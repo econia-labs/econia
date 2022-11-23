@@ -63,15 +63,6 @@ get_keyfile_info() {
 # Print git log in one line
 git_log_one_line() {git log --oneline --max-count=1}
 
-# Init Econia once published on chain, assuming `keyfile` and `addr` are
-# stored in global memory
-init_econia() {
-    aptos move run \
-        --function-id 0x$addr::registry::init_registry \
-        --private-key-file $keyfile \
-        --assume-yes
-}
-
 # Publish to either a temporary devnet address or an official devnet
 # address
 #
@@ -101,7 +92,6 @@ publish_from_keyfile() {
         --override-size-check \
         --included-artifacts none \
         --assume-yes
-    submit_market_buy $1 # Submit a market buy.
     # Print explorer link for address
     echo https://aptos-explorer.netlify.app/account/0x$addr
     # Substitute back docgen address
@@ -122,38 +112,13 @@ substitute_econia_address() {
     python $build_py substitute $addr $repo_root
 }
 
-# Submit a market buy, after `econia::test::init_module` has been run.
-#
-# Should be run from inside Move package directory.
-submit_market_buy() {
-    # Get keyfile for given flag argument.
-    get_keyfile_info $1
-    # Submit a market buy.
-    aptos move run \
-        --function-id 0x$addr::market::place_market_order_user \
-        --private-key-file $keyfile \
-        --assume-yes \
-        --type-args \
-            0x$addr::assets::BC \
-            0x$addr::assets::QC \
-        --args \
-            address:$addr \
-            u64:0 \
-            bool:true \
-            u64:0 \
-            u64:100 \
-            u64:0 \
-            u64:10000000 \
-            u64:100000000000000000
-}
-
 # Update Git revision hash for dependency in Move.toml
 #
 # Should be run from inside Move package directory
 update_rev_hash() {
-    # Get hash of latest commit to aptos-core devnet branch
+    # Get hash of latest commit to aptos-core main branch
     hash=$(git ls-remote https://github.com/aptos-labs/aptos-core \
-        refs/heads/devnet | grep -o '^\w\+')
+        refs/heads/main | grep -o '^\w\+')
     # Update Move.toml to indicate new hash dependency
     python $build_py rev $hash $repo_root
 }
@@ -182,14 +147,15 @@ elif test $1 = ca; then conda activate econia
 
 # Clean up temp files and terminal
 elif test $1 = cl; then
-    move sandbox clean
+    aptos move clean
     clear
 
 # Build documentation
 elif test $1 = d; then
     conda activate econia # Activate Econia conda environment
     substitute_econia_address docgen # Substitute docgen address
-    move build --doc # Build docs
+    aptos move document --include-impl # Build docs
+    substitute_econia_address official # Substitute official address
 
 # Go back to Econia project repository root
 elif test $1 = er; then cd $repo_root
@@ -215,8 +181,8 @@ elif test $1 = pc; then
     conda activate econia # Activate Econia conda environment
     update_rev_hash # Update revision hash for devnet dependency
     substitute_econia_address docgen # Substitute docgen address
-    aptos move test # Run all tests
-    move build --doc # Build docs
+    aptos move test -i 1000000 # Run all tests
+    aptos move document --include-impl # Build docs
     substitute_econia_address official # Substitute official address
 
 # Publish bytecode using official devnet address
@@ -250,11 +216,11 @@ elif test $1 = s_; then
     conda activate econia # Activate Econia conda environment
     substitute_econia_address _ # Subsitute generic address
 
-# Run aptos CLI test on all modules, rebuild documentation
-elif test $1 = ta; then aptos move test; move build --doc
+# Run aptos CLI test on all modules
+elif test $1 = ta; then aptos move test -i 1000000
 
 # Run aptos CLI test with filter and passed argument
-elif test $1 = tf; then aptos move test --filter $2
+elif test $1 = tf; then aptos move test --filter $2 -i 1000000
 
 # Watch source code and rebuild documentation if it changes
 # May require `brew install entr` beforehand
@@ -262,7 +228,7 @@ elif test $1 = wd; then
     conda activate econia # Activate Econia conda environment
     # Substitute docgen address into Move.toml
     substitute_econia_address docgen
-    ls sources/*.move | entr move build --doc
+    ls sources/*.move | entr aptos move document --include-impl
 
 # Watch source code and run a specific test if it changes
 # May require `brew install entr` beforehand
@@ -270,7 +236,7 @@ elif test $1 = wt; then
     conda activate econia # Activate Econia conda environment
     # Substitute docgen address into Move.toml
     substitute_econia_address docgen
-    ls sources/*.move | entr aptos move test --filter $2
+    ls sources/*.move | entr aptos move test --filter $2 -i 1000000
 
 else echo Invalid option; fi
 

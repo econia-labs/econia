@@ -477,7 +477,7 @@ module econia::critbit {
         /// (and memory intensive) `u128` is instead specified strictly.
         /// Must be an integer for bitwise operations.
         key: u128,
-        /// Value from node's key-value pair
+        /// Value from node's key-value pair.
         value: V,
         /// Parent node vector index. `ROOT` when node is root,
         /// otherwise corresponds to vector index of an inner node.
@@ -1430,7 +1430,7 @@ module econia::critbit {
     /// >          /   \
     /// >        011   0th <- search parent
     /// >             /   \
-    /// >           101   111 <- search outer node
+    /// >           110   111 <- search outer node
     /// >
     /// >       Insert 100
     /// >       --------->

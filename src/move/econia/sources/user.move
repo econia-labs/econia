@@ -1,76 +1,255 @@
-/// User-side book keeping and, optionally, collateral management.
+/// User-side asset, collateral, and order management.
 ///
-/// # Market account custodians
+/// Contains data structures and functionality for tracking a user's
+/// assets and open orders. Upon market account registration, users can
+/// either preside over their own account, or delegate custody to a
+/// custodian who manage their orders and withdrawals. For each market,
+/// a user can open multiple market accounts, each with a unique
+/// custodian.
 ///
-/// For any given market, designated by a unique market ID, a user can
-/// register multiple `MarketAccount`s, distinguished from one another
-/// by their corresponding "general custodian ID". The custodian
-/// capability having this ID is required to approve all market
-/// transactions within the market account with the exception of coin
-/// deposits and generic asset transfers, with the latter approved by a
-/// market-wide "generic asset transfer custodian" in the case of
-/// a market having at least one non-coin asset. When a general
-/// custodian ID is marked `NO_CUSTODIAN`, a signing user is required to
-/// approve general transactions rather than a custodian capability.
-/// Again, no authority is required to deposit coin types.
+/// # General overview sections
 ///
-/// For example: market 5 has a generic (non-coin) base asset, a coin
-/// quote asset, and generic asset transfer custodian ID 6. A user
-/// opens two market accounts for market 5, one having general
-/// custodian ID 7, and one having general custodian ID `NO_CUSTODIAN`.
-/// When a user wishes to deposit base assets to the first market
-/// account, custodian 6 is required for authorization. Then when the
-/// user wishes to submit an ask, custodian 7 must approve it. As for
-/// the second account, a user can withdraw quote coins and place or
-/// cancel trades via a signature, but custodian 6 is still required to
-/// verify base deposits and withdrawals.
+/// [Architecture](#architecture)
 ///
-/// In other words, the market-wide generic asset transfer custodian ID
-/// overrides the user-specific general custodian ID only when
-/// depositing or withdrawing generic assets, otherwise the
-/// user-specific general custodian ID takes precedence. Notably, a user
-/// can register a `MarketAccount` having the same general custodian ID
-/// and generic asset transfer custodian ID, and here, no overriding
-/// takes place. For example, if market 8 requires generic asset
-/// transfer custodian ID 9, a user can still register a market account
-/// having general custodian ID 9, and then custodian 9 will be required
-/// to authorize all of a user's transactions for the given
-/// `MarketAccount`.
+/// * [Market account IDs](#market-account-IDs)
+/// * [Market accounts](#market-accounts)
+/// * [Orders and access keys](#orders-and-access-keys)
+/// * [Market order IDs](#market-order-IDs)
 ///
-/// # Market account ID
+/// [Function index](#function-index)
 ///
-/// Since any of a user's `MarketAccount`s are specified by a
-/// unique combination of market ID and general custodian ID, a user's
-/// market account ID is thus defined as a 128-bit number, where the
-/// most-significant ("first") 64 bits correspond to the market ID, and
-/// the least-significant ("last") 64 bits correspond to the general
-/// custodian ID.
+/// * [Public functions](#public-functions)
+/// * [Public entry functions](#public-entry-functions)
+/// * [Public friend functions](#public-friend-functions)
+/// * [Dependency charts](#dependency-charts)
 ///
-/// For a market ID of `255` (`0b11111111`) and a general custodian ID
-/// of `170` (`0b10101010`), for example, the corresponding market
-/// account ID has the first 64 bits
-/// `0000000000000000000000000000000000000000000000000000000011111111`
-/// and the last 64 bits
-/// `0000000000000000000000000000000000000000000000000000000010101010`,
-/// corresponding to the base-10 integer `4703919738795935662250`. Note
-/// that when a user opts to sign general transactions rather than
-/// delegate to a general custodian, the market account ID uses a
-/// general custodian ID of `NO_CUSTODIAN`, corresponding to `0`.
+/// [Complete DocGen index](#complete-docgen-index)
 ///
-/// ---
+/// # Architecture
 ///
+/// ## Market account IDs
+///
+/// Markets, defined in the global registry, are assigned a 1-indexed
+/// `u64` market ID, as are custodians. The concatenated result of a
+/// market ID and a custodian ID is known as a market account ID, which
+/// is used as a key in assorted user-side lookup operations: the 64
+/// least-significant bits in a market account ID are the custodian ID
+/// for the given market account (`NIL` if no delegated custodian),
+/// while the 64 most-significant bits are the market ID. See
+/// `get_custodian_id()`, `get_market_account_id()`, and
+/// `get_market_id()` for implementation details.
+///
+/// ## Market accounts
+///
+/// When a user opens a market account, a `MarketAccount` entry is
+/// added to their `MarketAccounts`, and a coin entry is added to their
+/// `Collateral` for the given market's quote coin type. If the market's
+/// base asset is a coin, a `Collateral` entry is similarly created for
+/// the base coin type.
+///
+/// ## Orders and access keys
+///
+/// When users place an order on the order book, an `Order` is added to
+/// their corresponding `MarketAccount`. If they then cancel the order,
+/// the corresponding `Order` is not deallocated, but rather, marked
+/// "inactive" and pushed onto a stack of inactive orders for the
+/// corresponding side (`MarketAccount.asks_stack_top` or
+/// `MarketAccount.bids_stack_top`). Then, when a user places another
+/// order, rather than allocating a new `Order`, the inactive order at
+/// the top of the stack is popped off the stack and marked active.
+///
+/// This approach is motivated by global storage gas costs: as of the
+/// time of this writing, per-item creations cost approximately 16.7
+/// times as much as per-item writes, and there is no incentive to
+/// deallocate from memory. Hence the inactive stack paradigm allows
+/// for orders to be recycled in a way that reduces overall storage
+/// costs. In practice, however, this means that each `Order` is
+/// assigned a static "access key" that persists throughout subsequent
+/// active order states: if a user places an order, cancels the order,
+/// then places another order, the `Order` will have the same access key
+/// in each active instance. In other words, access keys are the lookup
+/// ID in the relevant `Order` data structure for the given side
+/// (`MarketAccount.asks` or `MarketAccount.bids`), and are not
+/// necessarily unique for orders across time.
+///
+/// ## Market order IDs
+///
+/// Market order IDs, however, are unique across time for a given market
+/// ID, and are tracked in a users' `Order.market_order_id`. A market
+/// order ID is a unique identifier for an order on a given order book.
+///
+/// # Function index
+///
+/// ## Public functions
+///
+/// Asset transfer:
+///
+/// * `deposit_coins()`
+/// * `deposit_generic_asset()`
+/// * `withdraw_coins_custodian()`
+/// * `withdraw_coins_user()`
+/// * `withdraw_generic_asset_custodian()`
+/// * `withdraw_generic_asset_user()`
+///
+/// Market account lookup:
+///
+/// * `get_all_market_account_ids_for_market_id()`
+/// * `get_all_market_account_ids_for_user()`
+/// * `get_asset_counts_custodian()`
+/// * `get_asset_counts_user()`
+/// * `has_market_account_by_market_account_id()`
+/// * `has_market_account_by_market_id()`
+///
+/// Market account ID lookup:
+///
+/// * `get_custodian_id()`
+/// * `get_market_account_id()`
+/// * `get_market_id()`
+///
+/// ## Public entry functions
+///
+/// Asset transfer:
+///
+/// * `deposit_from_coinstore()`
+/// * `withdraw_to_coinstore()`
+///
+/// Account registration:
+///
+/// * `register_market_account()`
+/// * `register_market_account_generic_base()`
+///
+/// ## Public friend functions
+///
+/// Order management:
+///
+/// * `cancel_order_internal()`
+/// * `change_order_size_internal()`
+/// * `fill_order_internal()`
+/// * `place_order_internal()`
+///
+/// Asset management:
+///
+/// * `deposit_assets_internal()`
+/// * `get_asset_counts_internal()`
+/// * `withdraw_assets_internal()`
+///
+/// Order identifiers:
+///
+/// * `get_next_order_access_key_internal()`
+/// * `get_active_market_order_ids_internal()`
+///
+/// ## Dependency charts
+///
+/// The below dependency charts use `mermaid.js` syntax, which can be
+/// automatically rendered into a diagram (depending on the browser)
+/// when viewing the documentation file generated from source code. If
+/// a browser renders the diagrams with coloring that makes it difficult
+/// to read, try a different browser.
+///
+/// Deposits:
+///
+/// ```mermaid
+///
+/// flowchart LR
+///
+/// deposit_coins --> deposit_asset
+///
+/// deposit_from_coinstore --> deposit_coins
+///
+/// deposit_assets_internal --> deposit_asset
+/// deposit_assets_internal --> deposit_coins
+///
+/// deposit_generic_asset --> deposit_asset
+/// deposit_generic_asset --> registry::get_underwriter_id
+///
+/// ```
+///
+/// Withdrawals:
+///
+/// ```mermaid
+///
+/// flowchart LR
+///
+/// withdraw_generic_asset_user --> withdraw_generic_asset
+///
+/// withdraw_generic_asset_custodian --> withdraw_generic_asset
+/// withdraw_generic_asset_custodian --> registry::get_custodian_id
+///
+/// withdraw_coins_custodian --> withdraw_coins
+/// withdraw_coins_custodian --> registry::get_custodian_id
+///
+/// withdraw_coins_user --> withdraw_coins
+///
+/// withdraw_to_coinstore --> withdraw_coins_user
+///
+/// withdraw_generic_asset --> withdraw_asset
+/// withdraw_generic_asset --> registry::get_underwriter_id
+///
+/// withdraw_coins --> withdraw_asset
+///
+/// withdraw_assets_internal --> withdraw_asset
+/// withdraw_assets_internal --> withdraw_coins
+///
+/// ```
+///
+/// Asset count lookup:
+///
+/// ```mermaid
+///
+/// flowchart LR
+///
+/// get_asset_counts_custodian --> get_asset_counts_internal
+/// get_asset_counts_custodian --> registry::get_custodian_id
+///
+/// get_asset_counts_user --> get_asset_counts_internal
+///
+/// ```
+///
+/// Market account registration:
+///
+/// ```mermaid
+///
+/// flowchart LR
+///
+/// register_market_account --> registry::is_registered_custodian_id
+/// register_market_account --> register_market_account_account_entries
+/// register_market_account --> register_market_account_collateral_entry
+///
+/// register_market_account_generic_base --> register_market_account
+///
+/// register_market_account_account_entries -->
+///     registry::get_market_info_for_market_account
+///
+/// ```
+///
+/// Internal order management:
+///
+/// ```mermaid
+///
+/// flowchart LR
+///
+/// change_order_size_internal --> cancel_order_internal
+/// change_order_size_internal --> place_order_internal
+///
+/// ```
+///
+/// # Complete DocGen index
+///
+/// The below index is automatically generated from source code:
 module econia::user {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     use aptos_framework::coin::{Self, Coin};
-    use aptos_std::type_info;
-    use econia::critbit::{Self, CritBitTree};
-    use econia::open_table;
-    use econia::order_id;
-    use econia::registry::{Self, CustodianCapability};
-    use std::option;
+    use aptos_framework::table::{Self, Table};
+    use aptos_framework::type_info::{Self, TypeInfo};
+    use econia::tablist::{Self, Tablist};
+    use econia::registry::{
+        Self, CustodianCapability, GenericAsset, UnderwriterCapability};
+    use std::option::{Self, Option};
     use std::signer::address_of;
+    use std::string::String;
+    use std::vector;
 
     // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -85,208 +264,318 @@ module econia::user {
     #[test_only]
     use aptos_framework::account;
     #[test_only]
-    use econia::assets::{Self, BC, BG, QC, QG};
+    use econia::avl_queue::{u_128_by_32, u_64_by_32};
     #[test_only]
-    use econia::critbit::{u, u_long};
+    use econia::assets::{Self, BC, QC, UC};
 
     // Test-only uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Collateral map for given coin type, across all `MarketAccount`s
+    /// All of a user's collateral across all market accounts.
     struct Collateral<phantom CoinType> has key {
-        /// Map from market account ID to coins held as collateral for
-        /// given `MarketAccount`. Separated into different table
-        /// entries to reduce transaction collisions across markets
-        map: open_table::OpenTable<u128, Coin<CoinType>>
+        /// Map from market account ID to collateral for market account.
+        /// Separated into different table entries to reduce transaction
+        /// collisions across markets. Enables off-chain iterated
+        /// indexing by market account ID.
+        map: Tablist<u128, Coin<CoinType>>
     }
 
-    /// Represents a user's open orders and available assets for a given
-    /// market account ID
+    /// Represents a user's open orders and asset counts for a given
+    /// market account ID. Contains `registry::MarketInfo` field
+    /// duplicates to reduce global storage item queries against the
+    /// registry.
     struct MarketAccount has store {
-        /// Base asset type info. When trading an
-        /// `aptos_framework::coin::Coin`, corresponds to the phantom
-        /// `CoinType`, for instance `MyCoin` rather than
-        /// `Coin<MyCoin>`. Otherwise corresponds to
-        /// `registry::GenericAsset`, or a non-coin asset indicated by
-        /// the market host.
-        base_type_info: type_info::TypeInfo,
-        /// Quote asset type info. When trading an
-        /// `aptos_framework::coin::Coin`, corresponds to the phantom
-        /// `CoinType`, for instance `MyCoin` rather than
-        /// `Coin<MyCoin>`. Otherwise corresponds to
-        /// `registry::GenericAsset`, or a non-coin asset indicated by
-        /// the market host.
-        quote_type_info: type_info::TypeInfo,
-        /// ID of custodian capability required to verify deposits,
-        /// swaps, and withdrawals of assets that are not coins. A
-        /// "market-wide asset transfer custodian ID" that only applies
-        /// to markets having at least one non-coin asset. For a market
-        /// having one coin asset and one generic asset, only applies to
-        /// the generic asset. Marked `PURE_COIN_PAIR` when base and
-        /// quote types are both coins.
-        generic_asset_transfer_custodian_id: u64,
-        /// Map from order ID to size of outstanding order, measured in
-        /// lots lefts to fill
-        asks: CritBitTree<u64>,
-        /// Map from order ID to size of outstanding order, measured in
-        /// lots lefts to fill
-        bids: CritBitTree<u64>,
-        /// Total base asset units held as collateral
+        /// `registry::MarketInfo.base_type`.
+        base_type: TypeInfo,
+        /// `registry::MarketInfo.base_name_generic`.
+        base_name_generic: String,
+        /// `registry::MarketInfo.quote_type`.
+        quote_type: TypeInfo,
+        /// `registry::MarketInfo.lot_size`.
+        lot_size: u64,
+        /// `registry::MarketInfo.tick_size`.
+        tick_size: u64,
+        /// `registry::MarketInfo.min_size`.
+        min_size: u64,
+        /// `registry::MarketInfo.underwriter_id`.
+        underwriter_id: u64,
+        /// Map from order access key to open ask order.
+        asks: Tablist<u64, Order>,
+        /// Map from order access key to open bid order.
+        bids: Tablist<u64, Order>,
+        /// Access key of ask order at top of inactive stack, if any.
+        asks_stack_top: u64,
+        /// Access key of bid order at top of inactive stack, if any.
+        bids_stack_top: u64,
+        /// Total base asset units held as collateral.
         base_total: u64,
-        /// Base asset units available for withdraw
+        /// Base asset units available to withdraw.
         base_available: u64,
-        /// Amount `base_total` will increase to if all open bids fill
+        /// Amount `base_total` will increase to if all open bids fill.
         base_ceiling: u64,
-        /// Total quote asset units held as collateral
+        /// Total quote asset units held as collateral.
         quote_total: u64,
-        /// Quote asset units available for withdraw
+        /// Quote asset units available to withdraw.
         quote_available: u64,
-        /// Amount `quote_total` will increase to if all open asks fill
+        /// Amount `quote_total` will increase to if all open asks fill.
         quote_ceiling: u64
     }
 
-    /// Market account map for all of a user's `MarketAccount`s
+    /// All of a user's market accounts.
     struct MarketAccounts has key {
-        /// Map from market account ID to `MarketAccount`. Separated
-        /// into different table entries to reduce transaction
-        /// collisions across markets
-        map: open_table::OpenTable<u128, MarketAccount>
+        /// Map from market account ID to `MarketAccount`.
+        map: Table<u128, MarketAccount>,
+        /// Map from market ID to vector of custodian IDs for which
+        /// a market account has been registered on the given market.
+        /// Enables off-chain iterated indexing by market account ID and
+        /// assorted on-chain queries.
+        custodians: Tablist<u64, vector<u64>>
+    }
+
+    /// An open order, either ask or bid.
+    struct Order has store {
+        /// Market order ID. `NIL` if inactive.
+        market_order_id: u128,
+        /// Order size left to fill, in lots. When `market_order_id` is
+        /// `NIL`, indicates access key of next inactive order in stack.
+        size: u64
     }
 
     // Structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Error codes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// When indicated asset is not in the market pair
-    const E_NOT_IN_MARKET_PAIR: u64 = 0;
-    /// When indicated custodian ID is not registered
-    const E_UNREGISTERED_CUSTODIAN_ID: u64 = 1;
-    /// When market account already exists for given market account ID
-    const E_EXISTS_MARKET_ACCOUNT: u64 = 2;
-    /// When indicated market account does not exist
+    /// Market account already exists.
+    const E_EXISTS_MARKET_ACCOUNT: u64 = 0;
+    /// Custodian ID has not been registered.
+    const E_UNREGISTERED_CUSTODIAN: u64 = 1;
+    /// No market accounts resource found.
+    const E_NO_MARKET_ACCOUNTS: u64 = 2;
+    /// No market account resource found.
     const E_NO_MARKET_ACCOUNT: u64 = 3;
-    /// When not enough asset available for operation
-    const E_NOT_ENOUGH_ASSET_AVAILABLE: u64 = 4;
-    /// When depositing an asset would overflow total holdings ceiling
+    /// Asset type is not in trading pair for market.
+    const E_ASSET_NOT_IN_PAIR: u64 = 4;
+    /// Deposit would overflow asset ceiling.
     const E_DEPOSIT_OVERFLOW_ASSET_CEILING: u64 = 5;
-    /// When number of ticks to fill order overflows a `u64`
-    const E_TICKS_OVERFLOW: u64 = 6;
-    /// When a user does not a `MarketAccounts`
-    const E_NO_MARKET_ACCOUNTS: u64 = 7;
-    /// When proposed order indicates a size of 0
-    const E_SIZE_0: u64 = 8;
-    /// When proposed order indicates a price of 0
-    const E_PRICE_0: u64 = 9;
-    /// When filling proposed order overflows asset received from trade
-    const E_OVERFLOW_ASSET_IN: u64 = 10;
-    /// When filling proposed order overflows asset traded away
-    const E_OVERFLOW_ASSET_OUT: u64 = 11;
-    /// When asset indicated as generic actually corresponds to a coin
-    const E_NOT_GENERIC_ASSET: u64 = 12;
-    /// When asset indicated as coin actually corresponds to a generic
-    const E_NOT_COIN_ASSET: u64 = 13;
-    /// When indicated custodian unauthorized to perform operation
-    const E_UNAUTHORIZED_CUSTODIAN: u64 = 14;
-    /// When no orders for indicated operation
-    const E_NO_ORDERS: u64 = 15;
+    /// Underwriter is not valid for indicated market.
+    const E_INVALID_UNDERWRITER: u64 = 6;
+    /// Too little available for withdrawal.
+    const E_WITHDRAW_TOO_LITTLE_AVAILABLE: u64 = 7;
+    /// Price is zero.
+    const E_PRICE_0: u64 = 8;
+    /// Price exceeds maximum possible price.
+    const E_PRICE_TOO_HIGH: u64 = 9;
+    /// Size is below minimum size for market.
+    const E_SIZE_TOO_LOW: u64 = 10;
+    /// Ticks to fill an order overflows a `u64`.
+    const E_TICKS_OVERFLOW: u64 = 11;
+    /// Filling order would overflow asset received from trade.
+    const E_OVERFLOW_ASSET_IN: u64 = 12;
+    /// Not enough asset to trade away.
+    const E_NOT_ENOUGH_ASSET_OUT: u64 = 13;
+    /// No change in order size.
+    const E_CHANGE_ORDER_NO_CHANGE: u64 = 14;
+    /// Market order ID mismatch with user's open order.
+    const E_INVALID_MARKET_ORDER_ID: u64 = 15;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Flag for asks side
+    /// Flag for ask side
     const ASK: bool = true;
-    /// Flag for asks side
+    /// Flag for bid side
     const BID: bool = false;
-    /// Flag for asset transfer of coin type
-    const COIN_ASSET_TRANSFER: u64 = 0;
-    /// Positions to bitshift for operating on first 64 bits
-    const FIRST_64: u8 = 64;
-    /// `u64` bitmask with all bits set
+    /// `u64` bitmask with all bits set, generated in Python via
+    /// `hex(int('1' * 64, 2))`.
     const HI_64: u64 = 0xffffffffffffffff;
-    /// Flag for inbound coins
-    const IN: bool = true;
-    /// Custodian ID flag for no delegated custodian
+    /// Maximum possible price that can be encoded in 32 bits. Generated
+    /// in Python via `hex(int('1' * 32, 2))`.
+    const MAX_PRICE: u64 = 0xffffffff;
+    /// Flag for null value when null defined as 0.
+    const NIL: u64 = 0;
+    /// Custodian ID flag for no custodian.
     const NO_CUSTODIAN: u64 = 0;
-    /// Flag for outbound coins
-    const OUT: bool = false;
-    /// When both base and quote assets are coins
-    const PURE_COIN_PAIR: u64 = 0;
+    /// Underwriter ID flag for no underwriter.
+    const NO_UNDERWRITER: u64 = 0;
+    /// Number of bits market ID is shifted in market account ID.
+    const SHIFT_MARKET_ID: u8 = 64;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Deposit `coins` of `CoinType` to `user`'s market account having
-    /// `market_id` and `general_custodian_id`
+    /// Wrapped call to `deposit_asset()` for depositing coins.
     ///
-    /// See wrapped function `deposit_asset()`
-    public fun deposit_coins<CoinType>(
-        user: address,
+    /// # Testing
+    ///
+    /// * `test_deposits()`
+    public fun deposit_coins<
+        CoinType
+    >(
+        user_address: address,
         market_id: u64,
-        general_custodian_id: u64,
+        custodian_id: u64,
         coins: Coin<CoinType>
     ) acquires
         Collateral,
         MarketAccounts
     {
         deposit_asset<CoinType>(
-            user,
-            get_market_account_id(market_id, general_custodian_id),
+            user_address,
+            market_id,
+            custodian_id,
             coin::value(&coins),
             option::some(coins),
-            COIN_ASSET_TRANSFER
-        )
+            NO_UNDERWRITER);
     }
 
-    /// Deposit `amount` of non-coin assets of `AssetType` to `user`'s
-    /// market account having `market_id` and `general_custodian_id`,
-    /// under authority of custodian indicated by
-    /// `generic_asset_transfer_custodian_capability_ref`
+    /// Wrapped call to `deposit_asset()` for depositing generic asset.
     ///
-    /// See wrapped function `deposit_asset()`
+    /// # Testing
     ///
-    /// # Abort conditions
-    /// * If `AssetType` corresponds to the `CoinType` of an initialized
-    ///   coin
-    public fun deposit_generic_asset<AssetType>(
-        user: address,
+    /// * `test_deposits()`
+    public fun deposit_generic_asset(
+        user_address: address,
         market_id: u64,
-        general_custodian_id: u64,
+        custodian_id: u64,
         amount: u64,
-        generic_asset_transfer_custodian_capability_ref: &CustodianCapability
+        underwriter_capability_ref: &UnderwriterCapability
     ) acquires
         Collateral,
         MarketAccounts
     {
-        // Assert asset type does not correspond to an initialized coin
-        assert!(!coin::is_coin_initialized<AssetType>(), E_NOT_GENERIC_ASSET);
-        // Get generic asset transfer custodian ID
-        let generic_asset_transfer_custodian_id = registry::custodian_id(
-            generic_asset_transfer_custodian_capability_ref);
-        deposit_asset<AssetType>( // Deposit generic asset
-            user,
-            get_market_account_id(market_id, general_custodian_id),
+        deposit_asset<GenericAsset>(
+            user_address,
+            market_id,
+            custodian_id,
             amount,
-            option::none<Coin<AssetType>>(),
-            generic_asset_transfer_custodian_id
-        )
+            option::none(),
+            registry::get_underwriter_id(underwriter_capability_ref));
     }
 
-    /// Return `MarketAccount` asset count fields for given `user` and
-    /// `market_account_id`, under authority of general custodian
-    /// indicated by `general_custodian_capability_ref()`.
+    /// Return all market account IDs associated with market ID.
     ///
-    /// See wrapped call `get_asset_counts()`.
+    /// # Parameters
     ///
-    /// # Restrictions
-    /// * Restricted to general custodian for given account to prevent
-    ///   excessive public queries and thus transaction collisions
-    public fun get_asset_counts_custodian(
+    /// * `user`: Address of user to check market account IDs for.
+    /// * `market_id`: Market ID to check market accounts for.
+    ///
+    /// # Returns
+    ///
+    /// * `vector<u128>`: Vector of user's market account IDs for given
+    ///   market, empty if no market accounts.
+    ///
+    /// # Gas considerations
+    ///
+    /// Loops over all elements within a vector that is itself a single
+    /// item in global storage, and returns a vector via pass-by-value.
+    ///
+    /// # Testing
+    ///
+    /// * `test_market_account_getters()`
+    public fun get_all_market_account_ids_for_market_id(
         user: address,
+        market_id: u64
+    ): vector<u128>
+    acquires MarketAccounts {
+        let market_account_ids = vector::empty(); // Init empty vector.
+        // Return empty if user has no market accounts resource.
+        if (!exists<MarketAccounts>(user)) return market_account_ids;
+        let custodians_map_ref = // Immutably borrow custodians map.
+            &borrow_global<MarketAccounts>(user).custodians;
+        // Return empty if user has no market accounts for given market.
+        if (!tablist::contains(custodians_map_ref, market_id))
+            return market_account_ids;
+        // Immutably borrow list of custodians for given market.
+        let custodians_ref = tablist::borrow(custodians_map_ref, market_id);
+        // Initialize loop counter and number of elements in vector.
+        let (i, n_custodians) = (0, vector::length(custodians_ref));
+        while (i < n_custodians) { // Loop over all elements.
+            // Get custodian ID.
+            let custodian_id = *vector::borrow(custodians_ref, i);
+            // Get market account ID.
+            let market_account_id = ((market_id as u128) << SHIFT_MARKET_ID) |
+                                    (custodian_id as u128);
+            // Push back onto ongoing market account ID vector.
+            vector::push_back(&mut market_account_ids, market_account_id);
+            i = i + 1; // Increment loop counter
+        };
+        market_account_ids // Return market account IDs.
+    }
+
+    /// Return all of a user's market account IDs.
+    ///
+    /// # Parameters
+    ///
+    /// * `user`: Address of user to check market account IDs for.
+    ///
+    /// # Returns
+    ///
+    /// * `vector<u128>`: Vector of user's market account IDs, empty if
+    ///   no market accounts.
+    ///
+    /// # Gas considerations
+    ///
+    /// For each market that a user has market accounts for, loops over
+    /// a separate item in global storage, incurring a per-item read
+    /// cost. Additionally loops over a vector for each such per-item
+    /// read, incurring linearly-scaled vector operation costs. Returns
+    /// a vector via pass-by-value.
+    ///
+    /// # Testing
+    ///
+    /// * `test_market_account_getters()`
+    public fun get_all_market_account_ids_for_user(
+        user: address,
+    ): vector<u128>
+    acquires MarketAccounts {
+        let market_account_ids = vector::empty(); // Init empty vector.
+        // Return empty if user has no market accounts resource.
+        if (!exists<MarketAccounts>(user)) return market_account_ids;
+        let custodians_map_ref = // Immutably borrow custodians map.
+            &borrow_global<MarketAccounts>(user).custodians;
+        // Get market ID option at head of market ID list.
+        let market_id_option = tablist::get_head_key(custodians_map_ref);
+        // While market IDs left to loop over:
+        while (option::is_some(&market_id_option)) {
+            // Get market ID.
+            let market_id = *option::borrow(&market_id_option);
+            // Immutably borrow list of custodians for given market and
+            // next market ID option in list.
+            let (custodians_ref, _, next) = tablist::borrow_iterable(
+                custodians_map_ref, market_id);
+            // Initialize loop counter and number of elements in vector.
+            let (i, n_custodians) = (0, vector::length(custodians_ref));
+            while (i < n_custodians) { // Loop over all elements.
+                // Get custodian ID.
+                let custodian_id = *vector::borrow(custodians_ref, i);
+                let market_account_id = // Get market account ID.
+                    ((market_id as u128) << SHIFT_MARKET_ID) |
+                    (custodian_id as u128);
+                // Push back onto ongoing market account ID vector.
+                vector::push_back(&mut market_account_ids, market_account_id);
+                i = i + 1; // Increment loop counter
+            };
+            // Review next market ID option in list.
+            market_id_option = next;
+        };
+        market_account_ids // Return market account IDs.
+    }
+
+    /// Wrapped call to `get_asset_counts_internal()` for custodian.
+    ///
+    /// Restricted to custodian for given market account to prevent
+    /// excessive public queries and thus transaction collisions.
+    ///
+    /// # Testing
+    ///
+    /// * `test_deposits()`
+    public fun get_asset_counts_custodian(
+        user_address: address,
         market_id: u64,
-        general_custodian_capability_ref: &CustodianCapability
+        custodian_capability_ref: &CustodianCapability
     ): (
         u64,
         u64,
@@ -295,24 +584,22 @@ module econia::user {
         u64,
         u64
     ) acquires MarketAccounts {
-        get_asset_counts(user, get_market_account_id(
-            market_id,
-            registry::custodian_id(general_custodian_capability_ref)
-        ))
+        get_asset_counts_internal(
+            user_address, market_id,
+            registry::get_custodian_id(custodian_capability_ref))
     }
 
-    /// Return `MarketAccount` asset count fields for given `user` and
-    /// `market_account_id`, under authority of signing user for a
-    /// market account without a delegated general custodian.
+    /// Wrapped call to `get_asset_counts_internal()` for signing user.
     ///
-    /// See wrapped call `get_asset_counts()`.
+    /// Restricted to signing user for given market account to prevent
+    /// excessive public queries and thus transaction collisions.
     ///
-    /// # Restrictions
-    /// * Restricted to signing user for given account to prevent
-    ///   excessive public queries and thus transaction collisions
+    /// # Testing
+    ///
+    /// * `test_deposits()`
     public fun get_asset_counts_user(
         user: &signer,
-        market_id: u64,
+        market_id: u64
     ): (
         u64,
         u64,
@@ -321,68 +608,120 @@ module econia::user {
         u64,
         u64
     ) acquires MarketAccounts {
-        get_asset_counts(
-            address_of(user),
-            get_market_account_id(market_id, NO_CUSTODIAN)
-        )
+        get_asset_counts_internal(address_of(user), market_id, NO_CUSTODIAN)
     }
 
-    /// Get general custodian ID encoded in `market_account_id`
-    public fun get_general_custodian_id(
+    /// Return custodian ID encoded in market account ID.
+    ///
+    /// # Testing
+    ///
+    /// * `test_market_account_id_getters()`
+    public fun get_custodian_id(
         market_account_id: u128
     ): u64 {
-        (market_account_id & (HI_64 as u128) as u64)
+        ((market_account_id & (HI_64 as u128)) as u64)
     }
 
-    /// Return market account ID for given `market_id` and
-    /// `general_custodian_id`
+    /// Return market account ID with encoded market and custodian IDs.
+    ///
+    /// # Testing
+    ///
+    /// * `test_market_account_id_getters()`
     public fun get_market_account_id(
         market_id: u64,
-        general_custodian_id: u64
+        custodian_id: u64
     ): u128 {
-        (market_id as u128) << FIRST_64 | (general_custodian_id as u128)
+        ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128)
     }
 
-    /// Get market ID encoded in `market_account_id`
+    /// Return market ID encoded in market account ID.
+    ///
+    /// # Testing
+    ///
+    /// * `test_market_account_id_getters()`
     public fun get_market_id(
         market_account_id: u128
     ): u64 {
-        (market_account_id >> FIRST_64 as u64)
+        (market_account_id >> SHIFT_MARKET_ID as u64)
     }
 
-    /// Withdraw `amount` of coins of `CoinType` from `user`'s market
-    /// account having `market_id`, under authority of custodian
-    /// indicated by `general_custodian_capability_ref`
+    /// Return `true` if `user` has market account registered with
+    /// given `market_account_id`.
     ///
-    /// See wrapped function `withdraw_coins()`
-    public fun withdraw_coins_custodian<CoinType>(
+    /// # Testing
+    ///
+    /// * `test_market_account_getters()`
+    public fun has_market_account_by_market_account_id(
         user: address,
+        market_account_id: u128
+    ): bool
+    acquires MarketAccounts {
+        // Return false if user has no market accounts resource.
+        if (!exists<MarketAccounts>(user)) return false;
+        // Immutably borrow market accounts map.
+        let market_accounts_map =
+            &borrow_global<MarketAccounts>(user).map;
+        // Return if map has entry for given market account ID.
+        table::contains(market_accounts_map, market_account_id)
+    }
+
+    /// Return `true` if `user` has at least one market account
+    /// registered with given `market_id`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_market_account_getters()`
+    public fun has_market_account_by_market_id(
+        user: address,
+        market_id: u64
+    ): bool
+    acquires MarketAccounts {
+        // Return false if user has no market accounts resource.
+        if (!exists<MarketAccounts>(user)) return false;
+        let custodians_map_ref = // Immutably borrow custodians map.
+            &borrow_global<MarketAccounts>(user).custodians;
+        // Return if custodians map has entry for given market ID.
+        tablist::contains(custodians_map_ref, market_id)
+    }
+
+    /// Wrapped call to `withdraw_coins()` for withdrawing under
+    /// authority of delegated custodian.
+    ///
+    /// # Testing
+    ///
+    /// * `test_withdrawals()`
+    public fun withdraw_coins_custodian<
+        CoinType
+    >(
+        user_address: address,
         market_id: u64,
         amount: u64,
-        general_custodian_capability_ref: &CustodianCapability
-    ): coin::Coin<CoinType>
+        custodian_capability_ref: &CustodianCapability
+    ): Coin<CoinType>
     acquires
         Collateral,
         MarketAccounts
     {
         withdraw_coins<CoinType>(
-            user,
+            user_address,
             market_id,
-            registry::custodian_id(general_custodian_capability_ref),
-            amount
-        )
+            registry::get_custodian_id(custodian_capability_ref),
+            amount)
     }
 
-    /// Withdraw `amount` of coins of `CoinType` from `user`'s market
-    /// account having `market_id` and no general custodian,returning
-    /// coins.
+    /// Wrapped call to `withdraw_coins()` for withdrawing under
+    /// authority of signing user.
     ///
-    /// See wrapped function `withdraw_coins()`.
-    public fun withdraw_coins_user<CoinType>(
+    /// # Testing
+    ///
+    /// * `test_withdrawals()`
+    public fun withdraw_coins_user<
+        CoinType
+    >(
         user: &signer,
         market_id: u64,
         amount: u64,
-    ): coin::Coin<CoinType>
+    ): Coin<CoinType>
     acquires
         Collateral,
         MarketAccounts
@@ -391,42 +730,54 @@ module econia::user {
             address_of(user),
             market_id,
             NO_CUSTODIAN,
-            amount
-        )
+            amount)
     }
 
-    /// Withdraw `amount` of non-coin assets of `AssetType` from
-    /// `user`'s market account having `market_id` and
-    /// `general_custodian_id`, under authority of custodian indicated
-    /// by `generic_asset_transfer_custodian_capability_ref`.
+    /// Wrapped call to `withdraw_generic_asset()` for withdrawing under
+    /// authority of delegated custodian.
     ///
-    /// See wrapped function `withdraw_asset()`.
+    /// # Testing
     ///
-    /// # Abort conditions
-    /// * If `AssetType` corresponds to the `CoinType` of an initialized
-    ///   coin
-    public fun withdraw_generic_asset<AssetType>(
-        user: address,
+    /// * `test_withdrawals()`
+    public fun withdraw_generic_asset_custodian(
+        user_address: address,
         market_id: u64,
-        general_custodian_id: u64,
         amount: u64,
-        generic_asset_transfer_custodian_capability_ref: &CustodianCapability
+        custodian_capability_ref: &CustodianCapability,
+        underwriter_capability_ref: &UnderwriterCapability
     ) acquires
         Collateral,
         MarketAccounts
     {
-        // Assert asset type does not correspond to an initialized coin
-        assert!(!coin::is_coin_initialized<AssetType>(), E_NOT_GENERIC_ASSET);
-        // Get generic asset transfer custodian ID
-        let generic_asset_transfer_custodian_id = registry::custodian_id(
-            generic_asset_transfer_custodian_capability_ref);
-        // Get market account ID
-        let market_account_id = get_market_account_id(market_id,
-            general_custodian_id);
-        // Withdraw asset as empty option
-        let empty_option = withdraw_asset<AssetType>(user, market_account_id,
-            amount, false, generic_asset_transfer_custodian_id);
-        option::destroy_none(empty_option); // Destroy empty option
+        withdraw_generic_asset(
+            user_address,
+            market_id,
+            registry::get_custodian_id(custodian_capability_ref),
+            amount,
+            underwriter_capability_ref)
+    }
+
+    /// Wrapped call to `withdraw_generic_asset()` for withdrawing under
+    /// authority of signing user.
+    ///
+    /// # Testing
+    ///
+    /// * `test_withdrawals()`
+    public fun withdraw_generic_asset_user(
+        user: &signer,
+        market_id: u64,
+        amount: u64,
+        underwriter_capability_ref: &UnderwriterCapability
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
+        withdraw_generic_asset(
+            address_of(user),
+            market_id,
+            NO_CUSTODIAN,
+            amount,
+            underwriter_capability_ref)
     }
 
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -434,16 +785,18 @@ module econia::user {
     // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[cmd]
-    /// Transfer `amount` of coins of `CoinType` from `user`'s
-    /// `aptos_framework::coin::CoinStore` to their `Collateral` for
-    /// market account having `market_id`, `general_custodian_id`, and
-    /// `generic_asset_transfer_custodian_id`.
+    /// Wrapped call to `deposit_coins()` for depositing from an
+    /// `aptos_framework::coin::CoinStore`.
     ///
-    /// See wrapped function `deposit_coins()`
-    public entry fun deposit_from_coinstore<CoinType>(
+    /// # Testing
+    ///
+    /// * `test_deposits()`
+    public entry fun deposit_from_coinstore<
+        CoinType
+    >(
         user: &signer,
         market_id: u64,
-        general_custodian_id: u64,
+        custodian_id: u64,
         amount: u64
     ) acquires
         Collateral,
@@ -452,742 +805,460 @@ module econia::user {
         deposit_coins<CoinType>(
             address_of(user),
             market_id,
-            general_custodian_id,
-            coin::withdraw<CoinType>(user, amount)
-        )
+            custodian_id,
+            coin::withdraw<CoinType>(user, amount));
     }
 
     #[cmd]
-    /// Register user with a market account
+    /// Register market account for indicated market and custodian.
     ///
     /// # Type parameters
-    /// * `BaseType`: Base type for market
-    /// * `QuoteType`: Quote type for market
+    ///
+    /// * `BaseType`: Base type for indicated market. If base asset is
+    ///   a generic asset, must be passed as `registry::GenericAsset`
+    ///   (alternatively use `register_market_account_base_generic()`).
+    /// * `QuoteType`: Quote type for indicated market.
     ///
     /// # Parameters
-    /// * `user`: Signing user
-    /// * `market_id`: Serial ID of corresponding market
-    /// * `general_custodian_id`: Serial ID of custodian capability
-    ///   required for general account authorization, set to
-    ///   `NO_CUSTODIAN` if signing user required for authorization on
-    ///   market account
     ///
-    /// # Abort conditions
-    /// * If invalid `custodian_id`
+    /// * `user`: User registering a market account.
+    /// * `market_id`: Market ID for given market.
+    /// * `custodian_id`: Custodian ID to register account with, or
+    ///   `NO_CUSTODIAN`.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_UNREGISTERED_CUSTODIAN`: Custodian ID has not been
+    ///   registered.
+    ///
+    /// # Testing
+    ///
+    /// * `test_register_market_account_unregistered_custodian()`
+    /// * `test_register_market_accounts()`
     public entry fun register_market_account<
         BaseType,
         QuoteType
     >(
         user: &signer,
         market_id: u64,
-        general_custodian_id: u64
+        custodian_id: u64
     ) acquires
         Collateral,
         MarketAccounts
     {
-        // If general custodian ID indicated, assert it is registered
-        if (general_custodian_id != NO_CUSTODIAN) assert!(
-            registry::is_registered_custodian_id(general_custodian_id),
-            E_UNREGISTERED_CUSTODIAN_ID);
-        // Get market account ID
-        let market_account_id = get_market_account_id(
-            market_id, general_custodian_id);
-        // Register entry in market accounts map
-        register_market_accounts_entry<BaseType, QuoteType>(
-            user, market_account_id);
-        // If base asset is coin, register collateral entry
+        // If custodian ID indicated, assert it is registered.
+        if (custodian_id != NO_CUSTODIAN) assert!(
+            registry::is_registered_custodian_id(custodian_id),
+            E_UNREGISTERED_CUSTODIAN);
+        let user_address = address_of(user); // Get user address.
+        let market_account_id = // Get market account ID.
+            ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128);
+        // Register market accounts map entries.
+        register_market_account_account_entries<BaseType, QuoteType>(
+            user, user_address, market_account_id, market_id, custodian_id);
+        // If base asset is coin, register collateral entry.
         if (coin::is_coin_initialized<BaseType>())
-            register_collateral_entry<BaseType>(user, market_account_id);
-        // If quote asset is coin, register collateral entry
-        if (coin::is_coin_initialized<QuoteType>())
-            register_collateral_entry<QuoteType>(user, market_account_id);
+            register_market_account_collateral_entry<BaseType>(
+                user, user_address, market_account_id);
+        // Register quote asset collateral entry.
+        register_market_account_collateral_entry<QuoteType>(
+            user, user_address, market_account_id);
     }
 
     #[cmd]
-    /// Transfer `amount` of coins of `CoinType` from `user`'s
-    /// `Collateral` to their `aptos_framework::coin::CoinStore` for
-    /// market account having `market_id` and
-    /// `generic_asset_transfer_custodian_id` but no general custodian
+    /// Wrapped `register_market_account()` call for generic base asset.
     ///
-    /// See wrapped function `withdraw_coins_user()`
-    public entry fun withdraw_to_coinstore<CoinType>(
+    /// # Testing
+    ///
+    /// * `test_register_market_accounts()`
+    public entry fun register_market_account_generic_base<
+        QuoteType
+    >(
         user: &signer,
         market_id: u64,
-        amount: u64
+        custodian_id: u64
     ) acquires
         Collateral,
         MarketAccounts
     {
-        // Withdraw coins from user's market account
-        let coins = withdraw_coins_user<CoinType>(user, market_id, amount);
-        // Deposit coins to user's coin store
-        coin::deposit<CoinType>(address_of(user), coins);
+        register_market_account<GenericAsset, QuoteType>(
+            user, market_id, custodian_id);
+    }
+
+    #[cmd]
+    /// Wrapped call to `withdraw_coins_user()` for withdrawing from
+    /// market account to user's `aptos_framework::coin::CoinStore`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_withdrawals()`
+    public entry fun withdraw_to_coinstore<
+        CoinType
+    >(
+        user: &signer,
+        market_id: u64,
+        amount: u64,
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register coin store if user does not have one.
+        if (!coin::is_account_registered<CoinType>(address_of(user)))
+            coin::register<CoinType>(user);
+        // Deposit to coin store coins withdrawn from market account.
+        coin::deposit<CoinType>(address_of(user), withdraw_coins_user(
+            user, market_id, amount));
     }
 
     // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Public friend functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Deposit `amount` of assets of `AssetType` to `user`'s market
-    /// account indicated by `market_account_id` and having
-    /// `generic_asset_transfer_custodian_id`, returning coins
-    /// in an `option::Option` if `AssetType` is a coin type.
+    /// Cancel order from a user's tablist of open orders on given side.
     ///
-    /// See wrapped function `deposit_asset()`.
-    public(friend) fun deposit_asset_as_option_internal<AssetType>(
-        user: address,
-        market_account_id: u128,
-        amount: u64,
-        optional_coins: option::Option<Coin<AssetType>>,
-        generic_asset_transfer_custodian_id: u64
-    ) acquires
-        Collateral,
-        MarketAccounts
-    {
-        deposit_asset<AssetType>(user, market_account_id, amount,
-            optional_coins, generic_asset_transfer_custodian_id)
+    /// Updates asset counts, pushes order onto top of inactive orders
+    /// stack, and overwrites its fields accordingly.
+    ///
+    /// Accepts as an argument a market order ID, which is checked
+    /// against the market order ID in the user's corresponding `Order`.
+    /// This check is bypassed when the market order ID is passed as
+    /// `NIL`, which should only happen when cancellation is motivated
+    /// by an eviction: market order IDs are not tracked in order book
+    /// state, so during an eviction, `cancel_order_internal()`
+    /// is simply called with a `NIL` market order ID argument.
+    /// Custodians or users who manually trigger order cancellations for
+    /// their own order do have to pass market order IDs, however, to
+    /// verify that they are not passing a malicious market order ID
+    /// (portions of which essentially function as pointers into AVL
+    /// queue state).
+    ///
+    /// # Parameters
+    ///
+    /// * `user_address`: User address for market account.
+    /// * `market_id`: Market ID for market account.
+    /// * `custodian_id`: Custodian ID for market account.
+    /// * `side`: `ASK` or `BID`, the side on which an order was placed.
+    /// * `size`: Order size, in lots.
+    /// * `price`: Order price, in ticks per lot.
+    /// * `order_access_key`: Order access key for user order lookup.
+    /// * `market_order_id`: `NIL` if order cancellation originates from
+    ///   an eviction, otherwise the market order ID encoded in the
+    ///   user's `Order`.
+    ///
+    /// # Returns
+    ///
+    /// * `u128`: Market order ID for corresponding order.
+    ///
+    /// # Terminology
+    ///
+    /// * The "inbound" asset is the asset that would have been received
+    ///   from a trade if the cancelled order had been filled.
+    /// * The "outbound" asset is the asset that would have been traded
+    ///   away if the cancelled order had been filled.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_INVALID_MARKET_ORDER_ID`: Market order ID mismatch with
+    ///   user's open order, when market order ID not passed as `NIL`.
+    ///
+    /// # Assumptions
+    ///
+    /// * Only called when also cancelling an order from the order book.
+    /// * User has an open order under indicated market account with
+    ///   provided access key, but not necessarily with provided market
+    ///   order ID (if market order ID is not `NIL`): if order
+    ///   cancellation is manually actuated by a custodian or user,
+    ///   then it had to have been successfully placed on the book to
+    ///   begin with for the given access key. Market order IDs,
+    ///   however, are not maintained in order book state and so could
+    ///   be potentially be passed by a malicious user or custodian who
+    ///   intends to alter order book state per above.
+    /// * If market order ID is not `NIL`, is only called during an
+    ///   eviction.
+    /// * `price` matches that encoded in market order ID from cancelled
+    ///   order if market order ID is not `NIL`.
+    ///
+    /// # Expected value testing
+    ///
+    /// * `test_place_cancel_order_ask()`
+    /// * `test_place_cancel_order_bid()`
+    /// * `test_place_cancel_order_stack()`
+    ///
+    /// # Failure testing
+    ///
+    /// * `test_cancel_order_internal_mismatch()`
+    public(friend) fun cancel_order_internal(
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64,
+        side: bool,
+        price: u64,
+        order_access_key: u64,
+        market_order_id: u128
+    ): u128
+    acquires MarketAccounts {
+        // Mutably borrow market accounts map.
+        let market_accounts_map_ref_mut =
+            &mut borrow_global_mut<MarketAccounts>(user_address).map;
+        let market_account_id = // Get market account ID.
+            ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128);
+        let market_account_ref_mut = // Mutably borrow market account.
+            table::borrow_mut(market_accounts_map_ref_mut, market_account_id);
+        // Mutably borrow orders tablist, inactive orders stack top,
+        // inbound asset ceiling, and outbound asset available fields,
+        // and determine size multiplier for calculating change in
+        // available and ceiling fields, based on order side.
+        let (orders_ref_mut, stack_top_ref_mut, in_ceiling_ref_mut,
+             out_available_ref_mut, size_multiplier_ceiling,
+             size_multiplier_available) = if (side == ASK) (
+                &mut market_account_ref_mut.asks,
+                &mut market_account_ref_mut.asks_stack_top,
+                &mut market_account_ref_mut.quote_ceiling,
+                &mut market_account_ref_mut.base_available,
+                price * market_account_ref_mut.tick_size,
+                market_account_ref_mut.lot_size
+            ) else (
+                &mut market_account_ref_mut.bids,
+                &mut market_account_ref_mut.bids_stack_top,
+                &mut market_account_ref_mut.base_ceiling,
+                &mut market_account_ref_mut.quote_available,
+                market_account_ref_mut.lot_size,
+                price * market_account_ref_mut.tick_size);
+        let order_ref_mut = // Mutably borrow order to remove.
+            tablist::borrow_mut(orders_ref_mut, order_access_key);
+        let size = order_ref_mut.size; // Store order's size field.
+        // If passed market order ID is null, reassign its value to the
+        // market order ID encoded in the order. Else assert that it is
+        // equal to market order ID in user's order.
+        if (market_order_id == (NIL as u128))
+            market_order_id = order_ref_mut.market_order_id else
+            assert!(order_ref_mut.market_order_id == market_order_id,
+                    E_INVALID_MARKET_ORDER_ID);
+        // Clear out order's market order ID field.
+        order_ref_mut.market_order_id = (NIL as u128);
+        // Mark order's size field to indicate top of inactive stack.
+        order_ref_mut.size = *stack_top_ref_mut;
+        // Reassign stack top field to indicate newly inactive order.
+        *stack_top_ref_mut = order_access_key;
+        // Calculate increment amount for outbound available field.
+        let available_increment_amount = size * size_multiplier_available;
+        *out_available_ref_mut = // Increment available field.
+            *out_available_ref_mut + available_increment_amount;
+        // Calculate decrement amount for inbound ceiling field.
+        let ceiling_decrement_amount = size * size_multiplier_ceiling;
+        *in_ceiling_ref_mut = // Decrement ceiling field.
+            *in_ceiling_ref_mut - ceiling_decrement_amount;
+        market_order_id // Return market order ID.
     }
 
-    /// Withdraw `base_amount` of `BaseType` and `quote_amount` of
-    /// Deposit `base_amount` of `BaseType` and `quote_amount` of
-    /// `QuoteType` from `user`'s market account indicated by
-    /// `market_account_id` and having
-    /// `generic_asset_transfer_custodian_id`, returning coins
-    /// in an `option::Option` as needed for each type.
+    /// Change the size of a user's open order on given side.
     ///
-    /// See wrapped function `deposit_asset_as_option_internal()`.
-    public(friend) fun deposit_assets_as_option_internal<
+    /// # Parameters
+    ///
+    /// * `user_address`: User address for market account.
+    /// * `market_id`: Market ID for market account.
+    /// * `custodian_id`: Custodian ID for market account.
+    /// * `side`: `ASK` or `BID`, the side on which an order was placed.
+    /// * `new_size`: New order size, in lots, checked during inner call
+    ///   to `place_order_internal()`.
+    /// * `price`: Order price, in ticks per lot.
+    /// * `order_access_key`: Order access key for user order lookup.
+    /// * `market_order_id`: Market order ID for order book lookup.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_CHANGE_ORDER_NO_CHANGE`: No change in order size.
+    ///
+    /// # Assumptions
+    ///
+    /// * Only called when also changing order size on the order book.
+    /// * User has an open order under indicated market account with
+    ///   provided access key, but not necessarily with provided market
+    ///   order ID, which is checked in `cancel_order_internal()`.
+    /// * `price` matches that encoded in market order ID for changed
+    ///   order.
+    ///
+    /// # Testing
+    ///
+    /// * `test_change_order_size_internal_ask()`
+    /// * `test_change_order_size_internal_bid()`
+    /// * `test_change_order_size_internal_no_change()`
+    public(friend) fun change_order_size_internal(
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64,
+        side: bool,
+        new_size: u64,
+        price: u64,
+        order_access_key: u64,
+        market_order_id: u128
+    ) acquires MarketAccounts {
+        // Mutably borrow market accounts map.
+        let market_accounts_map_ref_mut =
+            &mut borrow_global_mut<MarketAccounts>(user_address).map;
+        let market_account_id = // Get market account ID.
+            ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128);
+        let market_account_ref_mut = // Mutably borrow market account.
+            table::borrow_mut(market_accounts_map_ref_mut, market_account_id);
+        // Immutably borrow corresponding orders tablist based on side.
+        let orders_ref = if (side == ASK)
+            &market_account_ref_mut.asks else &market_account_ref_mut.bids;
+        // Immutably borrow order.
+        let order_ref = tablist::borrow(orders_ref, order_access_key);
+        // Assert change in size.
+        assert!(order_ref.size != new_size, E_CHANGE_ORDER_NO_CHANGE);
+        // Cancel order with size to be changed.
+        cancel_order_internal(user_address, market_id, custodian_id, side,
+                              price, order_access_key, market_order_id);
+        // Place order with new size.
+        place_order_internal(user_address, market_id, custodian_id, side,
+                             new_size, price, market_order_id);
+    }
+
+    /// Deposit base asset and quote coins when matching.
+    ///
+    /// Should only be called by the matching engine when matching from
+    /// a user's market account.
+    ///
+    /// # Type parameters
+    ///
+    /// * `BaseType`: Base type for market.
+    /// * `QuoteType`: Quote type for market.
+    ///
+    /// # Parameters
+    ///
+    /// * `user_address`: User address for market account.
+    /// * `market_id`: Market ID for market account.
+    /// * `custodian_id`: Custodian ID for market account.
+    /// * `base_amount`: Base asset amount to deposit.
+    /// * `optional_base_coins`: Optional base coins to deposit.
+    /// * `quote_coins`: Quote coins to deposit.
+    /// * `underwriter_id`: Underwriter ID for market.
+    ///
+    /// # Assumptions
+    ///
+    /// * If `optional_base_coins` is some, coin value is equal to
+    ///   `base_amount`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_deposit_withdraw_assets_internal()`
+    public(friend) fun deposit_assets_internal<
         BaseType,
         QuoteType
     >(
-        user: address,
-        market_account_id: u128,
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64,
         base_amount: u64,
-        quote_amount: u64,
-        optional_base_coins: option::Option<Coin<BaseType>>,
-        optional_quote_coins: option::Option<Coin<QuoteType>>,
-        generic_asset_transfer_custodian_id: u64
+        optional_base_coins: Option<Coin<BaseType>>,
+        quote_coins: Coin<QuoteType>,
+        underwriter_id: u64
     ) acquires
         Collateral,
         MarketAccounts
     {
-        // Deposit base
-        deposit_asset_as_option_internal<BaseType>(user, market_account_id,
-            base_amount, optional_base_coins,
-            generic_asset_transfer_custodian_id);
-        // Deposit quote
-        deposit_asset_as_option_internal<QuoteType>(user, market_account_id,
-            quote_amount, optional_quote_coins,
-            generic_asset_transfer_custodian_id);
+        deposit_asset<BaseType>( // Deposit base asset.
+            user_address, market_id, custodian_id, base_amount,
+            optional_base_coins, underwriter_id);
+        deposit_coins<QuoteType>( // Deposit quote coins.
+            user_address, market_id, custodian_id, quote_coins);
     }
 
-    /// Fill a user's order, routing coin collateral as needed.
+    /// Fill a user's order, routing collateral appropriately.
     ///
-    /// Only to be called by the matching engine, which has already
+    /// Updates asset counts in a user's market account. Transfers
+    /// coins as needed between a user's collateral, and an external
+    /// source of coins passing through the matching engine. If a
+    /// complete fill, pushes the newly inactive order to the top of the
+    /// inactive orders stack for the given side.
+    ///
+    /// Should only be called by the matching engine, which has already
     /// calculated the corresponding amount of assets to fill. If the
-    /// matching engine gets to this stage, then it is assumed that
-    /// given user has the indicated open order and sufficient assets
-    /// to fill it. Hence no error checking.
+    /// matching engine gets to this stage, then the user has an open
+    /// order as indicated with sufficient assets to fill it. Hence no
+    /// error checking.
     ///
     /// # Type parameters
-    /// * `BaseType`: Base type for market
-    /// * `QuoteType`: Quote type for market
+    ///
+    /// * `BaseType`: Base type for indicated market.
+    /// * `QuoteType`: Quote type for indicated market.
     ///
     /// # Parameters
-    /// * `user`: Address of corresponding user
-    /// * `market_account_id`: Corresponding market account ID
-    /// * `side`: `ASK` or `BID`
-    /// * `order_id`: Order ID for given order
-    /// * `complete_fill`: If `true`, the order is completely filled
-    /// * `fill_size`: Number of lots filled
-    /// * `optional_base_coins_ref_mut`: Mutable reference to optional
-    ///   base coins passing through the matching engine
-    /// * `optional_quote_coins_ref_mut`: Mutable reference to optional
-    ///   quote coins passing through the matching engine
-    /// * `base_to_route`: If `side` is `ASK`, number of base asset
-    ///   units routed from `user`, else to `user`
-    /// * `quote_to_route`: If `side` is `ASK`, number of quote asset
-    ///   units routed to `user`, else from `user`
+    ///
+    /// * `user_address`: User address for market account.
+    /// * `market_id`: Market ID for market account.
+    /// * `custodian_id`: Custodian ID for market account.
+    /// * `side`: `ASK` or `BID`, the side of the open order.
+    /// * `order_access_key`: The open order's access key.
+    /// * `fill_size`: The number of lots filled.
+    /// * `complete_fill`: `true` if order is completely filled.
+    /// * `optional_base_coins`: Optional external base coins passing
+    ///   through the matching engine.
+    /// * `quote_coins`: External quote coins passing through the
+    ///   matching engine.
+    /// * `base_to_route`: Amount of base asset filled.
+    /// * `quote_to_route`: Amount of quote asset filled.
+    ///
+    /// # Returns
+    ///
+    /// * `Option<Coin<BaseType>>`: Optional external base coins passing
+    ///   through the matching engine.
+    /// * `Coin<QuoteType>`: External quote coins passing through the
+    ///   matching engine.
+    /// * `u128`: Market order ID just filled against.
+    ///
+    /// # Assumptions
+    ///
+    /// * Only called by the matching engine as described above.
+    ///
+    /// # Testing
+    ///
+    /// * `test_fill_order_internal_ask_complete_base_coin()`
+    /// * `test_fill_order_internal_bid_complete_base_coin()`
+    /// * `test_fill_order_internal_bid_partial_base_generic()`
     public(friend) fun fill_order_internal<
         BaseType,
         QuoteType
     >(
-        user: address,
-        market_account_id: u128,
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64,
         side: bool,
-        order_id: u128,
-        complete_fill: bool,
+        order_access_key: u64,
         fill_size: u64,
-        optional_base_coins_ref_mut:
-            &mut option::Option<coin::Coin<BaseType>>,
-        optional_quote_coins_ref_mut:
-            &mut option::Option<coin::Coin<QuoteType>>,
-        base_to_route: u64,
-        quote_to_route: u64,
-    ) acquires
-        Collateral,
-        MarketAccounts
-    {
-        // Update user's market account
-        fill_order_update_market_account(user, market_account_id, side,
-            order_id, complete_fill, fill_size, base_to_route, quote_to_route);
-        // Route collateral accordingly, as needed
-        fill_order_route_collateral<BaseType, QuoteType>(user,
-            market_account_id, side, optional_base_coins_ref_mut,
-            optional_quote_coins_ref_mut, base_to_route, quote_to_route);
-    }
-
-    /// Return `MarketAccount` asset count fields for given `user` and
-    /// `market_account_id` .
-    ///
-    /// See wrapped call `get_asset_counts()`.
-    ///
-    /// # Restrictions
-    /// * Restricted to friend modules to prevent excessive public
-    ///   queries and thus transaction collisions
-    public(friend) fun get_asset_counts_internal(
-        user: address,
-        market_account_id: u128
-    ): (
-        u64,
-        u64,
-        u64,
-        u64,
-        u64,
-        u64
-    ) acquires MarketAccounts {
-        get_asset_counts(user, market_account_id)
-    }
-
-    /// Return number of open orders for given `user`,
-    /// `market_account_id`, and `side`
-    ///
-    /// # Restrictions
-    /// * Restricted to friends prevent excessive public queries and
-    ///   thus transaction collisions
-    public(friend) fun get_n_orders_internal(
-        user: address,
-        market_account_id: u128,
-        side: bool
-    ): u64
-    acquires MarketAccounts {
-        // Verify user has a corresponding market account
-        verify_market_account_exists(user, market_account_id);
-        // Borrow immutable reference to market accounts map
-        let market_accounts_map_ref = &borrow_global<MarketAccounts>(user).map;
-        // Borrow immutable reference to corresponding market account
-        let market_account_ref =
-            open_table::borrow(market_accounts_map_ref, market_account_id);
-        // Borrow immutable reference to corresponding orders tree
-        let tree_ref = if (side == ASK) &market_account_ref.asks else
-            &market_account_ref.bids;
-        critbit::length(tree_ref) // Return number of orders
-    }
-
-    /// Return order ID of order nearest the spread, for given `user`,
-    /// `market_account_id`, and `side`
-    ///
-    /// # Restrictions
-    /// * Restricted to friends prevent excessive public queries and
-    ///   thus transaction collisions
-    public(friend) fun get_order_id_nearest_spread_internal(
-        user: address,
-        market_account_id: u128,
-        side: bool
-    ): u128
-    acquires MarketAccounts {
-        // Verify user has a corresponding market account
-        verify_market_account_exists(user, market_account_id);
-        // Borrow immutable reference to market accounts map
-        let market_accounts_map_ref = &borrow_global<MarketAccounts>(user).map;
-        // Borrow immutable reference to corresponding market account
-        let market_account_ref =
-            open_table::borrow(market_accounts_map_ref, market_account_id);
-        // Borrow immutable reference to corresponding orders tree
-        let tree_ref = if (side == ASK) &market_account_ref.asks else
-            &market_account_ref.bids;
-        // Assert tree is not empty
-        assert!(!critbit::is_empty(tree_ref), E_NO_ORDERS);
-        if (side == ASK) critbit::min_key(tree_ref) else
-            critbit::max_key(tree_ref)
-    }
-
-    /// Register a new order under a user's market account
-    ///
-    /// # Parameters
-    /// * `user`: Address of corresponding user
-    /// * `market_account_id`: Corresponding market account ID
-    /// * `side:` `ASK` or `BID`
-    /// * `order_id`: Order ID for given order
-    /// * `size`: Size of order in lots
-    /// * `price`: Price of order in ticks per lot
-    /// * `lot_size`: Base asset units per lot
-    /// * `tick_size`: Quote asset units per tick
-    ///
-    /// # Assumes
-    /// * `price` is same as that encoded in `order_id`, since called by
-    ///   the matching engine
-    /// * `lot_size` and `tick_size` correspond to market ID encoded in
-    ///   `market_account_id`, since called by the matching engine
-    public(friend) fun register_order_internal(
-        user: address,
-        market_account_id: u128,
-        side: bool,
-        order_id: u128,
-        size: u64,
-        price: u64,
-        lot_size: u64,
-        tick_size: u64,
-    ) acquires MarketAccounts {
-        // Verify user has a corresponding market account
-        verify_market_account_exists(user, market_account_id);
-        // Borrow mutable reference to market accounts map
-        let market_accounts_map_ref_mut =
-            &mut borrow_global_mut<MarketAccounts>(user).map;
-        // Borrow mutable reference to corresponding market account
-        let market_account_ref_mut = open_table::borrow_mut(
-            market_accounts_map_ref_mut, market_account_id);
-        // Borrow mutable reference to open orders tree, mutable
-        // reference to ceiling field for asset received from trade, and
-        // mutable reference to available field for asset traded away
-        let (
-            tree_ref_mut,
-            in_asset_ceiling_ref_mut,
-            out_asset_available_ref_mut
-        ) = if (side == ASK) (
-                &mut market_account_ref_mut.asks,
-                &mut market_account_ref_mut.quote_ceiling,
-                &mut market_account_ref_mut.base_available
-            ) else (
-                &mut market_account_ref_mut.bids,
-                &mut market_account_ref_mut.base_ceiling,
-                &mut market_account_ref_mut.quote_available
-            );
-        // Range check proposed order, store fill amounts
-        let (in_asset_fill, out_asset_fill) = range_check_new_order(
-            side, size, price, lot_size, tick_size,
-            *in_asset_ceiling_ref_mut, *out_asset_available_ref_mut);
-        // Add order to corresponding tree
-        critbit::insert(tree_ref_mut, order_id, size);
-        // Increment asset ceiling amount for asset received from trade
-        *in_asset_ceiling_ref_mut = *in_asset_ceiling_ref_mut + in_asset_fill;
-        // Decrement asset available amount for asset traded away
-        *out_asset_available_ref_mut =
-            *out_asset_available_ref_mut - out_asset_fill;
-    }
-
-    /// Remove an order from a user's market account
-    ///
-    /// # Parameters
-    /// * `user`: Address of corresponding user
-    /// * `market_account_id`: Corresponding market account ID
-    /// * `lot_size`: Base asset units per lot
-    /// * `tick_size`: Quote asset units per tick
-    /// * `side`: `ASK` or `BID`
-    /// * `order_id`: Order ID for given order
-    ///
-    /// # Assumes
-    /// * That order has already been cancelled from the order book, and
-    ///   as such that user necessarily has an open order as specified:
-    ///   if an order has been cancelled from the book, then it had to
-    ///   have been placed on the book, which means that the
-    ///   corresponding user successfully placed it to begin with.
-    public(friend) fun remove_order_internal(
-        user: address,
-        market_account_id: u128,
-        lot_size: u64,
-        tick_size: u64,
-        side: bool,
-        order_id: u128,
-    ) acquires MarketAccounts {
-        // Borrow mutable reference to market accounts map
-        let market_accounts_map_ref_mut =
-            &mut borrow_global_mut<MarketAccounts>(user).map;
-        // Borrow mutable reference to corresponding market account
-        let market_account_ref_mut = open_table::borrow_mut(
-            market_accounts_map_ref_mut, market_account_id);
-        // Get mutable reference to corresponding tree, mutable
-        // reference to corresponding assets available field, mutable
-        // reference to corresponding asset ceiling fields, available
-        // size multiplier, and ceiling size multiplier, based on side
-        let (tree_ref_mut, asset_available_ref_mut, asset_ceiling_ref_mut,
-             size_multiplier_available, size_multiplier_ceiling) =
-            if (side == ASK) (
-                &mut market_account_ref_mut.asks,
-                &mut market_account_ref_mut.base_available,
-                &mut market_account_ref_mut.quote_ceiling,
-                lot_size,
-                order_id::price(order_id) * tick_size
-            ) else (
-                &mut market_account_ref_mut.bids,
-                &mut market_account_ref_mut.quote_available,
-                &mut market_account_ref_mut.base_ceiling,
-                order_id::price(order_id) * tick_size,
-                lot_size
-            );
-        // Pop order from corresponding tree, storing specified size
-        let size = critbit::pop(tree_ref_mut, order_id);
-        // Calculate amount of asset unlocked by order cancellation
-        let unlocked = size * size_multiplier_available;
-        // Update available asset field for amount unlocked
-        *asset_available_ref_mut = *asset_available_ref_mut + unlocked;
-        // Calculate amount that ceiling decrements due to cancellation
-        let ceiling_decrement_amount = size * size_multiplier_ceiling;
-        // Decrement ceiling amount accordingly
-        *asset_ceiling_ref_mut = *asset_ceiling_ref_mut -
-            ceiling_decrement_amount;
-    }
-
-    /// Withdraw `amount` of assets of `AssetType` from `user`'s market
-    /// account indicated by `market_account_id` and having
-    /// `generic_asset_transfer_custodian_id`, returning coins
-    /// in an `option::Option` if `AssetType` is a coin type.
-    ///
-    /// See wrapped function `withdraw_asset()`.
-    public(friend) fun withdraw_asset_as_option_internal<AssetType>(
-        user: address,
-        market_account_id: u128,
-        amount: u64,
-        generic_asset_transfer_custodian_id: u64
-    ): option::Option<Coin<AssetType>>
-    acquires
-        Collateral,
-        MarketAccounts
-    {
-        withdraw_asset<AssetType>(user, market_account_id, amount,
-            coin::is_coin_initialized<AssetType>(),
-            generic_asset_transfer_custodian_id)
-    }
-
-    /// Withdraw `base_amount` of `BaseType` and `quote_amount` of
-    /// `QuoteType` assets from `user`'s market account indicated by
-    /// `market_account_id` and having
-    /// `generic_asset_transfer_custodian_id`, returning coins in an
-    /// `option::Option` as needed for each type.
-    ///
-    /// See wrapped function `withdraw_asset_as_option_internal()`.
-    public(friend) fun withdraw_assets_as_option_internal<
-        BaseType,
-        QuoteType,
-    >(
-        user: address,
-        market_account_id: u128,
-        base_amount: u64,
-        quote_amount: u64,
-        generic_asset_transfer_custodian_id: u64
-    ): (
-        option::Option<Coin<BaseType>>,
-        option::Option<Coin<QuoteType>>
-    ) acquires
-        Collateral,
-        MarketAccounts
-    {
-        ( // Withdraw and return base/quote types in an option
-            withdraw_asset<BaseType>(user, market_account_id, base_amount,
-                coin::is_coin_initialized<BaseType>(),
-                generic_asset_transfer_custodian_id),
-            withdraw_asset<QuoteType>(user, market_account_id, quote_amount,
-                coin::is_coin_initialized<QuoteType>(),
-                generic_asset_transfer_custodian_id)
-        )
-    }
-
-    /// Withdraw `amount` of coins of `CoinType` from `user`'s market
-    /// account indicated by `market_account_id`, returning them
-    /// wrapped in an option
-    ///
-    /// See wrapped function `withdraw_asset()`.
-    public(friend) fun withdraw_coins_as_option_internal<CoinType>(
-        user: address,
-        market_account_id: u128,
-        amount: u64
-    ): option::Option<Coin<CoinType>>
-    acquires
-        Collateral,
-        MarketAccounts
-    {
-        withdraw_asset<CoinType>(user, market_account_id, amount, true,
-            COIN_ASSET_TRANSFER)
-    }
-
-    // Public friend functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-    // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-    /// Borrow mutable/immutable references to `MarketAccount` fields
-    /// required when depositing/withdrawing `AssetType`
-    ///
-    /// Look up the `MarketAccount` having `market_account_id` in the
-    /// market accounts map indicated by `market_accounts_map_ref_mut`,
-    /// then return a mutable reference to the amount of `AssetType`
-    /// holdings, a mutable reference to the amount of `AssetType`
-    /// available for withdraw, a mutable reference to `AssetType`
-    /// ceiling, and an immutable reference to the generic asset
-    /// transfer custodian ID for the given market
-    ///
-    /// # Returns
-    /// * `u64`: Mutable reference to `MarketAccount.base_total` for
-    ///   corresponding market account if `AssetType` is market base,
-    ///   else mutable reference to `MarketAccount.quote_total`
-    /// * `u64`: Mutable reference to `MarketAccount.base_available` for
-    ///   corresponding market account if `AssetType` is market base,
-    ///   else mutable reference to `MarketAccount.quote_available`
-    /// * `u64`: Mutable reference to `MarketAccount.base_ceiling` for
-    ///   corresponding market account if `AssetType` is market base,
-    ///   else mutable reference to `MarketAccount.quote_ceiling`
-    /// * `u64`: Immutable reference to generic asset transfer custodian
-    ///   ID
-    ///
-    /// # Assumes
-    /// * `market_accounts_map` has an entry with `market_account_id`
-    ///
-    /// # Abort conditions
-    /// * If `AssetType` is neither base nor quote for given market
-    ///   account
-    fun borrow_transfer_fields_mixed<AssetType>(
-        market_accounts_map_ref_mut:
-            &mut open_table::OpenTable<u128, MarketAccount>,
-        market_account_id: u128
-    ): (
-        &mut u64,
-        &mut u64,
-        &mut u64,
-        &u64,
-    ) {
-        // Borrow mutable reference to market account
-        let market_account_ref_mut =
-            open_table::borrow_mut(
-                market_accounts_map_ref_mut, market_account_id);
-        // Get asset type info
-        let asset_type_info = type_info::type_of<AssetType>();
-        // If is base asset, return mutable references to base fields
-        if (asset_type_info == market_account_ref_mut.base_type_info) {
-            return (
-                &mut market_account_ref_mut.base_total,
-                &mut market_account_ref_mut.base_available,
-                &mut market_account_ref_mut.base_ceiling,
-                &market_account_ref_mut.generic_asset_transfer_custodian_id
-            )
-        // If is quote asset, return mutable references to quote fields
-        } else if (asset_type_info == market_account_ref_mut.quote_type_info) {
-            return (
-                &mut market_account_ref_mut.quote_total,
-                &mut market_account_ref_mut.quote_available,
-                &mut market_account_ref_mut.quote_ceiling,
-                &market_account_ref_mut.generic_asset_transfer_custodian_id
-            )
-        }; // Otherwise abort
-        abort E_NOT_IN_MARKET_PAIR
-    }
-
-    /// Deposit `amount` of `AssetType`, which may include
-    /// `optional_coins`, to `user`'s market account
-    /// having `market_account_id`, optionally verifying
-    /// `generic_asset_transfer_custodian_id` in the case of depositing
-    /// a generic asset (ignored if depositing coin type)
-    ///
-    /// # Assumes
-    /// * That if depositing a coin asset, `amount` matches value of
-    ///   `optional_coins`
-    /// * That when depositing a coin asset, if the market account
-    ///   exists, then a corresponding collateral container does too
-    ///
-    /// # Abort conditions
-    /// * If deposit would overflow the total asset holdings ceiling
-    /// * If unauthorized `generic_asset_transfer_custodian_id` in the
-    ///   case of depositing a generic asset
-    fun deposit_asset<AssetType>(
-        user: address,
-        market_account_id: u128,
-        amount: u64,
-        optional_coins: option::Option<Coin<AssetType>>,
-        generic_asset_transfer_custodian_id: u64
-    ) acquires
-        Collateral,
-        MarketAccounts
-    {
-        // Verify user has corresponding market account
-        verify_market_account_exists(user, market_account_id);
-        // Borrow mutable reference to market accounts map
-        let market_accounts_map_ref_mut =
-            &mut borrow_global_mut<MarketAccounts>(user).map;
-        // Borrow mutable reference to total asset holdings, mutable
-        // reference to amount of assets available for withdrawal,
-        // mutable reference to total asset holdings ceiling, and
-        // immutable reference to generic asset transfer custodian ID
-        let (asset_total_ref_mut, asset_available_ref_mut,
-             asset_ceiling_ref_mut, generic_asset_transfer_custodian_id_ref) =
-                borrow_transfer_fields_mixed<AssetType>(
-                    market_accounts_map_ref_mut, market_account_id);
-        // Assert deposit does not overflow asset ceiling
-        assert!(!((*asset_ceiling_ref_mut as u128) + (amount as u128) >
-            (HI_64 as u128)), E_DEPOSIT_OVERFLOW_ASSET_CEILING);
-        // Increment total asset holdings amount
-        *asset_total_ref_mut = *asset_total_ref_mut + amount;
-        // Increment assets available for withdrawal amount
-        *asset_available_ref_mut = *asset_available_ref_mut + amount;
-        // Increment total asset holdings ceiling amount
-        *asset_ceiling_ref_mut = *asset_ceiling_ref_mut + amount;
-        if (option::is_some(&optional_coins)) { // If asset is coin type
-            // Borrow mutable reference to collateral map
-            let collateral_map_ref_mut =
-                &mut borrow_global_mut<Collateral<AssetType>>(user).map;
-            // Borrow mutable reference to collateral for market account
-            let collateral_ref_mut = open_table::borrow_mut(
-                collateral_map_ref_mut, market_account_id);
-            coin::merge( // Merge optional coins into collateral
-                collateral_ref_mut, option::destroy_some(optional_coins));
-        } else { // If asset is not coin type
-            // Verify indicated generic asset transfer custodian ID
-            assert!(generic_asset_transfer_custodian_id ==
-                *generic_asset_transfer_custodian_id_ref,
-                E_UNAUTHORIZED_CUSTODIAN);
-            // Destroy empty option resource
-            option::destroy_none(optional_coins);
-        }
-    }
-
-    /// Route collateral when filling an order, for coin assets.
-    ///
-    /// Inner function for `fill_order_internal()`.
-    ///
-    /// # Type parameters
-    /// * `BaseType`: Base type for market
-    /// * `QuoteType`: Quote type for market
-    ///
-    /// # Parameters
-    /// * `user`: Address of corresponding user
-    /// * `market_account_id`: Corresponding market account ID
-    /// * `side`: `ASK` or `BID`
-    /// * `optional_base_coins_ref_mut`: Mutable reference to optional
-    ///   base coins passing through the matching engine
-    /// * `optional_quote_coins_ref_mut`: Mutable reference to optional
-    ///   quote coins passing through the matching engine
-    /// * `base_to_route`: If `side` is `ASK`, number of base coins to
-    ///   route from `user` to `base_coins_ref_mut`, else from
-    ///   `base_coins_ref_mut` to `user`
-    /// * `quote_to_route`: If `side` is `ASK`, number of quote coins to
-    ///   route from `quote_coins_ref_mut` to `user`, else from `user`
-    ///   to `quote_coins_ref_mut`
-    fun fill_order_route_collateral<
-        BaseType,
-        QuoteType
-    >(
-        user: address,
-        market_account_id: u128,
-        side: bool,
-        optional_base_coins_ref_mut:
-            &mut option::Option<coin::Coin<BaseType>>,
-        optional_quote_coins_ref_mut:
-            &mut option::Option<coin::Coin<QuoteType>>,
-        base_to_route: u64,
-        quote_to_route: u64,
-    ) acquires Collateral {
-        // Determine route direction for base and quote relative to user
-        let (base_direction, quote_direction) =
-            if (side == ASK) (OUT, IN) else (IN, OUT);
-        // If base asset is coin type then route base coins
-        if (option::is_some(optional_base_coins_ref_mut))
-            fill_order_route_collateral_single<BaseType>(
-                user, market_account_id,
-                option::borrow_mut(optional_base_coins_ref_mut),
-                base_to_route, base_direction);
-        // If quote asset is coin type then route quote coins
-        if (option::is_some(optional_quote_coins_ref_mut))
-            fill_order_route_collateral_single<QuoteType>(
-                user, market_account_id,
-                option::borrow_mut(optional_quote_coins_ref_mut),
-                quote_to_route, quote_direction);
-    }
-
-    /// Route `amount` of `Collateral` in `direction` either `IN` or
-    /// `OUT`, relative to `user` with `market_account_id`, either
-    /// from or to, respectively, coins at `external_coins_ref_mut`.
-    ///
-    /// Inner function for `fill_order_route_collateral()`.
-    ///
-    /// # Parameters
-    /// * `user`: Address of corresponding user
-    /// * `market_account_id`: Corresponding market account id
-    /// * `external_coins_ref_mut`: Effectively a counterparty to `user`
-    /// * `amount`: Amount of coins to route
-    /// * `direction`: `IN` or `OUT`
-    ///
-    /// # Assumes
-    /// * User has a `Collateral` entry for given `market_account_id`
-    ///   with range-checked coin amount for given operation: should
-    ///   only be called after a user has successfully placed an order
-    ///   in the first place.
-    fun fill_order_route_collateral_single<CoinType>(
-        user: address,
-        market_account_id: u128,
-        external_coins_ref_mut: &mut coin::Coin<CoinType>,
-        amount: u64,
-        direction: bool
-    ) acquires Collateral {
-        // Borrow mutable reference to user's collateral map
-        let collateral_map_ref_mut =
-            &mut borrow_global_mut<Collateral<CoinType>>(user).map;
-        // Borrow mutable reference to user's collateral
-        let collateral_ref_mut = open_table::borrow_mut(collateral_map_ref_mut,
-            market_account_id);
-        // If inbound collateral to user
-        if (direction == IN)
-            // Merge to their collateral the extracted external coins
-            coin::merge(collateral_ref_mut,
-                coin::extract(external_coins_ref_mut, amount)) else
-            // If outbound collateral from user, merge to external coins
-            // those extracted from user's collateral
-            coin::merge(external_coins_ref_mut,
-                coin::extract(collateral_ref_mut, amount));
-    }
-
-    /// Update a user's market account when filling an order.
-    ///
-    /// Inner function for `fill_order_internal()`.
-    ///
-    /// # Parameters
-    /// * `user`: Address of corresponding user
-    /// * `market_account_id`: Corresponding market account ID
-    /// * `side`: `ASK` or `BID`
-    /// * `order_id`: Order ID for given order
-    /// * `complete_fill`: If `true`, the order is completely filled
-    /// * `fill_size`: Number of lots filled
-    /// * `base_to_route`: If `side` is `ASK`, number of base asset
-    ///   units routed from `user`, else to `user`
-    /// * `quote_to_route`: If `side` is `ASK`, number of quote asset
-    ///   units routed to `user`, else from `user`
-    ///
-    /// # Assumes
-    /// * User has an open order as specified: should only be called
-    ///   after a user has successfully placed an order in the first
-    ///   place.
-    fun fill_order_update_market_account(
-        user: address,
-        market_account_id: u128,
-        side: bool,
-        order_id: u128,
         complete_fill: bool,
-        fill_size: u64,
+        optional_base_coins: Option<Coin<BaseType>>,
+        quote_coins: Coin<QuoteType>,
         base_to_route: u64,
-        quote_to_route: u64,
-    ) acquires MarketAccounts {
-        // Borrow mutable reference to market accounts map
+        quote_to_route: u64
+    ): (
+        Option<Coin<BaseType>>,
+        Coin<QuoteType>,
+        u128
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Mutably borrow market accounts map.
         let market_accounts_map_ref_mut =
-            &mut borrow_global_mut<MarketAccounts>(user).map;
-        // Borrow mutable reference to market account
-        let market_account_ref_mut = open_table::borrow_mut(
-            market_accounts_map_ref_mut, market_account_id);
-        let ( // Get mutable reference to corresponding orders tree,
-            tree_ref_mut,
-            asset_in, // Amount of inbound asset
-            asset_in_total_ref_mut, // Inbound asset total field
-            asset_in_available_ref_mut, // Available field
-            asset_out, // Amount of outbound asset
-            asset_out_total_ref_mut, // Outbound asset total field
-            asset_out_ceiling_ref_mut, // Ceiling field
-        ) = if (side == ASK) ( // If an ask is matched
+            &mut borrow_global_mut<MarketAccounts>(user_address).map;
+        let market_account_id = // Get market account ID.
+            ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128);
+        let market_account_ref_mut = // Mutably borrow market account.
+            table::borrow_mut(market_accounts_map_ref_mut, market_account_id);
+        let ( // Mutably borrow corresponding orders tablist,
+            orders_ref_mut,
+            stack_top_ref_mut, // Inactive orders stack top,
+            asset_in, // Amount of inbound asset,
+            asset_in_total_ref_mut, // Inbound asset total field,
+            asset_in_available_ref_mut, // Available field,
+            asset_out, // Amount of outbound asset,
+            asset_out_total_ref_mut, // Outbound asset total field,
+            asset_out_ceiling_ref_mut, // And ceiling field.
+        ) = if (side == ASK) ( // If an ask is matched:
             &mut market_account_ref_mut.asks,
+            &mut market_account_ref_mut.asks_stack_top,
             quote_to_route,
             &mut market_account_ref_mut.quote_total,
             &mut market_account_ref_mut.quote_available,
@@ -1196,6 +1267,7 @@ module econia::user {
             &mut market_account_ref_mut.base_ceiling,
         ) else ( // If a bid is matched
             &mut market_account_ref_mut.bids,
+            &mut market_account_ref_mut.bids_stack_top,
             base_to_route,
             &mut market_account_ref_mut.base_total,
             &mut market_account_ref_mut.base_available,
@@ -1203,29 +1275,74 @@ module econia::user {
             &mut market_account_ref_mut.quote_total,
             &mut market_account_ref_mut.quote_ceiling,
         );
-        if (complete_fill) { // If completely filling the order
-            critbit::pop(tree_ref_mut, order_id); // Pop order
-        } else { // If only partially filling the order
-            // Get mutable reference to size left to fill on order
-            let order_size_ref_mut =
-                critbit::borrow_mut(tree_ref_mut, order_id);
-            // Decrement amount still unfilled
-            *order_size_ref_mut = *order_size_ref_mut - fill_size;
+        let order_ref_mut = // Mutably borrow corresponding order.
+            tablist::borrow_mut(orders_ref_mut, order_access_key);
+        // Store market order ID.
+        let market_order_id = order_ref_mut.market_order_id;
+        if (complete_fill) { // If completely filling order:
+            // Clear out order's market order ID field.
+            order_ref_mut.market_order_id = (NIL as u128);
+            // Mark order's size field to indicate inactive stack top.
+            order_ref_mut.size = *stack_top_ref_mut;
+            // Reassign stack top field to indicate new inactive order.
+            *stack_top_ref_mut = order_access_key;
+        } else { // If only partially filling the order:
+            // Decrement amount still unfilled on order.
+            order_ref_mut.size = order_ref_mut.size - fill_size;
         };
-        // Increment asset in total amount by asset in amount
+        // Increment asset in total amount by asset in amount.
         *asset_in_total_ref_mut = *asset_in_total_ref_mut + asset_in;
-        // Increment asset in available amount by asset in amount
+        // Increment asset in available amount by asset in amount.
         *asset_in_available_ref_mut = *asset_in_available_ref_mut + asset_in;
-        // Decrement asset out total amount by asset out amount
+        // Decrement asset out total amount by asset out amount.
         *asset_out_total_ref_mut = *asset_out_total_ref_mut - asset_out;
-        // Decrement asset out ceiling amount by asset out amount
+        // Decrement asset out ceiling amount by asset out amount.
         *asset_out_ceiling_ref_mut = *asset_out_ceiling_ref_mut - asset_out;
+        // If base coins to route:
+        if (option::is_some(&optional_base_coins)) {
+            // Mutably borrow base collateral map.
+            let collateral_map_ref_mut =
+                &mut borrow_global_mut<Collateral<BaseType>>(user_address).map;
+            let collateral_ref_mut = // Mutably borrow base collateral.
+                tablist::borrow_mut(collateral_map_ref_mut, market_account_id);
+            let base_coins_ref_mut = // Mutably borrow external coins.
+                option::borrow_mut(&mut optional_base_coins);
+            // If filling as ask, merge to external coins those
+            // extracted from user's collateral. Else if a bid, merge to
+            // user's collateral those extracted from external coins.
+            if (side == ASK)
+                coin::merge(base_coins_ref_mut,
+                    coin::extract(collateral_ref_mut, base_to_route)) else
+                coin::merge(collateral_ref_mut,
+                    coin::extract(base_coins_ref_mut, base_to_route));
+        };
+        // Mutably borrow quote collateral map.
+        let collateral_map_ref_mut =
+            &mut borrow_global_mut<Collateral<QuoteType>>(user_address).map;
+        let collateral_ref_mut = // Mutably borrow quote collateral.
+            tablist::borrow_mut(collateral_map_ref_mut, market_account_id);
+        // If filling an ask, merge to user's collateral coins extracted
+        // from external coins. Else if a bid, merge to external coins
+        // those extracted from user's collateral.
+        if (side == ASK)
+            coin::merge(collateral_ref_mut,
+                coin::extract(&mut quote_coins, quote_to_route)) else
+            coin::merge(&mut quote_coins,
+                coin::extract(collateral_ref_mut, quote_to_route));
+        // Return optional base coins, quote coins, and market order ID.
+        (optional_base_coins, quote_coins, market_order_id)
     }
 
-    /// Return `MarketAccount` asset count fields for given `user` and
-    /// `market_account_id`.
+    /// Return asset counts for specified market account.
+    ///
+    /// # Parameters
+    ///
+    /// * `user_address`: User address for market account.
+    /// * `market_id`: Market ID for market account.
+    /// * `custodian_id`: Custodian ID for market account.
     ///
     /// # Returns
+    ///
     /// * `MarketAccount.base_total`
     /// * `MarketAccount.base_available`
     /// * `MarketAccount.base_ceiling`
@@ -1233,12 +1350,20 @@ module econia::user {
     /// * `MarketAccount.quote_available`
     /// * `MarketAccount.quote_ceiling`
     ///
-    /// # Restrictions
-    /// * Restricted to private function to prevent excessive public
-    ///   queries and thus transaction collisions
-    fun get_asset_counts(
-        user: address,
-        market_account_id: u128
+    /// # Aborts
+    ///
+    /// * `E_NO_MARKET_ACCOUNTS`: No market accounts resource found.
+    /// * `E_NO_MARKET_ACCOUNT`: No market account resource found.
+    ///
+    /// # Testing
+    ///
+    /// * `test_deposits()`
+    /// * `test_get_asset_counts_internal_no_account()`
+    /// * `test_get_asset_counts_internal_no_accounts()`
+    public(friend) fun get_asset_counts_internal(
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64
     ): (
         u64,
         u64,
@@ -1247,2106 +1372,2606 @@ module econia::user {
         u64,
         u64
     ) acquires MarketAccounts {
-        // Verify user has a corresponding market account
-        verify_market_account_exists(user, market_account_id);
-        // Borrow immutable reference to market accounts map
-        let market_accounts_map_ref = &borrow_global<MarketAccounts>(user).map;
-        // Borrow immutable reference to corresponding market account
-        let market_account_ref =
-            open_table::borrow(market_accounts_map_ref, market_account_id);
-        ( // Return asset count fields
-            market_account_ref.base_total,
-            market_account_ref.base_available,
-            market_account_ref.base_ceiling,
-            market_account_ref.quote_total,
-            market_account_ref.quote_available,
-            market_account_ref.quote_ceiling
-        )
+        // Assert user has market accounts resource.
+        assert!(exists<MarketAccounts>(user_address), E_NO_MARKET_ACCOUNTS);
+        // Immutably borrow market accounts map.
+        let market_accounts_map_ref =
+            &borrow_global<MarketAccounts>(user_address).map;
+        let market_account_id = // Get market account ID.
+            ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128);
+        // Assert user has market account for given market account ID.
+        assert!(table::contains(market_accounts_map_ref, market_account_id),
+                E_NO_MARKET_ACCOUNT);
+        let market_account_ref = // Immutably borrow market account.
+            table::borrow(market_accounts_map_ref, market_account_id);
+        (market_account_ref.base_total,
+         market_account_ref.base_available,
+         market_account_ref.base_ceiling,
+         market_account_ref.quote_total,
+         market_account_ref.quote_available,
+         market_account_ref.quote_ceiling) // Return asset count fields.
     }
 
-    /// Range check proposed order
+    /// Return all active market order IDs for given market account.
     ///
     /// # Parameters
-    /// * `side:` `ASK` or `BID`
-    /// * `size`: Order size, in lots
-    /// * `price`: Order price, in ticks per lot
-    /// * `lot_size`: Base asset units per lot
-    /// * `tick_size`: Quote asset units per tick
-    /// * `in_asset_ceiling`: `MarketAccount.quote_ceiling` if `side` is
-    ///   `ASK`, and `MarketAccount.base_ceiling` if `side` is `BID`
-    ///   (total holdings ceiling amount for asset received from trade)
-    /// * `out_asset_available`: `MarketAccount.base_available` if
-    ///   `side` is `ASK`, and `MarketAccount.quote_available` if `side`
-    ///   is `BID` (available withdraw amount for asset traded away)
+    ///
+    /// * `user_address`: User address for market account.
+    /// * `market_id`: Market ID for market account.
+    /// * `custodian_id`: Custodian ID for market account.
+    /// * `side`: `ASK` or `BID`, the side on which to check.
     ///
     /// # Returns
-    /// * `u64`: If `side` is `ASK` quote asset units required to fill
-    ///   order, else base asset units (inbound asset fill)
-    /// * `u64`: If `side` is `ASK` base asset units required to fill
-    ///   order, else quote asset units (outbound asset fill)
     ///
-    /// # Abort conditions
-    /// * If `size` is 0
-    /// * If `price` is 0
-    /// * If number of ticks required to fill order overflows a `u64`
-    /// * If filling the order results in an overflow for incoming asset
-    /// * If filling the order results in an overflow for outgoing asset
-    /// * If not enough available outgoing asset to fill the order
-    fun range_check_new_order(
+    /// * `vector<u128>`: Vector of all active market order IDs for
+    ///   given market account and side, empty if none.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_NO_MARKET_ACCOUNTS`: No market accounts resource found.
+    /// * `E_NO_MARKET_ACCOUNT`: No market account resource found.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_active_market_order_ids_internal()`
+    /// * `test_get_active_market_order_ids_internal_no_account()`
+    /// * `test_get_active_market_order_ids_internal_no_accounts()`
+    public(friend) fun get_active_market_order_ids_internal(
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64,
+        side: bool,
+    ): vector<u128>
+    acquires MarketAccounts {
+        // Assert user has market accounts resource.
+        assert!(exists<MarketAccounts>(user_address), E_NO_MARKET_ACCOUNTS);
+        // Immutably borrow market accounts map.
+        let market_accounts_map_ref =
+            &borrow_global<MarketAccounts>(user_address).map;
+        let market_account_id = // Get market account ID.
+            ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128);
+        // Assert user has market account for given market account ID.
+        assert!(table::contains(market_accounts_map_ref, market_account_id),
+                E_NO_MARKET_ACCOUNT);
+        let market_account_ref = // Immutably borrow market account.
+            table::borrow(market_accounts_map_ref, market_account_id);
+        // Immutably borrow corresponding orders tablist based on side.
+        let orders_ref = if (side == ASK)
+            &market_account_ref.asks else &market_account_ref.bids;
+        // Initialize empty vector of market order IDs.
+        let market_order_ids = vector::empty();
+        // Initialize 1-indexed loop counter and get number of orders.
+        let (i, n) = (1, tablist::length(orders_ref));
+        while (i <= n) { // Loop over all allocated orders.
+            // Immutably borrow order with given access key.
+            let order_ref = tablist::borrow(orders_ref, i);
+            // If order is active, push back its market order ID.
+            if (order_ref.market_order_id != (NIL as u128)) vector::push_back(
+                &mut market_order_ids, order_ref.market_order_id);
+            i = i + 1; // Increment loop counter.
+        };
+        market_order_ids // Return market order IDs.
+    }
+
+    /// Return order access key for next placed order.
+    ///
+    /// If inactive orders stack top is empty, will be next 1-indexed
+    /// order access key to be allocated. Otherwise is order access key
+    /// at top of inactive order stack.
+    ///
+    /// # Parameters
+    ///
+    /// * `user_address`: User address for market account.
+    /// * `market_id`: Market ID for market account.
+    /// * `custodian_id`: Custodian ID for market account.
+    /// * `side`: `ASK` or `BID`, the side on which an order will be
+    ///   placed.
+    ///
+    /// # Returns
+    ///
+    /// * `u64`: Order access key of next order to be placed.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_NO_MARKET_ACCOUNTS`: No market accounts resource found.
+    /// * `E_NO_MARKET_ACCOUNT`: No market account resource found.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_next_order_access_key_internal_no_account()`
+    /// * `test_get_next_order_access_key_internal_no_accounts()`
+    /// * `test_place_cancel_order_ask()`
+    /// * `test_place_cancel_order_stack()`
+    public(friend) fun get_next_order_access_key_internal(
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64,
+        side: bool
+    ): u64
+    acquires MarketAccounts {
+        // Assert user has market accounts resource.
+        assert!(exists<MarketAccounts>(user_address), E_NO_MARKET_ACCOUNTS);
+        // Immutably borrow market accounts map.
+        let market_accounts_map_ref =
+            &borrow_global<MarketAccounts>(user_address).map;
+        let market_account_id = // Get market account ID.
+            ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128);
+        let has_market_account = // Check if user has market account.
+            table::contains(market_accounts_map_ref, market_account_id);
+        // Assert user has market account for given market account ID.
+        assert!(has_market_account, E_NO_MARKET_ACCOUNT);
+        let market_account_ref = // Mutably borrow market account.
+            table::borrow(market_accounts_map_ref, market_account_id);
+        // Get orders tablist and inactive order stack top for side.
+        let (orders_ref, stack_top_ref) = if (side == ASK)
+            (&market_account_ref.asks, &market_account_ref.asks_stack_top) else
+            (&market_account_ref.bids, &market_account_ref.bids_stack_top);
+        // If empty inactive order stack, return 1-indexed order access
+        // key for order that will need to be allocated.
+        if (*stack_top_ref == NIL) tablist::length(orders_ref) + 1 else
+            *stack_top_ref // Otherwise the top of the inactive stack.
+    }
+
+    /// Place order in user's tablist of open orders on given side.
+    ///
+    /// Range checks order parameters and updates asset counts
+    /// accordingly.
+    ///
+    /// Allocates a new order if the inactive order stack is empty,
+    /// otherwise pops one off the top of the stack and overwrites it.
+    ///
+    /// Should only be called when attempting to place an order on the
+    /// order book. Since order book entries list order access keys for
+    /// each corresponding user, `get_next_order_access_key_internal()`
+    /// needs to be called when generating an entry on the order book:
+    /// to insert to the order book, an order access key is first
+    /// required. Once an order book entry has been created, a market
+    /// order ID will then be made available.
+    ///
+    /// # Parameters
+    ///
+    /// * `user_address`: User address for market account.
+    /// * `market_id`: Market ID for market account.
+    /// * `custodian_id`: Custodian ID for market account.
+    /// * `side`: `ASK` or `BID`, the side on which an order is placed.
+    /// * `size`: Order size, in lots.
+    /// * `price`: Order price, in ticks per lot.
+    /// * `market_order_id`: Market order ID for order book access.
+    ///
+    /// # Terminology
+    ///
+    /// * The "inbound" asset is the asset received from a trade.
+    /// * The "outbound" asset is the asset traded away.
+    ///
+    /// # Assumptions
+    ///
+    /// * Only called when also placing an order on the order book.
+    /// * `price` matches that encoded in `market_order_id`.
+    /// * Existence of corresponding market account has already been
+    ///   verified by `get_next_order_access_key_internal()`.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_PRICE_0`: Price is zero.
+    /// * `E_PRICE_TOO_HIGH`: Price exceeds maximum possible price.
+    /// * `E_SIZE_TOO_LOW`: Size is below minimum size for market.
+    /// * `E_TICKS_OVERFLOW`: Ticks to fill order overflows a `u64`.
+    /// * `E_OVERFLOW_ASSET_IN`: Filling order would overflow asset
+    ///   received from trade.
+    /// * `E_NOT_ENOUGH_ASSET_OUT`: Not enough asset to trade away.
+    ///
+    /// # Expected value testing
+    ///
+    /// * `test_place_cancel_order_ask()`
+    /// * `test_place_cancel_order_bid()`
+    /// * `test_place_cancel_order_stack()`
+    ///
+    /// # Failure testing
+    ///
+    /// * `test_place_order_internal_in_overflow()`
+    /// * `test_place_order_internal_out_underflow()`
+    /// * `test_place_order_internal_price_0()`
+    /// * `test_place_order_internal_price_hi()`
+    /// * `test_place_order_internal_size_lo()`
+    /// * `test_place_order_internal_ticks_overflow()`
+    public(friend) fun place_order_internal(
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64,
         side: bool,
         size: u64,
         price: u64,
-        lot_size: u64,
-        tick_size: u64,
-        in_asset_ceiling: u64,
-        out_asset_available: u64
-    ): (
-        u64,
-        u64
-    ) {
-        // Assert order has actual price
-        assert!(size > 0, E_SIZE_0);
-        // Assert order has actual size
-        assert!(price > 0, E_PRICE_0);
-        // Calculate base units needed to fill order
-        let base_fill = (size as u128) * (lot_size as u128);
-        // Calculate ticks to fill order
+        market_order_id: u128
+    ) acquires MarketAccounts {
+        assert!(price > 0, E_PRICE_0); // Assert price is nonzero.
+        // Assert price is not too high.
+        assert!(price <= MAX_PRICE, E_PRICE_TOO_HIGH);
+        // Mutably borrow market accounts map.
+        let market_accounts_map_ref_mut =
+            &mut borrow_global_mut<MarketAccounts>(user_address).map;
+        let market_account_id = // Get market account ID.
+            ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128);
+        let market_account_ref_mut = // Mutably borrow market account.
+            table::borrow_mut(market_accounts_map_ref_mut, market_account_id);
+        // Assert order size is greater than or equal to market minimum.
+        assert!(size >= market_account_ref_mut.min_size, E_SIZE_TOO_LOW);
+        let base_fill = // Calculate base units needed to fill order.
+            (size as u128) * (market_account_ref_mut.lot_size as u128);
+        // Calculate ticks to fill order.
         let ticks = (size as u128) * (price as u128);
-        // Assert ticks count can fit in a u64
-        assert!(!(ticks > (HI_64 as u128)), E_TICKS_OVERFLOW);
-        // Calculate quote units to fill order
-        let quote_fill = ticks * (tick_size as u128);
-        // If an ask, user gets quote and trades away base, else flipped
-        let (in_asset_fill, out_asset_fill) = if (side == ASK)
-            (quote_fill, base_fill) else (base_fill, quote_fill);
-        assert!( // Assert inbound asset does not overflow
-            !(in_asset_fill + (in_asset_ceiling as u128) > (HI_64 as u128)),
-            E_OVERFLOW_ASSET_IN);
-        // Assert outbound asset fill amount fits in a u64
-        assert!(!(out_asset_fill > (HI_64 as u128)), E_OVERFLOW_ASSET_OUT);
-        // Assert enough outbound asset to cover the fill
-        assert!(!(out_asset_fill > (out_asset_available as u128)),
-            E_NOT_ENOUGH_ASSET_AVAILABLE);
-        // Return re-casted, range-checked amounts
-        ((in_asset_fill as u64), (out_asset_fill as u64))
-    }
-
-    /// Register `user` with `Collateral` map entry for given `CoinType`
-    /// and `market_account_id`, initializing `Collateral` if it does
-    /// not already exist.
-    ///
-    /// # Abort conditions
-    /// * If user already has a `Collateral` entry for given
-    ///   `market_account_id`
-    fun register_collateral_entry<
-        CoinType
-    >(
-        user: &signer,
-        market_account_id: u128,
-    ) acquires Collateral {
-        let user_address = address_of(user); // Get user's address
-        // If user does not have a collateral map initialized
-        if(!exists<Collateral<CoinType>>(user_address)) {
-            // Pack an empty one and move to their account
-            move_to<Collateral<CoinType>>(user,
-                Collateral{map: open_table::empty()})
+        // Assert ticks to fill order is not too large.
+        assert!(ticks <= (HI_64 as u128), E_TICKS_OVERFLOW);
+        // Calculate quote units to fill order.
+        let quote_fill = ticks * (market_account_ref_mut.tick_size as u128);
+        // Mutably borrow orders tablist, inactive orders stack top,
+        // inbound asset ceiling, and outbound asset available fields,
+        // and assign inbound and outbound asset fill amounts, based on
+        // order side.
+        let (orders_ref_mut, stack_top_ref_mut, in_ceiling_ref_mut,
+             out_available_ref_mut, in_fill, out_fill) = if (side == ASK)
+             (&mut market_account_ref_mut.asks,
+              &mut market_account_ref_mut.asks_stack_top,
+              &mut market_account_ref_mut.quote_ceiling,
+              &mut market_account_ref_mut.base_available,
+              quote_fill, base_fill) else
+             (&mut market_account_ref_mut.bids,
+              &mut market_account_ref_mut.bids_stack_top,
+              &mut market_account_ref_mut.base_ceiling,
+              &mut market_account_ref_mut.quote_available,
+              base_fill, quote_fill);
+        // Assert no inbound asset overflow.
+        assert!((in_fill + (*in_ceiling_ref_mut as u128)) <= (HI_64 as u128),
+                E_OVERFLOW_ASSET_IN);
+        // Assert enough outbound asset to cover the fill, which also
+        // ensures outbound fill amount does not overflow.
+        assert!((out_fill <= (*out_available_ref_mut as u128)),
+                E_NOT_ENOUGH_ASSET_OUT);
+        // Update ceiling for inbound asset.
+        *in_ceiling_ref_mut = *in_ceiling_ref_mut + (in_fill as u64);
+        // Update available amount for outbound asset.
+        *out_available_ref_mut = *out_available_ref_mut - (out_fill as u64);
+        if (*stack_top_ref_mut == NIL) { // If empty inactive stack:
+            // Get one-indexed order access key for new order.
+            let order_access_key = tablist::length(orders_ref_mut) + 1;
+            // Allocate new order.
+            tablist::add(orders_ref_mut, order_access_key, Order{
+                market_order_id, size});
+        } else { // If inactive order stack not empty:
+            let order_ref_mut = // Mutably borrow order at top of stack.
+                tablist::borrow_mut(orders_ref_mut, *stack_top_ref_mut);
+            // Reassign stack top field to next in stack.
+            *stack_top_ref_mut = order_ref_mut.size;
+            // Reassign market order ID for active order.
+            order_ref_mut.market_order_id = market_order_id;
+            order_ref_mut.size = size; // Reassign order size field.
         };
-        // Borrow mutable reference to collateral map
-        let collateral_map_ref_mut =
-            &mut borrow_global_mut<Collateral<CoinType>>(user_address).map;
-        // Assert no entry exists for given market account ID
-        assert!(!open_table::contains(collateral_map_ref_mut,
-            market_account_id), E_EXISTS_MARKET_ACCOUNT);
-        // Add an empty entry for given market account ID
-        open_table::add(collateral_map_ref_mut, market_account_id,
-            coin::zero<CoinType>());
     }
 
-    /// Register user with a `MarketAccounts` map entry for given
-    /// `BaseType`, `QuoteType`, and `market_account_id`, initializing
-    /// `MarketAccounts` if it does not already exist
+    /// Withdraw base asset and quote coins when matching.
     ///
-    /// # Abort conditions
-    /// * If user already has a `MarketAccounts` entry for given
-    ///   `market_account_id`
-    fun register_market_accounts_entry<
+    /// Should only be called by the matching engine when matching from
+    /// a user's market account.
+    ///
+    /// # Type parameters
+    ///
+    /// * `BaseType`: Base type for market.
+    /// * `QuoteType`: Quote type for market.
+    ///
+    /// # Parameters
+    ///
+    /// * `user_address`: User address for market account.
+    /// * `market_id`: Market ID for market account.
+    /// * `custodian_id`: Custodian ID for market account.
+    /// * `base_amount`: Base asset amount to withdraw.
+    /// * `quote_amount`: Quote asset amount to withdraw.
+    /// * `underwriter_id`: Underwriter ID for market.
+    ///
+    /// # Returns
+    ///
+    /// * `Option<Coin<BaseType>>`: Optional base coins from user's
+    ///   market account.
+    /// * `<Coin<QuoteType>`: Quote coins from user's market account.
+    ///
+    /// # Testing
+    ///
+    /// * `test_deposit_withdraw_assets_internal()`
+    public(friend) fun withdraw_assets_internal<
+        BaseType,
+        QuoteType,
+    >(
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64,
+        base_amount: u64,
+        quote_amount: u64,
+        underwriter_id: u64
+    ): (
+        Option<Coin<BaseType>>,
+        Coin<QuoteType>
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Return optional base coins, and quote coins per respective
+        // withdrawal functions.
+        (withdraw_asset<BaseType>(user_address, market_id, custodian_id,
+                                  base_amount, underwriter_id),
+         withdraw_coins<QuoteType>(user_address, market_id, custodian_id,
+                                   quote_amount))
+    }
+
+    // Public friend functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Deposit an asset to a user's market account.
+    ///
+    /// Update asset counts, deposit optional coins as collateral.
+    ///
+    /// # Type parameters
+    ///
+    /// * `AssetType`: Asset type to deposit, `registry::GenericAsset`
+    ///   if a generic asset.
+    ///
+    /// # Parameters
+    ///
+    /// * `user_address`: User address for market account.
+    /// * `market_id`: Market ID for market account.
+    /// * `custodian_id`: Custodian ID for market account.
+    /// * `amount`: Amount to deposit.
+    /// * `optional_coins`: Optional coins to deposit.
+    /// * `underwriter_id`: Underwriter ID for market, ignored when
+    ///   depositing coins.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_NO_MARKET_ACCOUNTS`: No market accounts resource found.
+    /// * `E_NO_MARKET_ACCOUNT`: No market account resource found.
+    /// * `E_ASSET_NOT_IN_PAIR`: Asset type is not in trading pair for
+    ///    market.
+    /// * `E_DEPOSIT_OVERFLOW_ASSET_CEILING`: Deposit would overflow
+    ///   asset ceiling.
+    /// * `E_INVALID_UNDERWRITER`: Underwriter is not valid for
+    ///   indicated market, in the case of a generic asset deposit.
+    ///
+    /// # Assumptions
+    ///
+    /// * If optional coins provided, their value equals `amount`.
+    /// * When depositing coins, if a market account exists, then so
+    ///   does a corresponding collateral map entry.
+    ///
+    /// # Testing
+    ///
+    /// * `test_deposit_asset_no_account()`
+    /// * `test_deposit_asset_no_accounts()`
+    /// * `test_deposit_asset_not_in_pair()`
+    /// * `test_deposit_asset_overflow()`
+    /// * `test_deposit_asset_underwriter()`
+    /// * `test_deposits()`
+    fun deposit_asset<
+        AssetType
+    >(
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64,
+        amount: u64,
+        optional_coins: Option<Coin<AssetType>>,
+        underwriter_id: u64
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Assert user has market accounts resource.
+        assert!(exists<MarketAccounts>(user_address), E_NO_MARKET_ACCOUNTS);
+        // Mutably borrow market accounts map.
+        let market_accounts_map_ref_mut =
+            &mut borrow_global_mut<MarketAccounts>(user_address).map;
+        let market_account_id = // Get market account ID.
+            ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128);
+        let has_market_account = // Check if user has market account.
+            table::contains(market_accounts_map_ref_mut, market_account_id);
+        // Assert user has market account for given market account ID.
+        assert!(has_market_account, E_NO_MARKET_ACCOUNT);
+        let market_account_ref_mut = // Mutably borrow market account.
+            table::borrow_mut(market_accounts_map_ref_mut, market_account_id);
+        // Get asset type info.
+        let asset_type = type_info::type_of<AssetType>();
+        // Get asset total, available, and ceiling amounts based on if
+        // asset is base or quote for trading pair, aborting if neither.
+        let (total_ref_mut, available_ref_mut, ceiling_ref_mut) =
+            if (asset_type == market_account_ref_mut.base_type) (
+                &mut market_account_ref_mut.base_total,
+                &mut market_account_ref_mut.base_available,
+                &mut market_account_ref_mut.base_ceiling
+            ) else if (asset_type == market_account_ref_mut.quote_type) (
+                &mut market_account_ref_mut.quote_total,
+                &mut market_account_ref_mut.quote_available,
+                &mut market_account_ref_mut.quote_ceiling
+            ) else abort E_ASSET_NOT_IN_PAIR;
+        assert!( // Assert deposit does not overflow asset ceiling.
+            ((*ceiling_ref_mut as u128) + (amount as u128)) <= (HI_64 as u128),
+            E_DEPOSIT_OVERFLOW_ASSET_CEILING);
+        *total_ref_mut = *total_ref_mut + amount; // Update total.
+        // Update available asset amount.
+        *available_ref_mut = *available_ref_mut + amount;
+        *ceiling_ref_mut = *ceiling_ref_mut + amount; // Update ceiling.
+        // If asset is generic:
+        if (asset_type == type_info::type_of<GenericAsset>()) {
+            assert!(underwriter_id == market_account_ref_mut.underwriter_id,
+                    E_INVALID_UNDERWRITER); // Assert underwriter ID.
+            option::destroy_none(optional_coins); // Destroy option.
+        } else { // If asset is coin:
+            // Mutably borrow collateral map.
+            let collateral_map_ref_mut = &mut borrow_global_mut<
+                Collateral<AssetType>>(user_address).map;
+            // Mutably borrow collateral for market account.
+            let collateral_ref_mut = tablist::borrow_mut(
+                collateral_map_ref_mut, market_account_id);
+            coin::merge( // Merge optional coins into collateral.
+                collateral_ref_mut, option::destroy_some(optional_coins));
+        };
+    }
+
+    /// Register market account entries for given market account info.
+    ///
+    /// Inner function for `register_market_account()`.
+    ///
+    /// # Type parameters
+    ///
+    /// * `BaseType`: Base type for indicated market.
+    /// * `QuoteType`: Quote type for indicated market.
+    ///
+    /// # Parameters
+    ///
+    /// * `user`: User registering a market account.
+    /// * `user_address`: Address of user registering a market account.
+    /// * `market_account_id`: Market account ID for given market.
+    /// * `market_id`: Market ID for given market.
+    /// * `custodian_id`: Custodian ID to register account with, or
+    ///   `NO_CUSTODIAN`.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_EXISTS_MARKET_ACCOUNT`: Market account already exists.
+    ///
+    /// # Testing
+    ///
+    /// * `test_register_market_account_account_entries_exists()`
+    /// * `test_register_market_accounts()`
+    fun register_market_account_account_entries<
         BaseType,
         QuoteType
     >(
         user: &signer,
+        user_address: address,
         market_account_id: u128,
+        market_id: u64,
+        custodian_id: u64
     ) acquires MarketAccounts {
-        // Get generic asset transfer custodian ID for verified market
-        let generic_asset_transfer_custodian_id = registry::
-            get_verified_market_custodian_id<BaseType, QuoteType>(
-                get_market_id(market_account_id));
-        let user_address = address_of(user); // Get user's address
-        // If user does not have a market accounts map initialized
-        if(!exists<MarketAccounts>(user_address)) {
+        let (base_type, quote_type) = // Get base and quote types.
+            (type_info::type_of<BaseType>(), type_info::type_of<QuoteType>());
+        // Get market info.
+        let (base_name_generic, lot_size, tick_size, min_size, underwriter_id)
+            = registry::get_market_info_for_market_account(
+                market_id, base_type, quote_type);
+        // If user does not have a market accounts map initialized:
+        if (!exists<MarketAccounts>(user_address))
             // Pack an empty one and move it to their account
-            move_to<MarketAccounts>(user,
-                MarketAccounts{map: open_table::empty()})
-        };
-        // Borrow mutable reference to market accounts map
+            move_to<MarketAccounts>(user, MarketAccounts{
+                map: table::new(), custodians: tablist::new()});
+        // Mutably borrow market accounts map.
         let market_accounts_map_ref_mut =
             &mut borrow_global_mut<MarketAccounts>(user_address).map;
-        // Assert no entry exists for given market account ID
-        assert!(!open_table::contains(market_accounts_map_ref_mut,
-            market_account_id), E_EXISTS_MARKET_ACCOUNT);
-        // Add an empty entry for given market account ID
-        open_table::add(market_accounts_map_ref_mut, market_account_id,
-            MarketAccount{
-                base_type_info: type_info::type_of<BaseType>(),
-                quote_type_info: type_info::type_of<QuoteType>(),
-                generic_asset_transfer_custodian_id,
-                asks: critbit::empty(),
-                bids: critbit::empty(),
-                base_total: 0,
-                base_available: 0,
-                base_ceiling: 0,
-                quote_total: 0,
-                quote_available: 0,
-                quote_ceiling: 0
-        });
-    }
-
-    /// Verify `user` has a `MarketAccount` with `market_account_id`
-    ///
-    /// # Abort conditions
-    /// * If `user` does not have a `MarketAccounts`
-    /// * If `user` does not have a `MarketAccount` for given
-    ///   `market_account_id`
-    fun verify_market_account_exists(
-        user: address,
-        market_account_id: u128
-    ) acquires MarketAccounts {
-        // Assert user has a market accounts map
-        assert!(exists<MarketAccounts>(user), E_NO_MARKET_ACCOUNTS);
-        // Borrow immutable reference to market accounts map
-        let market_accounts_map_ref = &borrow_global<MarketAccounts>(user).map;
-        // Assert user has an entry in map for market account ID
-        assert!(open_table::contains(market_accounts_map_ref,
-            market_account_id), E_NO_MARKET_ACCOUNT);
-    }
-
-    /// Withdraw `amount` of `AssetType` from `user`'s market account
-    /// indicated by `market_account_id`, optionally returning coins if
-    /// `asset_is_coin` is `true`, optionally verifying
-    /// `generic_asset_transfer_custodian_id` in the case of withdrawing
-    /// a generic asset (ignored for withdrawing coin type)
-    ///
-    /// # Abort conditions
-    /// * If `user` has insufficient assets available for withdrawal
-    /// * If unauthorized `generic_asset_transfer_custodian_id` in the
-    ///   case of depositing a generic asset
-    /// * If `AssetType` is not in the corresponding market pair, per
-    ///   `borrow_transfer_fields_mixed()`
-    fun withdraw_asset<AssetType>(
-        user: address,
-        market_account_id: u128,
-        amount: u64,
-        asset_is_coin: bool,
-        generic_asset_transfer_custodian_id: u64
-    ): option::Option<Coin<AssetType>>
-    acquires
-        Collateral,
-        MarketAccounts
-    {
-        // Verify user has corresponding market account
-        verify_market_account_exists(user, market_account_id);
-        // Borrow mutable reference to market accounts map
-        let market_accounts_map_ref_mut =
-                &mut borrow_global_mut<MarketAccounts>(user).map;
-        // Borrow mutable reference to total asset holdings, mutable
-        // reference to amount of assets available for withdrawal,
-        // mutable reference to total asset holdings ceiling, and
-        // immutable reference to generic asset transfer custodian ID
-        let (asset_total_ref_mut, asset_available_ref_mut,
-             asset_ceiling_ref_mut, generic_asset_transfer_custodian_id_ref) =
-                borrow_transfer_fields_mixed<AssetType>(
-                    market_accounts_map_ref_mut, market_account_id);
-        // Assert user has enough available asset to withdraw
-        assert!(!(amount > *asset_available_ref_mut),
-            E_NOT_ENOUGH_ASSET_AVAILABLE);
-        // Decrement total asset holdings amount
-        *asset_total_ref_mut = *asset_total_ref_mut - amount;
-        // Decrement assets available for withdrawal amount
-        *asset_available_ref_mut = *asset_available_ref_mut - amount;
-        // Decrement total asset holdings ceiling amount
-        *asset_ceiling_ref_mut = *asset_ceiling_ref_mut - amount;
-        if (asset_is_coin) { // If asset is coin type
-            // Borrow mutable reference to collateral map
-            let collateral_map_ref_mut =
-                &mut borrow_global_mut<Collateral<AssetType>>(user).map;
-            // Borrow mutable reference to collateral for market account
-            let collateral_ref_mut = open_table::borrow_mut(
-                collateral_map_ref_mut, market_account_id);
-            // Return coin in an option wrapper
-            return option::some<Coin<AssetType>>(
-                coin::extract(collateral_ref_mut, amount))
-        } else { // If asset is not coin type
-            // Verify indicated generic asset transfer custodian ID
-            assert!(generic_asset_transfer_custodian_id ==
-                *generic_asset_transfer_custodian_id_ref,
-                E_UNAUTHORIZED_CUSTODIAN);
-            // Return empty option wrapper
-            return option::none<Coin<AssetType>>()
+        assert!( // Assert no entry exists for given market account ID.
+            !table::contains(market_accounts_map_ref_mut, market_account_id),
+            E_EXISTS_MARKET_ACCOUNT);
+        table::add( // Add empty market account for market account ID.
+            market_accounts_map_ref_mut, market_account_id, MarketAccount{
+                base_type, base_name_generic, quote_type, lot_size, tick_size,
+                min_size, underwriter_id, asks: tablist::new(),
+                bids: tablist::new(), asks_stack_top: NIL, bids_stack_top: NIL,
+                base_total: 0, base_available: 0, base_ceiling: 0,
+                quote_total: 0, quote_available: 0, quote_ceiling: 0});
+        let custodians_ref_mut = // Mutably borrow custodians maps.
+            &mut borrow_global_mut<MarketAccounts>(user_address).custodians;
+        // If custodians map has no entry for given market ID:
+        if (!tablist::contains(custodians_ref_mut, market_id)) {
+            // Add new entry indicating new custodian ID.
+            tablist::add(custodians_ref_mut, market_id,
+                         vector::singleton(custodian_id));
+        } else { // If already entry for given market ID:
+            // Mutably borrow vector of custodians for given market.
+            let market_custodians_ref_mut =
+                tablist::borrow_mut(custodians_ref_mut, market_id);
+            // Push back custodian ID for given market account.
+            vector::push_back(market_custodians_ref_mut, custodian_id);
         }
     }
 
-    /// Withdraw `amount` of coins of `CoinType` from `user`'s market
-    /// account having `market_id` and `general_custodian_id`,
-    /// returning coins
+    /// Create collateral entry upon market account registration.
     ///
-    /// # Abort conditions
-    /// * If `CoinType` does not correspond to a coin
-    fun withdraw_coins<CoinType>(
-        user: address,
+    /// Inner function for `register_market_account()`.
+    ///
+    /// Does not check if collateral entry already exists for given
+    /// market account ID, as market account existence check already
+    /// performed by `register_market_account_accounts_entries()` in
+    /// `register_market_account()`.
+    ///
+    /// # Type parameters
+    ///
+    /// * `CoinType`: Phantom coin type for indicated market.
+    ///
+    /// # Parameters
+    ///
+    /// * `user`: User registering a market account.
+    /// * `user_address`: Address of user registering a market account.
+    /// * `market_account_id`: Market account ID for given market.
+    ///
+    /// # Testing
+    ///
+    /// * `test_register_market_accounts()`
+    fun register_market_account_collateral_entry<
+        CoinType
+    >(
+        user: &signer,
+        user_address: address,
+        market_account_id: u128
+    ) acquires Collateral {
+        // If user does not have a collateral map initialized, pack an
+        // empty one and move it to their account.
+        if (!exists<Collateral<CoinType>>(user_address))
+            move_to<Collateral<CoinType>>(user, Collateral{
+                map: tablist::new()});
+        let collateral_map_ref_mut = // Mutably borrow collateral map.
+            &mut borrow_global_mut<Collateral<CoinType>>(user_address).map;
+        // Add an empty entry for given market account ID.
+        tablist::add(collateral_map_ref_mut, market_account_id,
+                     coin::zero<CoinType>());
+    }
+
+    /// Withdraw an asset from a user's market account.
+    ///
+    /// Update asset counts, withdraw optional collateral coins.
+    ///
+    /// # Type parameters
+    ///
+    /// * `AssetType`: Asset type to withdraw, `registry::GenericAsset`
+    ///   if a generic asset.
+    ///
+    /// # Parameters
+    ///
+    /// * `user_address`: User address for market account.
+    /// * `market_id`: Market ID for market account.
+    /// * `custodian_id`: Custodian ID for market account.
+    /// * `amount`: Amount to withdraw.
+    /// * `underwriter_id`: Underwriter ID for market, ignored when
+    ///   withdrawing coins.
+    ///
+    /// # Returns
+    ///
+    /// * `Option<Coin<AssetType>>`: Optional collateral coins.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_NO_MARKET_ACCOUNTS`: No market accounts resource found.
+    /// * `E_NO_MARKET_ACCOUNT`: No market account resource found.
+    /// * `E_ASSET_NOT_IN_PAIR`: Asset type is not in trading pair for
+    ///    market.
+    /// * `E_WITHDRAW_TOO_LITTLE_AVAILABLE`: Too little available for
+    ///   withdrawal.
+    /// * `E_INVALID_UNDERWRITER`: Underwriter is not valid for
+    ///   indicated market, in the case of a generic asset withdrawal.
+    ///
+    /// # Testing
+    ///
+    /// * `test_withdraw_asset_no_account()`
+    /// * `test_withdraw_asset_no_accounts()`
+    /// * `test_withdraw_asset_not_in_pair()`
+    /// * `test_withdraw_asset_underflow()`
+    /// * `test_withdraw_asset_underwriter()`
+    /// * `test_withdrawals()`
+    fun withdraw_asset<
+        AssetType
+    >(
+        user_address: address,
         market_id: u64,
-        general_custodian_id: u64,
+        custodian_id: u64,
         amount: u64,
-    ): coin::Coin<CoinType>
+        underwriter_id: u64
+    ): Option<Coin<AssetType>>
     acquires
         Collateral,
         MarketAccounts
     {
-        // Assert type corresponds to an initialized coin
-        assert!(coin::is_coin_initialized<CoinType>(), E_NOT_COIN_ASSET);
-        // Get market account ID
-        let market_account_id = get_market_account_id(market_id,
-            general_custodian_id);
-        // Withdraw corresponding amount of coins, as an option
-        let option_coins = withdraw_asset<CoinType>(
-            user, market_account_id, amount, true, COIN_ASSET_TRANSFER);
-        option::destroy_some(option_coins) // Return extracted coins
+        // Assert user has market accounts resource.
+        assert!(exists<MarketAccounts>(user_address), E_NO_MARKET_ACCOUNTS);
+        // Mutably borrow market accounts map.
+        let market_accounts_map_ref_mut =
+            &mut borrow_global_mut<MarketAccounts>(user_address).map;
+        let market_account_id = // Get market account ID.
+            ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128);
+        let has_market_account = // Check if user has market account.
+            table::contains(market_accounts_map_ref_mut, market_account_id);
+        // Assert user has market account for given market account ID.
+        assert!(has_market_account, E_NO_MARKET_ACCOUNT);
+        let market_account_ref_mut = // Mutably borrow market account.
+            table::borrow_mut(market_accounts_map_ref_mut, market_account_id);
+        // Get asset type info.
+        let asset_type = type_info::type_of<AssetType>();
+        // Get asset total, available, and ceiling amounts based on if
+        // asset is base or quote for trading pair, aborting if neither.
+        let (total_ref_mut, available_ref_mut, ceiling_ref_mut) =
+            if (asset_type == market_account_ref_mut.base_type) (
+                &mut market_account_ref_mut.base_total,
+                &mut market_account_ref_mut.base_available,
+                &mut market_account_ref_mut.base_ceiling
+            ) else if (asset_type == market_account_ref_mut.quote_type) (
+                &mut market_account_ref_mut.quote_total,
+                &mut market_account_ref_mut.quote_available,
+                &mut market_account_ref_mut.quote_ceiling
+            ) else abort E_ASSET_NOT_IN_PAIR;
+        // Assert enough asset available for withdraw.
+        assert!(amount <= *available_ref_mut, E_WITHDRAW_TOO_LITTLE_AVAILABLE);
+        *total_ref_mut = *total_ref_mut - amount; // Update total.
+        // Update available asset amount.
+        *available_ref_mut = *available_ref_mut - amount;
+        *ceiling_ref_mut = *ceiling_ref_mut - amount; // Update ceiling.
+        // Return based on if asset type. If is generic:
+        return if (asset_type == type_info::type_of<GenericAsset>()) {
+            assert!(underwriter_id == market_account_ref_mut.underwriter_id,
+                    E_INVALID_UNDERWRITER); // Assert underwriter ID.
+            option::none() // Return empty option.
+        } else { // If asset is coin:
+            // Mutably borrow collateral map.
+            let collateral_map_ref_mut = &mut borrow_global_mut<
+                Collateral<AssetType>>(user_address).map;
+            // Mutably borrow collateral for market account.
+            let collateral_ref_mut = tablist::borrow_mut(
+                collateral_map_ref_mut, market_account_id);
+            // Withdraw coin and return in an option.
+            option::some<Coin<AssetType>>(
+                coin::extract(collateral_ref_mut, amount))
+        }
+    }
+
+    /// Wrapped call to `withdraw_asset()` for withdrawing coins.
+    ///
+    /// # Testing
+    ///
+    /// * `test_withdrawals()`
+    fun withdraw_coins<
+        CoinType
+    >(
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64,
+        amount: u64,
+    ): Coin<CoinType>
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        option::destroy_some(withdraw_asset<CoinType>(
+            user_address,
+            market_id,
+            custodian_id,
+            amount,
+            NO_UNDERWRITER))
+    }
+
+    /// Wrapped call to `withdraw_asset()` for withdrawing generic
+    /// asset.
+    ///
+    /// # Testing
+    ///
+    /// * `test_withdrawals()`
+    fun withdraw_generic_asset(
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64,
+        amount: u64,
+        underwriter_capability_ref: &UnderwriterCapability
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
+        option::destroy_none(withdraw_asset<GenericAsset>(
+            user_address,
+            market_id,
+            custodian_id,
+            amount,
+            registry::get_underwriter_id(underwriter_capability_ref)))
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+    // Test-only constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test_only]
+    /// Base asset starting amount for testing.
+    const BASE_START: u64 = 7500000000;
+    #[test_only]
+    /// Quote asset starting amount for testing.
+    const QUOTE_START: u64 = 8000000000;
+
+    #[test_only]
+    /// Custodian ID for market with delegated custodian.
+    const CUSTODIAN_ID: u64 = 123;
+    #[test_only]
+    /// Market ID for generic test market.
+    const MARKET_ID_GENERIC: u64 = 2;
+    #[test_only]
+    /// Market ID for pure coin test market.
+    const MARKET_ID_PURE_COIN: u64 = 1;
+    #[test_only]
+    /// From `registry::register_markets_test()`. Underwriter ID for
+    /// generic test market.
+    const UNDERWRITER_ID: u64 = 7;
+
+    #[test_only]
+    /// From `registry::register_markets_test()`.
+    const LOT_SIZE_PURE_COIN: u64 = 1;
+    #[test_only]
+    /// From `registry::register_markets_test()`.
+    const TICK_SIZE_PURE_COIN: u64 = 2;
+    #[test_only]
+    /// From `registry::register_markets_test()`.
+    const MIN_SIZE_PURE_COIN: u64 = 3;
+    #[test_only]
+    /// From `registry::register_markets_test()`.
+    const LOT_SIZE_GENERIC: u64 = 4;
+    #[test_only]
+    /// From `registry::register_markets_test()`.
+    const TICK_SIZE_GENERIC: u64 = 5;
+    #[test_only]
+    /// From `registry::register_markets_test()`.
+    const MIN_SIZE_GENERIC: u64 = 6;
+
+    // Test-only constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
     // Test-only functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
-    /// Return asset counts of `user`'s market account for given
-    /// `market_account_id`, via wrapped call to `get_asset_counts()`.
-    public fun get_asset_counts_test(
-        user: address,
+    /// Like `get_collateral_value_test()`, but accepts market id and
+    /// custodian ID.
+    public fun get_collateral_value_simple_test<
+        CoinType
+    >(
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64
+    ): u64
+    acquires Collateral {
+        get_collateral_value_test<CoinType>(
+            user_address, get_market_account_id(market_id, custodian_id))
+    }
+
+    #[test_only]
+    /// Return `Coin.value` of entry in `Collateral` for given
+    /// `user_address`, `AssetType` and `market_account_id`.
+    public fun get_collateral_value_test<
+        CoinType
+    >(
+        user_address: address,
         market_account_id: u128,
+    ): u64
+    acquires Collateral {
+        let collateral_map_ref = // Immutably borrow collateral map.
+            &borrow_global<Collateral<CoinType>>(user_address).map;
+        let coin_ref = // Immutably borrow coin collateral.
+            tablist::borrow(collateral_map_ref, market_account_id);
+        coin::value(coin_ref) // Return coin value.
+    }
+
+    #[test_only]
+    /// Get order access key at top of inactive order stack.
+    public fun get_inactive_stack_top_test(
+        user_address: address,
+        market_account_id: u128,
+        side: bool,
+    ): u64
+    acquires MarketAccounts {
+        // Immutably borrow market accounts map.
+        let market_accounts_map_ref =
+            &borrow_global<MarketAccounts>(user_address).map;
+        let market_account_ref = // Immutably borrow market account.
+            table::borrow(market_accounts_map_ref, market_account_id);
+        // Return corresponding stack top field.
+        if (side == ASK) market_account_ref.asks_stack_top else
+            market_account_ref.bids_stack_top
+    }
+
+    #[test_only]
+    /// Return next inactive order in inactive orders stack.
+    public fun get_next_inactive_order_test(
+        user_address: address,
+        market_account_id: u128,
+        side: bool,
+        order_access_key: u64
+    ): u64
+    acquires MarketAccounts {
+        assert!(!is_order_active_test( // Assert order is inactive.
+            user_address, market_account_id, side, order_access_key), 0);
+        // Get order's size field, indicating next inactive order.
+        let (_, next) = get_order_fields_test(
+            user_address, market_account_id, side, order_access_key);
+        next // Return next inactive order access key.
+    }
+
+    #[test_only]
+    /// Wrapper for `get_order_fields_test()`, accepting market ID and
+    /// custodian ID.
+    public fun get_order_fields_simple_test(
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64,
+        side: bool,
+        order_access_key: u64
     ): (
-        u64,
-        u64,
-        u64,
-        u64,
-        u64,
+        u128,
         u64
     ) acquires MarketAccounts {
-        get_asset_counts(user, market_account_id)
+        get_order_fields_test(
+            user_address, get_market_account_id(market_id, custodian_id),
+            side, order_access_key)
     }
 
     #[test_only]
-    /// Return `Coin.value` of `user`'s entry in `Collateral` for given
-    /// `AssetType` and `market_account_id`
-    public fun get_collateral_value_test<CoinType>(
-        user: address,
-        market_account_id: u128,
-    ): u64
-    acquires Collateral {
-        // Borrow immutable reference to collateral map
-        let collateral_map_ref =
-            &borrow_global<Collateral<CoinType>>(user).map;
-        // Borrow immutable reference to corresonding coin collateral
-        let coin_ref = open_table::borrow(
-            collateral_map_ref, market_account_id);
-        coin::value(coin_ref) // Return value of coin
-    }
-
-    #[test_only]
-    /// Return size of order for given `user`, `market_account_id`,
-    /// `side`, and `order_id`
-    ///
-    /// # Assumes
-    /// * `user` has an open order as specified
-    ///
-    /// # Restrictions
-    /// * Restricted to test-only to prevent excessive public queries
-    ///   and thus transaction collisions
-    public fun get_order_size_test(
-        user: address,
+    /// Return order fields for given order parameters.
+    public fun get_order_fields_test(
+        user_address: address,
         market_account_id: u128,
         side: bool,
-        order_id: u128
-    ): u64
-    acquires MarketAccounts {
-        // Borrow immutable reference to market accounts map
-        let market_accounts_map_ref =
-            &borrow_global<MarketAccounts>(user).map;
-        // Borrow immutable reference to market account
-        let market_account_ref = open_table::borrow(market_accounts_map_ref,
-            market_account_id);
-        // Get immutable reference to corresponding orders tree
-        let tree_ref = if (side == ASK) &market_account_ref.asks else
-            &market_account_ref.bids;
-        // Return order size for given order ID in tree
-        *critbit::borrow(tree_ref, order_id)
-    }
-
-    #[test_only]
-    /// Return `true` if `user` has an entry in `Collateral` for given
-    /// `AssetType` and `market_account_id`
-    public fun has_collateral_test<AssetType>(
-        user: address,
-        market_account_id: u128,
-    ): bool
-    acquires Collateral {
-        // Return false if does not even have collateral map
-        if (!exists<Collateral<AssetType>>(user)) return false;
-        // Borrow immutable reference to collateral map
-        let collateral_map_ref =
-            &borrow_global<Collateral<AssetType>>(user).map;
-        // Return if table contains entry for market account ID
-        open_table::contains(collateral_map_ref, market_account_id)
-    }
-
-    #[test_only]
-    /// Return `true` if `user` has an open order for given
-    /// `market_account_id`, `side`, and `order_id`, else `false`
-    ///
-    /// # Assumes
-    /// * `user` has a market account as specified
-    ///
-    /// # Restrictions
-    /// * Restricted to test-only to prevent excessive public queries
-    ///   and thus transaction collisions
-    public fun has_order_test(
-        user: address,
-        market_account_id: u128,
-        side: bool,
-        order_id: u128
-    ): bool
-    acquires MarketAccounts {
-        // Borrow immutable reference to market accounts map
-        let market_accounts_map_ref =
-            &borrow_global<MarketAccounts>(user).map;
-        // Borrow immutable reference to market account
-        let market_account_ref = open_table::borrow(market_accounts_map_ref,
-            market_account_id);
-        // Get immutable reference to corresponding orders tree
-        let tree_ref = if (side == ASK) &market_account_ref.asks else
-            &market_account_ref.bids;
-        // Return if tree has given order
-        critbit::has_key(tree_ref, order_id)
-    }
-
-    #[test_only]
-    /// Register user to trade on markets initialized via
-    /// `registry::register_market_internal_multiple_test`, returning
-    /// corresponding market account ID for each market
-    public fun register_user_with_market_accounts_test(
-        econia: &signer,
-        user: &signer,
-        general_custodian_id_pure_generic: u64,
-        general_custodian_id_pure_coin: u64
+        order_access_key: u64
     ): (
+        u128,
+        u64
+    ) acquires MarketAccounts {
+        // Immutably borrow market accounts map.
+        let market_accounts_map_ref =
+            &borrow_global<MarketAccounts>(user_address).map;
+        let market_account_ref = // Immutably borrow market account.
+            table::borrow(market_accounts_map_ref, market_account_id);
+        // Immutably borrow corresponding orders tablist based on side.
+        let (orders_ref) = if (side == ASK)
+            &market_account_ref.asks else &market_account_ref.bids;
+        // Immutably borrow order.
+        let order_ref = tablist::borrow(orders_ref, order_access_key);
+        // Return order fields.
+        (order_ref.market_order_id, order_ref.size)
+    }
+
+    #[test_only]
+    /// Return `true` if `user_adress` has an entry in `Collateral` for
+    /// given `AssetType` and `market_account_id`.
+    public fun has_collateral_test<
+        AssetType
+    >(
+        user_address: address,
+        market_account_id: u128,
+    ): bool
+    acquires Collateral {
+        // Return false if does not even have collateral map.
+        if (!exists<Collateral<AssetType>>(user_address)) return false;
+        // Immutably borrow collateral map.
+        let collateral_map_ref =
+            &borrow_global<Collateral<AssetType>>(user_address).map;
+        // Return if table contains entry for market account ID.
+        tablist::contains(collateral_map_ref, market_account_id)
+    }
+
+    #[test_only]
+    /// Check if user has allocated order for given parameters.
+    public fun has_order_test(
+        user_address: address,
+        market_account_id: u128,
+        side: bool,
+        order_access_key: u64
+    ): bool
+    acquires MarketAccounts {
+        // Immutably borrow market accounts map.
+        let market_accounts_map_ref =
+            &borrow_global<MarketAccounts>(user_address).map;
+        let market_account_ref = // Immutably borrow market account.
+            table::borrow(market_accounts_map_ref, market_account_id);
+        // Immutably borrow corresponding orders tablist based on side.
+        let (orders_ref) = if (side == ASK)
+            &market_account_ref.asks else &market_account_ref.bids;
+        tablist::contains(orders_ref, order_access_key)
+    }
+
+    #[test_only]
+    /// Register market accounts under test `@user`, return signer and
+    /// market account ID of:
+    ///
+    /// * Pure coin self-custodied market account.
+    /// * Pure coin market account with delegated custodian.
+    /// * Generic self-custodian market account.
+    /// * Generic market account with delegated custodian.
+    fun register_market_accounts_test(): (
+        signer,
+        u128,
+        u128,
         u128,
         u128
     ) acquires
         Collateral,
         MarketAccounts
     {
-        // Init test markets, storing market IDs
-        let  (_, _, _, market_id_pure_generic,
-              _, _, _, market_id_pure_coin
-        ) = registry::register_market_internal_multiple_test(econia);
-        // Register user for pure generic market
-        register_market_account<BG, QG>(
-            user, market_id_pure_generic, general_custodian_id_pure_generic);
-        // Register user for pure coin market
+        // Get signer for test user account.
+        let user = account::create_signer_with_capability(
+            &account::create_test_signer_cap(@user));
+        // Create Aptos account.
+        account::create_account_for_test(@user);
+        // Register a pure coin and a generic market, storing most
+        // returns.
+        let (market_id_pure_coin, _, lot_size_pure_coin, tick_size_pure_coin,
+             min_size_pure_coin, underwriter_id_pure_coin, market_id_generic,
+             _, lot_size_generic, tick_size_generic, min_size_generic,
+             underwriter_id_generic) = registry::register_markets_test();
+        // Assert market info.
+        assert!(market_id_pure_coin      == MARKET_ID_PURE_COIN, 0);
+        assert!(lot_size_pure_coin       == LOT_SIZE_PURE_COIN, 0);
+        assert!(tick_size_pure_coin      == TICK_SIZE_PURE_COIN, 0);
+        assert!(min_size_pure_coin       == MIN_SIZE_PURE_COIN, 0);
+        assert!(underwriter_id_pure_coin == NO_UNDERWRITER, 0);
+        assert!(market_id_generic        == MARKET_ID_GENERIC, 0);
+        assert!(lot_size_generic         == LOT_SIZE_GENERIC, 0);
+        assert!(tick_size_generic        == TICK_SIZE_GENERIC, 0);
+        assert!(min_size_generic         == MIN_SIZE_GENERIC, 0);
+        assert!(underwriter_id_generic   == UNDERWRITER_ID, 0);
+        // Register self-custodied pure coin account.
         register_market_account<BC, QC>(
-            user, market_id_pure_coin, general_custodian_id_pure_coin);
-        // Declare market account IDs
-        let market_account_id_pure_generic = get_market_account_id(
-            market_id_pure_generic, general_custodian_id_pure_generic);
-        let market_account_id_pure_coin = get_market_account_id(
-            market_id_pure_coin, general_custodian_id_pure_coin);
-        // Return corresponding market account IDs
-        (market_account_id_pure_generic, market_account_id_pure_coin)
+            &user, market_id_pure_coin, NO_CUSTODIAN);
+        // Set delegated custodian ID as registered.
+        registry::set_registered_custodian_test(CUSTODIAN_ID);
+        // Register delegated custody pure coin account.
+        register_market_account<BC, QC>(
+            &user, market_id_pure_coin, CUSTODIAN_ID);
+        // Register self-custodied generic asset account.
+        register_market_account_generic_base<QC>(
+            &user, market_id_generic, NO_CUSTODIAN);
+        // Register delegated custody generic asset account.
+        register_market_account_generic_base<QC>(
+            &user, market_id_generic, CUSTODIAN_ID);
+        // Get market account IDs.
+        let market_account_id_coin_self =
+            get_market_account_id(market_id_pure_coin, NO_CUSTODIAN);
+        let market_account_id_coin_delegated =
+            get_market_account_id(market_id_pure_coin, CUSTODIAN_ID);
+        let market_account_id_generic_self =
+            get_market_account_id(market_id_generic  , NO_CUSTODIAN);
+        let market_account_id_generic_delegated =
+            get_market_account_id(market_id_generic  , CUSTODIAN_ID);
+        (user, // Return signing user and market account IDs.
+         market_account_id_coin_self,
+         market_account_id_coin_delegated,
+         market_account_id_generic_self,
+         market_account_id_generic_delegated)
+    }
+
+    #[test_only]
+    /// Return `true` if order is active.
+    public fun is_order_active_test(
+        user_address: address,
+        market_account_id: u128,
+        side: bool,
+        order_access_key: u64
+    ): bool
+    acquires MarketAccounts {
+        // Get order's market order ID field.
+        let (market_order_id, _) = get_order_fields_test(
+            user_address, market_account_id, side, order_access_key);
+        market_order_id != (NIL as u128) // Return true if non-null ID.
     }
 
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    #[test(
-        econia = @econia,
-        user = @user
-    )]
-    #[expected_failure(abort_code = 0)]
-    /// Verify failure for asset not in pair
-    fun test_borrow_transfer_fields_mixed_not_in_pair(
-        econia: &signer,
-        user: &signer
-    ) acquires
+    #[test]
+    #[expected_failure(abort_code = 15)]
+    /// Verify failure for market account ID mismatch.
+    fun test_cancel_order_internal_mismatch()
+    acquires
         Collateral,
         MarketAccounts
     {
-        // Register user with agnostic market account
-        let (market_account_id, _) = register_user_with_market_accounts_test(
-            econia, user, NO_CUSTODIAN, NO_CUSTODIAN);
-        // Borrow mutable reference to market accounts map
-        let market_accounts_map_ref_mut =
-            &mut borrow_global_mut<MarketAccounts>(@user).map;
-        borrow_transfer_fields_mixed<BC>( // Attempt invalid invocation
-            market_accounts_map_ref_mut, market_account_id);
+        register_market_accounts_test(); // Register test markets.
+        // Define order parameters.
+        let market_order_id = 123;
+        let size            = MIN_SIZE_PURE_COIN;
+        let price           = 1;
+        let side            = BID;
+        // Deposit starting base and quote coins.
+        deposit_coins<BC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(BASE_START));
+        deposit_coins<QC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(QUOTE_START));
+        // Place order
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                             size, price, market_order_id);
+        // Attempt invalid cancellation.
+        cancel_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                              price, 1, market_order_id + 1);
     }
 
-    #[test(
-        econia = @econia,
-        user = @user
-    )]
+    #[test]
+    /// Verify state updates for changing ask size. Based on
+    /// `test_place_cancel_order_ask()`.
+    fun test_change_order_size_internal_ask()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        register_market_accounts_test(); // Register test markets.
+        // Define order parameters.
+        let market_order_id  = 1234;
+        let size             = 789;
+        let size_old         = size - 1;
+        let price            = 321;
+        let side             = ASK;
+        let order_access_key = 1;
+        // Calculate change in base asset and quote asset fields.
+        let base_delta = size * LOT_SIZE_PURE_COIN;
+        let quote_delta = size * price * TICK_SIZE_PURE_COIN;
+        // Deposit starting base and quote coins.
+        deposit_coins<BC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(BASE_START));
+        deposit_coins<QC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(QUOTE_START));
+        // Place order.
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                             size_old, price, market_order_id);
+        change_order_size_internal( // Change order size.
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, size, price,
+            order_access_key, market_order_id);
+        // Assert asset counts.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            get_asset_counts_internal(
+                @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID);
+        assert!(base_total      == BASE_START , 0);
+        assert!(base_available  == BASE_START - base_delta, 0);
+        assert!(base_ceiling    == BASE_START , 0);
+        assert!(quote_total     == QUOTE_START, 0);
+        assert!(quote_available == QUOTE_START, 0);
+        assert!(quote_ceiling   == QUOTE_START + quote_delta, 0);
+    }
+
+    #[test]
+    /// Verify state updates for changing bid size. Based on
+    /// `test_place_cancel_order_bid()`.
+    fun test_change_order_size_internal_bid()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        register_market_accounts_test(); // Register test markets.
+        // Define order parameters.
+        let market_order_id  = 1234;
+        let size             = 789;
+        let size_old         = size - 1;
+        let price            = 321;
+        let side             = BID;
+        let order_access_key = 1;
+        // Calculate change in base asset and quote asset fields.
+        let base_delta = size * LOT_SIZE_PURE_COIN;
+        let quote_delta = size * price * TICK_SIZE_PURE_COIN;
+        // Deposit starting base and quote coins.
+        deposit_coins<BC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(BASE_START));
+        deposit_coins<QC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(QUOTE_START));
+        // Place order.
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                             size_old, price, market_order_id);
+        change_order_size_internal( // Change order size.
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, size, price,
+            order_access_key, market_order_id);
+        // Assert asset counts.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            get_asset_counts_internal(
+                @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID);
+        assert!(base_total      == BASE_START , 0);
+        assert!(base_available  == BASE_START , 0);
+        assert!(base_ceiling    == BASE_START + base_delta, 0);
+        assert!(quote_total     == QUOTE_START, 0);
+        assert!(quote_available == QUOTE_START - quote_delta, 0);
+        assert!(quote_ceiling   == QUOTE_START, 0);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 14)]
+    /// Verify failure for no change in size.
+    fun test_change_order_size_internal_no_change()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        register_market_accounts_test(); // Register test markets.
+        // Define order parameters.
+        let market_order_id = 123;
+        let size            = MIN_SIZE_PURE_COIN;
+        let price           = 1;
+        let side            = BID;
+        // Deposit starting base and quote coins.
+        deposit_coins<BC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(BASE_START));
+        deposit_coins<QC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(QUOTE_START));
+        // Place order
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                             size, price, market_order_id);
+        change_order_size_internal( // Attempt invalid order size change.
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, size, price,
+            1, market_order_id);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 3)]
+    /// Verify failure for no market account.
+    fun test_deposit_asset_no_account()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register test market accounts.
+        register_market_accounts_test();
+        // Attempt invalid invocation.
+        deposit_coins<BC>(@user, 0, 0, coin::zero());
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 2)]
+    /// Verify failure for no market accounts.
+    fun test_deposit_asset_no_accounts()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Attempt invalid invocation.
+        deposit_coins<BC>(@user, 0, 0, coin::zero());
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 4)]
+    /// Verify failure for asset not in pair.
+    fun test_deposit_asset_not_in_pair()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register test market accounts.
+        register_market_accounts_test();
+        // Attempt invalid invocation.
+        deposit_coins<UC>(@user, MARKET_ID_PURE_COIN, NO_CUSTODIAN,
+                          coin::zero());
+    }
+
+    #[test]
     #[expected_failure(abort_code = 5)]
-    /// Verify failure for deposit that overflows asset ceiling
-    fun test_deposit_asset_overflow_ceiling(
-        econia: &signer,
-        user: &signer
-    ) acquires
+    /// Verify failure for ceiling overflow.
+    fun test_deposit_asset_overflow()
+    acquires
         Collateral,
         MarketAccounts
     {
-        // Declare general custodian ID
-        let general_custodian_id = NO_CUSTODIAN;
-        // Register user with pure coin market account
-        let (_, market_account_id) = register_user_with_market_accounts_test(
-            econia, user, NO_CUSTODIAN, general_custodian_id);
-        // Get market ID
-        let market_id = get_market_id(market_account_id);
-        // Deposit as many coins as possible to market account
-        deposit_coins<BC>(@user, market_id, general_custodian_id,
-            assets::mint<BC>(econia, HI_64));
-        // Try to deposit one more coin
-        deposit_coins<BC>(@user, market_id, general_custodian_id,
-            assets::mint<BC>(econia, 1));
+        // Register test market accounts.
+        register_market_accounts_test();
+        let underwriter_capability = // Get underwriter capability.
+            registry::get_underwriter_capability_test(UNDERWRITER_ID);
+        // Deposit maximum amount of generic asset.
+        deposit_generic_asset(@user, MARKET_ID_GENERIC, NO_CUSTODIAN,
+                              HI_64, &underwriter_capability);
+        // Attempt invalid deposit of one more unit.
+        deposit_generic_asset(@user, MARKET_ID_GENERIC, NO_CUSTODIAN,
+                              1, &underwriter_capability);
+        // Drop underwriter capability.
+        registry::drop_underwriter_capability_test(underwriter_capability);
     }
 
-    #[test(
-        econia = @econia,
-        user = @user
-    )]
-    /// Verify state for depositing generic and coin assets
-    fun test_deposit_assets_mixed(
-        econia: &signer,
-        user: &signer
-    ) acquires
+    #[test]
+    #[expected_failure(abort_code = 6)]
+    /// Verify failure for invalid underwriter.
+    fun test_deposit_asset_underwriter()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register test market accounts.
+        register_market_accounts_test();
+        let underwriter_capability = // Get underwriter capability.
+            registry::get_underwriter_capability_test(UNDERWRITER_ID + 1);
+        // Attempt deposit with invalid underwriter capability.
+        deposit_generic_asset(@user, MARKET_ID_GENERIC, NO_CUSTODIAN,
+                              1, &underwriter_capability);
+        // Drop underwriter capability.
+        registry::drop_underwriter_capability_test(underwriter_capability);
+    }
+
+    #[test]
+    /// Verify state updates, returns for pure coin and generic markets.
+    fun test_deposit_withdraw_assets_internal()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Get test market account IDs.
+        let (_, _, market_account_id_coin_delegated,
+                   market_account_id_generic_self, _) =
+             register_market_accounts_test();
+        // Declare withdrawal amounts for each market accounts.
+        let base_amount_0  = 123;
+        let quote_amount_0 = 234;
+        let base_amount_1  = 345;
+        let quote_amount_1 = 456;
+        // Deposit starting base and quote asset to each account.
+        deposit_coins<BC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(BASE_START));
+        deposit_coins<QC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(QUOTE_START));
+        deposit_asset<GenericAsset>(
+            @user, MARKET_ID_GENERIC, NO_CUSTODIAN, BASE_START, option::none(),
+            UNDERWRITER_ID);
+        deposit_coins<QC>(@user, MARKET_ID_GENERIC, NO_CUSTODIAN,
+                          assets::mint_test(QUOTE_START));
+        // Withdraw assets from pure coin market account.
+        let (optional_base_coins_0, quote_coins_0) = withdraw_assets_internal<
+            BC, QC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, base_amount_0,
+            quote_amount_0, NO_UNDERWRITER);
+        // Assert coin values.
+        assert!(coin::value(option::borrow(&optional_base_coins_0))
+                == base_amount_0, 0);
+        assert!(coin::value(&quote_coins_0) == quote_amount_0, 0);
+        // Assert asset counts.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            get_asset_counts_internal(
+                @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID);
+        assert!(base_total      == BASE_START  - base_amount_0, 0);
+        assert!(base_available  == BASE_START  - base_amount_0, 0);
+        assert!(base_ceiling    == BASE_START  - base_amount_0, 0);
+        assert!(quote_total     == QUOTE_START - quote_amount_0, 0);
+        assert!(quote_available == QUOTE_START - quote_amount_0, 0);
+        assert!(quote_ceiling   == QUOTE_START - quote_amount_0, 0);
+        // Assert collateral amounts.
+        assert!(get_collateral_value_test<BC>(
+            @user, market_account_id_coin_delegated)
+                == BASE_START - base_amount_0, 0);
+        assert!(get_collateral_value_test<QC>(
+            @user, market_account_id_coin_delegated)
+                 == QUOTE_START - quote_amount_0, 0);
+        // Deposit assets back to pure coin market account.
+        deposit_assets_internal<BC, QC>(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, base_amount_0,
+            optional_base_coins_0, quote_coins_0, NO_UNDERWRITER);
+        // Assert asset counts.
+        (base_total , base_available , base_ceiling,
+         quote_total, quote_available, quote_ceiling) =
+            get_asset_counts_internal(
+                @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID);
+        assert!(base_total      == BASE_START , 0);
+        assert!(base_available  == BASE_START , 0);
+        assert!(base_ceiling    == BASE_START , 0);
+        assert!(quote_total     == QUOTE_START, 0);
+        assert!(quote_available == QUOTE_START, 0);
+        assert!(quote_ceiling   == QUOTE_START, 0);
+        // Assert collateral amounts.
+        assert!(get_collateral_value_test<BC>(
+            @user, market_account_id_coin_delegated) == BASE_START, 0);
+        assert!(get_collateral_value_test<QC>(
+            @user, market_account_id_coin_delegated) == QUOTE_START, 0);
+        // Withdraw assets from generic market account.
+        let (optional_base_coins_1, quote_coins_1) = withdraw_assets_internal<
+            GenericAsset, QC>(@user, MARKET_ID_GENERIC, NO_CUSTODIAN,
+            base_amount_1, quote_amount_1, UNDERWRITER_ID);
+        // Assert no base asset.
+        assert!(option::is_none(&optional_base_coins_1), 0);
+        // Assert quote coin amount.
+        assert!(coin::value(&quote_coins_1) == quote_amount_1, 0);
+        // Assert asset counts.
+        (base_total , base_available , base_ceiling,
+         quote_total, quote_available, quote_ceiling) =
+            get_asset_counts_internal(
+                @user, MARKET_ID_GENERIC, NO_CUSTODIAN);
+        assert!(base_total      == BASE_START  - base_amount_1, 0);
+        assert!(base_available  == BASE_START  - base_amount_1, 0);
+        assert!(base_ceiling    == BASE_START  - base_amount_1, 0);
+        assert!(quote_total     == QUOTE_START - quote_amount_1, 0);
+        assert!(quote_available == QUOTE_START - quote_amount_1, 0);
+        assert!(quote_ceiling   == QUOTE_START - quote_amount_1, 0);
+        // Assert collateral state.
+        assert!(!has_collateral_test<GenericAsset>(
+            @user, market_account_id_generic_self), 0);
+        assert!(get_collateral_value_test<QC>(
+            @user, market_account_id_generic_self)
+                 == QUOTE_START - quote_amount_1, 0);
+        // Deposit assets back to generic market account.
+        deposit_assets_internal<GenericAsset, QC>(
+            @user, MARKET_ID_GENERIC, NO_CUSTODIAN, base_amount_1,
+            optional_base_coins_1, quote_coins_1, UNDERWRITER_ID);
+        // Assert asset counts.
+        (base_total , base_available , base_ceiling,
+         quote_total, quote_available, quote_ceiling) =
+            get_asset_counts_internal(
+                @user, MARKET_ID_GENERIC, NO_CUSTODIAN);
+        assert!(base_total      == BASE_START , 0);
+        assert!(base_available  == BASE_START , 0);
+        assert!(base_ceiling    == BASE_START , 0);
+        assert!(quote_total     == QUOTE_START, 0);
+        assert!(quote_available == QUOTE_START, 0);
+        assert!(quote_ceiling   == QUOTE_START, 0);
+        // Assert collateral state.
+        assert!(!has_collateral_test<GenericAsset>(
+            @user, market_account_id_generic_self), 0);
+        assert!(get_collateral_value_test<QC>(
+            @user, market_account_id_generic_self)
+                 == QUOTE_START, 0);
+    }
+
+    #[test]
+    /// Verify state updates for assorted deposit styles.
+    fun test_deposits()
+    acquires
         Collateral,
         MarketAccounts
     {
         // Declare deposit parameters
         let coin_amount = 700;
         let generic_amount = 500;
-        // Declare user-level general custodian ID
-        let general_custodian_id = NO_CUSTODIAN;
-        assets::init_coin_types(econia); // Initialize coin types
-        registry::init_registry(econia); // Initalize registry
-        // Register a custodian capability
-        let custodian_capability = registry::register_custodian_capability();
-        // Get ID of custodian capability
-        let generic_asset_transfer_custodian_id = registry::custodian_id(
-            &custodian_capability);
-        // Register market with generic base asset and coin quote asset
-        registry::register_market_internal<BG, QC>(@econia, 1, 2,
-            generic_asset_transfer_custodian_id);
-        let market_id = 0; // Declare market ID
-        let market_account_id = // Declare market account ID
-            get_market_account_id(market_id, general_custodian_id);
-        // Register user to trade on the account
-        register_market_account<BG, QC>(user, market_id, general_custodian_id);
-        account::create_account_for_test(@user); // Create account
-        coin::register<QC>(user); // Register coin store
-        coin::deposit(@user, assets::mint<QC>(econia, coin_amount));
-        // Deposit coin asset
-        deposit_from_coinstore<QC>(user, market_id, general_custodian_id,
-            coin_amount);
-        // Deposit generic asset
-        deposit_generic_asset<BG>(@user, market_id, general_custodian_id,
-            generic_amount, &custodian_capability);
-        // Destroy custodian capability
-        registry::destroy_custodian_capability_test(custodian_capability);
-        // Assert state
+        // Get signing user and test market account IDs.
+        let (user, _, market_account_id_coin_delegated,
+                      market_account_id_generic_self, _) =
+             register_market_accounts_test();
+        coin::register<QC>(&user); // Register coin store.
+        // Deposit coin asset to user's coin store.
+        coin::deposit(@user, assets::mint_test<QC>(coin_amount));
+        // Deposit to user's delegated pure coin market account.
+        deposit_from_coinstore<QC>(&user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                                   coin_amount);
+        let underwriter_capability = // Get underwriter capability.
+            registry::get_underwriter_capability_test(UNDERWRITER_ID);
+        // Deposit to user's generic market account.
+        deposit_generic_asset(@user, MARKET_ID_GENERIC, NO_CUSTODIAN,
+                              generic_amount, &underwriter_capability);
+        // Drop underwriter capability.
+        registry::drop_underwriter_capability_test(underwriter_capability);
+        let custodian_capability = // Get custodian capability.
+            registry::get_custodian_capability_test(CUSTODIAN_ID);
+        // Assert state for quote deposit.
         let ( base_total,  base_available,  base_ceiling,
              quote_total, quote_available, quote_ceiling) =
-            get_asset_counts_test(@user, market_account_id);
+            get_asset_counts_custodian(
+                @user, MARKET_ID_PURE_COIN, &custodian_capability);
+        // Drop custodian capability.
+        registry::drop_custodian_capability_test(custodian_capability);
+        assert!(base_total      == 0             , 0);
+        assert!(base_available  == 0             , 0);
+        assert!(base_ceiling    == 0             , 0);
+        assert!(quote_total     == coin_amount   , 0);
+        assert!(quote_available == coin_amount   , 0);
+        assert!(quote_ceiling   == coin_amount   , 0);
+        assert!(get_collateral_value_test<BC>(
+            @user, market_account_id_coin_delegated) == 0, 0);
+        assert!(get_collateral_value_test<QC>(
+            @user, market_account_id_coin_delegated) == coin_amount, 0);
+        // Assert state for base deposit.
+        let ( base_total,  base_available,  base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            get_asset_counts_user(&user, MARKET_ID_GENERIC);
         assert!(base_total      == generic_amount, 0);
         assert!(base_available  == generic_amount, 0);
         assert!(base_ceiling    == generic_amount, 0);
-        assert!(quote_total     == coin_amount,    0);
-        assert!(quote_available == coin_amount,    0);
-        assert!(quote_ceiling   == coin_amount,    0);
-        assert!(!has_collateral_test<BG>(@user, market_account_id), 0);
-        assert!(get_collateral_value_test<QC>(@user, market_account_id) ==
-            coin_amount, 0);
-    }
-
-    #[test(
-        econia = @econia,
-        user = @user
-    )]
-    #[expected_failure(abort_code = 12)]
-    /// Verify failure for calling with a coin type
-    fun test_deposit_generic_asset_not_generic_asset(
-        econia: &signer,
-        user: &signer
-    ) acquires
-        Collateral,
-        MarketAccounts
-    {
-        assets::init_coin_types(econia); // Initialize coin types
-        registry::init_registry(econia); // Initalize registry
-        // Register a custodian capability
-        let custodian_capability = registry::register_custodian_capability();
-        // Get ID of custodian capability
-        let generic_asset_transfer_custodian_id = registry::custodian_id(
-            &custodian_capability);
-        // Register market with generic base asset and coin quote asset
-        registry::register_market_internal<BG, QC>(@econia, 1, 2,
-            generic_asset_transfer_custodian_id);
-        let market_id = 0; // Declare market ID
-        // Declare user-level general custodian ID
-        let general_custodian_id = NO_CUSTODIAN;
-        // Register user to trade on the account
-        register_market_account<BG, QC>(user, market_id, general_custodian_id);
-        // Attempt invalid invocation
-        deposit_generic_asset<QC>(@user, market_id, general_custodian_id,
-            500, &custodian_capability);
-        // Destroy custodian capability
-        registry::destroy_custodian_capability_test(custodian_capability);
-    }
-
-    #[test(
-        econia = @econia,
-        user = @user
-    )]
-    #[expected_failure(abort_code = 14)]
-    /// Verify failure for calling with unauthorized custodian
-    fun test_deposit_generic_asset_unauthorized_custodian(
-        econia: &signer,
-        user: &signer
-    ) acquires
-        Collateral,
-        MarketAccounts
-    {
-        assets::init_coin_types(econia); // Initialize coin types
-        registry::init_registry(econia); // Initalize registry
-        // Register a custodian capability
-        let custodian_capability = registry::register_custodian_capability();
-        // Get ID of custodian capability
-        let generic_asset_transfer_custodian_id = registry::custodian_id(
-            &custodian_capability);
-        // Register test market
-        registry::register_market_internal<BG, QC>(@econia, 1, 2,
-            generic_asset_transfer_custodian_id);
-        let market_id = 0; // Declare market ID
-        // Declare user-level general custodian ID
-        let general_custodian_id = NO_CUSTODIAN;
-        // Register user to trade on the account
-        register_market_account<BG, QC>(user, market_id, general_custodian_id);
-        // Get a custodian capability that is not authorized for generic
-        // asset transfers
-        let unauthorized_capability =
-            registry::register_custodian_capability();
-        // Attempt invalid invocation
-        deposit_generic_asset<BG>(@user, market_id, general_custodian_id,
-            500, &unauthorized_capability);
-        // Destroy custodian capabilities
-        registry::destroy_custodian_capability_test(custodian_capability);
-        registry::destroy_custodian_capability_test(unauthorized_capability);
-    }
-
-    #[test(
-        econia = @econia,
-        user = @user
-    )]
-    /// Verify filling asks for a market with base coin/quote generic
-    fun test_fill_order_internal_asks_base_coin_quote_generic(
-        econia: &signer,
-        user: &signer
-    ) acquires
-        Collateral,
-        MarketAccounts
-    {
-        // Initialize registry
-        registry::init_registry(econia);
-        // Initialize coin types
-        assets::init_coin_types(econia);
-        // Declare market parameters
-        let lot_size = 10;
-        let tick_size = 125;
-        let generic_asset_transfer_custodian_id = 5;
-        let market_id = 0;
-        // Declare user-specific parameters
-        let general_custodian_id = NO_CUSTODIAN;
-        let market_account_id = get_market_account_id(market_id,
-            general_custodian_id);
-        // Declare order values
-        let side = ASK;
-        let size = 123;
-        let price = 456;
-        let counter = 0;
-        let order_id = order_id::order_id(price, counter, side);
-        // Declare fill values
-        let fill_size_1 = 5; // Partial fill
-        let fill_size_2 = size - fill_size_1; // Complete fill
-        let base_start = size * lot_size;
-        let quote_filled_total = size * price * tick_size;
-        let base_to_route_1 = fill_size_1 * lot_size;
-        let base_to_route_2 = fill_size_2 * lot_size;
-        let quote_to_route_1 = fill_size_1 * price * tick_size;
-        let quote_to_route_2 = fill_size_2 * price * tick_size;
-        let optional_base_coins = option::some<Coin<BC>>(coin::zero<BC>());
-        let optional_quote_coins = option::none<Coin<QG>>();
-        // Set generic asset transfer cusotdian ID as valid
-        registry::set_registered_custodian_test(
-            generic_asset_transfer_custodian_id);
-        // Get custodian ID
-        let generic_asset_transfer_custodian_capability = registry::
-            get_custodian_capability_test(generic_asset_transfer_custodian_id);
-        // Register mixed market
-        registry::register_market_internal<BC, QG>(@econia, lot_size,
-            tick_size, generic_asset_transfer_custodian_id);
-        // Register user with market account for given market
-        register_market_account<BC, QG>(user, market_id, general_custodian_id);
-        // Deposit coin asset to user's market account
-        deposit_coins<BC>(@user, market_id, general_custodian_id,
-            assets::mint(econia, base_start));
-        // Register user with order
-        register_order_internal(@user, market_account_id, side, order_id,
-            size, price, lot_size, tick_size);
-        // Assert has base collateral deposited
-        assert!(get_collateral_value_test<BC>(@user, market_account_id) ==
-            base_start, 0);
-        // Assert has no quote collateral structure
-        assert!(!has_collateral_test<QG>(@user, market_account_id), 0);
-        // Get asset counts
-        let (base_total,  base_available,  base_ceiling,
-             quote_total, quote_available, quote_ceiling,
-        ) = get_asset_counts_test(@user, market_account_id);
-        // Assert values
-        assert!(base_total      == base_start, 0);
-        assert!(base_available  == 0, 0);
-        assert!(base_ceiling    == base_start, 0);
-        assert!(quote_total     == 0, 0);
-        assert!(quote_available == 0, 0);
-        assert!(quote_ceiling   == quote_filled_total, 0);
-        // Assert order added to corresponding tree with correct size
-        assert!(get_order_size_test(@user, market_account_id, side, order_id)
-            == size, 0);
-        // Execute partial fill
-        fill_order_internal<BC, QG>(@user, market_account_id, side, order_id,
-            false, fill_size_1, &mut optional_base_coins,
-            &mut optional_quote_coins, base_to_route_1, quote_to_route_1);
-        // Assert optional coin count
-        assert!(coin::value(option::borrow(&optional_base_coins)) ==
-            base_to_route_1, 0);
-        // Assert base collateral withdrawn
-        assert!(get_collateral_value_test<BC>(@user, market_account_id) ==
-            base_start - base_to_route_1, 0);
-        // Get asset counts
-        (base_total,  base_available,  base_ceiling,
-         quote_total, quote_available, quote_ceiling) =
-            get_asset_counts_test(@user, market_account_id);
-        // Assert values
-        assert!(base_total      == base_start - base_to_route_1, 0);
-        assert!(base_available  ==                            0, 0);
-        assert!(base_ceiling    == base_start - base_to_route_1, 0);
-        assert!(quote_total     ==             quote_to_route_1, 0);
-        assert!(quote_available ==             quote_to_route_1, 0);
-        assert!(quote_ceiling   ==           quote_filled_total, 0);
-        // Assert order size update
-        assert!(get_order_size_test(@user, market_account_id, side, order_id)
-            == size - fill_size_1, 0);
-        // Execute complete fill
-        fill_order_internal<BC, QG>(@user, market_account_id, side, order_id,
-            true, fill_size_2, &mut optional_base_coins,
-            &mut optional_quote_coins, base_to_route_2, quote_to_route_2);
-        // Assert optional coin count
-        assert!(coin::value(option::borrow(&optional_base_coins)) ==
-            base_start, 0);
-        assert!( // Assert all base collateral withdrawn
-            get_collateral_value_test<BC>(@user, market_account_id) == 0, 0);
-        // Get asset counts
-        (base_total,  base_available,  base_ceiling,
-         quote_total, quote_available, quote_ceiling,
-        ) = get_asset_counts_test(@user, market_account_id);
-        // Assert values
-        assert!(base_total      == 0, 0);
-        assert!(base_available  == 0, 0);
-        assert!(base_ceiling    == 0, 0);
-        assert!(quote_total     == quote_filled_total, 0);
-        assert!(quote_available == quote_filled_total, 0);
-        assert!(quote_ceiling   == quote_filled_total, 0);
-        assert!( // Assert order removed from tree
-            !has_order_test(@user, market_account_id, side, order_id), 0);
-        // Destroy optional coin structures
-        assets::burn(option::destroy_some(optional_base_coins));
-        option::destroy_none(optional_quote_coins);
-        // Destroy custodian capability
-        registry::destroy_custodian_capability_test(
-            generic_asset_transfer_custodian_capability)
-    }
-
-    #[test(
-        econia = @econia,
-        user = @user
-    )]
-    /// Verify filling asks for a market with base generic/quote coin
-    fun test_fill_order_internal_asks_base_generic_quote_coin(
-        econia: &signer,
-        user: &signer
-    ) acquires
-        Collateral,
-        MarketAccounts
-    {
-        // Initialize registry
-        registry::init_registry(econia);
-        // Initialize coin types
-        assets::init_coin_types(econia);
-        // Declare market parameters
-        let lot_size = 10;
-        let tick_size = 125;
-        let generic_asset_transfer_custodian_id = 5;
-        let market_id = 0;
-        // Declare user-specific parameters
-        let general_custodian_id = NO_CUSTODIAN;
-        let market_account_id = get_market_account_id(market_id,
-            general_custodian_id);
-        // Declare order values
-        let side = ASK;
-        let size = 123;
-        let price = 456;
-        let counter = 0;
-        let order_id = order_id::order_id(price, counter, side);
-        // Declare fill values
-        let fill_size_1 = 5; // Partial fill
-        let fill_size_2 = size - fill_size_1; // Complete fill
-        let base_start = size * lot_size;
-        let quote_filled_total = size * price * tick_size;
-        let base_to_route_1 = fill_size_1 * lot_size;
-        let base_to_route_2 = fill_size_2 * lot_size;
-        let quote_to_route_1 = fill_size_1 * price * tick_size;
-        let quote_to_route_2 = fill_size_2 * price * tick_size;
-        let optional_base_coins = option::none<Coin<BG>>();
-        let optional_quote_coins = option::some<Coin<QC>>(
-            assets::mint<QC>(econia, quote_filled_total));
-        // Set generic asset transfer cusotdian ID as valid
-        registry::set_registered_custodian_test(
-            generic_asset_transfer_custodian_id);
-        // Get custodian ID
-        let generic_asset_transfer_custodian_capability = registry::
-            get_custodian_capability_test(generic_asset_transfer_custodian_id);
-        // Register mixed market
-        registry::register_market_internal<BG, QC>(@econia, lot_size,
-            tick_size, generic_asset_transfer_custodian_id);
-        // Register user with market account for given market
-        register_market_account<BG, QC>(user, market_id, general_custodian_id);
-        // Deposit generic asset to user's market account
-        deposit_generic_asset<BG>(@user, market_id, general_custodian_id,
-            base_start, &generic_asset_transfer_custodian_capability);
-        // Register user with order
-        register_order_internal(@user, market_account_id, side, order_id,
-            size, price, lot_size, tick_size);
-        // Assert has no base collateral structure
-        assert!(!has_collateral_test<BG>(@user, market_account_id), 0);
-        assert!( // Assert has no quote collateral deposited
-            get_collateral_value_test<QC>(@user, market_account_id) == 0, 0);
-        // Get asset counts
-        let (base_total,  base_available,  base_ceiling,
-             quote_total, quote_available, quote_ceiling,
-        ) = get_asset_counts_test(@user, market_account_id);
-        // Assert values
-        assert!(base_total      == base_start, 0);
-        assert!(base_available  == 0, 0);
-        assert!(base_ceiling    == base_start, 0);
-        assert!(quote_total     == 0, 0);
-        assert!(quote_available == 0, 0);
-        assert!(quote_ceiling   == quote_filled_total, 0);
-        // Assert order added to corresponding tree with correct size
-        assert!(get_order_size_test(@user, market_account_id, side, order_id)
-            == size, 0);
-        // Execute partial fill
-        fill_order_internal<BG, QC>(@user, market_account_id, side, order_id,
-            false, fill_size_1, &mut optional_base_coins,
-            &mut optional_quote_coins, base_to_route_1, quote_to_route_1);
-        // Assert optional coin count
-        assert!(coin::value(option::borrow(&optional_quote_coins)) ==
-            quote_filled_total - quote_to_route_1, 0);
-        // Assert quote collateral deposited
-        assert!(get_collateral_value_test<QC>(@user, market_account_id) ==
-            quote_to_route_1, 0);
-        // Get asset counts
-        (base_total,  base_available,  base_ceiling,
-         quote_total, quote_available, quote_ceiling,
-        ) = get_asset_counts_test(@user, market_account_id);
-        // Assert values
-        assert!(base_total      == base_start - base_to_route_1, 0);
-        assert!(base_available  ==                            0, 0);
-        assert!(base_ceiling    == base_start - base_to_route_1, 0);
-        assert!(quote_total     ==             quote_to_route_1, 0);
-        assert!(quote_available ==             quote_to_route_1, 0);
-        assert!(quote_ceiling   ==           quote_filled_total, 0);
-        // Assert order size update
-        assert!(get_order_size_test(@user, market_account_id, side, order_id)
-            == size - fill_size_1, 0);
-        // Execute complete fill
-        fill_order_internal<BG, QC>(@user, market_account_id, side, order_id,
-            true, fill_size_2, &mut optional_base_coins,
-            &mut optional_quote_coins, base_to_route_2, quote_to_route_2);
-        // Assert optional coin count
-        assert!(coin::value(option::borrow(&optional_quote_coins)) == 0, 0);
-        // Assert quote collateral deposited
-        assert!(get_collateral_value_test<QC>(@user, market_account_id) ==
-            quote_filled_total, 0);
-        // Get asset counts
-        (base_total,  base_available,  base_ceiling,
-         quote_total, quote_available, quote_ceiling,
-        ) = get_asset_counts_test(@user, market_account_id);
-        // Assert values
-        assert!(base_total      == 0, 0);
-        assert!(base_available  == 0, 0);
-        assert!(base_ceiling    == 0, 0);
-        assert!(quote_total     == quote_filled_total, 0);
-        assert!(quote_available == quote_filled_total, 0);
-        assert!(quote_ceiling   == quote_filled_total, 0);
-        assert!( // Assert order removed from tree
-            !has_order_test(@user, market_account_id, side, order_id), 0);
-        // Destroy optional coin structures
-        option::destroy_none(optional_base_coins);
-        coin::destroy_zero(option::destroy_some(optional_quote_coins));
-        // Destroy custodian capability
-        registry::destroy_custodian_capability_test(
-            generic_asset_transfer_custodian_capability)
-    }
-
-    #[test(
-        econia = @econia,
-        user = @user
-    )]
-    /// Verify filling bids for a market with base generic/quote coin
-    fun test_fill_order_internal_bids_base_generic_quote_coin(
-        econia: &signer,
-        user: &signer
-    ) acquires
-        Collateral,
-        MarketAccounts
-    {
-        // Initialize registry
-        registry::init_registry(econia);
-        // Initialize coin types
-        assets::init_coin_types(econia);
-        // Declare market parameters
-        let lot_size = 10;
-        let tick_size = 125;
-        let generic_asset_transfer_custodian_id = 5;
-        let market_id = 0;
-        // Declare user-specific parameters
-        let general_custodian_id = NO_CUSTODIAN;
-        let market_account_id = get_market_account_id(market_id,
-            general_custodian_id);
-        // Declare order values
-        let side = BID;
-        let size = 123;
-        let price = 456;
-        let counter = 0;
-        let order_id = order_id::order_id(price, counter, side);
-        // Declare fill values
-        let fill_size_1 = 5; // Partial fill
-        let fill_size_2 = size - fill_size_1; // Complete fill
-        let quote_start = size * price * tick_size;
-        let base_filled_total = size * lot_size;
-        let base_to_route_1 = fill_size_1 * lot_size;
-        let base_to_route_2 = fill_size_2 * lot_size;
-        let quote_to_route_1 = fill_size_1 * price * tick_size;
-        let quote_to_route_2 = fill_size_2 * price * tick_size;
-        let optional_base_coins = option::none<Coin<BG>>();
-        let optional_quote_coins = option::some<Coin<QC>>(coin::zero<QC>());
-        // Set generic asset transfer cusotdian ID as valid
-        registry::set_registered_custodian_test(
-            generic_asset_transfer_custodian_id);
-        // Get custodian ID
-        let generic_asset_transfer_custodian_capability = registry::
-            get_custodian_capability_test(generic_asset_transfer_custodian_id);
-        // Register mixed market
-        registry::register_market_internal<BG, QC>(@econia, lot_size,
-            tick_size, generic_asset_transfer_custodian_id);
-        // Register user with market account for given market
-        register_market_account<BG, QC>(user, market_id, general_custodian_id);
-        // Deposit coin asset to user's market account
-        deposit_coins<QC>(@user, market_id, general_custodian_id,
-            assets::mint(econia, quote_start));
-        // Register user with order
-        register_order_internal(@user, market_account_id, side, order_id,
-            size, price, lot_size, tick_size);
-        // Assert has no base collateral structure
-        assert!(!has_collateral_test<BG>(@user, market_account_id), 0);
-        // Assert has quote collateral deposited
-        assert!(get_collateral_value_test<QC>(@user, market_account_id) ==
-            quote_start, 0);
-        // Get asset counts
-        let (base_total,  base_available,  base_ceiling,
-             quote_total, quote_available, quote_ceiling,
-        ) = get_asset_counts_test(@user, market_account_id);
-        // Assert values
-        assert!(base_total      == 0, 0);
-        assert!(base_available  == 0, 0);
-        assert!(base_ceiling    == base_filled_total, 0);
-        assert!(quote_total     == quote_start, 0);
-        assert!(quote_available == 0, 0);
-        assert!(quote_ceiling   == quote_start, 0);
-        // Assert order added to corresponding tree with correct size
-        assert!(get_order_size_test(@user, market_account_id, side, order_id)
-            == size, 0);
-        // Execute partial fill
-        fill_order_internal<BG, QC>(@user, market_account_id, side, order_id,
-            false, fill_size_1, &mut optional_base_coins,
-            &mut optional_quote_coins, base_to_route_1, quote_to_route_1);
-        // Assert optional coin count
-        assert!(coin::value(option::borrow(&optional_quote_coins)) ==
-            quote_to_route_1, 0);
-        // Assert quote collateral withdrawn
-        assert!(get_collateral_value_test<QC>(@user, market_account_id) ==
-            quote_start - quote_to_route_1, 0);
-        // Get asset counts
-        (base_total,  base_available,  base_ceiling,
-         quote_total, quote_available, quote_ceiling,
-        ) = get_asset_counts_test(@user, market_account_id);
-        // Assert values
-        assert!(base_total      == base_to_route_1, 0);
-        assert!(base_available  == base_to_route_1, 0);
-        assert!(base_ceiling    == base_filled_total, 0);
-        assert!(quote_total     == quote_start - quote_to_route_1, 0);
-        assert!(quote_available == 0, 0);
-        assert!(quote_ceiling   == quote_start - quote_to_route_1, 0);
-        // Assert order size update
-        assert!(get_order_size_test(@user, market_account_id, side, order_id)
-            == size - fill_size_1, 0);
-        // Execute complete fill
-        fill_order_internal<BG, QC>(@user, market_account_id, side, order_id,
-            true, fill_size_2, &mut optional_base_coins,
-            &mut optional_quote_coins, base_to_route_2, quote_to_route_2);
-        // Assert optional coin count
-        assert!(coin::value(option::borrow(&optional_quote_coins)) ==
-            quote_to_route_1 + quote_to_route_2, 0);
-        assert!( // Assert no more quote collateral
-            get_collateral_value_test<QC>(@user, market_account_id) == 0, 0);
-        // Get asset counts
-        (base_total,  base_available,  base_ceiling,
-         quote_total, quote_available, quote_ceiling,
-        ) = get_asset_counts_test(@user, market_account_id);
-        // Assert values
-        assert!(base_total      == base_filled_total, 0);
-        assert!(base_available  == base_filled_total, 0);
-        assert!(base_ceiling    == base_filled_total, 0);
-        assert!(quote_total     == 0, 0);
-        assert!(quote_available == 0, 0);
-        assert!(quote_ceiling   == 0, 0);
-        assert!( // Assert order removed from tree
-            !has_order_test(@user, market_account_id, side, order_id), 0);
-        // Destroy optional coin structures
-        option::destroy_none(optional_base_coins);
-        assets::burn(option::destroy_some(optional_quote_coins));
-        // Destroy custodian capability
-        registry::destroy_custodian_capability_test(
-            generic_asset_transfer_custodian_capability)
-    }
-
-    #[test(
-        econia = @econia,
-        user = @user
-    )]
-    /// Verify expected returns
-    fun test_get_asset_counts_custodian_user_internal(
-        econia: &signer,
-        user: &signer
-    ) acquires
-        Collateral,
-        MarketAccounts
-    {
-        // Define mock market parameters
-        let market_id_pure_generic = 0;
-        let market_id_pure_coin = 1;
-        let general_custodian_id_pure_generic = NO_CUSTODIAN;
-        let general_custodian_id_pure_coin = 1;
-        let market_account_id_pure_generic = get_market_account_id(
-            market_id_pure_generic, general_custodian_id_pure_generic);
-        let market_account_id_pure_coin = get_market_account_id(
-            market_id_pure_coin, general_custodian_id_pure_coin);
-        // Define bogus asset counts
-        let base_total_pure_generic      = 0;
-        let base_available_pure_generic  = 1;
-        let base_ceiling_pure_generic    = 2;
-        let quote_total_pure_generic     = 3;
-        let quote_available_pure_generic = 4;
-        let quote_ceiling_pure_generic   = 5;
-        let base_total_pure_coin         = 6;
-        let base_available_pure_coin     = 7;
-        let base_ceiling_pure_coin       = 8;
-        let quote_total_pure_coin        = 9;
-        let quote_available_pure_coin    = 10;
-        let quote_ceiling_pure_coin      = 11;
-        // Register user to trade on markets
-        register_user_with_market_accounts_test(econia, user,
-            general_custodian_id_pure_generic, general_custodian_id_pure_coin);
-        // Get general custodian capability for pure coin market
-        let general_custodian_capability_pure_coin =
-            registry::get_custodian_capability_test(
-                general_custodian_id_pure_coin);
-        // Borrow mutable reference to market accounts map
-        let market_accounts_map_ref_mut =
-            &mut borrow_global_mut<MarketAccounts>(@user).map;
-        // Borrow mutable reference to pure generic market account
-        let market_account_ref_mut = open_table::borrow_mut(
-            market_accounts_map_ref_mut, market_account_id_pure_generic);
-        // Set fields to mock values
-        market_account_ref_mut.base_total      = base_total_pure_generic;
-        market_account_ref_mut.base_available  = base_available_pure_generic;
-        market_account_ref_mut.base_ceiling    = base_ceiling_pure_generic;
-        market_account_ref_mut.quote_total     = quote_total_pure_generic;
-        market_account_ref_mut.quote_available = quote_available_pure_generic;
-        market_account_ref_mut.quote_ceiling   = quote_ceiling_pure_generic;
-        // Borrow mutable reference to pure coin market account
-        let market_account_ref_mut = open_table::borrow_mut(
-            market_accounts_map_ref_mut, market_account_id_pure_coin);
-        // Set fields to mock values
-        market_account_ref_mut.base_total      = base_total_pure_coin;
-        market_account_ref_mut.base_available  = base_available_pure_coin;
-        market_account_ref_mut.base_ceiling    = base_ceiling_pure_coin;
-        market_account_ref_mut.quote_total     = quote_total_pure_coin;
-        market_account_ref_mut.quote_available = quote_available_pure_coin;
-        market_account_ref_mut.quote_ceiling   = quote_ceiling_pure_coin;
-        // Get pure generic market account asset fields
-        let (base_total,  base_available,  base_ceiling,
-             quote_total, quote_available, quote_ceiling) =
-            get_asset_counts_user(user, market_id_pure_generic);
-        // Assert fields
-        assert!(base_total      == base_total_pure_generic, 0);
-        assert!(base_available  == base_available_pure_generic, 0);
-        assert!(base_ceiling    == base_ceiling_pure_generic, 0);
-        assert!(quote_total     == quote_total_pure_generic, 0);
-        assert!(quote_available == quote_available_pure_generic, 0);
-        assert!(quote_ceiling   == quote_ceiling_pure_generic, 0);
-        // Get pure coin market account asset fields
-        let (base_total,  base_available,  base_ceiling,
-             quote_total, quote_available, quote_ceiling) =
-            get_asset_counts_custodian(@user, market_id_pure_coin,
-                &general_custodian_capability_pure_coin);
-        // Assert fields
-        assert!(base_total      == base_total_pure_coin, 0);
-        assert!(base_available  == base_available_pure_coin, 0);
-        assert!(base_ceiling    == base_ceiling_pure_coin, 0);
-        assert!(quote_total     == quote_total_pure_coin, 0);
-        assert!(quote_available == quote_available_pure_coin, 0);
-        assert!(quote_ceiling   == quote_ceiling_pure_coin, 0);
-        // Get pure coin market account values via internal function
-        let (base_total,  base_available,  base_ceiling,
-             quote_total, quote_available, quote_ceiling) =
-            get_asset_counts_internal(@user, market_account_id_pure_coin);
-        // Assert fields
-        assert!(base_total      == base_total_pure_coin, 0);
-        assert!(base_available  == base_available_pure_coin, 0);
-        assert!(base_ceiling    == base_ceiling_pure_coin, 0);
-        assert!(quote_total     == quote_total_pure_coin, 0);
-        assert!(quote_available == quote_available_pure_coin, 0);
-        assert!(quote_ceiling   == quote_ceiling_pure_coin, 0);
-        // Destroy custodian capability
-        registry::destroy_custodian_capability_test(
-            general_custodian_capability_pure_coin);
+        assert!(quote_total     == 0             , 0);
+        assert!(quote_available == 0             , 0);
+        assert!(quote_ceiling   == 0             , 0);
+        assert!(!has_collateral_test<GenericAsset>(
+            @user, market_account_id_generic_self), 0);
+        assert!(get_collateral_value_test<QC>(
+            @user, market_account_id_generic_self) == 0, 0);
     }
 
     #[test]
-    /// Verify expected return
-    fun test_get_general_custodian_id() {
-        // Define market_account id (60 characters on first two lines,
-        // 8 on last)
-        let market_account_id = u_long(
-            b"111111111111111111111111111111111111111111111111111111111111",
-            b"111100000000000000000000000000000000000000000000000000000000",
-            b"10101010"
-        );
-        // Assert expected return
-        assert!(get_general_custodian_id(market_account_id) ==
-            (u(b"10101010") as u64), 0);
-    }
-
-    #[test]
-    /// Verify expected return
-    fun test_get_market_account_id() {
-        // Declare market ID
-        let market_id = (u(b"1101") as u64);
-        // Declare general custodian ID
-        let general_custodian_id = (u(b"1010") as u64);
-        // Define expected return (60 characters on first two lines, 8
-        // on last)
-        let market_account_id = u_long(
-            b"000000000000000000000000000000000000000000000000000000000000",
-            b"110100000000000000000000000000000000000000000000000000000000",
-            b"00001010"
-        );
-        // Assert expected return
-        assert!(get_market_account_id(market_id, general_custodian_id) ==
-            market_account_id, 0);
-    }
-
-    #[test]
-    /// Verify expected return
-    fun test_get_market_id() {
-        // Define market_account id (60 characters on first two lines,
-        // 8 on last)
-        let market_account_id = u_long(
-            b"000000000000000000000000000000000000000000000000000000001010",
-            b"101011111111111111111111111111111111111111111111111111111111",
-            b"11111111"
-        );
-        // Assert expected return
-        assert!(get_market_id(market_account_id) ==
-            (u(b"10101010") as u64), 0);
-    }
-
-    #[test(
-        econia = @econia,
-        user = @user
-    )]
-    /// Verify returns for both sides
-    fun test_get_n_orders_order_id_nearest_spread_internal(
-        econia: &signer,
-        user: &signer
-    ) acquires Collateral, MarketAccounts {
-        // Declare order IDs
-        let ask_id_1 = 400;
-        let ask_id_2 = 500;
-        let ask_id_3 = 600;
-        let bid_id_1 = 100;
-        let bid_id_2 = 200;
-        let bid_id_3 = 300;
-        // Register user with pure coin market account
-        let (_, market_account_id) = register_user_with_market_accounts_test(
-            econia, user, 1, NO_CUSTODIAN);
-        // Deposit collateral for both sides
-        deposit_coins<BC>(
-            @user, 1, NO_CUSTODIAN, assets::mint<BC>(econia, 1000000));
-        deposit_coins<QC>(
-            @user, 1, NO_CUSTODIAN, assets::mint<QC>(econia, 1000000));
-        // Assert order counts
-        assert!(get_n_orders_internal(@user, market_account_id, ASK) == 0, 0);
-        assert!(get_n_orders_internal(@user, market_account_id, BID) == 0, 0);
-        register_order_internal( // Register order
-            @user, market_account_id, ASK, ask_id_1, 1, 1, 1, 1);
-        // Assert order counts
-        assert!(get_n_orders_internal(@user, market_account_id, ASK) == 1, 0);
-        assert!(get_n_orders_internal(@user, market_account_id, BID) == 0, 0);
-        // Assert order lookup
-        assert!(get_order_id_nearest_spread_internal(
-            @user, market_account_id, ASK) == ask_id_1, 0);
-        register_order_internal( // Register order
-            @user, market_account_id, ASK, ask_id_2, 1, 1, 1, 1);
-        // Assert order lookup
-        assert!(get_order_id_nearest_spread_internal(
-            @user, market_account_id, ASK) == ask_id_1, 0);
-        register_order_internal( // Register order
-            @user, market_account_id, ASK, ask_id_3, 1, 1, 1, 1);
-        // Assert order lookup
-        assert!(get_order_id_nearest_spread_internal(
-            @user, market_account_id, ASK) == ask_id_1, 0);
-        // Assert order counts
-        assert!(get_n_orders_internal(@user, market_account_id, ASK) == 3, 0);
-        assert!(get_n_orders_internal(@user, market_account_id, BID) == 0, 0);
-        register_order_internal( // Register order
-            @user, market_account_id, BID, bid_id_1, 1, 1, 1, 1);
-        // Assert order lookup
-        assert!(get_order_id_nearest_spread_internal(
-            @user, market_account_id, BID) == bid_id_1, 0);
-        register_order_internal( // Register order
-            @user, market_account_id, BID, bid_id_2, 1, 1, 1, 1);
-        // Assert order lookup
-        assert!(get_order_id_nearest_spread_internal(
-            @user, market_account_id, BID) == bid_id_2, 0);
-        register_order_internal( // Register order
-            @user, market_account_id, BID, bid_id_3, 1, 1, 1, 1);
-        // Assert order lookup
-        assert!(get_order_id_nearest_spread_internal(
-            @user, market_account_id, BID) == bid_id_3, 0);
-    }
-
-    #[test(
-        econia = @econia,
-        user = @user
-    )]
-    #[expected_failure(abort_code = 15)]
-    /// Verify failure for no orders
-    fun test_get_order_id_nearest_spread_internal_no_orders(
-        econia: &signer,
-        user: &signer
-    ) acquires Collateral, MarketAccounts {
-        // Register user with pure coin market account
-        let (_, market_account_id) = register_user_with_market_accounts_test(
-            econia, user, 1, NO_CUSTODIAN);
-        // Attempt invalid invocation
-        get_order_id_nearest_spread_internal(@user, market_account_id, ASK);
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 4)]
-    /// Verify failure for overflowing asset traded away
-    fun test_range_check_new_order_not_enough_asset() {
-        // Define order parameters
-        let side = BID;
-        let size = 2;
-        let price = 1;
-        let lot_size = 1;
-        let tick_size = 1;
-        let in_asset_ceiling = 1;
-        let out_asset_available = 1;
-        // Attempt invalid range check
-        range_check_new_order(side, size, price, lot_size, tick_size,
-            in_asset_ceiling, out_asset_available);
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 10)]
-    /// Verify failure for overflowing asset received from trade
-    fun test_range_check_new_order_overflow_asset_in() {
-        // Define order parameters
-        let side = ASK;
-        let size = 1;
-        let price = 1;
-        let lot_size = 1;
-        let tick_size = 1;
-        let in_asset_ceiling = HI_64;
-        let out_asset_available = 1;
-        // Attempt invalid range check
-        range_check_new_order(side, size, price, lot_size, tick_size,
-            in_asset_ceiling, out_asset_available);
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 11)]
-    /// Verify failure for overflowing asset traded away
-    fun test_range_check_new_order_overflow_asset_out() {
-        // Define order parameters
-        let side = BID;
-        let size = 2;
-        let price = 1;
-        let lot_size = 1;
-        let tick_size = HI_64;
-        let in_asset_ceiling = 1;
-        let out_asset_available = 1;
-        // Attempt invalid range check
-        range_check_new_order(side, size, price, lot_size, tick_size,
-            in_asset_ceiling, out_asset_available);
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 6)]
-    /// Verify failure for overflowing ticks required to fill trade
-    fun test_range_check_new_order_overflow_ticks() {
-        // Define order parameters
-        let side = BID;
-        let size = HI_64;
-        let price = 2;
-        let lot_size = 1;
-        let tick_size = 1;
-        let in_asset_ceiling = 1;
-        let out_asset_available = 1;
-        // Attempt invalid range check
-        range_check_new_order(side, size, price, lot_size, tick_size,
-            in_asset_ceiling, out_asset_available);
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 9)]
-    /// Verify failure for price 0
-    fun test_range_check_new_order_price_0() {
-        // Define order parameters
-        let side = ASK;
-        let size = 1;
-        let price = 0;
-        let lot_size = 2;
-        let tick_size = 3;
-        let in_asset_ceiling = 4;
-        let out_asset_available = 5;
-        // Attempt invalid range check
-        range_check_new_order(side, size, price, lot_size, tick_size,
-            in_asset_ceiling, out_asset_available);
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 8)]
-    /// Verify failure for size 0
-    fun test_range_check_new_order_size_0() {
-        // Define order parameters
-        let side = ASK;
-        let size = 0;
-        let price = 1;
-        let lot_size = 2;
-        let tick_size = 3;
-        let in_asset_ceiling = 4;
-        let out_asset_available = 5;
-        // Attempt invalid range check
-        range_check_new_order(side, size, price, lot_size, tick_size,
-            in_asset_ceiling, out_asset_available);
-    }
-
-    #[test]
-    /// Verify successful returns
-    fun test_range_check_new_order_success() {
-        // Define order parameters
-        let side = ASK;
-        let size = 3;
-        let price = 4;
-        let lot_size = 5;
-        let tick_size = 6;
-        let in_asset_ceiling = 1000;
-        let out_asset_available = 2000;
-        // Range check order, store asset in and asset out fill amounts
-        let (in_asset_fill, out_asset_fill) = range_check_new_order(side, size,
-            price, lot_size, tick_size, in_asset_ceiling, out_asset_available);
-        // Assert returns
-        assert!(in_asset_fill  == size * price * tick_size, 0);
-        assert!(out_asset_fill == size * lot_size         , 0);
-        // Swtich side and re-evaluate
-        side = BID;
-        (in_asset_fill, out_asset_fill) = range_check_new_order(side, size,
-            price, lot_size, tick_size, in_asset_ceiling, out_asset_available);
-        assert!(in_asset_fill  == size * lot_size         , 0);
-        assert!(out_asset_fill == size * price * tick_size, 0);
-    }
-
-    #[test(user = @user)]
-    /// Verify registration for multiple market accounts
-    fun test_register_collateral_entry(
-        user: &signer
-    ) acquires Collateral {
-        // Declare market account IDs
-        let market_account_id_1 = get_market_account_id(0, 1);
-        let market_account_id_2 = get_market_account_id(0, NO_CUSTODIAN);
-        // Register collateral entry
-        register_collateral_entry<BC>(user, market_account_id_1);
-        // Register another collateral entry
-        register_collateral_entry<BC>(user, market_account_id_2);
-        // Borrow immutable ref to collateral map
-        let collateral_map_ref =
-            &borrow_global<Collateral<BC>>(address_of(user)).map;
-        // Borrow immutable ref to collateral for first market account
-        let collateral_ref_1 =
-            open_table::borrow(collateral_map_ref, market_account_id_1);
-        // Assert amount
-        assert!(coin::value(collateral_ref_1) == 0, 0);
-        // Borrow immutable ref to collateral for second market account
-        let collateral_ref_2 =
-            open_table::borrow(collateral_map_ref, market_account_id_2);
-        // Assert amount
-        assert!(coin::value(collateral_ref_2) == 0, 0);
-    }
-
-    #[test(user = @user)]
-    #[expected_failure(abort_code = 2)]
-    /// Verify failure for given market account is already registered
-    fun test_register_collateral_entry_already_registered(
-        user: &signer
-    ) acquires Collateral {
-        // Declare market account ID
-        let market_account_id = get_market_account_id(0, 1);
-        // Register collateral entry
-        register_collateral_entry<BC>(user, market_account_id);
-        // Attempt invalid re-registration
-        register_collateral_entry<BC>(user, market_account_id);
-    }
-
-    #[test(
-        econia = @econia,
-        user = @user
-    )]
-    #[expected_failure(abort_code = 1)]
-    /// Verify failure for invalid user-level custodian ID
-    fun test_register_market_account_invalid_custodian_id(
-        econia: &signer,
-        user: &signer
-    ) acquires
-        Collateral,
-        MarketAccounts
-    {
-        // Register test markets
-        registry::register_market_internal_multiple_test(econia);
-        let agnostic_test_market_id = 0; // Declare market ID
-        // Attempt invalid registration
-        register_market_account<BG, QG>(
-            user, agnostic_test_market_id, 1000000000);
-    }
-
-    #[test(
-        econia = @econia,
-        user = @user
-    )]
-    /// Verify successful market account registration
-    fun test_register_market_accounts(
-        econia: &signer,
-        user: &signer
-    ) acquires
-        Collateral,
-        MarketAccounts
-    {
-        // Init test markets, storing market IDs
-        let  (_, _, _, market_id_agnostic,
-              _, _, _, market_id_pure_coin
-        ) = registry::register_market_internal_multiple_test(econia);
-        // Declare custodian IDs
-        let general_custodian_id_agnostic = NO_CUSTODIAN;
-        let general_custodian_id_pure_coin = 2;
-        // Register corresponding market accounts
-        register_market_account<BG, QG>(
-            user, market_id_agnostic, general_custodian_id_agnostic);
-        register_market_account<BC, QC>(
-            user, market_id_pure_coin, general_custodian_id_pure_coin);
-        // Get market account ID for both market accounts
-        let market_account_id_agnostic = get_market_account_id(
-            market_id_agnostic, general_custodian_id_agnostic);
-        let market_account_id_pure_coin = get_market_account_id(
-            market_id_pure_coin, general_custodian_id_pure_coin);
-        // Borrow immutable reference to market accounts map
-        let market_accounts_map_ref =
-            &borrow_global<MarketAccounts>(@user).map;
-        // Assert entries added to table
-        assert!(open_table::contains(
-            market_accounts_map_ref, market_account_id_agnostic), 0);
-        assert!(open_table::contains(
-            market_accounts_map_ref, market_account_id_pure_coin), 0);
-        // Assert no initialized collateral map for generic assets
-        assert!(!exists<Collateral<BG>>(@user), 0);
-        assert!(!exists<Collateral<QG>>(@user), 0);
-        // Borrow immutable reference to base coin collateral map
-        let collateral_map_ref =
-            &borrow_global<Collateral<BC>>(@user).map;
-        // Assert entry added for pure coin market account
-        assert!(open_table::contains(collateral_map_ref,
-            market_account_id_pure_coin), 0);
-        // Borrow immutable reference to quote coin collateral map
-        let collateral_map_ref =
-            &borrow_global<Collateral<QC>>(@user).map;
-        // Assert entry added for pure coin market account
-        assert!(open_table::contains(collateral_map_ref,
-            market_account_id_pure_coin), 0);
-    }
-
-    #[test(
-        econia = @econia,
-        user = @user
-    )]
-    /// Verify registration for multiple market accounts
-    fun test_register_market_accounts_entry(
-        econia: &signer,
-        user: &signer
-    ) acquires MarketAccounts {
-        // Declare market values
-        let market_id_1 = 0;
-        let general_custodian_id_1 = 1;
-        let market_account_id_1 = get_market_account_id(market_id_1,
-            general_custodian_id_1);
-        let generic_asset_transfer_custodian_id_1 = PURE_COIN_PAIR;
-        let market_id_2 = 0;
-        let general_custodian_id_2 = NO_CUSTODIAN;
-        let market_account_id_2 = get_market_account_id(market_id_2,
-            general_custodian_id_2);
-        let generic_asset_transfer_custodian_id_2 = PURE_COIN_PAIR;
-        // Initialize registry
-        registry::init_registry(econia);
-        // Initialize coin types
-        assets::init_coin_types(econia);
-        // Set custodian to be valid
-        registry::set_registered_custodian_test(general_custodian_id_1);
-        // Register test markets
-        registry::register_market_internal<BC, QC>(@econia, 1, 2,
-            generic_asset_transfer_custodian_id_1);
-        registry::register_market_internal<BC, QC>(@econia, 3, 4,
-            generic_asset_transfer_custodian_id_2);
-        // Register market accounts entry
-        register_market_accounts_entry<BC, QC>(user, market_account_id_1);
-        // Register market accounts entry
-        register_market_accounts_entry<BC, QC>(user, market_account_id_2);
-        // Borrow immutable reference to market accounts map
-        let market_accounts_map_ref =
-            &borrow_global<MarketAccounts>(address_of(user)).map;
-        // Borrow immutable reference to first market account
-        let market_account_ref_1 =
-            open_table::borrow(market_accounts_map_ref, market_account_id_1);
-        // Assert fields
-        assert!(market_account_ref_1.base_type_info ==
-            type_info::type_of<BC>(), 0);
-        assert!(market_account_ref_1.quote_type_info ==
-            type_info::type_of<QC>(), 0);
-        assert!(market_account_ref_1.generic_asset_transfer_custodian_id ==
-            generic_asset_transfer_custodian_id_1, 0);
-        assert!(critbit::is_empty(&market_account_ref_1.asks), 0);
-        assert!(critbit::is_empty(&market_account_ref_1.bids), 0);
-        assert!(market_account_ref_1.base_total == 0, 0);
-        assert!(market_account_ref_1.base_available == 0, 0);
-        assert!(market_account_ref_1.base_ceiling == 0, 0);
-        assert!(market_account_ref_1.quote_total == 0, 0);
-        assert!(market_account_ref_1.quote_available == 0, 0);
-        assert!(market_account_ref_1.quote_ceiling == 0, 0);
-        // Borrow immutable reference to second market account
-        let market_account_ref_2 =
-            open_table::borrow(market_accounts_map_ref, market_account_id_2);
-        // Assert fields
-        assert!(market_account_ref_2.base_type_info ==
-            type_info::type_of<BC>(), 0);
-        assert!(market_account_ref_2.quote_type_info ==
-            type_info::type_of<QC>(), 0);
-        assert!(market_account_ref_2.generic_asset_transfer_custodian_id ==
-            generic_asset_transfer_custodian_id_2, 0);
-        assert!(critbit::is_empty(&market_account_ref_2.asks), 0);
-        assert!(critbit::is_empty(&market_account_ref_2.bids), 0);
-        assert!(market_account_ref_2.base_total == 0, 0);
-        assert!(market_account_ref_2.base_available == 0, 0);
-        assert!(market_account_ref_2.base_ceiling == 0, 0);
-        assert!(market_account_ref_2.quote_total == 0, 0);
-        assert!(market_account_ref_2.quote_available == 0, 0);
-        assert!(market_account_ref_2.quote_ceiling == 0, 0);
-    }
-
-    #[test(
-        econia = @econia,
-        user = @user
-    )]
-    #[expected_failure(abort_code = 2)]
-    /// Verify failure for attempting to re-register market account
-    fun test_register_market_accounts_entry_already_registered(
-        econia: &signer,
-        user: &signer
-    ) acquires MarketAccounts {
-        // Declare market values
-        let market_id_1 = 0;
-        let general_custodian_id_1 = 1;
-        let market_account_id_1 = get_market_account_id(market_id_1,
-            general_custodian_id_1);
-        let generic_asset_transfer_custodian_id_1 = PURE_COIN_PAIR;
-        // Initialize registry
-        registry::init_registry(econia);
-        // Initialize coin types
-        assets::init_coin_types(econia);
-        // Set custodian to be valid
-        registry::set_registered_custodian_test(general_custodian_id_1);
-        // Register test markets
-        registry::register_market_internal<BC, QC>(@econia, 1, 2,
-            generic_asset_transfer_custodian_id_1);
-        // Register market accounts entry
-        register_market_accounts_entry<BC, QC>(user, market_account_id_1);
-        // Register market accounts entry
-        register_market_accounts_entry<BC, QC>(user, market_account_id_1);
-    }
-
-    #[test(
-        econia = @econia,
-        user = @user
-    )]
-    /// Verify adding an ask, then removing it
-    fun test_register_remove_order_internal_ask(
-        econia: &signer,
-        user: &signer
-    ) acquires
-        Collateral,
-        MarketAccounts
-    {
-        // Register a pure coin market for trading
-        let (_, _, _, _, lot_size, tick_size, _, market_id) =
-            registry::register_market_internal_multiple_test(econia);
-        // Declare user-specific general custodian ID
-        let general_custodian_id = NO_CUSTODIAN;
-        // Declare order parameters
-        let side = ASK;
-        let counter = 123;
-        let price = 456;
-        let order_id = order_id::order_id(price, counter, side);
-        let size = 789;
-        let base_required = lot_size * size;
-        let quote_received = size * price * tick_size;
-        // Register user with a market account for given market
-        register_market_account<BC, QC>(user, market_id, general_custodian_id);
-        // Get market account ID
-        let market_account_id = get_market_account_id(market_id,
-            general_custodian_id);
-        // Deposit enough base coins to cover the ask
-        deposit_coins<BC>(@user, market_id, general_custodian_id,
-            assets::mint<BC>(econia, base_required));
-        // Register user's market account with given order
-        register_order_internal(@user, market_account_id, side, order_id,
-            size, price, lot_size, tick_size);
-        // Get asset counts
-        let ( base_total,  base_available,  base_ceiling,
-             quote_total, quote_available, quote_ceiling,
-        ) = get_asset_counts_test(@user, market_account_id);
-        // Assert asset counts
-        assert!(base_total      ==  base_required, 0);
-        assert!(base_available  ==              0, 0);
-        assert!(base_ceiling    ==  base_required, 0);
-        assert!(quote_total     ==              0, 0);
-        assert!(quote_available ==              0, 0);
-        assert!(quote_ceiling   == quote_received, 0);
-        // Assert order added to corresponding tree with correct size
-        assert!(get_order_size_test(@user, market_account_id, side, order_id)
-            == size, 0);
-        // Remove the order from the user's market account
-        remove_order_internal(@user, market_account_id, lot_size, tick_size,
-            side, order_id);
-        // Get asset counts
-        ( base_total,  base_available,  base_ceiling,
-         quote_total, quote_available, quote_ceiling,
-        ) = get_asset_counts_test(@user, market_account_id);
-        // Assert asset counts
-        assert!(base_total      == base_required, 0);
-        assert!(base_available  == base_required, 0);
-        assert!(base_ceiling    == base_required, 0);
-        assert!(quote_total     ==             0, 0);
-        assert!(quote_available ==             0, 0);
-        assert!(quote_ceiling   ==             0, 0);
-        assert!( // Assert user no longer has order in market account
-            !has_order_test(@user, market_account_id, side, order_id), 0);
-    }
-
-    #[test(
-        econia = @econia,
-        user = @user
-    )]
-    /// Verify adding a bid, then removing it
-    fun test_register_remove_order_internal_bid(
-        econia: &signer,
-        user: &signer
-    ) acquires
-        Collateral,
-        MarketAccounts
-    {
-        // Register a pure coin market for trading
-        let (_, _, _, _, lot_size, tick_size, _, market_id) =
-            registry::register_market_internal_multiple_test(econia);
-        // Declare user-specific general custodian ID
-        let general_custodian_id = NO_CUSTODIAN;
-        // Declare order parameters
-        let side = BID;
-        let counter = 123;
-        let price = 456;
-        let order_id = order_id::order_id(price, counter, side);
-        let size = 789;
-        let base_received = lot_size * size;
-        let quote_required = size * price * tick_size;
-        // Register user with a market account for given market
-        register_market_account<BC, QC>(user, market_id, general_custodian_id);
-        // Get market account ID
-        let market_account_id = get_market_account_id(market_id,
-            general_custodian_id);
-        // Deposit enough quote coins to cover the bid
-        deposit_coins<QC>(@user, market_id, general_custodian_id,
-            assets::mint<QC>(econia, quote_required));
-        // Register user's market account with given order
-        register_order_internal(@user, market_account_id, side, order_id,
-            size, price, lot_size, tick_size);
-        // Get asset counts
-        let ( base_total,  base_available,  base_ceiling,
-             quote_total, quote_available, quote_ceiling,
-        ) = get_asset_counts_test(@user, market_account_id);
-        // Assert asset counts
-        assert!(base_total      ==              0, 0);
-        assert!(base_available  ==              0, 0);
-        assert!(base_ceiling    ==  base_received, 0);
-        assert!(quote_total     == quote_required, 0);
-        assert!(quote_available ==              0, 0);
-        assert!(quote_ceiling   == quote_required, 0);
-        // Assert order added to corresponding tree with correct size
-        assert!(get_order_size_test(@user, market_account_id, side, order_id)
-            == size, 0);
-        // Remove the order from the user's market account
-        remove_order_internal(@user, market_account_id, lot_size, tick_size,
-            side, order_id);
-        // Get asset counts
-        ( base_total,  base_available,  base_ceiling,
-         quote_total, quote_available, quote_ceiling,
-        ) = get_asset_counts_test(@user, market_account_id);
-        // Assert asset counts
-        assert!(base_total      ==              0, 0);
-        assert!(base_available  ==              0, 0);
-        assert!(base_ceiling    ==              0, 0);
-        assert!(quote_total     == quote_required, 0);
-        assert!(quote_available == quote_required, 0);
-        assert!(quote_ceiling   == quote_required, 0);
-        assert!( // Assert user no longer has order in market account
-            !has_order_test(@user, market_account_id, side, order_id), 0);
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 7)]
-    /// Verify failure for no market accounts
-    fun test_verify_market_account_exists_no_market_accounts()
-    acquires MarketAccounts {
-        // Attempt invalid invocation
-        verify_market_account_exists(@user, get_market_account_id(1, 2));
-    }
-
-    #[test(
-        econia = @econia,
-        user = @user
-    )]
-    #[expected_failure(abort_code = 3)]
-    /// Verify failure for wrong market account
-    fun test_verify_market_account_exists_wrong_market_account(
-        econia: &signer,
-        user: &signer
-    ) acquires
-        Collateral,
-        MarketAccounts
-    {
-        // Register user with pure generic market account
-        let (market_account_id, _) = register_user_with_market_accounts_test(
-            econia, user, NO_CUSTODIAN, NO_CUSTODIAN);
-        // Attempt invalid existence verification
-        verify_market_account_exists(@user, market_account_id + 1);
-    }
-
-    #[test(
-        econia = @econia,
-        user = @user
-    )]
-    #[expected_failure(abort_code = 4)]
-    /// Verify failure for attempting to withdraw more than available
-    fun test_withdraw_asset_not_enough_asset_available(
-        econia: &signer,
-        user: &signer
-    ) acquires
-        Collateral,
-        MarketAccounts
-    {
-        // Register user to trade on generic asset market
-        let (market_account_id, _) = register_user_with_market_accounts_test(
-            econia, user, NO_CUSTODIAN, NO_CUSTODIAN);
-        let empty_option = // Attempt invalid invocation
-            withdraw_asset<BG>(@user, market_account_id, 1, false, 1);
-        option::destroy_none(empty_option); // Destroy empty result
-    }
-
-    #[test(
-        econia = @econia,
-        user = @user
-    )]
-    /// Verify state for withdrawing generic and coin assets
-    fun test_withdraw_assets_mixed(
-        econia: &signer,
-        user: &signer
-    ) acquires
-        Collateral,
-        MarketAccounts
-    {
-        // Declare asset count deposit parameters
-        let coin_deposit_amount = 700;
-        let generic_deposit_amount = 500;
-        let coin_withdrawal_amount = 600;
-        let generic_withdrawal_amount = generic_deposit_amount;
-        let coin_end_amount = coin_deposit_amount - coin_withdrawal_amount;
-        let generic_end_amount = 0;
-        let coinstore_end_amount = coin_withdrawal_amount;
-        // Declare user-level general custodian ID
-        let general_custodian_id = NO_CUSTODIAN;
-        assets::init_coin_types(econia); // Initialize coin types
-        registry::init_registry(econia); // Initalize registry
-        // Register a custodian capability
-        let custodian_capability = registry::register_custodian_capability();
-        // Get ID of custodian capability
-        let generic_asset_transfer_custodian_id = registry::custodian_id(
-            &custodian_capability);
-        // Register market with generic base asset and coin quote asset
-        registry::register_market_internal<BG, QC>(@econia, 1, 2,
-            generic_asset_transfer_custodian_id);
-        let market_id = 0; // Declare market ID
-        let market_account_id =  // Declare market account ID
-            get_market_account_id(market_id, general_custodian_id);
-        // Register user to trade on the account
-        register_market_account<BG, QC>(user, market_id, general_custodian_id);
-        account::create_account_for_test(@user); // Create account
-        coin::register<QC>(user); // Register coin store
-        coin::deposit(@user, assets::mint<QC>(econia, coin_deposit_amount));
-        // Deposit coin asset
-        deposit_from_coinstore<QC>(user, market_id, general_custodian_id,
-            coin_deposit_amount);
-        // Deposit generic asset
-        deposit_generic_asset<BG>(@user, market_id, general_custodian_id,
-            generic_deposit_amount, &custodian_capability);
-        // Withdraw coin asset to coinstore
-        withdraw_to_coinstore<QC>(user, market_id, coin_withdrawal_amount);
-        // Withdraw generic asset
-        withdraw_generic_asset<BG>(@user, market_id, general_custodian_id,
-            generic_withdrawal_amount, &custodian_capability);
-        // Destroy custodian capability
-        registry::destroy_custodian_capability_test(custodian_capability);
-        // Assert state
-        let ( base_total,  base_available,  base_ceiling,
-             quote_total, quote_available, quote_ceiling) =
-            get_asset_counts_test(@user, market_account_id);
-        assert!(base_total      == generic_end_amount, 0);
-        assert!(base_available  == generic_end_amount, 0);
-        assert!(base_ceiling    == generic_end_amount, 0);
-        assert!(quote_total     == coin_end_amount,    0);
-        assert!(quote_available == coin_end_amount,    0);
-        assert!(quote_ceiling   == coin_end_amount,    0);
-        assert!(get_collateral_value_test<QC>(@user, market_account_id) ==
-            coin_end_amount, 0);
-        assert!(coin::balance<QC>(@user) == coinstore_end_amount, 0);
-    }
-
-    #[test(
-        econia = @econia,
-        user = @user
-    )]
-    /// Verify successful withdrawal
-    fun test_withdraw_coins_custodian_success(
-        econia: &signer,
-        user: &signer
-    ) acquires
-        Collateral,
-        MarketAccounts
-    {
-        // Declare user-specific general custodian ID
-        let general_custodian_id = 3;
-        // Declare asset count deposit parameters
-        let coin_deposit_amount = 700;
-        let coin_withdrawal_amount = 600;
-        let coin_end_amount = coin_deposit_amount - coin_withdrawal_amount;
-        // Register user to trade on pure coin market
-        let (_, market_account_id) = register_user_with_market_accounts_test(
-            econia, user, NO_CUSTODIAN, general_custodian_id);
-        // Extract market ID
-        let market_id = get_market_id(market_account_id);
-        // Get custodian capability
-        let custodian_capability =
-            registry::get_custodian_capability_test(general_custodian_id);
-        // Deposit coins to market account
-        deposit_coins<QC>(@user, market_id, general_custodian_id,
-            assets::mint<QC>(econia, coin_deposit_amount));
-        // Withdraw from market account
-        let coins = withdraw_coins_custodian<QC>(@user, market_id,
-            coin_withdrawal_amount, &custodian_capability);
-        // Assert raw coin value
-        assert!(coin::value(&coins) == coin_withdrawal_amount, 0);
-        // Assert market account state
-        let (_, _, _, quote_total, quote_available, quote_ceiling) =
-            get_asset_counts_test(@user, market_account_id);
-        assert!(quote_total     == coin_end_amount, 0);
-        assert!(quote_available == coin_end_amount, 0);
-        assert!(quote_ceiling   == coin_end_amount, 0);
-        assert!(get_collateral_value_test<QC>(@user, market_account_id) ==
-            coin_end_amount, 0);
-        // Destroy resources
-        registry::destroy_custodian_capability_test(custodian_capability);
-        assets::burn(coins);
-    }
-
-    #[test(
-        econia = @econia,
-        user = @user
-    )]
-    /// Verify successful withdrawal
-    fun test_withdraw_coins_internal_success(
-        econia: &signer,
-        user: &signer
-    ) acquires
-        Collateral,
-        MarketAccounts
-    {
-        // Declare user-specific general custodian ID
-        let general_custodian_id = 3;
-        // Declare asset count deposit parameters
-        let coin_deposit_amount = 700;
-        let coin_withdrawal_amount = 600;
-        let coin_end_amount = coin_deposit_amount - coin_withdrawal_amount;
-        // Register user to trade on pure coin market
-        let (_, market_account_id) = register_user_with_market_accounts_test(
-            econia, user, NO_CUSTODIAN, general_custodian_id);
-        // Extract market ID
-        let market_id = get_market_id(market_account_id);
-        // Get custodian capability
-        let custodian_capability =
-            registry::get_custodian_capability_test(general_custodian_id);
-        // Deposit coins to market account
-        deposit_coins<QC>(@user, market_id, general_custodian_id,
-            assets::mint<QC>(econia, coin_deposit_amount));
-        // Withdraw from market account
-        let option_coins = withdraw_coins_as_option_internal<QC>(@user,
-            market_account_id, coin_withdrawal_amount);
-        // Assert coin value
-        assert!(coin::value(option::borrow(&option_coins)) ==
-            coin_withdrawal_amount, 0);
-        // Assert market account state
-        let (_, _, _, quote_total, quote_available, quote_ceiling) =
-            get_asset_counts_test(@user, market_account_id);
-        assert!(quote_total     == coin_end_amount, 0);
-        assert!(quote_available == coin_end_amount, 0);
-        assert!(quote_ceiling   == coin_end_amount, 0);
-        assert!(get_collateral_value_test<QC>(@user, market_account_id) ==
-            coin_end_amount, 0);
-        // Destroy resources
-        registry::destroy_custodian_capability_test(custodian_capability);
-        assets::burn(option::destroy_some(option_coins));
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 13)]
-    /// Verify failure for not a coin asset type
-    fun test_withdraw_coins_not_coins()
+    /// Verify state updates for:
+    ///
+    /// * Filling an ask.
+    /// * Fill is complete.
+    /// * Inactive stack top not null.
+    /// * Base asset is coin.
+    fun test_fill_order_internal_ask_complete_base_coin()
     acquires
         Collateral,
         MarketAccounts
     {
-        // Attempt invalid invocation, burning result
-        assets::burn(withdraw_coins<BG>(@user, 1, 1, 1));
+        // Register test markets, get market account ID for pure coin
+        // market with delegated custodian.
+        let (_, _, market_account_id, _, _) = register_market_accounts_test();
+        // Define order parameters.
+        let market_order_id            = 1234;
+        let size                       = 789;
+        let price                      = 321;
+        let side                       = ASK;
+        let complete_fill              = true;
+        let order_access_key_filled    = 1;
+        let order_access_key_cancelled = 2;
+        // Calculate base asset and quote asset fill amounts.
+        let base_fill = size * LOT_SIZE_PURE_COIN;
+        let quote_fill = size * price * TICK_SIZE_PURE_COIN;
+        // Deposit starting base and quote coins.
+        deposit_coins<BC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(BASE_START));
+        deposit_coins<QC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(QUOTE_START));
+        // Place order.
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                             size, price, market_order_id);
+        // Place duplicate order then cancel, so stack is not empty.
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                             size, price, market_order_id);
+        cancel_order_internal(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, price,
+            order_access_key_cancelled, market_order_id);
+        // Initialize external coins passing through matching engine.
+        let optional_base_coins = option::some(coin::zero());
+        let quote_coins = assets::mint_test(quote_fill);
+        // Fill order, storing base and quote coins for matching engine,
+        // and market order ID.
+        (optional_base_coins, quote_coins, market_order_id) =
+            fill_order_internal<BC, QC>(
+                @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                order_access_key_filled, size, complete_fill,
+                optional_base_coins, quote_coins, base_fill, quote_fill);
+        // Assert market order ID.
+        assert!(market_order_id == market_order_id, 0);
+        // Assert external coin values after order fill.
+        let base_coins = option::destroy_some(optional_base_coins);
+        assert!(coin::value(&base_coins) == base_fill, 0);
+        assert!(coin::value(&quote_coins) == 0, 0);
+        // Destroy external coins.
+        assets::burn(base_coins);
+        coin::destroy_zero(quote_coins);
+        // Assert inactive stack top.
+        assert!(get_inactive_stack_top_test(
+            @user, market_account_id, side) == order_access_key_filled, 0);
+        assert!(!is_order_active_test( // Assert order marked inactive.
+            @user, market_account_id, side, order_access_key_filled), 0);
+        // Assert next inactive node field.
+        assert!(get_next_inactive_order_test(
+            @user, market_account_id, side, order_access_key_filled)
+            == order_access_key_cancelled, 0);
+        // Assert asset counts.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            get_asset_counts_internal(
+                @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID);
+        assert!(base_total      == BASE_START - base_fill, 0);
+        assert!(base_available  == BASE_START - base_fill, 0);
+        assert!(base_ceiling    == BASE_START - base_fill, 0);
+        assert!(quote_total     == QUOTE_START + quote_fill, 0);
+        assert!(quote_available == QUOTE_START + quote_fill, 0);
+        assert!(quote_ceiling   == QUOTE_START + quote_fill, 0);
+        // Assert collateral amounts.
+        assert!(get_collateral_value_test<BC>(
+            @user, market_account_id) == BASE_START - base_fill, 0);
+        assert!(get_collateral_value_test<QC>(
+            @user, market_account_id) == QUOTE_START + quote_fill, 0);
     }
 
-    #[test(
-        econia = @econia,
-        user = @user
-    )]
-    /// Verify state for withdrawing, depositing generic and coin assets
-    fun test_withdraw_deposit_asset_as_option_internal_mixed(
-        econia: &signer,
-        user: &signer
-    ) acquires
+    #[test]
+    /// Verify state updates for:
+    ///
+    /// * Filling a bid.
+    /// * Fill is complete.
+    /// * Inactive stack top is null.
+    /// * Base asset is coin.
+    fun test_fill_order_internal_bid_complete_base_coin()
+    acquires
         Collateral,
         MarketAccounts
     {
-        // Declare asset count deposit parameters
-        let coin_deposit_amount = 700;
-        let generic_deposit_amount = 500;
-        let coin_withdrawal_amount = 600;
-        let generic_withdrawal_amount = generic_deposit_amount;
-        let coin_end_amount = coin_deposit_amount - coin_withdrawal_amount;
-        let generic_end_amount = 0;
-        // Declare user-level general custodian ID
-        let general_custodian_id = NO_CUSTODIAN;
-        assets::init_coin_types(econia); // Initialize coin types
-        registry::init_registry(econia); // Initalize registry
-        // Register a custodian capability
-        let custodian_capability = registry::register_custodian_capability();
-        // Get ID of custodian capability
-        let generic_asset_transfer_custodian_id = registry::custodian_id(
-            &custodian_capability);
-        // Register market with generic base asset and coin quote asset
-        registry::register_market_internal<BG, QC>(@econia, 1, 2,
-            generic_asset_transfer_custodian_id);
-        let market_id = 0; // Declare market ID
-        let market_account_id =  // Declare market account ID
-            get_market_account_id(market_id, general_custodian_id);
-        // Register user to trade on the account
-        register_market_account<BG, QC>(user, market_id, general_custodian_id);
-        account::create_account_for_test(@user); // Create account
-        coin::register<QC>(user); // Register coin store
-        coin::deposit(@user, assets::mint<QC>(econia, coin_deposit_amount));
-        // Deposit coin asset
-        deposit_from_coinstore<QC>(user, market_id, general_custodian_id,
-            coin_deposit_amount);
-        // Deposit generic asset
-        deposit_generic_asset<BG>(@user, market_id, general_custodian_id,
-            generic_deposit_amount, &custodian_capability);
-        // Withdraw base/coin assets as option
-        let (generic_as_option, coin_as_option) =
-            withdraw_assets_as_option_internal<BG, QC>(
-                @user, market_account_id, generic_withdrawal_amount,
-                coin_withdrawal_amount, generic_asset_transfer_custodian_id);
-        // Destroy custodian capability
-        registry::destroy_custodian_capability_test(custodian_capability);
-        // Assert market account asset counts
-        let ( base_total,  base_available,  base_ceiling,
+        // Register test markets, get market account ID for pure coin
+        // market with delegated custodian.
+        let (_, _, market_account_id, _, _) = register_market_accounts_test();
+        // Define order parameters.
+        let market_order_id            = 1234;
+        let size                       = 789;
+        let price                      = 321;
+        let side                       = BID;
+        let complete_fill              = true;
+        let order_access_key_filled    = 1;
+        // Calculate base asset and quote asset fill amounts.
+        let base_fill = size * LOT_SIZE_PURE_COIN;
+        let quote_fill = size * price * TICK_SIZE_PURE_COIN;
+        // Deposit starting base and quote coins.
+        deposit_coins<BC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(BASE_START));
+        deposit_coins<QC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(QUOTE_START));
+        // Place order.
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                             size, price, market_order_id);
+        // Initialize external coins passing through matching engine.
+        let optional_base_coins = option::some(assets::mint_test(base_fill));
+        let quote_coins = coin::zero();
+        // Fill order, storing base and quote coins for matching engine,
+        // and market order ID.
+        (optional_base_coins, quote_coins, market_order_id) =
+            fill_order_internal<BC, QC>(
+                @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                order_access_key_filled, size, complete_fill,
+                optional_base_coins, quote_coins, base_fill, quote_fill);
+        // Assert market order ID.
+        assert!(market_order_id == market_order_id, 0);
+        // Assert external coin values after order fill.
+        let base_coins = option::destroy_some(optional_base_coins);
+        assert!(coin::value(&base_coins) == 0, 0);
+        assert!(coin::value(&quote_coins) == quote_fill, 0);
+        // Destroy external coins.
+        coin::destroy_zero(base_coins);
+        assets::burn(quote_coins);
+        // Assert inactive stack top.
+        assert!(get_inactive_stack_top_test(
+            @user, market_account_id, side) == order_access_key_filled, 0);
+        assert!(!is_order_active_test( // Assert order marked inactive.
+            @user, market_account_id, side, order_access_key_filled), 0);
+        // Assert next inactive node field.
+        assert!(get_next_inactive_order_test(
+            @user, market_account_id, side, order_access_key_filled)
+            == NIL, 0);
+        // Assert asset counts.
+        let (base_total , base_available , base_ceiling,
              quote_total, quote_available, quote_ceiling) =
-            get_asset_counts_test(@user, market_account_id);
-        assert!(base_total      == generic_end_amount, 0);
-        assert!(base_available  == generic_end_amount, 0);
-        assert!(base_ceiling    == generic_end_amount, 0);
-        assert!(quote_total     == coin_end_amount,    0);
-        assert!(quote_available == coin_end_amount,    0);
-        assert!(quote_ceiling   == coin_end_amount,    0);
-        assert!(get_collateral_value_test<QC>(@user, market_account_id) ==
-            coin_end_amount, 0);
-        // Assert generic asset option is none
-        assert!(option::is_none(&generic_as_option), 0);
-        // Assert coin value is as expected
-        assert!(coin::value(option::borrow(&coin_as_option)) ==
-            coin_withdrawal_amount, 0);
-        // Deposit both withdrawn assets back to user's market account
-        deposit_assets_as_option_internal<BG, QC>(@user, market_account_id,
-            generic_withdrawal_amount, coin_withdrawal_amount,
-            generic_as_option, coin_as_option,
-            generic_asset_transfer_custodian_id);
-        // Assert market account asset counts
-        let ( base_total,  base_available,  base_ceiling,
-             quote_total, quote_available, quote_ceiling) =
-            get_asset_counts_test(@user, market_account_id);
-        assert!(base_total      == generic_deposit_amount, 0);
-        assert!(base_available  == generic_deposit_amount, 0);
-        assert!(base_ceiling    == generic_deposit_amount, 0);
-        assert!(quote_total     == coin_deposit_amount,    0);
-        assert!(quote_available == coin_deposit_amount,    0);
-        assert!(quote_ceiling   == coin_deposit_amount,    0);
-        assert!(get_collateral_value_test<QC>(@user, market_account_id) ==
-            coin_deposit_amount, 0);
+            get_asset_counts_internal(
+                @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID);
+        assert!(base_total      == BASE_START + base_fill, 0);
+        assert!(base_available  == BASE_START + base_fill, 0);
+        assert!(base_ceiling    == BASE_START + base_fill, 0);
+        assert!(quote_total     == QUOTE_START - quote_fill, 0);
+        assert!(quote_available == QUOTE_START - quote_fill, 0);
+        assert!(quote_ceiling   == QUOTE_START - quote_fill, 0);
+        // Assert collateral amounts.
+        assert!(get_collateral_value_test<BC>(
+            @user, market_account_id) == BASE_START + base_fill, 0);
+        assert!(get_collateral_value_test<QC>(
+            @user, market_account_id) == QUOTE_START - quote_fill, 0);
     }
 
-    #[test(econia = @econia)]
+    #[test]
+    /// Verify state updates for:
+    ///
+    /// * Filling a bid.
+    /// * Fill is not complete.
+    /// * Base asset is generic.
+    fun test_fill_order_internal_bid_partial_base_generic()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register test markets, get market account ID for generic
+        // market with delegated custodian.
+        let (_, _, _, _, market_account_id) = register_market_accounts_test();
+        // Define order parameters.
+        let market_order_id            = 1234;
+        let size                       = 789;
+        let fill_size                  = size - 1;
+        let price                      = 321;
+        let side                       = BID;
+        let complete_fill              = false;
+        let order_access_key_filled    = 1;
+        // Calculate change in base ceiling and quote available if
+        // order were completely filled.
+        let base_ceiling_delta = size * LOT_SIZE_GENERIC;
+        let quote_available_delta = size * price * TICK_SIZE_GENERIC;
+        // Calculate base asset and quote asset fill amounts.
+        let base_fill = fill_size * LOT_SIZE_GENERIC;
+        let quote_fill = fill_size * price * TICK_SIZE_GENERIC;
+        // Deposit starting quote coins.
+        deposit_coins<QC>(@user, MARKET_ID_GENERIC, CUSTODIAN_ID,
+                          assets::mint_test(QUOTE_START));
+        // Place order.
+        place_order_internal(@user, MARKET_ID_GENERIC, CUSTODIAN_ID, side,
+                             size, price, market_order_id);
+        // Initialize external coins passing through matching engine.
+        let optional_base_coins = option::none();
+        let quote_coins = coin::zero();
+        // Fill order, storing base and quote coins for matching engine,
+        // and market order ID.
+        (optional_base_coins, quote_coins, market_order_id) =
+            fill_order_internal<GenericAsset, QC>(
+                @user, MARKET_ID_GENERIC, CUSTODIAN_ID, side,
+                order_access_key_filled, fill_size, complete_fill,
+                optional_base_coins, quote_coins, base_fill, quote_fill);
+        // Assert market order ID.
+        assert!(market_order_id == market_order_id, 0);
+        // Assert quote coin values after order fill.
+        assert!(coin::value(&quote_coins) == quote_fill, 0);
+        // Destroy external coins.
+        option::destroy_none(optional_base_coins);
+        assets::burn(quote_coins);
+        // Assert inactive stack top.
+        assert!(get_inactive_stack_top_test(
+            @user, market_account_id, side) == NIL, 0);
+        assert!(is_order_active_test( // Assert order marked active.
+            @user, market_account_id, side, order_access_key_filled), 0);
+        // Assert order field returns.
+        let (market_order_id_r, size_r) = get_order_fields_test(
+            @user, market_account_id, side, order_access_key_filled);
+        assert!(market_order_id_r == market_order_id, 0);
+        assert!(size_r == size - fill_size, 0);
+        // Assert asset counts.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            get_asset_counts_internal(
+                @user, MARKET_ID_GENERIC, CUSTODIAN_ID);
+        assert!(base_total      == base_fill, 0);
+        assert!(base_available  == base_fill, 0);
+        assert!(base_ceiling    == base_ceiling_delta, 0);
+        assert!(quote_total     == QUOTE_START - quote_fill, 0);
+        assert!(quote_available == QUOTE_START - quote_available_delta, 0);
+        assert!(quote_ceiling   == QUOTE_START - quote_fill, 0);
+        assert!(!has_collateral_test<GenericAsset>(
+            @user, market_account_id), 0);
+        assert!(get_collateral_value_test<QC>(
+            @user, market_account_id) == QUOTE_START - quote_fill, 0);
+    }
+
+    #[test]
+    /// Verify expected returns.
+    fun test_get_active_market_order_ids_internal()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register test market accounts.
+        register_market_accounts_test();
+        // Define order parameters.
+        let market_order_id_1 = 123;
+        let market_order_id_2 = 234;
+        let market_order_id_3 = 345;
+        let market_order_id_4 = 456;
+        let size              = MIN_SIZE_PURE_COIN;
+        let price             = 1;
+        // Deposit starting base and quote coins.
+        deposit_coins<BC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(BASE_START));
+        deposit_coins<QC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(QUOTE_START));
+        // Assert empty returns.
+        assert!(get_active_market_order_ids_internal(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, ASK) == vector[], 0);
+        assert!(get_active_market_order_ids_internal(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, BID) == vector[], 0);
+        // Place three asks, then cancel second ask.
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, ASK,
+                             size, price, market_order_id_1);
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, ASK,
+                             size, price, market_order_id_2);
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, ASK,
+                             size, price, market_order_id_3);
+        cancel_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, ASK,
+                              price, 2, market_order_id_2);
+        // Get expected market order IDs vector.
+        let expected = vector[market_order_id_1, market_order_id_3];
+        // Assert expected return.
+        assert!(get_active_market_order_ids_internal(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, ASK) == expected, 0);
+        // Place single bid.
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, BID,
+                             size, price, market_order_id_4);
+        // Get expected market order IDs vector.
+        expected = vector[market_order_id_4];
+        // Assert expected return.
+        assert!(get_active_market_order_ids_internal(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, BID) == expected, 0);
+        // Cancel order.
+        cancel_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, BID,
+                              price, 1, market_order_id_4);
+        // Assert expected return.
+        assert!(get_active_market_order_ids_internal(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, BID) == vector[], 0);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 3)]
+    /// Verify failure for no market account resource.
+    fun test_get_active_market_order_ids_internal_no_account()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register test market accounts.
+        register_market_accounts_test();
+        // Attempt invalid invocation.
+        get_active_market_order_ids_internal(
+            @user, MARKET_ID_PURE_COIN + 10, CUSTODIAN_ID, BID);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 2)]
+    /// Verify failure for no market accounts resource.
+    fun test_get_active_market_order_ids_internal_no_accounts()
+    acquires MarketAccounts {
+        // Attempt invalid invocation.
+        get_active_market_order_ids_internal(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, BID);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 3)]
+    /// Verify failure for no market account resource.
+    fun test_get_asset_counts_internal_no_account()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register test market accounts.
+        register_market_accounts_test();
+        // Attempt invalid invocation.
+        get_asset_counts_internal(@user, 0, 0);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 2)]
+    /// Verify failure for no market accounts resource.
+    fun test_get_asset_counts_internal_no_accounts()
+    acquires MarketAccounts {
+        // Attempt invalid invocation.
+        get_asset_counts_internal(@user, 0, 0);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 3)]
+    /// Verify failure for no market account.
+    fun test_get_next_order_access_key_internal_no_account()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register test market accounts.
+        register_market_accounts_test();
+        // Attempt invalid invocation.
+        get_next_order_access_key_internal(@user, 0, 0, ASK);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 2)]
+    /// Verify failure for no market accounts.
+    fun test_get_next_order_access_key_internal_no_accounts()
+    acquires MarketAccounts {
+        // Attempt invalid invocation.
+        get_next_order_access_key_internal(@user, 0, 0, ASK);
+    }
+
+    #[test]
+    /// Verify valid returns.
+    fun test_market_account_getters()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Get market account IDs for test accounts.
+        let market_account_id_coin_self = get_market_account_id(
+            MARKET_ID_PURE_COIN, NO_CUSTODIAN);
+        let market_account_id_coin_delegated = get_market_account_id(
+            MARKET_ID_PURE_COIN, CUSTODIAN_ID);
+        let market_account_id_generic_self = get_market_account_id(
+            MARKET_ID_GENERIC  , NO_CUSTODIAN);
+        let market_account_id_generic_delegated = get_market_account_id(
+            MARKET_ID_GENERIC  , CUSTODIAN_ID);
+        // Assert empty returns.
+        assert!(get_all_market_account_ids_for_market_id(
+                @user, MARKET_ID_PURE_COIN) == vector[], 0);
+        assert!(get_all_market_account_ids_for_market_id(
+                @user, MARKET_ID_GENERIC) == vector[], 0);
+        assert!(get_all_market_account_ids_for_user(
+                @user) == vector[], 0);
+        // Assert false returns.
+        assert!(!has_market_account_by_market_account_id(
+                @user, market_account_id_coin_self), 0);
+        assert!(!has_market_account_by_market_account_id(
+                @user, market_account_id_coin_delegated), 0);
+        assert!(!has_market_account_by_market_account_id(
+                @user, market_account_id_generic_self), 0);
+        assert!(!has_market_account_by_market_account_id(
+                @user, market_account_id_generic_delegated), 0);
+        assert!(!has_market_account_by_market_id(
+                @user, MARKET_ID_PURE_COIN), 0);
+        assert!(!has_market_account_by_market_id(
+                @user, MARKET_ID_GENERIC), 0);
+        register_market_accounts_test(); // Register market accounts.
+        // Assert empty returns.
+        assert!(get_all_market_account_ids_for_market_id(
+                @user, 123) == vector[], 0);
+        // Get signer for another test user account.
+        let user_1 = account::create_signer_with_capability(
+            &account::create_test_signer_cap(@user_1));
+        // Move to another user empty market accounts resource.
+        move_to<MarketAccounts>(&user_1, MarketAccounts{
+            map: table::new(), custodians: tablist::new()});
+        // Assert empty returns.
+        assert!(get_all_market_account_ids_for_user(
+                @user_1) == vector[], 0);
+        // Assert non-empty returns.
+        let expected_ids = vector[market_account_id_coin_self,
+                                  market_account_id_coin_delegated];
+        assert!(get_all_market_account_ids_for_market_id(
+                @user, MARKET_ID_PURE_COIN) == expected_ids, 0);
+        expected_ids = vector[market_account_id_generic_self,
+                              market_account_id_generic_delegated];
+        assert!(get_all_market_account_ids_for_market_id(
+                @user, MARKET_ID_GENERIC) == expected_ids, 0);
+        expected_ids = vector[market_account_id_coin_self,
+                              market_account_id_coin_delegated,
+                              market_account_id_generic_self,
+                              market_account_id_generic_delegated];
+        assert!(get_all_market_account_ids_for_user(
+                @user) == expected_ids, 0);
+        // Assert true returns.
+        assert!(has_market_account_by_market_account_id(
+                @user, market_account_id_coin_self), 0);
+        assert!(has_market_account_by_market_account_id(
+                @user, market_account_id_coin_delegated), 0);
+        assert!(has_market_account_by_market_account_id(
+                @user, market_account_id_generic_self), 0);
+        assert!(has_market_account_by_market_account_id(
+                @user, market_account_id_generic_delegated), 0);
+        assert!(has_market_account_by_market_id(
+                @user, MARKET_ID_PURE_COIN), 0);
+        assert!(has_market_account_by_market_id(
+                @user, MARKET_ID_GENERIC), 0);
+        // Assert false returns.
+        assert!(!has_market_account_by_market_account_id(
+                @user_1, market_account_id_coin_self), 0);
+        assert!(!has_market_account_by_market_account_id(
+                @user_1, market_account_id_coin_delegated), 0);
+        assert!(!has_market_account_by_market_account_id(
+                @user_1, market_account_id_generic_self), 0);
+        assert!(!has_market_account_by_market_account_id(
+                @user_1, market_account_id_generic_delegated), 0);
+        assert!(!has_market_account_by_market_id(
+                @user_1, MARKET_ID_PURE_COIN), 0);
+        assert!(!has_market_account_by_market_id(
+                @user_1, MARKET_ID_GENERIC), 0);
+    }
+
+    #[test]
+    /// Verify valid returns
+    fun test_market_account_id_getters() {
+        let market_id =    u_64_by_32(b"10000000000000000000000000000000",
+                                      b"00000000000000000000000000000001");
+        let custodian_id = u_64_by_32(b"11000000000000000000000000000000",
+                                      b"00000000000000000000000000000011");
+        let market_account_id = get_market_account_id(market_id, custodian_id);
+        assert!(market_account_id ==
+                          u_128_by_32(b"10000000000000000000000000000000",
+                                      b"00000000000000000000000000000001",
+                                      b"11000000000000000000000000000000",
+                                      b"00000000000000000000000000000011"), 0);
+        assert!(get_market_id(market_account_id) == market_id, 0);
+        assert!(get_custodian_id(market_account_id) == custodian_id, 0);
+    }
+
+    #[test]
+    /// Verify valid state updates for placing and cancelling an ask,
+    /// and next order access key lookup returns.
+    fun test_place_cancel_order_ask()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register test markets, get market account ID for pure coin
+        // market with delegated custodian.
+        let (_, _, market_account_id, _, _) = register_market_accounts_test();
+        // Define order parameters.
+        let market_order_id  = 1234;
+        let size             = 789;
+        let price            = 321;
+        let side             = ASK;
+        let order_access_key = 1;
+        // Calculate change in base asset and quote asset fields.
+        let base_delta = size * LOT_SIZE_PURE_COIN;
+        let quote_delta = size * price * TICK_SIZE_PURE_COIN;
+        // Deposit starting base and quote coins.
+        deposit_coins<BC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(BASE_START));
+        deposit_coins<QC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(QUOTE_START));
+        // Assert inactive stack top on given side.
+        assert!(get_inactive_stack_top_test(@user, market_account_id, side)
+                == NIL, 0);
+        // Assert next order access key.
+        assert!(get_next_order_access_key_internal(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side) == 1, 0);
+        // Place order.
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                             size, price, market_order_id);
+        // Assert asset counts.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            get_asset_counts_internal(
+                @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID);
+        assert!(base_total      == BASE_START , 0);
+        assert!(base_available  == BASE_START - base_delta, 0);
+        assert!(base_ceiling    == BASE_START , 0);
+        assert!(quote_total     == QUOTE_START, 0);
+        assert!(quote_available == QUOTE_START, 0);
+        assert!(quote_ceiling   == QUOTE_START + quote_delta, 0);
+        // Assert inactive stack top on given side.
+        assert!(get_inactive_stack_top_test(@user, market_account_id, side)
+                == NIL, 0);
+        // Assert next order access key.
+        assert!(get_next_order_access_key_internal(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side) == 2, 0);
+        // Assert order fields.
+        let (market_order_id_r, size_r) = get_order_fields_test(
+            @user, market_account_id, side, order_access_key);
+        assert!(market_order_id_r == market_order_id, 0);
+        assert!(size_r == size, 0);
+        // Evict order, storing returned market order ID.
+        market_order_id_r = cancel_order_internal(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, price,
+            order_access_key, (NIL as u128));
+        // Assert returned market order ID.
+        assert!(market_order_id_r == market_order_id, 0);
+        // Assert next order access key.
+        assert!(get_next_order_access_key_internal(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side) == 1, 0);
+        // Assert asset counts.
+        (base_total , base_available , base_ceiling,
+         quote_total, quote_available, quote_ceiling) =
+            get_asset_counts_internal(
+                @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID);
+        assert!(base_total      == BASE_START , 0);
+        assert!(base_available  == BASE_START , 0);
+        assert!(base_ceiling    == BASE_START , 0);
+        assert!(quote_total     == QUOTE_START, 0);
+        assert!(quote_available == QUOTE_START, 0);
+        assert!(quote_ceiling   == QUOTE_START, 0);
+        // Assert inactive stack top on given side.
+        assert!(get_inactive_stack_top_test(@user, market_account_id, side)
+                == order_access_key, 0);
+        // Assert order marked inactive.
+        assert!(!is_order_active_test(
+            @user, market_account_id, side, order_access_key), 0);
+        // Assert next inactive node field.
+        assert!(get_next_inactive_order_test(@user, market_account_id, side,
+                                             order_access_key) == NIL, 0);
+    }
+
+    #[test]
+    /// Verify valid state updates for placing and cancelling a bid.
+    fun test_place_cancel_order_bid()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register test markets, get market account ID for pure coin
+        // market with delegated custodian.
+        let (_, _, market_account_id, _, _) = register_market_accounts_test();
+        // Define order parameters.
+        let market_order_id  = 1234;
+        let size             = 789;
+        let price            = 321;
+        let side             = BID;
+        let order_access_key = 1;
+        // Calculate change in base asset and quote asset fields.
+        let base_delta = size * LOT_SIZE_PURE_COIN;
+        let quote_delta = size * price * TICK_SIZE_PURE_COIN;
+        // Deposit starting base and quote coins.
+        deposit_coins<BC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(BASE_START));
+        deposit_coins<QC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(QUOTE_START));
+        // Assert inactive stack top on given side.
+        assert!(get_inactive_stack_top_test(@user, market_account_id, side)
+                == NIL, 0);
+        // Place order.
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                             size, price, market_order_id);
+        // Assert asset counts.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            get_asset_counts_internal(
+                @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID);
+        assert!(base_total      == BASE_START , 0);
+        assert!(base_available  == BASE_START , 0);
+        assert!(base_ceiling    == BASE_START + base_delta, 0);
+        assert!(quote_total     == QUOTE_START, 0);
+        assert!(quote_available == QUOTE_START - quote_delta, 0);
+        assert!(quote_ceiling   == QUOTE_START, 0);
+        // Assert inactive stack top on given side.
+        assert!(get_inactive_stack_top_test(@user, market_account_id, side)
+                == NIL, 0);
+        // Assert order fields.
+        let (market_order_id_r, size_r) = get_order_fields_test(
+            @user, market_account_id, side, order_access_key);
+        assert!(market_order_id_r == market_order_id, 0);
+        assert!(size_r == size, 0);
+        // Cancel order, storing returned market order ID.
+        market_order_id_r = cancel_order_internal(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, price,
+            order_access_key, market_order_id);
+        // Assert returned market order ID.
+        assert!(market_order_id_r == market_order_id, 0);
+        // Assert asset counts.
+        (base_total , base_available , base_ceiling,
+         quote_total, quote_available, quote_ceiling) =
+            get_asset_counts_internal(
+                @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID);
+        assert!(base_total      == BASE_START , 0);
+        assert!(base_available  == BASE_START , 0);
+        assert!(base_ceiling    == BASE_START , 0);
+        assert!(quote_total     == QUOTE_START, 0);
+        assert!(quote_available == QUOTE_START, 0);
+        assert!(quote_ceiling   == QUOTE_START, 0);
+        // Assert inactive stack top on given side.
+        assert!(get_inactive_stack_top_test(@user, market_account_id, side)
+                == order_access_key, 0);
+        // Assert order marked inactive.
+        assert!(!is_order_active_test(
+            @user, market_account_id, side, order_access_key), 0);
+        // Assert next inactive node field.
+        assert!(get_next_inactive_order_test(@user, market_account_id, side,
+                                             order_access_key) == NIL, 0);
+    }
+
+    #[test]
+    /// Verify state updates for multiple pushes and pops from stack,
+    /// and next order access key lookup returns.
+    fun test_place_cancel_order_stack()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register test markets, get market account ID for pure coin
+        // market with delegated custodian.
+        let (_, _, market_account_id, _, _) = register_market_accounts_test();
+        // Define order parameters.
+        let market_order_id_1  = 123;
+        let market_order_id_2  = 234;
+        let market_order_id_3  = 345;
+        let size             = MIN_SIZE_PURE_COIN;
+        let price            = 1;
+        let side             = BID;
+        // Deposit starting base and quote coins.
+        deposit_coins<BC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(BASE_START));
+        deposit_coins<QC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(QUOTE_START));
+        // Assert inactive stack top on given side.
+        assert!(get_inactive_stack_top_test(@user, market_account_id, side)
+                == NIL, 0);
+        // Assert next order access key.
+        assert!(get_next_order_access_key_internal(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side) == 1, 0);
+        // Place two orders.
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                             size, price, market_order_id_1);
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                             size, price, market_order_id_2);
+        // Assert inactive stack top on given side.
+        assert!(get_inactive_stack_top_test(@user, market_account_id, side)
+                == NIL, 0);
+        // Assert next order access key.
+        assert!(get_next_order_access_key_internal(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side) == 3, 0);
+        // Cancel first order, storing market order ID.
+        let market_order_id = cancel_order_internal(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, price, 1,
+            market_order_id_1);
+        // Assert returned market order ID.
+        assert!(market_order_id == market_order_id_1, 0);
+        // Assert inactive stack top on given side.
+        assert!(get_inactive_stack_top_test(@user, market_account_id, side)
+                == 1, 0);
+        // Assert next order access key.
+        assert!(get_next_order_access_key_internal(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side) == 1, 0);
+        // Cancel second order, storting market order ID.
+        market_order_id = cancel_order_internal(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, price, 2,
+            market_order_id_2);
+        // Assert returned market order ID.
+        assert!(market_order_id == market_order_id_2, 0);
+        // Assert inactive stack top on given side.
+        assert!(get_inactive_stack_top_test(@user, market_account_id, side)
+                == 2, 0);
+        // Assert next order access key.
+        assert!(get_next_order_access_key_internal(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side) == 2, 0);
+        // Assert both orders marked inactive.
+        assert!(!is_order_active_test(@user, market_account_id, side, 1), 0);
+        assert!(!is_order_active_test(@user, market_account_id, side, 2), 0);
+        // Assert next inactive node fields.
+        assert!(get_next_inactive_order_test(
+            @user, market_account_id, side, 2) == 1, 0);
+        assert!(get_next_inactive_order_test(
+            @user, market_account_id, side, 1) == NIL, 0);
+        // Place an order
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                             size, price, market_order_id_3);
+        // Assert inactive stack top on given side.
+        assert!(get_inactive_stack_top_test(@user, market_account_id, side)
+                == 1, 0);
+        // Assert next order access key.
+        assert!(get_next_order_access_key_internal(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side) == 1, 0);
+        // Assert order fields.
+        let (market_order_id_r, size_r) = get_order_fields_test(
+            @user, market_account_id, side, 2);
+        assert!(market_order_id_r == market_order_id_3, 0);
+        assert!(size_r == size, 0);
+    }
+
+    #[test]
     #[expected_failure(abort_code = 12)]
-    /// Verify failure for coin type
-    fun test_withdraw_generic_asset_not_generic(
-        econia: &signer
-    ) acquires
+    /// Verify failure for overflowed inbound asset.
+    fun test_place_order_internal_in_overflow()
+    acquires
         Collateral,
         MarketAccounts
     {
-        assets::init_coin_types(econia); // Initialize coin types
-        // Get mock custodian capability
-        let custodian_capability = registry::get_custodian_capability_test(1);
-        // Attempt invalid invocation
-        withdraw_generic_asset<BC>(@user, 1, 2, 3, &custodian_capability);
-        // Destroy custodian capability
-        registry::destroy_custodian_capability_test(custodian_capability);
+        register_market_accounts_test(); // Register market accounts.
+        // Declare order parameters
+        let market_order_id  = 123;
+        let size             = MIN_SIZE_PURE_COIN;
+        let price            = 1;
+        let side             = BID;
+        // Calculate minimum base fill amount for price of 1.
+        let min_fill_base = MIN_SIZE_PURE_COIN * LOT_SIZE_PURE_COIN;
+        // Calculate starting base coin amount for barely overflowing.
+        let base_start = HI_64 - min_fill_base + 1;
+        // Deposit base coins.
+        deposit_coins<BC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(base_start));
+        // Deposit max quote coins.
+        deposit_coins<QC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(HI_64));
+        // Attempt invalid invocation.
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                             size, price, market_order_id);
     }
 
-    #[test(
-        econia = @econia,
-        user = @user
-    )]
-    #[expected_failure(abort_code = 14)]
-    /// Verify failure for unauthorized custodian
-    fun test_withdraw_generic_asset_unauthorized_custodian(
-        econia: &signer,
+    #[test]
+    #[expected_failure(abort_code = 13)]
+    /// Verify failure for underflowed outbound asset.
+    fun test_place_order_internal_out_underflow()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        register_market_accounts_test(); // Register market accounts.
+        // Declare order parameters
+        let market_order_id  = 123;
+        let size             = MIN_SIZE_PURE_COIN;
+        let price            = 1;
+        let side             = BID;
+        // Attempt invalid invocation.
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                             size, price, market_order_id);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 8)]
+    /// Verify failure for price 0.
+    fun test_place_order_internal_price_0()
+    acquires
+        MarketAccounts
+    {
+        // Declare order parameters
+        let market_order_id  = 123;
+        let size             = MIN_SIZE_PURE_COIN;
+        let price            = 0;
+        let side             = ASK;
+        // Attempt invalid invocation.
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                             size, price, market_order_id);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 9)]
+    /// Verify failure for price too high.
+    fun test_place_order_internal_price_hi()
+    acquires
+        MarketAccounts
+    {
+        // Declare order parameters
+        let market_order_id  = 123;
+        let size             = MIN_SIZE_PURE_COIN;
+        let price            = MAX_PRICE + 1;
+        let side             = ASK;
+        // Attempt invalid invocation.
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                             size, price, market_order_id);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 10)]
+    /// Verify failure for size too low.
+    fun test_place_order_internal_size_lo()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        register_market_accounts_test(); // Register market accounts.
+        // Declare order parameters
+        let market_order_id  = 123;
+        let size             = MIN_SIZE_PURE_COIN - 1;
+        let price            = MAX_PRICE;
+        let side             = ASK;
+        // Attempt invalid invocation.
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                             size, price, market_order_id);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 11)]
+    /// Verify failure for overflowed ticks.
+    fun test_place_order_internal_ticks_overflow()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        register_market_accounts_test(); // Register market accounts.
+        // Declare order parameters
+        let market_order_id  = 123;
+        let size             = HI_64 / MAX_PRICE + 1;
+        let price            = MAX_PRICE;
+        let side             = ASK;
+        // Attempt invalid invocation.
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                             size, price, market_order_id);
+    }
+
+    #[test(user = @user)]
+    #[expected_failure(abort_code = 0)]
+    /// Verify failure for market account already exists.
+    fun test_register_market_account_account_entries_exists(
         user: &signer
     ) acquires
         Collateral,
         MarketAccounts
     {
-        assets::init_coin_types(econia); // Initialize coin types
-        registry::init_registry(econia); // Initalize registry
-        // Register a custodian capability
-        let custodian_capability = registry::register_custodian_capability();
-        // Get ID of custodian capability
-        let generic_asset_transfer_custodian_id = registry::custodian_id(
+        // Register test markets, storing pure coin market ID.
+        let (market_id_pure_coin, _, _, _, _, _, _, _, _, _, _, _) =
+            registry::register_markets_test();
+        // Register user with market account.
+        register_market_account<BC, QC>(
+            user, market_id_pure_coin, NO_CUSTODIAN);
+        // Attempt invalid re-registration.
+        register_market_account<BC, QC>(
+            user, market_id_pure_coin, NO_CUSTODIAN);
+    }
+
+    #[test(user = @user)]
+    #[expected_failure(abort_code = 1)]
+    /// Verify failure for unregistered custodian.
+    fun test_register_market_account_unregistered_custodian(
+        user: &signer
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
+        registry::init_test(); // Initialize registry.
+        // Attempt invalid invocation.
+        register_market_account<BC, QC>(user, 1, 123);
+    }
+
+    #[test(user = @user)]
+    /// Verify state updates for market account registration.
+    ///
+    /// Exercises all non-assert conditional branches for:
+    ///
+    /// * `register_market_account()`
+    /// * `register_market_account_account_entries()`
+    /// * `register_market_account_collateral_entry()`
+    fun test_register_market_accounts(
+        user: &signer
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register test markets, storing market info.
+        let (market_id_pure_coin, base_name_generic_pure_coin,
+             lot_size_pure_coin, tick_size_pure_coin, min_size_pure_coin,
+             underwriter_id_pure_coin, market_id_generic,
+             base_name_generic_generic, lot_size_generic, tick_size_generic,
+             min_size_generic, underwriter_id_generic) =
+             registry::register_markets_test();
+        // Set custodian ID as registered.
+        registry::set_registered_custodian_test(CUSTODIAN_ID);
+        // Register pure coin market account.
+        register_market_account<BC, QC>(
+            user, market_id_pure_coin, NO_CUSTODIAN);
+        register_market_account<BC, QC>( // Register delegated account.
+            user, market_id_pure_coin, CUSTODIAN_ID);
+        // Register generic asset account.
+        register_market_account_generic_base<QC>(
+            user, market_id_generic, NO_CUSTODIAN);
+        // Get market account IDs.
+        let market_account_id_self = get_market_account_id(
+            market_id_pure_coin, NO_CUSTODIAN);
+        let market_account_id_delegated = get_market_account_id(
+            market_id_pure_coin, CUSTODIAN_ID);
+        let market_account_id_generic = get_market_account_id(
+            market_id_generic, NO_CUSTODIAN);
+        // Immutably borrow base coin collateral.
+        let collateral_map_ref = &borrow_global<Collateral<BC>>(@user).map;
+        // Assert entries only made for pure coin market accounts.
+        assert!(coin::value(tablist::borrow(
+            collateral_map_ref, market_account_id_self)) == 0, 0);
+        assert!(coin::value(tablist::borrow(
+            collateral_map_ref, market_account_id_delegated)) == 0, 0);
+        assert!(!tablist::contains(
+            collateral_map_ref, market_account_id_generic), 0);
+        // Immutably borrow quote coin collateral.
+        let collateral_map_ref = &borrow_global<Collateral<QC>>(@user).map;
+        // Assert entries made for all market accounts.
+        assert!(coin::value(tablist::borrow(
+            collateral_map_ref, market_account_id_self)) == 0, 0);
+        assert!(coin::value(tablist::borrow(
+            collateral_map_ref, market_account_id_delegated)) == 0, 0);
+        assert!(coin::value(tablist::borrow(
+            collateral_map_ref, market_account_id_generic)) == 0, 0);
+        let custodians_map_ref = // Immutably borrow custodians map.
+            &borrow_global<MarketAccounts>(@user).custodians;
+        // Immutably borrow custodians entry for pure coin market.
+        let custodians_ref =
+            tablist::borrow(custodians_map_ref, market_id_pure_coin);
+        // Assert listed custodians.
+        assert!(*custodians_ref
+                == vector[NO_CUSTODIAN, CUSTODIAN_ID], 0);
+        // Immutably borrow custodians entry for generic market.
+        custodians_ref =
+            tablist::borrow(custodians_map_ref, market_id_generic);
+        assert!( // Assert listed custodian.
+            *custodians_ref == vector[NO_CUSTODIAN], 0);
+        // Immutably borrow market accounts map.
+        let market_accounts_map_ref =
+            &borrow_global<MarketAccounts>(@user).map;
+        // Immutably borrow pure coin self-custodied market account.
+        let market_account_ref =
+            table::borrow(market_accounts_map_ref, market_account_id_self);
+        // Assert state.
+        assert!(market_account_ref.base_type == type_info::type_of<BC>(), 0);
+        assert!(market_account_ref.base_name_generic
+                == base_name_generic_pure_coin, 0);
+        assert!(market_account_ref.quote_type == type_info::type_of<QC>(), 0);
+        assert!(market_account_ref.lot_size == lot_size_pure_coin, 0);
+        assert!(market_account_ref.tick_size == tick_size_pure_coin, 0);
+        assert!(market_account_ref.min_size == min_size_pure_coin, 0);
+        assert!(market_account_ref.underwriter_id
+                == underwriter_id_pure_coin, 0);
+        assert!(tablist::is_empty(&market_account_ref.asks), 0);
+        assert!(tablist::is_empty(&market_account_ref.bids), 0);
+        assert!(market_account_ref.asks_stack_top == NIL, 0);
+        assert!(market_account_ref.bids_stack_top == NIL, 0);
+        assert!(market_account_ref.base_total == 0, 0);
+        assert!(market_account_ref.base_available == 0, 0);
+        assert!(market_account_ref.base_ceiling == 0, 0);
+        assert!(market_account_ref.quote_total == 0, 0);
+        assert!(market_account_ref.quote_available == 0, 0);
+        assert!(market_account_ref.quote_ceiling == 0, 0);
+        // Immutably borrow pure coin delegated market account.
+        market_account_ref = table::borrow(market_accounts_map_ref,
+                                           market_account_id_delegated);
+        // Assert state.
+        assert!(market_account_ref.base_type == type_info::type_of<BC>(), 0);
+        assert!(market_account_ref.base_name_generic
+                == base_name_generic_pure_coin, 0);
+        assert!(market_account_ref.quote_type == type_info::type_of<QC>(), 0);
+        assert!(market_account_ref.lot_size == lot_size_pure_coin, 0);
+        assert!(market_account_ref.tick_size == tick_size_pure_coin, 0);
+        assert!(market_account_ref.min_size == min_size_pure_coin, 0);
+        assert!(market_account_ref.underwriter_id
+                == underwriter_id_pure_coin, 0);
+        assert!(tablist::is_empty(&market_account_ref.asks), 0);
+        assert!(tablist::is_empty(&market_account_ref.bids), 0);
+        assert!(market_account_ref.asks_stack_top == NIL, 0);
+        assert!(market_account_ref.bids_stack_top == NIL, 0);
+        assert!(market_account_ref.base_total == 0, 0);
+        assert!(market_account_ref.base_available == 0, 0);
+        assert!(market_account_ref.base_ceiling == 0, 0);
+        assert!(market_account_ref.quote_total == 0, 0);
+        assert!(market_account_ref.quote_available == 0, 0);
+        assert!(market_account_ref.quote_ceiling == 0, 0);
+        // Immutably borrow generic market account.
+        market_account_ref =
+            table::borrow(market_accounts_map_ref, market_account_id_generic);
+        // Assert state.
+        assert!(market_account_ref.base_type
+                == type_info::type_of<GenericAsset>(), 0);
+        assert!(market_account_ref.base_name_generic
+                == base_name_generic_generic, 0);
+        assert!(market_account_ref.quote_type == type_info::type_of<QC>(), 0);
+        assert!(market_account_ref.lot_size == lot_size_generic, 0);
+        assert!(market_account_ref.tick_size == tick_size_generic, 0);
+        assert!(market_account_ref.min_size == min_size_generic, 0);
+        assert!(market_account_ref.underwriter_id
+                == underwriter_id_generic, 0);
+        assert!(tablist::is_empty(&market_account_ref.asks), 0);
+        assert!(tablist::is_empty(&market_account_ref.bids), 0);
+        assert!(market_account_ref.asks_stack_top == NIL, 0);
+        assert!(market_account_ref.bids_stack_top == NIL, 0);
+        assert!(market_account_ref.base_total == 0, 0);
+        assert!(market_account_ref.base_available == 0, 0);
+        assert!(market_account_ref.base_ceiling == 0, 0);
+        assert!(market_account_ref.quote_total == 0, 0);
+        assert!(market_account_ref.quote_available == 0, 0);
+        assert!(market_account_ref.quote_ceiling == 0, 0);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 3)]
+    /// Verify failure for no market account.
+    fun test_withdraw_asset_no_account()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register test market accounts.
+        let (user, _, _, _, _) = register_market_accounts_test();
+        // Attempt invalid invocation, burning returned coins.
+        assets::burn(withdraw_coins_user<BC>(&user, 0, 0));
+    }
+
+    #[test(user = @user)]
+    #[expected_failure(abort_code = 2)]
+    /// Verify failure for no market accounts.
+    fun test_withdraw_asset_no_accounts(
+        user: &signer
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Attempt invalid invocation, burning returned coins.
+        assets::burn(withdraw_coins_user<BC>(user, 0, 0));
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 4)]
+    /// Verify failure for asset not in pair.
+    fun test_withdraw_asset_not_in_pair()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register test market accounts.
+        let (user, _, _, _, _) = register_market_accounts_test();
+        // Attempt invalid invocation, burning returned coins.
+        assets::burn(withdraw_coins_user<UC>(&user, MARKET_ID_PURE_COIN, 0));
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 7)]
+    /// Verify failure for not enough asset available to withdraw.
+    fun test_withdraw_asset_underflow()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register test market accounts.
+        let (user, _, _, _, _) = register_market_accounts_test();
+        // Attempt invalid invocation, burning returned coins.
+        assets::burn(withdraw_coins_user<QC>(&user, MARKET_ID_PURE_COIN, 1));
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 6)]
+    /// Verify failure for invalid underwriter.
+    fun test_withdraw_asset_underwriter()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register test market accounts.
+        let (user, _, _, _, _) = register_market_accounts_test();
+        let underwriter_capability = // Get underwriter capability.
+            registry::get_underwriter_capability_test(UNDERWRITER_ID + 1);
+        // Attempt invalid invocation.
+        withdraw_generic_asset_user(&user, MARKET_ID_GENERIC, 0,
+                                    &underwriter_capability);
+        // Drop underwriter capability.
+        registry::drop_underwriter_capability_test(underwriter_capability);
+    }
+
+    #[test]
+    /// Verify state updates for assorted withdrawal styles.
+    fun test_withdrawals()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Declare start amount parameters.
+        let amount_start_coin = 700;
+        let amount_start_generic = 500;
+        // Declare withdrawal amount parameters.
+        let amount_withdraw_coin_0 = 350;
+        let amount_withdraw_generic_0 = 450;
+        let amount_withdraw_coin_1 = 300;
+        let amount_withdraw_generic_1 = 400;
+        // Declare final amounts.
+        let amount_final_coin_0 = amount_start_coin - amount_withdraw_coin_0;
+        let amount_final_generic_0 = amount_start_generic
+                                     - amount_withdraw_generic_0;
+        let amount_final_coin_1 = amount_start_coin - amount_withdraw_coin_1;
+        let amount_final_generic_1 = amount_start_generic
+                                     - amount_withdraw_generic_1;
+        // Get signing user and test market account IDs.
+        let (user, _, _, market_account_id_generic_self,
+                         market_account_id_generic_delegated) =
+             register_market_accounts_test();
+        let custodian_capability = // Get custodian capability.
+            registry::get_custodian_capability_test(CUSTODIAN_ID);
+        let underwriter_capability = // Get underwriter capability.
+            registry::get_underwriter_capability_test(UNDERWRITER_ID);
+        // Deposit to both market accounts.
+        deposit_coins<QC>(@user, MARKET_ID_GENERIC, NO_CUSTODIAN,
+                          assets::mint_test(amount_start_coin));
+        deposit_coins<QC>(@user, MARKET_ID_GENERIC, CUSTODIAN_ID,
+                          assets::mint_test(amount_start_coin));
+        deposit_generic_asset(@user, MARKET_ID_GENERIC, NO_CUSTODIAN,
+                              amount_start_generic, &underwriter_capability);
+        deposit_generic_asset(@user, MARKET_ID_GENERIC, CUSTODIAN_ID,
+                              amount_start_generic, &underwriter_capability);
+        // Withdraw coins to coin store under authority of signing user.
+        withdraw_to_coinstore<QC>(&user, MARKET_ID_GENERIC, 1);
+        withdraw_to_coinstore<QC>(&user, MARKET_ID_GENERIC,
+                                  amount_withdraw_coin_0 - 1);
+        // Assert coin store balance.
+        assert!(coin::balance<QC>(@user) == amount_withdraw_coin_0, 0);
+        // Withdraw coins under authority of delegated custodian.
+        let coins = withdraw_coins_custodian<QC>(
+            @user, MARKET_ID_GENERIC, amount_withdraw_coin_1,
             &custodian_capability);
-        // Register test market
-        registry::register_market_internal<BG, QC>(@econia, 1, 2,
-            generic_asset_transfer_custodian_id);
-        let market_id = 0; // Declare market ID
-        // Declare user-level general custodian ID
-        let general_custodian_id = NO_CUSTODIAN;
-        // Register user to trade on the account
-        register_market_account<BG, QC>(user, market_id, general_custodian_id);
-        // Deposit to the account
-        deposit_generic_asset<BG>(@user, market_id, general_custodian_id,
-            500, &custodian_capability);
-        // Get a custodian capability that is not authorized for generic
-        // asset transfers
-        let unauthorized_capability =
-            registry::register_custodian_capability();
-        // Attempt invalid invocation
-        withdraw_generic_asset<BG>(@user, market_id, general_custodian_id,
-            500, &unauthorized_capability);
-        // Destroy custodian capabilities
-        registry::destroy_custodian_capability_test(custodian_capability);
-        registry::destroy_custodian_capability_test(unauthorized_capability);
+        // Assert withdrawn coin value.
+        assert!(coin::value(&coins) == amount_withdraw_coin_1, 0);
+        assets::burn(coins); // Burn coins.
+        // Withdraw generic asset under authority of signing user.
+        withdraw_generic_asset_user(
+            &user, MARKET_ID_GENERIC, amount_withdraw_generic_0,
+            &underwriter_capability);
+        // Withdraw generic asset under authority of delegated
+        // custodian.
+        withdraw_generic_asset_custodian(
+            @user, MARKET_ID_GENERIC, amount_withdraw_generic_1,
+            &custodian_capability, &underwriter_capability);
+        // Assert state for self-custodied account.
+        let ( base_total,  base_available,  base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            get_asset_counts_user(&user, MARKET_ID_GENERIC);
+        assert!(base_total      == amount_final_generic_0, 0);
+        assert!(base_available  == amount_final_generic_0, 0);
+        assert!(base_ceiling    == amount_final_generic_0, 0);
+        assert!(quote_total     == amount_final_coin_0   , 0);
+        assert!(quote_available == amount_final_coin_0   , 0);
+        assert!(quote_ceiling   == amount_final_coin_0   , 0);
+        assert!(!has_collateral_test<GenericAsset>(
+            @user, market_account_id_generic_self), 0);
+        assert!(get_collateral_value_test<QC>(
+            @user, market_account_id_generic_self) == amount_final_coin_0, 0);
+        // Assert state for delegated custody account.
+        let ( base_total,  base_available,  base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            get_asset_counts_custodian(
+                @user, MARKET_ID_GENERIC, &custodian_capability);
+        assert!(base_total      == amount_final_generic_1, 0);
+        assert!(base_available  == amount_final_generic_1, 0);
+        assert!(base_ceiling    == amount_final_generic_1, 0);
+        assert!(quote_total     == amount_final_coin_1   , 0);
+        assert!(quote_available == amount_final_coin_1   , 0);
+        assert!(quote_ceiling   == amount_final_coin_1   , 0);
+        assert!(!has_collateral_test<GenericAsset>(
+            @user, market_account_id_generic_delegated), 0);
+        assert!(get_collateral_value_test<QC>(
+            @user, market_account_id_generic_delegated) ==
+            amount_final_coin_1, 0);
+        // Drop custodian capability.
+        registry::drop_custodian_capability_test(custodian_capability);
+        // Drop underwriter capability.
+        registry::drop_underwriter_capability_test(underwriter_capability);
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

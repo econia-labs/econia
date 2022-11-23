@@ -45,29 +45,24 @@ Now you will be able to run the provided `ss.sh` shell script file in whatever d
 Hello, Econia developer
 ```
 
-See `ss.sh` within a given directory for its available options
+See `ss.sh` within a given directory for its available options.
 
 ### Command line setup
 
-1. First follow the [official Aptos developer setup guide]
+1. First follow the [official Aptos developer setup guide].
 
-1. Then [install the `aptos` CLI]
+1. Then [install the `aptos` CLI].
 
-    ```zsh
-    cargo install --git https://github.com/aptos-labs/aptos-core.git aptos --branch devnet
-    aptos config set-global-config --config-type global
-    aptos init
-    ```
-    * Note that this will go faster if [adding a precompiled binary] to `~/.cargo/bin` rather than installing via `cargo`
-    * If the precompiled binary has not been released yet, additionally consider installing from Git, a method that does not always require rebuilding intermediate artifacts (see same resource for instructions)
+    * Note that this will go faster if [adding a precompiled binary] to `~/.cargo/bin` rather than installing via `cargo`.
+    * If the precompiled binary has not been released yet, additionally consider installing from Git, a method that does not always require rebuilding intermediate artifacts (see same resource for instructions, noting that building from binary can take up plenty of disk space inside of the `aptos-core` directory).
 
 
 1. Now you should be able to run all Move tests:
 
     ```zsh
     # From inside Econia repository root directory
-    s mp # Navigate to Move package
-    s ta # Run all tests
+    cd src/move/econia # Navigate to Move package
+    aptos move test -i 1000000 # Run all tests
     INCLUDING DEPENDENCY AptosFramework
     INCLUDING DEPENDENCY MoveNursery
     INCLUDING DEPENDENCY MoveStdlib
@@ -75,30 +70,22 @@ See `ss.sh` within a given directory for its available options
     Running Move unit tests
     ...
     ```
-1. Then install the `move` CLI:
-
-    ```zsh
-    cargo install --git https://github.com/move-language/move move-cli
-    ```
-
-1. Now you should be able to build the Move documentation:
-
+1. Then try building the Move documentation:
 
     ```zsh
     # Still within Move package
-    s d
+    aptos move document
     INCLUDING DEPENDENCY AptosFramework
     INCLUDING DEPENDENCY MoveNursery
     INCLUDING DEPENDENCY MoveStdlib
     BUILDING Econia
     ```
 
-1. Should [`aptos-core` #2142] be accepted, installing the `move` CLI will no longer be necessary for this step, and the relevant script should be updated to run on the `aptos` CLI alone
-
 ### Using the Python package
 
 Econia comes with a Python package for assorted build scripting functionality.
 The Python package is not as actively maintained as the Move code, and is mostly used for managing account addresses in `Move.toml` during package compilation (see [`src/move/econia/ss.sh`]).
+Econia uses `conda` (a command line tool for managing Python environments), the `econia` conda environment, and the Econia Python package within the `econia` conda environment.
 It is not necessary to use the Python package to develop Econia, but not all of the shell scripts will work without it.
 To install the `econia` Python package:
 
@@ -117,21 +104,24 @@ To install the `econia` Python package:
 1. Create the `econia` conda environment with the `Econia` Python package inside:
 
     ```zsh
-    conda env create -f env/conda.yml
+    # From inside Econia project root
+    conda env create -f conda.yml
     conda activate econia
     pip install -e src/python
     ```
 
+1. Then [install the Aptos Python SDK from source] with the `econia` conda environment still active.
+
 1. Create the secrets directories as needed:
 
     ```zsh
+    # From inside Econia project root
     if ! test -d .secrets; then mkdir .secrets; fi
     if ! test -d .secrets/devnet; then mkdir .secrets/old; fi
     if ! test -d .secrets/old; then mkdir .secrets/old; fi
     if ! test -d .secrets/vanity; then mkdir .secrets/devnet; fi
     ```
 
-Econia uses `conda` (a command line tool for managing Python environments), the `econia` conda environment, and the Econia Python package within the `econia` conda environment.
 If using VS Code, select `econia` as the default Python interpreter, and the integrated terminal should automatically activate it as needed, otherwise use the command line:
 
 ```zsh
@@ -144,17 +134,22 @@ If using VS Code, select `econia` as the default Python interpreter, and the int
 With the `econia` conda environment active, you can then build the Python package documentation, explore the provided interactive Jupyter notebook archive, and run package management shell scripts:
 
 ```zsh
+# From inside Econia project root
 # Autobuild Sphinx documentation with realtime updates
 (econia) % s ab
 ```
 
 ```zsh
+# From inside Econia project root
 # Open Jupyter notebook gallery
 # Earliest notebooks subject to breaking changes
 (econia) % s nb
 ```
 
 ```zsh
+# From inside Jupyter notebook gallery
+# Go back up to the Econia project root
+(econia) % cd ../..
 # Change directory to the Econia Move package
 (econia) % s mp
 # Move package has its own utility shell scripts
@@ -172,6 +167,8 @@ To clean up cache files and intermediate artifacts, consider the following tools
 
 In particular, if using a Mac [local Time Machine snapshots] of intermediate artifacts may lead to excessive "purgable" disk space should substantial time pass between backups.
 It is possible to disable snapshots as mentioned in the support thread, but backing up to Time Machine should also help purge snapshots of intermediate artifacts, once the above tools are invoked.
+
+Also consider deleting `~/.move` from time to time.
 
 ## Major filetypes
 
@@ -200,19 +197,20 @@ Sphinx documentation source files are at [`doc/sphinx`].
 
 <!---Alphabetized reference links-->
 
-[`aptos-core` #2142]:                   https://github.com/aptos-labs/aptos-core/issues/2142
-[`cargo cache`]:                        https://github.com/matthiaskrgr/cargo-cache
-[`detox`]:                              https://github.com/whitfin/detox
-[`doc/doc-site/`]:                      doc/doc-site/
-[`doc/sphinx`]:                         doc/sphinx
-[`kondo`]:                              https://github.com/tbillington/kondo
-[`src/jupyter`]:                        src/jupyter
-[`src/move/econia`]:                    src/move/econia
-[`src/move/econia/build/Econia/docs`]:  src/move/econia/build/Econia/docs
-[`src/move/econia/ss.sh`]:              src/move/econia/ss.sh
-[`src/python/econia`]:                  src/python/econia
-[adding a precompiled binary]:          https://aptos.dev/cli-tools/aptos-cli-tool/install-aptos-cli#install-precompiled-binary-easy-mode
-[install the `aptos` CLI]:              https://aptos.dev/cli-tools/aptos-cli-tool/install-aptos-cli
-[local Time Machine snapshots]:         https://discussions.apple.com/thread/7676695
-[official Aptos developer setup guide]: https://aptos.dev/guides/getting-started
-[Teach yourself Move on Aptos]:         https://github.com/econia-labs/teach-yourself-move
+[`aptos-core` #2142]:                       https://github.com/aptos-labs/aptos-core/issues/2142
+[`cargo cache`]:                            https://github.com/matthiaskrgr/cargo-cache
+[`detox`]:                                  https://github.com/whitfin/detox
+[`doc/doc-site/`]:                          doc/doc-site/
+[`doc/sphinx`]:                             doc/sphinx
+[`kondo`]:                                  https://github.com/tbillington/kondo
+[`src/jupyter`]:                            src/jupyter
+[`src/move/econia`]:                        src/move/econia
+[`src/move/econia/build/Econia/docs`]:      src/move/econia/build/Econia/docs
+[`src/move/econia/ss.sh`]:                  src/move/econia/ss.sh
+[`src/python/econia`]:                      src/python/econia
+[adding a precompiled binary]:              https://aptos.dev/cli-tools/aptos-cli-tool/install-aptos-cli#install-precompiled-binary-easy-mode
+[install the `aptos` CLI]:                  https://aptos.dev/cli-tools/aptos-cli-tool/install-aptos-cli
+[install the Aptos Python SDK from source]: https://aptos.dev/sdks/python-sdk#install-from-the-source
+[local Time Machine snapshots]:             https://discussions.apple.com/thread/7676695
+[official Aptos developer setup guide]:     https://aptos.dev/guides/getting-started
+[Teach yourself Move on Aptos]:             https://github.com/econia-labs/teach-yourself-move

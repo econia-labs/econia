@@ -1,0 +1,15 @@
+# Only specify packages that have been manually added to the environment.
+# Use versions obtained via dependency solver.
+# Do not export entire environment when adding a package, or builds,
+# as this information may break cross-platform support.
+name: econia
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - jupyter=1.0.0
+  - pandas=1.4.1
+  - python=3.9.12
+  - sphinx=4.4.0
+  - sphinx-autobuild=2021.3.14
+  - sphinx_rtd_theme=0.4.3

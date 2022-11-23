@@ -18,10 +18,10 @@
     - [Using the Python package](#using-the-python-package)
     - [Freeing up disk space](#freeing-up-disk-space)
   - [Major filetypes](#major-filetypes)
-    - [Jupyter](#jupyter)
-    - [Markdown](#markdown)
     - [Move](#move)
+    - [Markdown](#markdown)
     - [Python](#python)
+    - [Jupyter](#jupyter)
 
 If you haven't already, consider checking out Econia Labs' [Teach yourself Move on Aptos] guide for some helpful background information!
 
@@ -172,28 +172,28 @@ Also consider deleting `~/.move` from time to time.
 
 ## Major filetypes
 
-### Jupyter
+### Move
 
-Interactive Jupyter notebook examples are at [`src/jupyter`], listed in increasing order of creation number.
-The earliest notebooks are subject to breaking changes at the most recent commit, but they have been archived so as to be functional at the commit when they where finalized.
-Hence, older commits can be checked out and experimented with, but mostly they are useful for harvesting old code patterns.
+Move source code is at [`src/move/econia`].
+In the absence of a formal style guide, Move code is formatted similarly to PEP8-style Python code.
+Auto-generated module documentation files are at [`src/move/econia/doc`].
 
 ### Markdown
 
 Markdown files have a line break for each new sentence to make diff tracking easier.
 GitBook markdown source files are at [`doc/doc-site/`].
 
-### Move
-
-Move source code is at [`src/move/econia`].
-In the absence of a formal style guide, Move code is formatted similarly to PEP8-style Python code.
-Auto-generated module documentation files are at [`src/move/econia/build/Econia/docs`].
-
 ### Python
 
 The Econia Python package source code is at [`src/python/econia`].
 Python source is formatted according to the PEP8 style guide, and uses NumPy-style docstrings and PEP484-style type annotations, which are automatically parsed into a documentation website via Sphinx.
 Sphinx documentation source files are at [`doc/sphinx`].
+
+### Jupyter
+
+Interactive Jupyter notebook examples are at [`src/jupyter`], listed in increasing order of creation number.
+The earliest notebooks are subject to breaking changes at the most recent commit, but they have been archived so as to be functional at the commit when they where finalized.
+Hence, older commits can be checked out and experimented with, but mostly they are useful for harvesting old code patterns.
 
 <!---Alphabetized reference links-->
 
@@ -205,7 +205,7 @@ Sphinx documentation source files are at [`doc/sphinx`].
 [`kondo`]:                                  https://github.com/tbillington/kondo
 [`src/jupyter`]:                            src/jupyter
 [`src/move/econia`]:                        src/move/econia
-[`src/move/econia/build/Econia/docs`]:      src/move/econia/build/Econia/docs
+[`src/move/econia/doc`]:                    src/move/econia/doc
 [`src/move/econia/ss.sh`]:                  src/move/econia/ss.sh
 [`src/python/econia`]:                      src/python/econia
 [adding a precompiled binary]:              https://aptos.dev/cli-tools/aptos-cli-tool/install-aptos-cli#install-precompiled-binary-easy-mode

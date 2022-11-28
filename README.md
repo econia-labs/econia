@@ -2,7 +2,7 @@
 
 [![Discord chat](https://img.shields.io/badge/docs-Econia-59f)](https://www.econia.dev)
 [![Econia move documentation (move)](https://img.shields.io/badge/docs-Move-59f)](src/move/econia/build/Econia/docs)
-[![Discord chat](https://img.shields.io/discord/988942344776736830?style=flat)](https://discord.gg/Z7gXcMgX8A)
+[![Discord chat](https://img.shields.io/discord/988942344776736830?style=flat)](discord.gg/econia)
 [![License](https://img.shields.io/badge/license-Business_Source_License-white.svg)](LICENSE.md)
 
 # Econia

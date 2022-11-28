@@ -6,7 +6,7 @@ Thank you for your interest in the Econia Ecosystem! We are grateful to be build
 Before starting, please read our [Code of Conduct](CODE_OF_CONDUCT.md) to keep the Econia community a safe space for all community members.
 &nbsp;:blush:
 
-Reminder: 
+Reminder:
 This is a safe space that welcomes all levels of developers.
 Econia will only evolve into its best version by incorporating the contributions of developers from all walks of life.
 Don't be nervous to contribute, the Econia community is excited to have you here and we thank you for your energy.
@@ -39,4 +39,4 @@ If you are interested in contributing to the Econia Protocol and would like to l
 
 ## Where to go for help
 
-If you run into any issues or need help please reach out to the community via [Discord](https://discord.gg/Z7gXcMgX8A).
+If you run into any issues or need help please reach out to the community via [Discord](discord.gg/econia).

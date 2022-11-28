@@ -378,6 +378,8 @@ module econia::user {
     const E_CHANGE_ORDER_NO_CHANGE: u64 = 14;
     /// Market order ID mismatch with user's open order.
     const E_INVALID_MARKET_ORDER_ID: u64 = 15;
+    /// Mismatch between coin value and indicated amount.
+    const E_COIN_AMOUNT_MISMATCH: u64 = 16;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -1135,11 +1137,6 @@ module econia::user {
     /// * `quote_coins`: Quote coins to deposit.
     /// * `underwriter_id`: Underwriter ID for market.
     ///
-    /// # Assumptions
-    ///
-    /// * If `optional_base_coins` is some, coin value is equal to
-    ///   `base_amount`.
-    ///
     /// # Testing
     ///
     /// * `test_deposit_withdraw_assets_internal()`
@@ -1736,12 +1733,12 @@ module econia::user {
     ///
     /// # Assumptions
     ///
-    /// * If optional coins provided, their value equals `amount`.
     /// * When depositing coins, if a market account exists, then so
     ///   does a corresponding collateral map entry.
     ///
     /// # Testing
     ///
+    /// * `test_deposit_asset_amount_mismatch()`
     /// * `test_deposit_asset_no_account()`
     /// * `test_deposit_asset_no_accounts()`
     /// * `test_deposit_asset_not_in_pair()`
@@ -1801,14 +1798,18 @@ module econia::user {
                     E_INVALID_UNDERWRITER); // Assert underwriter ID.
             option::destroy_none(optional_coins); // Destroy option.
         } else { // If asset is coin:
+            // Extract coins from option.
+            let coins = option::destroy_some(optional_coins);
+            // Assert passed amount matches coin value.
+            assert!(amount == coin::value(&coins), E_COIN_AMOUNT_MISMATCH);
             // Mutably borrow collateral map.
             let collateral_map_ref_mut = &mut borrow_global_mut<
                 Collateral<AssetType>>(user_address).map;
             // Mutably borrow collateral for market account.
             let collateral_ref_mut = tablist::borrow_mut(
                 collateral_map_ref_mut, market_account_id);
-            coin::merge( // Merge optional coins into collateral.
-                collateral_ref_mut, option::destroy_some(optional_coins));
+            // Merge coins into collateral.
+            coin::merge(collateral_ref_mut, coins);
         };
     }
 
@@ -2507,6 +2508,28 @@ module econia::user {
         change_order_size_internal( // Attempt invalid order size change.
             @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, size, price,
             1, market_order_id);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 16)]
+    /// Verify failure for amount mismatch.
+    fun test_deposit_asset_amount_mismatch()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register test market accounts.
+        register_market_accounts_test();
+        // Declore deposit invocation arguments.
+        let user_address = @user;
+        let market_id = MARKET_ID_PURE_COIN;
+        let custodian_id = NO_CUSTODIAN;
+        let amount = 123;
+        let optional_coins = option::some(assets::mint_test<BC>(amount + 1));
+        let underwriter_id = NO_UNDERWRITER;
+        // Attempt invalid invocation.
+        deposit_asset(user_address, market_id, custodian_id, amount,
+                      optional_coins, underwriter_id);
     }
 
     #[test]

@@ -633,9 +633,6 @@ module econia::market {
     /// Flag to trade max possible asset amount: `u64` bitmask with all
     /// bits set, generated in Python via `hex(int('1' * 64, 2))`.
     const MAX_POSSIBLE: u64 = 0xffffffffffffffff;
-    /// Maximum possible price that can be encoded in 32 bits. Generated
-    /// in Python via `hex(int('1' * 32, 2))`.
-    const MAX_PRICE: u64 = 0xffffffff;
     /// Number of restriction flags.
     const N_RESTRICTIONS: u8 = 3;
     /// Flag for null value when null defined as 0.
@@ -1827,7 +1824,7 @@ module econia::market {
         u64
     ) {
         // Assert price is not too high.
-        assert!(limit_price <= MAX_PRICE, E_PRICE_TOO_HIGH);
+        assert!(limit_price <= HI_PRICE, E_PRICE_TOO_HIGH);
         // Taker buy fills against asks, sell against bids.
         let side = if (direction == BUY) ASK else BID;
         let (lot_size, tick_size) = (order_book_ref_mut.lot_size,
@@ -2091,7 +2088,7 @@ module econia::market {
         assert!(restriction <= N_RESTRICTIONS, E_INVALID_RESTRICTION);
         assert!(price != 0, E_PRICE_0); // Assert nonzero price.
         // Assert price is not too high.
-        assert!(price <= MAX_PRICE, E_PRICE_TOO_HIGH);
+        assert!(price <= HI_PRICE, E_PRICE_TOO_HIGH);
         // Get user's available and ceiling asset counts.
         let (_, base_available, base_ceiling, _, quote_available,
              quote_ceiling) = user::get_asset_counts_internal(
@@ -4644,7 +4641,7 @@ module econia::market {
         let max_base    = MAX_POSSIBLE;
         let min_quote   = 0;
         let max_quote   = MAX_POSSIBLE;
-        let limit_price = MAX_PRICE + 1;
+        let limit_price = HI_PRICE + 1;
         let base_coins = assets::mint_test<BC>(HI_64);
         let quote_coins  = coin::zero<QC>();
         // Invoke matching engine via coin swap against empty book.
@@ -4703,7 +4700,7 @@ module econia::market {
         // Declare order parameters.
         let side = ASK;
         let size = HI_64 / LOT_SIZE_COIN + 1;
-        let price = MAX_PRICE;
+        let price = HI_PRICE;
         let restriction = NO_RESTRICTION;
         let critical_height = CRITICAL_HEIGHT;
         // Initialize markets, users, and an integrator.
@@ -5334,7 +5331,7 @@ module econia::market {
         // Declare order parameters.
         let side = ASK;
         let size = MIN_SIZE_COIN;
-        let price = MAX_PRICE;
+        let price = HI_PRICE;
         let restriction = FILL_OR_ABORT;
         let critical_height = CRITICAL_HEIGHT;
         // Initialize markets, users, and an integrator.
@@ -5592,7 +5589,7 @@ module econia::market {
         // Declare order parameters.
         let side = ASK;
         let size = 123;
-        let price = MAX_PRICE + 1;
+        let price = HI_PRICE + 1;
         let restriction = NO_RESTRICTION;
         let critical_height = CRITICAL_HEIGHT;
         place_limit_order<BC, QC>( // Attempt invalid invocation.
@@ -5673,7 +5670,7 @@ module econia::market {
         // Declare order parameters.
         let side = ASK;
         let size = MIN_SIZE_COIN - 1;
-        let price = MAX_PRICE;
+        let price = HI_PRICE;
         let restriction = NO_RESTRICTION;
         let critical_height = CRITICAL_HEIGHT;
         // Initialize markets, users, and an integrator.

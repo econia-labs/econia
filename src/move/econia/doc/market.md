@@ -1170,17 +1170,6 @@ Order price exceeds maximum allowable price.
 
 
 
-<a name="0xc0deb00c_market_MAX_PRICE"></a>
-
-Maximum possible price that can be encoded in 32 bits. Generated
-in Python via <code>hex(int('1' * 32, 2))</code>.
-
-
-<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_MAX_PRICE">MAX_PRICE</a>: u64 = 4294967295;
-</code></pre>
-
-
-
 <a name="0xc0deb00c_market_CANCEL"></a>
 
 Flag for <code><a href="market.md#0xc0deb00c_market_MakerEvent">MakerEvent</a>.type</code> when order is cancelled.
@@ -3269,7 +3258,7 @@ conditions are then checked.
     u64
 ) {
     // Assert price is not too high.
-    <b>assert</b>!(limit_price &lt;= <a href="market.md#0xc0deb00c_market_MAX_PRICE">MAX_PRICE</a>, <a href="market.md#0xc0deb00c_market_E_PRICE_TOO_HIGH">E_PRICE_TOO_HIGH</a>);
+    <b>assert</b>!(limit_price &lt;= <a href="market.md#0xc0deb00c_market_HI_PRICE">HI_PRICE</a>, <a href="market.md#0xc0deb00c_market_E_PRICE_TOO_HIGH">E_PRICE_TOO_HIGH</a>);
     // Taker buy fills against asks, sell against bids.
     <b>let</b> side = <b>if</b> (direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>) <a href="market.md#0xc0deb00c_market_ASK">ASK</a> <b>else</b> <a href="market.md#0xc0deb00c_market_BID">BID</a>;
     <b>let</b> (lot_size, tick_size) = (order_book_ref_mut.lot_size,
@@ -3590,7 +3579,7 @@ ID is emitted in a maker evict event.
     <b>assert</b>!(restriction &lt;= <a href="market.md#0xc0deb00c_market_N_RESTRICTIONS">N_RESTRICTIONS</a>, <a href="market.md#0xc0deb00c_market_E_INVALID_RESTRICTION">E_INVALID_RESTRICTION</a>);
     <b>assert</b>!(price != 0, <a href="market.md#0xc0deb00c_market_E_PRICE_0">E_PRICE_0</a>); // Assert nonzero price.
     // Assert price is not too high.
-    <b>assert</b>!(price &lt;= <a href="market.md#0xc0deb00c_market_MAX_PRICE">MAX_PRICE</a>, <a href="market.md#0xc0deb00c_market_E_PRICE_TOO_HIGH">E_PRICE_TOO_HIGH</a>);
+    <b>assert</b>!(price &lt;= <a href="market.md#0xc0deb00c_market_HI_PRICE">HI_PRICE</a>, <a href="market.md#0xc0deb00c_market_E_PRICE_TOO_HIGH">E_PRICE_TOO_HIGH</a>);
     // Get <a href="user.md#0xc0deb00c_user">user</a>'s available and ceiling asset counts.
     <b>let</b> (_, base_available, base_ceiling, _, quote_available,
          quote_ceiling) = <a href="user.md#0xc0deb00c_user_get_asset_counts_internal">user::get_asset_counts_internal</a>(

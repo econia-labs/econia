@@ -20,11 +20,17 @@
 /// order management function, to enable diagnostic function returns,
 /// public entry calls, etc.
 ///
+/// When a maker places a limit order, they are issued a "market order
+/// ID" that is unique to the given market. The maker order price is
+/// encoded in the market order ID, as well as a counter for the number
+/// of orders that have been placed on the corresponding order book.
+///
 /// # General overview sections
 ///
 /// [Public function index](#public-function-index)
 ///
 /// * [Market registration](#market-registration)
+/// * [Market order IDs](#market-order-ids)
 /// * [Limit orders](#limit-orders)
 /// * [Market orders](#market-orders)
 /// * [Swaps](#swaps)
@@ -57,6 +63,11 @@
 /// * `register_market_base_coin()`
 /// * `register_market_base_coin_from_coinstore()`
 /// * `register_market_base_generic()`
+///
+/// ## Market order IDs
+///
+/// * `get_market_order_id_counter()`
+/// * `get_market_order_id_price()`
 ///
 /// ## Limit orders
 ///
@@ -467,13 +478,17 @@ module econia::market {
         /// The size, in lots, on the book after an order has been
         /// placed or its size has been manually changed. Else the size
         /// on the book before the order was cancelled or evicted.
-        size: u64
+        size: u64,
+        /// Order price, in ticks per lot.
+        price: u64
     }
 
     /// An order on the order book.
     struct Order has store {
         /// Number of lots to be filled.
         size: u64,
+        /// Order price, in ticks per lot.
+        price: u64,
         /// Address of user holding order.
         user: address,
         /// For given user, ID of custodian required to approve order
@@ -538,7 +553,9 @@ module econia::market {
         /// operations and withdrawals on given market account.
         custodian_id: u64,
         /// The size filled, in lots.
-        size: u64
+        size: u64,
+        /// Fill price, in ticks per lot.
+        price: u64
     }
 
     // Structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -597,6 +614,8 @@ module econia::market {
     const E_INVALID_USER: u64 = 24;
     /// Fill-or-abort price does not cross the spread.
     const E_FILL_OR_ABORT_NOT_CROSS_SPREAD: u64 = 25;
+    /// AVL queue head price does not match head order price.
+    const E_HEAD_KEY_PRICE_MISMATCH: u64 = 26;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -720,6 +739,30 @@ module econia::market {
             side,
             market_order_id,
             new_size);
+    }
+
+    /// Return maker order counter encoded in market order ID.
+    ///
+    /// # Testing
+    ///
+    /// * `test_place_limit_order_no_cross_ask_user()`
+    /// * `test_place_limit_order_no_cross_bid_custodian()`
+    public fun get_market_order_id_counter(
+        market_order_id: u128
+    ): u64 {
+        (((market_order_id >> SHIFT_COUNTER) & (HI_64 as u128)) as u64)
+    }
+
+    /// Return order price encoded in market order ID.
+    ///
+    /// # Testing
+    ///
+    /// * `test_place_limit_order_no_cross_ask_user()`
+    /// * `test_place_limit_order_no_cross_bid_custodian()`
+    public fun get_market_order_id_price(
+        market_order_id: u128
+    ): u64 {
+        ((market_order_id & (HI_PRICE as u128)) as u64)
     }
 
     /// Public function wrapper for `place_limit_order()` for placing
@@ -1567,21 +1610,20 @@ module econia::market {
         // Get AVL queue access key from market order ID.
         let avlq_access_key = ((market_order_id & (HI_64 as u128)) as u64);
         // Remove order from AVL queue, storing its fields.
-        let Order{size, user: order_user, custodian_id: order_custodian_id,
-                  order_access_key} = avl_queue::remove(orders_ref_mut,
-                                                        avlq_access_key);
+        let Order{size, price, user: order_user, custodian_id:
+                  order_custodian_id, order_access_key} = avl_queue::remove(
+            orders_ref_mut, avlq_access_key);
         // Assert passed maker address is user holding order.
         assert!(user == order_user, E_INVALID_USER);
         // Assert passed custodian ID matches that from order.
         assert!(custodian_id == order_custodian_id, E_INVALID_CUSTODIAN);
-        let price = avlq_access_key & HI_PRICE; // Get order price.
         // Cancel order user-side, thus verifying market order ID.
         user::cancel_order_internal(user, market_id, custodian_id, side,
                                     price, order_access_key, market_order_id);
-        let type = CANCEL; // Declare maker event type.
         // Emit a maker cancel event.
         event::emit_event(&mut order_book_ref_mut.maker_events, MakerEvent{
-            market_id, side, market_order_id, user, custodian_id, type, size});
+            market_id, side, market_order_id, user, custodian_id,
+            type: CANCEL, size, price});
     }
 
     /// Change maker order size on book and in user's market account.
@@ -1650,19 +1692,17 @@ module econia::market {
         // Assert passed custodian ID matches that from order.
         assert!(custodian_id == order_ref_mut.custodian_id,
                 E_INVALID_CUSTODIAN);
-        let price = avlq_access_key & HI_PRICE; // Get order price.
         // Change order size user-side, thus verifying market order ID
         // and new size.
         user::change_order_size_internal(
-            user, market_id, custodian_id, side, new_size, price,
+            user, market_id, custodian_id, side, new_size, order_ref_mut.price,
             order_ref_mut.order_access_key, market_order_id);
         // Update order on book with new size.
         order_ref_mut.size = new_size;
-        // Declare order size, maker event type.
-        let (size, type) = (order_ref_mut.size, CHANGE);
         // Emit a maker change event.
         event::emit_event(&mut order_book_ref_mut.maker_events, MakerEvent{
-            market_id, side, market_order_id, user, custodian_id, type, size});
+            market_id, side, market_order_id, user, custodian_id, type: CHANGE,
+            size: order_ref_mut.size, price: order_ref_mut.price});
     }
 
     /// Initialize the order books map upon module publication.
@@ -1742,6 +1782,8 @@ module econia::market {
     ///
     /// * `E_PRICE_TOO_HIGH`: Order price exceeds maximum allowable
     ///   price.
+    /// * `E_HEAD_KEY_PRICE_MISMATCH`: AVL queue head price does not
+    ///   match head order price.
     /// * `E_SELF_MATCH`: Taker and a matched maker have same address.
     /// * `E_MIN_BASE_NOT_TRADED`: Minimum base asset trade amount
     ///   requirement not met.
@@ -1764,8 +1806,10 @@ module econia::market {
     /// on the number of ticks left to fill until max and the price for
     /// the given order, and compared against the number of lots to fill
     /// until max. The lesser of the two is taken as the max fill size,
-    /// and compared against the order size to determine the fill size
-    /// and if a complete fill takes place. If no size can be filled the
+    /// the order is borrowed and its price is checked against that
+    /// indicated for the AVL queue head, then the max fill size is
+    /// compared against the order size to determine the fill size and
+    /// if a complete fill takes place. If no size can be filled the
     /// loop breaks, otherwise the number of ticks is calculated, and
     /// lots and ticks until max counters are updated. The self-match
     /// condition is checked, then the order is filled user side and a
@@ -1798,6 +1842,7 @@ module econia::market {
     ///
     /// * `test_match_min_base_not_traded()`
     /// * `test_match_min_quote_not_traded()`
+    /// * `test_match_price_mismatch()`
     /// * `test_match_price_too_high()`
     /// * `test_match_self_match()`
     fun match<
@@ -1858,6 +1903,8 @@ module econia::market {
                 max_fill_size_ticks else lots_until_max;
             // Mutably borrow order at head of AVL queue.
             let order_ref_mut = avl_queue::borrow_head_mut(orders_ref_mut);
+            // Assert AVL queue head price matches that of order.
+            assert!(order_ref_mut.price == price, E_HEAD_KEY_PRICE_MISMATCH);
             // Get fill size and if a complete fill against book.
             let (fill_size, complete_fill) =
                 // If max fill size is less than order size, fill size
@@ -1884,15 +1931,15 @@ module econia::market {
                     order_ref_mut.order_access_key, fill_size,
                     complete_fill, optional_base_coins, quote_coins,
                     fill_size * lot_size, ticks_filled * tick_size);
-            // Emit corresponding taker event.
             event::emit_event(&mut order_book_ref_mut.taker_events, TakerEvent{
-                market_id, side, market_order_id, maker, custodian_id, size});
+                market_id, side, market_order_id, maker, custodian_id, size,
+                price}); // Emit corresponding taker event.
             if (complete_fill) { // If order on book completely filled:
                 let avlq_access_key = // Get AVL queue access key.
                     ((market_order_id & (HI_64 as u128)) as u64);
                 // Remove order from AVL queue.
                 let order = avl_queue::remove(orders_ref_mut, avlq_access_key);
-                let Order{size: _, user: _, custodian_id: _,
+                let Order{size: _, price: _, user: _, custodian_id: _,
                           order_access_key: _} = order; // Unpack order.
                 // Break out of loop if no more lots or ticks to fill.
                 if ((lots_until_max == 0) || (ticks_until_max == 0)) break
@@ -2207,7 +2254,7 @@ module econia::market {
         let orders_ref_mut = if (side == ASK) &mut order_book_ref_mut.asks else
             &mut order_book_ref_mut.bids;
         // Declare order to insert to book.
-        let order = Order{size, user: user_address, custodian_id,
+        let order = Order{size, price, user: user_address, custodian_id,
                           order_access_key};
         // Get new AVL queue access key, evictee access key, and evictee
         // value by attempting to insert for given critical height.
@@ -2227,13 +2274,13 @@ module econia::market {
         // Emit a maker place event.
         event::emit_event(&mut order_book_ref_mut.maker_events, MakerEvent{
             market_id, side, market_order_id, user: user_address,
-            custodian_id, type: PLACE, size});
+            custodian_id, type: PLACE, size, price});
         if (evictee_access_key == NIL) { // If no eviction required:
             // Destroy empty evictee value option.
             option::destroy_none(evictee_value);
         } else { // If had to evict order at AVL queue tail:
             // Unpack evicted order, storing fields for event.
-            let Order{size, user, custodian_id, order_access_key} =
+            let Order{size, price, user, custodian_id, order_access_key} =
                 option::destroy_some(evictee_value);
             // Get price of cancelled order.
             let price_cancel = evictee_access_key & HI_PRICE;
@@ -2244,7 +2291,7 @@ module econia::market {
             // Emit a maker evict event.
             event::emit_event(&mut order_book_ref_mut.maker_events, MakerEvent{
                 market_id, side, market_order_id: market_order_id_cancel, user,
-                custodian_id, type: EVICT, size});
+                custodian_id, type: EVICT, size, price});
         };
         // Return market order ID and taker trade amounts.
         return (market_order_id, base_traded, quote_traded, fees)
@@ -2724,6 +2771,7 @@ module econia::market {
         market_order_id: u128
     ): (
         u64,
+        u64,
         address,
         u64,
         u64
@@ -2742,6 +2790,7 @@ module econia::market {
         let order_ref = avl_queue::borrow(orders_ref, avlq_access_key);
         // Return its fields.
         (order_ref.size,
+         order_ref.price,
          order_ref.user,
          order_ref.custodian_id,
          order_ref.order_access_key)
@@ -3055,7 +3104,7 @@ module econia::market {
             maker_address, market_id, integrator, side, size,
             price, restriction, &custodian_capability);
         // Get user-side order access key for later.
-        let (_, _, _, order_access_key) =
+        let (_, _, _, _, order_access_key) =
             get_order_fields_test(market_id, side, market_order_id);
         cancel_order_custodian( // Cancel order.
             maker_address, market_id, side, market_order_id,
@@ -3128,7 +3177,7 @@ module econia::market {
         let (market_order_id, _, _, _) = place_limit_order_user<BC, QC>(
             &maker, market_id, integrator, side, size, price, restriction);
         // Get user-side order access key for later.
-        let (_, _, _, order_access_key) =
+        let (_, _, _, _, order_access_key) =
             get_order_fields_test(market_id, side, market_order_id);
         // Cancel order.
         cancel_order_user( &maker, market_id, side, market_order_id);
@@ -3312,10 +3361,11 @@ module econia::market {
         // Drop custodian capability.
         registry::drop_custodian_capability_test(custodian_capability);
         // Get fields for maker order on book.
-        let (size_r, user_r, custodian_id_r, order_access_key) =
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
             get_order_fields_test(market_id, side, market_order_id);
         // Assert field returns except access key, used for user lookup.
         assert!(size_r         == size_end, 0);
+        assert!(price_r        == price, 0);
         assert!(user_r         == maker_address, 0);
         assert!(custodian_id_r == custodian_id, 0);
         // Assert user-side maker order fields.
@@ -3383,10 +3433,11 @@ module econia::market {
         change_order_size_user( // Change order size.
             &maker, market_id, side, market_order_id, size_end);
         // Get fields for maker order on book.
-        let (size_r, user_r, custodian_id_r, order_access_key) =
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
             get_order_fields_test(market_id, side, market_order_id);
         // Assert field returns except access key, used for user lookup.
         assert!(size_r         == size_end, 0);
+        assert!(price_r        == price, 0);
         assert!(user_r         == maker_address, 0);
         assert!(custodian_id_r == custodian_id, 0);
         // Assert user-side maker order fields.
@@ -3658,7 +3709,7 @@ module econia::market {
             &maker, market_id, @integrator, side_maker, size_maker, price,
             restriction);
         // Get user-side order access key for later.
-        let (_, _, _, order_access_key) =
+        let (_, _, _, _, order_access_key) =
             get_order_fields_test(market_id, side_maker, market_order_id);
         // Invoke matching engine via coin swap.
         let (base_coins, quote_coins, base_trade_r, quote_trade_r, fee_r) =
@@ -3782,7 +3833,7 @@ module econia::market {
             &maker, market_id, @integrator, side_maker, size_maker, price,
             restriction);
         // Get user-side order access key for later.
-        let (_, _, _, order_access_key) =
+        let (_, _, _, _, order_access_key) =
             get_order_fields_test(market_id, side_maker, market_order_id);
         // Invoke matching engine via coin swap.
         let (base_coins, quote_coins, base_trade_r, quote_trade_r, fee_r) =
@@ -3946,10 +3997,11 @@ module econia::market {
         if (quote_coin_end == 0) coin::destroy_zero(quote_coins) else
             assets::burn(quote_coins);
         // Get fields for maker order on book.
-        let (size_r, user_r, custodian_id_r, order_access_key) =
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
             get_order_fields_test(market_id, side_maker, market_order_id);
         // Assert field returns except access key, used for user lookup.
         assert!(size_r         == size_maker_end, 0);
+        assert!(price_r        == price, 0);
         assert!(user_r         == maker_address, 0);
         assert!(custodian_id_r == custodian_id, 0);
         // Assert user-side maker order fields.
@@ -4070,7 +4122,7 @@ module econia::market {
             &maker, market_id, @integrator, side_maker, size_maker_lo,
             price_lo, restriction);
         // Get user-side high-price order access key for later.
-        let (_, _, _, order_access_key_hi) =
+        let (_, _, _, _, order_access_key_hi) =
             get_order_fields_test(market_id, side_maker, market_order_id_hi);
         // Invoke matching engine via coin swap.
         let (base_coins, quote_coins, base_trade_r, quote_trade_r, fee_r) =
@@ -4122,10 +4174,11 @@ module econia::market {
         assert!(market_order_id_r == (NIL as u128), 0);
         assert!(size_r == NIL, 0); // Bottom of inactive stack.
         // Get fields for maker order still on book.
-        let (size_r, user_r, custodian_id_r, order_access_key_lo) =
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key_lo) =
             get_order_fields_test(market_id, side_maker, market_order_id_lo);
         // Assert field returns except access key, used for user lookup.
         assert!(size_r         == size_maker_lo_end, 0);
+        assert!(price_r        == price_lo, 0);
         assert!(user_r         == maker_address, 0);
         assert!(custodian_id_r == custodian_id, 0);
         // Assert user-side maker order fields.
@@ -4283,10 +4336,11 @@ module econia::market {
         if (quote_coin_end == 0) coin::destroy_zero(quote_coins) else
             assets::burn(quote_coins);
         // Get fields for maker order on book.
-        let (size_r, user_r, custodian_id_r, order_access_key) =
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
             get_order_fields_test(market_id, side_maker, market_order_id);
         // Assert field returns except access key, used for user lookup.
         assert!(size_r         == size_maker_end, 0);
+        assert!(price_r        == price, 0);
         assert!(user_r         == maker_address, 0);
         assert!(custodian_id_r == custodian_id, 0);
         // Assert user-side maker order fields.
@@ -4408,10 +4462,11 @@ module econia::market {
         if (quote_coin_end == 0) coin::destroy_zero(quote_coins) else
             assets::burn(quote_coins);
         // Get fields for maker order on book.
-        let (size_r, user_r, custodian_id_r, order_access_key) =
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
             get_order_fields_test(market_id, side_maker, market_order_id);
         // Assert field returns except access key, used for user lookup.
         assert!(size_r         == size_maker_end, 0);
+        assert!(price_r        == price, 0);
         assert!(user_r         == maker_address, 0);
         assert!(custodian_id_r == custodian_id, 0);
         // Assert user-side maker order fields.
@@ -4516,10 +4571,11 @@ module econia::market {
         if (quote_coin_end == 0) coin::destroy_zero(quote_coins) else
             assets::burn(quote_coins);
         // Get fields for maker order on book.
-        let (size_r, user_r, custodian_id_r, order_access_key) =
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
             get_order_fields_test(market_id, side_maker, market_order_id);
         // Assert field returns except access key, used for user lookup.
         assert!(size_r         == size_maker_end, 0);
+        assert!(price_r        == price_maker, 0);
         assert!(user_r         == maker_address, 0);
         assert!(custodian_id_r == custodian_id, 0);
         // Assert user-side maker order fields.
@@ -4618,10 +4674,11 @@ module econia::market {
         if (quote_coin_end == 0) coin::destroy_zero(quote_coins) else
             assets::burn(quote_coins);
         // Get fields for maker order on book.
-        let (size_r, user_r, custodian_id_r, order_access_key) =
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
             get_order_fields_test(market_id, side_maker, market_order_id);
         // Assert field returns except access key, used for user lookup.
         assert!(size_r         == size_maker_end, 0);
+        assert!(price_r        == price_maker, 0);
         assert!(user_r         == maker_address, 0);
         assert!(custodian_id_r == custodian_id, 0);
         // Assert user-side maker order fields.
@@ -4646,6 +4703,74 @@ module econia::market {
             maker_address, market_id, custodian_id) == base_total_end, 0);
         assert!(user::get_collateral_value_simple_test<QC>(
             maker_address, market_id, custodian_id) == quote_total_end, 0);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 26)]
+    /// Verify failure for price mismatch between order and AVL queue
+    /// head key. Test setup based on `test_match_fill_size_0()`
+    fun test_match_price_mismatch()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (maker, _) = init_markets_users_integrator_test();
+        // Declare shared/dependent market parameters.
+        let direction_taker = SELL;
+        let side_maker      = if (direction_taker == BUY) ASK else BID;
+        let market_id       = MARKET_ID_COIN;
+        let integrator      = @integrator;
+        // Declare additional maker order parameters.
+        let custodian_id  = NO_CUSTODIAN;
+        let maker_address = address_of(&maker);
+        let restriction   = NO_RESTRICTION;
+        let price = 456;
+        // Declare order size posted by maker, filled by taker.
+        let size_maker = MIN_SIZE_COIN + 10;
+        // Declare base and quote required to fill maker.
+        let base_maker = size_maker * LOT_SIZE_COIN;
+        let quote_maker = size_maker * price* TICK_SIZE_COIN;
+        // Declare maker deposit amounts.
+        let deposit_base  = HI_64 - base_maker;
+        let deposit_quote = quote_maker;
+        // Assign min/max base/quote swap input amounts for taker.
+        let min_base  = 0;
+        let max_base  = LOT_SIZE_COIN - 1;
+        let min_quote = 0;
+        let max_quote = MAX_POSSIBLE;
+        // Declare swap coin input starting amounts.
+        let base_coin_start = max_base;
+        let quote_coin_start = 0;
+        // Create swap coin inputs.
+        let base_coins  = assets::mint_test<BC>(base_coin_start);
+        let quote_coins = assets::mint_test<QC>(quote_coin_start);
+        // Deposit maker coins.
+        user::deposit_coins<BC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(deposit_base));
+        user::deposit_coins<QC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(deposit_quote));
+        // Place maker order.
+        place_limit_order_user<BC, QC>(
+            &maker, market_id, @integrator, side_maker, size_maker, price,
+            restriction);
+        // Get address of resource account for borrowing order book.
+        let resource_address = resource_account::get_address();
+        let order_books_map_ref_mut = // Mutably borrow order books map.
+            &mut borrow_global_mut<OrderBooks>(resource_address).map;
+        let order_book_ref_mut = // Mutably borrow market order book.
+            tablist::borrow_mut(order_books_map_ref_mut, market_id);
+        // Mutably borrow corresponding orders AVL queue.
+        let orders_ref_mut = if (side_maker == ASK)
+            &mut order_book_ref_mut.asks else &mut order_book_ref_mut.bids;
+        // Mutably borrow order at head of AVL queue.
+        let order_ref_mut = avl_queue::borrow_head_mut(orders_ref_mut);
+        // Manually modify price.
+        order_ref_mut.price = price + 1;
+        // Invoke matching engine via coin swap, triggering abort.
+        let (base_coins, quote_coins, _, _, _) = swap_coins(
+            market_id, integrator, direction_taker, min_base, max_base,
+            min_quote, max_quote, price, base_coins, quote_coins);
+        // Burn coins.
+        assets::burn(base_coins);
+        assets::burn(quote_coins);
     }
 
     #[test]
@@ -4773,7 +4898,7 @@ module econia::market {
             &user_0, MARKET_ID_COIN, @integrator, !side, size, price,
             POST_OR_ABORT);
         // Get user-side order access key for later.
-        let (_, _, _, order_access_key_0) = get_order_fields_test(
+        let (_, _, _, _, order_access_key_0) = get_order_fields_test(
             MARKET_ID_COIN, !side, market_order_id_0);
         assert!(is_list_node_order_active( // Assert order is active.
             MARKET_ID_COIN, !side, market_order_id_0), 0);
@@ -4897,11 +5022,12 @@ module econia::market {
         assert!(!is_list_node_order_active(
             MARKET_ID_COIN, !side, market_order_id_0), 0);
         // Get fields for new order on book.
-        let (size_r, user_r, custodian_id_r, order_access_key) =
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
             get_order_fields_test(MARKET_ID_COIN, side, market_order_id_1);
         // Assert field returns except access key, used for user lookup.
-        assert!(size_r == size_post, 0);
-        assert!(user_r == @user_1, 0);
+        assert!(size_r         == size_post, 0);
+        assert!(price_r        == price, 0);
+        assert!(user_r         == @user_1, 0);
         assert!(custodian_id_r == NO_CUSTODIAN, 0);
         // Assert first maker's asset counts.
         let (base_total , base_available , base_ceiling,
@@ -5061,7 +5187,7 @@ module econia::market {
             &user_0, MARKET_ID_COIN, @integrator, !side, size, price,
             restriction);
         // Get user-side order access key for later.
-        let (_, _, _, order_access_key_0) = get_order_fields_test(
+        let (_, _, _, _, order_access_key_0) = get_order_fields_test(
             MARKET_ID_COIN, !side, market_order_id_0);
         assert!(is_list_node_order_active( // Assert order is active.
             MARKET_ID_COIN, !side, market_order_id_0), 0);
@@ -5186,11 +5312,12 @@ module econia::market {
         assert!(!is_list_node_order_active(
             MARKET_ID_COIN, !side, market_order_id_0), 0);
         // Get fields for new order on book.
-        let (size_r, user_r, custodian_id_r, order_access_key) =
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
             get_order_fields_test(MARKET_ID_COIN, side, market_order_id_1);
         // Assert field returns except access key, used for user lookup.
-        assert!(size_r == size_post, 0);
-        assert!(user_r == @user_1, 0);
+        assert!(size_r         == size_post, 0);
+        assert!(price_r        == price, 0);
+        assert!(user_r         == @user_1, 0);
         assert!(custodian_id_r == NO_CUSTODIAN, 0);
         // Assert first maker's asset counts.
         let (base_total , base_available , base_ceiling,
@@ -5272,11 +5399,12 @@ module econia::market {
             &user_1, MARKET_ID_COIN, @integrator, side, size_1, price_1,
             restriction);
         // Assert order fields for first placed order.
-        let (size_r, user_r, custodian_id_r, order_access_key_0) =
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key_0) =
             get_order_fields_test(MARKET_ID_COIN, side, market_order_id_0);
         // Assert field returns except access key, used for user lookup.
-        assert!(size_r == size_0, 0);
-        assert!(user_r == @user_0, 0);
+        assert!(size_r         == size_0, 0);
+        assert!(price_r        == price_0, 0);
+        assert!(user_r         == @user_0, 0);
         assert!(custodian_id_r == NO_CUSTODIAN, 0);
         // Assert user-side order fields.
         let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
@@ -5284,11 +5412,12 @@ module econia::market {
         assert!(market_order_id_r == market_order_id_0, 0);
         assert!(size_r == size_0, 0);
         // Assert order fields for second placed order.
-        let (size_r, user_r, custodian_id_r, order_access_key_1) =
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key_1) =
             get_order_fields_test(MARKET_ID_COIN, side, market_order_id_1);
         // Assert field returns except access key, used for user lookup.
-        assert!(size_r == size_1, 0);
-        assert!(user_r == @user_1, 0);
+        assert!(size_r         == size_1, 0);
+        assert!(price_r        == price_1, 0);
+        assert!(user_r         == @user_1, 0);
         assert!(custodian_id_r == NO_CUSTODIAN, 0);
         // Assert user-side order fields.
         let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
@@ -5301,11 +5430,12 @@ module econia::market {
             @user_1, MARKET_ID_COIN, NO_CUSTODIAN, @integrator, side, size_2,
             price_2, restriction, critical_height);
         // Assert order fields for third placed order.
-        let (size_r, user_r, custodian_id_r, order_access_key_2) =
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key_2) =
             get_order_fields_test(MARKET_ID_COIN, side, market_order_id_2);
         // Assert field returns except access key, used for user lookup.
-        assert!(size_r == size_2, 0);
-        assert!(user_r == @user_1, 0);
+        assert!(size_r         == size_2, 0);
+        assert!(price_r        == price_2, 0);
+        assert!(user_r         == @user_1, 0);
         assert!(custodian_id_r == NO_CUSTODIAN, 0);
         // Assert user-side order fields.
         let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
@@ -5315,11 +5445,12 @@ module econia::market {
         // Assert order fields returned the same when attempting to
         // look up using the evicted order ID, since the same AVL queue
         // list node ID is re-used.
-        let (size_r, user_r, custodian_id_r, order_access_key_r) =
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key_r) =
             get_order_fields_test(MARKET_ID_COIN, side, market_order_id_0);
-        assert!(size_r == size_2, 0);
-        assert!(user_r == @user_1, 0);
-        assert!(custodian_id_r == NO_CUSTODIAN, 0);
+        assert!(size_r             == size_2, 0);
+        assert!(price_r            == price_2, 0);
+        assert!(user_r             == @user_1, 0);
+        assert!(custodian_id_r     == NO_CUSTODIAN, 0);
         assert!(order_access_key_r == order_access_key_2, 0);
         // Assert user-side order fields for inactive evicted order.
         let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
@@ -5496,15 +5627,18 @@ module econia::market {
         assert!(quote_trade == 0, 0);
         assert!(fees == 0, 0);
         // Assert counter encoded in order ID.
-        assert!(market_order_id >> SHIFT_COUNTER == 0, 0);
+        assert!(get_market_order_id_counter(market_order_id) == 0, 0);
+        // Assert price encoded in order ID.
+        assert!(get_market_order_id_price(market_order_id) == price, 0);
         // Assert order book counter.
         assert!(get_order_book_counter(MARKET_ID_COIN) == 1, 0);
         // Get order fields.
-        let (size_r, user_r, custodian_id_r, order_access_key) =
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
             get_order_fields_test(MARKET_ID_COIN, side, market_order_id);
         // Assert field returns except access key, used for user lookup.
-        assert!(size_r == size, 0);
-        assert!(user_r == @user_0, 0);
+        assert!(size_r         == size, 0);
+        assert!(price_r        == price, 0);
+        assert!(user_r         == @user_0, 0);
         assert!(custodian_id_r == NO_CUSTODIAN, 0);
         // Assert user's asset counts.
         let (base_total , base_available , base_ceiling,
@@ -5531,7 +5665,7 @@ module econia::market {
         let (market_order_id, _, _, _) = place_limit_order_user<BC, QC>(
             &user_0, MARKET_ID_COIN, @integrator, !side, size, price - 1,
             restriction);
-        assert!(market_order_id >> SHIFT_COUNTER == 1, 0);
+        assert!(get_market_order_id_counter(market_order_id) == 1, 0);
         // Assert order book counter.
         assert!(get_order_book_counter(MARKET_ID_COIN) == 2, 0);
     }
@@ -5565,18 +5699,21 @@ module econia::market {
             place_limit_order_custodian<BC, QC>( // Place limit order.
                 @user_0, MARKET_ID_COIN, @integrator, side, size, price,
                 restriction, &custodian_capability);
-        // Drop custodian capability.
-        registry::drop_custodian_capability_test(custodian_capability);
+        // Assert counter encoded in order ID.
+        assert!(get_market_order_id_counter(market_order_id) == 0, 0);
+        // Assert price encoded in order ID.
+        assert!(get_market_order_id_price(market_order_id) == price, 0);
         // Assert trade amount returns.
         assert!(base_trade == 0, 0);
         assert!(quote_trade == 0, 0);
         assert!(fees == 0, 0);
         // Get order fields.
-        let (size_r, user_r, custodian_id_r, order_access_key) =
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
             get_order_fields_test(MARKET_ID_COIN, side, market_order_id);
         // Assert field returns except access key, used for user lookup.
-        assert!(size_r == size, 0);
-        assert!(user_r == @user_0, 0);
+        assert!(size_r         == size, 0);
+        assert!(price_r        == price, 0);
+        assert!(user_r         == @user_0, 0);
         assert!(custodian_id_r == CUSTODIAN_ID_USER_0, 0);
         // Assert user's asset counts.
         let (base_total , base_available , base_ceiling,
@@ -5600,6 +5737,15 @@ module econia::market {
             order_access_key);
         assert!(market_order_id_r == market_order_id, 0);
         assert!(size_r == size, 0);
+        // Place another order, asserting counter in market order ID.
+        let (market_order_id, _, _, _) = place_limit_order_custodian<BC, QC>(
+            @user_0, MARKET_ID_COIN, @integrator, !side, size, price + 1,
+            restriction, &custodian_capability);
+        assert!(get_market_order_id_counter(market_order_id) == 1, 0);
+        // Assert order book counter.
+        assert!(get_order_book_counter(MARKET_ID_COIN) == 2, 0);
+        // Drop custodian capability.
+        registry::drop_custodian_capability_test(custodian_capability);
     }
 
     #[test]
@@ -5821,12 +5967,13 @@ module econia::market {
             @user_0, MARKET_ID_COIN, NO_CUSTODIAN, side, order_access_key);
         assert!(size_r == size, 0);
         // Get order fields.
-        let (size_r, user_r, custodian_id_r, order_access_key_r) =
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key_r) =
             get_order_fields_test(MARKET_ID_COIN, side, market_order_id);
         // Assert field returns except access key, used for user lookup.
-        assert!(size_r == size, 0);
-        assert!(user_r == @user_0, 0);
-        assert!(custodian_id_r == NO_CUSTODIAN, 0);
+        assert!(size_r             == size, 0);
+        assert!(price_r            == price, 0);
+        assert!(user_r             == @user_0, 0);
+        assert!(custodian_id_r     == NO_CUSTODIAN, 0);
         assert!(order_access_key_r == order_access_key, 0);
     }
 
@@ -5928,11 +6075,12 @@ module econia::market {
         assert!(quote_trade_r == quote_trade, 0);
         assert!(fee_r         == fee, 0);
         // Get fields for maker order on book.
-        let (size_r, user_r, custodian_id_r, order_access_key) =
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
             get_order_fields_test(MARKET_ID_COIN, side, market_order_id_0);
         // Assert field returns except access key, used for user lookup.
-        assert!(size_r == size_post - size_match, 0);
-        assert!(user_r == @user_0, 0);
+        assert!(size_r         == size_post - size_match, 0);
+        assert!(price_r        == price, 0);
+        assert!(user_r         == @user_0, 0);
         assert!(custodian_id_r == NO_CUSTODIAN, 0);
         // Assert user-side order fields.
         let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
@@ -6031,11 +6179,12 @@ module econia::market {
         assert!(quote_trade_r == quote_trade, 0);
         assert!(fee_r         == fee, 0);
         // Get fields for maker order on book.
-        let (size_r, user_r, custodian_id_r, order_access_key) =
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
             get_order_fields_test(MARKET_ID_COIN, side, market_order_id_0);
         // Assert field returns except access key, used for user lookup.
-        assert!(size_r == size_post - size_match, 0);
-        assert!(user_r == @user_0, 0);
+        assert!(size_r         == size_post - size_match, 0);
+        assert!(price_r        == price, 0);
+        assert!(user_r         == @user_0, 0);
         assert!(custodian_id_r == NO_CUSTODIAN, 0);
         // Assert user-side order fields.
         let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
@@ -6134,11 +6283,12 @@ module econia::market {
         assert!(quote_trade_r == quote_trade, 0);
         assert!(fee_r         == fee, 0);
         // Get fields for maker order on book.
-        let (size_r, user_r, custodian_id_r, order_access_key) =
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
             get_order_fields_test(MARKET_ID_COIN, side, market_order_id_0);
         // Assert field returns except access key, used for user lookup.
-        assert!(size_r == size_post - size_match, 0);
-        assert!(user_r == @user_0, 0);
+        assert!(size_r         == size_post - size_match, 0);
+        assert!(price_r        == price, 0);
+        assert!(user_r         == @user_0, 0);
         assert!(custodian_id_r == NO_CUSTODIAN, 0);
         // Assert user-side order fields.
         let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
@@ -6233,11 +6383,12 @@ module econia::market {
         assert!(quote_trade_r == quote_trade, 0);
         assert!(fee_r         == fee, 0);
         // Get fields for maker order on book.
-        let (size_r, user_r, custodian_id_r, order_access_key) =
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
             get_order_fields_test(MARKET_ID_COIN, side, market_order_id_0);
         // Assert field returns except access key, used for user lookup.
-        assert!(size_r == size_post - size_match, 0);
-        assert!(user_r == @user_0, 0);
+        assert!(size_r         == size_post - size_match, 0);
+        assert!(price_r        == price, 0);
+        assert!(user_r         == @user_0, 0);
         assert!(custodian_id_r == NO_CUSTODIAN, 0);
         // Assert user-side order fields.
         let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
@@ -6326,11 +6477,12 @@ module econia::market {
             &user_1, MARKET_ID_COIN, @integrator, BUY, 0, MAX_POSSIBLE,
             0, quote_deposit, price); // Place taker order.
         // Get fields for maker order on book.
-        let (size_r, user_r, custodian_id_r, order_access_key) =
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
             get_order_fields_test(MARKET_ID_COIN, side, market_order_id_0);
         // Assert field returns except access key, used for user lookup.
-        assert!(size_r == size_post - size_match, 0);
-        assert!(user_r == @user_0, 0);
+        assert!(size_r         == size_post - size_match, 0);
+        assert!(price_r        == price, 0);
+        assert!(user_r         == @user_0, 0);
         assert!(custodian_id_r == NO_CUSTODIAN, 0);
         // Assert user-side order fields.
         let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
@@ -6699,12 +6851,13 @@ module econia::market {
         assert!(quote_trade_r == quote_trade, 0);
         assert!(fee_r         == fee, 0);
         // Get fields for maker order on book.
-        let (size_r, user_r, custodian_id_r, order_access_key) =
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
             get_order_fields_test(
                 MARKET_ID_COIN, side_maker, market_order_id_0);
         // Assert field returns except access key, used for user lookup.
-        assert!(size_r == size_maker - size_taker, 0);
-        assert!(user_r == @user_0, 0);
+        assert!(size_r         == size_maker - size_taker, 0);
+        assert!(price_r        == price, 0);
+        assert!(user_r         == @user_0, 0);
         assert!(custodian_id_r == NO_CUSTODIAN, 0);
         // Assert user-side order fields.
         let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
@@ -6798,12 +6951,13 @@ module econia::market {
         assert!(quote_trade_r == quote_trade, 0);
         assert!(fee_r         == fee, 0);
         // Get fields for maker order on book.
-        let (size_r, user_r, custodian_id_r, order_access_key) =
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
             get_order_fields_test(
                 MARKET_ID_COIN, side_maker, market_order_id_0);
         // Assert field returns except access key, used for user lookup.
-        assert!(size_r == size_maker - size_taker, 0);
-        assert!(user_r == @user_0, 0);
+        assert!(size_r         == size_maker - size_taker, 0);
+        assert!(price_r        == price, 0);
+        assert!(user_r         == @user_0, 0);
         assert!(custodian_id_r == NO_CUSTODIAN, 0);
         // Assert user-side order fields.
         let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
@@ -6897,12 +7051,13 @@ module econia::market {
         assert!(quote_trade_r == quote_trade, 0);
         assert!(fee_r         == fee, 0);
         // Get fields for maker order on book.
-        let (size_r, user_r, custodian_id_r, order_access_key) =
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
             get_order_fields_test(
                 MARKET_ID_COIN, side_maker, market_order_id_0);
         // Assert field returns except access key, used for user lookup.
-        assert!(size_r == size_maker - size_taker, 0);
-        assert!(user_r == @user_0, 0);
+        assert!(size_r         == size_maker - size_taker, 0);
+        assert!(price_r        == price, 0);
+        assert!(user_r         == @user_0, 0);
         assert!(custodian_id_r == NO_CUSTODIAN, 0);
         // Assert user-side order fields.
         let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
@@ -6996,12 +7151,13 @@ module econia::market {
         assert!(quote_trade_r == quote_trade, 0);
         assert!(fee_r         == fee, 0);
         // Get fields for maker order on book.
-        let (size_r, user_r, custodian_id_r, order_access_key) =
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
             get_order_fields_test(
                 MARKET_ID_COIN, side_maker, market_order_id_0);
         // Assert field returns except access key, used for user lookup.
-        assert!(size_r == size_maker - size_taker, 0);
-        assert!(user_r == @user_0, 0);
+        assert!(size_r         == size_maker - size_taker, 0);
+        assert!(price_r        == price, 0);
+        assert!(user_r         == @user_0, 0);
         assert!(custodian_id_r == NO_CUSTODIAN, 0);
         // Assert user-side order fields.
         let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
@@ -7086,12 +7242,13 @@ module econia::market {
             &user_1, MARKET_ID_COIN, @integrator, direction, min_base,
             max_base, min_quote, max_quote, price);
         // Get fields for maker order on book.
-        let (size_r, user_r, custodian_id_r, order_access_key) =
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
             get_order_fields_test(
                 MARKET_ID_COIN, side_maker, market_order_id_0);
         // Assert field returns except access key, used for user lookup.
-        assert!(size_r == size_maker - size_taker, 0);
-        assert!(user_r == @user_0, 0);
+        assert!(size_r         == size_maker - size_taker, 0);
+        assert!(price_r        == price, 0);
+        assert!(user_r         == @user_0, 0);
         assert!(custodian_id_r == NO_CUSTODIAN, 0);
         // Assert user-side order fields.
         let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
@@ -7176,12 +7333,13 @@ module econia::market {
             &user_1, MARKET_ID_COIN, @integrator, direction, min_base,
             max_base, min_quote, max_quote, price);
         // Get fields for maker order on book.
-        let (size_r, user_r, custodian_id_r, order_access_key) =
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
             get_order_fields_test(
                 MARKET_ID_COIN, side_maker, market_order_id_0);
         // Assert field returns except access key, used for user lookup.
-        assert!(size_r == size_maker - size_taker, 0);
-        assert!(user_r == @user_0, 0);
+        assert!(size_r         == size_maker - size_taker, 0);
+        assert!(price_r        == price, 0);
+        assert!(user_r         == @user_0, 0);
         assert!(custodian_id_r == NO_CUSTODIAN, 0);
         // Assert user-side order fields.
         let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
@@ -7273,12 +7431,13 @@ module econia::market {
         assert!(quote_trade_r == quote_trade, 0);
         assert!(fee_r         == fee, 0);
         // Get fields for maker order on book.
-        let (size_r, user_r, custodian_id_r, order_access_key) =
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
             get_order_fields_test(
                 MARKET_ID_COIN, side_maker, market_order_id_0);
         // Assert field returns except access key, used for user lookup.
-        assert!(size_r == size_maker - size_taker, 0);
-        assert!(user_r == @user_0, 0);
+        assert!(size_r         == size_maker - size_taker, 0);
+        assert!(price_r        == price, 0);
+        assert!(user_r         == @user_0, 0);
         assert!(custodian_id_r == NO_CUSTODIAN, 0);
         // Assert user-side order fields.
         let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
@@ -7375,12 +7534,13 @@ module econia::market {
         assert!(quote_trade_r == quote_trade, 0);
         assert!(fee_r         == fee, 0);
         // Get fields for maker order on book.
-        let (size_r, user_r, custodian_id_r, order_access_key) =
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
             get_order_fields_test(
                 MARKET_ID_COIN, side_maker, market_order_id_0);
         // Assert field returns except access key, used for user lookup.
-        assert!(size_r == size_maker - size_taker, 0);
-        assert!(user_r == @user_0, 0);
+        assert!(size_r         == size_maker - size_taker, 0);
+        assert!(price_r        == price, 0);
+        assert!(user_r         == @user_0, 0);
         assert!(custodian_id_r == NO_CUSTODIAN, 0);
         // Assert user-side order fields.
         let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
@@ -7477,12 +7637,13 @@ module econia::market {
         assert!(quote_trade_r == quote_trade, 0);
         assert!(fee_r         == fee, 0);
         // Get fields for maker order on book.
-        let (size_r, user_r, custodian_id_r, order_access_key) =
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
             get_order_fields_test(
                 MARKET_ID_COIN, side_maker, market_order_id_0);
         // Assert field returns except access key, used for user lookup.
-        assert!(size_r == size_maker - size_taker, 0);
-        assert!(user_r == @user_0, 0);
+        assert!(size_r         == size_maker - size_taker, 0);
+        assert!(price_r        == price, 0);
+        assert!(user_r         == @user_0, 0);
         assert!(custodian_id_r == NO_CUSTODIAN, 0);
         // Assert user-side order fields.
         let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
@@ -7578,12 +7739,13 @@ module econia::market {
         assert!(quote_trade_r == quote_trade, 0);
         assert!(fee_r         == fee, 0);
         // Get fields for maker order on book.
-        let (size_r, user_r, custodian_id_r, order_access_key) =
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
             get_order_fields_test(
                 MARKET_ID_COIN, side_maker, market_order_id_0);
         // Assert field returns except access key, used for user lookup.
-        assert!(size_r == size_maker - size_taker, 0);
-        assert!(user_r == @user_0, 0);
+        assert!(size_r         == size_maker - size_taker, 0);
+        assert!(price_r        == price, 0);
+        assert!(user_r         == @user_0, 0);
         assert!(custodian_id_r == NO_CUSTODIAN, 0);
         // Assert user-side order fields.
         let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
@@ -7680,12 +7842,13 @@ module econia::market {
         assert!(quote_trade_r == quote_trade, 0);
         assert!(fee_r         == fee, 0);
         // Get fields for maker order on book.
-        let (size_r, user_r, custodian_id_r, order_access_key) =
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
             get_order_fields_test(
                 MARKET_ID_COIN, side_maker, market_order_id_0);
         // Assert field returns except access key, used for user lookup.
-        assert!(size_r == size_maker - size_taker, 0);
-        assert!(user_r == @user_0, 0);
+        assert!(size_r         == size_maker - size_taker, 0);
+        assert!(price_r        == price, 0);
+        assert!(user_r         == @user_0, 0);
         assert!(custodian_id_r == NO_CUSTODIAN, 0);
         // Assert user-side order fields.
         let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
@@ -7781,12 +7944,13 @@ module econia::market {
         assert!(quote_trade_r == quote_trade, 0);
         assert!(fee_r         == fee, 0);
         // Get fields for maker order on book.
-        let (size_r, user_r, custodian_id_r, order_access_key) =
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
             get_order_fields_test(
                 MARKET_ID_COIN, side_maker, market_order_id_0);
         // Assert field returns except access key, used for user lookup.
-        assert!(size_r == size_maker - size_taker, 0);
-        assert!(user_r == @user_0, 0);
+        assert!(size_r         == size_maker - size_taker, 0);
+        assert!(price_r        == price, 0);
+        assert!(user_r         == @user_0, 0);
         assert!(custodian_id_r == NO_CUSTODIAN, 0);
         // Assert user-side order fields.
         let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
@@ -7887,12 +8051,13 @@ module econia::market {
         assert!(quote_trade_r == quote_trade, 0);
         assert!(fee_r         == fee, 0);
         // Get fields for maker order on book.
-        let (size_r, user_r, custodian_id_r, order_access_key) =
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
             get_order_fields_test(
                 MARKET_ID_GENERIC, side_maker, market_order_id_0);
         // Assert field returns except access key, used for user lookup.
-        assert!(size_r == size_maker - size_taker, 0);
-        assert!(user_r == @user_0, 0);
+        assert!(size_r         == size_maker - size_taker, 0);
+        assert!(price_r        == price, 0);
+        assert!(user_r         == @user_0, 0);
         assert!(custodian_id_r == NO_CUSTODIAN, 0);
         // Assert user-side order fields.
         let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
@@ -7988,12 +8153,13 @@ module econia::market {
         assert!(quote_trade_r == quote_trade, 0);
         assert!(fee_r         == fee, 0);
         // Get fields for maker order on book.
-        let (size_r, user_r, custodian_id_r, order_access_key) =
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
             get_order_fields_test(
                 MARKET_ID_GENERIC, side_maker, market_order_id_0);
         // Assert field returns except access key, used for user lookup.
-        assert!(size_r == size_maker - size_taker, 0);
-        assert!(user_r == @user_0, 0);
+        assert!(size_r         == size_maker - size_taker, 0);
+        assert!(price_r        == price, 0);
+        assert!(user_r         == @user_0, 0);
         assert!(custodian_id_r == NO_CUSTODIAN, 0);
         // Assert user-side order fields.
         let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
@@ -8089,12 +8255,13 @@ module econia::market {
         assert!(quote_trade_r == quote_trade, 0);
         assert!(fee_r         == fee, 0);
         // Get fields for maker order on book.
-        let (size_r, user_r, custodian_id_r, order_access_key) =
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
             get_order_fields_test(
                 MARKET_ID_GENERIC, side_maker, market_order_id_0);
         // Assert field returns except access key, used for user lookup.
-        assert!(size_r == size_maker - size_taker, 0);
-        assert!(user_r == @user_0, 0);
+        assert!(size_r         == size_maker - size_taker, 0);
+        assert!(price_r        == price, 0);
+        assert!(user_r         == @user_0, 0);
         assert!(custodian_id_r == NO_CUSTODIAN, 0);
         // Assert user-side order fields.
         let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
@@ -8190,12 +8357,13 @@ module econia::market {
         assert!(quote_trade_r == quote_trade, 0);
         assert!(fee_r         == fee, 0);
         // Get fields for maker order on book.
-        let (size_r, user_r, custodian_id_r, order_access_key) =
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
             get_order_fields_test(
                 MARKET_ID_GENERIC, side_maker, market_order_id_0);
         // Assert field returns except access key, used for user lookup.
-        assert!(size_r == size_maker - size_taker, 0);
-        assert!(user_r == @user_0, 0);
+        assert!(size_r         == size_maker - size_taker, 0);
+        assert!(price_r        == price, 0);
+        assert!(user_r         == @user_0, 0);
         assert!(custodian_id_r == NO_CUSTODIAN, 0);
         // Assert user-side order fields.
         let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
@@ -8291,12 +8459,13 @@ module econia::market {
         assert!(quote_trade_r == quote_trade, 0);
         assert!(fee_r         == fee, 0);
         // Get fields for maker order on book.
-        let (size_r, user_r, custodian_id_r, order_access_key) =
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
             get_order_fields_test(
                 MARKET_ID_GENERIC, side_maker, market_order_id_0);
         // Assert field returns except access key, used for user lookup.
-        assert!(size_r == size_maker - size_taker, 0);
-        assert!(user_r == @user_0, 0);
+        assert!(size_r         == size_maker - size_taker, 0);
+        assert!(price_r        == price, 0);
+        assert!(user_r         == @user_0, 0);
         assert!(custodian_id_r == NO_CUSTODIAN, 0);
         // Assert user-side order fields.
         let (market_order_id_r, size_r) = user::get_order_fields_simple_test(

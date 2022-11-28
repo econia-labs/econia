@@ -1926,10 +1926,8 @@ module econia::market {
     ///
     /// # Type Parameters
     ///
-    /// * `BaseType`: Same as for `match()`. Ignored unless order fills
-    ///   across the spread as a taker.
-    /// * `QuoteType`: Same as for `match()`. Ignored unless order fills
-    ///   across the spread as a taker.
+    /// * `BaseType`: Same as for `match()`.
+    /// * `QuoteType`: Same as for `match()`.
     ///
     /// # Parameters
     ///
@@ -1965,6 +1963,8 @@ module econia::market {
     /// * `E_PRICE_0`: Order price specified as 0.
     /// * `E_PRICE_TOO_HIGH`: Order price exceeds maximum allowed
     ///   price.
+    /// * `E_INVALID_BASE`: Base asset type is invalid.
+    /// * `E_INVALID_QUOTE`: Quote asset type is invalid.
     /// * `E_SIZE_TOO_SMALL`: Limit order size does not meet minimum
     ///   size for market.
     /// * `E_FILL_OR_ABORT_NOT_CROSS_SPREAD`: Fill-or-abort price does
@@ -2010,12 +2010,13 @@ module econia::market {
     ///
     /// Order restriction and price are checked, then user's available
     /// and ceiling asset counts are checked, verifying that the given
-    /// market exists. The corresponding order book is borrowed, the
-    /// order size is checked against the min size for the market, and
-    /// the market underwriter ID is checked. The price is checked for
-    /// the given order side to determine if the spread is crossed, and
-    /// if not, order aborts if restriction is fill-or-abort. If spread
-    /// is not crossed, order aborts if restriction is post-or-abort.
+    /// market exists. The corresponding order book is borrowed, base
+    /// and quote type arguments are verified, the order size is checked
+    /// against the min size for the market, and the market underwriter
+    /// ID is checked. The price is checked for the given order side to
+    /// determine if the spread is crossed, and if not, order aborts if
+    /// restriction is fill-or-abort. If spread is not crossed, order
+    /// aborts if restriction is post-or-abort.
     ///
     /// The amount of base units, ticks, and quote units required to
     /// fill the order size are checked for overflow conditions, and
@@ -2057,6 +2058,8 @@ module econia::market {
     /// * `test_place_limit_order_base_overflow()`
     /// * `test_place_limit_order_fill_or_abort_not_cross()`
     /// * `test_place_limit_order_fill_or_abort_partial()`
+    /// * `test_place_limit_order_invalid_base()`
+    /// * `test_place_limit_order_invalid_quote()`
     /// * `test_place_limit_order_invalid_restriction()`
     /// * `test_place_limit_order_no_price()`
     /// * `test_place_limit_order_post_or_abort_crosses()`
@@ -2100,6 +2103,10 @@ module econia::market {
             &mut borrow_global_mut<OrderBooks>(resource_address).map;
         let order_book_ref_mut = // Mutably borrow market order book.
             tablist::borrow_mut(order_books_map_ref_mut, market_id);
+        assert!(type_info::type_of<BaseType>() // Assert base type.
+                == order_book_ref_mut.base_type, E_INVALID_BASE);
+        assert!(type_info::type_of<QuoteType>() // Assert quote type.
+                == order_book_ref_mut.quote_type, E_INVALID_QUOTE);
         // Assert order size is at least minimum size for market.
         assert!(size >= order_book_ref_mut.min_size, E_SIZE_TOO_SMALL);
         // Get market underwriter ID.
@@ -2273,17 +2280,23 @@ module econia::market {
     /// * `u64`: Quote coin trade amount, same as for `match()`.
     /// * `u64`: Quote coin fees paid, same as for `match()`.
     ///
+    /// # Aborts
+    ///
+    /// * `E_INVALID_BASE`: Base asset type is invalid.
+    /// * `E_INVALID_QUOTE`: Quote asset type is invalid.
+    ///
     /// # Algorithm description
     ///
     /// Checks user's available and ceiling asset counts, thus verifying
     /// that market exists for given market ID. Mutably borrows order
-    /// book for market and gets underwriter ID, then checks max base
-    /// and quote trade amount inputs. If flagged as max possible, max
-    /// base is updated to max amount possible for market account state,
-    /// as for max quote. Trade amounts are range checked, and withdraw
-    /// amounts are calculated based on the direction: if a buy, max
-    /// quote is withdrawn but no base, and if a sell, max base but no
-    /// quote is withdrawn from user's market account.
+    /// book for market and checks base/quote type arguments, gets
+    /// underwriter ID, then checks max base and quote trade amount
+    /// inputs. If flagged as max possible, max base is updated to max
+    /// amount possible for market account state, as for max quote.
+    /// Trade amounts are range checked, and withdraw amounts are
+    /// calculated based on the direction: if a buy, max quote is
+    /// withdrawn but no base, and if a sell, max base but no quote is
+    /// withdrawn from user's market account.
     ///
     /// Assets are withdrawn from the user's market account, thus
     /// verifying the base and quote type for the market. The amount of
@@ -2297,6 +2310,11 @@ module econia::market {
     /// * `test_place_market_order_max_base_sell_custodian()`
     /// * `test_place_market_order_max_quote_buy_custodian()`
     /// * `test_place_market_order_max_quote_sell_user()`
+    ///
+    /// # Failure testing
+    ///
+    /// * `test_place_market_order_invalid_base()`
+    /// * `test_place_market_order_invalid_quote()`
     fun place_market_order<
         BaseType,
         QuoteType
@@ -2327,6 +2345,10 @@ module econia::market {
             &mut borrow_global_mut<OrderBooks>(resource_address).map;
         let order_book_ref_mut = // Mutably borrow market order book.
             tablist::borrow_mut(order_books_map_ref_mut, market_id);
+        assert!(type_info::type_of<BaseType>() // Assert base type.
+                == order_book_ref_mut.base_type, E_INVALID_BASE);
+        assert!(type_info::type_of<QuoteType>() // Assert quote type.
+                == order_book_ref_mut.quote_type, E_INVALID_QUOTE);
         // Get market underwriter ID.
         let underwriter_id = order_book_ref_mut.underwriter_id;
         // If max base to trade flagged as max possible and a buy,
@@ -5379,6 +5401,52 @@ module econia::market {
     }
 
     #[test]
+    #[expected_failure(abort_code = 7)]
+    /// Verify failure for invalid base type argument.
+    fun test_place_limit_order_invalid_base()
+    acquires OrderBooks {
+        // Declare order parameters.
+        let side = ASK;
+        let size = MIN_SIZE_COIN;
+        let price = HI_PRICE;
+        let restriction = NO_RESTRICTION;
+        let critical_height = CRITICAL_HEIGHT;
+        // Initialize markets, users, and an integrator.
+        init_markets_users_integrator_test();
+        // Deposit base and quote coins to user's account.
+        user::deposit_coins<BC>(@user_0, MARKET_ID_COIN, CUSTODIAN_ID_USER_0,
+                                assets::mint_test(HI_64));
+        user::deposit_coins<QC>(@user_0, MARKET_ID_COIN, CUSTODIAN_ID_USER_0,
+                                assets::mint_test(HI_64));
+        place_limit_order<QC, QC>( // Attempt invalid invocation.
+            @user_0, MARKET_ID_COIN, NO_CUSTODIAN, @integrator, side, size,
+            price, restriction, critical_height);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 8)]
+    /// Verify failure for invalid quote type argument.
+    fun test_place_limit_order_invalid_quote()
+    acquires OrderBooks {
+        // Declare order parameters.
+        let side = ASK;
+        let size = MIN_SIZE_COIN;
+        let price = HI_PRICE;
+        let restriction = NO_RESTRICTION;
+        let critical_height = CRITICAL_HEIGHT;
+        // Initialize markets, users, and an integrator.
+        init_markets_users_integrator_test();
+        // Deposit base and quote coins to user's account.
+        user::deposit_coins<BC>(@user_0, MARKET_ID_COIN, CUSTODIAN_ID_USER_0,
+                                assets::mint_test(HI_64));
+        user::deposit_coins<QC>(@user_0, MARKET_ID_COIN, CUSTODIAN_ID_USER_0,
+                                assets::mint_test(HI_64));
+        place_limit_order<BC, BC>( // Attempt invalid invocation.
+            @user_0, MARKET_ID_COIN, NO_CUSTODIAN, @integrator, side, size,
+            price, restriction, critical_height);
+    }
+
+    #[test]
     #[expected_failure(abort_code = 18)]
     /// Verify failure for invalid restriction.
     fun test_place_limit_order_invalid_restriction()
@@ -5760,6 +5828,54 @@ module econia::market {
         assert!(user_r == @user_0, 0);
         assert!(custodian_id_r == NO_CUSTODIAN, 0);
         assert!(order_access_key_r == order_access_key, 0);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 7)]
+    /// Verify failure for invalid base type argument.
+    fun test_place_market_order_invalid_base()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        init_markets_users_integrator_test();
+        // Declare order arguments.
+        let user_address = @user_0;
+        let market_id = MARKET_ID_COIN;
+        let custodian_id = NO_CUSTODIAN;
+        let integrator = @integrator;
+        let direction = BUY;
+        let min_base = 0;
+        let max_base = MAX_POSSIBLE;
+        let min_quote = 0;
+        let max_quote = MAX_POSSIBLE;
+        let limit_price = HI_PRICE;
+        // Attempt invalid invocation.
+        place_market_order<QC, QC>(
+            user_address, market_id, custodian_id, integrator, direction,
+            min_base, max_base, min_quote, max_quote, limit_price);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 8)]
+    /// Verify failure for invalid quote type argument.
+    fun test_place_market_order_invalid_quote()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        init_markets_users_integrator_test();
+        // Declare order arguments.
+        let user_address = @user_0;
+        let market_id = MARKET_ID_COIN;
+        let custodian_id = NO_CUSTODIAN;
+        let integrator = @integrator;
+        let direction = BUY;
+        let min_base = 0;
+        let max_base = MAX_POSSIBLE;
+        let min_quote = 0;
+        let max_quote = MAX_POSSIBLE;
+        let limit_price = HI_PRICE;
+        // Attempt invalid invocation.
+        place_market_order<BC, BC>(
+            user_address, market_id, custodian_id, integrator, direction,
+            min_base, max_base, min_quote, max_quote, limit_price);
     }
 
     #[test]
@@ -7755,9 +7871,10 @@ module econia::market {
                                 assets::mint_test(quote_deposit_maker));
         // Create taker coins.
         let quote_coins = assets::mint_test<QC>(quote_deposit_taker);
-        let (market_order_id_0, _, _, _) = place_limit_order_user<QC, QC>(
-            &user_0, MARKET_ID_GENERIC, @integrator, side_maker, size_maker,
-            price, NO_RESTRICTION); // Place maker order.
+        // Place maker order.
+        let (market_order_id_0, _, _, _) = place_limit_order_user<
+            GenericAsset, QC>(&user_0, MARKET_ID_GENERIC, @integrator,
+            side_maker, size_maker, price, NO_RESTRICTION);
         let (quote_coins, base_trade_r, quote_trade_r, fee_r) =
             swap_generic<QC>( // Place taker order.
                 MARKET_ID_GENERIC, @integrator, direction, min_base, max_base,
@@ -7855,9 +7972,10 @@ module econia::market {
                                 assets::mint_test(quote_deposit_maker));
         // Create taker coins.
         let quote_coins = assets::mint_test<QC>(quote_deposit_taker);
-        let (market_order_id_0, _, _, _) = place_limit_order_user<QC, QC>(
-            &user_0, MARKET_ID_GENERIC, @integrator, side_maker, size_maker,
-            price, NO_RESTRICTION); // Place maker order.
+        // Place maker order.
+        let (market_order_id_0, _, _, _) = place_limit_order_user<
+            GenericAsset, QC>(&user_0, MARKET_ID_GENERIC, @integrator,
+            side_maker, size_maker, price, NO_RESTRICTION);
         let (quote_coins, base_trade_r, quote_trade_r, fee_r) =
             swap_generic<QC>( // Place taker order.
                 MARKET_ID_GENERIC, @integrator, direction, min_base, max_base,
@@ -7955,9 +8073,10 @@ module econia::market {
                                 assets::mint_test(quote_deposit_maker));
         // Create taker coins.
         let quote_coins = assets::mint_test<QC>(quote_deposit_taker);
-        let (market_order_id_0, _, _, _) = place_limit_order_user<QC, QC>(
-            &user_0, MARKET_ID_GENERIC, @integrator, side_maker, size_maker,
-            price, NO_RESTRICTION); // Place maker order.
+        // Place maker order.
+        let (market_order_id_0, _, _, _) = place_limit_order_user<
+            GenericAsset, QC>(&user_0, MARKET_ID_GENERIC, @integrator,
+            side_maker, size_maker, price, NO_RESTRICTION);
         let (quote_coins, base_trade_r, quote_trade_r, fee_r) =
             swap_generic<QC>( // Place taker order.
                 MARKET_ID_GENERIC, @integrator, direction, min_base, max_base,
@@ -8055,9 +8174,10 @@ module econia::market {
                                 assets::mint_test(quote_deposit_maker));
         // Create taker coins.
         let quote_coins = assets::mint_test<QC>(quote_deposit_taker);
-        let (market_order_id_0, _, _, _) = place_limit_order_user<QC, QC>(
-            &user_0, MARKET_ID_GENERIC, @integrator, side_maker, size_maker,
-            price, NO_RESTRICTION); // Place maker order.
+        // Place maker order.
+        let (market_order_id_0, _, _, _) = place_limit_order_user<
+            GenericAsset, QC>(&user_0, MARKET_ID_GENERIC, @integrator,
+            side_maker, size_maker, price, NO_RESTRICTION);
         let (quote_coins, base_trade_r, quote_trade_r, fee_r) =
             swap_generic<QC>( // Place taker order.
                 MARKET_ID_GENERIC, @integrator, direction, min_base, max_base,
@@ -8155,9 +8275,10 @@ module econia::market {
                                 assets::mint_test(quote_deposit_maker));
         // Create taker coins.
         let quote_coins = assets::mint_test<QC>(quote_deposit_taker);
-        let (market_order_id_0, _, _, _) = place_limit_order_user<QC, QC>(
-            &user_0, MARKET_ID_GENERIC, @integrator, side_maker, size_maker,
-            price, NO_RESTRICTION); // Place maker order.
+        // Place maker order.
+        let (market_order_id_0, _, _, _) = place_limit_order_user<
+            GenericAsset, QC>(&user_0, MARKET_ID_GENERIC, @integrator,
+            side_maker, size_maker, price, NO_RESTRICTION);
         let (quote_coins, base_trade_r, quote_trade_r, fee_r) =
             swap_generic<QC>( // Place taker order.
                 MARKET_ID_GENERIC, @integrator, direction, min_base, max_base,

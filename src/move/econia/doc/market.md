@@ -615,28 +615,30 @@ The below index is automatically generated from source code:
     -  [Type Parameters](#@Type_Parameters_84)
     -  [Parameters](#@Parameters_85)
     -  [Returns](#@Returns_86)
-    -  [Algorithm description](#@Algorithm_description_87)
-    -  [Expected value testing](#@Expected_value_testing_88)
+    -  [Aborts](#@Aborts_87)
+    -  [Algorithm description](#@Algorithm_description_88)
+    -  [Expected value testing](#@Expected_value_testing_89)
+    -  [Failure testing](#@Failure_testing_90)
 -  [Function `range_check_trade`](#0xc0deb00c_market_range_check_trade)
-    -  [Terminology](#@Terminology_89)
-    -  [Parameters](#@Parameters_90)
-    -  [Aborts](#@Aborts_91)
-    -  [Failure testing](#@Failure_testing_92)
+    -  [Terminology](#@Terminology_91)
+    -  [Parameters](#@Parameters_92)
+    -  [Aborts](#@Aborts_93)
+    -  [Failure testing](#@Failure_testing_94)
 -  [Function `register_market`](#0xc0deb00c_market_register_market)
-    -  [Type parameters](#@Type_parameters_93)
-    -  [Parameters](#@Parameters_94)
-    -  [Returns](#@Returns_95)
-    -  [Testing](#@Testing_96)
+    -  [Type parameters](#@Type_parameters_95)
+    -  [Parameters](#@Parameters_96)
+    -  [Returns](#@Returns_97)
+    -  [Testing](#@Testing_98)
 -  [Function `swap`](#0xc0deb00c_market_swap)
-    -  [Type Parameters](#@Type_Parameters_97)
-    -  [Parameters](#@Parameters_98)
-    -  [Returns](#@Returns_99)
-    -  [Aborts](#@Aborts_100)
-    -  [Expected value testing](#@Expected_value_testing_101)
-    -  [Failure testing](#@Failure_testing_102)
+    -  [Type Parameters](#@Type_Parameters_99)
+    -  [Parameters](#@Parameters_100)
+    -  [Returns](#@Returns_101)
+    -  [Aborts](#@Aborts_102)
+    -  [Expected value testing](#@Expected_value_testing_103)
+    -  [Failure testing](#@Failure_testing_104)
 -  [Function `index_orders`](#0xc0deb00c_market_index_orders)
-    -  [Returns](#@Returns_103)
-    -  [Testing](#@Testing_104)
+    -  [Returns](#@Returns_105)
+    -  [Testing](#@Testing_106)
 
 
 <pre><code><b>use</b> <a href="">0x1::account</a>;
@@ -3371,10 +3373,8 @@ Place limit order against order book from user market account.
 ### Type Parameters
 
 
-* <code>BaseType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>. Ignored unless order fills
-across the spread as a taker.
-* <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>. Ignored unless order fills
-across the spread as a taker.
+* <code>BaseType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
 <a name="@Parameters_75"></a>
@@ -3422,6 +3422,8 @@ if order fills across the spread.
 * <code><a href="market.md#0xc0deb00c_market_E_PRICE_0">E_PRICE_0</a></code>: Order price specified as 0.
 * <code><a href="market.md#0xc0deb00c_market_E_PRICE_TOO_HIGH">E_PRICE_TOO_HIGH</a></code>: Order price exceeds maximum allowed
 price.
+* <code><a href="market.md#0xc0deb00c_market_E_INVALID_BASE">E_INVALID_BASE</a></code>: Base asset type is invalid.
+* <code><a href="market.md#0xc0deb00c_market_E_INVALID_QUOTE">E_INVALID_QUOTE</a></code>: Quote asset type is invalid.
 * <code><a href="market.md#0xc0deb00c_market_E_SIZE_TOO_SMALL">E_SIZE_TOO_SMALL</a></code>: Limit order size does not meet minimum
 size for market.
 * <code><a href="market.md#0xc0deb00c_market_E_FILL_OR_ABORT_NOT_CROSS_SPREAD">E_FILL_OR_ABORT_NOT_CROSS_SPREAD</a></code>: Fill-or-abort price does
@@ -3483,12 +3485,13 @@ again for the maker portion.
 
 Order restriction and price are checked, then user's available
 and ceiling asset counts are checked, verifying that the given
-market exists. The corresponding order book is borrowed, the
-order size is checked against the min size for the market, and
-the market underwriter ID is checked. The price is checked for
-the given order side to determine if the spread is crossed, and
-if not, order aborts if restriction is fill-or-abort. If spread
-is not crossed, order aborts if restriction is post-or-abort.
+market exists. The corresponding order book is borrowed, base
+and quote type arguments are verified, the order size is checked
+against the min size for the market, and the market underwriter
+ID is checked. The price is checked for the given order side to
+determine if the spread is crossed, and if not, order aborts if
+restriction is fill-or-abort. If spread is not crossed, order
+aborts if restriction is post-or-abort.
 
 The amount of base units, ticks, and quote units required to
 fill the order size are checked for overflow conditions, and
@@ -3538,6 +3541,8 @@ ID is emitted in a maker evict event.
 * <code>test_place_limit_order_base_overflow()</code>
 * <code>test_place_limit_order_fill_or_abort_not_cross()</code>
 * <code>test_place_limit_order_fill_or_abort_partial()</code>
+* <code>test_place_limit_order_invalid_base()</code>
+* <code>test_place_limit_order_invalid_quote()</code>
 * <code>test_place_limit_order_invalid_restriction()</code>
 * <code>test_place_limit_order_no_price()</code>
 * <code>test_place_limit_order_post_or_abort_crosses()</code>
@@ -3591,6 +3596,10 @@ ID is emitted in a maker evict event.
         &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>&gt;(resource_address).map;
     <b>let</b> order_book_ref_mut = // Mutably borrow <a href="market.md#0xc0deb00c_market">market</a> order book.
         <a href="tablist.md#0xc0deb00c_tablist_borrow_mut">tablist::borrow_mut</a>(order_books_map_ref_mut, market_id);
+    <b>assert</b>!(<a href="_type_of">type_info::type_of</a>&lt;BaseType&gt;() // Assert base type.
+            == order_book_ref_mut.base_type, <a href="market.md#0xc0deb00c_market_E_INVALID_BASE">E_INVALID_BASE</a>);
+    <b>assert</b>!(<a href="_type_of">type_info::type_of</a>&lt;QuoteType&gt;() // Assert quote type.
+            == order_book_ref_mut.quote_type, <a href="market.md#0xc0deb00c_market_E_INVALID_QUOTE">E_INVALID_QUOTE</a>);
     // Assert order size is at least minimum size for <a href="market.md#0xc0deb00c_market">market</a>.
     <b>assert</b>!(size &gt;= order_book_ref_mut.min_size, <a href="market.md#0xc0deb00c_market_E_SIZE_TOO_SMALL">E_SIZE_TOO_SMALL</a>);
     // Get <a href="market.md#0xc0deb00c_market">market</a> underwriter ID.
@@ -3784,20 +3793,30 @@ for market account.
 * <code>u64</code>: Quote coin fees paid, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Algorithm_description_87"></a>
+<a name="@Aborts_87"></a>
+
+### Aborts
+
+
+* <code><a href="market.md#0xc0deb00c_market_E_INVALID_BASE">E_INVALID_BASE</a></code>: Base asset type is invalid.
+* <code><a href="market.md#0xc0deb00c_market_E_INVALID_QUOTE">E_INVALID_QUOTE</a></code>: Quote asset type is invalid.
+
+
+<a name="@Algorithm_description_88"></a>
 
 ### Algorithm description
 
 
 Checks user's available and ceiling asset counts, thus verifying
 that market exists for given market ID. Mutably borrows order
-book for market and gets underwriter ID, then checks max base
-and quote trade amount inputs. If flagged as max possible, max
-base is updated to max amount possible for market account state,
-as for max quote. Trade amounts are range checked, and withdraw
-amounts are calculated based on the direction: if a buy, max
-quote is withdrawn but no base, and if a sell, max base but no
-quote is withdrawn from user's market account.
+book for market and checks base/quote type arguments, gets
+underwriter ID, then checks max base and quote trade amount
+inputs. If flagged as max possible, max base is updated to max
+amount possible for market account state, as for max quote.
+Trade amounts are range checked, and withdraw amounts are
+calculated based on the direction: if a buy, max quote is
+withdrawn but no base, and if a sell, max base but no quote is
+withdrawn from user's market account.
 
 Assets are withdrawn from the user's market account, thus
 verifying the base and quote type for the market. The amount of
@@ -3806,7 +3825,7 @@ calculated, then base and quote assets are deposited back to the
 user's market account.
 
 
-<a name="@Expected_value_testing_88"></a>
+<a name="@Expected_value_testing_89"></a>
 
 ### Expected value testing
 
@@ -3815,6 +3834,15 @@ user's market account.
 * <code>test_place_market_order_max_base_sell_custodian()</code>
 * <code>test_place_market_order_max_quote_buy_custodian()</code>
 * <code>test_place_market_order_max_quote_sell_user()</code>
+
+
+<a name="@Failure_testing_90"></a>
+
+### Failure testing
+
+
+* <code>test_place_market_order_invalid_base()</code>
+* <code>test_place_market_order_invalid_quote()</code>
 
 
 <pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_place_market_order">place_market_order</a>&lt;BaseType, QuoteType&gt;(user_address: <b>address</b>, market_id: u64, custodian_id: u64, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64): (u64, u64, u64)
@@ -3855,6 +3883,10 @@ user's market account.
         &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>&gt;(resource_address).map;
     <b>let</b> order_book_ref_mut = // Mutably borrow <a href="market.md#0xc0deb00c_market">market</a> order book.
         <a href="tablist.md#0xc0deb00c_tablist_borrow_mut">tablist::borrow_mut</a>(order_books_map_ref_mut, market_id);
+    <b>assert</b>!(<a href="_type_of">type_info::type_of</a>&lt;BaseType&gt;() // Assert base type.
+            == order_book_ref_mut.base_type, <a href="market.md#0xc0deb00c_market_E_INVALID_BASE">E_INVALID_BASE</a>);
+    <b>assert</b>!(<a href="_type_of">type_info::type_of</a>&lt;QuoteType&gt;() // Assert quote type.
+            == order_book_ref_mut.quote_type, <a href="market.md#0xc0deb00c_market_E_INVALID_QUOTE">E_INVALID_QUOTE</a>);
     // Get <a href="market.md#0xc0deb00c_market">market</a> underwriter ID.
     <b>let</b> underwriter_id = order_book_ref_mut.underwriter_id;
     // If max base <b>to</b> trade flagged <b>as</b> max possible and a buy,
@@ -3909,7 +3941,7 @@ Range check minimum and maximum asset trade amounts.
 Should be called before <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Terminology_89"></a>
+<a name="@Terminology_91"></a>
 
 ### Terminology
 
@@ -3932,7 +3964,7 @@ user's <code>aptos_framework::coin::CoinStore</code> or from standalone
 coins, is the same as available amount.
 
 
-<a name="@Parameters_90"></a>
+<a name="@Parameters_92"></a>
 
 ### Parameters
 
@@ -3953,7 +3985,7 @@ trade.
 <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>.
 
 
-<a name="@Aborts_91"></a>
+<a name="@Aborts_93"></a>
 
 ### Aborts
 
@@ -3969,7 +4001,7 @@ received from trade.
 * <code><a href="market.md#0xc0deb00c_market_E_NOT_ENOUGH_ASSET_OUT">E_NOT_ENOUGH_ASSET_OUT</a></code>: Not enough asset to trade away.
 
 
-<a name="@Failure_testing_92"></a>
+<a name="@Failure_testing_94"></a>
 
 ### Failure testing
 
@@ -4043,7 +4075,7 @@ See <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketI
 size, minimum size, and 32-bit prices.
 
 
-<a name="@Type_parameters_93"></a>
+<a name="@Type_parameters_95"></a>
 
 ### Type parameters
 
@@ -4052,7 +4084,7 @@ size, minimum size, and 32-bit prices.
 * <code>QuoteType</code>: Quote coin type for market.
 
 
-<a name="@Parameters_94"></a>
+<a name="@Parameters_96"></a>
 
 ### Parameters
 
@@ -4066,7 +4098,7 @@ for market.
 * <code>underwriter_id</code>: <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>.min_size</code> for market.
 
 
-<a name="@Returns_95"></a>
+<a name="@Returns_97"></a>
 
 ### Returns
 
@@ -4074,7 +4106,7 @@ for market.
 * <code>u64</code>: Market ID for new market.
 
 
-<a name="@Testing_96"></a>
+<a name="@Testing_98"></a>
 
 ### Testing
 
@@ -4139,7 +4171,7 @@ for market.
 Match a taker's swap order against order book for given market.
 
 
-<a name="@Type_Parameters_97"></a>
+<a name="@Type_Parameters_99"></a>
 
 ### Type Parameters
 
@@ -4148,7 +4180,7 @@ Match a taker's swap order against order book for given market.
 * <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Parameters_98"></a>
+<a name="@Parameters_100"></a>
 
 ### Parameters
 
@@ -4169,7 +4201,7 @@ is <code><a href="registry.md#0xc0deb00c_registry_GenericAsset">registry::Generi
 * <code>quote_coins</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Returns_99"></a>
+<a name="@Returns_101"></a>
 
 ### Returns
 
@@ -4183,7 +4215,7 @@ same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>
 * <code>u64</code>: Quote coin fees paid, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Aborts_100"></a>
+<a name="@Aborts_102"></a>
 
 ### Aborts
 
@@ -4194,7 +4226,7 @@ same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>
 * <code><a href="market.md#0xc0deb00c_market_E_INVALID_QUOTE">E_INVALID_QUOTE</a></code>: Quote asset type is invalid.
 
 
-<a name="@Expected_value_testing_101"></a>
+<a name="@Expected_value_testing_103"></a>
 
 ### Expected value testing
 
@@ -4203,7 +4235,7 @@ same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>
 <code><a href="market.md#0xc0deb00c_market_swap_generic">swap_generic</a>()</code> testing.
 
 
-<a name="@Failure_testing_102"></a>
+<a name="@Failure_testing_104"></a>
 
 ### Failure testing
 
@@ -4280,7 +4312,7 @@ Index order book into ask and bids vectors.
 Only for SDK generation.
 
 
-<a name="@Returns_103"></a>
+<a name="@Returns_105"></a>
 
 ### Returns
 
@@ -4289,7 +4321,7 @@ Only for SDK generation.
 * <code><a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_PricedOrder">PricedOrder</a>&gt;</code>: Bids, sorted by descending price.
 
 
-<a name="@Testing_104"></a>
+<a name="@Testing_106"></a>
 
 ### Testing
 

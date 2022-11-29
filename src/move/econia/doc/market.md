@@ -147,11 +147,10 @@ associated function wrappers.
 ## Indexing
 
 
-An order book can be indexed off-chain via <code><a href="market.md#0xc0deb00c_market_index_orders">index_orders</a>()</code>, an
-SDK-generative function for use as a <code><b>move</b>-<b>to</b>-ts</code> method attribute
-on an <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code>.
+An order book can be indexed off-chain via <code><a href="market.md#0xc0deb00c_market_index_orders_sdk">index_orders_sdk</a>()</code>, an
+SDK-generative function for use with <code><b>move</b>-<b>to</b>-ts</code>.
 
-Once an order book has been indexed, the off-chain copy can be kept
+Once an order book has been indexed, the off-chain model can be kept
 current by monitoring <code><a href="market.md#0xc0deb00c_market_MakerEvent">MakerEvent</a></code> and <code><a href="market.md#0xc0deb00c_market_TakerEvent">TakerEvent</a></code> emissions from
 the following functions:
 
@@ -535,7 +534,7 @@ The below index is automatically generated from source code:
 -  [Struct `OrderBook`](#0xc0deb00c_market_OrderBook)
 -  [Resource `OrderBooks`](#0xc0deb00c_market_OrderBooks)
 -  [Struct `TakerEvent`](#0xc0deb00c_market_TakerEvent)
--  [Struct `PricedOrder`](#0xc0deb00c_market_PricedOrder)
+-  [Resource `Orders`](#0xc0deb00c_market_Orders)
 -  [Constants](#@Constants_19)
 -  [Function `cancel_all_orders_custodian`](#0xc0deb00c_market_cancel_all_orders_custodian)
     -  [Invocation testing](#@Invocation_testing_20)
@@ -656,9 +655,8 @@ The below index is automatically generated from source code:
     -  [Aborts](#@Aborts_105)
     -  [Expected value testing](#@Expected_value_testing_106)
     -  [Failure testing](#@Failure_testing_107)
--  [Function `index_orders`](#0xc0deb00c_market_index_orders)
-    -  [Returns](#@Returns_108)
-    -  [Testing](#@Testing_109)
+-  [Function `index_orders_sdk`](#0xc0deb00c_market_index_orders_sdk)
+    -  [Testing](#@Testing_108)
 
 
 <pre><code><b>use</b> <a href="">0x1::account</a>;
@@ -983,14 +981,15 @@ event is emitted for each one.
 </dl>
 
 
-<a name="0xc0deb00c_market_PricedOrder"></a>
+<a name="0xc0deb00c_market_Orders"></a>
 
-## Struct `PricedOrder`
+## Resource `Orders`
 
-An order with price. Only for SDK generation.
+All <code><a href="market.md#0xc0deb00c_market_Order">Order</a></code> instances from an <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code>, indexed by side and
+sorted by price-time priority. Only for SDK generation.
 
 
-<pre><code><b>struct</b> <a href="market.md#0xc0deb00c_market_PricedOrder">PricedOrder</a> <b>has</b> store
+<pre><code><b>struct</b> <a href="market.md#0xc0deb00c_market_Orders">Orders</a> <b>has</b> key
 </code></pre>
 
 
@@ -1000,16 +999,18 @@ An order with price. Only for SDK generation.
 
 <dl>
 <dt>
-<code>price: u64</code>
+<code>asks: <a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_Order">market::Order</a>&gt;</code>
 </dt>
 <dd>
- Price of order from order book AVL queue.
+ Asks sorted by price-time priority: oldest order at lowest
+ price first in vector.
 </dd>
 <dt>
-<code>order: <a href="market.md#0xc0deb00c_market_Order">market::Order</a></code>
+<code>bids: <a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_Order">market::Order</a>&gt;</code>
 </dt>
 <dd>
- Order from order book AVL queue.
+ Bids sorted by price-time priority: oldest order at highest
+ price first in vector.
 </dd>
 </dl>
 
@@ -1356,6 +1357,16 @@ Minimum quote coin trade amount requirement not met.
 
 
 <pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_MIN_QUOTE_NOT_TRADED">E_MIN_QUOTE_NOT_TRADED</a>: u64 = 10;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_E_NOT_SIMULATION_ACCOUNT"></a>
+
+Simulation query called by invalid account.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_NOT_SIMULATION_ACCOUNT">E_NOT_SIMULATION_ACCOUNT</a>: u64 = 27;
 </code></pre>
 
 
@@ -4421,33 +4432,31 @@ same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>
 
 
 
-<a name="0xc0deb00c_market_index_orders"></a>
+<a name="0xc0deb00c_market_index_orders_sdk"></a>
 
-## Function `index_orders`
+## Function `index_orders_sdk`
 
-Index order book into ask and bids vectors.
+Index order book for given market ID into ask and bid vectors.
 
-Only for SDK generation.
+Only for <code><b>move</b>-<b>to</b>-ts</code> SDK generation.
 
+Requires <code>@simulation_account</code> as a signer, which can be
+generated during transaction simulation.
 
-<a name="@Returns_108"></a>
-
-### Returns
-
-
-* <code><a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_PricedOrder">PricedOrder</a>&gt;</code>: Asks, sorted by ascending price.
-* <code><a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_PricedOrder">PricedOrder</a>&gt;</code>: Bids, sorted by descending price.
+Should be run on a full node with a high gas limit that allows
+the simulation to process all orders on the order book.
 
 
-<a name="@Testing_109"></a>
+<a name="@Testing_108"></a>
 
 ### Testing
 
 
-* <code>test_index_orders()</code>
+* <code>test_index_orders_sdk()</code>
+* <code>test_index_orders_sdk_not_sim_account()</code>
 
 
-<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_index_orders">index_orders</a>(order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">market::OrderBook</a>): (<a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_PricedOrder">market::PricedOrder</a>&gt;, <a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_PricedOrder">market::PricedOrder</a>&gt;)
+<pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_index_orders_sdk">index_orders_sdk</a>(<a href="">account</a>: &<a href="">signer</a>, market_id: u64)
 </code></pre>
 
 
@@ -4455,36 +4464,67 @@ Only for SDK generation.
 ##### Implementation
 
 
-<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_index_orders">index_orders</a>(
-    order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a>
-): (
-    <a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_PricedOrder">PricedOrder</a>&gt;,
-    <a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_PricedOrder">PricedOrder</a>&gt;
-) {
-    // Initialize asks and bids vectors.
-    <b>let</b> (asks, bids) = (<a href="">vector</a>[], <a href="">vector</a>[]);
-    // Mutably borrow asks AVL queue.
-    <b>let</b> orders_ref_mut = &<b>mut</b> order_book_ref_mut.asks;
-    // While asks <b>to</b> process:
-    <b>while</b>(!<a href="avl_queue.md#0xc0deb00c_avl_queue_is_empty">avl_queue::is_empty</a>(orders_ref_mut)) {
-        <b>let</b> price = // Get price of minimum ask in AVL queue.
-            *<a href="_borrow">option::borrow</a>(&<a href="avl_queue.md#0xc0deb00c_avl_queue_get_head_key">avl_queue::get_head_key</a>(orders_ref_mut));
-        // Remove order from AVL queue.
-        <b>let</b> order = <a href="avl_queue.md#0xc0deb00c_avl_queue_pop_head">avl_queue::pop_head</a>(orders_ref_mut);
-        // Push back priced order onto asks <a href="">vector</a>.
-        <a href="_push_back">vector::push_back</a>(&<b>mut</b> asks, <a href="market.md#0xc0deb00c_market_PricedOrder">PricedOrder</a>{price, order});
+<pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_index_orders_sdk">index_orders_sdk</a>(
+    <a href="">account</a>: &<a href="">signer</a>,
+    market_id: u64,
+) <b>acquires</b>
+    <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>,
+    <a href="market.md#0xc0deb00c_market_Orders">Orders</a>
+{
+    // Assert <a href="">account</a> <a href="">signer</a> passed appropriately during simulation.
+    <b>assert</b>!(address_of(<a href="">account</a>) == @simulation_account,
+            <a href="market.md#0xc0deb00c_market_E_NOT_SIMULATION_ACCOUNT">E_NOT_SIMULATION_ACCOUNT</a>);
+    // Get <b>address</b> of resource <a href="">account</a> <b>where</b> order books are stored.
+    <b>let</b> resource_address = resource_account::get_address();
+    <b>let</b> order_books_map_ref_mut = // Mutably borrow order books map.
+        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>&gt;(resource_address).map;
+    <b>let</b> order_book_ref_mut = // Mutably borrow <a href="market.md#0xc0deb00c_market">market</a> order book.
+        <a href="tablist.md#0xc0deb00c_tablist_borrow_mut">tablist::borrow_mut</a>(order_books_map_ref_mut, market_id);
+    // Declare orders resource. If an orders resource <b>exists</b> at
+    // simulation <a href="">account</a>:
+    <b>let</b> orders = <b>if</b> (<b>exists</b>&lt;<a href="market.md#0xc0deb00c_market_Orders">Orders</a>&gt;(@simulation_account)) {
+        // Move extant orders resource from <a href="">account</a>.
+        <b>let</b> orders = <b>move_from</b>&lt;<a href="market.md#0xc0deb00c_market_Orders">Orders</a>&gt;(@simulation_account);
+        // Get number of asks and bids from previous query.
+        <b>let</b> (n_asks, n_bids) =
+            (<a href="_length">vector::length</a>(&orders.asks), <a href="_length">vector::length</a>(&orders.bids));
+        <b>let</b> i = 0; // Initialize <b>loop</b> counter.
+        <b>while</b> (i &lt; n_asks) { // Loop over all asks.
+            // Unpack ask at back of <a href="">vector</a>.
+            <b>let</b> <a href="market.md#0xc0deb00c_market_Order">Order</a>{size: _, price: _, <a href="user.md#0xc0deb00c_user">user</a>: _, custodian_id: _,
+                      order_access_key: _} =
+                        <a href="_pop_back">vector::pop_back</a>(&<b>mut</b> orders.asks);
+            i = i + 1; // Increment <b>loop</b> variable.
+        };
+        i = 0; // Re-init <b>loop</b> counter for bids.
+        <b>while</b> (i &lt; n_bids) { // Loop over all bids.
+            // Unpack bid at back of <a href="">vector</a>.
+            <b>let</b> <a href="market.md#0xc0deb00c_market_Order">Order</a>{size: _, price: _, <a href="user.md#0xc0deb00c_user">user</a>: _, custodian_id: _,
+                      order_access_key: _} =
+                        <a href="_pop_back">vector::pop_back</a>(&<b>mut</b> orders.bids);
+            i = i + 1; // Increment <b>loop</b> variable.
+        };
+        orders // <a href="market.md#0xc0deb00c_market_Orders">Orders</a> resource now <b>local</b> and vectors empty.
+    } <b>else</b> { // If no orders resource at simulation <a href="">account</a>:
+        // Declare empty orders resource.
+        <a href="market.md#0xc0deb00c_market_Orders">Orders</a>{asks: <a href="_empty">vector::empty</a>(), bids: <a href="_empty">vector::empty</a>()}
     };
-    // Mutably borrow bids AVL queue.
-    <b>let</b> orders_ref_mut = &<b>mut</b> order_book_ref_mut.bids;
-    // While bids <b>to</b> process:
-    <b>while</b>(!<a href="avl_queue.md#0xc0deb00c_avl_queue_is_empty">avl_queue::is_empty</a>(orders_ref_mut)) {
-        <b>let</b> price = // Get price of maximum bid in AVL queue.
-            *<a href="_borrow">option::borrow</a>(&<a href="avl_queue.md#0xc0deb00c_avl_queue_get_head_key">avl_queue::get_head_key</a>(orders_ref_mut));
-        // Remove order from AVL queue.
-        <b>let</b> order = <a href="avl_queue.md#0xc0deb00c_avl_queue_pop_head">avl_queue::pop_head</a>(orders_ref_mut);
-        // Push back priced order onto bids <a href="">vector</a>.
-        <a href="_push_back">vector::push_back</a>(&<b>mut</b> bids, <a href="market.md#0xc0deb00c_market_PricedOrder">PricedOrder</a>{price, order});
+    // While asks <b>to</b> index:
+    <b>while</b>(!<a href="avl_queue.md#0xc0deb00c_avl_queue_is_empty">avl_queue::is_empty</a>(&order_book_ref_mut.asks)) {
+        // Push back onto asks <a href="">vector</a> the ask nearest the spread.
+        <a href="_push_back">vector::push_back</a>(
+            &<b>mut</b> orders.asks,
+            <a href="avl_queue.md#0xc0deb00c_avl_queue_pop_head">avl_queue::pop_head</a>(&<b>mut</b> order_book_ref_mut.asks));
     };
-    (asks, bids) // Return indexed asks and bids.
+    // While bids <b>to</b> index:
+    <b>while</b>(!<a href="avl_queue.md#0xc0deb00c_avl_queue_is_empty">avl_queue::is_empty</a>(&order_book_ref_mut.bids)) {
+        // Push back onto bids <a href="">vector</a> the bid nearest the spread.
+        <a href="_push_back">vector::push_back</a>(
+            &<b>mut</b> orders.bids,
+            <a href="avl_queue.md#0xc0deb00c_avl_queue_pop_head">avl_queue::pop_head</a>(&<b>mut</b> order_book_ref_mut.bids));
+    };
+    // Move orders resource <b>to</b> SDK <a href="">account</a>, marking the query value
+    // that should be returned.
+    <b>move_to</b>&lt;<a href="market.md#0xc0deb00c_market_Orders">Orders</a>&gt;(<a href="">account</a>, orders)
 }
 </code></pre>

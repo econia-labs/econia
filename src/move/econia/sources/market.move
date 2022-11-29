@@ -102,11 +102,10 @@
 ///
 /// # Indexing
 ///
-/// An order book can be indexed off-chain via `index_orders()`, an
-/// SDK-generative function for use as a `move-to-ts` method attribute
-/// on an `OrderBook`.
+/// An order book can be indexed off-chain via `index_orders_sdk()`, an
+/// SDK-generative function for use with `move-to-ts`.
 ///
-/// Once an order book has been indexed, the off-chain copy can be kept
+/// Once an order book has been indexed, the off-chain model can be kept
 /// current by monitoring `MakerEvent` and `TakerEvent` emissions from
 /// the following functions:
 ///
@@ -498,7 +497,6 @@ module econia::market {
         order_access_key: u64
     }
 
-    #[method(index_orders)]
     /// An order book for a given market. Contains
     /// `registry::MarketInfo` field duplicates to reduce global storage
     /// item queries against the registry.
@@ -616,6 +614,8 @@ module econia::market {
     const E_FILL_OR_ABORT_NOT_CROSS_SPREAD: u64 = 25;
     /// AVL queue head price does not match head order price.
     const E_HEAD_KEY_PRICE_MISMATCH: u64 = 26;
+    /// Simulation query called by invalid account.
+    const E_NOT_SIMULATION_ACCOUNT: u64 = 27;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -2706,57 +2706,94 @@ module econia::market {
 
     // SDK generation >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// An order with price. Only for SDK generation.
-    struct PricedOrder has store {
-        /// Price of order from order book AVL queue.
-        price: u64,
-        /// Order from order book AVL queue.
-        order: Order
+    /// All `Order` instances from an `OrderBook`, indexed by side and
+    /// sorted by price-time priority. Only for SDK generation.
+    struct Orders has key {
+        /// Asks sorted by price-time priority: oldest order at lowest
+        /// price first in vector.
+        asks: vector<Order>,
+        /// Bids sorted by price-time priority: oldest order at highest
+        /// price first in vector.
+        bids: vector<Order>
     }
 
-    /// Index order book into ask and bids vectors.
+    #[query]
+    /// Index order book for given market ID into ask and bid vectors.
     ///
-    /// Only for SDK generation.
+    /// Only for `move-to-ts` SDK generation.
     ///
-    /// # Returns
+    /// Requires `@simulation_account` as a signer, which can be
+    /// generated during transaction simulation.
     ///
-    /// * `vector<PricedOrder>`: Asks, sorted by ascending price.
-    /// * `vector<PricedOrder>`: Bids, sorted by descending price.
+    /// Should be run on a full node with a high gas limit that allows
+    /// the simulation to process all orders on the order book.
     ///
     /// # Testing
     ///
-    /// * `test_index_orders()`
-    fun index_orders(
-        order_book_ref_mut: &mut OrderBook
-    ): (
-        vector<PricedOrder>,
-        vector<PricedOrder>
-    ) {
-        // Initialize asks and bids vectors.
-        let (asks, bids) = (vector[], vector[]);
-        // Mutably borrow asks AVL queue.
-        let orders_ref_mut = &mut order_book_ref_mut.asks;
-        // While asks to process:
-        while(!avl_queue::is_empty(orders_ref_mut)) {
-            let price = // Get price of minimum ask in AVL queue.
-                *option::borrow(&avl_queue::get_head_key(orders_ref_mut));
-            // Remove order from AVL queue.
-            let order = avl_queue::pop_head(orders_ref_mut);
-            // Push back priced order onto asks vector.
-            vector::push_back(&mut asks, PricedOrder{price, order});
+    /// * `test_index_orders_sdk()`
+    /// * `test_index_orders_sdk_not_sim_account()`
+    public entry fun index_orders_sdk(
+        account: &signer,
+        market_id: u64,
+    ) acquires
+        OrderBooks,
+        Orders
+    {
+        // Assert account signer passed appropriately during simulation.
+        assert!(address_of(account) == @simulation_account,
+                E_NOT_SIMULATION_ACCOUNT);
+        // Get address of resource account where order books are stored.
+        let resource_address = resource_account::get_address();
+        let order_books_map_ref_mut = // Mutably borrow order books map.
+            &mut borrow_global_mut<OrderBooks>(resource_address).map;
+        let order_book_ref_mut = // Mutably borrow market order book.
+            tablist::borrow_mut(order_books_map_ref_mut, market_id);
+        // Declare orders resource. If an orders resource exists at
+        // simulation account:
+        let orders = if (exists<Orders>(@simulation_account)) {
+            // Move extant orders resource from account.
+            let orders = move_from<Orders>(@simulation_account);
+            // Get number of asks and bids from previous query.
+            let (n_asks, n_bids) =
+                (vector::length(&orders.asks), vector::length(&orders.bids));
+            let i = 0; // Initialize loop counter.
+            while (i < n_asks) { // Loop over all asks.
+                // Unpack ask at back of vector.
+                let Order{size: _, price: _, user: _, custodian_id: _,
+                          order_access_key: _} =
+                            vector::pop_back(&mut orders.asks);
+                i = i + 1; // Increment loop variable.
+            };
+            i = 0; // Re-init loop counter for bids.
+            while (i < n_bids) { // Loop over all bids.
+                // Unpack bid at back of vector.
+                let Order{size: _, price: _, user: _, custodian_id: _,
+                          order_access_key: _} =
+                            vector::pop_back(&mut orders.bids);
+                i = i + 1; // Increment loop variable.
+            };
+            orders // Orders resource now local and vectors empty.
+        } else { // If no orders resource at simulation account:
+            // Declare empty orders resource.
+            Orders{asks: vector::empty(), bids: vector::empty()}
         };
-        // Mutably borrow bids AVL queue.
-        let orders_ref_mut = &mut order_book_ref_mut.bids;
-        // While bids to process:
-        while(!avl_queue::is_empty(orders_ref_mut)) {
-            let price = // Get price of maximum bid in AVL queue.
-                *option::borrow(&avl_queue::get_head_key(orders_ref_mut));
-            // Remove order from AVL queue.
-            let order = avl_queue::pop_head(orders_ref_mut);
-            // Push back priced order onto bids vector.
-            vector::push_back(&mut bids, PricedOrder{price, order});
+        // While asks to index:
+        while(!avl_queue::is_empty(&order_book_ref_mut.asks)) {
+            // Push back onto asks vector the ask nearest the spread.
+            vector::push_back(
+                &mut orders.asks,
+                avl_queue::pop_head(&mut order_book_ref_mut.asks));
         };
-        (asks, bids) // Return indexed asks and bids.
+        // While bids to index:
+        while(!avl_queue::is_empty(&order_book_ref_mut.bids)) {
+            // Push back onto bids vector the bid nearest the spread.
+            vector::push_back(
+                &mut orders.bids,
+                avl_queue::pop_head(&mut order_book_ref_mut.bids));
+        };
+        // Move orders resource to SDK account, marking the query value
+        // that should be returned.
+        move_to<Orders>(account, orders)
     }
 
     // SDK generation <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -3572,13 +3609,14 @@ module econia::market {
             &attacker, market_id, side, market_order_id, size_end);
     }
 
-    #[test]
+    #[test(account = @simulation_account)]
     /// Verify indexing results.
-    fun test_index_orders():
-    (
-        vector<PricedOrder>,
-        vector<PricedOrder>
-    ) acquires OrderBooks {
+    fun test_index_orders_sdk(
+        account: &signer
+    ) acquires
+        OrderBooks,
+        Orders
+    {
         // Initialize markets, users, and an integrator.
         let (maker, _) = init_markets_users_integrator_test();
         // Declare common order parameters.
@@ -3601,7 +3639,7 @@ module econia::market {
                                 assets::mint_test(HI_64 / 2));
         user::deposit_coins<QC>(maker_address, market_id, custodian_id,
                                 assets::mint_test(HI_64 / 2));
-        // Place maker orders, storing market order IDs for lookup.
+        // Place maker orders.
         place_limit_order_user<BC, QC>(
             &maker, market_id, integrator, BID, bid_1_size, bid_1_price,
             restriction);
@@ -3614,27 +3652,65 @@ module econia::market {
         place_limit_order_user<BC, QC>(
             &maker, market_id, integrator, ASK, ask_1_size, ask_1_price,
             restriction);
-        let resource_address = resource_account::get_address();
-        let order_books_map_ref_mut = // Mutably borrow order books map.
-            &mut borrow_global_mut<OrderBooks>(resource_address).map;
-        let order_book_ref_mut = // Mutably borrow market order book.
-            tablist::borrow_mut(order_books_map_ref_mut, market_id);
-        // Index orders.
-        let (asks, bids) = index_orders(order_book_ref_mut);
-        // Assert priced order state.
-        let priced_order_ref = vector::borrow(&asks, 0);
-        assert!(priced_order_ref.price      == ask_0_price, 0);
-        assert!(priced_order_ref.order.size == ask_0_size, 0);
-        priced_order_ref = vector::borrow(&asks, 1);
-        assert!(priced_order_ref.price      == ask_1_price, 0);
-        assert!(priced_order_ref.order.size == ask_1_size, 0);
-        priced_order_ref = vector::borrow(&bids, 0);
-        assert!(priced_order_ref.price      == bid_0_price, 0);
-        assert!(priced_order_ref.order.size == bid_0_size, 0);
-        priced_order_ref = vector::borrow(&bids, 1);
-        assert!(priced_order_ref.price      == bid_1_price, 0);
-        assert!(priced_order_ref.order.size == bid_1_size, 0);
-        (asks, bids) // Return, rather than destroy.
+        index_orders_sdk(account, market_id); // Index orders.
+        // Immutably borrow indexed orders resource.
+        let orders = borrow_global<Orders>(@simulation_account);
+        // Assert order state.
+        let order_ref = vector::borrow(&orders.asks, 1);
+        assert!(order_ref.price == ask_1_price, 0);
+        assert!(order_ref.size  == ask_1_size, 0);
+        order_ref = vector::borrow(&orders.asks, 0);
+        assert!(order_ref.price == ask_0_price, 0);
+        assert!(order_ref.size  == ask_0_size, 0);
+        order_ref = vector::borrow(&orders.bids, 0);
+        assert!(order_ref.price == bid_0_price, 0);
+        assert!(order_ref.size  == bid_0_size, 0);
+        order_ref = vector::borrow(&orders.bids, 1);
+        assert!(order_ref.price == bid_1_price, 0);
+        assert!(order_ref.size  == bid_1_size, 0);
+        // Place maker orders again, since they have been mutated off
+        // of the order book.
+        place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, BID, bid_1_size, bid_1_price,
+            restriction);
+        place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, BID, bid_0_size, bid_0_price,
+            restriction);
+        place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, ASK, ask_0_size, ask_0_price,
+            restriction);
+        place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, ASK, ask_1_size, ask_1_price,
+            restriction);
+        // Index orders again, this time emptying out extant resource.
+        index_orders_sdk(account, market_id);
+        // Immutably borrow indexed orders resource.
+        let orders = borrow_global<Orders>(@simulation_account);
+        // Assert order state.
+        let order_ref = vector::borrow(&orders.asks, 1);
+        assert!(order_ref.price == ask_1_price, 0);
+        assert!(order_ref.size  == ask_1_size, 0);
+        order_ref = vector::borrow(&orders.asks, 0);
+        assert!(order_ref.price == ask_0_price, 0);
+        assert!(order_ref.size  == ask_0_size, 0);
+        order_ref = vector::borrow(&orders.bids, 0);
+        assert!(order_ref.price == bid_0_price, 0);
+        assert!(order_ref.size  == bid_0_size, 0);
+        order_ref = vector::borrow(&orders.bids, 1);
+        assert!(order_ref.price == bid_1_price, 0);
+        assert!(order_ref.size  == bid_1_size, 0);
+    }
+
+    #[test(account = @econia)]
+    #[expected_failure(abort_code = 27)]
+    /// Verify failure for invalid account.
+    fun test_index_orders_sdk_not_sim_account(
+        account: &signer
+    ) acquires
+        OrderBooks,
+        Orders
+    {
+        index_orders_sdk(account, 1); // Attempt invalid invocation.
     }
 
     #[test]

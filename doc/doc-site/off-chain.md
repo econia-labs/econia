@@ -47,7 +47,7 @@ Here, the simulation might fail for a large [`OrderBook`] due to transaction gas
 
 ## Order book indexing
 
-The most practical method for indexing an [`OrderBook`] in real time involves the [`index_orders_sdk()`] interface and event monitoring.
+A suggested method for indexing an [`OrderBook`] in real time involves the [`index_orders_sdk()`] interface and event monitoring:
 
 1. Run [`index_orders_sdk()`] to build up a local copy of an [`OrderBook`].
 1. Read and apply all [`MakerEvent`] and [`TakerEvent`] emissions since the index operation.

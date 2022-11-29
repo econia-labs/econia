@@ -4,7 +4,7 @@ version = '4.0.0' # Per SemVer
 upgrade_policy = 'compatible'
 
 [addresses]
-econia = '0x1abfa4c5bb5f381b00719fc19e8e655cb2531904bf8f59309efd18eb081373b4'
+econia = '0x2e51979739db25dc987bd24e1a968e45cca0e0daea7cae9121f68af93e8884c9'
 # Address of simulation account required for SDK generation.
 simulation_account = '0x1111'
 # Mock addresses for testing.

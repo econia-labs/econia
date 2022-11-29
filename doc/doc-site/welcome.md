@@ -20,7 +20,7 @@ Stand by for more documentation, and in the meantime, check out the [modules pag
 
 ## Testnet account
 
-As of 2022-11-21, Econia is initialized on the Aptos testnet at account [0x1abfa4c5bb5f381b00719fc19e8e655cb2531904bf8f59309efd18eb081373b4]!
+As of 2022-11-28, Econia is initialized on the Aptos Testnet at account [0x2e51979739db25dc987bd24e1a968e45cca0e0daea7cae9121f68af93e8884c9]!
 
 ## External resources
 
@@ -30,7 +30,7 @@ As of 2022-11-21, Econia is initialized on the Aptos testnet at account [0x1abfa
 * [Twitter]
 
 <!---Alphabetized reference links-->
-[0x1abfa4c5bb5f381b00719fc19e8e655cb2531904bf8f59309efd18eb081373b4]: https://aptos-explorer.netlify.app/account/0x1abfa4c5bb5f381b00719fc19e8e655cb2531904bf8f59309efd18eb081373b4?network=testnet
+[0x2e51979739db25dc987bd24e1a968e45cca0e0daea7cae9121f68af93e8884c9]: https://explorer.aptoslabs.com/account/0x2e51979739db25dc987bd24e1a968e45cca0e0daea7cae9121f68af93e8884c9?network=testnet
 [Aptos]:                                                              https://aptos.dev
 [Discord]:                                                            https://discord.gg/econia
 [GitHub]:                                                             https://github.com/econia-labs/econia

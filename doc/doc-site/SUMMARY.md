@@ -4,7 +4,7 @@
 
 * [Move modules](modules.md)
 
-* [`move-to-ts` hooks](hooks.md)
+* [Off-chain interfaces](off-chain.md)
 
 * [Logo attribution](logo.md)
 

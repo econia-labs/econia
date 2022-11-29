@@ -926,10 +926,10 @@ module econia::incentives {
     // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[cmd]
-    /// Wrapped call to `set_incentives()`, when calling after
+    /// Wrapped call to `set_incentive_parameters()`, when calling after
     /// initialization.
     ///
-    /// Accepts same arguments as `set_incentives()`.
+    /// Accepts same arguments as `set_incentive_parameters()`.
     ///
     /// # Testing
     ///

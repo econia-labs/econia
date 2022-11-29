@@ -2043,10 +2043,10 @@ See inner function <code><a href="incentives.md#0xc0deb00c_incentives_withdraw_u
 
 ## Function `update_incentives`
 
-Wrapped call to <code>set_incentives()</code>, when calling after
+Wrapped call to <code><a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters">set_incentive_parameters</a>()</code>, when calling after
 initialization.
 
-Accepts same arguments as <code>set_incentives()</code>.
+Accepts same arguments as <code><a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters">set_incentive_parameters</a>()</code>.
 
 
 <a name="@Testing_40"></a>

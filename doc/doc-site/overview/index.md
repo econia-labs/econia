@@ -13,6 +13,7 @@ Throughout the documentation there are links to assorted data structures and fun
 For example: [`OrderBook`].
 
 <!---Alphabetized reference links-->
+
 [Aptos]:        https://aptos.dev
 [Block-STM]:    https://arxiv.org/abs/2203.06871
 [Move]:         https://move-language.github.io/move/

@@ -22,6 +22,7 @@ This directory contains assorted diagrams, most of which are generated via [`mer
 * [matching-engine.md] has complexly-nested subgraphs and different classes.
 
 <!---Alphabetized reference links-->
+
 [`images`]:              images
 [`mermaid.js`]:          https://mermaid-js.github.io
 [`src`]:                 src

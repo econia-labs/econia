@@ -30,6 +30,7 @@ As of 2022-11-28, Econia is initialized on the Aptos Testnet at account [0x2e519
 * [Twitter]
 
 <!---Alphabetized reference links-->
+
 [0x2e51979739db25dc987bd24e1a968e45cca0e0daea7cae9121f68af93e8884c9]: https://explorer.aptoslabs.com/account/0x2e51979739db25dc987bd24e1a968e45cca0e0daea7cae9121f68af93e8884c9?network=testnet
 [Aptos]:                                                              https://aptos.dev
 [Discord]:                                                            https://discord.gg/econia

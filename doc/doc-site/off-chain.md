@@ -55,6 +55,7 @@ A suggested method for indexing an [`OrderBook`] in real time involves the [`ind
 Alternatively, all [`MakerEvent`] and [`TakerEvent`] emissions since the inception of the market can be applied consecutively.
 
 <!---Alphabetized reference links-->
+
 [events by creation number API]: https://fullnode.testnet.aptoslabs.com/v1/spec#/operations/get_events_by_creation_number
 [events by event handle API]:    https://fullnode.testnet.aptoslabs.com/v1/spec#/operations/get_events_by_event_handle
 [Hippo's `move-to-ts` tool]:     https://github.com/hippospace/move-to-ts

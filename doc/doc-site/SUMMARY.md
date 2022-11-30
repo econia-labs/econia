@@ -4,15 +4,16 @@
 
 * [Move modules](modules.md)
 
+* [Design overview](overview/index.md)
+    * [Orders](overview/orders.md)
+    * [The registry](overview/registry.md)
+
 * [Off-chain interfaces](off-chain.md)
 
 * [Logo attribution](logo.md)
 
 <!---
-* [Design overview](overview/index.md)
-    * [The registry](overview/registry.md)
     * [Accounts](overview/accounts.md)
-    * [Orders](overview/orders.md)
     * [Matching](overview/matching.md)
 
 * [Move APIs](api/index.md)

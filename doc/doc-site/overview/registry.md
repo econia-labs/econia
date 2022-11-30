@@ -1,12 +1,8 @@
 # The registry
 
-- [The registry](#the-registry)
-  - [General](#general)
-  - [Markets](#markets)
-  - [Custodians](#custodians)
-  - [Asset types](#asset-types)
-  - [Market uniqueness](#market-uniqueness)
+Documentation coming soon!
 
+<!---
 ## General
 
 Econia contains a global [`Registry`](../../../src/move/econia/build/Econia/docs/registry.md#0xc0deb00c_registry_Registry) that tracks information about [markets](#markets) and [custodians](#custodians).
@@ -65,3 +61,4 @@ For example, a market host can register 4 markets using the provided [`GenericAs
 Here, a third party maintains their own separate registry to track market metadata, and assuming they are the generic asset transfer custodian for each market, they approve deposits, withdrawals, and swaps for generic assets across all four trading pairs:
 
 ![](../diagrams/generic-asset-transfer.png)
+-->

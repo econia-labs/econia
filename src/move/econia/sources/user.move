@@ -380,6 +380,8 @@ module econia::user {
     const E_INVALID_MARKET_ORDER_ID: u64 = 15;
     /// Mismatch between coin value and indicated amount.
     const E_COIN_AMOUNT_MISMATCH: u64 = 16;
+    /// Simulation query called by invalid account.
+    const E_NOT_SIMULATION_ACCOUNT: u64 = 17;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -2085,6 +2087,61 @@ module econia::user {
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // SDK generation >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    struct UserMarketAccountIds has key {
+        market_account_ids: vector<u128>,
+    }
+
+    #[query]
+    /// Return all of a user's market account IDs.
+    ///
+    /// Only for `move-to-ts` SDK generation.
+    ///
+    /// Requires `@simulation_account` as a signer, which can be
+    /// generated during transaction simulation.
+    ///
+    /// Should be run on a full node with a high gas limit that allows
+    /// the simulation to loop over all markets and custodians
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_all_market_account_ids_for_user_sdk()`
+    /// * `test_get_all_market_account_ids_for_user_sdk_not_sim_account()`
+    public entry fun get_all_market_account_ids_for_user_sdk(
+        account: &signer,
+        user: address,
+    )
+    acquires MarketAccounts, UserMarketAccountIds
+    {
+        // Assert account signer passed appropriately during simulation.
+        assert!(address_of(account) == @simulation_account, E_NOT_SIMULATION_ACCOUNT);
+
+        let market_account_ids = get_all_market_account_ids_for_user(user);
+
+        let ids = if (exists<UserMarketAccountIds>(@simulation_account)) {
+            let ids = move_from<UserMarketAccountIds>(@simulation_account);
+            let n = vector::length(&ids.market_account_ids);
+            let i = 0; 
+            while (i < n) {
+                vector::pop_back(&mut ids.market_account_ids);
+                i = i + 1;
+            };
+            ids
+        } else {
+            UserMarketAccountIds{ market_account_ids: vector::empty() }
+        };
+
+        let n = vector::length(&market_account_ids);
+        let i = 0; 
+        while (i < n) {
+            vector::push_back(&mut ids.market_account_ids, *vector::borrow(&market_account_ids, i));
+            i = i + 1;
+        };
+
+        move_to<UserMarketAccountIds>(account, ids)
+    }
+    // SDK generation <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Test-only constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -3995,6 +4052,46 @@ module econia::user {
         registry::drop_custodian_capability_test(custodian_capability);
         // Drop underwriter capability.
         registry::drop_underwriter_capability_test(underwriter_capability);
+    }
+
+    #[test(account = @simulation_account)]
+    /// Verify valid resource
+    fun test_get_all_market_account_ids_for_user_sdk(
+        account: &signer
+    ) acquires
+        Collateral,
+        MarketAccounts,
+        UserMarketAccountIds
+    {
+        // Check empty account ids
+        get_all_market_account_ids_for_user_sdk(account, @user);
+        let market_accounts = borrow_global<UserMarketAccountIds>(@simulation_account);
+        assert!(market_accounts.market_account_ids == vector[], 1);
+        // Register test market accounts.
+        let (_, id0, id1, id2, id3) = register_market_accounts_test();
+        get_all_market_account_ids_for_user_sdk(account, @user);
+        let market_account_ids = &borrow_global<UserMarketAccountIds>(@simulation_account).market_account_ids;
+        assert!(vector::length(market_account_ids) == 4, 1);
+        let id = *vector::borrow(market_account_ids, 0);
+        assert!(id == id0, 1);
+        let id = *vector::borrow(market_account_ids, 1);
+        assert!(id == id1, 1);
+        let id = *vector::borrow(market_account_ids, 2);
+        assert!(id == id2, 1);
+        let id = *vector::borrow(market_account_ids, 3);
+        assert!(id == id3, 1);
+    }
+
+    #[test(account = @econia)]
+    #[expected_failure(abort_code = 17)]
+    /// Verify failure for non simulation account.
+    fun test_get_all_market_account_ids_for_user_sdk_not_sim_account(
+        account: &signer
+    ) acquires
+        MarketAccounts,
+        UserMarketAccountIds
+    {
+        get_all_market_account_ids_for_user_sdk(account, @user);
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

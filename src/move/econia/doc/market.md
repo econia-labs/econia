@@ -3628,12 +3628,15 @@ corresponding trade amounts are calculated for range checking.
 If the order crosses the spread, base and quote assets are
 withdrawn from the user's market account and passed through the
 matching engine, deposited back to the user's market account,
-and remaining order size to fill is updated. If restriction is
-immediate-or-cancel or if no size left to fill after optional
-matching as a taker, returns without placing a maker order.
+and remaining order size to fill is updated. If the order price
+still crosses the spread after matching halts, size is updated
+to 0, otherwise it is decremented by the amount just matched. If
+restriction is immediate-or-cancel or if no size left to fill
+after optional matching as a taker, returns without placing a
+maker order.
 
 The user's next order access key is checked, and a corresponding
-order is inserted to the order book. If the order's price time
+order is inserted to the order book. If the order's price-time
 priority is too low to fit on the book, the order aborts. Else
 a market order ID is constructed from the AVL queue access key
 just generated upon insertion, and the order book counter is
@@ -3660,6 +3663,8 @@ ID is emitted in a maker evict event.
 * <code>test_place_limit_order_evict()</code>
 * <code>test_place_limit_order_no_cross_ask_user()</code>
 * <code>test_place_limit_order_no_cross_bid_custodian()</code>
+* <code>test_place_limit_order_still_crosses_ask()</code>
+* <code>test_place_limit_order_still_crosses_bid()</code>
 
 
 <a name="@Failure_testing_86"></a>
@@ -3774,13 +3779,18 @@ ID is emitted in a maker evict event.
             // Hence max quote <b>to</b> trade is amount that will fit in
             // <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
             (<a href="market.md#0xc0deb00c_market_HI_64">HI_64</a> - quote_ceiling)
-        // If a bid, filling <b>as</b> a taker buy, will have <b>to</b> pay at
-        // least <b>as</b> much <b>as</b> from order size and price, plus fees.
-        } <b>else</b> {
-            // Get taker fee divisor
-            <b>let</b> taker_fee_divisor = <a href="incentives.md#0xc0deb00c_incentives_get_taker_fee_divisor">incentives::get_taker_fee_divisor</a>();
-            // Max quote is amount from size and price, <b>with</b> fees.
-            ((quote <b>as</b> u64) + ((quote <b>as</b> u64) / taker_fee_divisor))
+        } <b>else</b> { // If a bid, filling <b>as</b> a taker buy:
+            // <a href="market.md#0xc0deb00c_market_Order">Order</a> will fill at prices that are at most <b>as</b> high <b>as</b>
+            // specified order price, and <a href="user.md#0xc0deb00c_user">user</a> will have <b>to</b> pay at
+            // most the amount from order size and price, plus fees.
+            // Since max base is marked <b>as</b> amount corresponding <b>to</b>
+            // order size, matching engine will halt once enough
+            // base <b>has</b> been filled. Hence mark that max quote <b>to</b>
+            // trade is amount that <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> available <b>to</b> spend, <b>to</b>
+            // provide a buffer against integer division truncation
+            // that may occur when matching engine calculates max
+            // quote <b>to</b> match.
+            quote_available
         }
     } <b>else</b> { // If no portion of order fills <b>as</b> a taker:
         (quote <b>as</b> u64) // Max quote is amount from size and price.
@@ -3816,8 +3826,20 @@ ID is emitted in a maker evict event.
         <a href="user.md#0xc0deb00c_user_deposit_assets_internal">user::deposit_assets_internal</a>&lt;BaseType, QuoteType&gt;(
             user_address, market_id, custodian_id, base_deposit,
             optional_base_coins, quote_coins, underwriter_id);
-        // Update size <b>to</b> amount left <b>to</b> fill after taker match.
-        size = size - (base_traded / order_book_ref_mut.lot_size);
+        // <a href="market.md#0xc0deb00c_market_Order">Order</a> still crosses spread <b>if</b> an ask and would trail
+        // behind bids AVL queue head, or <b>if</b> a bid and would trail
+        // behind asks AVL queue head: can happen <b>if</b> an ask (taker
+        // sell) and quote ceiling reached, or <b>if</b> a bid (taker buy)
+        // and all available quote spent.
+        <b>let</b> still_crosses_spread = <b>if</b> (side == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>)
+            !<a href="avl_queue.md#0xc0deb00c_avl_queue_would_update_head">avl_queue::would_update_head</a>(&order_book_ref_mut.bids, price)
+            <b>else</b>
+            !<a href="avl_queue.md#0xc0deb00c_avl_queue_would_update_head">avl_queue::would_update_head</a>(&order_book_ref_mut.asks, price);
+        // If matching engine halted but order still crosses spread
+        // then mark no size left <b>to</b> fill <b>as</b> a maker.
+        size = <b>if</b> (still_crosses_spread) 0 <b>else</b>
+            // Else <b>update</b> size <b>to</b> amount left <b>to</b> fill <b>post</b>-match.
+            size - (base_traded / order_book_ref_mut.lot_size);
     }; // Done <b>with</b> optional matching <b>as</b> a taker across the spread.
     // Return without <a href="market.md#0xc0deb00c_market">market</a> order ID <b>if</b> no size left <b>to</b> fill.
     <b>if</b> ((restriction == <a href="market.md#0xc0deb00c_market_IMMEDIATE_OR_CANCEL">IMMEDIATE_OR_CANCEL</a>) || (size == 0))

@@ -1241,7 +1241,7 @@ module econia::incentives {
     /// * Taker is willing to spend 105 quote coins.
     /// * Fee is 5% (divisor of 20).
     /// * Max match is thus 100 quote coins.
-    /// * Matching engine returns after 100 quote coins filled.
+    /// * Matching engine halts after 100 quote coins filled.
     /// * 5% fee then assessed, withdrawn from takers's quote coins.
     /// * Taker has spent 105 quote coins.
     ///
@@ -1250,7 +1250,7 @@ module econia::incentives {
     /// * Taker is willing to receive 100 quote coins.
     /// * Fee is 4% (divisor of 25).
     /// * Max match is thus 104 quote coins.
-    /// * Matching engine returns after 104 quote coins filled.
+    /// * Matching engine halts after 104 quote coins filled.
     /// * 4% fee then assessed, withdrawn from quote coins received.
     /// * Taker has received 100 quote coins.
     ///

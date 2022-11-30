@@ -2071,12 +2071,15 @@ module econia::market {
     /// If the order crosses the spread, base and quote assets are
     /// withdrawn from the user's market account and passed through the
     /// matching engine, deposited back to the user's market account,
-    /// and remaining order size to fill is updated. If restriction is
-    /// immediate-or-cancel or if no size left to fill after optional
-    /// matching as a taker, returns without placing a maker order.
+    /// and remaining order size to fill is updated. If the order price
+    /// still crosses the spread after matching halts, size is updated
+    /// to 0, otherwise it is decremented by the amount just matched. If
+    /// restriction is immediate-or-cancel or if no size left to fill
+    /// after optional matching as a taker, returns without placing a
+    /// maker order.
     ///
     /// The user's next order access key is checked, and a corresponding
-    /// order is inserted to the order book. If the order's price time
+    /// order is inserted to the order book. If the order's price-time
     /// priority is too low to fit on the book, the order aborts. Else
     /// a market order ID is constructed from the AVL queue access key
     /// just generated upon insertion, and the order book counter is
@@ -2099,6 +2102,8 @@ module econia::market {
     /// * `test_place_limit_order_evict()`
     /// * `test_place_limit_order_no_cross_ask_user()`
     /// * `test_place_limit_order_no_cross_bid_custodian()`
+    /// * `test_place_limit_order_still_crosses_ask()`
+    /// * `test_place_limit_order_still_crosses_bid()`
     ///
     /// # Failure testing
     ///
@@ -2199,13 +2204,18 @@ module econia::market {
                 // Hence max quote to trade is amount that will fit in
                 // market account.
                 (HI_64 - quote_ceiling)
-            // If a bid, filling as a taker buy, will have to pay at
-            // least as much as from order size and price, plus fees.
-            } else {
-                // Get taker fee divisor
-                let taker_fee_divisor = incentives::get_taker_fee_divisor();
-                // Max quote is amount from size and price, with fees.
-                ((quote as u64) + ((quote as u64) / taker_fee_divisor))
+            } else { // If a bid, filling as a taker buy:
+                // Order will fill at prices that are at most as high as
+                // specified order price, and user will have to pay at
+                // most the amount from order size and price, plus fees.
+                // Since max base is marked as amount corresponding to
+                // order size, matching engine will halt once enough
+                // base has been filled. Hence mark that max quote to
+                // trade is amount that user has available to spend, to
+                // provide a buffer against integer division truncation
+                // that may occur when matching engine calculates max
+                // quote to match.
+                quote_available
             }
         } else { // If no portion of order fills as a taker:
             (quote as u64) // Max quote is amount from size and price.
@@ -2241,8 +2251,20 @@ module econia::market {
             user::deposit_assets_internal<BaseType, QuoteType>(
                 user_address, market_id, custodian_id, base_deposit,
                 optional_base_coins, quote_coins, underwriter_id);
-            // Update size to amount left to fill after taker match.
-            size = size - (base_traded / order_book_ref_mut.lot_size);
+            // Order still crosses spread if an ask and would trail
+            // behind bids AVL queue head, or if a bid and would trail
+            // behind asks AVL queue head: can happen if an ask (taker
+            // sell) and quote ceiling reached, or if a bid (taker buy)
+            // and all available quote spent.
+            let still_crosses_spread = if (side == ASK)
+                !avl_queue::would_update_head(&order_book_ref_mut.bids, price)
+                else
+                !avl_queue::would_update_head(&order_book_ref_mut.asks, price);
+            // If matching engine halted but order still crosses spread
+            // then mark no size left to fill as a maker.
+            size = if (still_crosses_spread) 0 else
+                // Else update size to amount left to fill post-match.
+                size - (base_traded / order_book_ref_mut.lot_size);
         }; // Done with optional matching as a taker across the spread.
         // Return without market order ID if no size left to fill.
         if ((restriction == IMMEDIATE_OR_CANCEL) || (size == 0))
@@ -4945,7 +4967,7 @@ module econia::market {
         let (taker_divisor, integrator_divisor) =
             (incentives::get_taker_fee_divisor(),
              incentives::get_fee_share_divisor(INTEGRATOR_TIER));
-        // Declare order paramaters from taker's perspective, with
+        // Declare order parameters from taker's perspective, with
         // price set to product of divisors to prevent truncation
         // effects on estimates.
         let side             = ASK; // Taker sell.
@@ -5040,7 +5062,7 @@ module econia::market {
     #[test]
     /// Verify state updates, returns for placing ask that fills
     /// partially across the spread, under authority of signing user.
-    /// Based on `test_place_limit_order_crosses_ask_exact()`
+    /// Based on `test_place_limit_order_crosses_ask_exact()`.
     fun test_place_limit_order_crosses_ask_partial()
     acquires OrderBooks {
         // Initialize markets, users, and an integrator.
@@ -5049,7 +5071,7 @@ module econia::market {
         let (taker_divisor, integrator_divisor) =
             (incentives::get_taker_fee_divisor(),
              incentives::get_fee_share_divisor(INTEGRATOR_TIER));
-        // Declare order paramaters with price set to product of
+        // Declare order parameters with price set to product of
         // divisors, to prevent truncation effects on estimates.
         let side             = ASK; // Taker sell.
         let size_match       = MIN_SIZE_COIN + 123;
@@ -5157,7 +5179,7 @@ module econia::market {
         let (taker_divisor, integrator_divisor) =
             (incentives::get_taker_fee_divisor(),
              incentives::get_fee_share_divisor(INTEGRATOR_TIER));
-        // Declare order paramaters with price set to product of
+        // Declare order parameters with price set to product of
         // divisors, to prevent truncation effects on estimates.
         let side             = ASK; // Taker sell.
         let size_match       = MIN_SIZE_COIN + 123;
@@ -5234,7 +5256,7 @@ module econia::market {
         let (taker_divisor, integrator_divisor) =
             (incentives::get_taker_fee_divisor(),
              incentives::get_fee_share_divisor(INTEGRATOR_TIER));
-        // Declare order paramaters from taker's perspective, with
+        // Declare order parameters from taker's perspective, with
         // price set to product of divisors to prevent truncation
         // effects on estimates.
         let side             = BID; // Taker buy.
@@ -5329,7 +5351,7 @@ module econia::market {
     #[test]
     /// Verify state updates, returns for placing bid that fills
     /// partially across the spread, under authority of signing user.
-    /// Mirror of `test_place_limit_order_crosses_ask_partial()`
+    /// Mirror of `test_place_limit_order_crosses_ask_partial()`.
     fun test_place_limit_order_crosses_bid_partial()
     acquires OrderBooks {
         // Initialize markets, users, and an integrator.
@@ -5338,7 +5360,7 @@ module econia::market {
         let (taker_divisor, integrator_divisor) =
             (incentives::get_taker_fee_divisor(),
              incentives::get_fee_share_divisor(INTEGRATOR_TIER));
-        // Declare order paramaters with price set to product of
+        // Declare order parameters with price set to product of
         // divisors, to prevent truncation effects on estimates.
         let side             = BID; // Taker buy.
         let size_match       = MIN_SIZE_COIN + 123;
@@ -5583,7 +5605,7 @@ module econia::market {
     acquires OrderBooks {
         // Initialize markets, users, and an integrator.
         let (user_0, user_1) = init_markets_users_integrator_test();
-        // Declare order paramaters.
+        // Declare order parameters.
         let side             = ASK; // Taker sell.
         let size             = MIN_SIZE_COIN;
         let price            = 789;
@@ -5847,7 +5869,7 @@ module econia::market {
     acquires OrderBooks {
         // Initialize markets, users, and an integrator.
         let (user_0, user_1) = init_markets_users_integrator_test();
-        // Declare order paramaters.
+        // Declare order parameters.
         let side             = ASK; // Taker sell.
         let size             = MIN_SIZE_COIN;
         let price            = 789;
@@ -5973,6 +5995,239 @@ module econia::market {
         place_limit_order<BC, QC>( // Attempt invalid invocation.
             @user_0, MARKET_ID_COIN, NO_CUSTODIAN, @integrator, side, size,
             price, restriction, critical_height);
+    }
+
+    #[test]
+    /// Verify state updates, returns for placing ask that still crosses
+    /// the spread after matching as a taker, under authority of signing
+    /// user. Based on `test_place_limit_order_crosses_ask_partial()`.
+    fun test_place_limit_order_still_crosses_ask()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (maker, taker) = init_markets_users_integrator_test();
+        let (maker_address, taker_address) = // Get user addresses.
+            (address_of(&maker), address_of(&taker));
+        // Get fee divisors.
+        let (taker_divisor, integrator_divisor) =
+            (incentives::get_taker_fee_divisor(),
+             incentives::get_fee_share_divisor(INTEGRATOR_TIER));
+        // Declare order parameters with price set to product of
+        // divisors, to prevent truncation effects on estimates.
+        let side_taker           = ASK;
+        let direction_taker      = if (side_taker == ASK) SELL else BUY;
+        let side_maker           = !side_taker;
+        let size_maker           = MIN_SIZE_COIN + 123;
+        let size_taker           = size_maker - 10;
+        let size_taker_requested = size_maker + 1;
+        let base_maker           = size_maker * LOT_SIZE_COIN;
+        let base_taker           = size_taker * LOT_SIZE_COIN;
+        let base_taker_requested = size_taker_requested * LOT_SIZE_COIN;
+        let price                = integrator_divisor * taker_divisor;
+        let quote_maker          = size_maker * price * TICK_SIZE_COIN;
+        let quote_match          = size_taker * price * TICK_SIZE_COIN;
+        let integrator_share     = quote_match / integrator_divisor;
+        let econia_share         =
+            quote_match / taker_divisor - integrator_share;
+        let fee                  = integrator_share + econia_share;
+        let quote_trade          = if (direction_taker == BUY)
+            (quote_match + fee) else (quote_match - fee);
+        let restriction          = NO_RESTRICTION;
+        // Deposit to maker's account enough to impinge on min and max
+        // amounts after fill.
+        let base_deposit_maker  = HI_64 - base_maker;
+        let quote_deposit_maker = quote_maker;
+        user::deposit_coins<BC>(maker_address, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(base_deposit_maker));
+        user::deposit_coins<QC>(maker_address, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(quote_deposit_maker));
+        // Deposit to second maker's account such that matching engine
+        // halts before matching requested size.
+        let base_deposit_taker  = base_taker_requested;
+        let quote_deposit_taker = HI_64 - quote_trade;
+        user::deposit_coins<BC>(taker_address, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(base_deposit_taker));
+        user::deposit_coins<QC>(taker_address, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(quote_deposit_taker));
+        // Place first maker order.
+        let (market_order_id_0, _, _, _) = place_limit_order_user<BC, QC>(
+            &maker, MARKET_ID_COIN, @integrator, side_maker, size_maker, price,
+            restriction);
+        // Place limit order that still crosses spread after matching.
+        let (market_order_id_1, base_trade_r, quote_trade_r, fee_r) =
+            place_limit_order_user<BC, QC>(
+                &taker, MARKET_ID_COIN, @integrator, side_taker,
+                size_taker_requested, price, restriction);
+        // Assert returns
+        assert!(market_order_id_1 == (NIL as u128), 0);
+        assert!(base_trade_r      == base_taker, 0);
+        assert!(quote_trade_r     == quote_trade, 0);
+        assert!(fee_r             == fee, 0);
+        // Get fields for maker order on book.
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
+            get_order_fields_test(MARKET_ID_COIN, side_maker,
+                                  market_order_id_0);
+        // Assert field returns except access key, used for user lookup.
+        assert!(size_r         == size_maker - size_taker, 0);
+        assert!(price_r        == price, 0);
+        assert!(user_r         == maker_address, 0);
+        assert!(custodian_id_r == NO_CUSTODIAN, 0);
+        // Assert user-side order fields.
+        let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
+            maker_address, MARKET_ID_COIN, NO_CUSTODIAN, side_maker,
+            order_access_key);
+        assert!(market_order_id_r == market_order_id_0, 0);
+        assert!(size_r            == size_maker - size_taker, 0);
+        // Assert maker's asset counts.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            user::get_asset_counts_internal(
+                maker_address, MARKET_ID_COIN, NO_CUSTODIAN);
+        assert!(base_total      == base_deposit_maker + base_taker, 0);
+        assert!(base_available  == base_deposit_maker + base_taker, 0);
+        assert!(base_ceiling    == HI_64, 0);
+        assert!(quote_total     == quote_deposit_maker - quote_match, 0);
+        assert!(quote_available == 0, 0);
+        assert!(quote_ceiling   == quote_deposit_maker - quote_match, 0);
+        // Assert collateral amounts.
+        assert!(user::get_collateral_value_simple_test<BC>(
+            maker_address, MARKET_ID_COIN, NO_CUSTODIAN) ==
+            base_deposit_maker + base_taker, 0);
+        assert!(user::get_collateral_value_simple_test<QC>(
+            maker_address, MARKET_ID_COIN, NO_CUSTODIAN) ==
+            quote_deposit_maker - quote_match, 0);
+        // Assert asset counts of taker.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            user::get_asset_counts_internal(
+                taker_address, MARKET_ID_COIN, NO_CUSTODIAN);
+        assert!(base_total      == base_deposit_taker - base_taker, 0);
+        assert!(base_available  == base_deposit_taker - base_taker, 0);
+        assert!(base_ceiling    == base_deposit_taker - base_taker, 0);
+        assert!(quote_total     == HI_64, 0);
+        assert!(quote_available == HI_64, 0);
+        assert!(quote_ceiling   == HI_64, 0);
+        // Assert collateral amounts.
+        assert!(user::get_collateral_value_simple_test<BC>(
+            taker_address, MARKET_ID_COIN, NO_CUSTODIAN)
+            == base_deposit_taker - base_taker, 0);
+        assert!(user::get_collateral_value_simple_test<QC>(
+            taker_address, MARKET_ID_COIN, NO_CUSTODIAN)
+            == HI_64, 0);
+    }
+
+    #[test]
+    /// Verify state updates, returns for placing bid that still crosses
+    /// the spread after matching as a taker, under authority of signing
+    /// user. Based on `test_place_limit_order_still_crosses_ask()`.
+    fun test_place_limit_order_still_crosses_bid()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (maker, taker) = init_markets_users_integrator_test();
+        let (maker_address, taker_address) = // Get user addresses.
+            (address_of(&maker), address_of(&taker));
+        // Get fee divisors.
+        let (taker_divisor, integrator_divisor) =
+            (incentives::get_taker_fee_divisor(),
+             incentives::get_fee_share_divisor(INTEGRATOR_TIER));
+        // Declare order parameters with price set to product of
+        // divisors, to prevent truncation effects on estimates.
+        let side_taker           = BID;
+        let direction_taker      = if (side_taker == ASK) SELL else BUY;
+        let side_maker           = !side_taker;
+        let size_maker           = MIN_SIZE_COIN + 123;
+        let size_taker           = size_maker - 10;
+        let size_taker_requested = size_maker + 1;
+        let base_maker           = size_maker * LOT_SIZE_COIN;
+        let base_taker           = size_taker * LOT_SIZE_COIN;
+        let price                = integrator_divisor * taker_divisor;
+        let quote_maker          = size_maker * price * TICK_SIZE_COIN;
+        let quote_match          = size_taker * price * TICK_SIZE_COIN;
+        let integrator_share     = quote_match / integrator_divisor;
+        let econia_share         =
+            quote_match / taker_divisor - integrator_share;
+        let fee                  = integrator_share + econia_share;
+        let quote_trade          = if (direction_taker == BUY)
+            (quote_match + fee) else (quote_match - fee);
+        let restriction          = NO_RESTRICTION;
+        // Deposit to maker's account enough to impinge on min and max
+        // amounts after fill.
+        let base_deposit_maker  = base_maker;
+        let quote_deposit_maker = HI_64 - quote_maker;
+        user::deposit_coins<BC>(maker_address, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(base_deposit_maker));
+        user::deposit_coins<QC>(maker_address, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(quote_deposit_maker));
+        // Deposit to second maker's account such that matching engine
+        // halts before matching requested size.
+        let base_deposit_taker  = 0;
+        let quote_deposit_taker = quote_trade;
+        user::deposit_coins<BC>(taker_address, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(base_deposit_taker));
+        user::deposit_coins<QC>(taker_address, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(quote_deposit_taker));
+        // Place first maker order.
+        let (market_order_id_0, _, _, _) = place_limit_order_user<BC, QC>(
+            &maker, MARKET_ID_COIN, @integrator, side_maker, size_maker, price,
+            restriction);
+        // Place limit order that still crosses spread after matching.
+        let (market_order_id_1, base_trade_r, quote_trade_r, fee_r) =
+            place_limit_order_user<BC, QC>(
+                &taker, MARKET_ID_COIN, @integrator, side_taker,
+                size_taker_requested, price, restriction);
+        // Assert returns
+        assert!(market_order_id_1 == (NIL as u128), 0);
+        assert!(base_trade_r      == base_taker, 0);
+        assert!(quote_trade_r     == quote_trade, 0);
+        assert!(fee_r             == fee, 0);
+        // Get fields for maker order on book.
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
+            get_order_fields_test(MARKET_ID_COIN, side_maker,
+                                  market_order_id_0);
+        // Assert field returns except access key, used for user lookup.
+        assert!(size_r         == size_maker - size_taker, 0);
+        assert!(price_r        == price, 0);
+        assert!(user_r         == maker_address, 0);
+        assert!(custodian_id_r == NO_CUSTODIAN, 0);
+        // Assert user-side order fields.
+        let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
+            maker_address, MARKET_ID_COIN, NO_CUSTODIAN, side_maker,
+            order_access_key);
+        assert!(market_order_id_r == market_order_id_0, 0);
+        assert!(size_r            == size_maker - size_taker, 0);
+        // Assert maker's asset counts.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            user::get_asset_counts_internal(
+                maker_address, MARKET_ID_COIN, NO_CUSTODIAN);
+        assert!(base_total      == base_deposit_maker - base_taker, 0);
+        assert!(base_available  == 0, 0);
+        assert!(base_ceiling    == base_deposit_maker - base_taker, 0);
+        assert!(quote_total     == quote_deposit_maker + quote_match, 0);
+        assert!(quote_available == quote_deposit_maker + quote_match, 0);
+        assert!(quote_ceiling   == HI_64, 0);
+        // Assert collateral amounts.
+        assert!(user::get_collateral_value_simple_test<BC>(
+            maker_address, MARKET_ID_COIN, NO_CUSTODIAN) ==
+            base_deposit_maker - base_taker, 0);
+        assert!(user::get_collateral_value_simple_test<QC>(
+            maker_address, MARKET_ID_COIN, NO_CUSTODIAN) ==
+            quote_deposit_maker + quote_match, 0);
+        // Assert asset counts of taker.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            user::get_asset_counts_internal(
+                taker_address, MARKET_ID_COIN, NO_CUSTODIAN);
+        assert!(base_total      == base_taker, 0);
+        assert!(base_available  == base_taker, 0);
+        assert!(base_ceiling    == base_taker, 0);
+        assert!(quote_total     == 0, 0);
+        assert!(quote_available == 0, 0);
+        assert!(quote_ceiling   == 0, 0);
+        // Assert collateral amounts.
+        assert!(user::get_collateral_value_simple_test<BC>(
+            taker_address, MARKET_ID_COIN, NO_CUSTODIAN) == base_taker, 0);
+        assert!(user::get_collateral_value_simple_test<QC>(
+            taker_address, MARKET_ID_COIN, NO_CUSTODIAN) == 0, 0);
     }
 
     #[test]
@@ -6113,7 +6368,7 @@ module econia::market {
         let (taker_divisor, integrator_divisor) =
             (incentives::get_taker_fee_divisor(),
              incentives::get_fee_share_divisor(INTEGRATOR_TIER));
-        // Declare order paramaters with price set to product of
+        // Declare order parameters with price set to product of
         // divisors, to prevent truncation effects on estimates.
         let side             = ASK; // Maker sell.
         let size_match       = 1; // Only one lot ends up filling.
@@ -6211,7 +6466,7 @@ module econia::market {
         let (taker_divisor, integrator_divisor) =
             (incentives::get_taker_fee_divisor(),
              incentives::get_fee_share_divisor(INTEGRATOR_TIER));
-        // Declare order paramaters with price set to product of
+        // Declare order parameters with price set to product of
         // divisors, to prevent truncation effects on estimates.
         let side             = BID; // Maker buy.
         let size_match       = 1; // Only one lot ends up filling.
@@ -6315,7 +6570,7 @@ module econia::market {
         let (taker_divisor, integrator_divisor) =
             (incentives::get_taker_fee_divisor(),
              incentives::get_fee_share_divisor(INTEGRATOR_TIER));
-        // Declare order paramaters with price set to product of
+        // Declare order parameters with price set to product of
         // divisors, to prevent truncation effects on estimates.
         let side             = ASK; // Maker sell.
         let size_match       = 1; // Only one lot ends up filling.
@@ -6419,7 +6674,7 @@ module econia::market {
         let (taker_divisor, integrator_divisor) =
             (incentives::get_taker_fee_divisor(),
              incentives::get_fee_share_divisor(INTEGRATOR_TIER));
-        // Declare order paramaters with price set to product of
+        // Declare order parameters with price set to product of
         // divisors, to prevent truncation effects on estimates.
         let side             = BID; // Maker buy.
         let size_match       = 1; // Only one lot ends up filling.
@@ -6519,7 +6774,7 @@ module econia::market {
         let (taker_divisor, integrator_divisor) =
             (incentives::get_taker_fee_divisor(),
              incentives::get_fee_share_divisor(INTEGRATOR_TIER));
-        // Declare order paramaters with price set to product of
+        // Declare order parameters with price set to product of
         // divisors, to prevent truncation effects on estimates.
         let side             = ASK; // Maker sell.
         let size_match       = 1; // Only one lot ends up filling.

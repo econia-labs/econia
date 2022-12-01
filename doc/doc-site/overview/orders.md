@@ -2,13 +2,13 @@
 
 For each market, Econia tracks bids and asks in two places:
 
-1. A global [`OrderBook`] resource for the market (book-side).
-1. A user-specific [`MarketAccount`] for each user with an open order on the market (user-side).
+1. A global [`OrderBook`] resource for the market.
+1. A user-specific [`MarketAccount`] for each user trading on the market.
 
 ## Order book structure
 
 Econia uses a custom data structure, the [AVL queue], for storing orders.
-In short, the AVL queue combines an AVL tree with a doubly linked list at every tree node, where tree nodes are price levels and list nodes are orders.
+In short, the [AVL queue] combines an AVL tree with a doubly linked list at every tree node, where tree nodes are price levels and list nodes are orders.
 For example, consider the following "ascending" [AVL queue]:
 
 >                                        1001 [35 -> 38]
@@ -63,7 +63,7 @@ Each [`OrderBook`] has an ascending [AVL queue] for asks, and a descending [AVL 
 | 991   | 40   | Bid  |
 | 991   | 45   | Bid  |
 
-Here, a large taker buy will fill against orders in the following sequence:
+Here, a large taker buy will fill against asks in the following sequence:
 
 1. Price 1000, size 50
 1. Price 1000, size 60
@@ -71,7 +71,7 @@ Here, a large taker buy will fill against orders in the following sequence:
 1. Price 1001, size 35
 1. ...
 
-Similarly, a large taker sell will fill against orders in the following sequence:
+Similarly, a large taker sell will fill against bids in the following sequence:
 
 1. Price 995, size 11
 1. Price 995, size 2

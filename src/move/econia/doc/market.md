@@ -3631,9 +3631,10 @@ matching engine, deposited back to the user's market account,
 and remaining order size to fill is updated. If the order price
 still crosses the spread after matching halts, size is updated
 to 0, otherwise it is decremented by the amount just matched. If
-restriction is immediate-or-cancel or if no size left to fill
-after optional matching as a taker, returns without placing a
-maker order.
+restriction is immediate-or-cancel or if remaining size to fill
+after optional matching as a taker does not meet minimum order
+size requirement for market, returns without placing a maker
+order.
 
 The user's next order access key is checked, and a corresponding
 order is inserted to the order book. If the order's price-time
@@ -3660,6 +3661,7 @@ ID is emitted in a maker evict event.
 * <code>test_place_limit_order_crosses_ask_partial_cancel()</code>
 * <code>test_place_limit_order_crosses_bid_exact()</code>
 * <code>test_place_limit_order_crosses_bid_partial()</code>
+* <code>test_place_limit_order_crosses_bid_partial_cancel()</code>
 * <code>test_place_limit_order_evict()</code>
 * <code>test_place_limit_order_no_cross_ask_user()</code>
 * <code>test_place_limit_order_no_cross_bid_custodian()</code>
@@ -3841,8 +3843,11 @@ ID is emitted in a maker evict event.
             // Else <b>update</b> size <b>to</b> amount left <b>to</b> fill <b>post</b>-match.
             size - (base_traded / order_book_ref_mut.lot_size);
     }; // Done <b>with</b> optional matching <b>as</b> a taker across the spread.
-    // Return without <a href="market.md#0xc0deb00c_market">market</a> order ID <b>if</b> no size left <b>to</b> fill.
-    <b>if</b> ((restriction == <a href="market.md#0xc0deb00c_market_IMMEDIATE_OR_CANCEL">IMMEDIATE_OR_CANCEL</a>) || (size == 0))
+    // Return without <a href="market.md#0xc0deb00c_market">market</a> order ID <b>if</b> immediate-or-cancel or <b>if</b>
+    // remaining size <b>to</b> fill after matching does not meet minimum
+    // size requirement for <a href="market.md#0xc0deb00c_market">market</a>.
+    <b>if</b> ((restriction == <a href="market.md#0xc0deb00c_market_IMMEDIATE_OR_CANCEL">IMMEDIATE_OR_CANCEL</a>) ||
+        (size &lt; order_book_ref_mut.min_size))
         <b>return</b> ((<a href="market.md#0xc0deb00c_market_NIL">NIL</a> <b>as</b> u128), base_traded, quote_traded, fees);
     // Get next order access key for <a href="user.md#0xc0deb00c_user">user</a>-side order placement.
     <b>let</b> order_access_key = <a href="user.md#0xc0deb00c_user_get_next_order_access_key_internal">user::get_next_order_access_key_internal</a>(

@@ -861,19 +861,18 @@ module econia::user {
         if (custodian_id != NO_CUSTODIAN) assert!(
             registry::is_registered_custodian_id(custodian_id),
             E_UNREGISTERED_CUSTODIAN);
-        let user_address = address_of(user); // Get user address.
         let market_account_id = // Get market account ID.
             ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128);
         // Register market accounts map entries.
         register_market_account_account_entries<BaseType, QuoteType>(
-            user, user_address, market_account_id, market_id, custodian_id);
+            user, market_account_id, market_id, custodian_id);
         // If base asset is coin, register collateral entry.
         if (coin::is_coin_initialized<BaseType>())
             register_market_account_collateral_entry<BaseType>(
-                user, user_address, market_account_id);
+                user, market_account_id);
         // Register quote asset collateral entry.
         register_market_account_collateral_entry<QuoteType>(
-            user, user_address, market_account_id);
+            user, market_account_id);
     }
 
     #[cmd]
@@ -1834,7 +1833,6 @@ module econia::user {
     /// # Parameters
     ///
     /// * `user`: User registering a market account.
-    /// * `user_address`: Address of user registering a market account.
     /// * `market_account_id`: Market account ID for given market.
     /// * `market_id`: Market ID for given market.
     /// * `custodian_id`: Custodian ID to register account with, or
@@ -1853,11 +1851,11 @@ module econia::user {
         QuoteType
     >(
         user: &signer,
-        user_address: address,
         market_account_id: u128,
         market_id: u64,
         custodian_id: u64
     ) acquires MarketAccounts {
+        let user_address = address_of(user); // Get user address.
         let (base_type, quote_type) = // Get base and quote types.
             (type_info::type_of<BaseType>(), type_info::type_of<QuoteType>());
         // Get market info.
@@ -1914,7 +1912,6 @@ module econia::user {
     /// # Parameters
     ///
     /// * `user`: User registering a market account.
-    /// * `user_address`: Address of user registering a market account.
     /// * `market_account_id`: Market account ID for given market.
     ///
     /// # Testing
@@ -1924,9 +1921,9 @@ module econia::user {
         CoinType
     >(
         user: &signer,
-        user_address: address,
         market_account_id: u128
     ) acquires Collateral {
+        let user_address = address_of(user); // Get user address.
         // If user does not have a collateral map initialized, pack an
         // empty one and move it to their account.
         if (!exists<Collateral<CoinType>>(user_address))

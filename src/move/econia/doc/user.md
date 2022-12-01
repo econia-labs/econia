@@ -1748,19 +1748,18 @@ registered.
     <b>if</b> (custodian_id != <a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a>) <b>assert</b>!(
         <a href="registry.md#0xc0deb00c_registry_is_registered_custodian_id">registry::is_registered_custodian_id</a>(custodian_id),
         <a href="user.md#0xc0deb00c_user_E_UNREGISTERED_CUSTODIAN">E_UNREGISTERED_CUSTODIAN</a>);
-    <b>let</b> user_address = address_of(<a href="user.md#0xc0deb00c_user">user</a>); // Get <a href="user.md#0xc0deb00c_user">user</a> <b>address</b>.
     <b>let</b> market_account_id = // Get <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> ID.
         ((market_id <b>as</b> u128) &lt;&lt; <a href="user.md#0xc0deb00c_user_SHIFT_MARKET_ID">SHIFT_MARKET_ID</a>) | (custodian_id <b>as</b> u128);
     // Register <a href="market.md#0xc0deb00c_market">market</a> accounts map entries.
     <a href="user.md#0xc0deb00c_user_register_market_account_account_entries">register_market_account_account_entries</a>&lt;BaseType, QuoteType&gt;(
-        <a href="user.md#0xc0deb00c_user">user</a>, user_address, market_account_id, market_id, custodian_id);
+        <a href="user.md#0xc0deb00c_user">user</a>, market_account_id, market_id, custodian_id);
     // If base asset is <a href="">coin</a>, register collateral entry.
     <b>if</b> (<a href="_is_coin_initialized">coin::is_coin_initialized</a>&lt;BaseType&gt;())
         <a href="user.md#0xc0deb00c_user_register_market_account_collateral_entry">register_market_account_collateral_entry</a>&lt;BaseType&gt;(
-            <a href="user.md#0xc0deb00c_user">user</a>, user_address, market_account_id);
+            <a href="user.md#0xc0deb00c_user">user</a>, market_account_id);
     // Register quote asset collateral entry.
     <a href="user.md#0xc0deb00c_user_register_market_account_collateral_entry">register_market_account_collateral_entry</a>&lt;QuoteType&gt;(
-        <a href="user.md#0xc0deb00c_user">user</a>, user_address, market_account_id);
+        <a href="user.md#0xc0deb00c_user">user</a>, market_account_id);
 }
 </code></pre>
 
@@ -3122,7 +3121,6 @@ Inner function for <code><a href="user.md#0xc0deb00c_user_register_market_accoun
 
 
 * <code><a href="user.md#0xc0deb00c_user">user</a></code>: User registering a market account.
-* <code>user_address</code>: Address of user registering a market account.
 * <code>market_account_id</code>: Market account ID for given market.
 * <code>market_id</code>: Market ID for given market.
 * <code>custodian_id</code>: Custodian ID to register account with, or
@@ -3146,7 +3144,7 @@ Inner function for <code><a href="user.md#0xc0deb00c_user_register_market_accoun
 * <code>test_register_market_accounts()</code>
 
 
-<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_register_market_account_account_entries">register_market_account_account_entries</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, user_address: <b>address</b>, market_account_id: u128, market_id: u64, custodian_id: u64)
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_register_market_account_account_entries">register_market_account_account_entries</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_account_id: u128, market_id: u64, custodian_id: u64)
 </code></pre>
 
 
@@ -3159,11 +3157,11 @@ Inner function for <code><a href="user.md#0xc0deb00c_user_register_market_accoun
     QuoteType
 &gt;(
     <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
-    user_address: <b>address</b>,
     market_account_id: u128,
     market_id: u64,
     custodian_id: u64
 ) <b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+    <b>let</b> user_address = address_of(<a href="user.md#0xc0deb00c_user">user</a>); // Get <a href="user.md#0xc0deb00c_user">user</a> <b>address</b>.
     <b>let</b> (base_type, quote_type) = // Get base and quote types.
         (<a href="_type_of">type_info::type_of</a>&lt;BaseType&gt;(), <a href="_type_of">type_info::type_of</a>&lt;QuoteType&gt;());
     // Get <a href="market.md#0xc0deb00c_market">market</a> info.
@@ -3235,7 +3233,6 @@ performed by <code>register_market_account_accounts_entries()</code> in
 
 
 * <code><a href="user.md#0xc0deb00c_user">user</a></code>: User registering a market account.
-* <code>user_address</code>: Address of user registering a market account.
 * <code>market_account_id</code>: Market account ID for given market.
 
 
@@ -3247,7 +3244,7 @@ performed by <code>register_market_account_accounts_entries()</code> in
 * <code>test_register_market_accounts()</code>
 
 
-<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_register_market_account_collateral_entry">register_market_account_collateral_entry</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, user_address: <b>address</b>, market_account_id: u128)
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_register_market_account_collateral_entry">register_market_account_collateral_entry</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_account_id: u128)
 </code></pre>
 
 
@@ -3259,9 +3256,9 @@ performed by <code>register_market_account_accounts_entries()</code> in
     CoinType
 &gt;(
     <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
-    user_address: <b>address</b>,
     market_account_id: u128
 ) <b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a> {
+    <b>let</b> user_address = address_of(<a href="user.md#0xc0deb00c_user">user</a>); // Get <a href="user.md#0xc0deb00c_user">user</a> <b>address</b>.
     // If <a href="user.md#0xc0deb00c_user">user</a> does not have a collateral map initialized, pack an
     // empty one and <b>move</b> it <b>to</b> their <a href="">account</a>.
     <b>if</b> (!<b>exists</b>&lt;<a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>&lt;CoinType&gt;&gt;(user_address))

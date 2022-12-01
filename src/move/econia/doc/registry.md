@@ -931,7 +931,7 @@ Tick size specified as 0.
 
 <a name="0xc0deb00c_registry_E_WRONG_RECOGNIZED_MARKET"></a>
 
-Market info is not recognized for given trading pair.
+Market ID is not recognized for corresponding trading pair.
 
 
 <pre><code><b>const</b> <a href="registry.md#0xc0deb00c_registry_E_WRONG_RECOGNIZED_MARKET">E_WRONG_RECOGNIZED_MARKET</a>: u64 = 11;
@@ -1744,8 +1744,8 @@ given trading pair.
 * <code><a href="registry.md#0xc0deb00c_registry_E_NOT_ECONIA">E_NOT_ECONIA</a></code>: <code><a href="">account</a></code> is not Econia.
 * <code><a href="registry.md#0xc0deb00c_registry_E_NO_RECOGNIZED_MARKET">E_NO_RECOGNIZED_MARKET</a></code>: Market having given ID is not a
 recognized market.
-* <code><a href="registry.md#0xc0deb00c_registry_E_WRONG_RECOGNIZED_MARKET">E_WRONG_RECOGNIZED_MARKET</a></code>: Market info is not recognized for
-given trading pair.
+* <code><a href="registry.md#0xc0deb00c_registry_E_WRONG_RECOGNIZED_MARKET">E_WRONG_RECOGNIZED_MARKET</a></code>: Market ID is not recognized for
+corresponding trading pair.
 
 
 <a name="@Assumptions_45"></a>
@@ -1788,18 +1788,10 @@ given trading pair.
         &<b>borrow_global</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia).market_id_to_info;
     // Immutably borrow info for <a href="market.md#0xc0deb00c_market">market</a> having given ID.
     <b>let</b> market_info_ref = <a href="tablist.md#0xc0deb00c_tablist_borrow">tablist::borrow</a>(markets_map_ref, market_id);
-    // Get recognized <a href="market.md#0xc0deb00c_market">market</a> info parameters.
-    <b>let</b> (base_type, base_name_generic, quote_type, lot_size, tick_size,
-         min_size, underwriter_id) =
-        (market_info_ref.base_type, market_info_ref.base_name_generic,
-         market_info_ref.quote_type, market_info_ref.lot_size,
-         market_info_ref.tick_size, market_info_ref.min_size,
-         market_info_ref.underwriter_id);
-    <b>let</b> trading_pair = // Pack trading pair.
-        <a href="registry.md#0xc0deb00c_registry_TradingPair">TradingPair</a>{base_type, base_name_generic, quote_type};
-    // Pack recognized <a href="market.md#0xc0deb00c_market">market</a> info.
-    <b>let</b> recognized_market_info = <a href="registry.md#0xc0deb00c_registry_RecognizedMarketInfo">RecognizedMarketInfo</a>{
-        market_id, lot_size, tick_size, min_size, underwriter_id};
+    <b>let</b> trading_pair = // Pack trading pair from <a href="market.md#0xc0deb00c_market">market</a> info.
+        <a href="registry.md#0xc0deb00c_registry_TradingPair">TradingPair</a>{base_type: market_info_ref.base_type,
+                    base_name_generic: market_info_ref.base_name_generic,
+                    quote_type: market_info_ref.quote_type};
     // Mutably borrow recognized markets resource.
     <b>let</b> recognized_markets_ref_mut =
         <b>borrow_global_mut</b>&lt;<a href="registry.md#0xc0deb00c_registry_RecognizedMarkets">RecognizedMarkets</a>&gt;(@econia);
@@ -1808,10 +1800,13 @@ given trading pair.
     <b>assert</b>!( // Assert trading pair <b>has</b> a recognized <a href="market.md#0xc0deb00c_market">market</a>.
         <a href="tablist.md#0xc0deb00c_tablist_contains">tablist::contains</a>(recognized_map_ref_mut, trading_pair),
         <a href="registry.md#0xc0deb00c_registry_E_NO_RECOGNIZED_MARKET">E_NO_RECOGNIZED_MARKET</a>);
-    <b>assert</b>!( // Assert <a href="market.md#0xc0deb00c_market">market</a> info is recognized for trading pair.
-        *<a href="tablist.md#0xc0deb00c_tablist_borrow">tablist::borrow</a>(recognized_map_ref_mut, trading_pair) ==
-            recognized_market_info,
-        <a href="registry.md#0xc0deb00c_registry_E_WRONG_RECOGNIZED_MARKET">E_WRONG_RECOGNIZED_MARKET</a>);
+    // Get recognized <a href="market.md#0xc0deb00c_market">market</a> ID for corresponding trading pair.
+    <b>let</b> recognized_market_id_for_trading_pair =
+        <a href="tablist.md#0xc0deb00c_tablist_borrow">tablist::borrow</a>(recognized_map_ref_mut, trading_pair).market_id;
+    // Assert passed <a href="market.md#0xc0deb00c_market">market</a> ID matches that of recognized <a href="market.md#0xc0deb00c_market">market</a> ID
+    // for given trading pair.
+    <b>assert</b>!(recognized_market_id_for_trading_pair == market_id,
+            <a href="registry.md#0xc0deb00c_registry_E_WRONG_RECOGNIZED_MARKET">E_WRONG_RECOGNIZED_MARKET</a>);
     // Remove entry for given trading pair.
     <a href="tablist.md#0xc0deb00c_tablist_remove">tablist::remove</a>(recognized_map_ref_mut, trading_pair);
     // Mutably borrow recognized markets events handle.

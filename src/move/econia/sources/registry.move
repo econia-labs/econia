@@ -365,7 +365,7 @@ module econia::registry {
     const E_NOT_ECONIA: u64 = 9;
     /// Trading pair does not have recognized market.
     const E_NO_RECOGNIZED_MARKET: u64 = 10;
-    /// Market info is not recognized for given trading pair.
+    /// Market ID is not recognized for corresponding trading pair.
     const E_WRONG_RECOGNIZED_MARKET: u64 = 11;
     /// Market ID is invalid.
     const E_INVALID_MARKET_ID: u64 = 12;
@@ -790,8 +790,8 @@ module econia::registry {
     /// * `E_NOT_ECONIA`: `account` is not Econia.
     /// * `E_NO_RECOGNIZED_MARKET`: Market having given ID is not a
     ///   recognized market.
-    /// * `E_WRONG_RECOGNIZED_MARKET`: Market info is not recognized for
-    ///   given trading pair.
+    /// * `E_WRONG_RECOGNIZED_MARKET`: Market ID is not recognized for
+    ///   corresponding trading pair.
     ///
     /// # Assumptions
     ///
@@ -816,18 +816,10 @@ module econia::registry {
             &borrow_global<Registry>(@econia).market_id_to_info;
         // Immutably borrow info for market having given ID.
         let market_info_ref = tablist::borrow(markets_map_ref, market_id);
-        // Get recognized market info parameters.
-        let (base_type, base_name_generic, quote_type, lot_size, tick_size,
-             min_size, underwriter_id) =
-            (market_info_ref.base_type, market_info_ref.base_name_generic,
-             market_info_ref.quote_type, market_info_ref.lot_size,
-             market_info_ref.tick_size, market_info_ref.min_size,
-             market_info_ref.underwriter_id);
-        let trading_pair = // Pack trading pair.
-            TradingPair{base_type, base_name_generic, quote_type};
-        // Pack recognized market info.
-        let recognized_market_info = RecognizedMarketInfo{
-            market_id, lot_size, tick_size, min_size, underwriter_id};
+        let trading_pair = // Pack trading pair from market info.
+            TradingPair{base_type: market_info_ref.base_type,
+                        base_name_generic: market_info_ref.base_name_generic,
+                        quote_type: market_info_ref.quote_type};
         // Mutably borrow recognized markets resource.
         let recognized_markets_ref_mut =
             borrow_global_mut<RecognizedMarkets>(@econia);
@@ -836,10 +828,13 @@ module econia::registry {
         assert!( // Assert trading pair has a recognized market.
             tablist::contains(recognized_map_ref_mut, trading_pair),
             E_NO_RECOGNIZED_MARKET);
-        assert!( // Assert market info is recognized for trading pair.
-            *tablist::borrow(recognized_map_ref_mut, trading_pair) ==
-                recognized_market_info,
-            E_WRONG_RECOGNIZED_MARKET);
+        // Get recognized market ID for corresponding trading pair.
+        let recognized_market_id_for_trading_pair =
+            tablist::borrow(recognized_map_ref_mut, trading_pair).market_id;
+        // Assert passed market ID matches that of recognized market ID
+        // for given trading pair.
+        assert!(recognized_market_id_for_trading_pair == market_id,
+                E_WRONG_RECOGNIZED_MARKET);
         // Remove entry for given trading pair.
         tablist::remove(recognized_map_ref_mut, trading_pair);
         // Mutably borrow recognized markets events handle.

@@ -485,6 +485,7 @@ module econia::incentives {
 
     // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    #[app]
     /// Calculate cost to upgrade `IntegratorFeeStore` to higher tier.
     ///
     /// # Type parameters
@@ -552,6 +553,7 @@ module econia::incentives {
             get_tier_activation_fee(current_tier)
     }
 
+    #[app]
     /// Return custodian registration fee.
     ///
     /// # Testing
@@ -563,6 +565,7 @@ module econia::incentives {
         borrow_global<IncentiveParameters>(@econia).custodian_registration_fee
     }
 
+    #[app]
     /// Return integrator fee share divisor for `tier`.
     ///
     /// # Testing
@@ -588,6 +591,7 @@ module econia::incentives {
         integrator_fee_store_tier_ref.fee_share_divisor
     }
 
+    #[app]
     /// Return withdrawal fee for given `integrator` and `market_id`.
     ///
     /// # Restrictions
@@ -615,6 +619,7 @@ module econia::incentives {
         get_tier_withdrawal_fee(integrator_fee_store_ref.tier)
     }
 
+    #[app]
     /// Return market registration fee.
     ///
     /// # Testing
@@ -626,6 +631,7 @@ module econia::incentives {
         borrow_global<IncentiveParameters>(@econia).market_registration_fee
     }
 
+    #[app]
     /// Return number of fee store tiers.
     ///
     /// # Testing
@@ -643,6 +649,7 @@ module econia::incentives {
         vector::length(integrator_fee_store_tiers_ref)
     }
 
+    #[app]
     /// Return taker fee divisor.
     ///
     /// # Testing
@@ -654,6 +661,7 @@ module econia::incentives {
         borrow_global<IncentiveParameters>(@econia).taker_fee_divisor
     }
 
+    #[app]
     /// Return fee to activate an `IntegratorFeeStore` to given `tier`.
     ///
     /// # Testing
@@ -679,6 +687,7 @@ module econia::incentives {
         integrator_fee_store_tier_ref.tier_activation_fee
     }
 
+    #[app]
     /// Return fee to withdraw from `IntegratorFeeStore` activated to
     /// given `tier`.
     ///
@@ -705,6 +714,7 @@ module econia::incentives {
         integrator_fee_store_tier_ref.withdrawal_fee
     }
 
+    #[app]
     /// Return underwriter registration fee.
     ///
     /// # Testing
@@ -717,6 +727,7 @@ module econia::incentives {
             underwriter_registration_fee
     }
 
+    #[app]
     /// Return `true` if `T` is the utility coin type.
     ///
     /// # Testing
@@ -776,6 +787,7 @@ module econia::incentives {
         integrator_fee_store_ref_mut.tier = new_tier;
     }
 
+    #[app]
     /// Assert `T` is utility coin type.
     ///
     /// # Aborts

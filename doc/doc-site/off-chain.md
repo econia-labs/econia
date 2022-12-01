@@ -38,7 +38,7 @@ Hence, for 1-indexed market id `n`, maker events have creation number `2n` and t
 ## `move-to-ts` hooks
 
 Econia is designed for use with [Hippo's `move-to-ts` tool], which auto-generates a TypeScript software development kit (SDK) from Move source code.
-As such, Econia's Move source code contains assorted  `#[cmd]` attributes on public entry functions for SDK generation.
+As such, Econia's Move source code contains assorted  `#[cmd]` attributes on public entry functions and `#[app]` attributes on public getter functions for SDK generation.
 Additionally, [`index_orders_sdk()`] contains a `#[query]` attribute for off-chain [`OrderBook`] indexing.
 
 The [`index_orders_sdk()`] function requires the signature of the `@simulation_account` address from [`Move.toml`], such that the function can not actually be executed as a public entry function during run time:

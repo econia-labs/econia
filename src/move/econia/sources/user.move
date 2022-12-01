@@ -457,6 +457,7 @@ module econia::user {
             registry::get_underwriter_id(underwriter_capability_ref));
     }
 
+    #[app]
     /// Return all market account IDs associated with market ID.
     ///
     /// # Parameters
@@ -507,6 +508,7 @@ module econia::user {
         market_account_ids // Return market account IDs.
     }
 
+    #[app]
     /// Return all of a user's market account IDs.
     ///
     /// # Parameters
@@ -566,6 +568,7 @@ module econia::user {
         market_account_ids // Return market account IDs.
     }
 
+    #[app]
     /// Wrapped call to `get_asset_counts_internal()` for custodian.
     ///
     /// Restricted to custodian for given market account to prevent
@@ -591,6 +594,7 @@ module econia::user {
             registry::get_custodian_id(custodian_capability_ref))
     }
 
+    #[app]
     /// Wrapped call to `get_asset_counts_internal()` for signing user.
     ///
     /// Restricted to signing user for given market account to prevent
@@ -613,6 +617,7 @@ module econia::user {
         get_asset_counts_internal(address_of(user), market_id, NO_CUSTODIAN)
     }
 
+    #[app]
     /// Return custodian ID encoded in market account ID.
     ///
     /// # Testing
@@ -624,6 +629,7 @@ module econia::user {
         ((market_account_id & (HI_64 as u128)) as u64)
     }
 
+    #[app]
     /// Return market account ID with encoded market and custodian IDs.
     ///
     /// # Testing
@@ -636,6 +642,7 @@ module econia::user {
         ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128)
     }
 
+    #[app]
     /// Return market ID encoded in market account ID.
     ///
     /// # Testing
@@ -647,6 +654,7 @@ module econia::user {
         (market_account_id >> SHIFT_MARKET_ID as u64)
     }
 
+    #[app]
     /// Return `true` if `user` has market account registered with
     /// given `market_account_id`.
     ///
@@ -667,6 +675,7 @@ module econia::user {
         table::contains(market_accounts_map, market_account_id)
     }
 
+    #[app]
     /// Return `true` if `user` has at least one market account
     /// registered with given `market_id`.
     ///

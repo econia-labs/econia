@@ -741,6 +741,7 @@ module econia::market {
             new_size);
     }
 
+    #[app]
     /// Return maker order counter encoded in market order ID.
     ///
     /// # Testing
@@ -753,6 +754,7 @@ module econia::market {
         (((market_order_id >> SHIFT_COUNTER) & (HI_64 as u128)) as u64)
     }
 
+    #[app]
     /// Return order price encoded in market order ID.
     ///
     /// # Testing

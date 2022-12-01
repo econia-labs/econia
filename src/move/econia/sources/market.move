@@ -2746,11 +2746,12 @@ module econia::market {
     ///
     /// Only for `move-to-ts` SDK generation.
     ///
-    /// Requires `@simulation_account` as a signer, which can be
-    /// generated during transaction simulation.
+    /// Requires `@econia` as a signer, which can be generated during
+    /// transaction simulation.
     ///
-    /// Should be run on a full node with a high gas limit that allows
-    /// the simulation to process all orders on the order book.
+    /// May have to be run on a full node with a high gas limit and low
+    /// gas unit price that allows the simulation to process all orders
+    /// on the order book.
     ///
     /// # Testing
     ///
@@ -2764,8 +2765,7 @@ module econia::market {
         Orders
     {
         // Assert account signer passed appropriately during simulation.
-        assert!(address_of(account) == @simulation_account,
-                E_NOT_SIMULATION_ACCOUNT);
+        assert!(address_of(account) == @econia, E_NOT_SIMULATION_ACCOUNT);
         // Get address of resource account where order books are stored.
         let resource_address = resource_account::get_address();
         let order_books_map_ref_mut = // Mutably borrow order books map.
@@ -2774,9 +2774,9 @@ module econia::market {
             tablist::borrow_mut(order_books_map_ref_mut, market_id);
         // Declare orders resource. If an orders resource exists at
         // simulation account:
-        let orders = if (exists<Orders>(@simulation_account)) {
+        let orders = if (exists<Orders>(@econia)) {
             // Move extant orders resource from account.
-            let orders = move_from<Orders>(@simulation_account);
+            let orders = move_from<Orders>(@econia);
             // Get number of asks and bids from previous query.
             let (n_asks, n_bids) =
                 (vector::length(&orders.asks), vector::length(&orders.bids));
@@ -3633,7 +3633,7 @@ module econia::market {
             &attacker, market_id, side, market_order_id, size_end);
     }
 
-    #[test(account = @simulation_account)]
+    #[test(account = @econia)]
     /// Verify indexing results.
     fun test_index_orders_sdk(
         account: &signer
@@ -3678,7 +3678,7 @@ module econia::market {
             restriction);
         index_orders_sdk(account, market_id); // Index orders.
         // Immutably borrow indexed orders resource.
-        let orders = borrow_global<Orders>(@simulation_account);
+        let orders = borrow_global<Orders>(@econia);
         // Assert order state.
         let order_ref = vector::borrow(&orders.asks, 1);
         assert!(order_ref.price == ask_1_price, 0);
@@ -3709,7 +3709,7 @@ module econia::market {
         // Index orders again, this time emptying out extant resource.
         index_orders_sdk(account, market_id);
         // Immutably borrow indexed orders resource.
-        let orders = borrow_global<Orders>(@simulation_account);
+        let orders = borrow_global<Orders>(@econia);
         // Assert order state.
         let order_ref = vector::borrow(&orders.asks, 1);
         assert!(order_ref.price == ask_1_price, 0);
@@ -3725,7 +3725,7 @@ module econia::market {
         assert!(order_ref.size  == bid_1_size, 0);
     }
 
-    #[test(account = @econia)]
+    #[test(account = @user)]
     #[expected_failure(abort_code = 27)]
     /// Verify failure for invalid account.
     fun test_index_orders_sdk_not_sim_account(

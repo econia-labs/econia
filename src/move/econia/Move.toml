@@ -5,8 +5,6 @@ upgrade_policy = 'compatible'
 
 [addresses]
 econia = '0x2e51979739db25dc987bd24e1a968e45cca0e0daea7cae9121f68af93e8884c9'
-# Address of simulation account required for SDK generation.
-simulation_account = '0x1111'
 # Mock addresses for testing.
 user = '0x1234'
 user_0 = '0x2345'

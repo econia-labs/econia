@@ -4462,11 +4462,12 @@ Index order book for given market ID into ask and bid vectors.
 
 Only for <code><b>move</b>-<b>to</b>-ts</code> SDK generation.
 
-Requires <code>@simulation_account</code> as a signer, which can be
-generated during transaction simulation.
+Requires <code>@econia</code> as a signer, which can be generated during
+transaction simulation.
 
-Should be run on a full node with a high gas limit that allows
-the simulation to process all orders on the order book.
+May have to be run on a full node with a high gas limit and low
+gas unit price that allows the simulation to process all orders
+on the order book.
 
 
 <a name="@Testing_108"></a>
@@ -4494,8 +4495,7 @@ the simulation to process all orders on the order book.
     <a href="market.md#0xc0deb00c_market_Orders">Orders</a>
 {
     // Assert <a href="">account</a> <a href="">signer</a> passed appropriately during simulation.
-    <b>assert</b>!(address_of(<a href="">account</a>) == @simulation_account,
-            <a href="market.md#0xc0deb00c_market_E_NOT_SIMULATION_ACCOUNT">E_NOT_SIMULATION_ACCOUNT</a>);
+    <b>assert</b>!(address_of(<a href="">account</a>) == @econia, <a href="market.md#0xc0deb00c_market_E_NOT_SIMULATION_ACCOUNT">E_NOT_SIMULATION_ACCOUNT</a>);
     // Get <b>address</b> of resource <a href="">account</a> <b>where</b> order books are stored.
     <b>let</b> resource_address = resource_account::get_address();
     <b>let</b> order_books_map_ref_mut = // Mutably borrow order books map.
@@ -4504,9 +4504,9 @@ the simulation to process all orders on the order book.
         <a href="tablist.md#0xc0deb00c_tablist_borrow_mut">tablist::borrow_mut</a>(order_books_map_ref_mut, market_id);
     // Declare orders resource. If an orders resource <b>exists</b> at
     // simulation <a href="">account</a>:
-    <b>let</b> orders = <b>if</b> (<b>exists</b>&lt;<a href="market.md#0xc0deb00c_market_Orders">Orders</a>&gt;(@simulation_account)) {
+    <b>let</b> orders = <b>if</b> (<b>exists</b>&lt;<a href="market.md#0xc0deb00c_market_Orders">Orders</a>&gt;(@econia)) {
         // Move extant orders resource from <a href="">account</a>.
-        <b>let</b> orders = <b>move_from</b>&lt;<a href="market.md#0xc0deb00c_market_Orders">Orders</a>&gt;(@simulation_account);
+        <b>let</b> orders = <b>move_from</b>&lt;<a href="market.md#0xc0deb00c_market_Orders">Orders</a>&gt;(@econia);
         // Get number of asks and bids from previous query.
         <b>let</b> (n_asks, n_bids) =
             (<a href="_length">vector::length</a>(&orders.asks), <a href="_length">vector::length</a>(&orders.bids));

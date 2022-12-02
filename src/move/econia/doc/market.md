@@ -3872,7 +3872,7 @@ ID is emitted in a maker evict event.
     order_book_ref_mut.counter = order_book_ref_mut.counter + 1;
     <a href="user.md#0xc0deb00c_user_place_order_internal">user::place_order_internal</a>( // Place order <a href="user.md#0xc0deb00c_user">user</a>-side.
         user_address, market_id, custodian_id, side, size, price,
-        market_order_id);
+        market_order_id, order_access_key);
     // Emit a maker place <a href="">event</a>.
     <a href="_emit_event">event::emit_event</a>(&<b>mut</b> order_book_ref_mut.maker_events, <a href="market.md#0xc0deb00c_market_MakerEvent">MakerEvent</a>{
         market_id, side, market_order_id, <a href="user.md#0xc0deb00c_user">user</a>: user_address,

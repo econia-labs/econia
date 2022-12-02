@@ -2299,7 +2299,7 @@ module econia::market {
         order_book_ref_mut.counter = order_book_ref_mut.counter + 1;
         user::place_order_internal( // Place order user-side.
             user_address, market_id, custodian_id, side, size, price,
-            market_order_id);
+            market_order_id, order_access_key);
         // Emit a maker place event.
         event::emit_event(&mut order_book_ref_mut.maker_events, MakerEvent{
             market_id, side, market_order_id, user: user_address,

@@ -729,6 +729,17 @@ Flag for bid side
 
 
 
+<a name="0xc0deb00c_user_E_ACCESS_KEY_MISMATCH"></a>
+
+Expected order access key does not match assigned order access
+key.
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_ACCESS_KEY_MISMATCH">E_ACCESS_KEY_MISMATCH</a>: u64 = 17;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_user_E_ASSET_NOT_IN_PAIR"></a>
 
 Asset type is not in trading pair for market.
@@ -2121,9 +2132,9 @@ order.
     // Cancel order <b>with</b> size <b>to</b> be changed.
     <a href="user.md#0xc0deb00c_user_cancel_order_internal">cancel_order_internal</a>(user_address, market_id, custodian_id, side,
                           price, order_access_key, market_order_id);
-    // Place order <b>with</b> new size.
-    <a href="user.md#0xc0deb00c_user_place_order_internal">place_order_internal</a>(user_address, market_id, custodian_id, side,
-                         new_size, price, market_order_id);
+    <a href="user.md#0xc0deb00c_user_place_order_internal">place_order_internal</a>( // Place order <b>with</b> new size.
+        user_address, market_id, custodian_id, side, new_size, price,
+        market_order_id, order_access_key);
 }
 </code></pre>
 
@@ -2719,6 +2730,8 @@ order ID will then be made available.
 * <code>size</code>: Order size, in lots.
 * <code>price</code>: Order price, in ticks per lot.
 * <code>market_order_id</code>: Market order ID for order book access.
+* <code>order_access_key_expected</code>: Expected order access key to be
+assigned to order.
 
 
 <a name="@Terminology_73"></a>
@@ -2753,6 +2766,8 @@ verified by <code><a href="user.md#0xc0deb00c_user_get_next_order_access_key_int
 * <code><a href="user.md#0xc0deb00c_user_E_OVERFLOW_ASSET_IN">E_OVERFLOW_ASSET_IN</a></code>: Filling order would overflow asset
 received from trade.
 * <code><a href="user.md#0xc0deb00c_user_E_NOT_ENOUGH_ASSET_OUT">E_NOT_ENOUGH_ASSET_OUT</a></code>: Not enough asset to trade away.
+* <code><a href="user.md#0xc0deb00c_user_E_ACCESS_KEY_MISMATCH">E_ACCESS_KEY_MISMATCH</a></code>: Expected order access key does not
+match assigned order access key.
 
 
 <a name="@Expected_value_testing_76"></a>
@@ -2770,6 +2785,7 @@ received from trade.
 ### Failure testing
 
 
+* <code>test_place_order_internal_access_key_mismatch()</code>
 * <code>test_place_order_internal_in_overflow()</code>
 * <code>test_place_order_internal_out_underflow()</code>
 * <code>test_place_order_internal_price_0()</code>
@@ -2778,7 +2794,7 @@ received from trade.
 * <code>test_place_order_internal_ticks_overflow()</code>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_place_order_internal">place_order_internal</a>(user_address: <b>address</b>, market_id: u64, custodian_id: u64, side: bool, size: u64, price: u64, market_order_id: u128)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_place_order_internal">place_order_internal</a>(user_address: <b>address</b>, market_id: u64, custodian_id: u64, side: bool, size: u64, price: u64, market_order_id: u128, order_access_key_expected: u64)
 </code></pre>
 
 
@@ -2793,7 +2809,8 @@ received from trade.
     side: bool,
     size: u64,
     price: u64,
-    market_order_id: u128
+    market_order_id: u128,
+    order_access_key_expected: u64
 ) <b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
     <b>assert</b>!(price &gt; 0, <a href="user.md#0xc0deb00c_user_E_PRICE_0">E_PRICE_0</a>); // Assert price is nonzero.
     // Assert price is not too high.
@@ -2842,21 +2859,29 @@ received from trade.
     *in_ceiling_ref_mut = *in_ceiling_ref_mut + (in_fill <b>as</b> u64);
     // Update available amount for outbound asset.
     *out_available_ref_mut = *out_available_ref_mut - (out_fill <b>as</b> u64);
-    <b>if</b> (*stack_top_ref_mut == <a href="user.md#0xc0deb00c_user_NIL">NIL</a>) { // If empty inactive stack:
+    // Get order access key. If empty inactive stack:
+    <b>let</b> order_access_key = <b>if</b> (*stack_top_ref_mut == <a href="user.md#0xc0deb00c_user_NIL">NIL</a>) {
         // Get one-indexed order access key for new order.
         <b>let</b> order_access_key = <a href="tablist.md#0xc0deb00c_tablist_length">tablist::length</a>(orders_ref_mut) + 1;
         // Allocate new order.
         <a href="tablist.md#0xc0deb00c_tablist_add">tablist::add</a>(orders_ref_mut, order_access_key, <a href="user.md#0xc0deb00c_user_Order">Order</a>{
             market_order_id, size});
+        order_access_key // Store order access key locally.
     } <b>else</b> { // If inactive order stack not empty:
+        // <a href="user.md#0xc0deb00c_user_Order">Order</a> access key is for inactive order at top of stack.
+        <b>let</b> order_access_key = *stack_top_ref_mut;
         <b>let</b> order_ref_mut = // Mutably borrow order at top of stack.
-            <a href="tablist.md#0xc0deb00c_tablist_borrow_mut">tablist::borrow_mut</a>(orders_ref_mut, *stack_top_ref_mut);
+            <a href="tablist.md#0xc0deb00c_tablist_borrow_mut">tablist::borrow_mut</a>(orders_ref_mut, order_access_key);
         // Reassign stack top field <b>to</b> next in stack.
         *stack_top_ref_mut = order_ref_mut.size;
         // Reassign <a href="market.md#0xc0deb00c_market">market</a> order ID for active order.
         order_ref_mut.market_order_id = market_order_id;
         order_ref_mut.size = size; // Reassign order size field.
+        order_access_key // Store order access key locally.
     };
+    // Assert order access key is <b>as</b> expected.
+    <b>assert</b>!(order_access_key == order_access_key_expected,
+            <a href="user.md#0xc0deb00c_user_E_ACCESS_KEY_MISMATCH">E_ACCESS_KEY_MISMATCH</a>);
 }
 </code></pre>
 

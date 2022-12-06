@@ -1695,6 +1695,9 @@ Wrapped call to <code><a href="user.md#0xc0deb00c_user_deposit_coins">deposit_co
 
 Register market account for indicated market and custodian.
 
+Verifies market ID and asset types via internal call to
+<code><a href="user.md#0xc0deb00c_user_register_market_account_account_entries">register_market_account_account_entries</a>()</code>.
+
 
 <a name="@Type_parameters_35"></a>
 
@@ -1761,14 +1764,17 @@ registered.
         <a href="user.md#0xc0deb00c_user_E_UNREGISTERED_CUSTODIAN">E_UNREGISTERED_CUSTODIAN</a>);
     <b>let</b> market_account_id = // Get <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> ID.
         ((market_id <b>as</b> u128) &lt;&lt; <a href="user.md#0xc0deb00c_user_SHIFT_MARKET_ID">SHIFT_MARKET_ID</a>) | (custodian_id <b>as</b> u128);
-    // Register <a href="market.md#0xc0deb00c_market">market</a> accounts map entries.
+    // Register <a href="market.md#0xc0deb00c_market">market</a> accounts map entries, verifying <a href="market.md#0xc0deb00c_market">market</a> ID and
+    // asset types.
     <a href="user.md#0xc0deb00c_user_register_market_account_account_entries">register_market_account_account_entries</a>&lt;BaseType, QuoteType&gt;(
         <a href="user.md#0xc0deb00c_user">user</a>, market_account_id, market_id, custodian_id);
-    // If base asset is <a href="">coin</a>, register collateral entry.
+    // Register collateral entry <b>if</b> base type is <a href="">coin</a> (otherwise
+    // is a generic asset and no collateral entry required).
     <b>if</b> (<a href="_is_coin_initialized">coin::is_coin_initialized</a>&lt;BaseType&gt;())
         <a href="user.md#0xc0deb00c_user_register_market_account_collateral_entry">register_market_account_collateral_entry</a>&lt;BaseType&gt;(
             <a href="user.md#0xc0deb00c_user">user</a>, market_account_id);
-    // Register quote asset collateral entry.
+    // Register quote asset collateral entry for quote <a href="">coin</a> type
+    // (quote type for a verified <a href="market.md#0xc0deb00c_market">market</a> must be a <a href="">coin</a>).
     <a href="user.md#0xc0deb00c_user_register_market_account_collateral_entry">register_market_account_collateral_entry</a>&lt;QuoteType&gt;(
         <a href="user.md#0xc0deb00c_user">user</a>, market_account_id);
 }
@@ -3130,6 +3136,10 @@ Register market account entries for given market account info.
 
 Inner function for <code><a href="user.md#0xc0deb00c_user_register_market_account">register_market_account</a>()</code>.
 
+Verifies market ID, base type, and quote type correspond to a
+registered market, via call to
+<code><a href="registry.md#0xc0deb00c_registry_get_market_info_for_market_account">registry::get_market_info_for_market_account</a>()</code>.
+
 
 <a name="@Type_parameters_87"></a>
 
@@ -3189,7 +3199,7 @@ Inner function for <code><a href="user.md#0xc0deb00c_user_register_market_accoun
     <b>let</b> user_address = address_of(<a href="user.md#0xc0deb00c_user">user</a>); // Get <a href="user.md#0xc0deb00c_user">user</a> <b>address</b>.
     <b>let</b> (base_type, quote_type) = // Get base and quote types.
         (<a href="_type_of">type_info::type_of</a>&lt;BaseType&gt;(), <a href="_type_of">type_info::type_of</a>&lt;QuoteType&gt;());
-    // Get <a href="market.md#0xc0deb00c_market">market</a> info.
+    // Get <a href="market.md#0xc0deb00c_market">market</a> info and verify <a href="market.md#0xc0deb00c_market">market</a> ID, base and quote types.
     <b>let</b> (base_name_generic, lot_size, tick_size, min_size, underwriter_id)
         = <a href="registry.md#0xc0deb00c_registry_get_market_info_for_market_account">registry::get_market_info_for_market_account</a>(
             market_id, base_type, quote_type);

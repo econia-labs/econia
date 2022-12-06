@@ -826,6 +826,9 @@ module econia::user {
     #[cmd]
     /// Register market account for indicated market and custodian.
     ///
+    /// Verifies market ID and asset types via internal call to
+    /// `register_market_account_account_entries()`.
+    ///
     /// # Type parameters
     ///
     /// * `BaseType`: Base type for indicated market. If base asset is
@@ -866,14 +869,17 @@ module econia::user {
             E_UNREGISTERED_CUSTODIAN);
         let market_account_id = // Get market account ID.
             ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128);
-        // Register market accounts map entries.
+        // Register market accounts map entries, verifying market ID and
+        // asset types.
         register_market_account_account_entries<BaseType, QuoteType>(
             user, market_account_id, market_id, custodian_id);
-        // If base asset is coin, register collateral entry.
+        // Register collateral entry if base type is coin (otherwise
+        // is a generic asset and no collateral entry required).
         if (coin::is_coin_initialized<BaseType>())
             register_market_account_collateral_entry<BaseType>(
                 user, market_account_id);
-        // Register quote asset collateral entry.
+        // Register quote asset collateral entry for quote coin type
+        // (quote type for a verified market must be a coin).
         register_market_account_collateral_entry<QuoteType>(
             user, market_account_id);
     }
@@ -1842,6 +1848,10 @@ module econia::user {
     ///
     /// Inner function for `register_market_account()`.
     ///
+    /// Verifies market ID, base type, and quote type correspond to a
+    /// registered market, via call to
+    /// `registry::get_market_info_for_market_account()`.
+    ///
     /// # Type parameters
     ///
     /// * `BaseType`: Base type for indicated market.
@@ -1875,7 +1885,7 @@ module econia::user {
         let user_address = address_of(user); // Get user address.
         let (base_type, quote_type) = // Get base and quote types.
             (type_info::type_of<BaseType>(), type_info::type_of<QuoteType>());
-        // Get market info.
+        // Get market info and verify market ID, base and quote types.
         let (base_name_generic, lot_size, tick_size, min_size, underwriter_id)
             = registry::get_market_info_for_market_account(
                 market_id, base_type, quote_type);

@@ -1,6 +1,11 @@
+---
+slug: /
+sidebar_position: 1
+---
+
 # Welcome
 
-![](../../.assets/newbanner.png)
+![](/img/newbanner.png)
 
 **e·co·ni·a** | /ə'känēə/
 

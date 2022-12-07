@@ -1,3 +1,7 @@
+---
+sidebar_position: 1
+---
+
 # Orders
 
 For each market, Econia tracks bids and asks in two places:
@@ -81,6 +85,6 @@ Similarly, a large taker sell will fill against bids in the following sequence:
 
 <!---Alphabetized reference links-->
 
-[AVL queue]:        ../../../src/move/econia/doc/avl_queue.md
-[`MarketAccount`]:  ../../../src/move/econia/doc/user.md#0xc0deb00c_user_MarketAccount
-[`OrderBook`]:      ../../../src/move/econia/doc/market.md#0xc0deb00c_market_OrderBook
+[AVL queue]:        https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/avl_queue.md
+[`MarketAccount`]:  https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/user.md#0xc0deb00c_user_MarketAccount
+[`OrderBook`]:      https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_OrderBook

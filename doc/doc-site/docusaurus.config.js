@@ -14,11 +14,6 @@ const config = {
   onBrokenMarkdownLinks: "warn",
   favicon: "img/favicon.ico",
 
-  // GitHub pages deployment config.
-  // If you aren't using GitHub pages, you don't need these.
-  organizationName: "econia-labs", // Usually your GitHub org/user name.
-  projectName: "econia-docs", // Usually your repo name.
-
   // Even if you don't use internalization, you can use this field to set useful
   // metadata like html lang. For example, if your site is Chinese, you may want
   // to replace "en" with "zh-Hans".
@@ -37,9 +32,7 @@ const config = {
           sidebarCollapsible: false,
           sidebarCollapsed: false,
           routeBasePath: "/",
-          // Please change this to your repo.
-          // Remove this to remove the "edit this page" links.
-          editUrl: "https://github.com/econia-labs/econia-docs/tree/master",
+          editUrl: "https://github.com/econia-labs/econia/tree/main/doc/doc-site/",
           breadcrumbs: false,
         },
         blog: false,
@@ -51,7 +44,6 @@ const config = {
   ],
 
   themes: [
-    // ... Your other themes.
     [
       require.resolve("@easyops-cn/docusaurus-search-local"),
       {

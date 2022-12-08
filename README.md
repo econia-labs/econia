@@ -181,7 +181,7 @@ Auto-generated module documentation files are at [`src/move/econia/doc`].
 ### Markdown
 
 Markdown files have a line break for each new sentence to make diff tracking easier.
-GitBook markdown source files are at [`doc/doc-site/`].
+Documentation markdown source files are at [`doc/doc-site/docs`].
 
 ### Python
 
@@ -200,7 +200,7 @@ Hence, older commits can be checked out and experimented with, but mostly they a
 [`aptos-core` #2142]:                       https://github.com/aptos-labs/aptos-core/issues/2142
 [`cargo cache`]:                            https://github.com/matthiaskrgr/cargo-cache
 [`detox`]:                                  https://github.com/whitfin/detox
-[`doc/doc-site/`]:                          doc/doc-site/
+[`doc/doc-site/docs`]:                      doc/doc-site/docs
 [`doc/sphinx`]:                             doc/sphinx
 [`kondo`]:                                  https://github.com/tbillington/kondo
 [`src/jupyter`]:                            src/jupyter

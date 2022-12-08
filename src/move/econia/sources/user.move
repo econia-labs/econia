@@ -267,6 +267,8 @@ module econia::user {
     use econia::avl_queue::{u_128_by_32, u_64_by_32};
     #[test_only]
     use econia::assets::{Self, BC, QC, UC};
+    #[test_only]
+    use std::string;
 
     // Test-only uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -383,6 +385,8 @@ module econia::user {
     /// Expected order access key does not match assigned order access
     /// key.
     const E_ACCESS_KEY_MISMATCH: u64 = 17;
+    /// Coin type is generic asset.
+    const E_COIN_TYPE_IS_GENERIC_ASSET: u64 = 18;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -413,8 +417,15 @@ module econia::user {
 
     /// Wrapped call to `deposit_asset()` for depositing coins.
     ///
+    /// # Aborts
+    ///
+    /// * `E_COIN_TYPE_IS_GENERIC_ASSET`: Coin type is generic asset,
+    ///   corresponding to the Econia account having intialized a coin
+    ///   of type `GenericAsset`.
+    ///
     /// # Testing
     ///
+    /// * `test_deposit_coins_generic()`
     /// * `test_deposits()`
     public fun deposit_coins<
         CoinType
@@ -427,7 +438,12 @@ module econia::user {
         Collateral,
         MarketAccounts
     {
-        deposit_asset<CoinType>(
+        // Check if coin type is generic asset.
+        let coin_type_is_generic_asset = type_info::type_of<CoinType>() ==
+                                         type_info::type_of<GenericAsset>();
+        // Assert coin type is not generic asset.
+        assert!(!coin_type_is_generic_asset, E_COIN_TYPE_IS_GENERIC_ASSET);
+        deposit_asset<CoinType>( // Deposit asset.
             user_address,
             market_id,
             custodian_id,
@@ -2645,6 +2661,28 @@ module econia::user {
                               1, &underwriter_capability);
         // Drop underwriter capability.
         registry::drop_underwriter_capability_test(underwriter_capability);
+    }
+
+    #[test(econia = @econia)]
+    #[expected_failure(abort_code = 18)]
+    /// Assert failure for coin type is generic asset.
+    fun test_deposit_coins_generic(
+        econia: &signer
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Initialize coin, storing capabilities.
+        let (burn_cap, freeze_cap, mint_cap) = coin::initialize<GenericAsset>(
+            econia, string::utf8(b""), string::utf8(b""), 1, true);
+        // Mint a generic coin.
+        let generic_coin = coin::mint<GenericAsset>(1, &mint_cap);
+        // Attempt invalid deposit.
+        deposit_coins<GenericAsset>(@econia, 0, 0, generic_coin);
+        // Destroy capabilities.
+        coin::destroy_burn_cap(burn_cap);
+        coin::destroy_freeze_cap(freeze_cap);
+        coin::destroy_mint_cap(mint_cap);
     }
 
     #[test]

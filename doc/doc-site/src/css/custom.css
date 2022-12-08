@@ -1,0 +1,47 @@
+/**
+ * Any CSS included here will be global. The classic template
+ * bundles Infima by default. Infima is a CSS framework designed to
+ * work well for content-centric websites.
+ */
+
+/* You can override the default Infima variables here. */
+:root {
+  --ifm-color-primary: #6ed5a3;
+  --ifm-color-primary-dark: #6ed5a3;
+  --ifm-color-primary-darker: #6ed5a3;
+  --ifm-color-primary-darkest: #6ed5a3;
+  --ifm-color-primary-light: #6ed5a3;
+  --ifm-color-primary-lighter: #6ed5a3;
+  --ifm-color-primary-lightest: #6ed5a3;
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+}
+
+/* For readability concerns, you should choose a lighter palette in dark mode. */
+[data-theme="dark"] {
+  --ifm-color-primary: #6ed5a3;
+  --ifm-color-primary-dark: #6ed5a3;
+  --ifm-color-primary-darker: #6ed5a3;
+  --ifm-color-primary-darkest: #6ed5a3;
+  --ifm-color-primary-light: #6ed5a3;
+  --ifm-color-primary-lighter: #6ed5a3;
+  --ifm-color-primary-lightest: #6ed5a3;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}
+
+body {
+  font-family: "Roboto Mono", monospace;
+}
+
+h1 h2 h3 h4 h5 {
+  font-family: "Jost", sans-serif;
+}
+
+.customTable {
+  width: 100%;
+  display: table;
+}
+
+th {
+  text-align: left;
+}

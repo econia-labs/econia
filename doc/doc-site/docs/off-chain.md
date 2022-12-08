@@ -1,3 +1,7 @@
+---
+sidebar_position: 4
+---
+
 # Off-chain interfaces
 
 ## Registry events
@@ -59,14 +63,14 @@ Alternatively, all [`MakerEvent`] and [`TakerEvent`] emissions since the incepti
 [events by creation number API]: https://fullnode.testnet.aptoslabs.com/v1/spec#/operations/get_events_by_creation_number
 [events by event handle API]:    https://fullnode.testnet.aptoslabs.com/v1/spec#/operations/get_events_by_event_handle
 [Hippo's `move-to-ts` tool]:     https://github.com/hippospace/move-to-ts
-[`index_orders_sdk()`]:          ../../src/move/econia/doc/market.md#0xc0deb00c_market_index_orders_sdk
-[`MakerEvent`]:                  ../../src/move/econia/doc/market.md#0xc0deb00c_market_MakerEvent
-[`MarketRegistrationEvent`]:     ../../src/move/econia/doc/registry.md#0xc0deb00c_registry_MarketRegistrationEvent
-[`Move.toml`]:                   ../../src/move/econia/Move.toml
-[`OrderBook`]:                   ../../src/move/econia/doc/market.md#0xc0deb00c_market_OrderBook
-[`OrderBooks`]:                  ../../src/move/econia/doc/market.md#0xc0deb00c_market_OrderBooks
-[`RecognizedMarketEvent`]:       ../../src/move/econia/doc/registry.md#0xc0deb00c_registry_RecognizedMarketEvent
-[`RecognizedMarkets`]:           ../../src/move/econia/doc/registry.md#0xc0deb00c_registry_RecognizedMarkets
-[`Registry`]:                    ../../src/move/econia/doc/registry.md#0xc0deb00c_registry_Registry
-[`SignerCapabilityStore`]:       ../../src/move/econia/doc/resource_account.md#0xc0deb00c_resource_account_SignerCapabilityStore
-[`TakerEvent`]:                  ../../src/move/econia/doc/market.md#0xc0deb00c_market_TakerEvent
+[`index_orders_sdk()`]:          https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_index_orders_sdk
+[`MakerEvent`]:                  https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_MakerEvent
+[`MarketRegistrationEvent`]:     https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_MarketRegistrationEvent
+[`Move.toml`]:                   https://github.com/econia-labs/econia/tree/main/src/move/econia/Move.toml
+[`OrderBook`]:                   https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_OrderBook
+[`OrderBooks`]:                  https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_OrderBooks
+[`RecognizedMarketEvent`]:       https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_RecognizedMarketEvent
+[`RecognizedMarkets`]:           https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_RecognizedMarkets
+[`Registry`]:                    https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_Registry
+[`SignerCapabilityStore`]:       https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/resource_account.md#0xc0deb00c_resource_account_SignerCapabilityStore
+[`TakerEvent`]:                  https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_TakerEvent

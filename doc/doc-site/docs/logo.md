@@ -1,7 +1,3 @@
----
-sidebar_position: 5
----
-
 # Logo Guidelines
 
 Thank you for being part of the Econia ecosystem!

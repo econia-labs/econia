@@ -1,7 +1,3 @@
----
-sidebar_position: 1
----
-
 # Orders
 
 For each market, Econia tracks bids and asks in two places:
@@ -44,28 +40,40 @@ Here, orders are sorted by:
 
 Each [`OrderBook`] has an ascending [AVL queue] for asks, and a descending [AVL queue] for bids, such that the two structures above produce the following price-time priority order book:
 
-| Price | Size | Side |
-|-------|------|------|
-| 1004  | 10   | Ask  |
-| 1004  | 4    | Ask  |
-| 1003  | 20   | Ask  |
-| 1002  | 5    | Ask  |
-| 1002  | 15   | Ask  |
-| 1001  | 38   | Ask  |
-| 1001  | 35   | Ask  |
-| 1000  | 55   | Ask  |
-| 1000  | 60   | Ask  |
-| 1000  | 50   | Ask  |
-| 995   | 11   | Bid  |
-| 995   | 2    | Bid  |
-| 994   | 18   | Bid  |
-| 993   | 14   | Bid  |
-| 993   | 4    | Bid  |
-| 992   | 25   | Bid  |
-| 992   | 28   | Bid  |
-| 991   | 30   | Bid  |
-| 991   | 40   | Bid  |
-| 991   | 45   | Bid  |
+
+<table>
+
+<tr><td>
+
+| Price | Size | Side                                       |
+|-------|------|--------------------------------------------|
+| 1004  | 10   | <span style={{color: 'red'}}>Ask</span>    |
+| 1004  | 4    | <span style={{color: 'red'}}>Ask</span>    |
+| 1003  | 20   | <span style={{color: 'red'}}>Ask</span>    |
+| 1002  | 5    | <span style={{color: 'red'}}>Ask</span>    |
+| 1002  | 15   | <span style={{color: 'red'}}>Ask</span>    |
+| 1001  | 38   | <span style={{color: 'red'}}>Ask</span>    |
+| 1001  | 35   | <span style={{color: 'red'}}>Ask</span>    |
+| 1000  | 55   | <span style={{color: 'red'}}>Ask</span>    |
+| 1000  | 60   | <span style={{color: 'red'}}>Ask</span>    |
+| 1000  | 50   | <span style={{color: 'red'}}>Ask</span>    |
+
+</td><td>
+
+| Price | Size | Side                                       |
+|-------|------|--------------------------------------------|
+| 995   | 11   | <span style={{color: 'green'}}>Bid</span>  |
+| 995   | 2    | <span style={{color: 'green'}}>Bid</span>  |
+| 994   | 18   | <span style={{color: 'green'}}>Bid</span>  |
+| 993   | 14   | <span style={{color: 'green'}}>Bid</span>  |
+| 993   | 4    | <span style={{color: 'green'}}>Bid</span>  |
+| 992   | 25   | <span style={{color: 'green'}}>Bid</span>  |
+| 992   | 28   | <span style={{color: 'green'}}>Bid</span>  |
+| 991   | 30   | <span style={{color: 'green'}}>Bid</span>  |
+| 991   | 40   | <span style={{color: 'green'}}>Bid</span>  |
+| 991   | 45   | <span style={{color: 'green'}}>Bid</span>  |
+
+</td></tr></table>
 
 Here, a large taker buy will fill against asks in the following sequence:
 
@@ -85,6 +93,6 @@ Similarly, a large taker sell will fill against bids in the following sequence:
 
 <!---Alphabetized reference links-->
 
-[AVL queue]:        https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/avl_queue.md
-[`MarketAccount`]:  https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/user.md#0xc0deb00c_user_MarketAccount
-[`OrderBook`]:      https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_OrderBook
+[AVL queue]:       https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/avl_queue.md
+[`MarketAccount`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/user.md#0xc0deb00c_user_MarketAccount
+[`OrderBook`]:     https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_OrderBook

@@ -1,6 +1,5 @@
 ---
 slug: /
-sidebar_position: 1
 ---
 
 # Welcome
@@ -25,7 +24,12 @@ Stand by for more documentation, and in the meantime, check out the [modules pag
 
 ## Testnet account
 
-As of 2022-11-28, Econia is initialized on the Aptos Testnet at account [0x2e51979739db25dc987bd24e1a968e45cca0e0daea7cae9121f68af93e8884c9]!
+As of 2022-12-09, Econia is initialized on the Aptos Testnet as follows:
+
+| Field      | Value                                                                |
+|------------|----------------------------------------------------------------------|
+| Account    | [0x2e51979739db25dc987bd24e1a968e45cca0e0daea7cae9121f68af93e8884c9] |
+| Public key | `0x31e13f3724737e056651f66d7c573bb8d3adb1b284b65abda16855864b17906f` |
 
 ## External resources
 
@@ -41,6 +45,6 @@ As of 2022-11-28, Econia is initialized on the Aptos Testnet at account [0x2e519
 [Discord]:                                                            https://discord.gg/econia
 [GitHub]:                                                             https://github.com/econia-labs/econia
 [Medium]:                                                             https://medium.com/econialabs
-[modules page]:                                                       modules.md
+[modules page]:                                                       modules
 [Teach yourself Move on Aptos]:                                       https://github.com/econia-labs/teach-yourself-move
 [Twitter]:                                                            https://twitter.com/econialabs

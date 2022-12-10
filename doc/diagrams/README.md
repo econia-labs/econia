@@ -12,9 +12,6 @@ This directory contains assorted diagrams, most of which are generated via [`mer
 * Most [`mermaid.js`] tutorials online present an `%%{init:}` directive on a single line, despite excessive line length.
 * The [modules.md] diagram theme is matched to GitHub's color schema.
 * `SVG` diagrams can be generated via [mermaid.live]
-* Additional clarifying information may be found in the [GitBook documentation] for diagrams that are referenced there.
-* Recommended disclaimer for documentation page on which diagrams are referenced:
-    * (If accessing the below diagram via [GitBook], you may need to switch web browsers to view an enlarged version, which can be activated by clicking on the image.)
 
 ## Representative diagrams
 
@@ -26,8 +23,6 @@ This directory contains assorted diagrams, most of which are generated via [`mer
 [`images`]:              images
 [`mermaid.js`]:          https://mermaid-js.github.io
 [`src`]:                 src
-[GitBook]:               https://gitbook.com
-[GitBook Documentation]: ../doc-site/
 [GitHub]:                https://github.com
 [mermaid.live]:          https://mermaid.live
 [modules.md]:            src/modules.md

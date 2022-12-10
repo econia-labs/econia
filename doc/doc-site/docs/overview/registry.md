@@ -1,7 +1,3 @@
----
-sidebar_position: 2
----
-
 # The registry
 
 Documentation coming soon!

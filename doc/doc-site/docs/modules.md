@@ -1,7 +1,3 @@
----
-sidebar_position: 2
----
-
 # Move modules
 
 | Module             | Source code             | Documentation         |
@@ -16,8 +12,6 @@ sidebar_position: 2
 | `user`             | [user.move]             | [user.md]             |
 
 Econia modules `use` each other as follows:
-
-(If accessing the below diagram via GitBook, you may need to switch web browsers to view an enlarged version, which can be activated by clicking on the image.)
 
 ![](/img/modules.svg)
 

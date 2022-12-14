@@ -200,28 +200,54 @@ Econia does not use a critical height of 1. The actual critical height is define
 ## Lots, ticks, size, and price
 
 Consider a hypothetical trading pair `APT/USDC`, `APT` denominated in `USDC`.
-Here, `APT` is considered the "base" asset and has 8 decimals, meaning that the smallest indivisible subunit of `APT` corresponds to 0.00000001 `APT`.
-`USDC` is considered the "quote" asset and has 6 decimals, meaning that the smallest indivisible subunit of `USDC` corresponds to 0.000001 `USDC`.
+Here, `APT` is considered the "base" asset and has 8 decimals, meaning that the smallest indivisible subunit of `APT` corresponds to $1^{-8} = 0.00000001$ `APT`.
+`USDC` is considered the "quote" asset and has 6 decimals, meaning that the smallest indivisible subunit of `USDC` corresponds to $1^{-6} = 0.000001$ `USDC`.
 
-Econia's matching engine is limited to transacting indivisible subunits (e.g. 0.00000001 `APT` or 0.000001 `USDC`) at a time and operates purely on integers, grouping base asset subunits into "lots" and quote asset subunits into "ticks".
+Econia's matching engine is limited to transacting indivisible subunits (e.g. $1^{-8} = 0.00000001$ `APT` or $1^{-6} = 0.000001$ `USDC`) at a time and operates purely on integers, grouping base asset subunits into "lots" and quote asset subunits into "ticks".
 The "lot size" is the number of indivisible subunits in a lot, and the "tick size" is the number of indivisible subunits in a tick.
 Order size is defined as the number of lots in an order, and price is defined as the number of ticks per lot.
 
-For example, consider (in decimal units) an order for 7.8 `APT` at a price of 5.23 `USDC` per `APT`, corresponding to 40.794 `USDC` total.
+:::tip
 
-Assuming that 0.1 `APT` (decimal) order size granularity is sufficient, an appropriate lot size is then $0.1 / 0.00000001 = 10000000$ indivisible subunits.
-This means that the original price of 5.23 `USDC` per `APT` corresponds to 0.523 `USDC` per 0.1 `APT` (per lot), and assuming that 0.001 `USDC` price granularity per lot (0.01 `USDC` per `APT`) is sufficient, an appropriate tick size is then $0.001 / 0.000001 = 1000$ indivisible subunits:
+Lot size and tick size are configured during market registration.
+
+:::
+
+For example, consider (in decimal units) an order for 7.8 `APT` at a price of 5.23 `USDC` per `APT`, corresponding to 40.794 `USDC` total, or $40.794 / 1^{-6} = 40794000$ `USDC` subunits.
+
+Assuming that 0.1 `APT` (decimal) order size granularity is sufficient for the market, the corresponding lot size is then $0.1 / 1^{-8} = 10000000$ indivisible subunits.
+This means that the original price of 5.23 `USDC` per `APT` corresponds to 0.523 `USDC` per 0.1 `APT` (per lot).
+Assuming that 0.001 `USDC` price granularity per lot (0.01 `USDC` per `APT`) is sufficient for the market, the corresponding tick size is then $0.001 / 1^{-6} = 1000$ indivisible subunits:
 
 | Field                                | Value    |
 |--------------------------------------|----------|
-| `APT` size granularity               | 0.1      |
+| Order size granularity (`APT`)       | 0.1      |
 | Lot size                             | 10000000 |
 | Price granularity (`USDC` per `APT`) | 0.01     |
+| Price granularity (`USDC` per lot)   | 0.001    |
 | Tick size                            | 1000     |
 | Order size (`APT`)                   | 7.8      |
 | Order size (lots)                    | 78       |
 | Price (`USDC` per `APT`)             | 5.23     |
+| Price (`USDC` per lot)               | .523     |
 | Price (ticks per lot)                | 523      |
+| Total `USDC` (decimal)               | 40.794   |
+| Total `USDC` (subunits)              | 40794000 |
+
+Note that Econia can only support precision down to a single indivisible subunit for either base or quote.
+This means, for example, that a market may not have a decimal order size granularity of $1^{-9} = 0.000000001$ `APT`, as each increment in size would correspond to a number of base asset subunits that could not be represented as an integer (0.1 indivisible subunits of `APT`).
+
+Similarly, if a market has a decimal order size granularity of 0.0001 `APT` (lot size 10000), than it can only support decimal price granularity down to 0.01 `USDC` per `APT`:
+at the lowest possible integer price of 1 tick per lot, the decimal change in total quote amount for each additional lot traded would be $0.0001 * 0.01 = 0.000001$ `USDC`, or one indivisible subunit of `USDC`, corresponding to a tick size of 1.
+A decimal price granularity of 0.001 `USDC` per `APT` would not be supported, however, because at the lowest possible integer price of 1 tick per lot, the decimal change in total quote amount for each additional lot traded would be $0.0001 * 0.001 = 0.0000001$ `USDC`, a quote asset amount that could not be represented as an integer multiple of subunits (0.1 indivisible subunits of `USDC`).
+
+Hence to check that a lot size/tick size combination is even possible for a market:
+
+1. Pick a decimal order size granularity: 0.1 `APT`.
+2. Pick a decimal price granularity : 0.01 `USDC` per `APT`.
+3. Calculate the product, verifying that the result can be represented as an integer multiple of quote asset subunits: $0.1 * 0.01 = 0.001 > 0.000001 = 1^{-6}$.
+4. Convert the product to quote asset subunits, yielding tick size: $0.001 / 1^{-6} = 1000$.
+5. Convert decimal order size granularity to base asset subunits, yielding lot size: $0.1 / 1^{-8} = 10000000$.
 
 <!---Alphabetized reference links-->
 

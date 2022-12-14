@@ -22,6 +22,7 @@ module econia_scripts::scripts {
         QuoteType
     >(
         user: &signer,
+        deposit_amount: u64,
         market_id: u64,
         integrator: address,
         side: bool,
@@ -43,24 +44,20 @@ module econia_scripts::scripts {
             );
         };
 
-        // Fund the `MarketAccount` with the required balance
-        // WIP
-        // let (_, lot_size, tick_size, _, _) = registry::get_market_info(market_id)
-        let lot_size = 1;
-        let tick_size = 1;
+        // Deposit `deposit_amount` into the MarketAccount
         if (side == BUY) {
             deposit_from_coinstore<QuoteType>(
                 user,
                 market_id,
                 NO_CUSTODIAN,
-                size * price * tick_size
+                deposit_amount // size * price * tick_size
             );
         } else {
             deposit_from_coinstore<BaseType>(
                 user,
                 market_id,
                 NO_CUSTODIAN,
-                size * lot_size
+                deposit_amount // size * lot_size
             );
         };
 

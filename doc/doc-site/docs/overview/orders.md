@@ -141,7 +141,7 @@ To prevent tree height from growing too tall, the AVL queue supports eviction fu
 Presently, the AVL tree supports up to [`N_NODES_MAX`] = 16383 orders at a time, meaning that for a critical height of 18, for example, up to 16383 orders, each at a different price level, are supported.
 At a critical height of 10 however, eviction may happen for as few as 376 price levels, and is guaranteed to happen for 2048 or more price levels, due to the upper and lower bounds on price level count for a given height:
 
-:::tip
+:::note
 
 Again, see [AVL queue height spec] for supporting calculations.
 
@@ -205,7 +205,7 @@ Here, `APT` is considered the "base" asset and has 8 decimals, meaning that the 
 
 Econia's matching engine is limited to transacting indivisible subunits (e.g. $10^{-8} = 0.00000001$ `APT` or $10^{-6} = 0.000001$ `USDC`) at a time and operates purely on integers, grouping base asset subunits into "lots" and quote asset subunits into "ticks".
 The "lot size" is the number of indivisible subunits in a lot, and the "tick size" is the number of indivisible subunits in a tick.
-Order size is defined as the number of lots in an order, and price is defined as the number of ticks per lot.
+Order size is defined as the number of lots in an order, and price (a 32-bit integer) is defined as the number of ticks per lot.
 
 :::tip
 
@@ -300,6 +300,47 @@ More generally, the following variables are related as follows:
 1. $$\LARGE p_i = \frac{p_d g_s}{s_t 10^{-d_q}} = 10^{d_q} \frac{p_d g_s}{s_t} = \frac{p_d}{g_p}$$
 
 1. $$\LARGE p_d = p_i g_p = 10^{(d_b - d_q)} \frac{p_i s_t}{s_l}$$
+
+### Noteworthy examples
+
+Consider a liquid staking derivative, `sAPT` trading against `APT`, both having 8 decimals: `sAPT/APT`.
+Here, high price precision may be appropriate:
+
+| Variable                       | Symbol       | Value                      |
+|--------------------------------|--------------|----------------------------|
+| Decimal order size granularity | $\large g_s$ | 0.01 `sAPT`                |
+| Decimal price granularity      | $\large g_p$ | 0.000001 `APT` per `sAPT`  |
+| Base asset decimals            | $\large d_b$ | 8                          |
+| Quote asset decimals           | $\large d_q$ | 8                          |
+| Decimal price                  | $\large p_d$ | 1.000012 `APT` per `sAPT`  |
+
+1. Lot size: $$\large s_l = 10^{d_b} g_s = 10^8 * 0.01 = 1000000$$
+
+1. Tick size: $$\large s_t = 10^{d_q} g_s g_p = 10^8 * 0.01 * 0.000001 = 1$$
+
+1. Integer price: $$\large p_i = \frac{p_d}{g_p} = \frac{1.000012}{0.000001} = 1000012$$
+
+Next, consider `wBTC` trading against a hypothetical stable coin `USDX` with 10 decimals: `wBTC/USDX`.
+Here, a market registrant may again opt for high price precision, but if they specify too much, they may not be able to encode the corresponding integer price in 32 bits:
+
+:::tip
+
+Prices in Econia are represented as 32-bit integers, such that the maximum possible integer price is $2^{32} = 4294967296$ ticks per lot.
+
+:::
+
+| Variable                       | Symbol       | Value                           |
+|--------------------------------|--------------|---------------------------------|
+| Decimal order size granularity | $\large g_s$ | 0.0001 `wBTC`                   |
+| Quote asset decimals           | $\large d_q$ | 10                              |
+| Decimal price granularity      | $\large g_p$ | 0.000001 `USDX` per `wBTC`      |
+| Decimal price                  | $\large p_d$ | 17792.280012 `USDX` per `wBTC`  |
+
+1. Tick size: $$\large s_t = 10^{d_q} g_s g_p = 10^{10} * 0.0001 * 0.000001 = 1$$
+
+1. Integer price: $$\large p_i = \frac{p_d}{g_p} = \frac{17792.280001}{0.000001} = 17792280012 > 2 ^ {32}$$
+
+Hence decimal price granularity must be reduced so that integer prices can fit into a 32-bit integer.
 
 <!---Alphabetized reference links-->
 

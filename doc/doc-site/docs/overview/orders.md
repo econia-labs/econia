@@ -197,128 +197,364 @@ Econia does not use a critical height of 1. The actual critical height is define
 
 :::
 
-## Lots, ticks, size, and price
+## Units and market parameters
 
 Consider a hypothetical trading pair `APT/USDC`, `APT` denominated in `USDC`.
-Here, `APT` is considered the "base" asset and has 8 decimals, meaning that the smallest indivisible subunit of `APT` corresponds to $10^{-8} = 0.00000001$ `APT`.
-`USDC` is considered the "quote" asset and has 6 decimals, meaning that the smallest indivisible subunit of `USDC` corresponds to $10^{-6} = 0.000001$ `USDC`.
+Here, `APT` is considered the "base" asset and `USDC` is considered the "quote asset", meaning that orders sized in `APT` are quoted in `USDC` per `APT`:
 
-Econia's matching engine is limited to transacting indivisible subunits (e.g. $10^{-8} = 0.00000001$ `APT` or $10^{-6} = 0.000001$ `USDC`) at a time and operates purely on integers, grouping base asset subunits into "lots" and quote asset subunits into "ticks".
-The "lot size" is the number of indivisible subunits in a lot, and the "tick size" is the number of indivisible subunits in a tick.
-Order size is defined as the number of lots in an order, and price (a 32-bit integer) is defined as the number of ticks per lot.
+| Term        | Specifies    | Symbol |
+|-------------|--------------|--------|
+| Base asset  | Order size   | `APT`  |
+| Quote asset | Order price  | `USDC` |
 
-:::tip
+In addition to a base asset and a quote asset, Econia also defines the following parameters for each market:
 
-Lot size and tick size are configured during market registration.
+| Parameter          | Meaning                     | Example     |
+|--------------------|-----------------------------|-------------|
+| Lot size           | Order size granularity      | 0.1 `APT`   |
+| Tick size          | Price granularity           | 0.01 `USDC` |
+| Minimum order size | Smallest allowed order size | 0.5 `APT`   |
 
-:::
+On this market, an order for 7.8 `APT` at a price of 5.23 `USDC` per `APT` would be valid, but the following would be invalid:
 
-For example, consider (in decimal units) an order for 7.8 `APT` at a price of 5.23 `USDC` per `APT`, corresponding to 40.794 `USDC` total, or $40.794 / 10^{-6} = 40794000$ `USDC` subunits.
+| Size | Price  | Reason             |
+|------|--------|--------------------|
+| 7.85 | 5.23   | Size too granular  |
+| 7.8  | 5.235  | Price too granular |
+| 0.4  | 5.23   | Size too small     |
 
-Assuming that 0.1 `APT` (decimal) order size granularity is sufficient for the market, the corresponding lot size is then $0.1 / 10^{-8} = 10000000$ indivisible subunits.
-This means that the original price of 5.23 `USDC` per `APT` corresponds to 0.523 `USDC` per 0.1 `APT` (per lot).
-Assuming that 0.001 `USDC` price granularity per lot (0.01 `USDC` per `APT`) is sufficient for the market, the corresponding tick size is then $0.001 / 10^{-6} = 1000$ indivisible subunits:
+Econia's matching engine uses integers rather than decimals, such that conversion from decimal amounts to integer amounts requires the `aptos_framework::coin::CoinInfo.decimals` for a given `CoinType`:
 
-| Field                                | Value    |
-|--------------------------------------|----------|
-| Order size granularity (`APT`)       | 0.1      |
-| Lot size                             | 10000000 |
-| Price granularity (`USDC` per `APT`) | 0.01     |
-| Price granularity (`USDC` per lot)   | 0.001    |
-| Tick size                            | 1000     |
-| Order size (`APT`)                   | 7.8      |
-| Order size (lots)                    | 78       |
-| Price (`USDC` per `APT`)             | 5.23     |
-| Price (`USDC` per lot)               | .523     |
-| Price (ticks per lot)                | 523      |
-| Total `USDC` (decimal)               | 40.794   |
-| Total `USDC` (subunits)              | 40794000 |
+| Term           | Symbol       | Coin   | Amount |
+|----------------|--------------|--------|--------|
+| Base decimals  | $\large d_b$ | `APT`  | 8      |
+| Quote decimals | $\large d_q$ | `USDC` | 6      |
+
+Here, a decimal amount of coins (e.g. 7.8 `APT`), can be converted to an integer amount of indivisible coin subunits (`aptos_framework::coin::Coin.value`):
+
+```python
+>>> from decimal import Decimal as dec
+>>> decimals = 8
+>>> coins = dec('123.456')
+>>> subunits = int(coins * 10 ** decimals)
+>>> subunits
+12345600000
+```
+
+Similarly, other terms can be converted as follows:
+
+| Variable                   | Decimal symbol | Integer symbol |
+|----------------------------|----------------|----------------|
+| Lot size                   | $\large l_d$   | $\large l_i$   |
+| Tick size                  | $\large t_d$   | $\large t_i$   |
+| Minimum order size         | $\large m_d$   | $\large m_i$   |
+| Size                       | $\large s_d$   | $\large s_i$   |
+| Price                      | $\large p_d$   | $\large p_i$   |
+| Total quote amount to fill | $\large a_d$   | $\large a_i$   |
+
+1. $$\LARGE l_i = l_d 10 ^ {d_b}$$
+
+    ```python
+    >>> decimals_base = 8
+    >>> lot_size_decimal = dec('0.1')
+    >>> lot_size_integer = int(lot_size_decimal * 10 ** decimals_base)
+    >>> lot_size_integer
+    10000000
+    ```
+
+1. $$\LARGE l_d = l_i 10 ^ {-d_b}$$
+
+    ```python
+    >>> lot_size_decimal = dec(lot_size_integer) / 10 ** decimals_base
+    >>> lot_size_decimal
+    Decimal('0.1')
+    ```
+
+1. $$\LARGE t_i = l_d t_d 10 ^ {d_q}$$
+
+    ```python
+    >>> decimals_quote = 6
+    >>> tick_size_decimal = dec('0.01')
+    >>> tick_size_integer = int(lot_size_decimal * tick_size_decimal
+    ...                         * 10 ** decimals_quote)
+    >>> tick_size_integer
+    1000
+    ```
+
+1. $$\LARGE t_d = \frac{t_i}{l_i} 10 ^ {d_b - d_q}$$
+
+    ```python
+    >>> tick_size_decimal = (dec(tick_size_integer) / dec(lot_size_integer)
+    ...                      * 10 ** (decimals_base - decimals_quote)).normalize()
+    >>> tick_size_decimal
+    Decimal('0.01')
+    ```
+
+1. $$\LARGE m_i = m_d 10 ^ {d_b}$$
+
+    ```python
+    >>> min_size_decimal = dec('0.5')
+    >>> min_size_integer = int(min_size_decimal * 10 ** decimals_base)
+    >>> min_size_integer
+    50000000
+    ```
+
+1. $$\LARGE m_d = m_i 10 ^ {-d_b}$$
+
+    ```python
+    >>> min_size_decimal = dec(min_size_integer) / 10 ** decimals_base
+    >>> min_size_decimal
+    Decimal('0.5')
+    ```
+
+1. $$\LARGE s_i = \frac{s_d}{l_d}$$
+
+    ```python
+    >>> size_decimal = dec('7.8')
+    >>> size_integer = int(size_decimal / lot_size_decimal)
+    >>> size_integer
+    78
+    ```
+
+1. $$\LARGE s_d = s_i l_i 10 ^ {-d_b}$$
+
+    ```python
+    >>> size_decimal = dec(size_integer) * lot_size_integer / 10 ** decimals_base
+    >>> size_decimal
+    Decimal('7.8')
+    ```
+
+1. $$\LARGE p_i = \frac{p_d}{t_d}$$
+
+    ```python
+    >>> price_decimal = dec('5.23')
+    >>> price_integer = int(price_decimal / tick_size_decimal)
+    >>> price_integer
+    523
+    ```
+
+1. $$\LARGE p_d = \frac{p_i t_i}{l_i} 10 ^ {d_b - d_q}$$
+
+    ```python
+    >>> price_decimal = (dec(price_integer) * dec(tick_size_integer)
+    ...                  / dec(lot_size_integer)
+    ...                  * 10 ** (decimals_base - decimals_quote)).normalize()
+    >>> price_decimal
+    Decimal('5.23')
+    ```
+
+1. $$\LARGE a_d = s_d p_d$$
+
+    ```python
+    >>> amount_decimal = size_decimal * price_decimal
+    >>> amount_decimal
+    Decimal('40.794')
+    ```
+
+1. $$\LARGE a_i = a_d 10 ^ {d_q}$$
+
+    ```python
+    >>> amount_integer = int(amount_decimal * 10 ** decimals_quote)
+    >>> amount_integer
+    40794000
+    ```
+
+1. $$\LARGE a_i = s_i p_i t_i$$
+
+    ```python
+    >>> amount_integer = size_integer * price_integer * tick_size_integer
+    >>> amount_integer
+    40794000
+    ```
+
+1. $$\LARGE a_d = a_i 10 ^ {-d_q}$$
+
+    ```python
+    >>> amount_decimal = dec(amount_integer) / 10 ** decimals_quote
+    >>> amount_decimal
+    Decimal('40.794')
+    ```
+
+Hence:
+
+| Variable                   | Decimal amount | Integer amount |
+|----------------------------|----------------|----------------|
+| Lot size                   | 0.1 `APT`      | 10000000       |
+| Tick size                  | 0.01 `USDC`    | 1000           |
+| Minimum order size         | 0.5  `APT`     | 50000000       |
+| Size                       | 7.8 `APT`      | 78             |
+| Price                      | 5.23 `USDC`    | 523            |
+| Total quote amount to fill | 40.794 `USDC`  | 40794000       |
 
 Note that Econia can only support precision down to a single indivisible subunit for either base or quote.
-This means, for example, that a market may not have a decimal order size granularity of $10^{-9} = 0.000000001$ `APT`, as each increment in size would correspond to a number of base asset subunits that could not be represented as an integer (0.1 indivisible subunits of `APT`).
+This means, for example, that a market may not have a decimal lot size of $10^{-9} = 0.000000001$ `APT`, as each increment in size would correspond to a number of base asset subunits that could not be represented as an integer (0.1 indivisible subunits of `APT`):
 
-Similarly, if a market has a decimal order size granularity of 0.0001 `APT` (lot size 10000), than it can only support decimal price granularity down to 0.01 `USDC` per `APT`:
-at the lowest possible integer price of 1 tick per lot, the decimal change in total quote amount for each additional lot traded would be $0.0001 * 0.01 = 0.000001$ `USDC`, or one indivisible subunit of `USDC`, corresponding to a tick size of 1.
-A decimal price granularity of 0.001 `USDC` per `APT` would not be supported, however, because at the lowest possible integer price of 1 tick per lot, the decimal change in total quote amount for each additional lot traded would be $0.0001 * 0.001 = 0.0000001$ `USDC`, a quote asset amount that could not be represented as an integer multiple of subunits (0.1 indivisible subunits of `USDC`).
+```python
+>>> lot_size_decimal = dec('0.000000001')
+>>> (lot_size_decimal * 10 ** decimals_base).normalize()
+Decimal('0.1')
+```
+
+Similarly, if a market has a decimal lot size of 0.0001 `APT`, than it can only support a decimal tick size down to 0.01 `USDC` per `APT`, because the increment in total quote amount for each additional lot or tick corresponds to a single `USDC` subunit:
+
+```python
+>>> lot_size_decimal = dec('0.0001')
+>>> tick_size_decimal = dec('0.01')
+>>> quote_increment_decimal = lot_size_decimal * tick_size_decimal
+>>> to_check = (quote_increment_decimal * 10 ** decimals_quote).normalize()
+>>> to_check
+Decimal('1')
+```
+
+Notably, this check amount is equivalent to the integer tick size:
+
+```python
+>>> tick_size_integer = int(lot_size_decimal * tick_size_decimal
+...                         * 10 ** decimals_quote)
+>>> tick_size_integer
+1
+```
+
+A decimal tick size of 0.001 `USDC` per `APT` would not be supported, however, because at the lowest possible price of 1 tick, the increment in total quote amount for each additional lot could not be represented as an integer multiple of subunits:
+
+```python
+>>> tick_size_decimal = dec('0.001')
+>>> quote_increment_decimal = lot_size_decimal * tick_size_decimal
+>>> (quote_increment_decimal * 10 ** decimals_quote).normalize()
+Decimal('0.1')
+```
 
 Hence to check that a lot size/tick size combination is even possible for a market:
 
-1. Pick a decimal order size granularity: 0.1 `APT`.
-2. Pick a decimal price granularity : 0.01 `USDC` per `APT`.
-3. Calculate the product, verifying that the result can be represented as an integer multiple of quote asset subunits: $0.1 * 0.01 = 0.001 > 0.000001 = 10^{-6}$.
-4. Convert the product to quote asset subunits, yielding tick size: $0.001 / 10^{-6} = 1000$.
-5. Convert decimal order size granularity to base asset subunits, yielding lot size: $0.1 / 10^{-8} = 10000000$.
+1. Pick a decimal lot size.
 
-### Parametric relationships
+    ```python
+    >>> lot_size_decimal = dec('0.1')
+    ```
+
+1. Assert that integer lot size corresponds to an integer multiple of base subunits.
+
+    ```python
+    >>> to_check = lot_size_decimal * 10 ** decimals_base
+    >>> lot_size_integer = int(to_check)
+    >>> assert to_check >= 1 and to_check == lot_size_integer
+    ```
+
+1. Pick a decimal tick size.
+
+    ```python
+    >>> tick_size_decimal = dec('0.01')
+    ```
+
+1. Assert that the integer tick size corresponds to an integer multiple of quote subunits.
+
+    ```python
+    >>> to_check = (lot_size_decimal * tick_size_decimal
+    ...             * 10 ** decimals_quote).normalize()
+    >>> tick_size_integer = int(to_check)
+    >>> assert to_check >= 1 and to_check == tick_size_integer
+    ```
+
+### Noteworthy examples
 
 Consider the trading pair `wBTC/USDC`:
-as of the time of this writing, one `BTC` costs approximately 17792.27 `USD`, so initial parametric inputs to lot size and tick size might entail:
+as of the time of this writing, one `BTC` costs approximately 17792.27 `USD`, so initial choices for lot size and tick size might entail:
 
-1. 0.00001 `wBTC` decimal order size granularity (corresponding to 0.1779227 `USDC` nominal).
-2. 0.01 `USDC` decimal price (`USDC` per `wBTC`) granularity.
+1. 0.00001 `wBTC` decimal lot size (corresponding to 0.1779227 `USDC` nominal).
+2. 0.01 `USDC` decimal tick size.
 
-Notably, these choices yield a total quote amount increment that does not correspond to an integer multiple of `USDC` subunits: $0.00001 * 0.01 = 0.0000001 = 10^{-7}$.
-Thus a different combination must be chosen, for example, by multiplying decimal order size granularity by 10:
+Notably, these choices yield a total quote amount increment that does not correspond to an integer multiple of `USDC` subunits:
 
-1. 0.0001 `wBTC` decimal order size granularity (corresponding to 1.779227 `USDC` nominal).
-2. 0.01 `USDC` decimal price (`USDC` per `wBTC`) granularity.
+```python
+>>> lot_size_decimal = dec('0.00001')
+>>> tick_size_decimal = dec('0.01')
+>>> to_check = (lot_size_decimal * tick_size_decimal
+...             * 10 ** decimals_quote).normalize()
+>>> tick_size_integer = int(to_check)
+>>> to_check
+Decimal('0.1')
+>>> assert to_check >= 1 and to_check == tick_size_integer
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+AssertionError
+```
 
-Here, the total quote amount increment then corresponds to 1 `USDC` subunit, for a tick size of 1.
+Thus a different combination must be chosen, for example, by increasing decimal lot size by a factor of 10:
+
+1. 0.0001 `wBTC` decimal lot size (corresponding to 1.779227 `USDC` nominal).
+2. 0.01 `USDC` decimal tick size.
+
+Here, the resultant quote amount increment corresponds to 1 `USDC` subunit, for a tick size of 1:
+
+```python
+>>> lot_size_decimal = dec('0.0001')
+>>> to_check = (lot_size_decimal * tick_size_decimal
+...             * 10 ** decimals_quote).normalize()
+>>> tick_size_integer = int(to_check)
+>>> assert to_check >= 1 and to_check == tick_size_integer
+>>> tick_size_integer
+1
+```
+
 However, the new decimal order size granularity corresponds to 1.779227 `USDC` nominal, which may not be considered granular enough.
 Hence alternative parametric inputs might entail:
 
 1. 0.00005 `wBTC` decimal order size granularity (corresponding to 0.8896135 `USDC` nominal).
 2. 0.02 `USDC` decimal price granularity.
 
-Here, the total quote amount increment again corresponds to an integer multiple of `USDC` subunits: $0.00005 * 0.02 = 0.000001 = 10^{-6}$, for a tick size of 1.
-Note, however, that compared with the other viable parameter set, this schema trades off order size precision for price precision:
-twice as much order size granularity entails one half as much price granularity.
+Here, the total quote amount increment again corresponds to an integer multiple of `USDC` subunits, for a tick size of 1:
+
+```python
+>>> lot_size_decimal = dec('0.00005')
+>>> tick_size_decimal = dec('0.02')
+>>> to_check = (lot_size_decimal * tick_size_decimal
+...             * 10 ** decimals_quote).normalize()
+>>> tick_size_integer = int(to_check)
+>>> assert to_check >= 1 and to_check == tick_size_integer
+>>> tick_size_integer
+1
+```
+
+Note, however, that compared with the other viable parameter set, this set trades off size precision for price precision:
+twice as much size granularity entails one half as much price granularity.
 Hence the nominal price of 17792.27 `USD` per `BTC` must be truncated to either 17792.26 or 17792.28.
-For the latter, this corresponds to an integer price of $17792.28 / 0.02 = 889614$
+For the latter case, this entails an integer price of 889614:
 
-More generally, the following variables are related as follows:
+```python
+>>> price_decimal = dec('17792.28')
+>>> price_integer = int(price_decimal / tick_size_decimal)
+>>> price_integer
+889614
+```
 
-| Variable                       | Symbol       |
-|--------------------------------|--------------|
-| Decimal order size granularity | $\large g_s$ |
-| Decimal price granularity      | $\large g_p$ |
-| Base asset decimals            | $\large d_b$ |
-| Quote asset decimals           | $\large d_q$ |
-| Decimal price                  | $\large p_d$ |
-| Integer price                  | $\large p_i$ |
-| Lot size                       | $\large s_l$ |
-| Tick size                      | $\large s_t$ |
-
-1. $$\LARGE s_l = \frac{g_s}{10^{-d_b}} = 10^{d_b} g_s$$
-
-1. $$\LARGE g_s = 10^{-d_b} s_l$$
-
-1. $$\LARGE s_t = \frac{g_s g_p}{10^{-d_q}} = 10^{d_q} g_s g_p$$
-
-1. $$\LARGE g_p = 10^{-d_q} \frac{s_t}{g_s} = \frac{10^{-d_q} s_t}{10^{-d_b} s_l} = 10^{(d_b - d_q)} \frac{s_t}{s_l}$$
-
-1. $$\LARGE p_i = \frac{p_d g_s}{s_t 10^{-d_q}} = 10^{d_q} \frac{p_d g_s}{s_t} = \frac{p_d}{g_p}$$
-
-1. $$\LARGE p_d = p_i g_p = 10^{(d_b - d_q)} \frac{p_i s_t}{s_l}$$
-
-### Noteworthy examples
-
-Consider a liquid staking derivative, `sAPT` trading against `APT`, both having 8 decimals: `sAPT/APT`.
+Next, consider a liquid staking derivative `sAPT` trading against `APT`, `sAPT/APT`, both having 8 decimals.
 Here, high price precision may be appropriate:
 
-| Variable                       | Symbol       | Value                      |
-|--------------------------------|--------------|----------------------------|
-| Decimal order size granularity | $\large g_s$ | 0.01 `sAPT`                |
-| Decimal price granularity      | $\large g_p$ | 0.000001 `APT` per `sAPT`  |
-| Base asset decimals            | $\large d_b$ | 8                          |
-| Quote asset decimals           | $\large d_q$ | 8                          |
-| Decimal price                  | $\large p_d$ | 1.000012 `APT` per `sAPT`  |
+| Variable          | Value                     |
+|-------------------|---------------------------|
+| Decimal lot size  | 0.01 `sAPT`               |
+| Decimal tick size | 0.000001 `APT` per `sAPT` |
+| Base decimals     | 8                         |
+| Quote decimals    | 8                         |
+| Decimal price     | 1.000012 `APT` per `sAPT` |
 
-1. Lot size: $$\large s_l = 10^{d_b} g_s = 10^8 * 0.01 = 1000000$$
-
-1. Tick size: $$\large s_t = 10^{d_q} g_s g_p = 10^8 * 0.01 * 0.000001 = 1$$
-
-1. Integer price: $$\large p_i = \frac{p_d}{g_p} = \frac{1.000012}{0.000001} = 1000012$$
+```python
+>>> decimals_base = 8
+>>> decimals_quote = 8
+>>> lot_size_decimal = dec('0.01')
+>>> tick_size_decimal = dec('0.000001')
+>>> price_decimal = dec('1.000012')
+>>> lot_size_integer = int(lot_size_decimal * 10 ** decimals_base)
+>>> lot_size_integer
+1000000
+>>> tick_size_integer = int(lot_size_decimal * tick_size_decimal
+...                         * 10 ** decimals_quote)
+>>> tick_size_integer
+1
+>>> price_integer = int(price_decimal / tick_size_decimal)
+>>> price_integer
+1000012
+```
 
 Next, consider `wBTC` trading against a hypothetical stable coin `USDX` with 10 decimals: `wBTC/USDX`.
 Here, a market registrant may again opt for high price precision, but if they specify too much, they may not be able to encode the corresponding integer price in 32 bits:
@@ -329,18 +565,30 @@ Prices in Econia are represented as 32-bit integers, such that the maximum possi
 
 :::
 
-| Variable                       | Symbol       | Value                           |
-|--------------------------------|--------------|---------------------------------|
-| Decimal order size granularity | $\large g_s$ | 0.0001 `wBTC`                   |
-| Quote asset decimals           | $\large d_q$ | 10                              |
-| Decimal price granularity      | $\large g_p$ | 0.000001 `USDX` per `wBTC`      |
-| Decimal price                  | $\large p_d$ | 17792.280012 `USDX` per `wBTC`  |
+| Variable                       | Value                          |
+|--------------------------------|--------------------------------|
+| Decimal lot size               | 0.0001 `wBTC`                  |
+| Quote asset decimals           | 10                             |
+| Decimal tick size              | 0.000001 `USDX` per `wBTC`     |
+| Decimal price                  | 17792.280012 `USDX` per `wBTC` |
 
-1. Tick size: $$\large s_t = 10^{d_q} g_s g_p = 10^{10} * 0.0001 * 0.000001 = 1$$
+```python
+>>> lot_size_decimal = dec('0.0001')
+>>> decimals_quote = 10
+>>> tick_size_decimal = dec('0.000001')
+>>> price_decimal = dec('17792.280012')
+>>> tick_size_integer = int(lot_size_decimal * tick_size_decimal
+...                         * 10 ** decimals_quote)
+>>> tick_size_integer
+1
+>>> price_integer = int(price_decimal / tick_size_decimal)
+>>> price_integer
+17792280012
+>>> price_integer <= 2 ** 32
+False
+```
 
-1. Integer price: $$\large p_i = \frac{p_d}{g_p} = \frac{17792.280001}{0.000001} = 17792280012 > 2 ^ {32}$$
-
-Hence decimal price granularity must be reduced so that integer prices can fit into a 32-bit integer.
+Hence decimal tick size must be reduced so that integer prices can fit into a 32-bit integer.
 
 <!---Alphabetized reference links-->
 

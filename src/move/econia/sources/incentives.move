@@ -362,37 +362,37 @@ module econia::incentives {
     // Genesis parameters >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Genesis parameter.
-    const MARKET_REGISTRATION_FEE: u64 = 2000000000;
+    const MARKET_REGISTRATION_FEE: u64 =     625000000;
     /// Genesis parameter.
-    const UNDERWRITER_REGISTRATION_FEE: u64 = 500000000;
+    const UNDERWRITER_REGISTRATION_FEE: u64 = 25000000;
     /// Genesis parameter.
-    const CUSTODIAN_REGISTRATION_FEE: u64 = 200000000;
+    const CUSTODIAN_REGISTRATION_FEE: u64 =   25000000;
     /// Genesis parameter.
-    const TAKER_FEE_DIVISOR: u64 = 2000;
+    const TAKER_FEE_DIVISOR: u64 =                2000;
     /// Genesis parameter.
-    const FEE_SHARE_DIVISOR_0: u64 = 10000;
+    const FEE_SHARE_DIVISOR_0: u64 =             10000;
     /// Genesis parameter.
-    const FEE_SHARE_DIVISOR_1: u64 = 5000;
+    const FEE_SHARE_DIVISOR_1: u64 =              8000;
     /// Genesis parameter.
-    const FEE_SHARE_DIVISOR_2: u64 = 4000;
+    const FEE_SHARE_DIVISOR_2: u64 =              6667;
     /// Genesis parameter.
-    const FEE_SHARE_DIVISOR_3: u64 = 3333;
+    const FEE_SHARE_DIVISOR_3: u64 =              5714;
     /// Genesis parameter.
-    const TIER_ACTIVATION_FEE_0: u64 = 0;
+    const TIER_ACTIVATION_FEE_0: u64 =               0;
     /// Genesis parameter.
-    const TIER_ACTIVATION_FEE_1: u64 = 2000000000;
+    const TIER_ACTIVATION_FEE_1: u64 =      6250000000;
     /// Genesis parameter.
-    const TIER_ACTIVATION_FEE_2: u64 = 20000000000;
+    const TIER_ACTIVATION_FEE_2: u64 =    125000000000;
     /// Genesis parameter.
-    const TIER_ACTIVATION_FEE_3: u64 = 200000000000;
+    const TIER_ACTIVATION_FEE_3: u64 =   1875000000000;
     /// Genesis parameter.
-    const WITHDRAWAL_FEE_0: u64 = 200000000;
+    const WITHDRAWAL_FEE_0: u64 =             50000000;
     /// Genesis parameter.
-    const WITHDRAWAL_FEE_1: u64 = 100000000;
+    const WITHDRAWAL_FEE_1: u64 =             37500000;
     /// Genesis parameter.
-    const WITHDRAWAL_FEE_2: u64 = 50000000;
+    const WITHDRAWAL_FEE_2: u64 =             31250000;
     /// Genesis parameter.
-    const WITHDRAWAL_FEE_3: u64 = 20000000;
+    const WITHDRAWAL_FEE_3: u64 =             25000000;
 
     // Genesis parameters >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 

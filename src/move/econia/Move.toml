@@ -12,6 +12,6 @@ user_1 = '0x3456'
 integrator = '0x4567'
 
 [dependencies.AptosFramework]
-git = 'https://github.com/aptos-labs/aptos-core'
+git = 'https://github.com/aptos-labs/aptos-core.git'
 subdir = 'aptos-move/framework/aptos-framework'
-rev = 'c4f5fb69fb848bf593f31b6adbca33b5a0e41cb0'
+rev = 'mainnet'

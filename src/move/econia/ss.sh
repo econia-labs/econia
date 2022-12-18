@@ -112,17 +112,6 @@ substitute_econia_address() {
     python $build_py substitute $addr $repo_root
 }
 
-# Update Git revision hash for dependency in Move.toml
-#
-# Should be run from inside Move package directory
-update_rev_hash() {
-    # Get hash of latest commit to aptos-core main branch
-    hash=$(git ls-remote https://github.com/aptos-labs/aptos-core \
-        refs/heads/main | grep -o '^\w\+')
-    # Update Move.toml to indicate new hash dependency
-    python $build_py rev $hash $repo_root
-}
-
 # Functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 # Commands >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -179,7 +168,6 @@ elif test $1 = hello; then echo Hello, Econia developer
 # Run pre-commit checks
 elif test $1 = pc; then
     conda activate econia # Activate Econia conda environment
-    update_rev_hash # Update revision hash for devnet dependency
     substitute_econia_address docgen # Substitute docgen address
     aptos move test -i 1000000 # Run all tests
     aptos move document --include-impl # Build docs
@@ -190,11 +178,6 @@ elif test $1 = po; then publish official
 
 # Publish bytecode using a temporary devnet address
 elif test $1 = pt; then publish temp
-
-# Update devnet revision hash in Move.toml
-elif test $1 = r; then
-    conda activate econia # Activate Econia conda environment
-    update_rev_hash
 
 # Substitute given address into Move.toml
 elif test $1 = sg; then

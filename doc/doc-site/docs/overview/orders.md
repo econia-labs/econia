@@ -207,7 +207,7 @@ Here, `APT` is considered the "base" asset and `USDC` is considered the "quote a
 | Base asset  | Order size   | `APT`  |
 | Quote asset | Order price  | `USDC` |
 
-In addition to a base asset and a quote asset, Econia also defines the following parameters for each market:
+In addition to a base/quote trading pair, each market in Econia additionally contains the following parameters, which are selected by the market registrant during registration:
 
 | Parameter          | Meaning                     | Example     |
 |--------------------|-----------------------------|-------------|
@@ -589,6 +589,61 @@ False
 ```
 
 Hence decimal tick size must be reduced so that integer prices can fit into a 32-bit integer.
+
+### Picking the right parameters
+
+As shown above, picking the "correct" lot size, tick size, and minimum order size for a given market is ultimately a judgement call.
+Still, however, there are several guidelines that can aid the process:
+
+1. **Only specify as much granularity as needed**:
+   overly-granular lot size and tick size combinations do not properly translate to integer tick sizes, and may make indexing more difficult.
+   Three orders at price 12.34 is easier to interpret than one order each at 12.3401, 12.3404, and 12.3407.
+
+2. **Specify a reasonable minimum order size that will help keep gas costs low**:
+   when matching against the book, an AVL queue removal is required for each fill, which means that taker orders will require more global storage operations if they have to fill against more maker orders.
+   For example, if the minimum order size for a market corresponds to \$ 0.1 USD nominal, and someone submits a market buy order for \$100 of the base asset, then they may have to pay the gas costs for up to $100 / 0.1 = 1000$ AVL queue operations.
+   In contrast, for a more reasonable minimum order size of \$ 10 USD nominal, at most they will have to pay for 10 AVL queue operations.
+
+3. **Plan for price increases**:
+   as shown above, prices must be able to fit into 32-bit integers.
+   If a market's parameters have been calibrated such that a 3x price increase will lead to a 32-bit integer overflow, then a different lot size/tick size combination should be chosen.
+   Notably, if prices go up on the order of 100x, for instance, then a new market will likely be necessary anyways, due to changes in the appropriate level of granularity for a lot size/tick size combination.
+   Hence initial market parameters should be chosen to support the maximum price swing possible before the registration of a new market becomes necessary due to granularity considerations alone.
+
+## Adversarial considerations
+
+Econia operates within the bounds of the Aptos virtual machine, a resource-scarce computing environment that imposes a unique set of operational constraints.
+In particular, Aptos' gas schedule charges for each "per-item" storage operation, which means that the cost of a transaction increases each time a `key`-able resource or a table entry is accessed.
+
+Since Econia's AVL queue is based on table entries, this means that Econia could become prohibitively expensive if it did not place an upper bound on the number of possible price levels.
+For instance, if Econia were to allow an unbounded number of price levels and 256-bit prices, then an attacker could place orders at integer prices of $1, 2, 3, 4, \ldots$ and so on, potentially leading to a tree of height $h \approx 1.44 * 256 \approx 368$, such that insertion/removal operations would have to access as many as 368 table entries.
+This would lead to prohibitively high gas costs, such that a malicious actor could effectively denial-of-service (DoS) an order book by placing orders across all possible integer prices below/above the spread (depending on the side).
+
+In the interest of preventing such an attack, Econia's AVL queue implementation thus sets an upper bound on the number of price levels, as well as the number of total orders, allowed on a given side of the order book.
+Yet simply imposing an upper bound is not enough:
+with only an upper bound on the size of the order book, an attacker could simply place the maximum number of orders possible to completely occupy the entire order book, far enough away from the spread so that no one would ever accept the best price.
+Here the order book would be practically locked until the attacker decided to cancel an order.
+
+Hence Econia additionally imposes eviction logic, whereby the order with lowest price-time priority is evicted if the order book fills up.
+Here, orders far away from the spread are subject to cancellation if a better price comes around, such that an attacker attempting to fill up the order book will either have their orders matched against or will get evicted.
+If an attacker were to attempt placing and cancelling during the same transaction to circumvent these implications, they would still have to pay for:
+
+1. [`N_NODES_MAX`] insertions to the AVL queue to place their malicious orders,
+2. [`N_NODES_MAX`] removals from the AVL queue for the evictee cancellations, and
+3. [`N_NODES_MAX`] removals from the AVL queue to cancel their own malicious orders.
+
+Notably, each of these operations entails assorted function calls, global state mutation, etc., such that the requisite transaction would fail due to too high of a gas cost.
+In theory an attacker could split up the operation across multiple transactions, but then of course they risk having their orders filled at a price worse than the best market price (since they would have to place an order closer to the spread than that of the best order, in order to evict the order with the highest price-time priority).
+
+In the rare case that an attacker is also a block-producing node, then the multi-transaction requirement does not necessarily apply, but here there is a larger issue at play that affects more than just Econia:
+block-producing nodes have the power to sequence transactions in ways that benefit themselves, even to the detriment of others.
+A solution to this broader issue (miner extractable value, or MEV) lies outside the scope of the present discussion.
+
+Note that the economic outcomes of any adversarial behaviors discussed above do not constitute a failure per se of the Econia protocol, but rather, present a set of critical implications for anyone who makes assumptions about Econia's operations:
+if a substantial portion of an order book were to be evicted, then it would not be the case that Econia had been "hacked", as Econia would continue to accept new orders from trading bots, retail users, etc., and the order book could freely fill back up.
+But if someone were to build a protocol on top of Econia that assumed there would *always* be orders within a certain price range, for example, then the violation of this assumption could lead to economic losses higher up in the protocol dependency stack.
+
+Hence the above analysis is provided in the interest of educating protocol developers about potential adversarial dynamics, such that they may avoid making erroneous assumptions with unintended consequences.
 
 <!---Alphabetized reference links-->
 

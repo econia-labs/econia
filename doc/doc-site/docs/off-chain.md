@@ -24,9 +24,9 @@ Econia emits two types of market events:
 Unlike registry event handles, market event handles are created via a resource account, since the `@econia` signature is not available each time a new [`OrderBook`] is permissionlessly initialized.
 Each [`OrderBook`] is stored as a table entry in the [`OrderBooks`] map stored under the resource account, such that market events should be queried via the Aptos node [events by creation number API].
 
-:::note
+:::tip
 
-The signing capability for the resource account stored under the `@econia` account in a [`SignerCapabilityStore`] (such that the account number can be easily queried off chain).
+The signing capability for the resource account is stored under the `@econia` account in a [`SignerCapabilityStore`], such that the account number can be easily queried off chain.
 
 :::
 

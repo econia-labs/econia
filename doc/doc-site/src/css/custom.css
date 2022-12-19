@@ -14,6 +14,12 @@
   --ifm-color-primary-lighter: #6ed5a3;
   --ifm-color-primary-lightest: #6ed5a3;
   --ifm-code-font-size: 95%;
+
+  --ifm-heading-color: #ffffff;
+  --ifm-heading-font-family: "Jost", sans-serif;
+  --ifm-heading-font-weight: bold;
+  --ifm-heading-line-height: 58px;
+
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
 }
 
@@ -29,12 +35,8 @@
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
 }
 
-body {
+p {
   font-family: "Roboto Mono", monospace;
-}
-
-h1 h2 h3 h4 h5 {
-  font-family: "Jost", sans-serif;
 }
 
 .customTable {

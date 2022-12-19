@@ -3455,7 +3455,7 @@ vector.
     // Initialize tracker variables for the fee store parameters of
     // the last parsed tier.
     <b>let</b> (divisor_last, activation_fee_last, withdrawal_fee_last) = (
-                <a href="incentives.md#0xc0deb00c_incentives_HI_64">HI_64</a>,               <a href="incentives.md#0xc0deb00c_incentives_HI_64">HI_64</a>,               <a href="incentives.md#0xc0deb00c_incentives_HI_64">HI_64</a>);
+                <a href="incentives.md#0xc0deb00c_incentives_HI_64">HI_64</a>,                   0,               <a href="incentives.md#0xc0deb00c_incentives_HI_64">HI_64</a>);
     // Get number of specified integrator fee store tiers.
     <b>let</b> n_tiers = <a href="_length">vector::length</a>(integrator_fee_store_tiers_ref);
     <b>let</b> i = 0; // Declare counter for <b>loop</b> variable.
@@ -3481,7 +3481,7 @@ vector.
         <b>let</b> tier_activation_fee_ref =
             <a href="_borrow">vector::borrow</a>(tier_fields_ref, <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_INDEX">TIER_ACTIVATION_FEE_INDEX</a>);
         <b>if</b> (i == 0) { // If parsing parameters for first tier:
-            // Assert activation fee is 0
+            // Assert activation fee is 0.
             <b>assert</b>!(*tier_activation_fee_ref == 0,
                 <a href="incentives.md#0xc0deb00c_incentives_E_FIRST_TIER_ACTIVATION_FEE_NONZERO">E_FIRST_TIER_ACTIVATION_FEE_NONZERO</a>);
         } <b>else</b> { // If parameters for tier that is not first:

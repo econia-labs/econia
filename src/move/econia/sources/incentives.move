@@ -1826,7 +1826,7 @@ module econia::incentives {
         // Initialize tracker variables for the fee store parameters of
         // the last parsed tier.
         let (divisor_last, activation_fee_last, withdrawal_fee_last) = (
-                    HI_64,               HI_64,               HI_64);
+                    HI_64,                   0,               HI_64);
         // Get number of specified integrator fee store tiers.
         let n_tiers = vector::length(integrator_fee_store_tiers_ref);
         let i = 0; // Declare counter for loop variable.
@@ -1852,7 +1852,7 @@ module econia::incentives {
             let tier_activation_fee_ref =
                 vector::borrow(tier_fields_ref, TIER_ACTIVATION_FEE_INDEX);
             if (i == 0) { // If parsing parameters for first tier:
-                // Assert activation fee is 0
+                // Assert activation fee is 0.
                 assert!(*tier_activation_fee_ref == 0,
                     E_FIRST_TIER_ACTIVATION_FEE_NONZERO);
             } else { // If parameters for tier that is not first:

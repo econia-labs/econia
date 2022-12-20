@@ -634,7 +634,7 @@ module econia::market {
     /// Flag for `MakerEvent.type` when order size is changed.
     const CHANGE: u8 = 1;
     /// Critical tree height above which evictions may take place.
-    const CRITICAL_HEIGHT: u8 = 10;
+    const CRITICAL_HEIGHT: u8 = 18;
     /// Descending AVL queue flag, for bids AVL queue.
     const DESCENDING: bool = false;
     /// Flag for `MakerEvent.type` when order is evicted.

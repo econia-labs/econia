@@ -446,30 +446,19 @@ Information about a market.
 <dd>
  Number of base units exchanged per lot (when base asset is
  a coin, corresponds to <code>aptos_framework::coin::Coin.value</code>).
- When selecting a lot size, note that prices are 32 bits.
 </dd>
 <dt>
 <code>tick_size: u64</code>
 </dt>
 <dd>
  Number of quote coin units exchanged per tick (corresponds
- to <code>aptos_framework::coin::Coin.value</code>). When selecting a
- tick size, note that prices are 32 bits. The suggested tick
- size is 5 basis points, which will ensure sufficient
- granularity as well as price level coverage. If an
- inappropriately small tick size is chosen, price level
- coverage may become insufficient during market volatility.
+ to <code>aptos_framework::coin::Coin.value</code>).
 </dd>
 <dt>
 <code>min_size: u64</code>
 </dt>
 <dd>
- Minimum number of lots per order. When selecting a minimum
- size, note that filling a large taker order will incur
- additional gas costs for every additional maker order that
- must be filled against. Hence a minimum size that is
- excessively small will result in higher gas costs for
- takers.
+ Minimum number of lots per order.
 </dd>
 <dt>
 <code>underwriter_id: u64</code>

@@ -14,8 +14,11 @@
   --ifm-color-primary-lighter: #6ed5a3;
   --ifm-color-primary-lightest: #6ed5a3;
   --ifm-code-font-size: 95%;
-
   --ifm-font-family-base: "Roboto Mono", monospace;
+
+  --ifm-navbar-height: 72px;
+  --ifm-navbar-background-color: #020202;
+  --ifm-navbar-padding-horizontal: 22px;
 
   --ifm-h2-font-size: 48px;
   --ifm-h2-line-height: 58px;
@@ -40,9 +43,13 @@
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
 }
 
-/* p {
-  font-family: "Roboto Mono", monospace;
-} */
+body {
+  background-color: #020202;
+}
+
+.navbar {
+  border-bottom: 1px solid #565656
+}
 
 .customTable {
   width: 100%;

@@ -15,7 +15,7 @@ This directory contains assorted diagrams, most of which are generated via [`mer
 
 ## Representative diagrams
 
-* [modules.md] has a color theme matched to [GitHub]'s color schema.
+* [modules.md] has a color theme matched to Econia's doc site schema.
 * [matching-engine.md] has complexly-nested subgraphs and different classes.
 
 <!---Alphabetized reference links-->
@@ -23,7 +23,6 @@ This directory contains assorted diagrams, most of which are generated via [`mer
 [`images`]:              images
 [`mermaid.js`]:          https://mermaid-js.github.io
 [`src`]:                 src
-[GitHub]:                https://github.com
 [mermaid.live]:          https://mermaid.live
 [modules.md]:            src/modules.md
 [matching-engine.md]:    src/scraps/matching-engine.md

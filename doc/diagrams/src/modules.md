@@ -1,6 +1,6 @@
 ```mermaid
 
-%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#54a7fa', 'lineColor': '#c4dcf1', 'primaryTextColor': '#0d1013', 'secondaryColor': '#c4dcf1'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#6ed5a3', 'lineColor': '#aaaaaa', 'primaryTextColor': '#020202', 'secondaryColor': '#aaaaaa'}}}%%
 
 flowchart TD
 

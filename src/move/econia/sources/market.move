@@ -628,7 +628,7 @@ module econia::market {
     /// Flag for bid side.
     const BID: bool = false;
     /// Flag for buy direction.
-    const BUY: bool = true;
+    const BUY: bool = false;
     /// Flag for `MakerEvent.type` when order is cancelled.
     const CANCEL: u8 = 0;
     /// Flag for `MakerEvent.type` when order size is changed.
@@ -667,7 +667,7 @@ module econia::market {
     /// Flag for post-or-abort order restriction.
     const POST_OR_ABORT: u8 = 3;
     /// Flag for sell direction.
-    const SELL: bool = false;
+    const SELL: bool = true;
     /// Number of bits maker order counter is shifted in a market order
     /// ID.
     const SHIFT_COUNTER: u8 = 64;

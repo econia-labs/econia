@@ -722,7 +722,7 @@ Caller is not Econia, but should be.
 Buy direction flag, as defined in <code><a href="market.md#0xc0deb00c_market">market</a>.<b>move</b></code>.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_BUY">BUY</a>: bool = <b>true</b>;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_BUY">BUY</a>: bool = <b>false</b>;
 </code></pre>
 
 
@@ -1070,7 +1070,7 @@ Number of fields in an <code><a href="incentives.md#0xc0deb00c_incentives_Integr
 Sell direction flag, as defined in <code><a href="market.md#0xc0deb00c_market">market</a>.<b>move</b></code>.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_SELL">SELL</a>: bool = <b>false</b>;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_SELL">SELL</a>: bool = <b>true</b>;
 </code></pre>
 
 

@@ -1066,7 +1066,7 @@ Flag for null value when null defined as 0.
 Flag for buy direction.
 
 
-<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_BUY">BUY</a>: bool = <b>true</b>;
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_BUY">BUY</a>: bool = <b>false</b>;
 </code></pre>
 
 
@@ -1076,7 +1076,7 @@ Flag for buy direction.
 Flag for sell direction.
 
 
-<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_SELL">SELL</a>: bool = <b>false</b>;
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_SELL">SELL</a>: bool = <b>true</b>;
 </code></pre>
 
 

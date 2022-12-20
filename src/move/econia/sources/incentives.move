@@ -453,7 +453,7 @@ module econia::incentives {
     // Constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Buy direction flag, as defined in `market.move`.
-    const BUY: bool = true;
+    const BUY: bool = false;
     /// Index of fee share in vectorized representation of an
     /// `IntegratorFeeStoreTierParameters`.
     const FEE_SHARE_DIVISOR_INDEX: u64 = 0;
@@ -473,7 +473,7 @@ module econia::incentives {
     /// Number of fields in an `IntegratorFeeStoreTierParameters`.
     const N_TIER_FIELDS: u64 = 3;
     /// Sell direction flag, as defined in `market.move`.
-    const SELL: bool = false;
+    const SELL: bool = true;
     /// Index of tier activation fee in vectorized representation of an
     /// `IntegratorFeeStoreTierParameters`.
     const TIER_ACTIVATION_FEE_INDEX: u64 = 1;

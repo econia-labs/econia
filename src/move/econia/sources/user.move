@@ -82,6 +82,12 @@
 ///
 /// ## Public functions
 ///
+/// Constant getters:
+///
+/// * `get_ASK()`
+/// * `get_BID()`
+/// * `get_NO_CUSTODIAN()`
+///
 /// Asset transfer:
 ///
 /// * `deposit_coins()`
@@ -401,7 +407,7 @@ module econia::user {
     const HI_64: u64 = 0xffffffffffffffff;
     /// Maximum possible price that can be encoded in 32 bits. Generated
     /// in Python via `hex(int('1' * 32, 2))`.
-    const MAX_PRICE: u64 = 0xffffffff;
+    const HI_PRICE: u64 = 0xffffffff;
     /// Flag for null value when null defined as 0.
     const NIL: u64 = 0;
     /// Custodian ID flag for no custodian.
@@ -588,6 +594,14 @@ module econia::user {
     }
 
     #[app]
+    /// Public constant getter for `ASK`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_ASK()`
+    public fun get_ASK(): bool {ASK}
+
+    #[app]
     /// Wrapped call to `get_asset_counts_internal()` for custodian.
     ///
     /// Restricted to custodian for given market account to prevent
@@ -635,6 +649,14 @@ module econia::user {
     ) acquires MarketAccounts {
         get_asset_counts_internal(address_of(user), market_id, NO_CUSTODIAN)
     }
+
+    #[app]
+    /// Public constant getter for `BID`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_BID()`
+    public fun get_BID(): bool {BID}
 
     #[app]
     /// Return custodian ID encoded in market account ID.
@@ -693,6 +715,14 @@ module econia::user {
         // Return if map has entry for given market account ID.
         table::contains(market_accounts_map, market_account_id)
     }
+
+    #[app]
+    /// Public constant getter for `NO_CUSTODIAN`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_NO_CUSTODIAN()`
+    public fun get_NO_CUSTODIAN(): u64 {NO_CUSTODIAN}
 
     #[app]
     /// Return `true` if `user` has at least one market account
@@ -1621,7 +1651,7 @@ module econia::user {
     ) acquires MarketAccounts {
         assert!(price > 0, E_PRICE_0); // Assert price is nonzero.
         // Assert price is not too high.
-        assert!(price <= MAX_PRICE, E_PRICE_TOO_HIGH);
+        assert!(price <= HI_PRICE, E_PRICE_TOO_HIGH);
         // Mutably borrow market accounts map.
         let market_accounts_map_ref_mut =
             &mut borrow_global_mut<MarketAccounts>(user_address).map;
@@ -2214,6 +2244,11 @@ module econia::user {
     }
 
     #[test_only]
+    /// Return `HI_PRICE`, for testing synchronization with
+    /// `market.move`.
+    public fun get_HI_PRICE_test(): u64 {HI_PRICE}
+
+    #[test_only]
     /// Get order access key at top of inactive order stack.
     public fun get_inactive_stack_top_test(
         user_address: address,
@@ -2247,6 +2282,11 @@ module econia::user {
             user_address, market_account_id, side, order_access_key);
         next // Return next inactive order access key.
     }
+
+    #[test_only]
+    /// Return `NO_UNDERWRITER`, for testing synchronization with
+    /// `market.move`.
+    public fun get_NO_UNDERWRITER_test(): u64 {NO_UNDERWRITER}
 
     #[test_only]
     /// Wrapper for `get_order_fields_test()`, accepting market ID and
@@ -3193,6 +3233,10 @@ module econia::user {
     }
 
     #[test]
+    /// Verify constant getter return.
+    fun test_get_ASK() {assert!(get_ASK() == ASK, 0)}
+
+    #[test]
     #[expected_failure(abort_code = 3)]
     /// Verify failure for no market account resource.
     fun test_get_asset_counts_internal_no_account()
@@ -3216,6 +3260,10 @@ module econia::user {
     }
 
     #[test]
+    /// Verify constant getter return.
+    fun test_get_BID() {assert!(get_BID() == BID, 0)}
+
+    #[test]
     #[expected_failure(abort_code = 3)]
     /// Verify failure for no market account.
     fun test_get_next_order_access_key_internal_no_account()
@@ -3236,6 +3284,13 @@ module econia::user {
     acquires MarketAccounts {
         // Attempt invalid invocation.
         get_next_order_access_key_internal(@user, 0, 0, ASK);
+    }
+
+    #[test]
+    /// Verify constant getter return.
+    fun test_get_NO_CUSTODIAN() {
+        assert!(get_NO_CUSTODIAN() == NO_CUSTODIAN, 0);
+        assert!(get_NO_CUSTODIAN() == registry::get_NO_CUSTODIAN(), 0)
     }
 
     #[test]
@@ -3702,7 +3757,7 @@ module econia::user {
         // Declare order parameters
         let market_order_id  = 123;
         let size             = MIN_SIZE_PURE_COIN;
-        let price            = MAX_PRICE + 1;
+        let price            = HI_PRICE + 1;
         let side             = ASK;
         // Attempt invalid invocation.
         place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
@@ -3721,7 +3776,7 @@ module econia::user {
         // Declare order parameters
         let market_order_id  = 123;
         let size             = MIN_SIZE_PURE_COIN - 1;
-        let price            = MAX_PRICE;
+        let price            = HI_PRICE;
         let side             = ASK;
         // Attempt invalid invocation.
         place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
@@ -3739,8 +3794,8 @@ module econia::user {
         register_market_accounts_test(); // Register market accounts.
         // Declare order parameters
         let market_order_id  = 123;
-        let size             = HI_64 / MAX_PRICE + 1;
-        let price            = MAX_PRICE;
+        let size             = HI_64 / HI_PRICE + 1;
+        let price            = HI_PRICE;
         let side             = ASK;
         // Attempt invalid invocation.
         place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,

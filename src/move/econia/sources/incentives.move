@@ -2073,6 +2073,10 @@ module econia::incentives {
     // Test-only functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
+    /// Return `BUY`, for testing synchronization with `market.move`.
+    public fun get_BUY_test(): bool {BUY}
+
+    #[test_only]
     /// Return amount of quote coins in `EconiaFeeStore` for given
     /// `QuoteCoinType` and `market_id`.
     ///
@@ -2129,6 +2133,10 @@ module econia::incentives {
         tablist::borrow(&borrow_global<IntegratorFeeStores<QuoteCoinType>>(
             integrator).map, market_id).tier
     }
+
+    #[test_only]
+    /// Return `SELL`, for testing synchronization with `market.move`.
+    public fun get_SELL_test(): bool {SELL}
 
     #[test_only]
     /// Return amount of utility coins in `UtilityCoinStore` for utility

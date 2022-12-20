@@ -29,6 +29,7 @@
 ///
 /// [Public function index](#public-function-index)
 ///
+/// * [Constant getters](#constant-getters)
 /// * [Market registration](#market-registration)
 /// * [Market order IDs](#market-order-ids)
 /// * [Limit orders](#limit-orders)
@@ -57,6 +58,21 @@
 ///
 /// See the [dependency charts](#dependency-charts) for a visual map of
 /// associated function wrappers.
+///
+/// ## Constant getters
+///
+/// * `get_ASK()`
+/// * `get_BID()`
+/// * `get_BUY()`
+/// * `get_FILL_OR_ABORT()`
+/// * `get_HI_PRICE()`
+/// * `get_IMMEDIATE_OR_CANCEL()`
+/// * `get_MAX_POSSIBLE()`
+/// * `get_NO_CUSTODIAN()`
+/// * `get_NO_RESTRICTION()`
+/// * `get_NO_UNDERWRITER()`
+/// * `get_POST_OR_ABORT()`
+/// * `get_SELL()`
 ///
 /// ## Market registration
 ///
@@ -742,6 +758,54 @@ module econia::market {
     }
 
     #[app]
+    /// Public constant getter for `ASK`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_ASK()`
+    public fun get_ASK(): bool {ASK}
+
+    #[app]
+    /// Public constant getter for `BID`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_BID()`
+    public fun get_BID(): bool {BID}
+
+    #[app]
+    /// Public constant getter for `BUY`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_BUY()`
+    public fun get_BUY(): bool {BUY}
+
+    #[app]
+    /// Public constant getter for `FILL_OR_ABORT`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_FILL_OR_ABORT()`
+    public fun get_FILL_OR_ABORT(): u8 {FILL_OR_ABORT}
+
+    #[app]
+    /// Public constant getter for `HI_PRICE`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_HI_PRICE()`
+    public fun get_HI_PRICE(): u64 {HI_PRICE}
+
+    #[app]
+    /// Public constant getter for `IMMEDIATE_OR_CANCEL`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_IMMEDIATE_OR_CANCEL()`
+    public fun get_IMMEDIATE_OR_CANCEL(): u8 {IMMEDIATE_OR_CANCEL}
+
+    #[app]
     /// Return maker order counter encoded in market order ID.
     ///
     /// # Testing
@@ -766,6 +830,54 @@ module econia::market {
     ): u64 {
         ((market_order_id & (HI_PRICE as u128)) as u64)
     }
+
+    #[app]
+    /// Public constant getter for `MAX_POSSIBLE`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_MAX_POSSIBLE()`
+    public fun get_MAX_POSSIBLE(): u64 {MAX_POSSIBLE}
+
+    #[app]
+    /// Public constant getter for `NO_CUSTODIAN`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_NO_CUSTODIAN()`
+    public fun get_NO_CUSTODIAN(): u64 {NO_CUSTODIAN}
+
+    #[app]
+    /// Public constant getter for `NO_RESTRICTION`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_NO_RESTRICTION()`
+    public fun get_NO_RESTRICTION(): u8 {NO_RESTRICTION}
+
+    #[app]
+    /// Public constant getter for `NO_UNDERWRITER`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_NO_UNDERWRITER()`
+    public fun get_NO_UNDERWRITER(): u64 {NO_UNDERWRITER}
+
+    #[app]
+    /// Public constant getter for `POST_OR_ABORT`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_POST_OR_ABORT()`
+    public fun get_POST_OR_ABORT(): u8 {POST_OR_ABORT}
+
+    #[app]
+    /// Public constant getter for `SELL`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_SELL()`
+    public fun get_SELL(): bool {SELL}
 
     /// Public function wrapper for `place_limit_order()` for placing
     /// order under authority of delegated custodian.
@@ -3636,6 +3748,87 @@ module econia::market {
             price, restriction);
         change_order_size_user( // Attempt invalid order change.
             &attacker, market_id, side, market_order_id, size_end);
+    }
+
+    #[test]
+    /// Verify constant getter return.
+    fun test_get_ASK() {
+        assert!(get_ASK() == ASK, 0);
+        assert!(get_ASK() == user::get_ASK(), 0);
+    }
+
+    #[test]
+    /// Verify constant getter return.
+    fun test_get_BID() {
+        assert!(get_BID() == BID, 0);
+        assert!(get_BID() == user::get_BID(), 0);
+    }
+
+    #[test]
+    /// Verify constant getter return.
+    fun test_get_BUY() {
+        assert!(get_BUY() == BUY, 0);
+        assert!(get_BUY() == incentives::get_BUY_test(), 0);
+    }
+
+    #[test]
+    /// Verify constant getter return.
+    fun test_get_FILL_OR_ABORT() {
+        assert!(get_FILL_OR_ABORT() == FILL_OR_ABORT, 0)
+    }
+
+    #[test]
+    /// Verify constant getter return.
+    fun test_get_HI_PRICE() {
+        assert!(get_HI_PRICE() == HI_PRICE, 0);
+        assert!(get_HI_PRICE() == user::get_HI_PRICE_test(), 0)
+    }
+
+    #[test]
+    /// Verify constant getter return.
+    fun test_get_IMMEDIATE_OR_CANCEL() {
+        assert!(get_IMMEDIATE_OR_CANCEL() == IMMEDIATE_OR_CANCEL, 0)
+    }
+
+    #[test]
+    /// Verify constant getter return.
+    fun test_get_MAX_POSSIBLE() {
+        assert!(get_MAX_POSSIBLE() == MAX_POSSIBLE, 0)
+    }
+
+    #[test]
+    /// Verify constant getter return.
+    fun test_get_NO_CUSTODIAN() {
+        assert!(get_NO_CUSTODIAN() == NO_CUSTODIAN, 0);
+        assert!(get_NO_CUSTODIAN() == user::get_NO_CUSTODIAN(), 0);
+        assert!(get_NO_CUSTODIAN() == registry::get_NO_CUSTODIAN(), 0);
+    }
+
+    #[test]
+    /// Verify constant getter return.
+    fun test_get_NO_RESTRICTION() {
+        assert!(get_NO_RESTRICTION() == NO_RESTRICTION, 0)
+    }
+
+    #[test]
+    /// Verify constant getter return.
+    fun test_get_NO_UNDERWRITER() {
+        assert!(get_NO_UNDERWRITER() == NO_UNDERWRITER, 0);
+        assert!(get_NO_UNDERWRITER() == registry::get_NO_UNDERWRITER(), 0);
+        assert!(get_NO_UNDERWRITER() == user::get_NO_UNDERWRITER_test(), 0);
+    }
+
+    #[test]
+    /// Verify constant getter return.
+    fun test_get_POST_OR_ABORT() {
+        assert!(get_POST_OR_ABORT() == POST_OR_ABORT, 0)
+    }
+
+    #[test]
+    /// Verify constant getter return.
+    fun test_get_SELL() {
+        assert!(get_SELL() == SELL, 0);
+        assert!(get_SELL() == incentives::get_SELL_test(), 0);
     }
 
     #[test(account = @econia)]

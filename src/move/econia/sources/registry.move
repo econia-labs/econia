@@ -20,6 +20,7 @@
 ///
 /// [Public function index](#public-function-index)
 ///
+/// * [Constant getters](#constant-getters)
 /// * [Capability management](#capability-management)
 /// * [Integrator fee store setup](#integrator-fee-store-setup)
 /// * [Recognized market lookup](#recognized-market-lookup)
@@ -36,6 +37,13 @@
 /// [Complete DocGen index](#complete-docgen-index)
 ///
 /// # Public function index
+///
+/// ## Constant getters
+///
+/// * `get_MAX_CHARACTERS_GENERIC()`
+/// * `get_MIN_CHARACTERS_GENERIC()`
+/// * `get_NO_CUSTODIAN()`
+/// * `get_NO_UNDERWRITER()`
 ///
 /// ## Capability management
 ///
@@ -511,6 +519,38 @@ module econia::registry {
             base_name_generic,
             type_info::type_of<QuoteCoinType>())
     }
+
+    #[app]
+    /// Public constant getter for `MAX_CHARACTERS_GENERIC`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_MAX_CHARACTERS_GENERIC()`
+    public fun get_MAX_CHARACTERS_GENERIC(): u64 {MAX_CHARACTERS_GENERIC}
+
+    #[app]
+    /// Public constant getter for `MIN_CHARACTERS_GENERIC`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_MIN_CHARACTERS_GENERIC()`
+    public fun get_MIN_CHARACTERS_GENERIC(): u64 {MIN_CHARACTERS_GENERIC}
+
+    #[app]
+    /// Public constant getter for `NO_CUSTODIAN`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_NO_CUSTODIAN()`
+    public fun get_NO_CUSTODIAN(): u64 {NO_CUSTODIAN}
+
+    #[app]
+    /// Public constant getter for `NO_UNDERWRITER`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_NO_UNDERWRITER()`
+    public fun get_NO_UNDERWRITER(): u64 {NO_UNDERWRITER}
 
     #[app]
     /// Return serial ID of given `UnderwriterCapability`.
@@ -1582,6 +1622,30 @@ module econia::registry {
             (type_info::type_of<GenericAsset>(), type_info::type_of<BC>());
         // Attempt invalid invocation.
         get_market_info_for_market_account(market_id, base_type, quote_type);
+    }
+
+    #[test]
+    /// Verify constant getter return.
+    fun test_get_MAX_CHARACTERS_GENERIC() {
+        assert!(get_MAX_CHARACTERS_GENERIC() == MAX_CHARACTERS_GENERIC, 0)
+    }
+
+    #[test]
+    /// Verify constant getter return.
+    fun test_get_MIN_CHARACTERS_GENERIC() {
+        assert!(get_MIN_CHARACTERS_GENERIC() == MIN_CHARACTERS_GENERIC, 0)
+    }
+
+    #[test]
+    /// Verify constant getter return.
+    fun test_get_NO_CUSTODIAN() {
+        assert!(get_NO_CUSTODIAN() == NO_CUSTODIAN, 0);
+    }
+
+    #[test]
+    /// Verify constant getter return.
+    fun test_get_NO_UNDERWRITER() {
+        assert!(get_NO_UNDERWRITER() == NO_UNDERWRITER, 0)
     }
 
     #[test]

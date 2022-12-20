@@ -15,6 +15,11 @@
   --ifm-color-primary-lightest: #6ed5a3;
   --ifm-code-font-size: 95%;
 
+  --ifm-font-family-base: "Roboto Mono", monospace;
+
+  --ifm-h2-font-size: 48px;
+  --ifm-h2-line-height: 58px;
+
   --ifm-heading-color: #ffffff;
   --ifm-heading-font-family: "Jost", sans-serif;
   --ifm-heading-font-weight: bold;
@@ -35,9 +40,9 @@
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
 }
 
-p {
+/* p {
   font-family: "Roboto Mono", monospace;
-}
+} */
 
 .customTable {
   width: 100%;

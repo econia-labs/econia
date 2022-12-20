@@ -1,12 +1,22 @@
 ---
 slug: /
+title: Welcome
+hide_title: true
 ---
 
-# Welcome
-
-![](/img/newbanner.png)
-
-**e·co·ni·a** | /ə'känēə/
+<div style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "var(--ifm-leading)"
+}}>
+    <div>
+        <h2 style={{ marginBottom: "40px" }}>Welcome</h2>
+        <img height={68} width={432} src="/img/EconiaBanner.svg" />
+        <p style={{ marginTop: "20px" }}>e·co·ni·a | /ə'känēə/</p>
+    </div>
+    <img height={176} width={240}  src="/img/CodeIllustration.svg" />
+</div>
 
 Welcome to the developer documentation site for Econia, a hyper-parallelized on-chain order book for the [Aptos] blockchain.
 

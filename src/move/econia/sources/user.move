@@ -103,6 +103,8 @@
 /// * `get_all_market_account_ids_for_user()`
 /// * `get_asset_counts_custodian()`
 /// * `get_asset_counts_user()`
+/// * `get_market_account_market_info_custodian()`
+/// * `get_market_account_market_info_user()`
 /// * `has_market_account_by_market_account_id()`
 /// * `has_market_account_by_market_id()`
 ///
@@ -198,16 +200,25 @@
 ///
 /// ```
 ///
-/// Asset count lookup:
+/// Market account lookup:
 ///
 /// ```mermaid
 ///
 /// flowchart LR
 ///
+/// get_asset_counts_user --> get_asset_counts_internal
+///
 /// get_asset_counts_custodian --> get_asset_counts_internal
 /// get_asset_counts_custodian --> registry::get_custodian_id
 ///
-/// get_asset_counts_user --> get_asset_counts_internal
+///
+/// get_market_account_market_info_custodian -->
+///     get_market_account_market_info
+/// get_market_account_market_info_custodian -->
+///     registry::get_custodian_id
+///
+/// get_market_account_market_info_user -->
+///     get_market_account_market_info
 ///
 /// ```
 ///
@@ -681,6 +692,60 @@ module econia::user {
         custodian_id: u64
     ): u128 {
         ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128)
+    }
+
+    #[app]
+    /// Wrapped call to `get_market_account_market_info()` for
+    /// custodian.
+    ///
+    /// Restricted to custodian for given market account to prevent
+    /// excessive public queries and thus transaction collisions.
+    ///
+    /// # Testing
+    ///
+    /// * `test_register_market_accounts()`
+    public fun get_market_account_market_info_custodian(
+        user_address: address,
+        market_id: u64,
+        custodian_capability_ref: &CustodianCapability
+    ): (
+        TypeInfo,
+        String,
+        TypeInfo,
+        u64,
+        u64,
+        u64,
+        u64
+    ) acquires MarketAccounts {
+        get_market_account_market_info(
+            user_address, market_id,
+            registry::get_custodian_id(custodian_capability_ref))
+    }
+
+    #[app]
+    /// Wrapped call to `get_market_account_market_info()` for signing
+    /// user.
+    ///
+    /// Restricted to signing user for given market account to prevent
+    /// excessive public queries and thus transaction collisions.
+    ///
+    /// # Testing
+    ///
+    /// * `test_register_market_accounts()`
+    public fun get_market_account_market_info_user(
+        user: &signer,
+        market_id: u64
+    ): (
+        TypeInfo,
+        String,
+        TypeInfo,
+        u64,
+        u64,
+        u64,
+        u64
+    ) acquires MarketAccounts {
+        get_market_account_market_info(
+            address_of(user), market_id, NO_CUSTODIAN)
     }
 
     #[app]
@@ -1888,6 +1953,69 @@ module econia::user {
             // Merge coins into collateral.
             coin::merge(collateral_ref_mut, coins);
         };
+    }
+
+    /// Return `registry::MarketInfo` fields stored in market account.
+    ///
+    /// # Parameters
+    ///
+    /// * `user_address`: User address for market account.
+    /// * `market_id`: Market ID for market account.
+    /// * `custodian_id`: Custodian ID for market account.
+    ///
+    /// # Returns
+    ///
+    /// * `MarketAccount.base_type`
+    /// * `MarketAccount.base_name_generic`
+    /// * `MarketAccount.quote_type`
+    /// * `MarketAccount.lot_size`
+    /// * `MarketAccount.tick_size`
+    /// * `MarketAccount.min_size`
+    /// * `MarketAccount.underwriter_id`
+    ///
+    /// # Aborts
+    ///
+    /// * `E_NO_MARKET_ACCOUNTS`: No market accounts resource found.
+    /// * `E_NO_MARKET_ACCOUNT`: No market account resource found.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_market_account_market_info_no_account()`
+    /// * `test_get_market_account_market_info_no_accounts()`
+    /// * `test_register_market_accounts()`
+    fun get_market_account_market_info(
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64
+    ): (
+        TypeInfo,
+        String,
+        TypeInfo,
+        u64,
+        u64,
+        u64,
+        u64
+    ) acquires MarketAccounts {
+        // Assert user has market accounts resource.
+        assert!(exists<MarketAccounts>(user_address), E_NO_MARKET_ACCOUNTS);
+        // Immutably borrow market accounts map.
+        let market_accounts_map_ref =
+            &borrow_global<MarketAccounts>(user_address).map;
+        let market_account_id = // Get market account ID.
+            ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128);
+        // Assert user has market account for given market account ID.
+        assert!(table::contains(market_accounts_map_ref, market_account_id),
+                E_NO_MARKET_ACCOUNT);
+        let market_account_ref = // Immutably borrow market account.
+            table::borrow(market_accounts_map_ref, market_account_id);
+         // Return duplicate market info fields.
+        (market_account_ref.base_type,
+         market_account_ref.base_name_generic,
+         market_account_ref.quote_type,
+         market_account_ref.lot_size,
+         market_account_ref.tick_size,
+         market_account_ref.min_size,
+         market_account_ref.underwriter_id)
     }
 
     /// Register market account entries for given market account info.
@@ -3265,6 +3393,29 @@ module econia::user {
 
     #[test]
     #[expected_failure(abort_code = 3)]
+    /// Verify failure for no market account resource.
+    fun test_get_market_account_market_info_no_account()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register test market accounts.
+        register_market_accounts_test();
+        // Attempt invalid invocation.
+        get_market_account_market_info(@user, 0, 0);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 2)]
+    /// Verify failure for no market accounts resource.
+    fun test_get_market_account_market_info_no_accounts()
+    acquires MarketAccounts {
+        // Attempt invalid invocation.
+        get_market_account_market_info(@user, 0, 0);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 3)]
     /// Verify failure for no market account.
     fun test_get_next_order_access_key_internal_no_account()
     acquires
@@ -3978,6 +4129,47 @@ module econia::user {
         assert!(market_account_ref.quote_total == 0, 0);
         assert!(market_account_ref.quote_available == 0, 0);
         assert!(market_account_ref.quote_ceiling == 0, 0);
+        // Verify market info getter returns for self-custodied pure
+        // coin market account.
+        let (base_type_r, base_name_generic_r, quote_type_r, lot_size_r,
+             tick_size_r, min_size_r, underwriter_id_r) =
+            get_market_account_market_info_user(user, market_id_pure_coin);
+        assert!(base_type_r == type_info::type_of<BC>(), 0);
+        assert!(base_name_generic_r == base_name_generic_pure_coin, 0);
+        assert!(quote_type_r == type_info::type_of<QC>(), 0);
+        assert!(lot_size_r == lot_size_pure_coin, 0);
+        assert!(tick_size_r == tick_size_pure_coin, 0);
+        assert!(min_size_r == min_size_pure_coin, 0);
+        assert!(underwriter_id_r == underwriter_id_pure_coin, 0);
+        let custodian_capability = registry::get_custodian_capability_test(
+            CUSTODIAN_ID); // Get custodian capability.
+        // Verify market info getter returns for delegated pure coin
+        // market account.
+        let (base_type_r, base_name_generic_r, quote_type_r, lot_size_r,
+             tick_size_r, min_size_r, underwriter_id_r) =
+            get_market_account_market_info_custodian(
+                @user, market_id_pure_coin, &custodian_capability);
+        assert!(base_type_r == type_info::type_of<BC>(), 0);
+        assert!(base_name_generic_r == base_name_generic_pure_coin, 0);
+        assert!(quote_type_r == type_info::type_of<QC>(), 0);
+        assert!(lot_size_r == lot_size_pure_coin, 0);
+        assert!(tick_size_r == tick_size_pure_coin, 0);
+        assert!(min_size_r == min_size_pure_coin, 0);
+        assert!(underwriter_id_r == underwriter_id_pure_coin, 0);
+        // Drop custodian capability.
+        registry::drop_custodian_capability_test(custodian_capability);
+        // Verify market info getter returns for self-custodied generic
+        // market account.
+        let (base_type_r, base_name_generic_r, quote_type_r, lot_size_r,
+             tick_size_r, min_size_r, underwriter_id_r) =
+            get_market_account_market_info_user(user, market_id_generic);
+        assert!(base_type_r == type_info::type_of<GenericAsset>(), 0);
+        assert!(base_name_generic_r == base_name_generic_generic, 0);
+        assert!(quote_type_r == type_info::type_of<QC>(), 0);
+        assert!(lot_size_r == lot_size_generic, 0);
+        assert!(tick_size_r == tick_size_generic, 0);
+        assert!(min_size_r == min_size_generic, 0);
+        assert!(underwriter_id_r == underwriter_id_generic, 0);
     }
 
     #[test]

@@ -40,7 +40,7 @@ updated later per <code><a href="incentives.md#0xc0deb00c_incentives_set_incenti
 ## Incentive model
 
 
-As a permissionless system, Econia mitigates denial-of-service (DOS)
+As a permissionless system, Econia mitigates denial-of-service (DoS)
 attacks by charging utility coins for assorted operations. Econia
 also charges taker fees, denominated in the quote coin for a given
 market, which are distributed between integrators and Econia. The

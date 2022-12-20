@@ -67,6 +67,16 @@ html {
   color: #ffffff;
 }
 
+.menu__link--active {
+  background-color: #020202;
+  outline: 1px solid var(--ifm-color-primary);
+  border-radius: 0px;
+}
+
+.menu__link--active:not(.menu__link--sublist) {
+  background-color: #020202;
+}
+
 .customTable {
   width: 100%;
   display: table;

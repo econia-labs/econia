@@ -517,6 +517,14 @@ Here, the total quote amount increment again corresponds to an integer multiple 
 
 Note, however, that compared with the other viable parameter set, this set trades off size precision for price precision:
 twice as much size granularity entails one half as much price granularity.
+
+:::note
+
+Size granularity restrictions only apply to limit orders.
+Market orders and swaps allow users to specify precise trade amounts down to a single integer subunit.
+
+:::
+
 Hence the nominal price of 17792.27 `USD` per `BTC` must be truncated to either 17792.26 or 17792.28.
 For the latter case, this entails an integer price of 889614:
 

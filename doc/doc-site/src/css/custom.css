@@ -14,6 +14,16 @@
   --ifm-color-primary-lighter: #6ed5a3;
   --ifm-color-primary-lightest: #6ed5a3;
   --ifm-code-font-size: 95%;
+  --ifm-font-family-base: "Roboto Mono", monospace;
+
+  --ifm-navbar-height: 72px;
+  --ifm-navbar-background-color: #020202;
+  --ifm-navbar-padding-horizontal: 22px;
+  --ifm-navbar-search-input-icon: url(/img/SearchIcon.svg);
+  --ifm-navbar-search-input-background-color: #020202;
+
+  --ifm-h2-font-size: 48px;
+  --ifm-h2-line-height: 58px;
 
   --ifm-heading-color: #ffffff;
   --ifm-heading-font-family: "Jost", sans-serif;
@@ -35,8 +45,36 @@
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
 }
 
-p {
-  font-family: "Roboto Mono", monospace;
+html {
+  background-color: #020202;
+}
+
+.navbar {
+  border-bottom: 1px solid #565656;
+}
+
+.navbar__search-input {
+  border-radius: 0px;
+  border: 1px solid #aaaaaa;
+  color: #ffffff;
+  padding: "8px 8px 0px 36px";
+  width: 252px;
+  height: 36px;
+}
+
+.navbar__search-input::placeholder {
+  text-transform: uppercase;
+  color: #ffffff;
+}
+
+.menu__link--active {
+  background-color: #020202;
+  outline: 1px solid var(--ifm-color-primary);
+  border-radius: 0px;
+}
+
+.menu__link--active:not(.menu__link--sublist) {
+  background-color: #020202;
 }
 
 .customTable {
@@ -46,4 +84,43 @@ p {
 
 th {
   text-align: left;
+}
+
+.pagination-nav__link {
+  border-radius: 0px;
+  padding: 0px;
+  border: none;
+  /* outline: 1px solid #aaaaaa; */
+}
+
+.pagination-nav__link--next {
+  text-align: left;
+  background: no-repeat center/98% url(/img/PaginationNextBackground.svg) ;
+}
+
+.pagination-nav__link--next:hover {
+  /* TODO: The image moves on hover */
+  background: no-repeat center/98% url(/img/PaginationNextBackgroundHover.svg);
+}
+
+.pagination-nav__link--prev {
+  /* TODO: Need to clarify whether we want to keep the previous navigation */
+  display: none;
+}
+
+.pagination-nav__sublabel,
+.pagination-nav__label::before,
+.pagination-nav__label::after {
+  display: none;
+}
+
+.pagination-nav__label {
+  color: #ffffff;
+  text-transform: uppercase;
+  font-weight: normal;
+  padding: 0px 34px;
+}
+
+.pagination-nav__label:hover {
+  color: var(--ifm-color-primary);
 }

@@ -65,10 +65,11 @@ module.exports = {
   themeConfig:
     ({
       navbar: {
-        title: "Econia Docs",
         logo: {
           alt: "Econia Logo",
-          src: "img/logo.svg",
+          src: "img/EconiaHeader.svg",
+          width: "156px",
+          height: "24px",
         },
         items: [],
       },

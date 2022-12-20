@@ -1,8 +1,15 @@
 # The registry
 
-Documentation coming soon!
+Econia's [registry module documentation] contains an overview of relevant functionality for Econia's global registry and recognized markets lists.
 
-<!---
+Stay tuned for more docs that will be added here, coming soon!
+
+<!---Alphabetized reference links-->
+
+[registry module documentation]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md
+
+<!--- Commented out text harvested from v3
+
 ## General
 
 Econia contains a global [`Registry`](https://github.com/econia-labs/econia/tree/main/src/move/econia/build/Econia/docs/registry.md#0xc0deb00c_registry_Registry) that tracks information about [markets](#markets) and [custodians](#custodians).

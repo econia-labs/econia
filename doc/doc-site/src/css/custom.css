@@ -85,3 +85,42 @@ html {
 th {
   text-align: left;
 }
+
+.pagination-nav__link {
+  border-radius: 0px;
+  padding: 0px;
+  border: none;
+  /* outline: 1px solid #aaaaaa; */
+}
+
+.pagination-nav__link--next {
+  text-align: left;
+  background: no-repeat center/98% url(/img/PaginationNextBackground.svg) ;
+}
+
+.pagination-nav__link--next:hover {
+  /* TODO: The image moves on hover */
+  background: no-repeat center/98% url(/img/PaginationNextBackgroundHover.svg);
+}
+
+.pagination-nav__link--prev {
+  /* TODO: Need to clarify whether we want to keep the previous navigation */
+  display: none;
+}
+
+.pagination-nav__sublabel,
+.pagination-nav__label::before,
+.pagination-nav__label::after {
+  display: none;
+}
+
+.pagination-nav__label {
+  color: #ffffff;
+  text-transform: uppercase;
+  font-weight: normal;
+  padding: 0px 34px;
+}
+
+.pagination-nav__label:hover {
+  color: var(--ifm-color-primary);
+}

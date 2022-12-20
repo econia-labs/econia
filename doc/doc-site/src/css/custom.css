@@ -19,6 +19,8 @@
   --ifm-navbar-height: 72px;
   --ifm-navbar-background-color: #020202;
   --ifm-navbar-padding-horizontal: 22px;
+  --ifm-navbar-search-input-icon: url(/img/SearchIcon.svg);
+  --ifm-navbar-search-input-background-color: #020202;
 
   --ifm-h2-font-size: 48px;
   --ifm-h2-line-height: 58px;
@@ -48,7 +50,21 @@ body {
 }
 
 .navbar {
-  border-bottom: 1px solid #565656
+  border-bottom: 1px solid #565656;
+}
+
+.navbar__search-input {
+  border-radius: 0px;
+  border: 1px solid #aaaaaa;
+  color: #ffffff;
+  padding: "8px 8px 0px 36px";
+  width: 252px;
+  height: 36px;
+}
+
+.navbar__search-input::placeholder {
+  text-transform: uppercase;
+  color: #ffffff;
 }
 
 .customTable {

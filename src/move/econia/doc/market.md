@@ -3414,7 +3414,7 @@ custodian ID of order on order book having market order ID.
     // Assert passed custodian ID matches that from order.
     <b>assert</b>!(custodian_id == order_custodian_id, <a href="market.md#0xc0deb00c_market_E_INVALID_CUSTODIAN">E_INVALID_CUSTODIAN</a>);
     // Cancel order <a href="user.md#0xc0deb00c_user">user</a>-side, thus verifying <a href="market.md#0xc0deb00c_market">market</a> order ID.
-    <a href="user.md#0xc0deb00c_user_cancel_order_internal">user::cancel_order_internal</a>(<a href="user.md#0xc0deb00c_user">user</a>, market_id, custodian_id, side,
+    <a href="user.md#0xc0deb00c_user_cancel_order_internal">user::cancel_order_internal</a>(<a href="user.md#0xc0deb00c_user">user</a>, market_id, custodian_id, side, size,
                                 price, order_access_key, market_order_id);
     // Emit a maker cancel <a href="">event</a>.
     <a href="_emit_event">event::emit_event</a>(&<b>mut</b> order_book_ref_mut.maker_events, <a href="market.md#0xc0deb00c_market_MakerEvent">MakerEvent</a>{
@@ -3528,8 +3528,8 @@ custodian ID of order on order book having market order ID.
     // Change order size <a href="user.md#0xc0deb00c_user">user</a>-side, thus verifying <a href="market.md#0xc0deb00c_market">market</a> order ID
     // and new size.
     <a href="user.md#0xc0deb00c_user_change_order_size_internal">user::change_order_size_internal</a>(
-        <a href="user.md#0xc0deb00c_user">user</a>, market_id, custodian_id, side, new_size, order_ref_mut.price,
-        order_ref_mut.order_access_key, market_order_id);
+        <a href="user.md#0xc0deb00c_user">user</a>, market_id, custodian_id, side, order_ref_mut.size, new_size,
+        order_ref_mut.price, order_ref_mut.order_access_key, market_order_id);
     // Update order on book <b>with</b> new size.
     order_ref_mut.size = new_size;
     // Emit a maker change <a href="">event</a>.
@@ -3827,8 +3827,8 @@ conditions are then checked.
         (optional_base_coins, quote_coins, market_order_id) =
             <a href="user.md#0xc0deb00c_user_fill_order_internal">user::fill_order_internal</a>&lt;BaseType, QuoteType&gt;(
                 maker, market_id, custodian_id, side,
-                order_ref_mut.order_access_key, fill_size,
-                complete_fill, optional_base_coins, quote_coins,
+                order_ref_mut.order_access_key, order_ref_mut.size,
+                fill_size, complete_fill, optional_base_coins, quote_coins,
                 fill_size * lot_size, ticks_filled * tick_size);
         <a href="_emit_event">event::emit_event</a>(&<b>mut</b> order_book_ref_mut.taker_events, <a href="market.md#0xc0deb00c_market_TakerEvent">TakerEvent</a>{
             market_id, side, market_order_id, maker, custodian_id, size,
@@ -4265,11 +4265,9 @@ ID is emitted in a maker evict event.
         // Unpack evicted order, storing fields for <a href="">event</a>.
         <b>let</b> <a href="market.md#0xc0deb00c_market_Order">Order</a>{size, price, <a href="user.md#0xc0deb00c_user">user</a>, custodian_id, order_access_key} =
             <a href="_destroy_some">option::destroy_some</a>(evictee_value);
-        // Get price of cancelled order.
-        <b>let</b> price_cancel = evictee_access_key & <a href="market.md#0xc0deb00c_market_HI_PRICE">HI_PRICE</a>;
         // Cancel order <a href="user.md#0xc0deb00c_user">user</a>-side, storing its <a href="market.md#0xc0deb00c_market">market</a> order ID.
         <b>let</b> market_order_id_cancel = <a href="user.md#0xc0deb00c_user_cancel_order_internal">user::cancel_order_internal</a>(
-            <a href="user.md#0xc0deb00c_user">user</a>, market_id, custodian_id, side, price_cancel,
+            <a href="user.md#0xc0deb00c_user">user</a>, market_id, custodian_id, side, size, price,
             order_access_key, (<a href="market.md#0xc0deb00c_market_NIL">NIL</a> <b>as</b> u128));
         // Emit a maker evict <a href="">event</a>.
         <a href="_emit_event">event::emit_event</a>(&<b>mut</b> order_book_ref_mut.maker_events, <a href="market.md#0xc0deb00c_market_MakerEvent">MakerEvent</a>{

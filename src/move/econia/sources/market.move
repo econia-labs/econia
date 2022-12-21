@@ -1732,7 +1732,7 @@ module econia::market {
         // Assert passed custodian ID matches that from order.
         assert!(custodian_id == order_custodian_id, E_INVALID_CUSTODIAN);
         // Cancel order user-side, thus verifying market order ID.
-        user::cancel_order_internal(user, market_id, custodian_id, side,
+        user::cancel_order_internal(user, market_id, custodian_id, side, size,
                                     price, order_access_key, market_order_id);
         // Emit a maker cancel event.
         event::emit_event(&mut order_book_ref_mut.maker_events, MakerEvent{
@@ -1809,8 +1809,8 @@ module econia::market {
         // Change order size user-side, thus verifying market order ID
         // and new size.
         user::change_order_size_internal(
-            user, market_id, custodian_id, side, new_size, order_ref_mut.price,
-            order_ref_mut.order_access_key, market_order_id);
+            user, market_id, custodian_id, side, order_ref_mut.size, new_size,
+            order_ref_mut.price, order_ref_mut.order_access_key, market_order_id);
         // Update order on book with new size.
         order_ref_mut.size = new_size;
         // Emit a maker change event.
@@ -2042,8 +2042,8 @@ module econia::market {
             (optional_base_coins, quote_coins, market_order_id) =
                 user::fill_order_internal<BaseType, QuoteType>(
                     maker, market_id, custodian_id, side,
-                    order_ref_mut.order_access_key, fill_size,
-                    complete_fill, optional_base_coins, quote_coins,
+                    order_ref_mut.order_access_key, order_ref_mut.size,
+                    fill_size, complete_fill, optional_base_coins, quote_coins,
                     fill_size * lot_size, ticks_filled * tick_size);
             event::emit_event(&mut order_book_ref_mut.taker_events, TakerEvent{
                 market_id, side, market_order_id, maker, custodian_id, size,
@@ -2423,11 +2423,9 @@ module econia::market {
             // Unpack evicted order, storing fields for event.
             let Order{size, price, user, custodian_id, order_access_key} =
                 option::destroy_some(evictee_value);
-            // Get price of cancelled order.
-            let price_cancel = evictee_access_key & HI_PRICE;
             // Cancel order user-side, storing its market order ID.
             let market_order_id_cancel = user::cancel_order_internal(
-                user, market_id, custodian_id, side, price_cancel,
+                user, market_id, custodian_id, side, size, price,
                 order_access_key, (NIL as u128));
             // Emit a maker evict event.
             event::emit_event(&mut order_book_ref_mut.maker_events, MakerEvent{

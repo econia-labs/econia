@@ -404,6 +404,9 @@ module econia::user {
     const E_ACCESS_KEY_MISMATCH: u64 = 17;
     /// Coin type is generic asset.
     const E_COIN_TYPE_IS_GENERIC_ASSET: u64 = 18;
+    /// Mismatch between expected size before operation and actual size
+    /// before operation.
+    const E_START_SIZE_MISMATCH: u64 = 19;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -1068,7 +1071,7 @@ module econia::user {
     /// * `market_id`: Market ID for market account.
     /// * `custodian_id`: Custodian ID for market account.
     /// * `side`: `ASK` or `BID`, the side on which an order was placed.
-    /// * `size`: Order size, in lots.
+    /// * `start_size`: The open order size before filling.
     /// * `price`: Order price, in ticks per lot.
     /// * `order_access_key`: Order access key for user order lookup.
     /// * `market_order_id`: `NIL` if order cancellation originates from
@@ -1088,6 +1091,8 @@ module econia::user {
     ///
     /// # Aborts
     ///
+    /// * `E_START_SIZE_MISMATCH`: Mismatch between expected size before
+    ///   operation and actual size before operation.
     /// * `E_INVALID_MARKET_ORDER_ID`: Market order ID mismatch with
     ///   user's open order, when market order ID not passed as `NIL`.
     ///
@@ -1116,12 +1121,14 @@ module econia::user {
     ///
     /// # Failure testing
     ///
-    /// * `test_cancel_order_internal_mismatch()`
+    /// * `test_cancel_order_internal_invalid_market_order_id()`
+    /// * `test_cancel_order_internal_start_size_mismatch()`
     public(friend) fun cancel_order_internal(
         user_address: address,
         market_id: u64,
         custodian_id: u64,
         side: bool,
+        start_size: u64,
         price: u64,
         order_access_key: u64,
         market_order_id: u128
@@ -1157,6 +1164,8 @@ module econia::user {
         let order_ref_mut = // Mutably borrow order to remove.
             tablist::borrow_mut(orders_ref_mut, order_access_key);
         let size = order_ref_mut.size; // Store order's size field.
+        // Assert order starts off with expected size.
+        assert!(size == start_size, E_START_SIZE_MISMATCH);
         // If passed market order ID is null, reassign its value to the
         // market order ID encoded in the order. Else assert that it is
         // equal to market order ID in user's order.
@@ -1189,6 +1198,7 @@ module econia::user {
     /// * `market_id`: Market ID for market account.
     /// * `custodian_id`: Custodian ID for market account.
     /// * `side`: `ASK` or `BID`, the side on which an order was placed.
+    /// * `start_size`: The open order size before size change.
     /// * `new_size`: New order size, in lots, checked during inner call
     ///   to `place_order_internal()`.
     /// * `price`: Order price, in ticks per lot.
@@ -1218,6 +1228,7 @@ module econia::user {
         market_id: u64,
         custodian_id: u64,
         side: bool,
+        start_size: u64,
         new_size: u64,
         price: u64,
         order_access_key: u64,
@@ -1237,9 +1248,9 @@ module econia::user {
         let order_ref = tablist::borrow(orders_ref, order_access_key);
         // Assert change in size.
         assert!(order_ref.size != new_size, E_CHANGE_ORDER_NO_CHANGE);
-        // Cancel order with size to be changed.
-        cancel_order_internal(user_address, market_id, custodian_id, side,
-                              price, order_access_key, market_order_id);
+        cancel_order_internal( // Cancel order with size to be changed.
+            user_address, market_id, custodian_id, side, start_size, price,
+            order_access_key, market_order_id);
         place_order_internal( // Place order with new size.
             user_address, market_id, custodian_id, side, new_size, price,
             market_order_id, order_access_key);
@@ -1316,6 +1327,7 @@ module econia::user {
     /// * `custodian_id`: Custodian ID for market account.
     /// * `side`: `ASK` or `BID`, the side of the open order.
     /// * `order_access_key`: The open order's access key.
+    /// * `start_size`: The open order size before filling.
     /// * `fill_size`: The number of lots filled.
     /// * `complete_fill`: `true` if order is completely filled.
     /// * `optional_base_coins`: Optional external base coins passing
@@ -1333,6 +1345,11 @@ module econia::user {
     ///   matching engine.
     /// * `u128`: Market order ID just filled against.
     ///
+    /// # Aborts
+    ///
+    /// * `E_START_SIZE_MISMATCH`: Mismatch between expected size before
+    ///   operation and actual size before operation.
+    ///
     /// # Assumptions
     ///
     /// * Only called by the matching engine as described above.
@@ -1342,6 +1359,7 @@ module econia::user {
     /// * `test_fill_order_internal_ask_complete_base_coin()`
     /// * `test_fill_order_internal_bid_complete_base_coin()`
     /// * `test_fill_order_internal_bid_partial_base_generic()`
+    /// * `test_fill_order_internal_start_size_mismatch()`
     public(friend) fun fill_order_internal<
         BaseType,
         QuoteType
@@ -1351,6 +1369,7 @@ module econia::user {
         custodian_id: u64,
         side: bool,
         order_access_key: u64,
+        start_size: u64,
         fill_size: u64,
         complete_fill: bool,
         optional_base_coins: Option<Coin<BaseType>>,
@@ -1404,6 +1423,8 @@ module econia::user {
             tablist::borrow_mut(orders_ref_mut, order_access_key);
         // Store market order ID.
         let market_order_id = order_ref_mut.market_order_id;
+        // Assert order starts off with expected size.
+        assert!(order_ref_mut.size == start_size, E_START_SIZE_MISMATCH);
         if (complete_fill) { // If completely filling order:
             // Clear out order's market order ID field.
             order_ref_mut.market_order_id = (NIL as u128);
@@ -2590,7 +2611,7 @@ module econia::user {
     #[test]
     #[expected_failure(abort_code = 15)]
     /// Verify failure for market account ID mismatch.
-    fun test_cancel_order_internal_mismatch()
+    fun test_cancel_order_internal_invalid_market_order_id()
     acquires
         Collateral,
         MarketAccounts
@@ -2611,7 +2632,34 @@ module econia::user {
                              size, price, market_order_id, 1);
         // Attempt invalid cancellation.
         cancel_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
-                              price, 1, market_order_id + 1);
+                              size, price, 1, market_order_id + 1);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 19)]
+    /// Verify failure for start size mismatch.
+    fun test_cancel_order_internal_start_size_mismatch()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        register_market_accounts_test(); // Register test markets.
+        // Define order parameters.
+        let market_order_id = 123;
+        let size            = MIN_SIZE_PURE_COIN;
+        let price           = 1;
+        let side            = BID;
+        // Deposit starting base and quote coins.
+        deposit_coins<BC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(BASE_START));
+        deposit_coins<QC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(QUOTE_START));
+        // Place order
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                             size, price, market_order_id, 1);
+        // Attempt invalid cancellation.
+        cancel_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                              size + 1, price, 1, market_order_id);
     }
 
     #[test]
@@ -2642,8 +2690,8 @@ module econia::user {
         place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
                              size_old, price, market_order_id, 1);
         change_order_size_internal( // Change order size.
-            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, size, price,
-            order_access_key, market_order_id);
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, size_old, size,
+            price, order_access_key, market_order_id);
         // Assert asset counts.
         let (base_total , base_available , base_ceiling,
              quote_total, quote_available, quote_ceiling) =
@@ -2685,8 +2733,8 @@ module econia::user {
         place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
                              size_old, price, market_order_id, 1);
         change_order_size_internal( // Change order size.
-            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, size, price,
-            order_access_key, market_order_id);
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, size_old, size,
+            price, order_access_key, market_order_id);
         // Assert asset counts.
         let (base_total , base_available , base_ceiling,
              quote_total, quote_available, quote_ceiling) =
@@ -2723,7 +2771,7 @@ module econia::user {
         place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
                              size, price, market_order_id, 1);
         change_order_size_internal( // Attempt invalid order size change.
-            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, size, price,
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, size, size, price,
             1, market_order_id);
     }
 
@@ -3073,7 +3121,7 @@ module econia::user {
         place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
                              size, price, market_order_id, 2);
         cancel_order_internal(
-            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, price,
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, size, price,
             order_access_key_cancelled, market_order_id);
         // Initialize external coins passing through matching engine.
         let optional_base_coins = option::some(coin::zero());
@@ -3083,7 +3131,7 @@ module econia::user {
         (optional_base_coins, quote_coins, market_order_id) =
             fill_order_internal<BC, QC>(
                 @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
-                order_access_key_filled, size, complete_fill,
+                order_access_key_filled, size, size, complete_fill,
                 optional_base_coins, quote_coins, base_fill, quote_fill);
         // Assert market order ID.
         assert!(market_order_id == market_order_id, 0);
@@ -3162,7 +3210,7 @@ module econia::user {
         (optional_base_coins, quote_coins, market_order_id) =
             fill_order_internal<BC, QC>(
                 @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
-                order_access_key_filled, size, complete_fill,
+                order_access_key_filled, size, size, complete_fill,
                 optional_base_coins, quote_coins, base_fill, quote_fill);
         // Assert market order ID.
         assert!(market_order_id == market_order_id, 0);
@@ -3243,7 +3291,7 @@ module econia::user {
         (optional_base_coins, quote_coins, market_order_id) =
             fill_order_internal<GenericAsset, QC>(
                 @user, MARKET_ID_GENERIC, CUSTODIAN_ID, side,
-                order_access_key_filled, fill_size, complete_fill,
+                order_access_key_filled, size, fill_size, complete_fill,
                 optional_base_coins, quote_coins, base_fill, quote_fill);
         // Assert market order ID.
         assert!(market_order_id == market_order_id, 0);
@@ -3280,6 +3328,47 @@ module econia::user {
     }
 
     #[test]
+    #[expected_failure(abort_code = 19)]
+    /// Verify failure for start size mismatch. Based on
+    /// `test_fill_order_internal_ask_complete_base_coin()`.
+    fun test_fill_order_internal_start_size_mismatch()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        register_market_accounts_test(); // Register test markets.
+        // Define order parameters.
+        let market_order_id = 1234;
+        let size            = 789;
+        let price           = 321;
+        let side            = ASK;
+        let complete_fill   = true;
+        let access_key      = 1;
+        // Calculate base asset and quote asset fill amounts.
+        let base_fill = size * LOT_SIZE_PURE_COIN;
+        let quote_fill = size * price * TICK_SIZE_PURE_COIN;
+        // Deposit starting base and quote coins.
+        deposit_coins<BC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(BASE_START));
+        deposit_coins<QC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(QUOTE_START));
+        place_order_internal( // Place order.
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, size, price,
+            market_order_id, access_key);
+        // Initialize external coins passing through matching engine.
+        let optional_base_coins = option::some(coin::zero());
+        let quote_coins = assets::mint_test(quote_fill);
+        // Fill order, storing base and quote coins for matching engine.
+        (optional_base_coins, quote_coins, _) = fill_order_internal<BC, QC>(
+                @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, access_key,
+                size + 1, size, complete_fill, optional_base_coins, quote_coins,
+                base_fill, quote_fill);
+        // Destroy external coins.
+        assets::burn(option::destroy_some(optional_base_coins));
+        assets::burn(quote_coins);
+    }
+
+    #[test]
     /// Verify expected returns.
     fun test_get_active_market_order_ids_internal()
     acquires
@@ -3313,7 +3402,7 @@ module econia::user {
         place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, ASK,
                              size, price, market_order_id_3, 3);
         cancel_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, ASK,
-                              price, 2, market_order_id_2);
+                              size, price, 2, market_order_id_2);
         // Get expected market order IDs vector.
         let expected = vector[market_order_id_1, market_order_id_3];
         // Assert expected return.
@@ -3329,7 +3418,7 @@ module econia::user {
             @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, BID) == expected, 0);
         // Cancel order.
         cancel_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, BID,
-                              price, 1, market_order_id_4);
+                              size, price, 1, market_order_id_4);
         // Assert expected return.
         assert!(get_active_market_order_ids_internal(
             @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, BID) == vector[], 0);
@@ -3611,7 +3700,7 @@ module econia::user {
         assert!(size_r == size, 0);
         // Evict order, storing returned market order ID.
         market_order_id_r = cancel_order_internal(
-            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, price,
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, size, price,
             order_access_key, (NIL as u128));
         // Assert returned market order ID.
         assert!(market_order_id_r == market_order_id, 0);
@@ -3691,7 +3780,7 @@ module econia::user {
         assert!(size_r == size, 0);
         // Cancel order, storing returned market order ID.
         market_order_id_r = cancel_order_internal(
-            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, price,
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, size, price,
             order_access_key, market_order_id);
         // Assert returned market order ID.
         assert!(market_order_id_r == market_order_id, 0);
@@ -3759,7 +3848,7 @@ module econia::user {
             @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side) == 3, 0);
         // Cancel first order, storing market order ID.
         let market_order_id = cancel_order_internal(
-            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, price, 1,
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, size, price, 1,
             market_order_id_1);
         // Assert returned market order ID.
         assert!(market_order_id == market_order_id_1, 0);
@@ -3771,7 +3860,7 @@ module econia::user {
             @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side) == 1, 0);
         // Cancel second order, storting market order ID.
         market_order_id = cancel_order_internal(
-            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, price, 2,
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, size, price, 2,
             market_order_id_2);
         // Assert returned market order ID.
         assert!(market_order_id == market_order_id_2, 0);

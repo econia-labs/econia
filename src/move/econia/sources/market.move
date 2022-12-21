@@ -614,7 +614,7 @@ module econia::market {
     const E_SIZE_PRICE_QUOTE_OVERFLOW: u64 = 17;
     /// Invalid restriction flag.
     const E_INVALID_RESTRICTION: u64 = 18;
-    /// Taker and maker have same address.
+    /// A self match occurs when self match behavior is abort.
     const E_SELF_MATCH: u64 = 19;
     /// No room to insert order with such low price-time priority.
     const E_PRICE_TIME_PRIORITY_TOO_LOW: u64 = 20;
@@ -632,6 +632,8 @@ module econia::market {
     const E_HEAD_KEY_PRICE_MISMATCH: u64 = 26;
     /// Simulation query called by invalid account.
     const E_NOT_SIMULATION_ACCOUNT: u64 = 27;
+    /// Invalid self match behavior flag.
+    const E_INVALID_SELF_MATCH_BEHAVIOR: u64 = 28;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -639,6 +641,8 @@ module econia::market {
 
     /// Ascending AVL queue flag, for asks AVL queue.
     const ASCENDING: bool = true;
+    /// Flag to abort during a self match.
+    const ABORT: u8 = 0;
     /// Flag for ask side.
     const ASK: bool = true;
     /// Flag for bid side.
@@ -647,6 +651,12 @@ module econia::market {
     const BUY: bool = false;
     /// Flag for `MakerEvent.type` when order is cancelled.
     const CANCEL: u8 = 0;
+    /// Flag to cancel maker and taker order during a self match.
+    const CANCEL_BOTH: u8 = 1;
+    /// Flag to cancel maker order only during a self match.
+    const CANCEL_MAKER: u8 = 2;
+    /// Flag to cancel taker order only during a self match.
+    const CANCEL_TAKER: u8 = 3;
     /// Flag for `MakerEvent.type` when order size is changed.
     const CHANGE: u8 = 1;
     /// Critical tree height above which evictions may take place.
@@ -674,6 +684,9 @@ module econia::market {
     const NIL: u64 = 0;
     /// Custodian ID flag for no custodian.
     const NO_CUSTODIAN: u64 = 0;
+    /// Taker address flag for when taker order does not originate from
+    /// a market account.
+    const NO_MARKET_ACCOUNT: address = @0x0;
     /// Flag for no order restriction.
     const NO_RESTRICTION: u8 = 0;
     /// Underwriter ID flag for no underwriter.
@@ -687,8 +700,6 @@ module econia::market {
     /// Number of bits maker order counter is shifted in a market order
     /// ID.
     const SHIFT_COUNTER: u8 = 64;
-    /// Taker address flag for when taker is unknown.
-    const UNKNOWN_TAKER: address = @0x0;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -896,6 +907,7 @@ module econia::market {
         size: u64,
         price: u64,
         restriction: u8,
+        self_match_behavior: u8,
         custodian_capability_ref: &CustodianCapability
     ): (
         u128,
@@ -915,6 +927,7 @@ module econia::market {
             size,
             price,
             restriction,
+            self_match_behavior,
             CRITICAL_HEIGHT)
     }
 
@@ -941,6 +954,7 @@ module econia::market {
         size: u64,
         price: u64,
         restriction: u8,
+        self_match_behavior: u8
     ): (
         u128,
         u64,
@@ -959,6 +973,7 @@ module econia::market {
             size,
             price,
             restriction,
+            self_match_behavior,
             CRITICAL_HEIGHT)
     }
 
@@ -982,6 +997,7 @@ module econia::market {
         min_quote: u64,
         max_quote: u64,
         limit_price: u64,
+        self_match_behavior: u8,
         custodian_capability_ref: &CustodianCapability
     ): (
         u64,
@@ -998,7 +1014,8 @@ module econia::market {
             max_base,
             min_quote,
             max_quote,
-            limit_price)
+            limit_price,
+            self_match_behavior)
     }
 
     /// Public function wrapper for `place_market_order()` for placing
@@ -1021,6 +1038,7 @@ module econia::market {
         min_quote: u64,
         max_quote: u64,
         limit_price: u64,
+        self_match_behavior: u8
     ): (
         u64,
         u64,
@@ -1036,7 +1054,8 @@ module econia::market {
             max_base,
             min_quote,
             max_quote,
-            limit_price)
+            limit_price,
+            self_match_behavior)
     }
 
     /// Register pure coin market, return resultant market ID.
@@ -1230,12 +1249,12 @@ module econia::market {
             // If a sell, need max base but not quote.
             (option::some(coin::withdraw<BaseType>(user, max_base)),
              coin::zero<QuoteType>());
-        // Swap against order book, storing modified coin inputs, base
-        // and quote trade amounts, and quote fees paid.
+        // Swap against order book, storing optionally modified coin
+        // inputs, base and quote trade amounts, and quote fees paid.
         let (optional_base_coins, quote_coins, base_traded, quote_traded, fees)
-            = swap(market_id, NO_UNDERWRITER, user_address, integrator,
-                   direction, min_base, max_base, min_quote, max_quote,
-                   limit_price, optional_base_coins, quote_coins);
+            = swap(market_id, NO_UNDERWRITER, integrator, direction, min_base,
+                   max_base, min_quote, max_quote, limit_price,
+                   optional_base_coins, quote_coins);
         // Deposit base coins back to user's coin store.
         coin::deposit(user_address, option::destroy_some(optional_base_coins));
         // Deposit quote coins back to user's coin store.
@@ -1349,13 +1368,13 @@ module econia::market {
         range_check_trade( // Range check trade amounts.
             direction, min_base, max_base, min_quote, max_quote,
             base_value, base_value, quote_value, quote_value);
-        // Swap against order book, storing modified coin inputs, base
-        // and quote trade amounts, and quote fees paid.
+        // Swap against order book, storing optionally modified coin
+        // inputs, base and quote trade amounts, and quote fees paid.
         let (optional_base_coins, quote_coins_matched, base_traded,
              quote_traded, fees) = swap(
-                market_id, NO_UNDERWRITER, UNKNOWN_TAKER, integrator,
-                direction, min_base, max_base, min_quote, max_quote,
-                limit_price, optional_base_coins, quote_coins_to_match);
+                market_id, NO_UNDERWRITER, integrator, direction, min_base,
+                max_base, min_quote, max_quote, limit_price,
+                optional_base_coins, quote_coins_to_match);
         // Merge matched quote coins back into holdings.
         coin::merge(&mut quote_coins, quote_coins_matched);
         // Get base coins from option.
@@ -1450,13 +1469,13 @@ module econia::market {
         range_check_trade( // Range check trade amounts.
             direction, min_base, max_base, min_quote, max_quote,
             base_value, base_value, quote_value, quote_value);
-        // Swap against order book, storing modified quote coin input,
-        // base and quote trade amounts, and quote fees paid.
+        // Swap against order book, storing optionally modified quote
+        // coin input, base and quote trade amounts, quote fees paid.
         let (optional_base_coins, quote_coins_matched, base_traded,
              quote_traded, fees) = swap(
-                market_id, underwriter_id, UNKNOWN_TAKER, integrator,
-                direction, min_base, max_base, min_quote, max_quote,
-                limit_price, option::none(), quote_coins_to_match);
+                market_id, underwriter_id, integrator, direction, min_base,
+                max_base, min_quote, max_quote, limit_price, option::none(),
+                quote_coins_to_match);
         // Destroy empty base coin option.
         option::destroy_none<Coin<GenericAsset>>(optional_base_coins);
         // Merge matched quote coins back into holdings.
@@ -1550,9 +1569,11 @@ module econia::market {
         size: u64,
         price: u64,
         restriction: u8,
+        self_match_behavior: u8
     ) acquires OrderBooks {
         place_limit_order_user<BaseType, QuoteType>(
-            user, market_id, integrator, side, size, price, restriction);
+            user, market_id, integrator, side, size, price, restriction,
+            self_match_behavior);
     }
 
     #[cmd]
@@ -1574,10 +1595,11 @@ module econia::market {
         min_quote: u64,
         max_quote: u64,
         limit_price: u64,
+        self_match_behavior: u8
     ) acquires OrderBooks {
         place_market_order_user<BaseType, QuoteType>(
             user, market_id, integrator, direction, min_base, max_base,
-            min_quote, max_quote, limit_price);
+            min_quote, max_quote, limit_price, self_match_behavior);
     }
 
     #[cmd]
@@ -1841,9 +1863,11 @@ module econia::market {
     ///
     /// * `market_id`: Market ID of market.
     /// * `order_book_ref_mut`: Mutable reference to market order book.
-    /// * `taker`: Address of taker whose order is matched. May be
-    ///   passed as `UNKNOWN_TAKER` when taker order originates from
-    ///   a standalone coin swap or a generic swap.
+    /// * `taker`: Address of taker whose order is matched. Passed as
+    ///   `NO_MARKET_ACCOUNT` when taker order originates from a swap.
+    /// * `custodian_id`: Custodian ID associated with a taker market
+    ///   account, if any. Should be passed as `NO_CUSTODIAN` if `taker`
+    ///   is `NO_MARKET_ACCOUNT`.
     /// * `integrator`: The integrator for the taker order, who collects
     ///   a portion of taker fees at their
     ///   `incentives::IntegratorFeeStore` for the given market. May be
@@ -1866,6 +1890,8 @@ module econia::market {
     ///   matching should halt. If direction is `SELL`, the price below
     ///   which matching should halt. Can be passed as `HI_PRICE` if a
     ///   `BUY` or `0` if a `SELL` to approve matching at any price.
+    /// * `self_match_behavior`: `ABORT`, `CANCEL_BOTH`, `CANCEL_MAKER`,
+    ///   or `CANCEL_TAKER`. Ignored if no self matching takes place.
     /// * `optional_base_coins`: None if `BaseType` is
     ///   `registry::GenericAsset` (market is generic), else base coin
     ///   holdings for pure coin market, which are incremented if
@@ -1886,6 +1912,7 @@ module econia::market {
     /// * `u64`: Quote coin amount traded by taker, inclusive of fees:
     ///   net change in taker's quote coin holdings.
     /// * `u64`: Amount of quote coin fees paid.
+    /// * `bool`: `true` if a self match that results in a taker cancel.
     ///
     /// # Emits
     ///
@@ -1898,47 +1925,14 @@ module econia::market {
     ///   price.
     /// * `E_HEAD_KEY_PRICE_MISMATCH`: AVL queue head price does not
     ///   match head order price.
-    /// * `E_SELF_MATCH`: Taker and a matched maker have same address.
+    /// * `E_SELF_MATCH`: A self match occurs when `self_match_behavior`
+    ///   is `ABORT`.
+    /// * `E_INVALID_SELF_MATCH_BEHAVIOR`: A self match occurs but an
+    ///   invalid flag is passed.
     /// * `E_MIN_BASE_NOT_TRADED`: Minimum base asset trade amount
     ///   requirement not met.
     /// * `E_MIN_QUOTE_NOT_TRADED`: Minimum quote asset trade amount
     ///   requirement not met.
-    ///
-    /// # Algorithm description
-    ///
-    /// After checking price, lot size, and tick size, the taker fee
-    /// divisor is used to calculate the max quote coin match amount
-    /// for the given direction. Max lot and tick fill amounts are
-    /// calculated, and counters are initiated for the number of lots
-    /// and ticks to fill until reaching the max permitted amount. The
-    /// corresponding AVL queue is borrowed, and loopwise matching
-    /// executes against the head of the queue as long as it is empty:
-    ///
-    /// The price of the order at the head of the AVL queue is compared
-    /// against the limit price, and the loop breaks if the limit price
-    /// condition is not met. Then the max fill size is calculated based
-    /// on the number of ticks left to fill until max and the price for
-    /// the given order, and compared against the number of lots to fill
-    /// until max. The lesser of the two is taken as the max fill size,
-    /// the order is borrowed and its price is checked against that
-    /// indicated for the AVL queue head, then the max fill size is
-    /// compared against the order size to determine the fill size and
-    /// if a complete fill takes place. If no size can be filled the
-    /// loop breaks, otherwise the number of ticks is calculated, and
-    /// lots and ticks until max counters are updated. The self-match
-    /// condition is checked, then the order is filled user side and a
-    /// taker event is emitted. If there was a complete fill, the maker
-    /// order is removed from the head of the AVL queue and the loop
-    /// breaks if there are not lots or ticks left to fill. If the
-    /// order was not completely filled, the order size on the order
-    /// book is updated, and the loop breaks.
-    ///
-    /// After loopwise matching, base and quote fill amounts are
-    /// calculated, then taker fees are assessed. If a buy, the traded
-    /// quote amount is calculated as the quote fill amount plus fees
-    /// paid, and if a sell, the traded quote amount is calculated as
-    /// the quote fill amount minus fees paid. Min base and quote trade
-    /// conditions are then checked.
     ///
     /// # Expected value testing
     ///
@@ -1966,6 +1960,7 @@ module econia::market {
         market_id: u64,
         order_book_ref_mut: &mut OrderBook,
         taker: address,
+        custodian_id: u64,
         integrator: address,
         direction: bool,
         min_base: u64,
@@ -1973,6 +1968,7 @@ module econia::market {
         min_quote: u64,
         max_quote: u64,
         limit_price: u64,
+        self_match_behavior: u8,
         optional_base_coins: Option<Coin<BaseType>>,
         quote_coins: Coin<QuoteType>,
     ): (
@@ -1980,7 +1976,8 @@ module econia::market {
         Coin<QuoteType>,
         u64,
         u64,
-        u64
+        u64,
+        bool
     ) {
         // Assert price is not too high.
         assert!(limit_price <= HI_PRICE, E_PRICE_TOO_HIGH);
@@ -2001,6 +1998,9 @@ module econia::market {
         // Mutably borrow corresponding orders AVL queue.
         let orders_ref_mut = if (side == ASK) &mut order_book_ref_mut.asks
             else &mut order_book_ref_mut.bids;
+        // Assume it is not the case that a self match led to a taker
+        // order cancellation.
+        let self_match_taker_cancel = false;
         // While there are orders to match against:
         while (!avl_queue::is_empty(orders_ref_mut)) {
             let price = // Get price of order at head of AVL queue.
@@ -2027,41 +2027,94 @@ module econia::market {
                 if (max_fill_size < order_ref_mut.size)
                    (max_fill_size, false) else (order_ref_mut.size, true);
             if (fill_size == 0) break; // Break if no lots to fill.
-            let ticks_filled = fill_size * price; // Get ticks filled.
-            // Decrement counter for lots to fill until max reached.
-            lots_until_max = lots_until_max - fill_size;
-            // Decrement counter for ticks to fill until max reached.
-            ticks_until_max = ticks_until_max - ticks_filled;
-            // Get order maker, maker's custodian ID, and event size.
-            let (maker, custodian_id, size) =
-                (order_ref_mut.user, order_ref_mut.custodian_id, fill_size);
-            // Assert no self match.
-            assert!(maker != taker, E_SELF_MATCH);
-            let market_order_id; // Declare return assignment variable.
-            // Fill matched order user side, storing market order ID.
-            (optional_base_coins, quote_coins, market_order_id) =
-                user::fill_order_internal<BaseType, QuoteType>(
-                    maker, market_id, custodian_id, side,
-                    order_ref_mut.order_access_key, order_ref_mut.size,
-                    fill_size, complete_fill, optional_base_coins, quote_coins,
-                    fill_size * lot_size, ticks_filled * tick_size);
-            event::emit_event(&mut order_book_ref_mut.taker_events, TakerEvent{
-                market_id, side, market_order_id, maker, custodian_id, size,
-                price}); // Emit corresponding taker event.
-            if (complete_fill) { // If order on book completely filled:
-                let avlq_access_key = // Get AVL queue access key.
-                    ((market_order_id & (HI_64 as u128)) as u64);
-                // Remove order from AVL queue.
-                let order = avl_queue::remove(orders_ref_mut, avlq_access_key);
-                let Order{size: _, price: _, user: _, custodian_id: _,
-                          order_access_key: _} = order; // Unpack order.
-                // Break out of loop if no more lots or ticks to fill.
-                if ((lots_until_max == 0) || (ticks_until_max == 0)) break
-            } else { // If order on book not completely filled:
-                // Decrement order size by amount filled.
-                order_ref_mut.size = order_ref_mut.size - fill_size;
-                break // Stop matching.
-            }
+            // Get maker user address and custodian ID for maker's
+            // market account.
+            let (maker, maker_custodian_id) =
+                (order_ref_mut.user, order_ref_mut.custodian_id);
+            let self_match = // Determine if a self match.
+                ((taker == maker) && (custodian_id == maker_custodian_id));
+            if (self_match) { // If a self match:
+                // Assert self match behavior is not abort.
+                assert!(self_match_behavior != ABORT, E_SELF_MATCH);
+                // Assume not cancelling maker order.
+                let cancel_maker_order = false;
+                // If self match behavior is cancel both:
+                if (self_match_behavior == CANCEL_BOTH) {
+                    (cancel_maker_order, self_match_taker_cancel) =
+                        (true, true); // Flag orders for cancellation.
+                // If self match behavior is cancel maker order:
+                } else if (self_match_behavior == CANCEL_MAKER) {
+                    cancel_maker_order = true; // Flag for cancellation.
+                // If self match behavior is cancel taker order:
+                } else if (self_match_behavior == CANCEL_TAKER) {
+                    // Flag for cancellation.
+                    self_match_taker_cancel = true;
+                // Otherwise invalid self match behavior specified.
+                } else abort E_INVALID_SELF_MATCH_BEHAVIOR;
+                // If maker order should be canceled:
+                if (cancel_maker_order) {
+                    // Cancel from maker's market account, storing
+                    // market order ID.
+                    let market_order_id = user::cancel_order_internal(
+                        maker, market_id, maker_custodian_id, side,
+                        order_ref_mut.size, price,
+                        order_ref_mut.order_access_key, (NIL as u128));
+                    // Get AVL queue access key from market order ID.
+                    let avlq_access_key =
+                        ((market_order_id & (HI_64 as u128)) as u64);
+                    // Remove order from AVL queue, storing size.
+                    let Order{size, price: _, user: _, custodian_id: _,
+                              order_access_key: _} = avl_queue::remove(
+                        orders_ref_mut, avlq_access_key);
+                    // Get maker events handle.
+                    let maker_handle = &mut order_book_ref_mut.maker_events;
+                    // Emit a maker cancel event.
+                    event::emit_event(maker_handle, MakerEvent{
+                        market_id, side, market_order_id, user: maker,
+                        custodian_id: maker_custodian_id, type: CANCEL,
+                        size, price});
+                }; // Optional maker order cancellation complete.
+                // Break out of loop if a self match taker cancel.
+                if (self_match_taker_cancel) break;
+            } else { // If not a self match:
+                // Get ticks filled.
+                let ticks_filled = fill_size * price;
+                // Decrement counter for lots to fill until max reached.
+                lots_until_max = lots_until_max - fill_size;
+                // Decrement counter for ticks to fill until max.
+                ticks_until_max = ticks_until_max - ticks_filled;
+                // Declare return assignment variable.
+                let market_order_id;
+                // Fill matched order user side, store market order ID.
+                (optional_base_coins, quote_coins, market_order_id) =
+                    user::fill_order_internal<BaseType, QuoteType>(
+                        maker, market_id, maker_custodian_id, side,
+                        order_ref_mut.order_access_key, order_ref_mut.size,
+                        fill_size, complete_fill, optional_base_coins,
+                        quote_coins, fill_size * lot_size,
+                        ticks_filled * tick_size);
+                // Get taker events handle.
+                let taker_handle = &mut order_book_ref_mut.taker_events;
+                // Emit corresponding taker event.
+                event::emit_event(taker_handle, TakerEvent{
+                    market_id, side, market_order_id, maker, custodian_id:
+                    maker_custodian_id, size: fill_size, price});
+                // If order on book completely filled:
+                if (complete_fill) {
+                    let avlq_access_key = // Get AVL queue access key.
+                        ((market_order_id & (HI_64 as u128)) as u64);
+                    let order = // Remove order from AVL queue.
+                        avl_queue::remove(orders_ref_mut, avlq_access_key);
+                    let Order{size: _, price: _, user: _, custodian_id: _,
+                            order_access_key: _} = order; // Unpack order.
+                    // Break out of loop if no more lots or ticks to fill.
+                    if ((lots_until_max == 0) || (ticks_until_max == 0)) break
+                } else { // If order on book not completely filled:
+                    // Decrement order size by amount filled.
+                    order_ref_mut.size = order_ref_mut.size - fill_size;
+                    break // Stop matching.
+                }
+            }; // Done processing counterparty match.
         }; // Done looping over head of AVL queue for given side.
         let (base_fill, quote_fill) = // Calculate base and quote fills.
             (((max_lots  - lots_until_max ) * lot_size),
@@ -2079,8 +2132,10 @@ module econia::market {
         assert!(base_fill >= min_base, E_MIN_BASE_NOT_TRADED);
         // Assert minimum quote coin trade amount met.
         assert!(quote_traded >= min_quote, E_MIN_QUOTE_NOT_TRADED);
-        // Return optional base coin, quote coins, trade amounts.
-        (optional_base_coins, quote_coins, base_fill, quote_traded, fees_paid)
+        // Return optional base coin, quote coins, trade amounts, and
+        // self match taker cancel flag.
+        (optional_base_coins, quote_coins, base_fill, quote_traded, fees_paid,
+         self_match_taker_cancel)
     }
 
     /// Place limit order against order book from user market account.
@@ -2103,6 +2158,7 @@ module econia::market {
     /// * `price`: The limit order price, in ticks per lot.
     /// * `restriction`: `FILL_OR_ABORT`, `IMMEDIATE_OR_CANCEL`,
     ///   `POST_OR_ABORT`, or `NO_RESTRICTION`.
+    /// * `self_match_behavior`: Same as for `match()`.
     /// * `critical_height`: The AVL queue height above which evictions
     ///   may take place. Should only be passed as `CRITICAL_HEIGHT`.
     ///   Accepted as an argument to simplify testing.
@@ -2167,46 +2223,6 @@ module econia::market {
     ///   left as a maker, minimum order size condition must be met
     ///   again for the maker portion.
     ///
-    /// # Algorithm description
-    ///
-    /// Order restriction and price are checked, then user's available
-    /// and ceiling asset counts are checked, verifying that the given
-    /// market exists. The corresponding order book is borrowed, base
-    /// and quote type arguments are verified, the order size is checked
-    /// against the min size for the market, and the market underwriter
-    /// ID is checked. The price is checked for the given order side to
-    /// determine if the spread is crossed, and if not, order aborts if
-    /// restriction is fill-or-abort. If spread is not crossed, order
-    /// aborts if restriction is post-or-abort.
-    ///
-    /// The amount of base units, ticks, and quote units required to
-    /// fill the order size are checked for overflow conditions, and
-    /// corresponding trade amounts are calculated for range checking.
-    /// If the order crosses the spread, base and quote assets are
-    /// withdrawn from the user's market account and passed through the
-    /// matching engine, deposited back to the user's market account,
-    /// and remaining order size to fill is updated. If the order price
-    /// still crosses the spread after matching halts, size is updated
-    /// to 0, otherwise it is decremented by the amount just matched. If
-    /// restriction is immediate-or-cancel or if remaining size to fill
-    /// after optional matching as a taker does not meet minimum order
-    /// size requirement for market, returns without placing a maker
-    /// order.
-    ///
-    /// The user's next order access key is checked, and a corresponding
-    /// order is inserted to the order book. If the order's price-time
-    /// priority is too low to fit on the book, the order aborts. Else
-    /// a market order ID is constructed from the AVL queue access key
-    /// just generated upon insertion, and the order book counter is
-    /// updated. An order is placed user-side, and a taker event is
-    /// emitted for the new order on the book.
-    ///
-    /// If insertion did not result in an eviction, the empty optional
-    /// evictee value is destroyed. Otherwise, the evicted order is
-    /// unpacked and its price is extracted, then it is cancelled from
-    /// the corresponding user's market account, and its market order
-    /// ID is emitted in a maker evict event.
-    ///
     /// # Expected value testing
     ///
     /// * `test_place_limit_order_crosses_ask_exact()`
@@ -2248,6 +2264,7 @@ module econia::market {
         size: u64,
         price: u64,
         restriction: u8,
+        self_match_behavior: u8,
         critical_height: u8
     ): (
         u128,
@@ -2354,12 +2371,18 @@ module econia::market {
                 user::withdraw_assets_internal<BaseType, QuoteType>(
                     user_address, market_id, custodian_id, base_withdraw,
                     quote_withdraw, underwriter_id);
-            // Match against order book, storing modified asset inputs,
-            // base and quote trade amounts, and quote fees paid.
-            (optional_base_coins, quote_coins, base_traded, quote_traded, fees)
-                = match(market_id, order_book_ref_mut, user_address,
-                        integrator, direction, min_base, max_base, min_quote,
-                        max_quote, price, optional_base_coins, quote_coins);
+            // Declare return assignment variable.
+            let self_match_cancel;
+            // Match against order book, storing optionally modified
+            // asset inputs, base and quote trade amounts, quote fees
+            // paid, and if a self match requires canceling the rest of
+            // the order.
+            (optional_base_coins, quote_coins, base_traded, quote_traded, fees,
+             self_match_cancel) = match(
+                market_id, order_book_ref_mut, user_address, custodian_id,
+                integrator, direction, min_base, max_base, min_quote,
+                max_quote, price, self_match_behavior, optional_base_coins,
+                quote_coins);
             // Calculate amount of base deposited back to market account.
             let base_deposit = if (direction == BUY) base_traded else
                 base_withdraw - base_traded;
@@ -2376,9 +2399,10 @@ module econia::market {
                 !avl_queue::would_update_head(&order_book_ref_mut.bids, price)
                 else
                 !avl_queue::would_update_head(&order_book_ref_mut.asks, price);
-            // If matching engine halted but order still crosses spread
-            // then mark no size left to fill as a maker.
-            size = if (still_crosses_spread) 0 else
+            // If matching engine halted but order still crosses spread,
+            // or if a self match that requires canceling the rest of
+            // of the order, then mark no size left to post as a maker.
+            size = if (still_crosses_spread || self_match_cancel) 0 else
                 // Else update size to amount left to fill post-match.
                 size - (base_traded / order_book_ref_mut.lot_size);
         }; // Done with optional matching as a taker across the spread.
@@ -2459,6 +2483,7 @@ module econia::market {
     ///   `MAX_POSSIBLE` will attempt to trade maximum possible amount
     ///   for market account.
     /// * `limit_price`: Same as for `match()`.
+    /// * `self_match_behavior`: Same as for `match()`.
     ///
     /// # Returns
     ///
@@ -2470,25 +2495,6 @@ module econia::market {
     ///
     /// * `E_INVALID_BASE`: Base asset type is invalid.
     /// * `E_INVALID_QUOTE`: Quote asset type is invalid.
-    ///
-    /// # Algorithm description
-    ///
-    /// Checks user's available and ceiling asset counts, thus verifying
-    /// that market exists for given market ID. Mutably borrows order
-    /// book for market and checks base/quote type arguments, gets
-    /// underwriter ID, then checks max base and quote trade amount
-    /// inputs. If flagged as max possible, max base is updated to max
-    /// amount possible for market account state, as for max quote.
-    /// Trade amounts are range checked, and withdraw amounts are
-    /// calculated based on the direction: if a buy, max quote is
-    /// withdrawn but no base, and if a sell, max base but no quote is
-    /// withdrawn from user's market account.
-    ///
-    /// Assets are withdrawn from the user's market account, thus
-    /// verifying the base and quote type for the market. The amount of
-    /// base asset to deposit back to the user's market account is
-    /// calculated, then base and quote assets are deposited back to the
-    /// user's market account.
     ///
     /// # Expected value testing
     ///
@@ -2515,6 +2521,7 @@ module econia::market {
         min_quote: u64,
         max_quote: u64,
         limit_price: u64,
+        self_match_behavior: u8
     ): (
         u64,
         u64,
@@ -2560,12 +2567,13 @@ module econia::market {
             user::withdraw_assets_internal<BaseType, QuoteType>(
                 user_address, market_id, custodian_id, base_withdraw,
                 quote_withdraw, underwriter_id);
-        // Match against order book, storing modified asset inputs,
-        // base and quote trade amounts, and quote fees paid.
-        let (optional_base_coins, quote_coins, base_traded, quote_traded, fees)
-            = match(market_id, order_book_ref_mut, user_address, integrator,
-                    direction, min_base, max_base, min_quote, max_quote,
-                    limit_price, optional_base_coins, quote_coins);
+        // Match against order book, storing optionally modified asset
+        // inputs, base and quote trade amounts, and quote fees paid.
+        let (optional_base_coins, quote_coins, base_traded, quote_traded, fees,
+             _) = match(market_id, order_book_ref_mut, user_address,
+                        custodian_id, integrator, direction, min_base,
+                        max_base, min_quote, max_quote, limit_price,
+                        self_match_behavior, optional_base_coins, quote_coins);
         // Calculate amount of base deposited back to market account.
         let base_deposit = if (direction == BUY) base_traded else
             (base_withdraw - base_traded);
@@ -2756,7 +2764,6 @@ module econia::market {
     /// * `underwriter_id`: ID of underwriter to verify if `BaseType`
     ///   is `registry::GenericAsset`, else may be passed as
     ///   `NO_UNDERWRITER`.
-    /// * `taker`: Same as for `match()`.
     /// * `integrator`: Same as for `match()`.
     /// * `direction`: Same as for `match()`.
     /// * `min_base`: Same as for `match()`.
@@ -2801,7 +2808,6 @@ module econia::market {
     >(
         market_id: u64,
         underwriter_id: u64,
-        taker: address,
         integrator: address,
         direction: bool,
         min_base: u64,
@@ -2835,10 +2841,16 @@ module econia::market {
                 == order_book_ref_mut.base_type, E_INVALID_BASE);
         assert!(type_info::type_of<QuoteType>() // Assert quote type.
                 == order_book_ref_mut.quote_type, E_INVALID_QUOTE);
-        match<BaseType, QuoteType>( // Match against order book.
-            market_id, order_book_ref_mut, taker, integrator, direction,
-            min_base, max_base, min_quote, max_quote, limit_price,
-            optional_base_coins, quote_coins)
+        // Declare return assignment variables.
+        let (base_traded, quote_traded, fees);
+        (optional_base_coins, quote_coins, base_traded, quote_traded, fees, _)
+            = match<BaseType, QuoteType>( // Match against order book.
+                market_id, order_book_ref_mut, NO_MARKET_ACCOUNT, NO_CUSTODIAN,
+                integrator, direction, min_base, max_base, min_quote,
+                max_quote, limit_price, ABORT, optional_base_coins,
+                quote_coins);
+        // Return optionally modified asset inputs, trade amounts, fees.
+        (optional_base_coins, quote_coins, base_traded, quote_traded, fees)
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

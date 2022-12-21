@@ -661,47 +661,44 @@ The below index is automatically generated from source code:
     -  [Returns](#@Returns_84)
     -  [Emits](#@Emits_85)
     -  [Aborts](#@Aborts_86)
-    -  [Algorithm description](#@Algorithm_description_87)
-    -  [Expected value testing](#@Expected_value_testing_88)
-    -  [Failure testing](#@Failure_testing_89)
+    -  [Expected value testing](#@Expected_value_testing_87)
+    -  [Failure testing](#@Failure_testing_88)
 -  [Function `place_limit_order`](#0xc0deb00c_market_place_limit_order)
-    -  [Type Parameters](#@Type_Parameters_90)
-    -  [Parameters](#@Parameters_91)
-    -  [Returns](#@Returns_92)
-    -  [Aborts](#@Aborts_93)
-    -  [Emits](#@Emits_94)
-    -  [Restrictions](#@Restrictions_95)
-    -  [Minimum size](#@Minimum_size_96)
-    -  [Algorithm description](#@Algorithm_description_97)
-    -  [Expected value testing](#@Expected_value_testing_98)
-    -  [Failure testing](#@Failure_testing_99)
+    -  [Type Parameters](#@Type_Parameters_89)
+    -  [Parameters](#@Parameters_90)
+    -  [Returns](#@Returns_91)
+    -  [Aborts](#@Aborts_92)
+    -  [Emits](#@Emits_93)
+    -  [Restrictions](#@Restrictions_94)
+    -  [Minimum size](#@Minimum_size_95)
+    -  [Expected value testing](#@Expected_value_testing_96)
+    -  [Failure testing](#@Failure_testing_97)
 -  [Function `place_market_order`](#0xc0deb00c_market_place_market_order)
-    -  [Type Parameters](#@Type_Parameters_100)
-    -  [Parameters](#@Parameters_101)
-    -  [Returns](#@Returns_102)
-    -  [Aborts](#@Aborts_103)
-    -  [Algorithm description](#@Algorithm_description_104)
-    -  [Expected value testing](#@Expected_value_testing_105)
-    -  [Failure testing](#@Failure_testing_106)
+    -  [Type Parameters](#@Type_Parameters_98)
+    -  [Parameters](#@Parameters_99)
+    -  [Returns](#@Returns_100)
+    -  [Aborts](#@Aborts_101)
+    -  [Expected value testing](#@Expected_value_testing_102)
+    -  [Failure testing](#@Failure_testing_103)
 -  [Function `range_check_trade`](#0xc0deb00c_market_range_check_trade)
-    -  [Terminology](#@Terminology_107)
-    -  [Parameters](#@Parameters_108)
-    -  [Aborts](#@Aborts_109)
-    -  [Failure testing](#@Failure_testing_110)
+    -  [Terminology](#@Terminology_104)
+    -  [Parameters](#@Parameters_105)
+    -  [Aborts](#@Aborts_106)
+    -  [Failure testing](#@Failure_testing_107)
 -  [Function `register_market`](#0xc0deb00c_market_register_market)
-    -  [Type parameters](#@Type_parameters_111)
-    -  [Parameters](#@Parameters_112)
-    -  [Returns](#@Returns_113)
-    -  [Testing](#@Testing_114)
+    -  [Type parameters](#@Type_parameters_108)
+    -  [Parameters](#@Parameters_109)
+    -  [Returns](#@Returns_110)
+    -  [Testing](#@Testing_111)
 -  [Function `swap`](#0xc0deb00c_market_swap)
-    -  [Type Parameters](#@Type_Parameters_115)
-    -  [Parameters](#@Parameters_116)
-    -  [Returns](#@Returns_117)
-    -  [Aborts](#@Aborts_118)
-    -  [Expected value testing](#@Expected_value_testing_119)
-    -  [Failure testing](#@Failure_testing_120)
+    -  [Type Parameters](#@Type_Parameters_112)
+    -  [Parameters](#@Parameters_113)
+    -  [Returns](#@Returns_114)
+    -  [Aborts](#@Aborts_115)
+    -  [Expected value testing](#@Expected_value_testing_116)
+    -  [Failure testing](#@Failure_testing_117)
 -  [Function `index_orders_sdk`](#0xc0deb00c_market_index_orders_sdk)
-    -  [Testing](#@Testing_121)
+    -  [Testing](#@Testing_118)
 
 
 <pre><code><b>use</b> <a href="">0x1::account</a>;
@@ -1267,12 +1264,52 @@ Generated in Python via <code>hex(int('1' * 32, 2))</code>.
 
 
 
+<a name="0xc0deb00c_market_ABORT"></a>
+
+Flag to abort during a self match.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_ABORT">ABORT</a>: u8 = 0;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_market_CANCEL"></a>
 
 Flag for <code><a href="market.md#0xc0deb00c_market_MakerEvent">MakerEvent</a>.type</code> when order is cancelled.
 
 
 <pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_CANCEL">CANCEL</a>: u8 = 0;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_CANCEL_BOTH"></a>
+
+Flag to cancel maker and taker order during a self match.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_CANCEL_BOTH">CANCEL_BOTH</a>: u8 = 1;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_CANCEL_MAKER"></a>
+
+Flag to cancel maker order only during a self match.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_CANCEL_MAKER">CANCEL_MAKER</a>: u8 = 2;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_CANCEL_TAKER"></a>
+
+Flag to cancel taker order only during a self match.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_CANCEL_TAKER">CANCEL_TAKER</a>: u8 = 3;
 </code></pre>
 
 
@@ -1343,6 +1380,16 @@ Invalid restriction flag.
 
 
 <pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_INVALID_RESTRICTION">E_INVALID_RESTRICTION</a>: u64 = 18;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_E_INVALID_SELF_MATCH_BEHAVIOR"></a>
+
+Invalid self match behavior flag.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_INVALID_SELF_MATCH_BEHAVIOR">E_INVALID_SELF_MATCH_BEHAVIOR</a>: u64 = 28;
 </code></pre>
 
 
@@ -1449,7 +1496,7 @@ No room to insert order with such low price-time priority.
 
 <a name="0xc0deb00c_market_E_SELF_MATCH"></a>
 
-Taker and maker have same address.
+A self match occurs when self match behavior is abort.
 
 
 <pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_SELF_MATCH">E_SELF_MATCH</a>: u64 = 19;
@@ -1528,6 +1575,17 @@ bits set, generated in Python via <code>hex(int('1' * 64, 2))</code>.
 
 
 
+<a name="0xc0deb00c_market_NO_MARKET_ACCOUNT"></a>
+
+Taker address flag for when taker order does not originate from
+a market account.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_NO_MARKET_ACCOUNT">NO_MARKET_ACCOUNT</a>: <b>address</b> = 0;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_market_NO_RESTRICTION"></a>
 
 Flag for no order restriction.
@@ -1575,16 +1633,6 @@ ID.
 
 
 <pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_SHIFT_COUNTER">SHIFT_COUNTER</a>: u8 = 64;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_market_UNKNOWN_TAKER"></a>
-
-Taker address flag for when taker is unknown.
-
-
-<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_UNKNOWN_TAKER">UNKNOWN_TAKER</a>: <b>address</b> = 0;
 </code></pre>
 
 
@@ -2133,7 +2181,7 @@ order under authority of delegated custodian.
 * <code>test_place_limit_order_no_cross_bid_custodian()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order_custodian">place_limit_order_custodian</a>&lt;BaseType, QuoteType&gt;(user_address: <b>address</b>, market_id: u64, integrator: <b>address</b>, side: bool, size: u64, price: u64, restriction: u8, custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>): (u128, u64, u64, u64)
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order_custodian">place_limit_order_custodian</a>&lt;BaseType, QuoteType&gt;(user_address: <b>address</b>, market_id: u64, integrator: <b>address</b>, side: bool, size: u64, price: u64, restriction: u8, self_match_behavior: u8, custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>): (u128, u64, u64, u64)
 </code></pre>
 
 
@@ -2152,6 +2200,7 @@ order under authority of delegated custodian.
     size: u64,
     price: u64,
     restriction: u8,
+    self_match_behavior: u8,
     custodian_capability_ref: &CustodianCapability
 ): (
     u128,
@@ -2171,6 +2220,7 @@ order under authority of delegated custodian.
         size,
         price,
         restriction,
+        self_match_behavior,
         <a href="market.md#0xc0deb00c_market_CRITICAL_HEIGHT">CRITICAL_HEIGHT</a>)
 }
 </code></pre>
@@ -2199,7 +2249,7 @@ order under authority of signing user.
 * <code>test_place_limit_order_no_cross_ask_user()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order_user">place_limit_order_user</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, integrator: <b>address</b>, side: bool, size: u64, price: u64, restriction: u8): (u128, u64, u64, u64)
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order_user">place_limit_order_user</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, integrator: <b>address</b>, side: bool, size: u64, price: u64, restriction: u8, self_match_behavior: u8): (u128, u64, u64, u64)
 </code></pre>
 
 
@@ -2218,6 +2268,7 @@ order under authority of signing user.
     size: u64,
     price: u64,
     restriction: u8,
+    self_match_behavior: u8
 ): (
     u128,
     u64,
@@ -2236,6 +2287,7 @@ order under authority of signing user.
         size,
         price,
         restriction,
+        self_match_behavior,
         <a href="market.md#0xc0deb00c_market_CRITICAL_HEIGHT">CRITICAL_HEIGHT</a>)
 }
 </code></pre>
@@ -2259,7 +2311,7 @@ order under authority of delegated custodian.
 * <code>test_place_market_order_max_quote_buy_custodian()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_market_order_custodian">place_market_order_custodian</a>&lt;BaseType, QuoteType&gt;(user_address: <b>address</b>, market_id: u64, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64, custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>): (u64, u64, u64)
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_market_order_custodian">place_market_order_custodian</a>&lt;BaseType, QuoteType&gt;(user_address: <b>address</b>, market_id: u64, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64, self_match_behavior: u8, custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>): (u64, u64, u64)
 </code></pre>
 
 
@@ -2280,6 +2332,7 @@ order under authority of delegated custodian.
     min_quote: u64,
     max_quote: u64,
     limit_price: u64,
+    self_match_behavior: u8,
     custodian_capability_ref: &CustodianCapability
 ): (
     u64,
@@ -2296,7 +2349,8 @@ order under authority of delegated custodian.
         max_base,
         min_quote,
         max_quote,
-        limit_price)
+        limit_price,
+        self_match_behavior)
 }
 </code></pre>
 
@@ -2319,7 +2373,7 @@ order under authority of signing user.
 * <code>test_place_market_order_max_quote_sell_user()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_market_order_user">place_market_order_user</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64): (u64, u64, u64)
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_market_order_user">place_market_order_user</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64, self_match_behavior: u8): (u64, u64, u64)
 </code></pre>
 
 
@@ -2340,6 +2394,7 @@ order under authority of signing user.
     min_quote: u64,
     max_quote: u64,
     limit_price: u64,
+    self_match_behavior: u8
 ): (
     u64,
     u64,
@@ -2355,7 +2410,8 @@ order under authority of signing user.
         max_base,
         min_quote,
         max_quote,
-        limit_price)
+        limit_price,
+        self_match_behavior)
 }
 </code></pre>
 
@@ -2648,12 +2704,12 @@ for coin store.
         // If a sell, need max base but not quote.
         (<a href="_some">option::some</a>(<a href="_withdraw">coin::withdraw</a>&lt;BaseType&gt;(<a href="user.md#0xc0deb00c_user">user</a>, max_base)),
          <a href="_zero">coin::zero</a>&lt;QuoteType&gt;());
-    // Swap against order book, storing modified <a href="">coin</a> inputs, base
-    // and quote trade amounts, and quote fees paid.
+    // Swap against order book, storing optionally modified <a href="">coin</a>
+    // inputs, base and quote trade amounts, and quote fees paid.
     <b>let</b> (optional_base_coins, quote_coins, base_traded, quote_traded, fees)
-        = <a href="market.md#0xc0deb00c_market_swap">swap</a>(market_id, <a href="market.md#0xc0deb00c_market_NO_UNDERWRITER">NO_UNDERWRITER</a>, user_address, integrator,
-               direction, min_base, max_base, min_quote, max_quote,
-               limit_price, optional_base_coins, quote_coins);
+        = <a href="market.md#0xc0deb00c_market_swap">swap</a>(market_id, <a href="market.md#0xc0deb00c_market_NO_UNDERWRITER">NO_UNDERWRITER</a>, integrator, direction, min_base,
+               max_base, min_quote, max_quote, limit_price,
+               optional_base_coins, quote_coins);
     // Deposit base coins back <b>to</b> <a href="user.md#0xc0deb00c_user">user</a>'s <a href="">coin</a> store.
     <a href="_deposit">coin::deposit</a>(user_address, <a href="_destroy_some">option::destroy_some</a>(optional_base_coins));
     // Deposit quote coins back <b>to</b> <a href="user.md#0xc0deb00c_user">user</a>'s <a href="">coin</a> store.
@@ -2804,13 +2860,13 @@ the case of a buy, base coins in the case of a sell.
     <a href="market.md#0xc0deb00c_market_range_check_trade">range_check_trade</a>( // Range check trade amounts.
         direction, min_base, max_base, min_quote, max_quote,
         base_value, base_value, quote_value, quote_value);
-    // Swap against order book, storing modified <a href="">coin</a> inputs, base
-    // and quote trade amounts, and quote fees paid.
+    // Swap against order book, storing optionally modified <a href="">coin</a>
+    // inputs, base and quote trade amounts, and quote fees paid.
     <b>let</b> (optional_base_coins, quote_coins_matched, base_traded,
          quote_traded, fees) = <a href="market.md#0xc0deb00c_market_swap">swap</a>(
-            market_id, <a href="market.md#0xc0deb00c_market_NO_UNDERWRITER">NO_UNDERWRITER</a>, <a href="market.md#0xc0deb00c_market_UNKNOWN_TAKER">UNKNOWN_TAKER</a>, integrator,
-            direction, min_base, max_base, min_quote, max_quote,
-            limit_price, optional_base_coins, quote_coins_to_match);
+            market_id, <a href="market.md#0xc0deb00c_market_NO_UNDERWRITER">NO_UNDERWRITER</a>, integrator, direction, min_base,
+            max_base, min_quote, max_quote, limit_price,
+            optional_base_coins, quote_coins_to_match);
     // Merge matched quote coins back into holdings.
     <a href="_merge">coin::merge</a>(&<b>mut</b> quote_coins, quote_coins_matched);
     // Get base coins from <a href="">option</a>.
@@ -2938,13 +2994,13 @@ underwriter capability for given market.
     <a href="market.md#0xc0deb00c_market_range_check_trade">range_check_trade</a>( // Range check trade amounts.
         direction, min_base, max_base, min_quote, max_quote,
         base_value, base_value, quote_value, quote_value);
-    // Swap against order book, storing modified quote <a href="">coin</a> input,
-    // base and quote trade amounts, and quote fees paid.
+    // Swap against order book, storing optionally modified quote
+    // <a href="">coin</a> input, base and quote trade amounts, quote fees paid.
     <b>let</b> (optional_base_coins, quote_coins_matched, base_traded,
          quote_traded, fees) = <a href="market.md#0xc0deb00c_market_swap">swap</a>(
-            market_id, underwriter_id, <a href="market.md#0xc0deb00c_market_UNKNOWN_TAKER">UNKNOWN_TAKER</a>, integrator,
-            direction, min_base, max_base, min_quote, max_quote,
-            limit_price, <a href="_none">option::none</a>(), quote_coins_to_match);
+            market_id, underwriter_id, integrator, direction, min_base,
+            max_base, min_quote, max_quote, limit_price, <a href="_none">option::none</a>(),
+            quote_coins_to_match);
     // Destroy empty base <a href="">coin</a> <a href="">option</a>.
     <a href="_destroy_none">option::destroy_none</a>&lt;Coin&lt;GenericAsset&gt;&gt;(optional_base_coins);
     // Merge matched quote coins back into holdings.
@@ -3095,7 +3151,7 @@ Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_pla
 * <code>test_place_limit_order_user_entry()</code>
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order_user_entry">place_limit_order_user_entry</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, integrator: <b>address</b>, side: bool, size: u64, price: u64, restriction: u8)
+<pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order_user_entry">place_limit_order_user_entry</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, integrator: <b>address</b>, side: bool, size: u64, price: u64, restriction: u8, self_match_behavior: u8)
 </code></pre>
 
 
@@ -3114,9 +3170,11 @@ Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_pla
     size: u64,
     price: u64,
     restriction: u8,
+    self_match_behavior: u8
 ) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
     <a href="market.md#0xc0deb00c_market_place_limit_order_user">place_limit_order_user</a>&lt;BaseType, QuoteType&gt;(
-        <a href="user.md#0xc0deb00c_user">user</a>, market_id, integrator, side, size, price, restriction);
+        <a href="user.md#0xc0deb00c_user">user</a>, market_id, integrator, side, size, price, restriction,
+        self_match_behavior);
 }
 </code></pre>
 
@@ -3137,7 +3195,7 @@ Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_pla
 * <code>test_place_market_order_user_entry()</code>
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_place_market_order_user_entry">place_market_order_user_entry</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64)
+<pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_place_market_order_user_entry">place_market_order_user_entry</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64, self_match_behavior: u8)
 </code></pre>
 
 
@@ -3158,10 +3216,11 @@ Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_pla
     min_quote: u64,
     max_quote: u64,
     limit_price: u64,
+    self_match_behavior: u8
 ) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
     <a href="market.md#0xc0deb00c_market_place_market_order_user">place_market_order_user</a>&lt;BaseType, QuoteType&gt;(
         <a href="user.md#0xc0deb00c_user">user</a>, market_id, integrator, direction, min_base, max_base,
-        min_quote, max_quote, limit_price);
+        min_quote, max_quote, limit_price, self_match_behavior);
 }
 </code></pre>
 
@@ -3592,9 +3651,11 @@ Match a taker order against the order book.
 
 * <code>market_id</code>: Market ID of market.
 * <code>order_book_ref_mut</code>: Mutable reference to market order book.
-* <code>taker</code>: Address of taker whose order is matched. May be
-passed as <code><a href="market.md#0xc0deb00c_market_UNKNOWN_TAKER">UNKNOWN_TAKER</a></code> when taker order originates from
-a standalone coin swap or a generic swap.
+* <code>taker</code>: Address of taker whose order is matched. Passed as
+<code><a href="market.md#0xc0deb00c_market_NO_MARKET_ACCOUNT">NO_MARKET_ACCOUNT</a></code> when taker order originates from a swap.
+* <code>custodian_id</code>: Custodian ID associated with a taker market
+account, if any. Should be passed as <code><a href="market.md#0xc0deb00c_market_NO_CUSTODIAN">NO_CUSTODIAN</a></code> if <code>taker</code>
+is <code><a href="market.md#0xc0deb00c_market_NO_MARKET_ACCOUNT">NO_MARKET_ACCOUNT</a></code>.
 * <code>integrator</code>: The integrator for the taker order, who collects
 a portion of taker fees at their
 <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStore">incentives::IntegratorFeeStore</a></code> for the given market. May be
@@ -3617,6 +3678,8 @@ the net change in taker's quote holdings after the match.
 matching should halt. If direction is <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>, the price below
 which matching should halt. Can be passed as <code><a href="market.md#0xc0deb00c_market_HI_PRICE">HI_PRICE</a></code> if a
 <code><a href="market.md#0xc0deb00c_market_BUY">BUY</a></code> or <code>0</code> if a <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code> to approve matching at any price.
+* <code>self_match_behavior</code>: <code><a href="market.md#0xc0deb00c_market_ABORT">ABORT</a></code>, <code><a href="market.md#0xc0deb00c_market_CANCEL_BOTH">CANCEL_BOTH</a></code>, <code><a href="market.md#0xc0deb00c_market_CANCEL_MAKER">CANCEL_MAKER</a></code>,
+or <code><a href="market.md#0xc0deb00c_market_CANCEL_TAKER">CANCEL_TAKER</a></code>. Ignored if no self matching takes place.
 * <code>optional_base_coins</code>: None if <code>BaseType</code> is
 <code><a href="registry.md#0xc0deb00c_registry_GenericAsset">registry::GenericAsset</a></code> (market is generic), else base coin
 holdings for pure coin market, which are incremented if
@@ -3641,6 +3704,7 @@ taker's base holdings.
 * <code>u64</code>: Quote coin amount traded by taker, inclusive of fees:
 net change in taker's quote coin holdings.
 * <code>u64</code>: Amount of quote coin fees paid.
+* <code>bool</code>: <code><b>true</b></code> if a self match that results in a taker cancel.
 
 
 <a name="@Emits_85"></a>
@@ -3661,54 +3725,17 @@ emitted for each separate maker order that is filled against.
 price.
 * <code><a href="market.md#0xc0deb00c_market_E_HEAD_KEY_PRICE_MISMATCH">E_HEAD_KEY_PRICE_MISMATCH</a></code>: AVL queue head price does not
 match head order price.
-* <code><a href="market.md#0xc0deb00c_market_E_SELF_MATCH">E_SELF_MATCH</a></code>: Taker and a matched maker have same address.
+* <code><a href="market.md#0xc0deb00c_market_E_SELF_MATCH">E_SELF_MATCH</a></code>: A self match occurs when <code>self_match_behavior</code>
+is <code><a href="market.md#0xc0deb00c_market_ABORT">ABORT</a></code>.
+* <code><a href="market.md#0xc0deb00c_market_E_INVALID_SELF_MATCH_BEHAVIOR">E_INVALID_SELF_MATCH_BEHAVIOR</a></code>: A self match occurs but an
+invalid flag is passed.
 * <code><a href="market.md#0xc0deb00c_market_E_MIN_BASE_NOT_TRADED">E_MIN_BASE_NOT_TRADED</a></code>: Minimum base asset trade amount
 requirement not met.
 * <code><a href="market.md#0xc0deb00c_market_E_MIN_QUOTE_NOT_TRADED">E_MIN_QUOTE_NOT_TRADED</a></code>: Minimum quote asset trade amount
 requirement not met.
 
 
-<a name="@Algorithm_description_87"></a>
-
-### Algorithm description
-
-
-After checking price, lot size, and tick size, the taker fee
-divisor is used to calculate the max quote coin match amount
-for the given direction. Max lot and tick fill amounts are
-calculated, and counters are initiated for the number of lots
-and ticks to fill until reaching the max permitted amount. The
-corresponding AVL queue is borrowed, and loopwise matching
-executes against the head of the queue as long as it is empty:
-
-The price of the order at the head of the AVL queue is compared
-against the limit price, and the loop breaks if the limit price
-condition is not met. Then the max fill size is calculated based
-on the number of ticks left to fill until max and the price for
-the given order, and compared against the number of lots to fill
-until max. The lesser of the two is taken as the max fill size,
-the order is borrowed and its price is checked against that
-indicated for the AVL queue head, then the max fill size is
-compared against the order size to determine the fill size and
-if a complete fill takes place. If no size can be filled the
-loop breaks, otherwise the number of ticks is calculated, and
-lots and ticks until max counters are updated. The self-match
-condition is checked, then the order is filled user side and a
-taker event is emitted. If there was a complete fill, the maker
-order is removed from the head of the AVL queue and the loop
-breaks if there are not lots or ticks left to fill. If the
-order was not completely filled, the order size on the order
-book is updated, and the loop breaks.
-
-After loopwise matching, base and quote fill amounts are
-calculated, then taker fees are assessed. If a buy, the traded
-quote amount is calculated as the quote fill amount plus fees
-paid, and if a sell, the traded quote amount is calculated as
-the quote fill amount minus fees paid. Min base and quote trade
-conditions are then checked.
-
-
-<a name="@Expected_value_testing_88"></a>
+<a name="@Expected_value_testing_87"></a>
 
 ### Expected value testing
 
@@ -3724,7 +3751,7 @@ conditions are then checked.
 * <code>test_match_price_break_sell()</code>
 
 
-<a name="@Failure_testing_89"></a>
+<a name="@Failure_testing_88"></a>
 
 ### Failure testing
 
@@ -3736,7 +3763,7 @@ conditions are then checked.
 * <code>test_match_self_match()</code>
 
 
-<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_match">match</a>&lt;BaseType, QuoteType&gt;(market_id: u64, order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">market::OrderBook</a>, taker: <b>address</b>, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64, optional_base_coins: <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, quote_coins: <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;): (<a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;, u64, u64, u64)
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_match">match</a>&lt;BaseType, QuoteType&gt;(market_id: u64, order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">market::OrderBook</a>, taker: <b>address</b>, custodian_id: u64, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64, self_match_behavior: u8, optional_base_coins: <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, quote_coins: <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;): (<a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;, u64, u64, u64, bool)
 </code></pre>
 
 
@@ -3751,6 +3778,7 @@ conditions are then checked.
     market_id: u64,
     order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a>,
     taker: <b>address</b>,
+    custodian_id: u64,
     integrator: <b>address</b>,
     direction: bool,
     min_base: u64,
@@ -3758,6 +3786,7 @@ conditions are then checked.
     min_quote: u64,
     max_quote: u64,
     limit_price: u64,
+    self_match_behavior: u8,
     optional_base_coins: Option&lt;Coin&lt;BaseType&gt;&gt;,
     quote_coins: Coin&lt;QuoteType&gt;,
 ): (
@@ -3765,7 +3794,8 @@ conditions are then checked.
     Coin&lt;QuoteType&gt;,
     u64,
     u64,
-    u64
+    u64,
+    bool
 ) {
     // Assert price is not too high.
     <b>assert</b>!(limit_price &lt;= <a href="market.md#0xc0deb00c_market_HI_PRICE">HI_PRICE</a>, <a href="market.md#0xc0deb00c_market_E_PRICE_TOO_HIGH">E_PRICE_TOO_HIGH</a>);
@@ -3786,6 +3816,9 @@ conditions are then checked.
     // Mutably borrow corresponding orders AVL queue.
     <b>let</b> orders_ref_mut = <b>if</b> (side == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>) &<b>mut</b> order_book_ref_mut.asks
         <b>else</b> &<b>mut</b> order_book_ref_mut.bids;
+    // Assume it is not the case that a self match led <b>to</b> a taker
+    // order cancellation.
+    <b>let</b> self_match_taker_cancel = <b>false</b>;
     // While there are orders <b>to</b> match against:
     <b>while</b> (!<a href="avl_queue.md#0xc0deb00c_avl_queue_is_empty">avl_queue::is_empty</a>(orders_ref_mut)) {
         <b>let</b> price = // Get price of order at head of AVL queue.
@@ -3812,41 +3845,94 @@ conditions are then checked.
             <b>if</b> (max_fill_size &lt; order_ref_mut.size)
                (max_fill_size, <b>false</b>) <b>else</b> (order_ref_mut.size, <b>true</b>);
         <b>if</b> (fill_size == 0) <b>break</b>; // Break <b>if</b> no lots <b>to</b> fill.
-        <b>let</b> ticks_filled = fill_size * price; // Get ticks filled.
-        // Decrement counter for lots <b>to</b> fill until max reached.
-        lots_until_max = lots_until_max - fill_size;
-        // Decrement counter for ticks <b>to</b> fill until max reached.
-        ticks_until_max = ticks_until_max - ticks_filled;
-        // Get order maker, maker's custodian ID, and <a href="">event</a> size.
-        <b>let</b> (maker, custodian_id, size) =
-            (order_ref_mut.<a href="user.md#0xc0deb00c_user">user</a>, order_ref_mut.custodian_id, fill_size);
-        // Assert no self match.
-        <b>assert</b>!(maker != taker, <a href="market.md#0xc0deb00c_market_E_SELF_MATCH">E_SELF_MATCH</a>);
-        <b>let</b> market_order_id; // Declare <b>return</b> assignment variable.
-        // Fill matched order <a href="user.md#0xc0deb00c_user">user</a> side, storing <a href="market.md#0xc0deb00c_market">market</a> order ID.
-        (optional_base_coins, quote_coins, market_order_id) =
-            <a href="user.md#0xc0deb00c_user_fill_order_internal">user::fill_order_internal</a>&lt;BaseType, QuoteType&gt;(
-                maker, market_id, custodian_id, side,
-                order_ref_mut.order_access_key, order_ref_mut.size,
-                fill_size, complete_fill, optional_base_coins, quote_coins,
-                fill_size * lot_size, ticks_filled * tick_size);
-        <a href="_emit_event">event::emit_event</a>(&<b>mut</b> order_book_ref_mut.taker_events, <a href="market.md#0xc0deb00c_market_TakerEvent">TakerEvent</a>{
-            market_id, side, market_order_id, maker, custodian_id, size,
-            price}); // Emit corresponding taker <a href="">event</a>.
-        <b>if</b> (complete_fill) { // If order on book completely filled:
-            <b>let</b> avlq_access_key = // Get AVL queue access key.
-                ((market_order_id & (<a href="market.md#0xc0deb00c_market_HI_64">HI_64</a> <b>as</b> u128)) <b>as</b> u64);
-            // Remove order from AVL queue.
-            <b>let</b> order = <a href="avl_queue.md#0xc0deb00c_avl_queue_remove">avl_queue::remove</a>(orders_ref_mut, avlq_access_key);
-            <b>let</b> <a href="market.md#0xc0deb00c_market_Order">Order</a>{size: _, price: _, <a href="user.md#0xc0deb00c_user">user</a>: _, custodian_id: _,
-                      order_access_key: _} = order; // Unpack order.
-            // Break out of <b>loop</b> <b>if</b> no more lots or ticks <b>to</b> fill.
-            <b>if</b> ((lots_until_max == 0) || (ticks_until_max == 0)) <b>break</b>
-        } <b>else</b> { // If order on book not completely filled:
-            // Decrement order size by amount filled.
-            order_ref_mut.size = order_ref_mut.size - fill_size;
-            <b>break</b> // Stop matching.
-        }
+        // Get maker <a href="user.md#0xc0deb00c_user">user</a> <b>address</b> and custodian ID for maker's
+        // <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
+        <b>let</b> (maker, maker_custodian_id) =
+            (order_ref_mut.<a href="user.md#0xc0deb00c_user">user</a>, order_ref_mut.custodian_id);
+        <b>let</b> self_match = // Determine <b>if</b> a self match.
+            ((taker == maker) && (custodian_id == maker_custodian_id));
+        <b>if</b> (self_match) { // If a self match:
+            // Assert self match behavior is not <b>abort</b>.
+            <b>assert</b>!(self_match_behavior != <a href="market.md#0xc0deb00c_market_ABORT">ABORT</a>, <a href="market.md#0xc0deb00c_market_E_SELF_MATCH">E_SELF_MATCH</a>);
+            // Assume not cancelling maker order.
+            <b>let</b> cancel_maker_order = <b>false</b>;
+            // If self match behavior is cancel both:
+            <b>if</b> (self_match_behavior == <a href="market.md#0xc0deb00c_market_CANCEL_BOTH">CANCEL_BOTH</a>) {
+                (cancel_maker_order, self_match_taker_cancel) =
+                    (<b>true</b>, <b>true</b>); // Flag orders for cancellation.
+            // If self match behavior is cancel maker order:
+            } <b>else</b> <b>if</b> (self_match_behavior == <a href="market.md#0xc0deb00c_market_CANCEL_MAKER">CANCEL_MAKER</a>) {
+                cancel_maker_order = <b>true</b>; // Flag for cancellation.
+            // If self match behavior is cancel taker order:
+            } <b>else</b> <b>if</b> (self_match_behavior == <a href="market.md#0xc0deb00c_market_CANCEL_TAKER">CANCEL_TAKER</a>) {
+                // Flag for cancellation.
+                self_match_taker_cancel = <b>true</b>;
+            // Otherwise invalid self match behavior specified.
+            } <b>else</b> <b>abort</b> <a href="market.md#0xc0deb00c_market_E_INVALID_SELF_MATCH_BEHAVIOR">E_INVALID_SELF_MATCH_BEHAVIOR</a>;
+            // If maker order should be canceled:
+            <b>if</b> (cancel_maker_order) {
+                // Cancel from maker's <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>, storing
+                // <a href="market.md#0xc0deb00c_market">market</a> order ID.
+                <b>let</b> market_order_id = <a href="user.md#0xc0deb00c_user_cancel_order_internal">user::cancel_order_internal</a>(
+                    maker, market_id, maker_custodian_id, side,
+                    order_ref_mut.size, price,
+                    order_ref_mut.order_access_key, (<a href="market.md#0xc0deb00c_market_NIL">NIL</a> <b>as</b> u128));
+                // Get AVL queue access key from <a href="market.md#0xc0deb00c_market">market</a> order ID.
+                <b>let</b> avlq_access_key =
+                    ((market_order_id & (<a href="market.md#0xc0deb00c_market_HI_64">HI_64</a> <b>as</b> u128)) <b>as</b> u64);
+                // Remove order from AVL queue, storing size.
+                <b>let</b> <a href="market.md#0xc0deb00c_market_Order">Order</a>{size, price: _, <a href="user.md#0xc0deb00c_user">user</a>: _, custodian_id: _,
+                          order_access_key: _} = <a href="avl_queue.md#0xc0deb00c_avl_queue_remove">avl_queue::remove</a>(
+                    orders_ref_mut, avlq_access_key);
+                // Get maker events handle.
+                <b>let</b> maker_handle = &<b>mut</b> order_book_ref_mut.maker_events;
+                // Emit a maker cancel <a href="">event</a>.
+                <a href="_emit_event">event::emit_event</a>(maker_handle, <a href="market.md#0xc0deb00c_market_MakerEvent">MakerEvent</a>{
+                    market_id, side, market_order_id, <a href="user.md#0xc0deb00c_user">user</a>: maker,
+                    custodian_id: maker_custodian_id, type: <a href="market.md#0xc0deb00c_market_CANCEL">CANCEL</a>,
+                    size, price});
+            }; // Optional maker order cancellation complete.
+            // Break out of <b>loop</b> <b>if</b> a self match taker cancel.
+            <b>if</b> (self_match_taker_cancel) <b>break</b>;
+        } <b>else</b> { // If not a self match:
+            // Get ticks filled.
+            <b>let</b> ticks_filled = fill_size * price;
+            // Decrement counter for lots <b>to</b> fill until max reached.
+            lots_until_max = lots_until_max - fill_size;
+            // Decrement counter for ticks <b>to</b> fill until max.
+            ticks_until_max = ticks_until_max - ticks_filled;
+            // Declare <b>return</b> assignment variable.
+            <b>let</b> market_order_id;
+            // Fill matched order <a href="user.md#0xc0deb00c_user">user</a> side, store <a href="market.md#0xc0deb00c_market">market</a> order ID.
+            (optional_base_coins, quote_coins, market_order_id) =
+                <a href="user.md#0xc0deb00c_user_fill_order_internal">user::fill_order_internal</a>&lt;BaseType, QuoteType&gt;(
+                    maker, market_id, maker_custodian_id, side,
+                    order_ref_mut.order_access_key, order_ref_mut.size,
+                    fill_size, complete_fill, optional_base_coins,
+                    quote_coins, fill_size * lot_size,
+                    ticks_filled * tick_size);
+            // Get taker events handle.
+            <b>let</b> taker_handle = &<b>mut</b> order_book_ref_mut.taker_events;
+            // Emit corresponding taker <a href="">event</a>.
+            <a href="_emit_event">event::emit_event</a>(taker_handle, <a href="market.md#0xc0deb00c_market_TakerEvent">TakerEvent</a>{
+                market_id, side, market_order_id, maker, custodian_id:
+                maker_custodian_id, size: fill_size, price});
+            // If order on book completely filled:
+            <b>if</b> (complete_fill) {
+                <b>let</b> avlq_access_key = // Get AVL queue access key.
+                    ((market_order_id & (<a href="market.md#0xc0deb00c_market_HI_64">HI_64</a> <b>as</b> u128)) <b>as</b> u64);
+                <b>let</b> order = // Remove order from AVL queue.
+                    <a href="avl_queue.md#0xc0deb00c_avl_queue_remove">avl_queue::remove</a>(orders_ref_mut, avlq_access_key);
+                <b>let</b> <a href="market.md#0xc0deb00c_market_Order">Order</a>{size: _, price: _, <a href="user.md#0xc0deb00c_user">user</a>: _, custodian_id: _,
+                        order_access_key: _} = order; // Unpack order.
+                // Break out of <b>loop</b> <b>if</b> no more lots or ticks <b>to</b> fill.
+                <b>if</b> ((lots_until_max == 0) || (ticks_until_max == 0)) <b>break</b>
+            } <b>else</b> { // If order on book not completely filled:
+                // Decrement order size by amount filled.
+                order_ref_mut.size = order_ref_mut.size - fill_size;
+                <b>break</b> // Stop matching.
+            }
+        }; // Done processing counterparty match.
     }; // Done looping over head of AVL queue for given side.
     <b>let</b> (base_fill, quote_fill) = // Calculate base and quote fills.
         (((max_lots  - lots_until_max ) * lot_size),
@@ -3864,8 +3950,10 @@ conditions are then checked.
     <b>assert</b>!(base_fill &gt;= min_base, <a href="market.md#0xc0deb00c_market_E_MIN_BASE_NOT_TRADED">E_MIN_BASE_NOT_TRADED</a>);
     // Assert minimum quote <a href="">coin</a> trade amount met.
     <b>assert</b>!(quote_traded &gt;= min_quote, <a href="market.md#0xc0deb00c_market_E_MIN_QUOTE_NOT_TRADED">E_MIN_QUOTE_NOT_TRADED</a>);
-    // Return optional base <a href="">coin</a>, quote coins, trade amounts.
-    (optional_base_coins, quote_coins, base_fill, quote_traded, fees_paid)
+    // Return optional base <a href="">coin</a>, quote coins, trade amounts, and
+    // self match taker cancel flag.
+    (optional_base_coins, quote_coins, base_fill, quote_traded, fees_paid,
+     self_match_taker_cancel)
 }
 </code></pre>
 
@@ -3878,7 +3966,7 @@ conditions are then checked.
 Place limit order against order book from user market account.
 
 
-<a name="@Type_Parameters_90"></a>
+<a name="@Type_Parameters_89"></a>
 
 ### Type Parameters
 
@@ -3887,7 +3975,7 @@ Place limit order against order book from user market account.
 * <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Parameters_91"></a>
+<a name="@Parameters_90"></a>
 
 ### Parameters
 
@@ -3903,12 +3991,13 @@ a maker.
 * <code>price</code>: The limit order price, in ticks per lot.
 * <code>restriction</code>: <code><a href="market.md#0xc0deb00c_market_FILL_OR_ABORT">FILL_OR_ABORT</a></code>, <code><a href="market.md#0xc0deb00c_market_IMMEDIATE_OR_CANCEL">IMMEDIATE_OR_CANCEL</a></code>,
 <code><a href="market.md#0xc0deb00c_market_POST_OR_ABORT">POST_OR_ABORT</a></code>, or <code><a href="market.md#0xc0deb00c_market_NO_RESTRICTION">NO_RESTRICTION</a></code>.
+* <code>self_match_behavior</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 * <code>critical_height</code>: The AVL queue height above which evictions
 may take place. Should only be passed as <code><a href="market.md#0xc0deb00c_market_CRITICAL_HEIGHT">CRITICAL_HEIGHT</a></code>.
 Accepted as an argument to simplify testing.
 
 
-<a name="@Returns_92"></a>
+<a name="@Returns_91"></a>
 
 ### Returns
 
@@ -3923,7 +4012,7 @@ was placed. Else <code><a href="market.md#0xc0deb00c_market_NIL">NIL</a></code>.
 if order fills across the spread.
 
 
-<a name="@Aborts_93"></a>
+<a name="@Aborts_92"></a>
 
 ### Aborts
 
@@ -3952,7 +4041,7 @@ price-time priority if inserted to AVL queue, but AVL queue
 does not have room for any more orders.
 
 
-<a name="@Emits_94"></a>
+<a name="@Emits_93"></a>
 
 ### Emits
 
@@ -3964,7 +4053,7 @@ the order book, if required to fit user's maker order on the
 book.
 
 
-<a name="@Restrictions_95"></a>
+<a name="@Restrictions_94"></a>
 
 ### Restrictions
 
@@ -3978,7 +4067,7 @@ amount is not filled.
 then returns.
 
 
-<a name="@Minimum_size_96"></a>
+<a name="@Minimum_size_95"></a>
 
 ### Minimum size
 
@@ -3988,51 +4077,7 @@ left as a maker, minimum order size condition must be met
 again for the maker portion.
 
 
-<a name="@Algorithm_description_97"></a>
-
-### Algorithm description
-
-
-Order restriction and price are checked, then user's available
-and ceiling asset counts are checked, verifying that the given
-market exists. The corresponding order book is borrowed, base
-and quote type arguments are verified, the order size is checked
-against the min size for the market, and the market underwriter
-ID is checked. The price is checked for the given order side to
-determine if the spread is crossed, and if not, order aborts if
-restriction is fill-or-abort. If spread is not crossed, order
-aborts if restriction is post-or-abort.
-
-The amount of base units, ticks, and quote units required to
-fill the order size are checked for overflow conditions, and
-corresponding trade amounts are calculated for range checking.
-If the order crosses the spread, base and quote assets are
-withdrawn from the user's market account and passed through the
-matching engine, deposited back to the user's market account,
-and remaining order size to fill is updated. If the order price
-still crosses the spread after matching halts, size is updated
-to 0, otherwise it is decremented by the amount just matched. If
-restriction is immediate-or-cancel or if remaining size to fill
-after optional matching as a taker does not meet minimum order
-size requirement for market, returns without placing a maker
-order.
-
-The user's next order access key is checked, and a corresponding
-order is inserted to the order book. If the order's price-time
-priority is too low to fit on the book, the order aborts. Else
-a market order ID is constructed from the AVL queue access key
-just generated upon insertion, and the order book counter is
-updated. An order is placed user-side, and a taker event is
-emitted for the new order on the book.
-
-If insertion did not result in an eviction, the empty optional
-evictee value is destroyed. Otherwise, the evicted order is
-unpacked and its price is extracted, then it is cancelled from
-the corresponding user's market account, and its market order
-ID is emitted in a maker evict event.
-
-
-<a name="@Expected_value_testing_98"></a>
+<a name="@Expected_value_testing_96"></a>
 
 ### Expected value testing
 
@@ -4050,7 +4095,7 @@ ID is emitted in a maker evict event.
 * <code>test_place_limit_order_still_crosses_bid()</code>
 
 
-<a name="@Failure_testing_99"></a>
+<a name="@Failure_testing_97"></a>
 
 ### Failure testing
 
@@ -4070,7 +4115,7 @@ ID is emitted in a maker evict event.
 * <code>test_place_limit_order_ticks_overflow()</code>
 
 
-<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>&lt;BaseType, QuoteType&gt;(user_address: <b>address</b>, market_id: u64, custodian_id: u64, integrator: <b>address</b>, side: bool, size: u64, price: u64, restriction: u8, critical_height: u8): (u128, u64, u64, u64)
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>&lt;BaseType, QuoteType&gt;(user_address: <b>address</b>, market_id: u64, custodian_id: u64, integrator: <b>address</b>, side: bool, size: u64, price: u64, restriction: u8, self_match_behavior: u8, critical_height: u8): (u128, u64, u64, u64)
 </code></pre>
 
 
@@ -4090,6 +4135,7 @@ ID is emitted in a maker evict event.
     size: u64,
     price: u64,
     restriction: u8,
+    self_match_behavior: u8,
     critical_height: u8
 ): (
     u128,
@@ -4196,12 +4242,18 @@ ID is emitted in a maker evict event.
             <a href="user.md#0xc0deb00c_user_withdraw_assets_internal">user::withdraw_assets_internal</a>&lt;BaseType, QuoteType&gt;(
                 user_address, market_id, custodian_id, base_withdraw,
                 quote_withdraw, underwriter_id);
-        // Match against order book, storing modified asset inputs,
-        // base and quote trade amounts, and quote fees paid.
-        (optional_base_coins, quote_coins, base_traded, quote_traded, fees)
-            = <a href="market.md#0xc0deb00c_market_match">match</a>(market_id, order_book_ref_mut, user_address,
-                    integrator, direction, min_base, max_base, min_quote,
-                    max_quote, price, optional_base_coins, quote_coins);
+        // Declare <b>return</b> assignment variable.
+        <b>let</b> self_match_cancel;
+        // Match against order book, storing optionally modified
+        // asset inputs, base and quote trade amounts, quote fees
+        // paid, and <b>if</b> a self match <b>requires</b> canceling the rest of
+        // the order.
+        (optional_base_coins, quote_coins, base_traded, quote_traded, fees,
+         self_match_cancel) = <a href="market.md#0xc0deb00c_market_match">match</a>(
+            market_id, order_book_ref_mut, user_address, custodian_id,
+            integrator, direction, min_base, max_base, min_quote,
+            max_quote, price, self_match_behavior, optional_base_coins,
+            quote_coins);
         // Calculate amount of base deposited back <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
         <b>let</b> base_deposit = <b>if</b> (direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>) base_traded <b>else</b>
             base_withdraw - base_traded;
@@ -4218,9 +4270,10 @@ ID is emitted in a maker evict event.
             !<a href="avl_queue.md#0xc0deb00c_avl_queue_would_update_head">avl_queue::would_update_head</a>(&order_book_ref_mut.bids, price)
             <b>else</b>
             !<a href="avl_queue.md#0xc0deb00c_avl_queue_would_update_head">avl_queue::would_update_head</a>(&order_book_ref_mut.asks, price);
-        // If matching engine halted but order still crosses spread
-        // then mark no size left <b>to</b> fill <b>as</b> a maker.
-        size = <b>if</b> (still_crosses_spread) 0 <b>else</b>
+        // If matching engine halted but order still crosses spread,
+        // or <b>if</b> a self match that <b>requires</b> canceling the rest of
+        // of the order, then mark no size left <b>to</b> <b>post</b> <b>as</b> a maker.
+        size = <b>if</b> (still_crosses_spread || self_match_cancel) 0 <b>else</b>
             // Else <b>update</b> size <b>to</b> amount left <b>to</b> fill <b>post</b>-match.
             size - (base_traded / order_book_ref_mut.lot_size);
     }; // Done <b>with</b> optional matching <b>as</b> a taker across the spread.
@@ -4288,7 +4341,7 @@ ID is emitted in a maker evict event.
 Place market order against order book from user market account.
 
 
-<a name="@Type_Parameters_100"></a>
+<a name="@Type_Parameters_98"></a>
 
 ### Type Parameters
 
@@ -4297,7 +4350,7 @@ Place market order against order book from user market account.
 * <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Parameters_101"></a>
+<a name="@Parameters_99"></a>
 
 ### Parameters
 
@@ -4316,9 +4369,10 @@ account.
 <code><a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a></code> will attempt to trade maximum possible amount
 for market account.
 * <code>limit_price</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>self_match_behavior</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Returns_102"></a>
+<a name="@Returns_100"></a>
 
 ### Returns
 
@@ -4328,7 +4382,7 @@ for market account.
 * <code>u64</code>: Quote coin fees paid, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Aborts_103"></a>
+<a name="@Aborts_101"></a>
 
 ### Aborts
 
@@ -4337,30 +4391,7 @@ for market account.
 * <code><a href="market.md#0xc0deb00c_market_E_INVALID_QUOTE">E_INVALID_QUOTE</a></code>: Quote asset type is invalid.
 
 
-<a name="@Algorithm_description_104"></a>
-
-### Algorithm description
-
-
-Checks user's available and ceiling asset counts, thus verifying
-that market exists for given market ID. Mutably borrows order
-book for market and checks base/quote type arguments, gets
-underwriter ID, then checks max base and quote trade amount
-inputs. If flagged as max possible, max base is updated to max
-amount possible for market account state, as for max quote.
-Trade amounts are range checked, and withdraw amounts are
-calculated based on the direction: if a buy, max quote is
-withdrawn but no base, and if a sell, max base but no quote is
-withdrawn from user's market account.
-
-Assets are withdrawn from the user's market account, thus
-verifying the base and quote type for the market. The amount of
-base asset to deposit back to the user's market account is
-calculated, then base and quote assets are deposited back to the
-user's market account.
-
-
-<a name="@Expected_value_testing_105"></a>
+<a name="@Expected_value_testing_102"></a>
 
 ### Expected value testing
 
@@ -4371,7 +4402,7 @@ user's market account.
 * <code>test_place_market_order_max_quote_sell_user()</code>
 
 
-<a name="@Failure_testing_106"></a>
+<a name="@Failure_testing_103"></a>
 
 ### Failure testing
 
@@ -4380,7 +4411,7 @@ user's market account.
 * <code>test_place_market_order_invalid_quote()</code>
 
 
-<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_place_market_order">place_market_order</a>&lt;BaseType, QuoteType&gt;(user_address: <b>address</b>, market_id: u64, custodian_id: u64, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64): (u64, u64, u64)
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_place_market_order">place_market_order</a>&lt;BaseType, QuoteType&gt;(user_address: <b>address</b>, market_id: u64, custodian_id: u64, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64, self_match_behavior: u8): (u64, u64, u64)
 </code></pre>
 
 
@@ -4402,6 +4433,7 @@ user's market account.
     min_quote: u64,
     max_quote: u64,
     limit_price: u64,
+    self_match_behavior: u8
 ): (
     u64,
     u64,
@@ -4447,12 +4479,13 @@ user's market account.
         <a href="user.md#0xc0deb00c_user_withdraw_assets_internal">user::withdraw_assets_internal</a>&lt;BaseType, QuoteType&gt;(
             user_address, market_id, custodian_id, base_withdraw,
             quote_withdraw, underwriter_id);
-    // Match against order book, storing modified asset inputs,
-    // base and quote trade amounts, and quote fees paid.
-    <b>let</b> (optional_base_coins, quote_coins, base_traded, quote_traded, fees)
-        = <a href="market.md#0xc0deb00c_market_match">match</a>(market_id, order_book_ref_mut, user_address, integrator,
-                direction, min_base, max_base, min_quote, max_quote,
-                limit_price, optional_base_coins, quote_coins);
+    // Match against order book, storing optionally modified asset
+    // inputs, base and quote trade amounts, and quote fees paid.
+    <b>let</b> (optional_base_coins, quote_coins, base_traded, quote_traded, fees,
+         _) = <a href="market.md#0xc0deb00c_market_match">match</a>(market_id, order_book_ref_mut, user_address,
+                    custodian_id, integrator, direction, min_base,
+                    max_base, min_quote, max_quote, limit_price,
+                    self_match_behavior, optional_base_coins, quote_coins);
     // Calculate amount of base deposited back <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
     <b>let</b> base_deposit = <b>if</b> (direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>) base_traded <b>else</b>
         (base_withdraw - base_traded);
@@ -4476,7 +4509,7 @@ Range check minimum and maximum asset trade amounts.
 Should be called before <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Terminology_107"></a>
+<a name="@Terminology_104"></a>
 
 ### Terminology
 
@@ -4499,7 +4532,7 @@ user's <code>aptos_framework::coin::CoinStore</code> or from standalone
 coins, is the same as available amount.
 
 
-<a name="@Parameters_108"></a>
+<a name="@Parameters_105"></a>
 
 ### Parameters
 
@@ -4520,7 +4553,7 @@ trade.
 <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>.
 
 
-<a name="@Aborts_109"></a>
+<a name="@Aborts_106"></a>
 
 ### Aborts
 
@@ -4536,7 +4569,7 @@ received from trade.
 * <code><a href="market.md#0xc0deb00c_market_E_NOT_ENOUGH_ASSET_OUT">E_NOT_ENOUGH_ASSET_OUT</a></code>: Not enough asset to trade away.
 
 
-<a name="@Failure_testing_110"></a>
+<a name="@Failure_testing_107"></a>
 
 ### Failure testing
 
@@ -4610,7 +4643,7 @@ See <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketI
 size, minimum size, and 32-bit prices.
 
 
-<a name="@Type_parameters_111"></a>
+<a name="@Type_parameters_108"></a>
 
 ### Type parameters
 
@@ -4619,7 +4652,7 @@ size, minimum size, and 32-bit prices.
 * <code>QuoteType</code>: Quote coin type for market.
 
 
-<a name="@Parameters_112"></a>
+<a name="@Parameters_109"></a>
 
 ### Parameters
 
@@ -4633,7 +4666,7 @@ for market.
 * <code>underwriter_id</code>: <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>.min_size</code> for market.
 
 
-<a name="@Returns_113"></a>
+<a name="@Returns_110"></a>
 
 ### Returns
 
@@ -4641,7 +4674,7 @@ for market.
 * <code>u64</code>: Market ID for new market.
 
 
-<a name="@Testing_114"></a>
+<a name="@Testing_111"></a>
 
 ### Testing
 
@@ -4706,7 +4739,7 @@ for market.
 Match a taker's swap order against order book for given market.
 
 
-<a name="@Type_Parameters_115"></a>
+<a name="@Type_Parameters_112"></a>
 
 ### Type Parameters
 
@@ -4715,7 +4748,7 @@ Match a taker's swap order against order book for given market.
 * <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Parameters_116"></a>
+<a name="@Parameters_113"></a>
 
 ### Parameters
 
@@ -4724,7 +4757,6 @@ Match a taker's swap order against order book for given market.
 * <code>underwriter_id</code>: ID of underwriter to verify if <code>BaseType</code>
 is <code><a href="registry.md#0xc0deb00c_registry_GenericAsset">registry::GenericAsset</a></code>, else may be passed as
 <code><a href="market.md#0xc0deb00c_market_NO_UNDERWRITER">NO_UNDERWRITER</a></code>.
-* <code>taker</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 * <code>integrator</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 * <code>direction</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 * <code>min_base</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
@@ -4736,7 +4768,7 @@ is <code><a href="registry.md#0xc0deb00c_registry_GenericAsset">registry::Generi
 * <code>quote_coins</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Returns_117"></a>
+<a name="@Returns_114"></a>
 
 ### Returns
 
@@ -4750,7 +4782,7 @@ same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>
 * <code>u64</code>: Quote coin fees paid, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Aborts_118"></a>
+<a name="@Aborts_115"></a>
 
 ### Aborts
 
@@ -4761,7 +4793,7 @@ same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>
 * <code><a href="market.md#0xc0deb00c_market_E_INVALID_QUOTE">E_INVALID_QUOTE</a></code>: Quote asset type is invalid.
 
 
-<a name="@Expected_value_testing_119"></a>
+<a name="@Expected_value_testing_116"></a>
 
 ### Expected value testing
 
@@ -4770,7 +4802,7 @@ same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>
 <code><a href="market.md#0xc0deb00c_market_swap_generic">swap_generic</a>()</code> testing.
 
 
-<a name="@Failure_testing_120"></a>
+<a name="@Failure_testing_117"></a>
 
 ### Failure testing
 
@@ -4781,7 +4813,7 @@ same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>
 * <code>test_swap_invalid_underwriter()</code>
 
 
-<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_swap">swap</a>&lt;BaseType, QuoteType&gt;(market_id: u64, underwriter_id: u64, taker: <b>address</b>, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64, optional_base_coins: <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, quote_coins: <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;): (<a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;, u64, u64, u64)
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_swap">swap</a>&lt;BaseType, QuoteType&gt;(market_id: u64, underwriter_id: u64, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64, optional_base_coins: <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, quote_coins: <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;): (<a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;, u64, u64, u64)
 </code></pre>
 
 
@@ -4795,7 +4827,6 @@ same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>
 &gt;(
     market_id: u64,
     underwriter_id: u64,
-    taker: <b>address</b>,
     integrator: <b>address</b>,
     direction: bool,
     min_base: u64,
@@ -4829,10 +4860,16 @@ same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>
             == order_book_ref_mut.base_type, <a href="market.md#0xc0deb00c_market_E_INVALID_BASE">E_INVALID_BASE</a>);
     <b>assert</b>!(<a href="_type_of">type_info::type_of</a>&lt;QuoteType&gt;() // Assert quote type.
             == order_book_ref_mut.quote_type, <a href="market.md#0xc0deb00c_market_E_INVALID_QUOTE">E_INVALID_QUOTE</a>);
-    <a href="market.md#0xc0deb00c_market_match">match</a>&lt;BaseType, QuoteType&gt;( // Match against order book.
-        market_id, order_book_ref_mut, taker, integrator, direction,
-        min_base, max_base, min_quote, max_quote, limit_price,
-        optional_base_coins, quote_coins)
+    // Declare <b>return</b> assignment variables.
+    <b>let</b> (base_traded, quote_traded, fees);
+    (optional_base_coins, quote_coins, base_traded, quote_traded, fees, _)
+        = <a href="market.md#0xc0deb00c_market_match">match</a>&lt;BaseType, QuoteType&gt;( // Match against order book.
+            market_id, order_book_ref_mut, <a href="market.md#0xc0deb00c_market_NO_MARKET_ACCOUNT">NO_MARKET_ACCOUNT</a>, <a href="market.md#0xc0deb00c_market_NO_CUSTODIAN">NO_CUSTODIAN</a>,
+            integrator, direction, min_base, max_base, min_quote,
+            max_quote, limit_price, <a href="market.md#0xc0deb00c_market_ABORT">ABORT</a>, optional_base_coins,
+            quote_coins);
+    // Return optionally modified asset inputs, trade amounts, fees.
+    (optional_base_coins, quote_coins, base_traded, quote_traded, fees)
 }
 </code></pre>
 
@@ -4854,7 +4891,7 @@ gas unit price that allows the simulation to process all orders
 on the order book.
 
 
-<a name="@Testing_121"></a>
+<a name="@Testing_118"></a>
 
 ### Testing
 

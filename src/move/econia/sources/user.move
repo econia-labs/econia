@@ -1056,14 +1056,14 @@ module econia::user {
     /// against the market order ID in the user's corresponding `Order`.
     /// This check is bypassed when the market order ID is passed as
     /// `NIL`, which should only happen when cancellation is motivated
-    /// by an eviction: market order IDs are not tracked in order book
-    /// state, so during an eviction, `cancel_order_internal()`
-    /// is simply called with a `NIL` market order ID argument.
-    /// Custodians or users who manually trigger order cancellations for
-    /// their own order do have to pass market order IDs, however, to
-    /// verify that they are not passing a malicious market order ID
-    /// (portions of which essentially function as pointers into AVL
-    /// queue state).
+    /// by an eviction or by a self match cancel: market order IDs are
+    /// not tracked in order book state, so during these two operations,
+    /// `cancel_order_internal()` is simply called with a `NIL` market
+    /// order ID argument. Custodians or users who manually trigger
+    /// order cancellations for their own order do have to pass market
+    /// order IDs, however, to verify that they are not passing a
+    /// malicious market order ID (portions of which essentially
+    /// function as pointers into AVL queue state).
     ///
     /// # Parameters
     ///
@@ -1075,8 +1075,8 @@ module econia::user {
     /// * `price`: Order price, in ticks per lot.
     /// * `order_access_key`: Order access key for user order lookup.
     /// * `market_order_id`: `NIL` if order cancellation originates from
-    ///   an eviction, otherwise the market order ID encoded in the
-    ///   user's `Order`.
+    ///   an eviction or a self match cancel, otherwise the market order
+    ///   ID encoded in the user's `Order`.
     ///
     /// # Returns
     ///
@@ -1108,8 +1108,8 @@ module econia::user {
     ///   however, are not maintained in order book state and so could
     ///   be potentially be passed by a malicious user or custodian who
     ///   intends to alter order book state per above.
-    /// * If market order ID is not `NIL`, is only called during an
-    ///   eviction.
+    /// * If market order ID is `NIL`, is only called during an eviction
+    ///   or a self match cancel.
     /// * `price` matches that encoded in market order ID from cancelled
     ///   order if market order ID is not `NIL`.
     ///

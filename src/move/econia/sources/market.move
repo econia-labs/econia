@@ -61,9 +61,13 @@
 ///
 /// ## Constant getters
 ///
+/// * `get_ABORT()`
 /// * `get_ASK()`
 /// * `get_BID()`
 /// * `get_BUY()`
+/// * `get_CANCEL_BOTH()`
+/// * `get_CANCEL_MAKER()`
+/// * `get_CANCEL_TAKER()`
 /// * `get_FILL_OR_ABORT()`
 /// * `get_HI_PRICE()`
 /// * `get_IMMEDIATE_OR_CANCEL()`
@@ -769,6 +773,14 @@ module econia::market {
     }
 
     #[app]
+    /// Public constant getter for `ABORT`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_ABORT()`
+    public fun get_ABORT(): u8 {ABORT}
+
+    #[app]
     /// Public constant getter for `ASK`.
     ///
     /// # Testing
@@ -791,6 +803,30 @@ module econia::market {
     ///
     /// * `test_get_BUY()`
     public fun get_BUY(): bool {BUY}
+
+    #[app]
+    /// Public constant getter for `CANCEL_BOTH`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_CANCEL_BOTH()`
+    public fun get_CANCEL_BOTH(): u8 {CANCEL_BOTH}
+
+    #[app]
+    /// Public constant getter for `CANCEL_MAKER`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_CANCEL_MAKER()`
+    public fun get_CANCEL_MAKER(): u8 {CANCEL_MAKER}
+
+    #[app]
+    /// Public constant getter for `CANCEL_TAKER`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_CANCEL_TAKER()`
+    public fun get_CANCEL_TAKER(): u8 {CANCEL_TAKER}
 
     #[app]
     /// Public constant getter for `FILL_OR_ABORT`.
@@ -3775,6 +3811,10 @@ module econia::market {
 
     #[test]
     /// Verify constant getter return.
+    fun test_get_ABORT() {assert!(get_ABORT() == ABORT, 0)}
+
+    #[test]
+    /// Verify constant getter return.
     fun test_get_ASK() {
         assert!(get_ASK() == ASK, 0);
         assert!(get_ASK() == user::get_ASK(), 0);
@@ -3792,6 +3832,22 @@ module econia::market {
     fun test_get_BUY() {
         assert!(get_BUY() == BUY, 0);
         assert!(get_BUY() == incentives::get_BUY_test(), 0);
+    }
+
+    #[test]
+    /// Verify constant getter return.
+    fun test_get_CANCEL_BOTH() {assert!(get_CANCEL_BOTH() == CANCEL_BOTH, 0)}
+
+    #[test]
+    /// Verify constant getter return.
+    fun test_get_CANCEL_MAKER() {
+        assert!(get_CANCEL_MAKER() == CANCEL_MAKER, 0)
+    }
+
+    #[test]
+    /// Verify constant getter return.
+    fun test_get_CANCEL_TAKER() {
+        assert!(get_CANCEL_TAKER() == CANCEL_TAKER, 0)
     }
 
     #[test]

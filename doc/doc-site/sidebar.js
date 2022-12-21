@@ -17,10 +17,36 @@ module.exports = {
                 'overview/matching'
             ]
         },
-        'apis',
+        {
+            type: 'category',
+            label: 'Move APIs',
+            link: {
+                type: 'generated-index'
+            },
+            items: [
+                'apis/registration',
+                'apis/assets',
+                'apis/trading',
+                'apis/integrators',
+                'apis/utility'
+            ]
+        },
+        {
+            type: 'category',
+            label: 'Integrator resources',
+            link: {
+                type: 'generated-index'
+            },
+            items: [
+                'integrators/econia-labs',
+                'integrators/bridges',
+                'integrators/notifications',
+                'integrators/oracles',
+                'integrators/audits',
+            ]
+        },
         'off-chain',
         'security',
-        'third-party',
         'logo'
     ]
 }

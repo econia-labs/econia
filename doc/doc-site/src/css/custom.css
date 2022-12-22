@@ -51,6 +51,17 @@ html {
 
 .navbar {
   border-bottom: 1px solid #565656;
+  display: flex;
+  justify-content: center;
+}
+
+.navbar__inner {
+  max-width: 1366px;
+}
+
+.main-wrapper {
+  max-width: 1366px;
+  align-self: center;
 }
 
 .navbar__search-input {
@@ -95,7 +106,7 @@ th {
 
 .pagination-nav__link--next {
   text-align: left;
-  background: no-repeat center/98% url(/img/PaginationNextBackground.svg) ;
+  background: no-repeat center/98% url(/img/PaginationNextBackground.svg);
 }
 
 .pagination-nav__link--next:hover {

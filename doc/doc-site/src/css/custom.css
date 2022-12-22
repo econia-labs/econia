@@ -33,6 +33,9 @@
   --ifm-heading-font-weight: bold;
   --ifm-heading-line-height: 58px;
 
+  --ifm-spacing-horizontal: 40px;
+  --ifm-spacing-horizontal: 40px;
+
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
 }
 
@@ -60,6 +63,10 @@ html {
 
 .navbar__inner {
   max-width: 1366px;
+}
+
+.padding-top--md {
+  padding-top: 40px !important;
 }
 
 .main-wrapper {

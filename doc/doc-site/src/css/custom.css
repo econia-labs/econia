@@ -22,6 +22,9 @@
   --ifm-navbar-search-input-icon: url(/img/SearchIcon.svg);
   --ifm-navbar-search-input-background-color: #020202;
 
+  --ifm-menu-color-background-active: #020202;
+  --ifm-menu-color-background-hover: #565656;
+
   --ifm-h2-font-size: 48px;
   --ifm-h2-line-height: 58px;
 
@@ -78,14 +81,12 @@ html {
   color: #ffffff;
 }
 
-.menu__link--active {
-  background-color: #020202;
+.menu__link--active:not(.menu__link--sublist) {
   outline: 1px solid var(--ifm-color-primary);
-  border-radius: 0px;
 }
 
-.menu__link--active:not(.menu__link--sublist) {
-  background-color: #020202;
+.menu__list-item-collapsible .menu__link--active {
+  outline: none;
 }
 
 .customTable {

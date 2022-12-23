@@ -76,7 +76,9 @@
 /// * `get_NO_RESTRICTION()`
 /// * `get_NO_UNDERWRITER()`
 /// * `get_POST_OR_ABORT()`
+/// * `get_PERCENT()`
 /// * `get_SELL()`
+/// * `get_TICKS()`
 ///
 /// ## Market registration
 ///
@@ -94,6 +96,12 @@
 /// * `place_limit_order_custodian()`
 /// * `place_limit_order_user()`
 /// * `place_limit_order_user_entry()`
+///
+/// ## Passive advance limit orders
+///
+/// * `place_limit_order_passive_advance_custodian()`
+/// * `place_limit_order_passive_advance_user()`
+/// * `place_limit_order_passive_advance_user_entry()`
 ///
 /// ## Market orders
 ///
@@ -167,33 +175,15 @@
 ///
 /// flowchart LR
 ///
-/// subgraph Limit orders
-///
-/// place_limit_order_user_entry --> place_limit_order_user
-///
-/// place_limit_order_user --> place_limit_order
-///
-/// place_limit_order_custodian --> place_limit_order
-///
-/// end
-///
 /// place_limit_order ---> match
 ///
 /// place_limit_order --> range_check_trade
 ///
-/// subgraph Market orders
-///
-/// place_market_order_user_entry --> place_market_order_user
-///
-/// place_market_order_user --> place_market_order
-///
-/// place_market_order_custodian --> place_market_order
-///
-/// end
-///
 /// place_market_order ---> match
 ///
 /// place_market_order --> range_check_trade
+///
+/// swap ---> match
 ///
 /// swap_between_coinstores ---> range_check_trade
 ///
@@ -209,11 +199,44 @@
 ///
 /// end
 ///
-/// swap_generic --> range_check_trade
-///
 /// swap_coins ---> range_check_trade
 ///
-/// swap ---> match
+/// swap_generic ---> range_check_trade
+///
+/// place_limit_order_passive_advance --> place_limit_order
+///
+/// subgraph Market orders
+///
+/// place_market_order_user_entry --> place_market_order_user
+///
+/// place_market_order_user --> place_market_order
+///
+/// place_market_order_custodian --> place_market_order
+///
+/// end
+///
+/// subgraph Limit orders
+///
+/// place_limit_order_user_entry --> place_limit_order_user
+///
+/// place_limit_order_user --> place_limit_order
+///
+/// place_limit_order_custodian --> place_limit_order
+///
+/// end
+///
+/// subgraph Passive advance limit orders
+///
+/// place_limit_order_passive_advance_user_entry -->
+///     place_limit_order_passive_advance_user
+///
+/// place_limit_order_passive_advance_user -->
+///     place_limit_order_passive_advance
+///
+/// place_limit_order_passive_advance_custodian -->
+///     place_limit_order_passive_advance
+///
+/// end
 ///
 /// ```
 ///
@@ -363,6 +386,8 @@
 /// * [x] `change_order_size()`
 /// * [x] `match()`
 /// * [x] `place_limit_order()`
+/// * [ ] `place_limit_order_passive_advance()`
+/// * [x] `place_market_order()`
 /// * [x] `range_check_trade()`
 /// * [x] `swap()`
 ///
@@ -391,9 +416,21 @@
 /// | `swap_coins()`                   | None                        |
 /// | `swap_generic()`                 | None                        |
 ///
+/// Passive advance limit order functions do not fit in the above table
+/// without excessive line length, and are thus presented here:
+///
+/// * Function `place_limit_order_passive_advance()` has return proxy
+///   `place_limit_order_passive_advance_user()`
+/// * Function `place_limit_order_passive_advance_user()` has no return
+///   proxy.
+/// * Function `place_limit_order_passive_advance_custodian()` has no
+///   return proxy.
+///
 /// Function returns to test:
 ///
 /// * [x] `place_limit_order_custodian()`
+/// * [ ] `place_limit_order_passive_advance_custodian()`
+/// * [ ] `place_limit_order_passive_advance_user()`
 /// * [x] `place_limit_order_user()`
 /// * [x] `place_market_order_custodian()`
 /// * [x] `place_market_order_user()`
@@ -420,6 +457,8 @@
 /// * [x] `change_order_size_user()`
 /// * [x] `place_limit_order_user_entry()`
 /// * [x] `place_limit_order_custodian()`
+/// * [ ] `place_limit_order_passive_advance_custodian()`
+/// * [ ] `place_limit_order_passive_advance_user_entry()`
 /// * [x] `place_market_order_user_entry()`
 /// * [x] `place_market_order_custodian()`
 /// * [x] `swap_between_coinstores_entry()`
@@ -435,6 +474,7 @@
 /// * [x] `change_order_size()`
 /// * [x] `match()`
 /// * [x] `place_limit_order()`
+/// * [ ] `place_limit_order_passive_advance()`
 /// * [x] `place_market_order()`
 /// * [x] `range_check_trade()`
 /// * [x] `swap_between_coinstores()`
@@ -927,12 +967,28 @@ module econia::market {
     public fun get_POST_OR_ABORT(): u8 {POST_OR_ABORT}
 
     #[app]
+    /// Public constant getter for `PERCENT`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_PERCENT()`
+    public fun get_PERCENT(): bool {PERCENT}
+
+    #[app]
     /// Public constant getter for `SELL`.
     ///
     /// # Testing
     ///
     /// * `test_get_SELL()`
     public fun get_SELL(): bool {SELL}
+
+    #[app]
+    /// Public constant getter for `TICKS`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_TICKS()`
+    public fun get_TICKS(): bool {TICKS}
 
     /// Public function wrapper for `place_limit_order()` for placing
     /// order under authority of delegated custodian.
@@ -973,6 +1029,67 @@ module econia::market {
             restriction,
             self_match_behavior,
             CRITICAL_HEIGHT)
+    }
+
+    /// Public function wrapper for
+    /// `place_limit_order_passive_advance()` for placing order under
+    /// authority of delegated custodian.
+    public fun place_limit_order_passive_advance_custodian<
+        BaseType,
+        QuoteType
+    >(
+        user_address: address,
+        market_id: u64,
+        integrator: address,
+        side: bool,
+        size: u64,
+        advance_style: bool,
+        target_advance_amount: u64,
+        custodian_capability_ref: &CustodianCapability
+    ): u128
+    acquires OrderBooks {
+        place_limit_order_passive_advance<
+            BaseType,
+            QuoteType
+        >(
+            user_address,
+            market_id,
+            registry::get_custodian_id(custodian_capability_ref),
+            integrator,
+            side,
+            size,
+            advance_style,
+            target_advance_amount)
+    }
+
+    /// Public function wrapper for
+    /// `place_limit_order_passive_advance()` for placing order under
+    /// authority of signing user.
+    public fun place_limit_order_passive_advance_user<
+        BaseType,
+        QuoteType
+    >(
+        user: &signer,
+        market_id: u64,
+        integrator: address,
+        side: bool,
+        size: u64,
+        advance_style: bool,
+        target_advance_amount: u64
+    ): u128
+    acquires OrderBooks {
+        place_limit_order_passive_advance<
+            BaseType,
+            QuoteType
+        >(
+            address_of(user),
+            market_id,
+            NO_CUSTODIAN,
+            integrator,
+            side,
+            size,
+            advance_style,
+            target_advance_amount)
     }
 
     /// Public function wrapper for `place_limit_order()` for placing
@@ -1594,6 +1711,34 @@ module econia::market {
             side,
             market_order_id,
             new_size);
+    }
+
+    #[cmd]
+    /// Public entry function wrapper for
+    /// `place_limit_order_passive_advance_user()`.
+    public entry fun place_limit_order_passive_advance_user_entry<
+        BaseType,
+        QuoteType
+    >(
+        user: &signer,
+        market_id: u64,
+        integrator: address,
+        side: bool,
+        size: u64,
+        advance_style: bool,
+        target_advance_amount: u64
+    ) acquires OrderBooks {
+        place_limit_order_passive_advance_user<
+            BaseType,
+            QuoteType
+        >(
+            user,
+            market_id,
+            integrator,
+            side,
+            size,
+            advance_style,
+            target_advance_amount);
     }
 
     #[cmd]
@@ -2503,9 +2648,67 @@ module econia::market {
         return (market_order_id, base_traded, quote_traded, fees)
     }
 
-    /// * Base and quote type are checked in `place_limit_order()`.
-    /// * Order book lookup prices are 32 bits and nonzero.
-    /// * Computed prices are later calculated in `place_limit_order()`.
+    /// Place a limit order, passively advancing from the best price on
+    /// the given side.
+    ///
+    /// Computes limit order price based on a "passive advance" amount
+    /// specified as a percentage of the spread, or in ticks. If a user
+    /// places an ask with a 35 percent advance, for example, limit
+    /// price will be computed as the minimum ask price minus 35 percent
+    /// of the spread. If a bid with a 10 tick advance, limit price
+    /// becomes the maximum bid price plus 10 ticks.
+    ///
+    /// Returns without posting an order if the order book is empty on
+    /// the specified side. If advance amount is nonzero, returns
+    /// silently if the order book is empty on the other side (since
+    /// the spread cannot be computed). If target advance amount,
+    /// specified in ticks, exceeds the number of ticks available inside
+    /// the spread, advances as much as possible without crossing the
+    /// spread.
+    ///
+    /// To ensure passivity, a full advance corresponds to an advance
+    /// price just short of completely crossing the spread: for a 100
+    /// percent passive advance bid on a market where the minimum ask
+    /// price is 400, the advance price is 399.
+    ///
+    /// After computing the passive advance price, places a
+    /// post-or-abort limit order that aborts for a self-match. Advance
+    /// price is then range-checked by `place_limit_order()`.
+    ///
+    /// # Pricing
+    ///
+    /// For a limit order to be placed on the book, it must fit in
+    /// 32 bits and be nonzero. Hence no underflow checking for the
+    /// bid "check price", or overflow checking for the multiplication
+    /// operation during advance calculation for the percent case.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `BaseType`: Same as for `match()`.
+    /// * `QuoteType`: Same as for `match()`.
+    ///
+    /// # Parameters
+    ///
+    /// * `user_address`: User address for market account.
+    /// * `market_id`: Same as for `match()`.
+    /// * `custodian_id`: Same as for `match()`.
+    /// * `integrator`: Same as for `place_limit_order()`.
+    /// * `side`: Same as for `place_limit_order()`.
+    /// * `size`: Same as for `place_limit_order()`.
+    /// * `advance_style`: `PERCENT` or `TICKS`, denoting a price
+    ///   advance into the spread specified as a percent of a full
+    ///   advance, or a target number of ticks into the spread.
+    /// * `target_advance_amount`: If `advance_style` is `PERCENT`, the
+    ///
+    /// # Returns
+    ///
+    /// * `u128`: Market order ID, same as for `place_limit_order()`.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_INVALID_MARKET_ID`: No market with given ID.
+    /// * `E_INVALID_BASE`: Base asset type is invalid.
+    /// * `E_INVALID_QUOTE`: Quote asset type is invalid.
     fun place_limit_order_passive_advance<
         BaseType,
         QuoteType,
@@ -2517,13 +2720,9 @@ module econia::market {
         side: bool,
         size: u64,
         advance_style: bool,
-        advance_amount: u64,
-    ): (
-        u128,
-        u64,
-        u64,
-        u64
-    ) acquires OrderBooks {
+        target_advance_amount: u64
+    ): u128
+    acquires OrderBooks {
         // Get address of resource account where order books are stored.
         let resource_address = resource_account::get_address();
         let order_books_map_ref = // Immutably borrow order books map.
@@ -2533,7 +2732,11 @@ module econia::market {
                 E_INVALID_MARKET_ID);
         // Immutably borrow market order book.
         let order_book_ref = tablist::borrow(order_books_map_ref, market_id);
-        // Get option-packed max bid and min ask prices.
+        assert!(type_info::type_of<BaseType>() // Assert base type.
+                == order_book_ref.base_type, E_INVALID_BASE);
+        assert!(type_info::type_of<QuoteType>() // Assert quote type.
+                == order_book_ref.quote_type, E_INVALID_QUOTE);
+        // Get option-packed maximum bid and minimum ask prices.
         let (max_bid_price_option, min_ask_price_option) =
             (avl_queue::get_head_key(&order_book_ref.bids),
              avl_queue::get_head_key(&order_book_ref.asks));
@@ -2542,15 +2745,13 @@ module econia::market {
             (min_ask_price_option, max_bid_price_option) else
             (max_bid_price_option, min_ask_price_option);
         // Return if there is no price to advance from.
-        if (option::is_none(&start_price_option)) return
-            ((NIL as u128), 0, 0, 0);
+        if (option::is_none(&start_price_option)) return (NIL as u128);
         // Get price to start advance from.
         let start_price = *option::borrow(&start_price_option);
-        // If advance amount is 0, price is start price. Otherwise:
-        let price = if (advance_amount == 0) start_price else {
+        // If target advance amount is 0, price is start price. Else:
+        let price = if (target_advance_amount == 0) start_price else {
             // Return if no cross price.
-            if (option::is_none(&cross_price_option)) return
-                ((NIL as u128), 0, 0, 0);
+            if (option::is_none(&cross_price_option)) return (NIL as u128);
             // Get cross price.
             let cross_price = *option::borrow(&cross_price_option);
             // Calculate full advance price. If an ask:
@@ -2572,7 +2773,7 @@ module econia::market {
             // Calculate price. If full advance price equals start
             // price, do not advance past start price. Otherwise:
             if (full_advance_price == start_price) start_price else {
-                // Calculate full price advance in ticks:
+                // Calculate full advance in ticks:
                 let full_advance = if (side == ASK)
                     // If an ask, calculate max decrement.
                     (start_price - full_advance_price) else
@@ -2580,35 +2781,40 @@ module econia::market {
                     (full_advance_price - start_price);
                 // If advance specified as a percentage:
                 if (advance_style == PERCENT) {
-                    // Assert advance amount is a valid percent.
-                    assert!(advance_amount <= PERCENT_100, E_INVALID_PERCENT);
-                    // Calculate price. If advance is 100 percent:
-                    if (advance_amount == PERCENT_100)
+                    // Assert target advance amount is a valid percent.
+                    assert!(target_advance_amount <= PERCENT_100,
+                            E_INVALID_PERCENT);
+                    // Calculate price. If target is 100 percent:
+                    if (target_advance_amount == PERCENT_100)
                             // Price is full advance price.
                             full_advance_price else { // Otherwise:
-                        let advance = full_advance * advance_amount /
+                        let advance = full_advance * target_advance_amount /
                             PERCENT_100; // Calculate advance in ticks.
                         // Price is decremented by advance if an ask,
                         if (side == ASK) start_price - advance else
                             start_price + advance // Else incremented.
                     }
                 } else { // Advance specified number of ticks.
-                    // Calculate price. If advance amount greater than
-                    // or equal to full advance in ticks:
-                    if (advance_amount >= full_advance)
+                    // Calculate price. If target advance amount greater
+                    // than or equal to full advance in ticks:
+                    if (target_advance_amount >= full_advance)
                         // Price is full advance price. Else if an ask:
                         full_advance_price else if (side == ASK)
-                            // Price is decremented by advance amount.
-                            start_price - advance_amount else
+                            // Price is decremented by target advance
+                            // amount.
+                            start_price - target_advance_amount else
                             // If a bid, price incremented instead.
-                            start_price + advance_amount
+                            start_price + target_advance_amount
                 }
             }
-        }; // Price now updated.
-        // Place post-or-abort limit order.
-        place_limit_order<BaseType, QuoteType>(
-            user_address, market_id, custodian_id, integrator, side, size,
-            price, POST_OR_ABORT, ABORT, CRITICAL_HEIGHT)
+        }; // Price now computed.
+        // Place post-or-abort limit order that aborts for self-match,
+        // storing market order ID.
+        let (market_order_id, _, _, _) =
+            place_limit_order<BaseType, QuoteType>(
+                user_address, market_id, custodian_id, integrator, side, size,
+                price, POST_OR_ABORT, ABORT, CRITICAL_HEIGHT);
+        market_order_id // Return market order ID.
     }
 
     /// Place market order against order book from user market account.
@@ -4021,10 +4227,18 @@ module econia::market {
 
     #[test]
     /// Verify constant getter return.
+    fun test_get_PERCENT() {assert!(get_PERCENT() == PERCENT, 0)}
+
+    #[test]
+    /// Verify constant getter return.
     fun test_get_SELL() {
         assert!(get_SELL() == SELL, 0);
         assert!(get_SELL() == incentives::get_SELL_test(), 0);
     }
+
+    #[test]
+    /// Verify constant getter return.
+    fun test_get_TICKS() {assert!(get_TICKS() == TICKS, 0)}
 
     #[test(account = @econia)]
     /// Verify indexing results.

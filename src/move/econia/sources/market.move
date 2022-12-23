@@ -638,6 +638,8 @@ module econia::market {
     const E_NOT_SIMULATION_ACCOUNT: u64 = 27;
     /// Invalid self match behavior flag.
     const E_INVALID_SELF_MATCH_BEHAVIOR: u64 = 28;
+    /// Passive advance percent is not less than or equal to 100.
+    const E_INVALID_PERCENT: u64 = 29;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -695,6 +697,10 @@ module econia::market {
     const NO_RESTRICTION: u8 = 0;
     /// Underwriter ID flag for no underwriter.
     const NO_UNDERWRITER: u64 = 0;
+    /// Flag for passive order specified by percent advance.
+    const PERCENT: bool = true;
+    /// Maximum percentage passive advance.
+    const PERCENT_100: u64 = 100;
     /// Flag for `MakerEvent.type` when order is placed.
     const PLACE: u8 = 3;
     /// Flag for post-or-abort order restriction.
@@ -704,6 +710,8 @@ module econia::market {
     /// Number of bits maker order counter is shifted in a market order
     /// ID.
     const SHIFT_COUNTER: u8 = 64;
+    /// Flag for passive order specified by advance in ticks.
+    const TICKS: bool = false;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -2493,6 +2501,114 @@ module econia::market {
         };
         // Return market order ID and taker trade amounts.
         return (market_order_id, base_traded, quote_traded, fees)
+    }
+
+    /// * Base and quote type are checked in `place_limit_order()`.
+    /// * Order book lookup prices are 32 bits and nonzero.
+    /// * Computed prices are later calculated in `place_limit_order()`.
+    fun place_limit_order_passive_advance<
+        BaseType,
+        QuoteType,
+    >(
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64,
+        integrator: address,
+        side: bool,
+        size: u64,
+        advance_style: bool,
+        advance_amount: u64,
+    ): (
+        u128,
+        u64,
+        u64,
+        u64
+    ) acquires OrderBooks {
+        // Get address of resource account where order books are stored.
+        let resource_address = resource_account::get_address();
+        let order_books_map_ref = // Immutably borrow order books map.
+            &borrow_global<OrderBooks>(resource_address).map;
+        // Assert order books map has order book with given market ID.
+        assert!(tablist::contains(order_books_map_ref, market_id),
+                E_INVALID_MARKET_ID);
+        // Immutably borrow market order book.
+        let order_book_ref = tablist::borrow(order_books_map_ref, market_id);
+        // Get option-packed max bid and min ask prices.
+        let (max_bid_price_option, min_ask_price_option) =
+            (avl_queue::get_head_key(&order_book_ref.bids),
+             avl_queue::get_head_key(&order_book_ref.asks));
+        // Get best price on given side, and best price on other side.
+        let (start_price_option, cross_price_option) = if (side == ASK)
+            (min_ask_price_option, max_bid_price_option) else
+            (max_bid_price_option, min_ask_price_option);
+        // Return if there is no price to advance from.
+        if (option::is_none(&start_price_option)) return
+            ((NIL as u128), 0, 0, 0);
+        // Get price to start advance from.
+        let start_price = *option::borrow(&start_price_option);
+        // If advance amount is 0, price is start price. Otherwise:
+        let price = if (advance_amount == 0) start_price else {
+            // Return if no cross price.
+            if (option::is_none(&cross_price_option)) return
+                ((NIL as u128), 0, 0, 0);
+            // Get cross price.
+            let cross_price = *option::borrow(&cross_price_option);
+            // Calculate full advance price. If an ask:
+            let full_advance_price = if (side == ASK) {
+                // Check price one tick above max bid price.
+                let check_price = cross_price + 1;
+                // If check price is less than or equal to start price,
+                // full advance goes to check price. Otherwise do not
+                // advance past start price.
+                if (check_price <= start_price) check_price else start_price
+            } else { // If a bid:
+                // Check price one tick below min ask price.
+                let check_price = cross_price - 1;
+                // If check price greater than or equal to start price,
+                // full advance goes to check price. Otherwise do not
+                // advance past start price.
+                if (check_price >= start_price) check_price else start_price
+            };
+            // Calculate price. If full advance price equals start
+            // price, do not advance past start price. Otherwise:
+            if (full_advance_price == start_price) start_price else {
+                // Calculate full price advance in ticks:
+                let full_advance = if (side == ASK)
+                    // If an ask, calculate max decrement.
+                    (start_price - full_advance_price) else
+                    // If a bid, calculate max increment.
+                    (full_advance_price - start_price);
+                // If advance specified as a percentage:
+                if (advance_style == PERCENT) {
+                    // Assert advance amount is a valid percent.
+                    assert!(advance_amount <= PERCENT_100, E_INVALID_PERCENT);
+                    // Calculate price. If advance is 100 percent:
+                    if (advance_amount == PERCENT_100)
+                            // Price is full advance price.
+                            full_advance_price else { // Otherwise:
+                        let advance = full_advance * advance_amount /
+                            PERCENT_100; // Calculate advance in ticks.
+                        // Price is decremented by advance if an ask,
+                        if (side == ASK) start_price - advance else
+                            start_price + advance // Else incremented.
+                    }
+                } else { // Advance specified number of ticks.
+                    // Calculate price. If advance amount greater than
+                    // or equal to full advance in ticks:
+                    if (advance_amount >= full_advance)
+                        // Price is full advance price. Else if an ask:
+                        full_advance_price else if (side == ASK)
+                            // Price is decremented by advance amount.
+                            start_price - advance_amount else
+                            // If a bid, price incremented instead.
+                            start_price + advance_amount
+                }
+            }
+        }; // Price now updated.
+        // Place post-or-abort limit order.
+        place_limit_order<BaseType, QuoteType>(
+            user_address, market_id, custodian_id, integrator, side, size,
+            price, POST_OR_ABORT, ABORT, CRITICAL_HEIGHT)
     }
 
     /// Place market order against order book from user market account.

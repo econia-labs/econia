@@ -2651,36 +2651,36 @@ module econia::market {
     /// Place a limit order, passively advancing from the best price on
     /// the given side.
     ///
-    /// Computes limit order price based on a "passive advance" amount
-    /// specified as a percentage of the spread, or in ticks. If a user
-    /// places an ask with a 35 percent advance, for example, limit
-    /// price will be computed as the minimum ask price minus 35 percent
-    /// of the spread. If a bid with a 10 tick advance, limit price
-    /// becomes the maximum bid price plus 10 ticks.
+    /// Computes limit order price based on a target "advance" amount
+    /// specified as a percentage of the spread, or specified in ticks:
+    /// if a user places an ask with a 35 percent advance, for example,
+    /// the "advance price" will be computed as the minimum ask price
+    /// minus 35 percent of the spread. If a bid with a 10 tick advance,
+    /// the advance price becomes the maximum bid price plus 10 ticks.
     ///
     /// Returns without posting an order if the order book is empty on
-    /// the specified side. If advance amount is nonzero, returns
-    /// silently if the order book is empty on the other side (since
-    /// the spread cannot be computed). If target advance amount,
-    /// specified in ticks, exceeds the number of ticks available inside
-    /// the spread, advances as much as possible without crossing the
-    /// spread.
+    /// the specified side, or if advance amount is nonzero and the
+    /// order book is empty on the other side (since the spread cannot
+    /// be computed). If target advance amount, specified in ticks,
+    /// exceeds the number of ticks available inside the spread,
+    /// advances as much as possible without crossing the spread.
     ///
     /// To ensure passivity, a full advance corresponds to an advance
     /// price just short of completely crossing the spread: for a 100
     /// percent passive advance bid on a market where the minimum ask
     /// price is 400, the advance price is 399.
     ///
-    /// After computing the passive advance price, places a
-    /// post-or-abort limit order that aborts for a self-match. Advance
-    /// price is then range-checked by `place_limit_order()`.
+    /// After computing the advance price, places a post-or-abort limit
+    /// order that aborts for a self-match. Advance price is then
+    /// range-checked by `place_limit_order()`.
     ///
-    /// # Pricing
+    /// # Price calculations
     ///
     /// For a limit order to be placed on the book, it must fit in
     /// 32 bits and be nonzero. Hence no underflow checking for the
     /// bid "check price", or overflow checking for the multiplication
-    /// operation during advance calculation for the percent case.
+    /// operation during the advance amount calculation for the percent
+    /// case.
     ///
     /// # Type Parameters
     ///
@@ -2698,7 +2698,9 @@ module econia::market {
     /// * `advance_style`: `PERCENT` or `TICKS`, denoting a price
     ///   advance into the spread specified as a percent of a full
     ///   advance, or a target number of ticks into the spread.
-    /// * `target_advance_amount`: If `advance_style` is `PERCENT`, the
+    /// * `target_advance_amount`: If `advance_style` is `PERCENT` the
+    ///   percent of the spread to advance, else the number of ticks to
+    ///   advance.
     ///
     /// # Returns
     ///
@@ -2779,7 +2781,7 @@ module econia::market {
                     (start_price - full_advance_price) else
                     // If a bid, calculate max increment.
                     (full_advance_price - start_price);
-                // If advance specified as a percentage:
+                // Calculate price. If advance specified as percentage:
                 if (advance_style == PERCENT) {
                     // Assert target advance amount is a valid percent.
                     assert!(target_advance_amount <= PERCENT_100,

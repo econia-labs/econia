@@ -738,7 +738,7 @@ The below index is automatically generated from source code:
     -  [Expected value testing](#@Expected_value_testing_103)
     -  [Failure testing](#@Failure_testing_104)
 -  [Function `place_limit_order_passive_advance`](#0xc0deb00c_market_place_limit_order_passive_advance)
-    -  [Pricing](#@Pricing_105)
+    -  [Price calculations](#@Price_calculations_105)
     -  [Type Parameters](#@Type_Parameters_106)
     -  [Parameters](#@Parameters_107)
     -  [Returns](#@Returns_108)
@@ -4757,40 +4757,40 @@ again for the maker portion.
 Place a limit order, passively advancing from the best price on
 the given side.
 
-Computes limit order price based on a "passive advance" amount
-specified as a percentage of the spread, or in ticks. If a user
-places an ask with a 35 percent advance, for example, limit
-price will be computed as the minimum ask price minus 35 percent
-of the spread. If a bid with a 10 tick advance, limit price
-becomes the maximum bid price plus 10 ticks.
+Computes limit order price based on a target "advance" amount
+specified as a percentage of the spread, or specified in ticks:
+if a user places an ask with a 35 percent advance, for example,
+the "advance price" will be computed as the minimum ask price
+minus 35 percent of the spread. If a bid with a 10 tick advance,
+the advance price becomes the maximum bid price plus 10 ticks.
 
 Returns without posting an order if the order book is empty on
-the specified side. If advance amount is nonzero, returns
-silently if the order book is empty on the other side (since
-the spread cannot be computed). If target advance amount,
-specified in ticks, exceeds the number of ticks available inside
-the spread, advances as much as possible without crossing the
-spread.
+the specified side, or if advance amount is nonzero and the
+order book is empty on the other side (since the spread cannot
+be computed). If target advance amount, specified in ticks,
+exceeds the number of ticks available inside the spread,
+advances as much as possible without crossing the spread.
 
 To ensure passivity, a full advance corresponds to an advance
 price just short of completely crossing the spread: for a 100
 percent passive advance bid on a market where the minimum ask
 price is 400, the advance price is 399.
 
-After computing the passive advance price, places a
-post-or-abort limit order that aborts for a self-match. Advance
-price is then range-checked by <code><a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>()</code>.
+After computing the advance price, places a post-or-abort limit
+order that aborts for a self-match. Advance price is then
+range-checked by <code><a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>()</code>.
 
 
-<a name="@Pricing_105"></a>
+<a name="@Price_calculations_105"></a>
 
-### Pricing
+### Price calculations
 
 
 For a limit order to be placed on the book, it must fit in
 32 bits and be nonzero. Hence no underflow checking for the
 bid "check price", or overflow checking for the multiplication
-operation during advance calculation for the percent case.
+operation during the advance amount calculation for the percent
+case.
 
 
 <a name="@Type_Parameters_106"></a>
@@ -4816,7 +4816,9 @@ operation during advance calculation for the percent case.
 * <code>advance_style</code>: <code><a href="market.md#0xc0deb00c_market_PERCENT">PERCENT</a></code> or <code><a href="market.md#0xc0deb00c_market_TICKS">TICKS</a></code>, denoting a price
 advance into the spread specified as a percent of a full
 advance, or a target number of ticks into the spread.
-* <code>target_advance_amount</code>: If <code>advance_style</code> is <code><a href="market.md#0xc0deb00c_market_PERCENT">PERCENT</a></code>, the
+* <code>target_advance_amount</code>: If <code>advance_style</code> is <code><a href="market.md#0xc0deb00c_market_PERCENT">PERCENT</a></code> the
+percent of the spread to advance, else the number of ticks to
+advance.
 
 
 <a name="@Returns_108"></a>
@@ -4915,7 +4917,7 @@ advance, or a target number of ticks into the spread.
                 (start_price - full_advance_price) <b>else</b>
                 // If a bid, calculate max increment.
                 (full_advance_price - start_price);
-            // If advance specified <b>as</b> a percentage:
+            // Calculate price. If advance specified <b>as</b> percentage:
             <b>if</b> (advance_style == <a href="market.md#0xc0deb00c_market_PERCENT">PERCENT</a>) {
                 // Assert target advance amount is a valid percent.
                 <b>assert</b>!(target_advance_amount &lt;= <a href="market.md#0xc0deb00c_market_PERCENT_100">PERCENT_100</a>,

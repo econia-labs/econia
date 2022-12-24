@@ -361,7 +361,7 @@
 ///
 /// * [x] `cancel_order()`
 /// * [x] `change_order_size()`
-/// * [x] `match()`
+/// * [ ] `match()`
 /// * [x] `place_limit_order()`
 /// * [x] `range_check_trade()`
 /// * [x] `swap()`
@@ -433,8 +433,8 @@
 /// * [x] `cancel_all_orders()`
 /// * [x] `cancel_order()`
 /// * [x] `change_order_size()`
-/// * [x] `match()`
-/// * [x] `place_limit_order()`
+/// * [ ] `match()`
+/// * [ ] `place_limit_order()`
 /// * [x] `place_market_order()`
 /// * [x] `range_check_trade()`
 /// * [x] `swap_between_coinstores()`
@@ -1889,6 +1889,10 @@ module econia::market {
 
     /// Match a taker order against the order book.
     ///
+    /// Calculates maximum amont of quote coins to match, matches, then
+    /// assesses taker fees. Matches up until the point of a self match,
+    /// then proceeds according to specified self match behavior.
+    ///
     /// # Type Parameters
     ///
     /// * `BaseType`: Base asset type for market.
@@ -1964,7 +1968,7 @@ module econia::market {
     /// * `E_SELF_MATCH`: A self match occurs when `self_match_behavior`
     ///   is `ABORT`.
     /// * `E_INVALID_SELF_MATCH_BEHAVIOR`: A self match occurs but an
-    ///   invalid flag is passed.
+    ///   invalid behavior flag is passed.
     /// * `E_MIN_BASE_NOT_TRADED`: Minimum base asset trade amount
     ///   requirement not met.
     /// * `E_MIN_QUOTE_NOT_TRADED`: Minimum quote asset trade amount
@@ -2184,7 +2188,7 @@ module econia::market {
     ///
     /// * `user_address`: User address for market account.
     /// * `market_id`: Same as for `match()`.
-    /// * `custodian_id`: Custodian ID for market account.
+    /// * `custodian_id`: Same as for `match()`.
     /// * `integrator`: Same as for `match()`, only receives fees if
     ///   order fills across the spread.
     /// * `side`: `ASK` or `BID`, the side on which to place an order as
@@ -2257,6 +2261,13 @@ module econia::market {
     /// * If order partially fills as a taker and there is still size
     ///   left as a maker, minimum order size condition must be met
     ///   again for the maker portion.
+    ///
+    /// # Self matching
+    ///
+    /// * If price crosses the spread and cross-spread filling is
+    ///   permitted per the indicated restriction, fills up until the
+    ///   point of a self match. If self match behavior is taker cancel,
+    ///   cancels remaining size without posting as a maker.
     ///
     /// # Expected value testing
     ///
@@ -2506,7 +2517,7 @@ module econia::market {
     ///
     /// * `user_address`: User address for market account.
     /// * `market_id`: Same as for `match()`.
-    /// * `custodian_id`: Custodian ID for market account.
+    /// * `custodian_id`: Same as for `match()`.
     /// * `integrator`: Same as for `match()`.
     /// * `direction`: Same as for `match()`.
     /// * `min_base`: Same as for `match()`.

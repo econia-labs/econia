@@ -999,7 +999,7 @@ Wrapped call to <code><a href="user.md#0xc0deb00c_user_deposit_asset">deposit_as
 
 
 * <code><a href="user.md#0xc0deb00c_user_E_COIN_TYPE_IS_GENERIC_ASSET">E_COIN_TYPE_IS_GENERIC_ASSET</a></code>: Coin type is generic asset,
-corresponding to the Econia account having intialized a coin
+corresponding to the Econia account having initialized a coin
 of type <code>GenericAsset</code>.
 
 
@@ -2129,14 +2129,14 @@ Accepts as an argument a market order ID, which is checked
 against the market order ID in the user's corresponding <code><a href="user.md#0xc0deb00c_user_Order">Order</a></code>.
 This check is bypassed when the market order ID is passed as
 <code><a href="user.md#0xc0deb00c_user_NIL">NIL</a></code>, which should only happen when cancellation is motivated
-by an eviction: market order IDs are not tracked in order book
-state, so during an eviction, <code><a href="user.md#0xc0deb00c_user_cancel_order_internal">cancel_order_internal</a>()</code>
-is simply called with a <code><a href="user.md#0xc0deb00c_user_NIL">NIL</a></code> market order ID argument.
-Custodians or users who manually trigger order cancellations for
-their own order do have to pass market order IDs, however, to
-verify that they are not passing a malicious market order ID
-(portions of which essentially function as pointers into AVL
-queue state).
+by an eviction or by a self match cancel: market order IDs are
+not tracked in order book state, so during these two operations,
+<code><a href="user.md#0xc0deb00c_user_cancel_order_internal">cancel_order_internal</a>()</code> is simply called with a <code><a href="user.md#0xc0deb00c_user_NIL">NIL</a></code> market
+order ID argument. Custodians or users who manually trigger
+order cancellations for their own order do have to pass market
+order IDs, however, to verify that they are not passing a
+malicious market order ID (portions of which essentially
+function as pointers into AVL queue state).
 
 
 <a name="@Parameters_47"></a>
@@ -2152,8 +2152,8 @@ queue state).
 * <code>price</code>: Order price, in ticks per lot.
 * <code>order_access_key</code>: Order access key for user order lookup.
 * <code>market_order_id</code>: <code><a href="user.md#0xc0deb00c_user_NIL">NIL</a></code> if order cancellation originates from
-an eviction, otherwise the market order ID encoded in the
-user's <code><a href="user.md#0xc0deb00c_user_Order">Order</a></code>.
+an eviction or a self match cancel, otherwise the market order
+ID encoded in the user's <code><a href="user.md#0xc0deb00c_user_Order">Order</a></code>.
 
 
 <a name="@Returns_48"></a>
@@ -2201,8 +2201,8 @@ begin with for the given access key. Market order IDs,
 however, are not maintained in order book state and so could
 be potentially be passed by a malicious user or custodian who
 intends to alter order book state per above.
-* If market order ID is not <code><a href="user.md#0xc0deb00c_user_NIL">NIL</a></code>, is only called during an
-eviction.
+* If market order ID is <code><a href="user.md#0xc0deb00c_user_NIL">NIL</a></code>, is only called during an eviction
+or a self match cancel.
 * <code>price</code> matches that encoded in market order ID from cancelled
 order if market order ID is not <code><a href="user.md#0xc0deb00c_user_NIL">NIL</a></code>.
 

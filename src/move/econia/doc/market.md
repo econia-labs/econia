@@ -4051,7 +4051,7 @@ Initialize the order books map upon module publication.
 
 Match a taker order against the order book.
 
-Calculates maximum amont of quote coins to match, matches, then
+Calculates maximum amount of quote coins to match, matches, then
 assesses taker fees. Matches up until the point of a self match,
 then proceeds according to specified self match behavior.
 

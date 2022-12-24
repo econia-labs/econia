@@ -30,6 +30,7 @@
         "deallocating",
         "devnet",
         "disambiguator",
+        "disincentivize",
         "Docgen",
         "docstrings",
         "doctest",
@@ -78,6 +79,7 @@
         "toctree",
         "unflagged",
         "unrepresentable",
+        "Vectorize",
         "Velsky",
         "walkthrough"
     ],

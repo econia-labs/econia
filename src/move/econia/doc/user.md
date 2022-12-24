@@ -999,7 +999,7 @@ Wrapped call to <code><a href="user.md#0xc0deb00c_user_deposit_asset">deposit_as
 
 
 * <code><a href="user.md#0xc0deb00c_user_E_COIN_TYPE_IS_GENERIC_ASSET">E_COIN_TYPE_IS_GENERIC_ASSET</a></code>: Coin type is generic asset,
-corresponding to the Econia account having intialized a coin
+corresponding to the Econia account having initialized a coin
 of type <code>GenericAsset</code>.
 
 

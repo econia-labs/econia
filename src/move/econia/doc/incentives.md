@@ -483,7 +483,7 @@ reserved for Econia.
 </dt>
 <dd>
  Map from market ID to fees collected for given market,
- enabling duplicate checks and interable indexing.
+ enabling duplicate checks and iterable indexing.
 </dd>
 </dl>
 
@@ -587,7 +587,7 @@ Fee store for a given integrator, on a given market.
 
 ## Resource `IntegratorFeeStores`
 
-All of an integrator's <code>IntregratorFeeStore</code>s for given
+All of an integrator's <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStore">IntegratorFeeStore</a></code>s for given
 <code>QuoteCoinType</code>.
 
 
@@ -912,7 +912,7 @@ The wrong number of fields are passed for a given tier.
 
 <a name="0xc0deb00c_incentives_E_TOO_MANY_TIERS"></a>
 
-Too many integrater fee store tiers indicated.
+Too many integrator fee store tiers indicated.
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_TOO_MANY_TIERS">E_TOO_MANY_TIERS</a>: u64 = 14;
@@ -1616,7 +1616,7 @@ given <code>tier</code>.
     // Assert provided 0-indexed tier number is within range.
     <b>assert</b>!((tier <b>as</b> u64) &lt; <a href="_length">vector::length</a>(integrator_fee_store_tiers_ref),
             <a href="incentives.md#0xc0deb00c_incentives_E_INVALID_TIER">E_INVALID_TIER</a>);
-    // Borrow immutable refernce <b>to</b> given tier.
+    // Borrow immutable reference <b>to</b> given tier.
     <b>let</b> integrator_fee_store_tier_ref = <a href="_borrow">vector::borrow</a>(
         integrator_fee_store_tiers_ref, (tier <b>as</b> u64));
     // Return its withdrawal fee.
@@ -2463,7 +2463,7 @@ Testing
         <b>let</b> integrator_fee_stores_map_ref_mut =
             &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStores">IntegratorFeeStores</a>&lt;QuoteCoinType&gt;&gt;(
                 integrator_address).map;
-        // Determine <b>if</b> the fee stores map cotains an entry for the
+        // Determine <b>if</b> the fee stores map contains an entry for the
         // given <a href="market.md#0xc0deb00c_market">market</a> ID.
         <b>let</b> contains_market_id_entry = <a href="tablist.md#0xc0deb00c_tablist_contains">tablist::contains</a>(
             integrator_fee_stores_map_ref_mut, market_id);
@@ -3271,7 +3271,7 @@ set.
 vector containing fields for a corresponding
 <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStoreTierParameters">IntegratorFeeStoreTierParameters</a></code>.
 * <code>updating</code>: <code><b>true</b></code> if updating incentive parameters that have
-already beeen set, <code><b>false</b></code> if setting parameters for the first
+already been set, <code><b>false</b></code> if setting parameters for the first
 time.
 
 
@@ -3624,7 +3624,7 @@ a vector that is too long.
 
 Withdraw all fee coins from an <code><a href="incentives.md#0xc0deb00c_incentives_EconiaFeeStore">EconiaFeeStore</a></code> for given
 <code>QuoteCoinType</code> and <code>market_id</code> if <code>all</code> is <code><b>true</b></code>, otherwise
-withdraw <code>amount</code> (which may corresond to all coins), aborting
+withdraw <code>amount</code> (which may correspond to all coins), aborting
 if <code><a href="">account</a></code> is not Econia.
 
 
@@ -3724,7 +3724,7 @@ depositing withdrawn coins to an
 ## Function `withdraw_utility_coins_internal`
 
 Withdraw all utility coins from the <code><a href="incentives.md#0xc0deb00c_incentives_UtilityCoinStore">UtilityCoinStore</a></code> if <code>all</code>
-is <code><b>true</b></code>, otherwise withdraw <code>amount</code> (which may corresond to
+is <code><b>true</b></code>, otherwise withdraw <code>amount</code> (which may correspond to
 all coins), aborting if <code><a href="">account</a></code> is not Econia.
 
 

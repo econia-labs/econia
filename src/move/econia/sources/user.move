@@ -440,7 +440,7 @@ module econia::user {
     /// # Aborts
     ///
     /// * `E_COIN_TYPE_IS_GENERIC_ASSET`: Coin type is generic asset,
-    ///   corresponding to the Econia account having intialized a coin
+    ///   corresponding to the Econia account having initialized a coin
     ///   of type `GenericAsset`.
     ///
     /// # Testing

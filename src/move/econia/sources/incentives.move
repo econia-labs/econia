@@ -277,7 +277,7 @@ module econia::incentives {
     /// reserved for Econia.
     struct EconiaFeeStore<phantom QuoteCoinType> has key {
         /// Map from market ID to fees collected for given market,
-        /// enabling duplicate checks and interable indexing.
+        /// enabling duplicate checks and iterable indexing.
         map: Tablist<u64, Coin<QuoteCoinType>>
     }
 
@@ -314,7 +314,7 @@ module econia::incentives {
         coins: Coin<QuoteCoinType>
     }
 
-    /// All of an integrator's `IntregratorFeeStore`s for given
+    /// All of an integrator's `IntegratorFeeStore`s for given
     /// `QuoteCoinType`.
     struct IntegratorFeeStores<phantom QuoteCoinType> has key {
         /// Map from market ID to `IntegratorFeeStore`, enabling
@@ -427,7 +427,7 @@ module econia::incentives {
     const E_INVALID_UTILITY_COIN_TYPE: u64 = 12;
     /// Not enough utility coins provided.
     const E_NOT_ENOUGH_UTILITY_COINS: u64 = 13;
-    /// Too many integrater fee store tiers indicated.
+    /// Too many integrator fee store tiers indicated.
     const E_TOO_MANY_TIERS: u64 = 14;
     /// Indicated tier is not higher than existing tier.
     const E_NOT_AN_UPGRADE: u64 = 15;
@@ -707,7 +707,7 @@ module econia::incentives {
         // Assert provided 0-indexed tier number is within range.
         assert!((tier as u64) < vector::length(integrator_fee_store_tiers_ref),
                 E_INVALID_TIER);
-        // Borrow immutable refernce to given tier.
+        // Borrow immutable reference to given tier.
         let integrator_fee_store_tier_ref = vector::borrow(
             integrator_fee_store_tiers_ref, (tier as u64));
         // Return its withdrawal fee.
@@ -1187,7 +1187,7 @@ module econia::incentives {
             let integrator_fee_stores_map_ref_mut =
                 &mut borrow_global_mut<IntegratorFeeStores<QuoteCoinType>>(
                     integrator_address).map;
-            // Determine if the fee stores map cotains an entry for the
+            // Determine if the fee stores map contains an entry for the
             // given market ID.
             let contains_market_id_entry = tablist::contains(
                 integrator_fee_stores_map_ref_mut, market_id);
@@ -1689,7 +1689,7 @@ module econia::incentives {
     ///   vector containing fields for a corresponding
     ///   `IntegratorFeeStoreTierParameters`.
     /// * `updating`: `true` if updating incentive parameters that have
-    ///   already beeen set, `false` if setting parameters for the first
+    ///   already been set, `false` if setting parameters for the first
     ///   time.
     ///
     /// # Assumptions
@@ -1959,7 +1959,7 @@ module econia::incentives {
 
     /// Withdraw all fee coins from an `EconiaFeeStore` for given
     /// `QuoteCoinType` and `market_id` if `all` is `true`, otherwise
-    /// withdraw `amount` (which may corresond to all coins), aborting
+    /// withdraw `amount` (which may correspond to all coins), aborting
     /// if `account` is not Econia.
     ///
     /// # Aborts
@@ -2017,7 +2017,7 @@ module econia::incentives {
     }
 
     /// Withdraw all utility coins from the `UtilityCoinStore` if `all`
-    /// is `true`, otherwise withdraw `amount` (which may corresond to
+    /// is `true`, otherwise withdraw `amount` (which may correspond to
     /// all coins), aborting if `account` is not Econia.
     ///
     /// # Aborts

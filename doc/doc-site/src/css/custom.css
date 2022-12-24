@@ -22,6 +22,9 @@
   --ifm-navbar-search-input-icon: url(/img/SearchIcon.svg);
   --ifm-navbar-search-input-background-color: #020202;
 
+  --ifm-menu-color-background-active: #020202;
+  --ifm-menu-color-background-hover: #565656;
+
   --ifm-h2-font-size: 48px;
   --ifm-h2-line-height: 58px;
 
@@ -29,6 +32,9 @@
   --ifm-heading-font-family: "Jost", sans-serif;
   --ifm-heading-font-weight: bold;
   --ifm-heading-line-height: 58px;
+
+  --ifm-spacing-horizontal: 40px;
+  --ifm-spacing-horizontal: 40px;
 
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
 }
@@ -51,6 +57,21 @@ html {
 
 .navbar {
   border-bottom: 1px solid #565656;
+  display: flex;
+  justify-content: center;
+}
+
+.navbar__inner {
+  max-width: 1366px;
+}
+
+.padding-top--md {
+  padding-top: 40px !important;
+}
+
+.main-wrapper {
+  max-width: 1366px;
+  align-self: center;
 }
 
 .navbar__search-input {
@@ -67,14 +88,12 @@ html {
   color: #ffffff;
 }
 
-.menu__link--active {
-  background-color: #020202;
+.menu__link--active:not(.menu__link--sublist) {
   outline: 1px solid var(--ifm-color-primary);
-  border-radius: 0px;
 }
 
-.menu__link--active:not(.menu__link--sublist) {
-  background-color: #020202;
+.menu__list-item-collapsible .menu__link--active {
+  outline: none;
 }
 
 .customTable {
@@ -95,12 +114,12 @@ th {
 
 .pagination-nav__link--next {
   text-align: left;
-  background: no-repeat center/98% url(/img/PaginationNextBackground.svg) ;
+  background: no-repeat center/95% url(/img/PaginationNextBackground.svg);
 }
 
 .pagination-nav__link--next:hover {
   /* TODO: The image moves on hover */
-  background: no-repeat center/98% url(/img/PaginationNextBackgroundHover.svg);
+  background: no-repeat center/95% url(/img/PaginationNextBackgroundHover.svg);
 }
 
 .pagination-nav__link--prev {

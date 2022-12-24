@@ -732,7 +732,7 @@ Buy direction flag, as defined in <code><a href="market.md#0xc0deb00c_market">ma
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_CUSTODIAN_REGISTRATION_FEE">CUSTODIAN_REGISTRATION_FEE</a>: u64 = 25000000;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_CUSTODIAN_REGISTRATION_FEE">CUSTODIAN_REGISTRATION_FEE</a>: u64 = 250000;
 </code></pre>
 
 
@@ -975,7 +975,7 @@ Genesis parameter.
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_FEE_SHARE_DIVISOR_1">FEE_SHARE_DIVISOR_1</a>: u64 = 8000;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_FEE_SHARE_DIVISOR_1">FEE_SHARE_DIVISOR_1</a>: u64 = 8333;
 </code></pre>
 
 
@@ -985,7 +985,7 @@ Genesis parameter.
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_FEE_SHARE_DIVISOR_2">FEE_SHARE_DIVISOR_2</a>: u64 = 6667;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_FEE_SHARE_DIVISOR_2">FEE_SHARE_DIVISOR_2</a>: u64 = 7692;
 </code></pre>
 
 
@@ -995,7 +995,37 @@ Genesis parameter.
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_FEE_SHARE_DIVISOR_3">FEE_SHARE_DIVISOR_3</a>: u64 = 5714;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_FEE_SHARE_DIVISOR_3">FEE_SHARE_DIVISOR_3</a>: u64 = 7143;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_incentives_FEE_SHARE_DIVISOR_4"></a>
+
+Genesis parameter.
+
+
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_FEE_SHARE_DIVISOR_4">FEE_SHARE_DIVISOR_4</a>: u64 = 6667;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_incentives_FEE_SHARE_DIVISOR_5"></a>
+
+Genesis parameter.
+
+
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_FEE_SHARE_DIVISOR_5">FEE_SHARE_DIVISOR_5</a>: u64 = 6250;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_incentives_FEE_SHARE_DIVISOR_6"></a>
+
+Genesis parameter.
+
+
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_FEE_SHARE_DIVISOR_6">FEE_SHARE_DIVISOR_6</a>: u64 = 5882;
 </code></pre>
 
 
@@ -1100,7 +1130,7 @@ Genesis parameter.
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_1">TIER_ACTIVATION_FEE_1</a>: u64 = 6250000000;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_1">TIER_ACTIVATION_FEE_1</a>: u64 = 5000000;
 </code></pre>
 
 
@@ -1110,7 +1140,7 @@ Genesis parameter.
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_2">TIER_ACTIVATION_FEE_2</a>: u64 = 125000000000;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_2">TIER_ACTIVATION_FEE_2</a>: u64 = 75000000;
 </code></pre>
 
 
@@ -1120,7 +1150,37 @@ Genesis parameter.
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_3">TIER_ACTIVATION_FEE_3</a>: u64 = 1875000000000;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_3">TIER_ACTIVATION_FEE_3</a>: u64 = 1000000000;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_incentives_TIER_ACTIVATION_FEE_4"></a>
+
+Genesis parameter.
+
+
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_4">TIER_ACTIVATION_FEE_4</a>: u64 = 12500000000;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_incentives_TIER_ACTIVATION_FEE_5"></a>
+
+Genesis parameter.
+
+
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_5">TIER_ACTIVATION_FEE_5</a>: u64 = 150000000000;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_incentives_TIER_ACTIVATION_FEE_6"></a>
+
+Genesis parameter.
+
+
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_6">TIER_ACTIVATION_FEE_6</a>: u64 = 1750000000000;
 </code></pre>
 
 
@@ -1141,7 +1201,7 @@ Index of tier activation fee in vectorized representation of an
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_UNDERWRITER_REGISTRATION_FEE">UNDERWRITER_REGISTRATION_FEE</a>: u64 = 25000000;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_UNDERWRITER_REGISTRATION_FEE">UNDERWRITER_REGISTRATION_FEE</a>: u64 = 250000;
 </code></pre>
 
 
@@ -1151,7 +1211,7 @@ Genesis parameter.
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_0">WITHDRAWAL_FEE_0</a>: u64 = 50000000;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_0">WITHDRAWAL_FEE_0</a>: u64 = 5000000;
 </code></pre>
 
 
@@ -1161,7 +1221,7 @@ Genesis parameter.
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_1">WITHDRAWAL_FEE_1</a>: u64 = 37500000;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_1">WITHDRAWAL_FEE_1</a>: u64 = 4750000;
 </code></pre>
 
 
@@ -1171,7 +1231,7 @@ Genesis parameter.
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_2">WITHDRAWAL_FEE_2</a>: u64 = 31250000;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_2">WITHDRAWAL_FEE_2</a>: u64 = 4500000;
 </code></pre>
 
 
@@ -1181,7 +1241,37 @@ Genesis parameter.
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_3">WITHDRAWAL_FEE_3</a>: u64 = 25000000;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_3">WITHDRAWAL_FEE_3</a>: u64 = 4250000;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_incentives_WITHDRAWAL_FEE_4"></a>
+
+Genesis parameter.
+
+
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_4">WITHDRAWAL_FEE_4</a>: u64 = 4000000;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_incentives_WITHDRAWAL_FEE_5"></a>
+
+Genesis parameter.
+
+
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_5">WITHDRAWAL_FEE_5</a>: u64 = 3750000;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_incentives_WITHDRAWAL_FEE_6"></a>
+
+Genesis parameter.
+
+
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_6">WITHDRAWAL_FEE_6</a>: u64 = 3500000;
 </code></pre>
 
 
@@ -3100,7 +3190,16 @@ Uses hard-coded genesis parameters that can be updated later.
                <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_2">WITHDRAWAL_FEE_2</a>],
         <a href="">vector</a>[<a href="incentives.md#0xc0deb00c_incentives_FEE_SHARE_DIVISOR_3">FEE_SHARE_DIVISOR_3</a>,
                <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_3">TIER_ACTIVATION_FEE_3</a>,
-               <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_3">WITHDRAWAL_FEE_3</a>]];
+               <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_3">WITHDRAWAL_FEE_3</a>],
+        <a href="">vector</a>[<a href="incentives.md#0xc0deb00c_incentives_FEE_SHARE_DIVISOR_4">FEE_SHARE_DIVISOR_4</a>,
+               <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_4">TIER_ACTIVATION_FEE_4</a>,
+               <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_4">WITHDRAWAL_FEE_4</a>],
+        <a href="">vector</a>[<a href="incentives.md#0xc0deb00c_incentives_FEE_SHARE_DIVISOR_5">FEE_SHARE_DIVISOR_5</a>,
+               <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_5">TIER_ACTIVATION_FEE_5</a>,
+               <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_5">WITHDRAWAL_FEE_5</a>],
+        <a href="">vector</a>[<a href="incentives.md#0xc0deb00c_incentives_FEE_SHARE_DIVISOR_6">FEE_SHARE_DIVISOR_6</a>,
+               <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_6">TIER_ACTIVATION_FEE_6</a>,
+               <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_6">WITHDRAWAL_FEE_6</a>]];
     // Set incentive parameters for the first time.
     <a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters">set_incentive_parameters</a>&lt;AptosCoin&gt;(econia,
         <a href="incentives.md#0xc0deb00c_incentives_MARKET_REGISTRATION_FEE">MARKET_REGISTRATION_FEE</a>, <a href="incentives.md#0xc0deb00c_incentives_UNDERWRITER_REGISTRATION_FEE">UNDERWRITER_REGISTRATION_FEE</a>,

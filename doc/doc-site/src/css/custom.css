@@ -23,7 +23,7 @@
   --ifm-navbar-search-input-background-color: #020202;
 
   --ifm-menu-color-background-active: #020202;
-  --ifm-menu-color-background-hover: #565656;
+  --ifm-menu-color-background-hover: #020202;
 
   --ifm-h2-font-size: 48px;
   --ifm-h2-line-height: 58px;
@@ -88,7 +88,22 @@ html {
   color: #ffffff;
 }
 
+.menu__list {
+  margin-right: 4px;
+}
+
+.menu__link {
+  border-radius: 0px;
+  color: #ffffff;
+}
+
+.menu__link:hover {
+  outline: 1px solid #ffffff;
+  color: #ffffff;
+}
+
 .menu__link--active:not(.menu__link--sublist) {
+  color: var(--ifm-color-primary);
   outline: 1px solid var(--ifm-color-primary);
 }
 

@@ -130,12 +130,12 @@ th {
 
 .pagination-nav__link--next {
   text-align: left;
-  background: no-repeat center/95% url(/img/PaginationNextBackground.svg);
+  background: no-repeat left/85% url(/img/PaginationNextBackground.svg);
 }
 
 .pagination-nav__link--next:hover {
   /* TODO: The image moves on hover */
-  background: no-repeat center/95% url(/img/PaginationNextBackgroundHover.svg);
+  background: no-repeat left/85% url(/img/PaginationNextBackgroundHover.svg);
 }
 
 .pagination-nav__link--prev {

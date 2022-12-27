@@ -37,6 +37,8 @@
   --ifm-spacing-horizontal: 40px;
 
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+
+  --ifm-card-border-radius: 0px;
 }
 
 /* For readability concerns, you should choose a lighter palette in dark mode. */
@@ -158,4 +160,8 @@ th {
 
 .pagination-nav__label:hover {
   color: var(--ifm-color-primary);
+}
+
+.card {
+  --ifm-color-emphasis-200: #565656;
 }

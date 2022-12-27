@@ -62,7 +62,7 @@ html {
 }
 
 .navbar__inner {
-  max-width: 1366px;
+  max-width: 1600px;
 }
 
 .padding-top--md {
@@ -70,7 +70,8 @@ html {
 }
 
 .main-wrapper {
-  max-width: 1366px;
+  width: 100%;
+  max-width: 1600px;
   align-self: center;
 }
 

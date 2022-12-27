@@ -70,6 +70,7 @@ html {
 }
 
 .main-wrapper {
+  width: 100%;
   max-width: 1366px;
   align-self: center;
 }

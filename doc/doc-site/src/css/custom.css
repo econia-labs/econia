@@ -127,27 +127,19 @@ th {
   border-radius: 0px;
   padding: 0px;
   border: none;
-  /* outline: 1px solid #aaaaaa; */
+  outline: 1px solid #565656;
 }
 
 .pagination-nav__link--next {
   text-align: left;
-  background: no-repeat left/85% url(/img/PaginationNextBackground.svg);
 }
 
-.pagination-nav__link--next:hover {
+.pagination-nav__link:hover {
   /* TODO: The image moves on hover */
-  background: no-repeat left/85% url(/img/PaginationNextBackgroundHover.svg);
+  outline: 1px solid var(--ifm-color-primary);
 }
 
-.pagination-nav__link--prev {
-  /* TODO: Need to clarify whether we want to keep the previous navigation */
-  display: none;
-}
-
-.pagination-nav__sublabel,
-.pagination-nav__label::before,
-.pagination-nav__label::after {
+.pagination-nav__sublabel {
   display: none;
 }
 

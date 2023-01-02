@@ -554,6 +554,7 @@
 /// * `borrow_mut()`
 /// * `borrow_tail()`
 /// * `borrow_tail_mut()`
+/// * `contains_active_list_node_id()`
 /// * `get_access_key_insertion_key()`
 /// * `get_head_key()`
 /// * `get_height()`
@@ -1016,6 +1017,24 @@ module econia::avl_queue {
         // Mutably borrow corresponding insertion value.
         option::borrow_mut(
             table::borrow_mut(&mut avlq_ref_mut.values, list_node_id))
+    }
+
+    /// Return `true` if list node ID encoded in `access_key` is active.
+    ///
+    /// # Testing
+    ///
+    /// * `test_contains_active_list_node_id()`
+    public fun contains_active_list_node_id<V>(
+        avlq_ref: &AVLqueue<V>,
+        access_key: u64
+    ): bool {
+        let list_node_id = // Extract list node ID from access key.
+            (access_key >> SHIFT_ACCESS_LIST_NODE_ID) & HI_NODE_ID;
+        // Return false if no list node in AVL queue with list node ID,
+        if (!table::contains(&avlq_ref.values, list_node_id)) false else
+            // Otherwise, return if there is an insertion value for
+            // given list node ID.
+            option::is_some(table::borrow(&avlq_ref.values, list_node_id))
     }
 
     /// Get insertion key encoded in an access key.
@@ -5523,6 +5542,23 @@ module econia::avl_queue {
         };
         // Assert tree top.
         assert!(get_tree_top_test(&avlq) == u_64(b"10000000000001"), 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    /// Verify expected returns.
+    fun test_contains_active_list_node_id() {
+        let avlq = new(ASCENDING, 0, 0); // Init AVL queue.
+        let access_key = HI_64; // Declare bogus access key.
+        // Assert marked as not having active list node ID encoded.
+        assert!(!contains_active_list_node_id(&avlq, access_key), 0);
+        // Insert arbitrary key, reassigning access key.
+        access_key = insert(&mut avlq, 1, 0);
+        // Assert marked as having active list node ID encoded.
+        assert!(contains_active_list_node_id(&avlq, access_key), 0);
+        remove(&mut avlq, access_key); // Remove key-value pair.
+        // Assert marked as not having active list node ID encoded.
+        assert!(!contains_active_list_node_id(&avlq, access_key), 0);
         drop_avlq_test(avlq); // Drop AVL queue.
     }
 

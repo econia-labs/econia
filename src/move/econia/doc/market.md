@@ -3797,6 +3797,13 @@ Cancel all of a user's open maker orders.
 
 Cancel maker order on order book and in user's market account.
 
+The market order ID is first checked to see if the AVL queue
+access key encoded within can even be used for an AVL queue
+removal operation in the first place. Then during the call to
+<code><a href="user.md#0xc0deb00c_user_cancel_order_internal">user::cancel_order_internal</a>()</code>, the market order ID is again
+verified against the order access key derived from the AVL queue
+removal operation.
+
 
 <a name="@Parameters_79"></a>
 
@@ -3815,7 +3822,8 @@ Cancel maker order on order book and in user's market account.
 ### Aborts
 
 
-* <code><a href="market.md#0xc0deb00c_market_E_INVALID_MARKET_ORDER_ID">E_INVALID_MARKET_ORDER_ID</a></code>: Market order ID passed as <code><a href="market.md#0xc0deb00c_market_NIL">NIL</a></code>.
+* <code><a href="market.md#0xc0deb00c_market_E_INVALID_MARKET_ORDER_ID">E_INVALID_MARKET_ORDER_ID</a></code>: Market order ID does not
+correspond to a valid order.
 * <code><a href="market.md#0xc0deb00c_market_E_INVALID_MARKET_ID">E_INVALID_MARKET_ID</a></code>: No market with given ID.
 * <code><a href="market.md#0xc0deb00c_market_E_INVALID_USER">E_INVALID_USER</a></code>: Mismatch between <code><a href="user.md#0xc0deb00c_user">user</a></code> and user for order
 on book having given market order ID.
@@ -3847,7 +3855,8 @@ custodian ID of order on order book having market order ID.
 
 * <code>test_cancel_order_invalid_custodian()</code>
 * <code>test_cancel_order_invalid_market_id()</code>
-* <code>test_cancel_order_invalid_market_order_id()</code>
+* <code>test_cancel_order_invalid_market_order_id_bogus()</code>
+* <code>test_cancel_order_invalid_market_order_id_null()</code>
 * <code>test_cancel_order_invalid_user()</code>
 
 
@@ -3866,8 +3875,6 @@ custodian ID of order on order book having market order ID.
     side: bool,
     market_order_id: u128
 ) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
-    // Assert <a href="market.md#0xc0deb00c_market">market</a> order ID not passed <b>as</b> reserved null flag.
-    <b>assert</b>!(market_order_id != (<a href="market.md#0xc0deb00c_market_NIL">NIL</a> <b>as</b> u128), <a href="market.md#0xc0deb00c_market_E_INVALID_MARKET_ORDER_ID">E_INVALID_MARKET_ORDER_ID</a>);
     // Get <b>address</b> of resource <a href="">account</a> <b>where</b> order books are stored.
     <b>let</b> resource_address = resource_account::get_address();
     <b>let</b> order_books_map_ref_mut = // Mutably borrow order books map.
@@ -3882,6 +3889,11 @@ custodian ID of order on order book having market order ID.
         <b>else</b> &<b>mut</b> order_book_ref_mut.bids;
     // Get AVL queue access key from <a href="market.md#0xc0deb00c_market">market</a> order ID.
     <b>let</b> avlq_access_key = ((market_order_id & (<a href="market.md#0xc0deb00c_market_HI_64">HI_64</a> <b>as</b> u128)) <b>as</b> u64);
+    // Check <b>if</b> removal from the AVL queue is even possible.
+    <b>let</b> removal_possible = <a href="avl_queue.md#0xc0deb00c_avl_queue_contains_active_list_node_id">avl_queue::contains_active_list_node_id</a>(
+        orders_ref_mut, avlq_access_key);
+    // Assert that removal from the AVL queue is possible.
+    <b>assert</b>!(removal_possible, <a href="market.md#0xc0deb00c_market_E_INVALID_MARKET_ORDER_ID">E_INVALID_MARKET_ORDER_ID</a>);
     // Remove order from AVL queue, storing its fields.
     <b>let</b> <a href="market.md#0xc0deb00c_market_Order">Order</a>{size, price, <a href="user.md#0xc0deb00c_user">user</a>: order_user, custodian_id:
               order_custodian_id, order_access_key} = <a href="avl_queue.md#0xc0deb00c_avl_queue_remove">avl_queue::remove</a>(
@@ -3908,6 +3920,13 @@ custodian ID of order on order book having market order ID.
 
 Change maker order size on book and in user's market account.
 
+The market order ID is first checked to see if the AVL queue
+access key encoded within can even be used for an AVL queue
+borrow operation in the first place. Then during the call to
+<code><a href="user.md#0xc0deb00c_user_change_order_size_internal">user::change_order_size_internal</a>()</code>, the market order ID is
+again verified against the order access key derived from the AVL
+queue borrow operation.
+
 
 <a name="@Parameters_84"></a>
 
@@ -3927,7 +3946,8 @@ Change maker order size on book and in user's market account.
 ### Aborts
 
 
-* <code><a href="market.md#0xc0deb00c_market_E_INVALID_MARKET_ORDER_ID">E_INVALID_MARKET_ORDER_ID</a></code>: Market order ID passed as <code><a href="market.md#0xc0deb00c_market_NIL">NIL</a></code>.
+* <code><a href="market.md#0xc0deb00c_market_E_INVALID_MARKET_ORDER_ID">E_INVALID_MARKET_ORDER_ID</a></code>: Market order ID does not
+correspond to a valid order.
 * <code><a href="market.md#0xc0deb00c_market_E_INVALID_MARKET_ID">E_INVALID_MARKET_ID</a></code>: No market with given ID.
 * <code><a href="market.md#0xc0deb00c_market_E_INVALID_USER">E_INVALID_USER</a></code>: Mismatch between <code><a href="user.md#0xc0deb00c_user">user</a></code> and user for order
 on book having given market order ID.
@@ -3959,7 +3979,8 @@ custodian ID of order on order book having market order ID.
 
 * <code>test_change_order_size_invalid_custodian()</code>
 * <code>test_change_order_size_invalid_market_id()</code>
-* <code>test_change_order_size_invalid_market_order_id()</code>
+* <code>test_change_order_size_invalid_market_order_id_bogus()</code>
+* <code>test_change_order_size_invalid_market_order_id_null()</code>
 * <code>test_change_order_size_invalid_user()</code>
 
 
@@ -3979,8 +4000,6 @@ custodian ID of order on order book having market order ID.
     market_order_id: u128,
     new_size: u64
 ) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
-    // Assert <a href="market.md#0xc0deb00c_market">market</a> order ID not passed <b>as</b> reserved null flag.
-    <b>assert</b>!(market_order_id != (<a href="market.md#0xc0deb00c_market_NIL">NIL</a> <b>as</b> u128), <a href="market.md#0xc0deb00c_market_E_INVALID_MARKET_ORDER_ID">E_INVALID_MARKET_ORDER_ID</a>);
     // Get <b>address</b> of resource <a href="">account</a> <b>where</b> order books are stored.
     <b>let</b> resource_address = resource_account::get_address();
     <b>let</b> order_books_map_ref_mut = // Mutably borrow order books map.
@@ -3995,6 +4014,11 @@ custodian ID of order on order book having market order ID.
         <b>else</b> &<b>mut</b> order_book_ref_mut.bids;
     // Get AVL queue access key from <a href="market.md#0xc0deb00c_market">market</a> order ID.
     <b>let</b> avlq_access_key = ((market_order_id & (<a href="market.md#0xc0deb00c_market_HI_64">HI_64</a> <b>as</b> u128)) <b>as</b> u64);
+    // Check <b>if</b> borrowing from the AVL queue is even possible.
+    <b>let</b> borrow_possible = <a href="avl_queue.md#0xc0deb00c_avl_queue_contains_active_list_node_id">avl_queue::contains_active_list_node_id</a>(
+        orders_ref_mut, avlq_access_key);
+    // Assert that borrow from the AVL queue is possible.
+    <b>assert</b>!(borrow_possible, <a href="market.md#0xc0deb00c_market_E_INVALID_MARKET_ORDER_ID">E_INVALID_MARKET_ORDER_ID</a>);
     <b>let</b> order_ref_mut = // Mutably borrow order on order book.
         <a href="avl_queue.md#0xc0deb00c_avl_queue_borrow_mut">avl_queue::borrow_mut</a>(orders_ref_mut, avlq_access_key);
     // Assert passed <a href="user.md#0xc0deb00c_user">user</a> <b>address</b> is <a href="user.md#0xc0deb00c_user">user</a> holding order.

@@ -1879,6 +1879,13 @@ module econia::market {
 
     /// Cancel maker order on order book and in user's market account.
     ///
+    /// The market order ID is first checked to see if the AVL queue
+    /// access key encoded within can even be used for an AVL queue
+    /// removal operation in the first place. Then during the call to
+    /// `user::cancel_order_internal()`, the market order ID is again
+    /// verified against the order access key derived from the AVL queue
+    /// removal operation.
+    ///
     /// # Parameters
     ///
     /// * `user`: Address of user holding maker order.
@@ -1889,7 +1896,8 @@ module econia::market {
     ///
     /// # Aborts
     ///
-    /// * `E_INVALID_MARKET_ORDER_ID`: Market order ID passed as `NIL`.
+    /// * `E_INVALID_MARKET_ORDER_ID`: Market order ID does not
+    ///   correspond to a valid order.
     /// * `E_INVALID_MARKET_ID`: No market with given ID.
     /// * `E_INVALID_USER`: Mismatch between `user` and user for order
     ///   on book having given market order ID.
@@ -1909,7 +1917,8 @@ module econia::market {
     ///
     /// * `test_cancel_order_invalid_custodian()`
     /// * `test_cancel_order_invalid_market_id()`
-    /// * `test_cancel_order_invalid_market_order_id()`
+    /// * `test_cancel_order_invalid_market_order_id_bogus()`
+    /// * `test_cancel_order_invalid_market_order_id_null()`
     /// * `test_cancel_order_invalid_user()`
     fun cancel_order(
         user: address,
@@ -1918,8 +1927,6 @@ module econia::market {
         side: bool,
         market_order_id: u128
     ) acquires OrderBooks {
-        // Assert market order ID not passed as reserved null flag.
-        assert!(market_order_id != (NIL as u128), E_INVALID_MARKET_ORDER_ID);
         // Get address of resource account where order books are stored.
         let resource_address = resource_account::get_address();
         let order_books_map_ref_mut = // Mutably borrow order books map.
@@ -1934,6 +1941,11 @@ module econia::market {
             else &mut order_book_ref_mut.bids;
         // Get AVL queue access key from market order ID.
         let avlq_access_key = ((market_order_id & (HI_64 as u128)) as u64);
+        // Check if removal from the AVL queue is even possible.
+        let removal_possible = avl_queue::contains_active_list_node_id(
+            orders_ref_mut, avlq_access_key);
+        // Assert that removal from the AVL queue is possible.
+        assert!(removal_possible, E_INVALID_MARKET_ORDER_ID);
         // Remove order from AVL queue, storing its fields.
         let Order{size, price, user: order_user, custodian_id:
                   order_custodian_id, order_access_key} = avl_queue::remove(
@@ -1953,6 +1965,13 @@ module econia::market {
 
     /// Change maker order size on book and in user's market account.
     ///
+    /// The market order ID is first checked to see if the AVL queue
+    /// access key encoded within can even be used for an AVL queue
+    /// borrow operation in the first place. Then during the call to
+    /// `user::change_order_size_internal()`, the market order ID is
+    /// again verified against the order access key derived from the AVL
+    /// queue borrow operation.
+    ///
     /// # Parameters
     ///
     /// * `user`: Address of user holding maker order.
@@ -1964,7 +1983,8 @@ module econia::market {
     ///
     /// # Aborts
     ///
-    /// * `E_INVALID_MARKET_ORDER_ID`: Market order ID passed as `NIL`.
+    /// * `E_INVALID_MARKET_ORDER_ID`: Market order ID does not
+    ///   correspond to a valid order.
     /// * `E_INVALID_MARKET_ID`: No market with given ID.
     /// * `E_INVALID_USER`: Mismatch between `user` and user for order
     ///   on book having given market order ID.
@@ -1984,7 +2004,8 @@ module econia::market {
     ///
     /// * `test_change_order_size_invalid_custodian()`
     /// * `test_change_order_size_invalid_market_id()`
-    /// * `test_change_order_size_invalid_market_order_id()`
+    /// * `test_change_order_size_invalid_market_order_id_bogus()`
+    /// * `test_change_order_size_invalid_market_order_id_null()`
     /// * `test_change_order_size_invalid_user()`
     fun change_order_size(
         user: address,
@@ -1994,8 +2015,6 @@ module econia::market {
         market_order_id: u128,
         new_size: u64
     ) acquires OrderBooks {
-        // Assert market order ID not passed as reserved null flag.
-        assert!(market_order_id != (NIL as u128), E_INVALID_MARKET_ORDER_ID);
         // Get address of resource account where order books are stored.
         let resource_address = resource_account::get_address();
         let order_books_map_ref_mut = // Mutably borrow order books map.
@@ -2010,6 +2029,11 @@ module econia::market {
             else &mut order_book_ref_mut.bids;
         // Get AVL queue access key from market order ID.
         let avlq_access_key = ((market_order_id & (HI_64 as u128)) as u64);
+        // Check if borrowing from the AVL queue is even possible.
+        let borrow_possible = avl_queue::contains_active_list_node_id(
+            orders_ref_mut, avlq_access_key);
+        // Assert that borrow from the AVL queue is possible.
+        assert!(borrow_possible, E_INVALID_MARKET_ORDER_ID);
         let order_ref_mut = // Mutably borrow order on order book.
             avl_queue::borrow_mut(orders_ref_mut, avlq_access_key);
         // Assert passed user address is user holding order.
@@ -3833,8 +3857,23 @@ module econia::market {
 
     #[test]
     #[expected_failure(abort_code = 22)]
-    /// Verify failure for invalid market order ID.
-    fun test_cancel_order_invalid_market_order_id()
+    /// Verify failure for invalid bogus market order ID.
+    fun test_cancel_order_invalid_market_order_id_bogus()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (maker, _) = init_markets_users_integrator_test();
+        // Declare order change parameters.
+        let market_id       = MARKET_ID_COIN;
+        let side            = ASK;
+        let market_order_id = 0xdeadfacedeadface;
+        cancel_order_user( // Attempt invalid cancel.
+            &maker, market_id, side, market_order_id);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 22)]
+    /// Verify failure for invalid market order ID passed as `NIL`.
+    fun test_cancel_order_invalid_market_order_id_null()
     acquires OrderBooks {
         // Initialize markets, users, and an integrator.
         let (maker, _) = init_markets_users_integrator_test();
@@ -4093,8 +4132,24 @@ module econia::market {
 
     #[test]
     #[expected_failure(abort_code = 22)]
-    /// Verify failure for invalid market order ID.
-    fun test_change_order_size_invalid_market_order_id()
+    /// Verify failure for invalid bogus market order ID.
+    fun test_change_order_size_invalid_market_order_id_bogus()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (maker, _) = init_markets_users_integrator_test();
+        // Declare order change parameters.
+        let market_id       = MARKET_ID_COIN;
+        let side            = ASK;
+        let market_order_id = 0xdeadfacedeadface;
+        let size_end        = MIN_SIZE_COIN;
+        change_order_size_user( // Attempt invalid order change.
+            &maker, market_id, side, market_order_id, size_end);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 22)]
+    /// Verify failure for invalid market order ID passed as `NIL`.
+    fun test_change_order_size_invalid_market_order_id_null()
     acquires OrderBooks {
         // Initialize markets, users, and an integrator.
         let (maker, _) = init_markets_users_integrator_test();

@@ -384,7 +384,7 @@
 ///
 /// * [x] `cancel_order()`
 /// * [x] `change_order_size()`
-/// * [ ] `match()`
+/// * [x] `match()`
 /// * [x] `place_limit_order()`
 /// * [ ] `place_limit_order_passive_advance()`
 /// * [x] `place_market_order()`
@@ -2162,6 +2162,7 @@ module econia::market {
     /// * `test_match_partial_fill_tick_limited_buy()`
     /// * `test_match_price_break_buy()`
     /// * `test_match_price_break_sell()`
+    /// * `test_match_self_match_cancel_both()`
     ///
     /// # Failure testing
     ///
@@ -2169,6 +2170,8 @@ module econia::market {
     /// * `test_match_min_quote_not_traded()`
     /// * `test_match_price_mismatch()`
     /// * `test_match_price_too_high()`
+    /// * `test_match_self_match_abort()`
+    /// * `test_match_self_match_invalid()`
     fun match<
         BaseType,
         QuoteType
@@ -5585,6 +5588,166 @@ module econia::market {
             else assets::burn(base_coins);
         if (coin::value(&quote_coins) == 0) coin::destroy_zero(quote_coins)
             else assets::burn(quote_coins);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 19)]
+    /// Verify failure for self match with abort behavior.
+    fun test_match_self_match_abort()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (user, _) = init_markets_users_integrator_test();
+        // Declare common market parameters.
+        let market_id    = MARKET_ID_COIN;
+        let integrator   = @integrator;
+        let user_address = address_of(&user);
+        let custodian_id = NO_CUSTODIAN;
+        // Declare maker order parameters.
+        let side_maker  = ASK;
+        let size_maker  = MIN_SIZE_COIN;
+        let price_maker = 100;
+        let restriction = NO_RESTRICTION;
+        // Declare taker order parameters.
+        let direction_taker     = if (side_maker == ASK) BUY else SELL;
+        let self_match_behavior = ABORT;
+        let min_base            = 0;
+        let max_base            = MAX_POSSIBLE;
+        let min_quote           = 0;
+        let max_quote           = MAX_POSSIBLE;
+        let limit_price         = price_maker;
+        // Declare deposit amounts.
+        let deposit_base  = HI_64 / 2;
+        let deposit_quote = HI_64 / 2;
+        // Deposit coins.
+        user::deposit_coins<BC>(user_address, market_id, custodian_id,
+                                assets::mint_test(deposit_base));
+        user::deposit_coins<QC>(user_address, market_id, custodian_id,
+                                assets::mint_test(deposit_quote));
+        // Place a maker order.
+        place_limit_order_user<BC, QC>(
+            &user, market_id, integrator, side_maker, size_maker, price_maker,
+            restriction, self_match_behavior);
+        // Place an invalid taker order.
+        place_market_order_user<BC, QC>(
+            &user, market_id, integrator, direction_taker, min_base, max_base,
+            min_quote, max_quote, limit_price, self_match_behavior);
+    }
+
+    #[test]
+    /// Verify self match with cancel both behavior.
+    fun test_match_self_match_cancel_both()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (user, _) = init_markets_users_integrator_test();
+        // Declare common market parameters.
+        let market_id    = MARKET_ID_COIN;
+        let integrator   = @integrator;
+        let user_address = address_of(&user);
+        let custodian_id = NO_CUSTODIAN;
+        // Declare maker order parameters.
+        let side_maker  = ASK;
+        let size_maker  = MIN_SIZE_COIN;
+        let price_maker = 100;
+        let restriction = NO_RESTRICTION;
+        // Declare taker order parameters.
+        let direction_taker     = if (side_maker == ASK) BUY else SELL;
+        let self_match_behavior = CANCEL_BOTH;
+        let min_base            = 0;
+        let max_base            = MAX_POSSIBLE;
+        let min_quote           = 0;
+        let max_quote           = MAX_POSSIBLE;
+        let limit_price         = price_maker;
+        // Declare deposit amounts.
+        let deposit_base  = HI_64 / 2;
+        let deposit_quote = HI_64 / 2;
+        // Deposit coins.
+        user::deposit_coins<BC>(user_address, market_id, custodian_id,
+                                assets::mint_test(deposit_base));
+        user::deposit_coins<QC>(user_address, market_id, custodian_id,
+                                assets::mint_test(deposit_quote));
+        // Place a maker order, storing market order ID.
+        let (market_order_id, _, _, _) = place_limit_order_user<BC, QC>(
+            &user, market_id, integrator, side_maker, size_maker, price_maker,
+            restriction, self_match_behavior);
+        // Get user-side order access key for later.
+        let (_, _, _, _, order_access_key) =
+            get_order_fields_test(market_id, side_maker, market_order_id);
+        // Assert list node order active.
+        assert!(is_list_node_order_active(
+            market_id, side_maker, market_order_id), 0);
+        // Place taker order with self match.
+        place_market_order_user<BC, QC>(
+            &user, market_id, integrator, direction_taker, min_base, max_base,
+            min_quote, max_quote, limit_price, self_match_behavior);
+        // Assert list node order inactive.
+        assert!(!is_list_node_order_active(
+            market_id, side_maker, market_order_id), 0);
+        // Assert user-side order fields for cancelled order
+        let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
+            user_address, market_id, custodian_id, side_maker,
+            order_access_key);
+        // No market order ID.
+        assert!(market_order_id_r == (NIL as u128), 0);
+        assert!(size_r == NIL, 0); // Bottom of inactive stack.
+        // Assert users's asset counts.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            user::get_asset_counts_internal(
+                user_address, market_id, custodian_id);
+        assert!(base_total      == deposit_base, 0);
+        assert!(base_available  == deposit_base, 0);
+        assert!(base_ceiling    == deposit_base, 0);
+        assert!(quote_total     == deposit_quote, 0);
+        assert!(quote_available == deposit_quote, 0);
+        assert!(quote_ceiling   == deposit_quote, 0);
+        // Assert collateral amounts.
+        assert!(user::get_collateral_value_simple_test<BC>(
+            user_address, market_id, custodian_id) == deposit_base, 0);
+        assert!(user::get_collateral_value_simple_test<QC>(
+            user_address, market_id, custodian_id) == deposit_quote, 0);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 28)]
+    /// Verify failure for self match with invalid abort behavior.
+    fun test_match_self_match_invalid()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (user, _) = init_markets_users_integrator_test();
+        // Declare common market parameters.
+        let market_id    = MARKET_ID_COIN;
+        let integrator   = @integrator;
+        let user_address = address_of(&user);
+        let custodian_id = NO_CUSTODIAN;
+        // Declare maker order parameters.
+        let side_maker  = ASK;
+        let size_maker  = MIN_SIZE_COIN;
+        let price_maker = 100;
+        let restriction = NO_RESTRICTION;
+        // Declare taker order parameters.
+        let direction_taker     = if (side_maker == ASK) BUY else SELL;
+        let self_match_behavior = 0xff;
+        let min_base            = 0;
+        let max_base            = MAX_POSSIBLE;
+        let min_quote           = 0;
+        let max_quote           = MAX_POSSIBLE;
+        let limit_price         = price_maker;
+        // Declare deposit amounts.
+        let deposit_base  = HI_64 / 2;
+        let deposit_quote = HI_64 / 2;
+        // Deposit coins.
+        user::deposit_coins<BC>(user_address, market_id, custodian_id,
+                                assets::mint_test(deposit_base));
+        user::deposit_coins<QC>(user_address, market_id, custodian_id,
+                                assets::mint_test(deposit_quote));
+        // Place a maker order.
+        place_limit_order_user<BC, QC>(
+            &user, market_id, integrator, side_maker, size_maker, price_maker,
+            restriction, self_match_behavior);
+        // Place an invalid taker order.
+        place_market_order_user<BC, QC>(
+            &user, market_id, integrator, direction_taker, min_base, max_base,
+            min_quote, max_quote, limit_price, self_match_behavior);
     }
 
     #[test]

@@ -31,6 +31,7 @@ module.exports = {
                 'apis/utility'
             ]
         },
+        'off-chain',
         {
             type: 'category',
             label: 'Integrator resources',
@@ -45,7 +46,6 @@ module.exports = {
                 'integrators/audits',
             ]
         },
-        'off-chain',
         'security',
         'logo'
     ]

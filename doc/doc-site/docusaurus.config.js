@@ -64,6 +64,7 @@ module.exports = {
 
   themeConfig:
     ({
+      image: "img/EconiaPreview.svg",
       navbar: {
         logo: {
           alt: "Econia Logo",

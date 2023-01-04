@@ -557,8 +557,8 @@ Functions with logical branches to test:
 * [x] <code><a href="market.md#0xc0deb00c_market_cancel_all_orders">cancel_all_orders</a>()</code>
 * [x] <code><a href="market.md#0xc0deb00c_market_cancel_order">cancel_order</a>()</code>
 * [x] <code><a href="market.md#0xc0deb00c_market_change_order_size">change_order_size</a>()</code>
-* [ ] <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>
-* [ ] <code><a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>()</code>
+* [x] <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>
+* [x] <code><a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>()</code>
 * [ ] <code><a href="market.md#0xc0deb00c_market_place_limit_order_passive_advance">place_limit_order_passive_advance</a>()</code>
 * [x] <code><a href="market.md#0xc0deb00c_market_place_market_order">place_market_order</a>()</code>
 * [x] <code><a href="market.md#0xc0deb00c_market_range_check_trade">range_check_trade</a>()</code>
@@ -2617,6 +2617,7 @@ order under authority of signing user.
 * <code>test_place_limit_order_crosses_ask_exact()</code>
 * <code>test_place_limit_order_crosses_ask_partial()</code>
 * <code>test_place_limit_order_crosses_ask_partial_cancel()</code>
+* <code>test_place_limit_order_crosses_ask_self_match_cancel()</code>
 * <code>test_place_limit_order_crosses_bid_exact()</code>
 * <code>test_place_limit_order_crosses_bid_partial()</code>
 * <code>test_place_limit_order_evict()</code>
@@ -4196,6 +4197,8 @@ requirement not met.
 * <code>test_match_price_break_buy()</code>
 * <code>test_match_price_break_sell()</code>
 * <code>test_match_self_match_cancel_both()</code>
+* <code>test_match_self_match_cancel_maker()</code>
+* <code>test_match_self_match_cancel_taker()</code>
 
 
 <a name="@Failure_testing_95"></a>
@@ -4530,10 +4533,13 @@ again for the maker portion.
 ### Self matching
 
 
-* If price crosses the spread and cross-spread filling is
-permitted per the indicated restriction, fills up until the
-point of a self match. If self match behavior is taker cancel,
-cancels remaining size without posting as a maker.
+Fills up until the point of a self match, cancelling remaining
+size without posting as a maker if:
+
+1. Price crosses the spread,
+2. Cross-spread filling is permitted per the indicated
+restriction, and
+3. Self match behavior indicates taker cancellation.
 
 
 <a name="@Expected_value_testing_104"></a>
@@ -4544,6 +4550,7 @@ cancels remaining size without posting as a maker.
 * <code>test_place_limit_order_crosses_ask_exact()</code>
 * <code>test_place_limit_order_crosses_ask_partial()</code>
 * <code>test_place_limit_order_crosses_ask_partial_cancel()</code>
+* <code>test_place_limit_order_crosses_ask_self_match_cancel()</code>
 * <code>test_place_limit_order_crosses_bid_exact()</code>
 * <code>test_place_limit_order_crosses_bid_partial()</code>
 * <code>test_place_limit_order_crosses_bid_partial_cancel()</code>

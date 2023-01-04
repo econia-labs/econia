@@ -472,8 +472,8 @@
 /// * [x] `cancel_all_orders()`
 /// * [x] `cancel_order()`
 /// * [x] `change_order_size()`
-/// * [ ] `match()`
-/// * [ ] `place_limit_order()`
+/// * [x] `match()`
+/// * [x] `place_limit_order()`
 /// * [ ] `place_limit_order_passive_advance()`
 /// * [x] `place_market_order()`
 /// * [x] `range_check_trade()`
@@ -1100,6 +1100,7 @@ module econia::market {
     /// * `test_place_limit_order_crosses_ask_exact()`
     /// * `test_place_limit_order_crosses_ask_partial()`
     /// * `test_place_limit_order_crosses_ask_partial_cancel()`
+    /// * `test_place_limit_order_crosses_ask_self_match_cancel()`
     /// * `test_place_limit_order_crosses_bid_exact()`
     /// * `test_place_limit_order_crosses_bid_partial()`
     /// * `test_place_limit_order_evict()`
@@ -2163,6 +2164,8 @@ module econia::market {
     /// * `test_match_price_break_buy()`
     /// * `test_match_price_break_sell()`
     /// * `test_match_self_match_cancel_both()`
+    /// * `test_match_self_match_cancel_maker()`
+    /// * `test_match_self_match_cancel_taker()`
     ///
     /// # Failure testing
     ///
@@ -2444,16 +2447,20 @@ module econia::market {
     ///
     /// # Self matching
     ///
-    /// * If price crosses the spread and cross-spread filling is
-    ///   permitted per the indicated restriction, fills up until the
-    ///   point of a self match. If self match behavior is taker cancel,
-    ///   cancels remaining size without posting as a maker.
+    /// Fills up until the point of a self match, cancelling remaining
+    /// size without posting as a maker if:
+    ///
+    /// 1. Price crosses the spread,
+    /// 2. Cross-spread filling is permitted per the indicated
+    ///    restriction, and
+    /// 3. Self match behavior indicates taker cancellation.
     ///
     /// # Expected value testing
     ///
     /// * `test_place_limit_order_crosses_ask_exact()`
     /// * `test_place_limit_order_crosses_ask_partial()`
     /// * `test_place_limit_order_crosses_ask_partial_cancel()`
+    /// * `test_place_limit_order_crosses_ask_self_match_cancel()`
     /// * `test_place_limit_order_crosses_bid_exact()`
     /// * `test_place_limit_order_crosses_bid_partial()`
     /// * `test_place_limit_order_crosses_bid_partial_cancel()`
@@ -5634,66 +5641,106 @@ module econia::market {
     }
 
     #[test]
-    /// Verify self match with cancel both behavior.
+    /// Have user place two maker asks:
+    ///
+    /// * One at a low price without a delegated custodian.
+    /// * One at a high price with a delegated custodian.
+    ///
+    /// Then have signing user place a taker buy, self matching against
+    /// the order at the lower price. Here, matching halts after the
+    /// self match.
     fun test_match_self_match_cancel_both()
     acquires OrderBooks {
         // Initialize markets, users, and an integrator.
         let (user, _) = init_markets_users_integrator_test();
+        // Get fee divisors.
+        let (taker_divisor, integrator_divisor) =
+            (incentives::get_taker_fee_divisor(),
+             incentives::get_fee_share_divisor(INTEGRATOR_TIER));
         // Declare common market parameters.
-        let market_id    = MARKET_ID_COIN;
-        let integrator   = @integrator;
-        let user_address = address_of(&user);
-        let custodian_id = NO_CUSTODIAN;
+        let market_id      = MARKET_ID_COIN;
+        let integrator     = @integrator;
+        let user_address   = address_of(&user);
         // Declare maker order parameters.
-        let side_maker  = ASK;
-        let size_maker  = MIN_SIZE_COIN;
-        let price_maker = 100;
-        let restriction = NO_RESTRICTION;
+        let side_maker                = ASK;
+        let restriction               = NO_RESTRICTION;
+        let size_maker                = MIN_SIZE_COIN;
+        let self_match_behavior_maker = ABORT;
+        // Declare lower price set to product of fee divisors, to
+        // eliminate truncation when predicting fee amounts.
+        let price_lo = integrator_divisor * taker_divisor;
+        // Declare higher price for an order further from the spread.
+        let price_hi = integrator_divisor * taker_divisor * 2;
         // Declare taker order parameters.
-        let direction_taker     = if (side_maker == ASK) BUY else SELL;
-        let self_match_behavior = CANCEL_BOTH;
-        let min_base            = 0;
-        let max_base            = MAX_POSSIBLE;
-        let min_quote           = 0;
-        let max_quote           = MAX_POSSIBLE;
-        let limit_price         = price_maker;
+        let direction_taker           = if (side_maker == ASK) BUY else SELL;
+        let min_base                  = 0;
+        let max_base                  = MAX_POSSIBLE;
+        let min_quote                 = 0;
+        let max_quote                 = MAX_POSSIBLE;
+        let limit_price               = price_hi;
+        let self_match_behavior_taker = CANCEL_BOTH;
         // Declare deposit amounts.
         let deposit_base  = HI_64 / 2;
         let deposit_quote = HI_64 / 2;
         // Deposit coins.
-        user::deposit_coins<BC>(user_address, market_id, custodian_id,
+        user::deposit_coins<BC>(user_address, market_id, NO_CUSTODIAN,
                                 assets::mint_test(deposit_base));
-        user::deposit_coins<QC>(user_address, market_id, custodian_id,
+        user::deposit_coins<QC>(user_address, market_id, NO_CUSTODIAN,
                                 assets::mint_test(deposit_quote));
-        // Place a maker order, storing market order ID.
-        let (market_order_id, _, _, _) = place_limit_order_user<BC, QC>(
-            &user, market_id, integrator, side_maker, size_maker, price_maker,
-            restriction, self_match_behavior);
-        // Get user-side order access key for later.
-        let (_, _, _, _, order_access_key) =
-            get_order_fields_test(market_id, side_maker, market_order_id);
-        // Assert list node order active.
+        user::deposit_coins<BC>(user_address, market_id, CUSTODIAN_ID_USER_0,
+                                assets::mint_test(deposit_base));
+        user::deposit_coins<QC>(user_address, market_id, CUSTODIAN_ID_USER_0,
+                                assets::mint_test(deposit_quote));
+        let custodian_capability = // Get custodian capability.
+            registry::get_custodian_capability_test(CUSTODIAN_ID_USER_0);
+        // Place maker orders, storing market order IDs.
+        let (market_order_id_lo, _, _, _) = place_limit_order_user<BC, QC>(
+            &user, market_id, integrator, side_maker, size_maker, price_lo,
+            restriction, self_match_behavior_maker);
+        let (market_order_id_hi, _, _, _) =
+                place_limit_order_custodian<BC, QC>(
+            user_address, market_id, integrator, side_maker, size_maker,
+            price_hi, restriction, self_match_behavior_maker,
+            &custodian_capability);
+        // Drop custodian capability.
+        registry::drop_custodian_capability_test(custodian_capability);
+        // Get user-side order access keys for later.
+        let (_, _, _, _, order_access_key_lo) =
+            get_order_fields_test(market_id, side_maker, market_order_id_lo);
+        let (_, _, _, _, order_access_key_hi) =
+            get_order_fields_test(market_id, side_maker, market_order_id_hi);
+        // Assert list node orders active.
         assert!(is_list_node_order_active(
-            market_id, side_maker, market_order_id), 0);
+            market_id, side_maker, market_order_id_lo), 0);
+        assert!(is_list_node_order_active(
+            market_id, side_maker, market_order_id_hi), 0);
         // Place taker order with self match.
         place_market_order_user<BC, QC>(
             &user, market_id, integrator, direction_taker, min_base, max_base,
-            min_quote, max_quote, limit_price, self_match_behavior);
-        // Assert list node order inactive.
+            min_quote, max_quote, limit_price, self_match_behavior_taker);
+        // Assert list node order inactive for low price, active for
+        // high price.
         assert!(!is_list_node_order_active(
-            market_id, side_maker, market_order_id), 0);
-        // Assert user-side order fields for cancelled order
+            market_id, side_maker, market_order_id_lo), 0);
+        assert!(is_list_node_order_active(
+            market_id, side_maker, market_order_id_hi), 0);
+        // Assert user-side order fields for cancelled/active orders.
         let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
-            user_address, market_id, custodian_id, side_maker,
-            order_access_key);
+            user_address, market_id, NO_CUSTODIAN, side_maker,
+            order_access_key_lo);
         // No market order ID.
         assert!(market_order_id_r == (NIL as u128), 0);
         assert!(size_r == NIL, 0); // Bottom of inactive stack.
-        // Assert users's asset counts.
+        let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
+            user_address, market_id, CUSTODIAN_ID_USER_0, side_maker,
+            order_access_key_hi);
+        assert!(market_order_id_r == market_order_id_hi, 0);
+        assert!(size_r == size_maker, 0);
+        // Assert users's asset counts for signing market account.
         let (base_total , base_available , base_ceiling,
              quote_total, quote_available, quote_ceiling) =
             user::get_asset_counts_internal(
-                user_address, market_id, custodian_id);
+                user_address, market_id, NO_CUSTODIAN);
         assert!(base_total      == deposit_base, 0);
         assert!(base_available  == deposit_base, 0);
         assert!(base_ceiling    == deposit_base, 0);
@@ -5702,9 +5749,271 @@ module econia::market {
         assert!(quote_ceiling   == deposit_quote, 0);
         // Assert collateral amounts.
         assert!(user::get_collateral_value_simple_test<BC>(
-            user_address, market_id, custodian_id) == deposit_base, 0);
+            user_address, market_id, NO_CUSTODIAN) == deposit_base, 0);
         assert!(user::get_collateral_value_simple_test<QC>(
-            user_address, market_id, custodian_id) == deposit_quote, 0);
+            user_address, market_id, NO_CUSTODIAN) == deposit_quote, 0);
+    }
+
+    #[test]
+    /// Have user place two maker asks:
+    ///
+    /// * One at a low price without a delegated custodian.
+    /// * One at a high price with a delegated custodian.
+    ///
+    /// Then have signing user place a taker buy, self matching against
+    /// the order at the lower price. Here, matching continues against
+    /// the order at the higher price.
+    fun test_match_self_match_cancel_maker()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (user, _) = init_markets_users_integrator_test();
+        // Get fee divisors.
+        let (taker_divisor, integrator_divisor) =
+            (incentives::get_taker_fee_divisor(),
+             incentives::get_fee_share_divisor(INTEGRATOR_TIER));
+        // Declare common market parameters.
+        let market_id      = MARKET_ID_COIN;
+        let integrator     = @integrator;
+        let user_address   = address_of(&user);
+        // Declare maker order parameters.
+        let side_maker                = ASK;
+        let restriction               = NO_RESTRICTION;
+        let size_maker                = MIN_SIZE_COIN;
+        let self_match_behavior_maker = ABORT;
+        // Declare lower price set to product of fee divisors, to
+        // eliminate truncation when predicting fee amounts.
+        let price_lo = integrator_divisor * taker_divisor;
+        // Declare higher price for an order further from the spread.
+        let price_hi = integrator_divisor * taker_divisor * 2;
+        // Declare taker order parameters.
+        let direction_taker           = if (side_maker == ASK) BUY else SELL;
+        let min_base                  = 0;
+        let max_base                  = MAX_POSSIBLE;
+        let min_quote                 = 0;
+        let max_quote                 = MAX_POSSIBLE;
+        let limit_price               = price_hi;
+        let self_match_behavior_taker = CANCEL_MAKER;
+        // Declare taker match amounts.
+        let size_taker  = size_maker;
+        let base_taker  = size_taker * LOT_SIZE_COIN;
+        let quote_taker = size_taker * price_hi * TICK_SIZE_COIN;
+        // Declare trade and fee amounts.
+        let base_trade       = base_taker;
+        let integrator_share = quote_taker / integrator_divisor;
+        let econia_share     = quote_taker / taker_divisor - integrator_share;
+        let fee              = integrator_share + econia_share;
+        let quote_trade      = if (direction_taker == BUY)
+            (quote_taker + fee) else (quote_taker - fee);
+        // Declare deposit amounts.
+        let deposit_base  = HI_64 / 2;
+        let deposit_quote = HI_64 / 2;
+        // Declare expected maker asset counts after matching, for
+        // signing user.
+        let base_total_end      = deposit_base + base_trade;
+        let base_available_end  = base_total_end;
+        let base_ceiling_end    = base_total_end;
+        let quote_total_end     = deposit_quote - quote_trade;
+        let quote_available_end = quote_total_end;
+        let quote_ceiling_end   = quote_total_end;
+        // Deposit coins.
+        user::deposit_coins<BC>(user_address, market_id, NO_CUSTODIAN,
+                                assets::mint_test(deposit_base));
+        user::deposit_coins<QC>(user_address, market_id, NO_CUSTODIAN,
+                                assets::mint_test(deposit_quote));
+        user::deposit_coins<BC>(user_address, market_id, CUSTODIAN_ID_USER_0,
+                                assets::mint_test(deposit_base));
+        user::deposit_coins<QC>(user_address, market_id, CUSTODIAN_ID_USER_0,
+                                assets::mint_test(deposit_quote));
+        let custodian_capability = // Get custodian capability.
+            registry::get_custodian_capability_test(CUSTODIAN_ID_USER_0);
+        // Place maker orders, storing market order IDs.
+        let (market_order_id_lo, _, _, _) = place_limit_order_user<BC, QC>(
+            &user, market_id, integrator, side_maker, size_maker, price_lo,
+            restriction, self_match_behavior_maker);
+        let (market_order_id_hi, _, _, _) =
+                place_limit_order_custodian<BC, QC>(
+            user_address, market_id, integrator, side_maker, size_maker,
+            price_hi, restriction, self_match_behavior_maker,
+            &custodian_capability);
+        // Drop custodian capability.
+        registry::drop_custodian_capability_test(custodian_capability);
+        // Get user-side order access keys for later.
+        let (_, _, _, _, order_access_key_lo) =
+            get_order_fields_test(market_id, side_maker, market_order_id_lo);
+        let (_, _, _, _, order_access_key_hi) =
+            get_order_fields_test(market_id, side_maker, market_order_id_hi);
+        // Assert list node orders active.
+        assert!(is_list_node_order_active(
+            market_id, side_maker, market_order_id_lo), 0);
+        assert!(is_list_node_order_active(
+            market_id, side_maker, market_order_id_hi), 0);
+        // Place taker order with self match.
+        let (base_trade_r, quote_trade_r, fee_r) =
+                place_market_order_user<BC, QC>(
+            &user, market_id, integrator, direction_taker, min_base, max_base,
+            min_quote, max_quote, limit_price, self_match_behavior_taker);
+        // Assert returns.
+        assert!(base_trade_r  == base_trade, 0);
+        assert!(quote_trade_r == quote_trade, 0);
+        assert!(fee_r         == fee, 0);
+        // Assert list node orders inactive.
+        assert!(!is_list_node_order_active(
+            market_id, side_maker, market_order_id_lo), 0);
+        assert!(!is_list_node_order_active(
+            market_id, side_maker, market_order_id_hi), 0);
+        // Assert user-side order fields for cancelled/filled orders.
+        let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
+            user_address, market_id, NO_CUSTODIAN, side_maker,
+            order_access_key_lo);
+        // No market order ID.
+        assert!(market_order_id_r == (NIL as u128), 0);
+        assert!(size_r == NIL, 0); // Bottom of inactive stack.
+        let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
+            user_address, market_id, CUSTODIAN_ID_USER_0, side_maker,
+            order_access_key_hi);
+        // No market order ID.
+        assert!(market_order_id_r == (NIL as u128), 0);
+        assert!(size_r == NIL, 0); // Bottom of inactive stack.
+        // Assert users's asset counts for signing market account.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            user::get_asset_counts_internal(
+                user_address, market_id, NO_CUSTODIAN);
+        assert!(base_total      == base_total_end, 0);
+        assert!(base_available  == base_available_end, 0);
+        assert!(base_ceiling    == base_ceiling_end, 0);
+        assert!(quote_total     == quote_total_end, 0);
+        assert!(quote_available == quote_available_end, 0);
+        assert!(quote_ceiling   == quote_ceiling_end, 0);
+        // Assert collateral amounts.
+        assert!(user::get_collateral_value_simple_test<BC>(
+            user_address, market_id, NO_CUSTODIAN) == base_total_end, 0);
+        assert!(user::get_collateral_value_simple_test<QC>(
+            user_address, market_id, NO_CUSTODIAN) == quote_total_end, 0);
+    }
+
+    #[test]
+    /// Have user place two maker asks:
+    ///
+    /// * One at a low price without a delegated custodian.
+    /// * One at a high price with a delegated custodian.
+    ///
+    /// Then have signing user place a taker buy, self matching against
+    /// the order at the lower price. Here, matching halts after the
+    /// self match.
+    fun test_match_self_match_cancel_taker()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (user, _) = init_markets_users_integrator_test();
+        // Get fee divisors.
+        let (taker_divisor, integrator_divisor) =
+            (incentives::get_taker_fee_divisor(),
+             incentives::get_fee_share_divisor(INTEGRATOR_TIER));
+        // Declare common market parameters.
+        let market_id      = MARKET_ID_COIN;
+        let integrator     = @integrator;
+        let user_address   = address_of(&user);
+        // Declare maker order parameters.
+        let side_maker                = ASK;
+        let restriction               = NO_RESTRICTION;
+        let size_maker                = MIN_SIZE_COIN;
+        let self_match_behavior_maker = ABORT;
+        // Declare lower price set to product of fee divisors, to
+        // eliminate truncation when predicting fee amounts.
+        let price_lo = integrator_divisor * taker_divisor;
+        // Declare higher price for an order further from the spread.
+        let price_hi = integrator_divisor * taker_divisor * 2;
+        // Declare taker order parameters.
+        let direction_taker           = if (side_maker == ASK) BUY else SELL;
+        let min_base                  = 0;
+        let max_base                  = MAX_POSSIBLE;
+        let min_quote                 = 0;
+        let max_quote                 = MAX_POSSIBLE;
+        let limit_price               = price_hi;
+        let self_match_behavior_taker = CANCEL_TAKER;
+        // Declare deposit amounts.
+        let deposit_base  = HI_64 / 2;
+        let deposit_quote = HI_64 / 2;
+        // Declare taker match amounts against low price order.
+        let base_taker  = size_maker * LOT_SIZE_COIN;
+        let quote_taker = size_maker * price_lo * TICK_SIZE_COIN;
+        // Declare expected maker asset counts after matching, for
+        // signing user.
+        let base_total_end      = deposit_base;
+        let base_available_end  = base_total_end - base_taker;
+        let base_ceiling_end    = base_total_end;
+        let quote_total_end     = deposit_quote;
+        let quote_available_end = quote_total_end;
+        let quote_ceiling_end   = quote_total_end + quote_taker;
+        // Deposit coins.
+        user::deposit_coins<BC>(user_address, market_id, NO_CUSTODIAN,
+                                assets::mint_test(deposit_base));
+        user::deposit_coins<QC>(user_address, market_id, NO_CUSTODIAN,
+                                assets::mint_test(deposit_quote));
+        user::deposit_coins<BC>(user_address, market_id, CUSTODIAN_ID_USER_0,
+                                assets::mint_test(deposit_base));
+        user::deposit_coins<QC>(user_address, market_id, CUSTODIAN_ID_USER_0,
+                                assets::mint_test(deposit_quote));
+        let custodian_capability = // Get custodian capability.
+            registry::get_custodian_capability_test(CUSTODIAN_ID_USER_0);
+        // Place maker orders, storing market order IDs.
+        let (market_order_id_lo, _, _, _) = place_limit_order_user<BC, QC>(
+            &user, market_id, integrator, side_maker, size_maker, price_lo,
+            restriction, self_match_behavior_maker);
+        let (market_order_id_hi, _, _, _) =
+                place_limit_order_custodian<BC, QC>(
+            user_address, market_id, integrator, side_maker, size_maker,
+            price_hi, restriction, self_match_behavior_maker,
+            &custodian_capability);
+        // Drop custodian capability.
+        registry::drop_custodian_capability_test(custodian_capability);
+        // Get user-side order access keys for later.
+        let (_, _, _, _, order_access_key_lo) =
+            get_order_fields_test(market_id, side_maker, market_order_id_lo);
+        let (_, _, _, _, order_access_key_hi) =
+            get_order_fields_test(market_id, side_maker, market_order_id_hi);
+        // Assert list node orders active.
+        assert!(is_list_node_order_active(
+            market_id, side_maker, market_order_id_lo), 0);
+        assert!(is_list_node_order_active(
+            market_id, side_maker, market_order_id_hi), 0);
+        // Place taker order with self match.
+        place_market_order_user<BC, QC>(
+            &user, market_id, integrator, direction_taker, min_base, max_base,
+            min_quote, max_quote, limit_price, self_match_behavior_taker);
+        // Assert list node orders active.
+        assert!(is_list_node_order_active(
+            market_id, side_maker, market_order_id_lo), 0);
+        assert!(is_list_node_order_active(
+            market_id, side_maker, market_order_id_hi), 0);
+        // Assert user-side order fields for active orders.
+        let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
+            user_address, market_id, NO_CUSTODIAN, side_maker,
+            order_access_key_lo);
+        // No market order ID.
+        assert!(market_order_id_r == market_order_id_lo, 0);
+        assert!(size_r == size_maker, 0);
+        let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
+            user_address, market_id, CUSTODIAN_ID_USER_0, side_maker,
+            order_access_key_hi);
+        assert!(market_order_id_r == market_order_id_hi, 0);
+        assert!(size_r == size_maker, 0);
+        // Assert users's asset counts for signing market account.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            user::get_asset_counts_internal(
+                user_address, market_id, NO_CUSTODIAN);
+        assert!(base_total      == base_total_end, 0);
+        assert!(base_available  == base_available_end, 0);
+        assert!(base_ceiling    == base_ceiling_end, 0);
+        assert!(quote_total     == quote_total_end, 0);
+        assert!(quote_available == quote_available_end, 0);
+        assert!(quote_ceiling   == quote_ceiling_end, 0);
+        // Assert collateral amounts.
+        assert!(user::get_collateral_value_simple_test<BC>(
+            user_address, market_id, NO_CUSTODIAN) == base_total, 0);
+        assert!(user::get_collateral_value_simple_test<QC>(
+            user_address, market_id, NO_CUSTODIAN) == quote_total, 0);
     }
 
     #[test]
@@ -6060,6 +6369,76 @@ module econia::market {
             @user_1, MARKET_ID_COIN, NO_CUSTODIAN) == base_post, 0);
         assert!(user::get_collateral_value_simple_test<QC>(
             @user_1, MARKET_ID_COIN, NO_CUSTODIAN) == HI_64 - quote_post, 0);
+    }
+
+    #[test]
+    /// Verify state updates, returns for placing ask that self matches
+    /// with taker cancellation. Based on
+    /// `test_place_limit_order_crosses_ask_partial()`.
+    fun test_place_limit_order_crosses_ask_self_match_cancel()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (user, _) = init_markets_users_integrator_test();
+        // Declare order parameters.
+        let side_maker          = BID;
+        let side_taker          = ASK;
+        let size                = MIN_SIZE_COIN;
+        let price               = 123;
+        let restriction         = NO_RESTRICTION;
+        let self_match_behavior = CANCEL_BOTH;
+        // Declare deposit amounts.
+        let deposit_base  = HI_64 / 2;
+        let deposit_quote = HI_64 / 2;
+        // Deposit to user's account.
+        user::deposit_coins<BC>(@user_0, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(deposit_base));
+        user::deposit_coins<QC>(@user_0, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(deposit_quote));
+        // Place maker order.
+        let (market_order_id, _, _, _) = place_limit_order_user<BC, QC>(
+            &user, MARKET_ID_COIN, @integrator, side_maker, size, price,
+            restriction, self_match_behavior);
+        // Get user-side order access key for later.
+        let (_, _, _, _, order_access_key) = get_order_fields_test(
+            MARKET_ID_COIN, side_maker, market_order_id);
+        assert!(is_list_node_order_active( // Assert order is active.
+            MARKET_ID_COIN, side_maker, market_order_id), 0);
+        // Place taker order.
+        let (market_order_id_r, base_trade_r, quote_trade_r, fee_r) =
+            place_limit_order_user<BC, QC>(
+                &user, MARKET_ID_COIN, @integrator, side_taker, size, price,
+                restriction, self_match_behavior);
+        // Assert returns
+        assert!(market_order_id_r == (NIL as u128), 0);
+        assert!(base_trade_r      == 0, 0);
+        assert!(quote_trade_r     == 0, 0);
+        assert!(fee_r             == 0, 0);
+        // Assert maker order inactive.
+        assert!(!is_list_node_order_active(
+            MARKET_ID_COIN, side_maker, market_order_id), 0);
+        // Assert user's asset counts.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            user::get_asset_counts_internal(
+                @user_0, MARKET_ID_COIN, NO_CUSTODIAN);
+        assert!(base_total      == deposit_base, 0);
+        assert!(base_available  == deposit_base, 0);
+        assert!(base_ceiling    == deposit_base, 0);
+        assert!(quote_total     == deposit_quote, 0);
+        assert!(quote_available == deposit_quote, 0);
+        assert!(quote_ceiling   == deposit_quote, 0);
+        // Assert collateral amounts.
+        assert!(user::get_collateral_value_simple_test<BC>(
+            @user_0, MARKET_ID_COIN, NO_CUSTODIAN) == deposit_base, 0);
+        assert!(user::get_collateral_value_simple_test<QC>(
+            @user_0, MARKET_ID_COIN, NO_CUSTODIAN) == deposit_quote, 0);
+        // Assert user-side order fields for cancelled maker order.
+        let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
+            @user_0, MARKET_ID_COIN, NO_CUSTODIAN, side_maker,
+            order_access_key);
+        // No market order ID.
+        assert!(market_order_id_r == (NIL as u128), 0);
+        assert!(size_r == NIL, 0); // Bottom of inactive stack.
     }
 
     #[test]

@@ -64,6 +64,11 @@ module.exports = {
 
   themeConfig:
     ({
+      metadata: [
+        { name: "twitter:card", content: "summary" },
+        { name: "og:image:width", content: "1200" },
+        { name: "og:image:height", content: "630" }
+      ],
       image: "img/EconiaPreview.svg",
       navbar: {
         logo: {

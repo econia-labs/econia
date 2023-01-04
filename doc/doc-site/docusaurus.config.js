@@ -69,7 +69,7 @@ module.exports = {
         { name: "og:image:width", content: "1200" },
         { name: "og:image:height", content: "630" }
       ],
-      image: "img/EconiaPreview.svg",
+      image: "img/EconiaPreview.png",
       navbar: {
         logo: {
           alt: "Econia Logo",

@@ -2,6 +2,7 @@
 slug: /
 title: Welcome
 hide_title: true
+description: Documentation for the Econia Protocol
 ---
 
 <div style={{

@@ -386,7 +386,7 @@
 /// * [x] `change_order_size()`
 /// * [x] `match()`
 /// * [x] `place_limit_order()`
-/// * [ ] `place_limit_order_passive_advance()`
+/// * [x] `place_limit_order_passive_advance()`
 /// * [x] `place_market_order()`
 /// * [x] `range_check_trade()`
 /// * [x] `swap()`
@@ -429,8 +429,8 @@
 /// Function returns to test:
 ///
 /// * [x] `place_limit_order_custodian()`
-/// * [ ] `place_limit_order_passive_advance_custodian()`
-/// * [ ] `place_limit_order_passive_advance_user()`
+/// * [x] `place_limit_order_passive_advance_custodian()`
+/// * [x] `place_limit_order_passive_advance_user()`
 /// * [x] `place_limit_order_user()`
 /// * [x] `place_market_order_custodian()`
 /// * [x] `place_market_order_user()`
@@ -457,8 +457,8 @@
 /// * [x] `change_order_size_user()`
 /// * [x] `place_limit_order_user_entry()`
 /// * [x] `place_limit_order_custodian()`
-/// * [ ] `place_limit_order_passive_advance_custodian()`
-/// * [ ] `place_limit_order_passive_advance_user_entry()`
+/// * [x] `place_limit_order_passive_advance_custodian()`
+/// * [x] `place_limit_order_passive_advance_user_entry()`
 /// * [x] `place_market_order_user_entry()`
 /// * [x] `place_market_order_custodian()`
 /// * [x] `swap_between_coinstores_entry()`
@@ -474,7 +474,7 @@
 /// * [x] `change_order_size()`
 /// * [x] `match()`
 /// * [x] `place_limit_order()`
-/// * [ ] `place_limit_order_passive_advance()`
+/// * [x] `place_limit_order_passive_advance()`
 /// * [x] `place_market_order()`
 /// * [x] `range_check_trade()`
 /// * [x] `swap_between_coinstores()`
@@ -1034,6 +1034,10 @@ module econia::market {
     /// Public function wrapper for
     /// `place_limit_order_passive_advance()` for placing order under
     /// authority of delegated custodian.
+    ///
+    /// # Invocation and return testing
+    ///
+    /// * `test_place_limit_order_passive_advance_ticks_bid()`
     public fun place_limit_order_passive_advance_custodian<
         BaseType,
         QuoteType
@@ -1065,6 +1069,17 @@ module econia::market {
     /// Public function wrapper for
     /// `place_limit_order_passive_advance()` for placing order under
     /// authority of signing user.
+    ///
+    /// # Invocation and return testing
+    ///
+    /// * `test_place_limit_order_passive_advance_no_cross_price_ask()`
+    /// * `test_place_limit_order_passive_advance_no_cross_price_bid()`
+    /// * `test_place_limit_order_passive_advance_no_full_advance()`
+    /// * `test_place_limit_order_passive_advance_no_start_price()`.
+    /// * `test_place_limit_order_passive_advance_no_target_advance()`
+    /// * `test_place_limit_order_passive_advance_percent_ask()`
+    /// * `test_place_limit_order_passive_advance_percent_bid()`
+    /// * `test_place_limit_order_passive_advance_ticks_ask()`
     public fun place_limit_order_passive_advance_user<
         BaseType,
         QuoteType
@@ -1717,6 +1732,10 @@ module econia::market {
     #[cmd]
     /// Public entry function wrapper for
     /// `place_limit_order_passive_advance_user()`.
+    ///
+    /// # Invocation testing
+    ///
+    /// * `test_place_limit_order_passive_advance_ticks_ask()`
     public entry fun place_limit_order_passive_advance_user_entry<
         BaseType,
         QuoteType
@@ -2756,6 +2775,27 @@ module econia::market {
     /// * `E_INVALID_MARKET_ID`: No market with given ID.
     /// * `E_INVALID_BASE`: Base asset type is invalid.
     /// * `E_INVALID_QUOTE`: Quote asset type is invalid.
+    /// * `E_INVALID_PERCENT`: `advance_style` is `PERCENT` and
+    ///   `target_advance_amount` is not less than or equal to 100.
+    ///
+    /// # Expected value testing
+    ///
+    /// * `test_place_limit_order_passive_advance_no_cross_price_ask()`
+    /// * `test_place_limit_order_passive_advance_no_cross_price_bid()`
+    /// * `test_place_limit_order_passive_advance_no_full_advance()`
+    /// * `test_place_limit_order_passive_advance_no_start_price()`.
+    /// * `test_place_limit_order_passive_advance_no_target_advance()`
+    /// * `test_place_limit_order_passive_advance_percent_ask()`
+    /// * `test_place_limit_order_passive_advance_percent_bid()`
+    /// * `test_place_limit_order_passive_advance_ticks_ask()`
+    /// * `test_place_limit_order_passive_advance_ticks_bid()`
+    ///
+    /// # Failure testing
+    ///
+    /// * `test_place_limit_order_passive_advance_invalid_base()`
+    /// * `test_place_limit_order_passive_advance_invalid_market_id()`
+    /// * `test_place_limit_order_passive_advance_invalid_percent()`
+    /// * `test_place_limit_order_passive_advance_invalid_quote()`
     fun place_limit_order_passive_advance<
         BaseType,
         QuoteType,
@@ -2805,17 +2845,17 @@ module econia::market {
             let full_advance_price = if (side == ASK) {
                 // Check price one tick above max bid price.
                 let check_price = cross_price + 1;
-                // If check price is less than or equal to start price,
-                // full advance goes to check price. Otherwise do not
-                // advance past start price.
-                if (check_price <= start_price) check_price else start_price
+                // If check price is less than start price, full advance
+                // goes to check price. Otherwise do not advance past
+                // start price.
+                if (check_price < start_price) check_price else start_price
             } else { // If a bid:
                 // Check price one tick below min ask price.
                 let check_price = cross_price - 1;
-                // If check price greater than or equal to start price,
-                // full advance goes to check price. Otherwise do not
-                // advance past start price.
-                if (check_price >= start_price) check_price else start_price
+                // If check price greater than start price, full advance
+                // goes to check price. Otherwise do not advance past
+                // start price.
+                if (check_price > start_price) check_price else start_price
             };
             // Calculate price. If full advance price equals start
             // price, do not advance past start price. Otherwise:
@@ -2855,7 +2895,7 @@ module econia::market {
                 }
             }
         }; // Price now computed.
-        // Place post-or-abort limit order that aborts for self-match,
+        // Place post-or-abort limit order that aborts for self match,
         // storing market order ID.
         let (market_order_id, _, _, _) =
             place_limit_order<BaseType, QuoteType>(
@@ -3354,6 +3394,61 @@ module econia::market {
     // SDK generation <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Test-only functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test_only]
+    /// Assuming order placed by `@user_0` on `MARKET_ID_COIN`, verify
+    /// order fields.
+    public fun check_order_fields_test(
+        market_order_id: u128,
+        side: bool,
+        size: u64,
+        price: u64,
+        custodian_id: u64
+    ) acquires OrderBooks {
+        // Get order fields from book.
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
+            get_order_fields_test(MARKET_ID_COIN, side, market_order_id);
+        // Assert returns.
+        assert!(size_r         == size, 0);
+        assert!(price_r        == price, 0);
+        assert!(user_r         == @user_0, 0);
+        assert!(custodian_id_r == custodian_id, 0);
+        // Check fields user-side.
+        let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
+            @user_0, MARKET_ID_COIN, custodian_id, side, order_access_key);
+        // Assert returns.
+        assert!(market_order_id_r == market_order_id, 0);
+        assert!(size_r            == size, 0);
+    }
+
+    #[test_only]
+    /// Configure spread for `MARKET_ID_COIN` with `@user_0` placing a
+    /// bid of price `max_bid_price` and an ask of price
+    /// `min_ask_price`, placing no order for given side if indicated
+    /// price is `NIL`. Provide user with enough collateral to cover
+    /// trades and to place more later.
+    public fun configure_spread_test(
+        max_bid_price: u64,
+        min_ask_price: u64
+    ): signer
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (user, _) = init_markets_users_integrator_test();
+        let user_address = address_of(&user); // Get user address.
+        // Deposit coins to user's market account.
+        user::deposit_coins<BC>(user_address, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(HI_64 / 2));
+        user::deposit_coins<QC>(user_address, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(HI_64 / 2));
+        // Place orders accordingly.
+        if (max_bid_price != NIL) {place_limit_order_user<BC, QC>(
+                &user, MARKET_ID_COIN, @integrator, BID, MIN_SIZE_COIN,
+                max_bid_price, NO_RESTRICTION, ABORT);};
+        if (min_ask_price != NIL) {place_limit_order_user<BC, QC>(
+                &user, MARKET_ID_COIN, @integrator, ASK, MIN_SIZE_COIN,
+                min_ask_price, NO_RESTRICTION, ABORT);};
+        user // Return user signature.
+    }
 
     #[test_only]
     /// Return fields of indicated `Order`.
@@ -7170,6 +7265,377 @@ module econia::market {
         place_limit_order<BC, QC>( // Attempt invalid invocation.
             @user, MARKET_ID_COIN, NO_CUSTODIAN, @integrator, side, size,
             price, restriction, self_match_behavior, critical_height);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 7)]
+    /// Verify failure for invalid base type argument.
+    fun test_place_limit_order_passive_advance_invalid_base()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (user, _) = init_markets_users_integrator_test();
+        // Declare order parameters.
+        let market_id             = MARKET_ID_COIN;
+        let integrator            = @integrator;
+        let side                  = ASK;
+        let size                  = MIN_SIZE_COIN;
+        let advance_style         = PERCENT;
+        let target_advance_amount = 50;
+        // Attempt invalid invocation.
+        place_limit_order_passive_advance_user<QC, QC>(
+            &user, market_id, integrator, side, size, advance_style,
+            target_advance_amount);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 6)]
+    /// Verify failure for invalid market ID.
+    fun test_place_limit_order_passive_advance_invalid_market_id()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (user, _) = init_markets_users_integrator_test();
+        // Declare order parameters.
+        let market_id             = HI_64;
+        let integrator            = @integrator;
+        let side                  = ASK;
+        let size                  = MIN_SIZE_COIN;
+        let advance_style         = PERCENT;
+        let target_advance_amount = 50;
+        // Attempt invalid invocation.
+        place_limit_order_passive_advance_user<BC, QC>(
+            &user, market_id, integrator, side, size, advance_style,
+            target_advance_amount);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 29)]
+    /// Verify failure for invalid percent
+    fun test_place_limit_order_passive_advance_invalid_percent()
+    acquires OrderBooks {
+        // Configure spread.
+        let max_bid_price = 100;
+        let min_ask_price = 201;
+        let user = configure_spread_test(max_bid_price, min_ask_price);
+        // Declare order parameters.
+        let market_id             = MARKET_ID_COIN;
+        let integrator            = @integrator;
+        let side                  = ASK;
+        let size                  = MIN_SIZE_COIN;
+        let advance_style         = PERCENT;
+        let target_advance_amount = 101;
+        // Attempt invalid invocation.
+        place_limit_order_passive_advance_user<BC, QC>(
+            &user, market_id, integrator, side, size, advance_style,
+            target_advance_amount);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 8)]
+    /// Verify failure for invalid quote type argument.
+    fun test_place_limit_order_passive_advance_invalid_quote()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (user, _) = init_markets_users_integrator_test();
+        // Declare order parameters.
+        let market_id             = MARKET_ID_COIN;
+        let integrator            = @integrator;
+        let side                  = ASK;
+        let size                  = MIN_SIZE_COIN;
+        let advance_style         = PERCENT;
+        let target_advance_amount = 50;
+        // Attempt invalid invocation.
+        place_limit_order_passive_advance_user<BC, BC>(
+            &user, market_id, integrator, side, size, advance_style,
+            target_advance_amount);
+    }
+
+    #[test]
+    /// Verify return for no cross price when placing an ask.
+    fun test_place_limit_order_passive_advance_no_cross_price_ask()
+    acquires OrderBooks {
+        // Configure spread.
+        let max_bid_price = NIL;
+        let min_ask_price = 201;
+        let user = configure_spread_test(max_bid_price, min_ask_price);
+        // Declare order parameters.
+        let market_id             = MARKET_ID_COIN;
+        let integrator            = @integrator;
+        let side                  = ASK;
+        let size                  = MIN_SIZE_COIN;
+        let advance_style         = PERCENT;
+        let target_advance_amount = 1;
+        // Place passive advance ask with percent advance style.
+        let market_order_id = place_limit_order_passive_advance_user<BC, QC>(
+            &user, market_id, integrator, side, size, advance_style,
+            target_advance_amount);
+        // Assert no order placed.
+        assert!(market_order_id == (NIL as u128), 0);
+    }
+
+    #[test]
+    /// Verify return for no cross price when placing a bid.
+    fun test_place_limit_order_passive_advance_no_cross_price_bid()
+    acquires OrderBooks {
+        // Configure spread.
+        let max_bid_price = 100;
+        let min_ask_price = NIL;
+        let user = configure_spread_test(max_bid_price, min_ask_price);
+        // Declare order parameters.
+        let market_id             = MARKET_ID_COIN;
+        let integrator            = @integrator;
+        let side                  = BID;
+        let size                  = MIN_SIZE_COIN;
+        let advance_style         = TICKS;
+        let target_advance_amount = 1;
+        // Place passive advance ask with percent advance style.
+        let market_order_id = place_limit_order_passive_advance_user<BC, QC>(
+            &user, market_id, integrator, side, size, advance_style,
+            target_advance_amount);
+        // Assert no order placed.
+        assert!(market_order_id == (NIL as u128), 0);
+    }
+
+    #[test]
+    /// Verify returns, state updates for full advance is start price.
+    fun test_place_limit_order_passive_advance_no_full_advance()
+    acquires OrderBooks {
+        // Configure spread.
+        let max_bid_price = 100;
+        let min_ask_price = 101;
+        let user = configure_spread_test(max_bid_price, min_ask_price);
+        // Declare order parameters.
+        let market_id             = MARKET_ID_COIN;
+        let integrator            = @integrator;
+        let size                  = MIN_SIZE_COIN + 1;
+        let advance_style         = PERCENT;
+        let target_advance_amount = 100;
+        // Place passive advance ask.
+        let market_order_id = place_limit_order_passive_advance_user<BC, QC>(
+            &user, market_id, integrator, ASK, size, advance_style,
+            target_advance_amount);
+        check_order_fields_test( // Check fields for placed order.
+            market_order_id, ASK, size, min_ask_price, NO_CUSTODIAN);
+        // Place passive advance bid.
+        market_order_id = place_limit_order_passive_advance_user<BC, QC>(
+            &user, market_id, integrator, BID, size, advance_style,
+            target_advance_amount);
+        check_order_fields_test( // Check fields for placed order.
+            market_order_id, BID, size, max_bid_price, NO_CUSTODIAN);
+    }
+
+    #[test]
+    /// Verify returns for no start price.
+    fun test_place_limit_order_passive_advance_no_start_price()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (user, _) = init_markets_users_integrator_test();
+        // Declare order parameters.
+        let market_id             = MARKET_ID_COIN;
+        let integrator            = @integrator;
+        let side                  = ASK;
+        let size                  = MIN_SIZE_COIN;
+        let advance_style         = PERCENT;
+        let target_advance_amount = 50;
+        // Place passive advance limit order.
+        let market_order_id = place_limit_order_passive_advance_user<BC, QC>(
+            &user, market_id, integrator, side, size, advance_style,
+            target_advance_amount);
+        // Assert no order placed.
+        assert!(market_order_id == (NIL as u128), 0);
+        // Place passive advance limit order on other side.
+        market_order_id = place_limit_order_passive_advance_user<BC, QC>(
+            &user, market_id, integrator, !side, size, advance_style,
+            target_advance_amount);
+        // Assert no order placed.
+        assert!(market_order_id == (NIL as u128), 0);
+    }
+
+    #[test]
+    /// Verify returns, state updates for no target advance amount.
+    fun test_place_limit_order_passive_advance_no_target_advance()
+    acquires OrderBooks {
+        // Configure spread.
+        let max_bid_price = 100;
+        let min_ask_price = 201;
+        let user = configure_spread_test(max_bid_price, min_ask_price);
+        // Declare order parameters.
+        let market_id             = MARKET_ID_COIN;
+        let integrator            = @integrator;
+        let size                  = MIN_SIZE_COIN;
+        let target_advance_amount = 0;
+        // Place passive advance ask with percent advance style.
+        let market_order_id = place_limit_order_passive_advance_user<BC, QC>(
+            &user, market_id, integrator, ASK, size, PERCENT,
+            target_advance_amount);
+        check_order_fields_test( // Check fields for placed order.
+            market_order_id, ASK, size, min_ask_price, NO_CUSTODIAN);
+        // Place passive advance bid with tick advance style.
+        market_order_id = place_limit_order_passive_advance_user<BC, QC>(
+            &user, market_id, integrator, BID, size, TICKS,
+            target_advance_amount);
+        check_order_fields_test( // Check fields for placed order.
+            market_order_id, BID, size, max_bid_price, NO_CUSTODIAN);
+    }
+
+    #[test]
+    /// Verify returns, state updates for percent-specified asks.
+    fun test_place_limit_order_passive_advance_percent_ask()
+    acquires OrderBooks {
+        // Configure spread.
+        let max_bid_price = 99;
+        let min_ask_price = 500;
+        let user = configure_spread_test(max_bid_price, min_ask_price);
+        // Declare order parameters.
+        let market_id     = MARKET_ID_COIN;
+        let integrator    = @integrator;
+        let side          = ASK;
+        let size          = MIN_SIZE_COIN + 123;
+        let advance_style = PERCENT;
+        // Place passive advance ask for halfway through spread.
+        let market_order_id = place_limit_order_passive_advance_user<BC, QC>(
+            &user, market_id, integrator, side, size, advance_style, 50);
+        check_order_fields_test( // Check fields for placed order.
+            market_order_id, side, size, 300, NO_CUSTODIAN);
+        // Place another ask for halfway through spread.
+        market_order_id = place_limit_order_passive_advance_user<BC, QC>(
+            &user, market_id, integrator, side, size, advance_style, 50);
+        check_order_fields_test( // Check fields for placed order.
+            market_order_id, side, size, 200, NO_CUSTODIAN);
+        // Place another ask for full advance
+        market_order_id = place_limit_order_passive_advance_user<BC, QC>(
+            &user, market_id, integrator, side, size, advance_style, 100);
+        check_order_fields_test( // Check fields for placed order.
+            market_order_id, side, size, 100, NO_CUSTODIAN);
+    }
+
+    #[test]
+    /// Verify returns, state updates for percent-specified bids.
+    fun test_place_limit_order_passive_advance_percent_bid()
+    acquires OrderBooks {
+        // Configure spread.
+        let max_bid_price = 100;
+        let min_ask_price = 501;
+        let user = configure_spread_test(max_bid_price, min_ask_price);
+        // Declare order parameters.
+        let market_id     = MARKET_ID_COIN;
+        let integrator    = @integrator;
+        let side          = BID;
+        let size          = MIN_SIZE_COIN + 123;
+        let advance_style = PERCENT;
+        // Place passive advance bid for one quarter through spread.
+        let market_order_id = place_limit_order_passive_advance_user<BC, QC>(
+            &user, market_id, integrator, side, size, advance_style, 25);
+        check_order_fields_test( // Check fields for placed order.
+            market_order_id, side, size, 200, NO_CUSTODIAN);
+        // Place another bid for three quarters through spread.
+        market_order_id = place_limit_order_passive_advance_user<BC, QC>(
+            &user, market_id, integrator, side, size, advance_style, 75);
+        check_order_fields_test( // Check fields for placed order.
+            market_order_id, side, size, 425, NO_CUSTODIAN);
+        // Place another bid for full advance.
+        market_order_id = place_limit_order_passive_advance_user<BC, QC>(
+            &user, market_id, integrator, side, size, advance_style, 100);
+        check_order_fields_test( // Check fields for placed order.
+            market_order_id, side, size, 500, NO_CUSTODIAN);
+    }
+
+    #[test]
+    /// Verify returns, state updates for ticks-specified asks.
+    fun test_place_limit_order_passive_advance_ticks_ask()
+    acquires OrderBooks {
+        // Configure spread.
+        let max_bid_price = 100;
+        let min_ask_price = 500;
+        let user = configure_spread_test(max_bid_price, min_ask_price);
+        // Declare order parameters.
+        let market_id     = MARKET_ID_COIN;
+        let integrator    = @integrator;
+        let side          = ASK;
+        let size          = MIN_SIZE_COIN + 123;
+        let advance_style = TICKS;
+        // Place passive advance ask for arbitrary ticks.
+        let market_order_id = place_limit_order_passive_advance_user<BC, QC>(
+            &user, market_id, integrator, side, size, advance_style, 100);
+        check_order_fields_test( // Check fields for placed order.
+            market_order_id, side, size, 400, NO_CUSTODIAN);
+        // Place another ask exceeding ticks left to advance.
+        market_order_id = place_limit_order_passive_advance_user<BC, QC>(
+            &user, market_id, integrator, side, size, advance_style, 300);
+        check_order_fields_test( // Check fields for placed order.
+            market_order_id, side, size, 101, NO_CUSTODIAN);
+        // Cancel the order.
+        cancel_order_user(&user, market_id, side, market_order_id);
+        // Place another ask exactly matching ticks left to advance.
+        market_order_id = place_limit_order_passive_advance_user<BC, QC>(
+            &user, market_id, integrator, side, size, advance_style, 299);
+        check_order_fields_test( // Check fields for placed order.
+            market_order_id, side, size, 101, NO_CUSTODIAN);
+        // Get order access key from book.
+        let (_, _, _, _, order_access_key) = get_order_fields_test(
+            market_id, side, market_order_id);
+        // Cancel the order, resulting in order access key at top of
+        // inactive orders stack for user's market account.
+        cancel_order_user(&user, market_id, side, market_order_id);
+        // Place a 1 tick advance ask, using public entry wrapper.
+        place_limit_order_passive_advance_user_entry<BC, QC>(
+            &user, market_id, integrator, side, size, advance_style, 1);
+        // Get market order ID for ask just placed, based on order
+        // access key just popped off inactive order stack.
+        (market_order_id, _) = user::get_order_fields_simple_test(
+            @user_0, market_id, NO_CUSTODIAN, side, order_access_key);
+        check_order_fields_test( // Check fields for placed order.
+            market_order_id, side, size, 399, NO_CUSTODIAN);
+    }
+
+    #[test]
+    /// Verify returns, state updates for ticks-specified bid, for
+    /// delegated custodian.
+    fun test_place_limit_order_passive_advance_ticks_bid()
+    acquires OrderBooks {
+        // Configure spread.
+        let max_bid_price = 100;
+        let min_ask_price = 500;
+        let user = configure_spread_test(max_bid_price, min_ask_price);
+        // Declare order parameters.
+        let user_address  = address_of(&user);
+        let custodian_id  = CUSTODIAN_ID_USER_0;
+        let market_id     = MARKET_ID_COIN;
+        let integrator    = @integrator;
+        let side          = BID;
+        let size          = MIN_SIZE_COIN + 123;
+        let advance_style = TICKS;
+        // Deposit coins to user's market account.
+        user::deposit_coins<BC>(user_address, market_id, custodian_id,
+                                assets::mint_test(HI_64 / 2));
+        user::deposit_coins<QC>(user_address, market_id, custodian_id,
+                                assets::mint_test(HI_64 / 2));
+        // Get custodian capability.
+        let custodian_capability = registry::get_custodian_capability_test(
+            custodian_id);
+        // Place passive advance ask for arbitrary ticks.
+        let market_order_id =
+                place_limit_order_passive_advance_custodian<BC, QC>(
+            user_address, market_id, integrator, side, size, advance_style,
+            100, &custodian_capability);
+        check_order_fields_test( // Check fields for placed order.
+            market_order_id, side, size, 200, custodian_id);
+        // Place another ask exceeding ticks left to advance.
+        market_order_id = place_limit_order_passive_advance_custodian<BC, QC>(
+            user_address, market_id, integrator, side, size, advance_style,
+            300, &custodian_capability);
+        check_order_fields_test( // Check fields for placed order.
+            market_order_id, side, size, 499, custodian_id);
+        // Cancel the order.
+        cancel_order_custodian(address_of(&user), market_id, side,
+                               market_order_id, &custodian_capability);
+        // Place another bid exactly matching ticks left to advance.
+        market_order_id = place_limit_order_passive_advance_custodian<BC, QC>(
+            user_address, market_id, integrator, side, size, advance_style,
+            299, &custodian_capability);
+        check_order_fields_test( // Check fields for placed order.
+            market_order_id, side, size, 499, custodian_id);
+        // Drop custodian capability.
+        registry::drop_custodian_capability_test(custodian_capability);
     }
 
     #[test]

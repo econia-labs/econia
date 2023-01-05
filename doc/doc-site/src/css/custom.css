@@ -131,7 +131,7 @@ th {
 }
 
 .pagination-nav__link--next {
-  text-align: left;
+  text-align: right;
 }
 
 .pagination-nav__link:hover {
@@ -147,7 +147,8 @@ th {
   color: #ffffff;
   text-transform: uppercase;
   font-weight: normal;
-  padding: 0px 34px;
+  padding: 16px 16px;
+  line-height: 20px;
 }
 
 .pagination-nav__label:hover {

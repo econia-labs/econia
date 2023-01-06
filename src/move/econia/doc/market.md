@@ -497,7 +497,7 @@ Passive advance limit order functions do not fit in the above table
 without excessive line length, and are thus presented here:
 
 * Function <code><a href="market.md#0xc0deb00c_market_place_limit_order_passive_advance">place_limit_order_passive_advance</a>()</code> has return proxy
-<code><a href="market.md#0xc0deb00c_market_place_limit_order_passive_advance_user">place_limit_order_passive_advance_user</a>()</code>
+<code><a href="market.md#0xc0deb00c_market_place_limit_order_passive_advance_user">place_limit_order_passive_advance_user</a>()</code>.
 * Function <code><a href="market.md#0xc0deb00c_market_place_limit_order_passive_advance_user">place_limit_order_passive_advance_user</a>()</code> has no return
 proxy.
 * Function <code><a href="market.md#0xc0deb00c_market_place_limit_order_passive_advance_custodian">place_limit_order_passive_advance_custodian</a>()</code> has no

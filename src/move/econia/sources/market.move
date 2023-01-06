@@ -420,7 +420,7 @@
 /// without excessive line length, and are thus presented here:
 ///
 /// * Function `place_limit_order_passive_advance()` has return proxy
-///   `place_limit_order_passive_advance_user()`
+///   `place_limit_order_passive_advance_user()`.
 /// * Function `place_limit_order_passive_advance_user()` has no return
 ///   proxy.
 /// * Function `place_limit_order_passive_advance_custodian()` has no

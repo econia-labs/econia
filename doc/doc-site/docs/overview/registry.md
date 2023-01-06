@@ -1,71 +1,107 @@
 # The registry
 
-Econia's [registry module documentation] contains an overview of relevant functionality for Econia's global registry and recognized markets lists.
-
-Stay tuned for more docs that will be added here, coming soon!
-
-<!---Alphabetized reference links-->
-
-[registry module documentation]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md
-
-<!--- Commented out text harvested from v3
-
-## General
-
-Econia contains a global [`Registry`](https://github.com/econia-labs/econia/tree/main/src/move/econia/build/Econia/docs/registry.md#0xc0deb00c_registry_Registry) that tracks information about [markets](#markets) and [custodians](#custodians).
-Once the Econia account initializes the registry, markets and custodian capabilities can be registered permissionlessly.
+Econia contains a global [`Registry`] that tracks information about [markets], [custodians], and [underwriters], all of which can be registered permissionlessly.
+An additional [recognized markets] registry provides additional functionality for certain markets that are recognized as following best practices for [market size parameters].
 
 ## Markets
 
-In Econia, markets are specified by a [`TradingPairInfo`](https://github.com/econia-labs/econia/tree/main/src/move/econia/build/Econia/docs/registry.md#0xc0deb00c_registry_TradingPairInfo), which designates a base asset, quote asset, lot size, and tick size.
-Lot size and tick size are denominated in terms of indivisible subunits of the underlying asset, for example `aptos_framework::coin::Coin.value`, which is an integer (`u64`).
-The corresponding [`OrderBook`](https://github.com/econia-labs/econia/tree/main/src/move/econia/build/Econia/docs/market.md#0xc0deb00c_market_OrderBook) for a given [`TradingPairInfo`](https://github.com/econia-labs/econia/tree/main/src/move/econia/build/Econia/docs/registry.md#0xc0deb00c_registry_TradingPairInfo) is hosted at the address of the signing account who registers the market, via [`register_market_pure_coin`](https://github.com/econia-labs/econia/tree/main/src/move/econia/build/Econia/docs/market.md#0xc0deb00c_market_register_market_pure_coin) or [`register_market_generic`](https://github.com/econia-labs/econia/tree/main/src/move/econia/build/Econia/docs/market.md#0xc0deb00c_market_register_market_generic).
-When a host registers a market, a [`MarketInfo`](https://github.com/econia-labs/econia/tree/main/src/move/econia/build/Econia/docs/registry.md#0xc0deb00c_registry_MarketInfo) is added to [`Registry.markets`](https://github.com/econia-labs/econia/tree/main/src/move/econia/build/Econia/docs/registry.md#0xc0deb00c_registry_Registry), and a corresponding market ID is generated, with the market ID defined as the 0-indexed vector index in [`Registry.markets`](https://github.com/econia-labs/econia/tree/main/src/move/econia/build/Econia/docs/registry.md#0xc0deb00c_registry_Registry).
-For example:
+Each Econia market is designated by a unique [`MarketInfo`] and a corresponding serial market ID.
+A [`MarketInfo`] specifies the base and quote asset types for a market, as well as the corresponding [market size parameters].
+While the quote asset must be an `aptos_framework::coin::Coin`, the base asset can be a `Coin` or a "generic asset".
+In the latter case, the base type is considered [`GenericAsset`], the market is registered with a corresponding generic base name, and a market-wide [underwriter] ID is specified, which indicates the serial ID of the [underwriter] required to verify generic asset amounts for the market.
 
-| Market ID | Base asset | Quote asset | Lot size | Tick size |
-|-----------|------------|-------------|----------|-----------|
-| 100       | `wBTC`     | `USDC`      | 100      | 25        |
-| 101       | `wBTC`     | `USDT`      | 100      | 25        |
-| 102       | `wETH`     | `USDC`      | 1000     | 10        |
+Given that the [`Registry`] is a global resource, access to it is gated in the interest of reducing of contentious transactions during runtime.
+Hence market parameters are copied to [`MarketAccount`] and [`OrderBook`] structures to reduce lookup queries against the global registry, which could inhibit registration operations via colliding transactions.
+
+To inspect info about a market from the [`Registry`] in the general case, it should either be done off-chain or via the following functions:
+
+* [`get_market_account_market_info_custodian()`]
+* [`get_market_account_market_info_user()`]
+
+:::tip
+
+First register a [`MarketAccount`] under the corresponding market ID before calling either function.
+
+:::
 
 ## Custodians
 
-Econia manages access control by issuing [`CustodianCapability`](https://github.com/econia-labs/econia/tree/main/src/move/econia/build/Econia/docs/registry.md#0xc0deb00c_registry_CustodianCapability) resources, with each such capability having a unique serial ID that is generated upon registration.
-When a custodian registers via [`register_custodian_capability`](https://github.com/econia-labs/econia/tree/main/src/move/econia/build/Econia/docs/registry.md#0xc0deb00c_registry_register_custodian_capability), they receive a [`CustodianCapability`](https://github.com/econia-labs/econia/tree/main/src/move/econia/build/Econia/docs/registry.md#0xc0deb00c_registry_CustodianCapability) with an unalterable ID, which serves as a kind of authentication token for assorted operations throughout Econia.
-The number of registered custodian capabilities is tracked by [`Registry.n_custodians`](https://github.com/econia-labs/econia/tree/main/src/move/econia/build/Econia/docs/registry.md#0xc0deb00c_registry_Registry).
+Within a given market, a user may register a [`MarketAccount`] where their signature is required to approve order operations and withdrawals.
+They may also register additional market accounts, within the same market, under the authority of as many third-party custodians as they want.
+The premier use case for a market account with custody delegated to a third party is margin trading, whereby custodians manage their own borrow/lend pools and cancel orders accordingly during liquidation events.
 
-## Asset types
+Custodians manage orders and withdrawals on behalf of a user, via a [`CustodianCapability`] with a unique serial ID that is assigned upon issuance.
+Via this custodian ID approach only a single entity (either signing user or a delegated custodian), has authority over a certain market account, such that access control can be gated across practically infinite market accounts within a given market.
+For example, consider a user with the following market accounts:
 
-The base asset and quote asset for a given [`TradingPairInfo`](https://github.com/econia-labs/econia/tree/main/src/move/econia/build/Econia/docs/registry.md#0xc0deb00c_registry_TradingPairInfo) are designated by their type info, which is either
+| Market ID | Custodian ID     | Authority     |
+|-----------|------------------|---------------|
+| 123       | [`NO_CUSTODIAN`] | Signing user  |
+| 123       | 456              | Custodian 456 |
+| 123       | 789              | Custodian 789 |
 
-1. A phantom coin type for an `aptos_framework::coin::Coin` (e.g. `USDC` in `Coin<USDC>`), or
-1. A non-coin type, known as a generic asset type
+## Underwriters
 
-The type info for both base and quote assets are generated from type arguments during market registration.
+As described in [markets], an Econia market can have a `Coin` type base asset or a "generic asset".
+The premier use case for generic base assets is for derivatives markets, whereby it is impractical to publish a module with a new `Coin` definition each time a market is to be registered.
+Instead, for a derivatives market, Econia allows a third-party underwriter to verify generic asset amounts, which can then be traded from a user's [`MarketAccount`].
+Here, a third party is required to underwrite amounts because unlike with `Coin` assets, there is no public API that can verify the amount thereof:
+when a user deposits `Coin` assets to their market account, the `Coin.value` getter function returns the amount deposited.
+Conversely, for a non-`Coin` asset an underwriter is required to certify the amount deposited to a [`MarketAccount`].
 
-A market having both base and quote assets as coin types (e.g. `wBTC/USDC`) is known as a pure coin market, and can be registered via [`register_market_pure_coin`](https://github.com/econia-labs/econia/tree/main/src/move/econia/build/Econia/docs/market.md#0xc0deb00c_market_register_market_pure_coin).
-Markets that have at least one generic asset must be registered via [`register_market_generic`](https://github.com/econia-labs/econia/tree/main/src/move/econia/build/Econia/docs/market.md#0xc0deb00c_market_register_market_generic), which requires a [`CustodianCapability`](https://github.com/econia-labs/econia/tree/main/src/move/econia/build/Econia/docs/registry.md#0xc0deb00c_registry_CustodianCapability).
-Here, a "generic asset transfer custodian" is required to verify deposits, swaps, and withdrawals of generic assets, since it is impossible to verify amounts of non-coin types in the general case.
+Underwriter operations are facilitated via an [`UnderwriterCapability`] with a unique serial ID that is particular to a given market.
+Here, an underwriter presides over asset amount verifications for an entire market, in the case of a generic market:
 
-Presently, both the base and the quote asset for a market can be generic, though in the future, generic quote types will likely be prohibited due to [incentive model considerations](https://github.com/econia-labs/econia/issues/7#issuecomment-1227680515).
+| Market ID | Underwriter ID     | Asset amount verification authority |
+|-----------|--------------------|-------------------------------------|
+| 123       | [`NO_UNDERWRITER`] | `aptos_framework::coin::Coin` API   |
+| 234       | 456                | Underwriter 456                     |
+| 345       | 789                | Underwriter 789                     |
 
 ## Market uniqueness
 
-For any given pure-coin trading pair, Econia only allows the registration of a single {base, quote, lot size, tick size} tuple:
-for example, `wBTC/USD lot size 10, tick size 25` may only be registered once.
+A given base type and quote type combination is known as a [`TradingPair`], with a [`MarketInfo`] containing the same fields as well as [market size parameters], and in the case of a generic market, an underwriter ID.
+Note that the [`MarketInfo`] for a given market must be unique, but this does not mean that the [`TradingPair`] for a market must be unique.
+For example, Econia support registration of the following two pure coin markets:
 
-For trading pairs having a generic asset, however, there is no such restriction, because in practice generic asset types are a effectively placeholder that allows integrators to register markets for non-coin assets without having to define a new type each time.
-For example, a market host can register 4 markets using the provided [`GenericAsset`](https://github.com/econia-labs/econia/tree/main/src/move/econia/build/Econia/docs/registry.md#0xc0deb00c_registry_GenericAsset) type flag, all taking the form `GenericAsset/USDC lot size 1, tick size 25`, with each such market representing a different financial instrument:
+| Base coin | Quote coin | Lot size    | Tick size   | Minimum order size |
+|-----------|------------|-------------|-------------|--------------------|
+| `APT`     | `USDC`     | 0.1 `APT`   | 0.01 `USDC` | 0.5 `APT`          |
+| `APT`     | `USDC`     | 0.01 `APT`  | 0.01 `USDC` | 0.05 `APT`         |
+| `APT`     | `USDC`     | 0.001 `APT` | 0.01 `USDC` | 0.005 `APT`        |
 
-| Econia Market ID | Base Asset         | Quote Asset |
-|------------------|--------------------|-------------|
-| 500              | `wBTC put option`  | `USDC`      |
-| 501              | `wBTC call option` | `USDC`      |
-| 502              | `wETH put option`  | `USDC`      |
-| 503              | `wETH call option` | `USDC`      |
+As a permissionless system, Econia allows market registrants to select whatever [market size parameters] they want, to provide for a frictionless registration experience if market conditions change:
+if the `USDC`-denominated price of asset were to increase 100x, then a given lot size and minimum order size may no longer be appropriate, so here all one has to do is permissionlessly register a new market.
 
-Here, a third party maintains their own separate registry to track market metadata, and assuming they are the generic asset transfer custodian for each market, they approve deposits, withdrawals, and swaps for generic assets across all four trading pairs:
+A potential result of this loosely-defined market uniqueness is liquidity fracturing:
+if two markets both have reasonable [market size parameters], then market makers and takers may split liquidity between the two venues, leading to price discovery inefficiencies.
+To remedy this drawback, Econia additionally tabulates [recognized markets].
 
-![](../diagrams/generic-asset-transfer.png)
--->
+## Recognized markets
+
+In addition to a permissionless global [`Registry`], Econia also defines a [`RecognizedMarkets`] structure that tabulates info for markets recognized as having proper [market size parameters]:
+for a given [`TradingPair`] there can be only one recognized market, such that, continuing the above example, only one `APT/USDC` market may be considered recognized.
+
+Unlike the [`Registry`], which is a contended global resource, the [`RecognizedMarkets`] is almost always read-only, such that assorted getter functions can be used to look up the recognized market for a given [`TradingPair`].
+Here, users can simply decide what assets they want to trade, then look up the corresponding recognized market ID from the [`RecognizedMarkets`] structure.
+
+<!---Alphabetized reference links-->
+
+[custodians]:                                   #custodians
+[markets]:                                      #markets
+[market size parameters]:                       orders#units-and-market-parameters
+[recognized markets]:                           #recognized-markets
+[underwriter]:                                  #underwriters
+[underwriters]:                                 #underwriters
+[`CustodianCapability`]:                        https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_CustodianCapability
+[`GenericAsset`]:                               https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_GenericAsset
+[`MarketAccount`]:                              https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/user.md#0xc0deb00c_user_MarketAccount
+[`MarketInfo`]:                                 https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_MarketInfo
+[`NO_CUSTODIAN`]:                               https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_NO_CUSTODIAN
+[`NO_UNDERWRITER`]:                             https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_NO_UNDERWRITER
+[`OrderBook`]:                                  https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_OrderBook
+[`RecognizedMarkets`]:                          https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_RecognizedMarkets
+[`Registry`]:                                   https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_Registry
+[`TradingPair`]:                                https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_TradingPair
+[`get_market_account_market_info_user()`]:      https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/user.md#0xc0deb00c_user_get_market_account_market_info_user
+[`get_market_account_market_info_custodian()`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/user.md#0xc0deb00c_user_get_market_account_market_info_custodian

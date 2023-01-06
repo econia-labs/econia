@@ -25,7 +25,6 @@ Here, orders are sorted by:
 
 Conversely, consider the following "descending" [AVL queue]:
 
-
 >                             992 [25 -> 28]
 >                            /   \
 >        [30 -> 40 -> 45] 991    994 [18]
@@ -39,7 +38,6 @@ Here, orders are sorted by:
 2. Increasing order of insertion within a price level.
 
 Each [`OrderBook`] has an ascending [AVL queue] for asks, and a descending [AVL queue] for bids, such that the two structures above produce the following price-time priority order book:
-
 
 <table>
 
@@ -193,7 +191,7 @@ Here, the single order at price 1003 has been evicted.
 
 :::note
 
-Econia does not use a critical height of 1. The actual critical height is defined at [`econia::market::CRITICAL_HEIGHT`].
+Econia does not use a critical height of 1. The actual critical height is defined at [`CRITICAL_HEIGHT`].
 
 :::
 
@@ -653,11 +651,35 @@ But if someone were to build a protocol on top of Econia that assumed there woul
 
 Hence the above analysis is provided in the interest of educating protocol developers about potential adversarial dynamics, such that they may avoid making erroneous assumptions with unintended consequences.
 
+## More on data structures
+
+An Econia [`OrderBook`] tracks each order as [`market::Order`], which is complemented by a [`user::Order`] under the corresponding user's [`MarketAccount`]:
+when a user places a bid, for example, the global [`OrderBook`] for the market is updated along with the user's corresponding [`MarketAccount`].
+
+While [`market::Order`] instances are stored in an [AVL queue] inside an [`OrderBook`] for the corresponding side, [`user::Order`] instances are stored in a different custom data structure, the [`Tablist`].
+A [`Tablist`] is a hybrid between a doubly linked list and a table, such that iteration is possible both during runtime and off-chain.
+Here, a user's asks and bids are each stored in a [`Tablist`], having key-value pairs where the value is a [`user::Order`].
+The key in the pair is known as an "access key", which essentially functions as a pointer into [`Tablist`] memory:
+
+Rather than allocate a new node for each order and de-allocate it when the order fills, unused nodes are pushed onto a stack of inactive nodes, then popped off when a new order needs to be tabulated.
+Each node is referred to by its index in the underlying table, and this index is the access key used for $O(1)$ node lookup.
+
+Each [`market::Order`] stores the access key for the corresponding [`user::Order`], and similarly, each [`user::Order`] stores a "market order ID" used for lookup within the [AVL queue].
+As explained in the [market module documentation], a market order ID encodes the price of the order as well as a counter for the number of orders that have been placed on the corresponding order book.
+
+Notably, each market order ID also contains an [AVL queue]-specific access key, which essentially functions as a pointer into [AVL queue] memory for a similar inactive node stack paradigm.
+Whether in a [`MarketAccount`] or an [`OrderBook`], the inactive node stack approach decreases gas costs by minimizing the number of table item creations.
+
+
 <!---Alphabetized reference links-->
 
-[AVL queue]:                         https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/avl_queue.md
-[AVL queue height spec]:             https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/avl_queue.md#height
-[`econia::market::CRITICAL_HEIGHT`]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#0xc0deb00c_market_CRITICAL_HEIGHT
-[`MarketAccount`]:                   https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/user.md#0xc0deb00c_user_MarketAccount
-[`N_NODES_MAX`]:                     https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/avl_queue.md#0xc0deb00c_avl_queue_N_NODES_MAX
-[`OrderBook`]:                       https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_OrderBook
+[AVL queue]:                   https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/avl_queue.md
+[AVL queue height spec]:       https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/avl_queue.md#height
+[market module documentation]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md
+[`CRITICAL_HEIGHT`]:           https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#0xc0deb00c_market_CRITICAL_HEIGHT
+[`MarketAccount`]:             https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/user.md#0xc0deb00c_user_MarketAccount
+[`N_NODES_MAX`]:               https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/avl_queue.md#0xc0deb00c_avl_queue_N_NODES_MAX
+[`OrderBook`]:                 https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_OrderBook
+[`Tablist`]:                   https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/tablist.md#0xc0deb00c_tablist_Tablist
+[`market::Order`]:             https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_Order
+[`user::Order`]:               https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/user.md#0xc0deb00c_user_Order

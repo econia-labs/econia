@@ -465,6 +465,9 @@ module econia::incentives {
     const E_UTILITY_COIN_STORE_OVERFLOW: u64 = 21;
     /// There is no tier with given number.
     const E_INVALID_TIER: u64 = 22;
+    /// Cumulative activation fee for new tier is not greater than that
+    /// of current tier.
+    const E_TIER_COST_NOT_INCREASE: u64 = 23;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -529,6 +532,8 @@ module econia::incentives {
     ///
     /// * `E_NOT_AN_UPGRADE`: `new_tier` is not higher than the one
     ///    that the `IntegratorFeeStore` is already activated to.
+    /// * `E_TIER_COST_NOT_INCREASE`: Cumulative activation fee for new
+    ///   tier is not greater than that of current tier.
     ///
     /// # Restrictions
     ///
@@ -538,6 +543,7 @@ module econia::incentives {
     ///
     /// # Testing
     ///
+    /// * `test_get_cost_to_upgrade_integrator_fee_store_not_increase()`
     /// * `test_get_cost_to_upgrade_integrator_fee_store_not_upgrade()`
     public fun get_cost_to_upgrade_integrator_fee_store<
         QuoteCoinType,
@@ -566,9 +572,14 @@ module econia::incentives {
         let current_tier = integrator_fee_store_ref_mut.tier;
         // Assert actually attempting to upgrade to new tier.
         assert!(new_tier > current_tier, E_NOT_AN_UPGRADE);
+        // Get cumulative activation fee for current tier.
+        let current_tier_fee = get_tier_activation_fee(current_tier);
+        // Get cumulative activation fee for new tier.
+        let new_tier_fee = get_tier_activation_fee(new_tier);
+        // Assert new tier fee is greater than current tier fee.
+        assert!(new_tier_fee > current_tier_fee, E_TIER_COST_NOT_INCREASE);
         // Return difference in cumulative cost to upgrade.
-        get_tier_activation_fee(new_tier) -
-            get_tier_activation_fee(current_tier)
+        new_tier_fee - current_tier_fee
     }
 
     #[app]
@@ -2364,6 +2375,40 @@ module econia::incentives {
         coins = withdraw_utility_coins_all<UC>(econia);
         assert!(coin::value(&coins) == 60, 0); // Assert value.
         assets::burn(coins); // Burn coins
+    }
+
+    #[test(integrator = @user)]
+    #[expected_failure(abort_code = 23)]
+    /// Verify expected failure for not an increase in tier cost.
+    fun test_get_cost_to_upgrade_integrator_fee_store_not_increase(
+        integrator: &signer
+    ) acquires
+        IncentiveParameters,
+        IntegratorFeeStores,
+        UtilityCoinStore
+    {
+        init_test(); // Init incentives.
+        // Declare market ID, tier numbers.
+        let (market_id, tier_0, tier_1) = (0, 0, 1);
+        // Register to tier 0.
+        register_integrator_fee_store<QC, UC>(integrator, market_id, tier_0,
+            assets::mint_test(get_tier_activation_fee(tier_0)));
+        // Get cumulative fee to activate to tier 0.
+        let tier_0_fee = get_tier_activation_fee(tier_0);
+        // Mutably borrow incentive parameters.
+        let incentive_parameters_ref_mut =
+            borrow_global_mut<IncentiveParameters>(@econia);
+        // Mutably borrow integrator fee store tiers.
+        let integrator_fee_store_tiers_ref_mut =
+            &mut incentive_parameters_ref_mut.integrator_fee_store_tiers;
+        // Mutably borrow tier 1.
+        let tier_1_ref_mut = vector::borrow_mut(
+            integrator_fee_store_tiers_ref_mut, (tier_1 as u64));
+        // Manually set fee to that of previous tier.
+        tier_1_ref_mut.tier_activation_fee = tier_0_fee;
+        // Attempt invalid query against modified tier 1.
+        get_cost_to_upgrade_integrator_fee_store<QC, UC>(
+            integrator, market_id, tier_1);
     }
 
     #[test(integrator = @user)]

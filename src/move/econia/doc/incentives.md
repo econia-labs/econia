@@ -900,6 +900,17 @@ Taker fee divisor is less than the minimum.
 
 
 
+<a name="0xc0deb00c_incentives_E_TIER_COST_NOT_INCREASE"></a>
+
+Cumulative activation fee for new tier is not greater than that
+of current tier.
+
+
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_TIER_COST_NOT_INCREASE">E_TIER_COST_NOT_INCREASE</a>: u64 = 23;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_incentives_E_TIER_FIELDS_WRONG_LENGTH"></a>
 
 The wrong number of fields are passed for a given tier.
@@ -1332,6 +1343,8 @@ upgrade from tier 1 to tier 3.
 
 * <code><a href="incentives.md#0xc0deb00c_incentives_E_NOT_AN_UPGRADE">E_NOT_AN_UPGRADE</a></code>: <code>new_tier</code> is not higher than the one
 that the <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStore">IntegratorFeeStore</a></code> is already activated to.
+* <code><a href="incentives.md#0xc0deb00c_incentives_E_TIER_COST_NOT_INCREASE">E_TIER_COST_NOT_INCREASE</a></code>: Cumulative activation fee for new
+tier is not greater than that of current tier.
 
 
 <a name="@Restrictions_19"></a>
@@ -1349,6 +1362,7 @@ collisions with the matching engine.
 ### Testing
 
 
+* <code>test_get_cost_to_upgrade_integrator_fee_store_not_increase()</code>
 * <code>test_get_cost_to_upgrade_integrator_fee_store_not_upgrade()</code>
 
 
@@ -1387,9 +1401,14 @@ collisions with the matching engine.
     <b>let</b> current_tier = integrator_fee_store_ref_mut.tier;
     // Assert actually attempting <b>to</b> upgrade <b>to</b> new tier.
     <b>assert</b>!(new_tier &gt; current_tier, <a href="incentives.md#0xc0deb00c_incentives_E_NOT_AN_UPGRADE">E_NOT_AN_UPGRADE</a>);
+    // Get cumulative activation fee for current tier.
+    <b>let</b> current_tier_fee = <a href="incentives.md#0xc0deb00c_incentives_get_tier_activation_fee">get_tier_activation_fee</a>(current_tier);
+    // Get cumulative activation fee for new tier.
+    <b>let</b> new_tier_fee = <a href="incentives.md#0xc0deb00c_incentives_get_tier_activation_fee">get_tier_activation_fee</a>(new_tier);
+    // Assert new tier fee is greater than current tier fee.
+    <b>assert</b>!(new_tier_fee &gt; current_tier_fee, <a href="incentives.md#0xc0deb00c_incentives_E_TIER_COST_NOT_INCREASE">E_TIER_COST_NOT_INCREASE</a>);
     // Return difference in cumulative cost <b>to</b> upgrade.
-    <a href="incentives.md#0xc0deb00c_incentives_get_tier_activation_fee">get_tier_activation_fee</a>(new_tier) -
-        <a href="incentives.md#0xc0deb00c_incentives_get_tier_activation_fee">get_tier_activation_fee</a>(current_tier)
+    new_tier_fee - current_tier_fee
 }
 </code></pre>
 

@@ -37,7 +37,7 @@
 /// fills a taker order, the integrator who facilitated the transaction
 /// has a portion of taker fees deposited to their fee store, and Econia
 /// gets the rest, with the split thereof determined by the integrator's
-/// fee store tier for the given market. Econia does not charge taker
+/// fee store tier for the given market. Econia does not charge maker
 /// fees.
 ///
 /// Hence Econia involves 5 major incentive parameters, defined at

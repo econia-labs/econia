@@ -81,6 +81,6 @@ In the case of a [`GenericAsset`] for the base asset on a market, an [underwrite
 [underwriter]:               ./registry#underwriters
 [user module documentation]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/user.md
 [`Collateral`]:              https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/user.md#0xc0deb00c_user_Collateral
-[`GenericAsset`]:            ./registry#markets
+[`GenericAsset`]:            ./registry#underwriters
 [`MarketAccount`]:           https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/user.md#0xc0deb00c_user_MarketAccount
 [`MarketAccounts`]:          https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/user.md#0xc0deb00c_user_MarketAccounts

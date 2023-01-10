@@ -123,6 +123,10 @@ th {
   text-align: left;
 }
 
+.pagination-nav {
+  gap: 16px;
+}
+
 .pagination-nav__link {
   border-radius: 0px;
   padding: 0px;
@@ -146,8 +150,9 @@ th {
 .pagination-nav__label {
   color: #ffffff;
   text-transform: uppercase;
+  font-size: 14px;
   font-weight: normal;
-  padding: 16px 16px;
+  padding: 12px 8px;
   line-height: 20px;
 }
 
@@ -157,4 +162,27 @@ th {
 
 .card {
   --ifm-color-emphasis-200: #565656;
+}
+
+.welcome-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--ifm-leading);
+}
+
+.welcome-heading-mobile {
+  display: none;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--ifm-leading);
+}
+
+@media (max-width: 768px) {
+  .welcome-heading {
+    display: none;
+  }
+  .welcome-heading-mobile {
+    display: block;
+  };
 }

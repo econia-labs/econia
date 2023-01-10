@@ -5,18 +5,26 @@ hide_title: true
 description: Documentation for the Econia Protocol
 ---
 
-<div style={{
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "var(--ifm-leading)"
-}}>
+<div className="welcome-heading">
     <div>
         <h2 style={{ marginBottom: "40px" }}>Welcome</h2>
         <img height={68} width={432} src="/img/EconiaBanner.svg" />
         <p style={{ marginTop: "20px" }}>e·co·ni·a | /ə'känēə/</p>
     </div>
-    <img height={176} width={240}  src="/img/CodeIllustration.svg" />
+    <img width={240} src="/img/CodeIllustration.svg" />
+</div>
+
+<div className="welcome-heading-mobile">
+    <div style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+    }}>
+        <h2 style={{ marginBottom: "40px" }}>Welcome</h2>
+        <img width={94} src="/img/CodeIllustration.svg" />
+    </div>
+    <img height={68} width={432} src="/img/EconiaBanner.svg" />
+    <p style={{ marginTop: "20px" }}>e·co·ni·a | /ə'känēə/</p>
 </div>
 
 Welcome to the developer documentation site for Econia, a hyper-parallelized on-chain order book for the [Aptos] blockchain.

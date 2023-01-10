@@ -158,3 +158,26 @@ th {
 .card {
   --ifm-color-emphasis-200: #565656;
 }
+
+.welcome-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--ifm-leading);
+}
+
+.welcome-heading-mobile {
+  display: none;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--ifm-leading);
+}
+
+@media (max-width: 768px) {
+  .welcome-heading {
+    display: none;
+  }
+  .welcome-heading-mobile {
+    display: block;
+  };
+}

@@ -103,5 +103,6 @@ Here, users can simply decide what assets they want to trade, then look up the c
 [`RecognizedMarkets`]:                          https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_RecognizedMarkets
 [`Registry`]:                                   https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_Registry
 [`TradingPair`]:                                https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_TradingPair
+[`UnderwriterCapability`]:                      https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_UnderwriterCapability
 [`get_market_account_market_info_user()`]:      https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/user.md#0xc0deb00c_user_get_market_account_market_info_user
 [`get_market_account_market_info_custodian()`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/user.md#0xc0deb00c_user_get_market_account_market_info_custodian

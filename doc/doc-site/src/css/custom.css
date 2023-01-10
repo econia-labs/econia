@@ -123,6 +123,10 @@ th {
   text-align: left;
 }
 
+.pagination-nav {
+  gap: 16px;
+}
+
 .pagination-nav__link {
   border-radius: 0px;
   padding: 0px;
@@ -146,8 +150,9 @@ th {
 .pagination-nav__label {
   color: #ffffff;
   text-transform: uppercase;
+  font-size: 14px;
   font-weight: normal;
-  padding: 16px 16px;
+  padding: 12px 8px;
   line-height: 20px;
 }
 

@@ -84,10 +84,10 @@ If they route volume through Econia without first registering an [`IntegratorFee
 [incentives module documentation]:                  https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/incentives.md
 [incentives module getters]:                        https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/incentives.md#public-getters
 [issue 49]:                                         https://github.com/econia-labs/econia/issues/49
-[matching]:                                         matching
-[register a market]:                                registry#markets
-[register a custodian capability]:                  registry#custodians
-[register an underwriter capability]:               registry#underwriters
+[matching]:                                         ./matching
+[register a market]:                                ./registry#markets
+[register a custodian capability]:                  ./registry#custodians
+[register an underwriter capability]:               ./registry#underwriters
 [`EconiaFeeStore`]:                                 https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/incentives.md#0xc0deb00c_incentives_EconiaFeeStore
 [`IncentiveParameters`]:                            https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/incentives.md#0xc0deb00c_incentives_IncentiveParameters
 [`IntegratorFeeStore`]:                             https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/incentives.md#0xc0deb00c_incentives_IntegratorFeeStore

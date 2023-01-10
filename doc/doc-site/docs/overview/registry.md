@@ -89,7 +89,7 @@ Here, users can simply decide what assets they want to trade, then look up the c
 
 [custodians]:                                   #custodians
 [markets]:                                      #markets
-[market size parameters]:                       orders#units-and-market-parameters
+[market size parameters]:                       ./orders#units-and-market-parameters
 [recognized markets]:                           #recognized-markets
 [underwriter]:                                  #underwriters
 [underwriters]:                                 #underwriters

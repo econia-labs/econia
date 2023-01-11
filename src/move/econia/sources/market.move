@@ -2735,7 +2735,7 @@ module econia::market {
     /// price is 400, the advance price is 399.
     ///
     /// After computing the advance price, places a post-or-abort limit
-    /// order that aborts for a self-match. Advance price is then
+    /// order that aborts for a self match. Advance price is then
     /// range-checked by `place_limit_order()`.
     ///
     /// # Price calculations

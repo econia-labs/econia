@@ -4863,7 +4863,7 @@ percent passive advance bid on a market where the minimum ask
 price is 400, the advance price is 399.
 
 After computing the advance price, places a post-or-abort limit
-order that aborts for a self-match. Advance price is then
+order that aborts for a self match. Advance price is then
 range-checked by <code><a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>()</code>.
 
 

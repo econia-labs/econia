@@ -1,22 +1,15 @@
-# Diagrams
-
-- [Diagrams](#diagrams)
-  - [General](#general)
-  - [Representative diagrams](#representative-diagrams)
-
 This directory contains assorted diagrams, most of which are generated via [`mermaid.js`], with source files in [`src`] and images in [`images`].
 
 ## General
 
 * [`mermaid.js`] diagrams are generated declaratively, and may present occasional rendering artifacts.
 * Most [`mermaid.js`] tutorials online present an `%%{init:}` directive on a single line, despite excessive line length.
-* The [modules.md] diagram theme is matched to GitHub's color schema.
 * `SVG` diagrams can be generated via [mermaid.live]
 
 ## Representative diagrams
 
-* [modules.md] has a color theme matched to Econia's doc site schema.
-* [matching-engine.md] has complexly-nested subgraphs and different classes.
+* [matching.md] has a color theme matched to Econia's doc site schema.
+* [matching-engine.md] (deprecated) has complexly-nested subgraphs and different classes.
 
 <!---Alphabetized reference links-->
 
@@ -24,5 +17,5 @@ This directory contains assorted diagrams, most of which are generated via [`mer
 [`mermaid.js`]:          https://mermaid-js.github.io
 [`src`]:                 src
 [mermaid.live]:          https://mermaid.live
-[modules.md]:            src/modules.md
+[matching.md]:           src/matching.md
 [matching-engine.md]:    src/scraps/matching-engine.md

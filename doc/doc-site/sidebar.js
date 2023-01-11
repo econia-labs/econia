@@ -13,7 +13,7 @@ module.exports = {
                 'overview/orders',
                 'overview/registry',
                 'overview/incentives',
-                'overview/market-account',
+                'overview/market-accounts',
                 'overview/matching'
             ]
         },

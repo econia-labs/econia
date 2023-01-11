@@ -100,7 +100,7 @@ one custodian cannot adversarially cancel orders placed by a different custodian
 [limit orders]:                          #limit-orders
 [market orders]:                         #taker-only-orders
 [lots]:                                  ./orders#units-and-market-parameters
-[market account]:                        ./market-account
+[market account]:                        ./market-accounts
 [market module documentation]:           https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md
 [`ABORT`]:                               https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_ABORT
 [`CANCEL_BOTH`]:                         https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_CANCEL_BOTH

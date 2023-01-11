@@ -127,32 +127,44 @@ th {
   border-radius: 0px;
   padding: 0px;
   border: none;
-  outline: 1px solid #565656;
-}
-
-.pagination-nav__link--next {
-  text-align: right;
+  transition: background-color 300ms ease, transform 300ms ease,
+    color 300ms ease, -webkit-transform 300ms ease;
 }
 
 .pagination-nav__link:hover {
   /* TODO: The image moves on hover */
-  outline: 1px solid var(--ifm-color-primary);
+  transform: translate3d(0px, -3px, 0.01px);
 }
 
 .pagination-nav__sublabel {
   display: none;
 }
 
-.pagination-nav__label {
+.pagination-nav__link--prev {
+  text-align: right;
+  background: #161616;
   color: #ffffff;
+}
+
+.pagination-nav__link--prev:hover {
+  color: #ffffff;
+}
+
+.pagination-nav__link--next {
+  text-align: right;
+  background: #ffffff;
+  color: #161616;
+}
+
+.pagination-nav__link--next:hover {
+  color: #161616;
+}
+
+.pagination-nav__label {
   text-transform: uppercase;
   font-weight: normal;
   padding: 16px 16px;
   line-height: 20px;
-}
-
-.pagination-nav__label:hover {
-  color: var(--ifm-color-primary);
 }
 
 .card {

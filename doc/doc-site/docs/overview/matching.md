@@ -90,6 +90,24 @@ Hence since [limit orders] and [market orders] can both fill as a taker, they re
 Note that self matching only applies within a [market account]:
 one custodian cannot adversarially cancel orders placed by a different custodian for the same user and market.
 
+## Fee assessment
+
+Econia's matching engine charges [taker fees], which are assessed at the end of the matching process and are denominated in the quote coin for a given market.
+Calls to the matching engine, however, specify quote trade amounts that denote the net change in a taker's quote coin holdings due to matching *and* fees, or in other words, the minimum or maximum amount of quote coins that a taker is willing to trade away or receive from a trade.
+As such, [`match()`] calculates a maximum amount of quote coins to match on an order for the given direction ([`BUY`] or [`SELL`]) per [`calculate_max_quote_match()`], matches accordingly, *then* assesses fees per [`assess_taker_fees()`].
+
+For example, consider a hypothetical market with a 5% fee taker fee.
+A user places a taker buy for a maximum quote trade amount of 105 quote coins, meaning that they are willing to spend up to 105 quote coins.
+At most the matching engine can match 100 quote coins, with the remaining 5 coins set aside to cover taker fees.
+Here, the maximum quote asset trade amount is passed in (105 quote coins) and a reserve is essentially set aside to pay taker fees.
+After matching and fees, the taker thus experiences a net change of up to 105 quote coins, even though only as many as 100 were matched.
+
+For taker sells, conversely, no quote coins are passed in.
+Rather, the base asset is passed in and matched, then a portion of quote proceeds are deducted for fees.
+For example, consider a hypothetical market with a 4% taker fee, where the taker specifies a maximum quote trade amount of 100 quote coins.
+Here, the matching engine matches up to 104 quote coins then assesses a 4% fee, withdrawn from the quote coins received in the trade.
+After matching and fees, the taker thus experiences a net change of up to 100 quote coins, even though as many as 104 were matched.
+
 <!---Alphabetized reference links-->
 
 [AVL queue]:                             ./orders#order-book-structure
@@ -98,11 +116,13 @@ one custodian cannot adversarially cancel orders placed by a different custodian
 [custodian]:                             ./registry#custodians
 [integer price]:                         ./orders#units-and-market-parameters
 [limit orders]:                          #limit-orders
-[market orders]:                         #taker-only-orders
 [lots]:                                  ./orders#units-and-market-parameters
+[market orders]:                         #taker-only-orders
 [market account]:                        ./market-accounts
 [market module documentation]:           https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md
+[taker fees]:                            ./incentives
 [`ABORT`]:                               https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_ABORT
+[`BUY`]:                                 https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_BUY
 [`CANCEL_BOTH`]:                         https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_CANCEL_BOTH
 [`CANCEL_MAKER`]:                        https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_CANCEL_MAKER
 [`CANCEL_TAKER`]:                        https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_CANCEL_TAKER
@@ -110,6 +130,9 @@ one custodian cannot adversarially cancel orders placed by a different custodian
 [`IMMEDIATE_OR_CANCEL`]:                 https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_IMMEDIATE_OR_CANCEL
 [`NO_RESTRICTION`]:                      https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_NO_RESTRICTION
 [`POST_OR_ABORT`]:                       https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_POST_OR_ABORT
+[`SELL`]:                                https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_SELL
+[`assess_taker_fees()`]:                 https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/incentives.md#0xc0deb00c_incentives_assess_taker_fees
+[`calculate_max_quote_match()`]:         https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/incentives.md#0xc0deb00c_incentives_calculate_max_quote_match
 [`match()`]:                             https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_match
 [`place_limit_order()`]:                 https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_place_limit_order
 [`place_limit_order_passive_advance()`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_place_limit_order_passive_advance

@@ -2636,9 +2636,10 @@ amount when initiating the transaction. This amount indicates
 the maximum amount of quote coins they are willing to spend in
 the case of a taker buy, and the maximum amount of quote coins
 they are willing to receive in the case of a taker sell. The
-user-specified amount is not inclusive of fees, however, which
-are assessed after matching concludes. Hence it is necessary to
-calculate a maximum quote match amount prior to matching.
+user-specified amount refers to the net change in taker's quote
+coin holdings due to matching and fees, which are assessed after
+matching concludes. Hence it is necessary to calculate a maximum
+quote match amount prior to matching.
 
 
 <a name="@Example_buy_53"></a>

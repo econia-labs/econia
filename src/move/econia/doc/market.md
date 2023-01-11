@@ -4152,11 +4152,11 @@ either received or traded away.
 * <code>max_base</code>: Maximum base asset units to be traded by taker,
 either received or traded away.
 * <code>min_quote</code>: Minimum quote asset units to be traded by taker,
-either received or traded away. Exclusive of fees: refers to
-the net change in taker's quote holdings after the match.
+either received or traded away. Refers to the net change in
+taker's quote holdings after matching and fees.
 * <code>max_quote</code>: Maximum quote asset units to be traded by taker,
-either received or traded away. Exclusive of fees: refers to
-the net change in taker's quote holdings after the match.
+either received or traded away. Refers to the net change in
+taker's quote holdings after matching and fees.
 * <code>limit_price</code>: If direction is <code><a href="market.md#0xc0deb00c_market_BUY">BUY</a></code>, the price above which
 matching should halt. If direction is <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>, the price below
 which matching should halt. Can be passed as <code><a href="market.md#0xc0deb00c_market_HI_PRICE">HI_PRICE</a></code> if a

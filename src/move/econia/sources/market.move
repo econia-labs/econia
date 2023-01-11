@@ -2118,11 +2118,11 @@ module econia::market {
     /// * `max_base`: Maximum base asset units to be traded by taker,
     ///   either received or traded away.
     /// * `min_quote`: Minimum quote asset units to be traded by taker,
-    ///   either received or traded away. Exclusive of fees: refers to
-    ///   the net change in taker's quote holdings after the match.
+    ///   either received or traded away. Refers to the net change in
+    ///   taker's quote holdings after matching and fees.
     /// * `max_quote`: Maximum quote asset units to be traded by taker,
-    ///   either received or traded away. Exclusive of fees: refers to
-    ///   the net change in taker's quote holdings after the match.
+    ///   either received or traded away. Refers to the net change in
+    ///   taker's quote holdings after matching and fees.
     /// * `limit_price`: If direction is `BUY`, the price above which
     ///   matching should halt. If direction is `SELL`, the price below
     ///   which matching should halt. Can be passed as `HI_PRICE` if a

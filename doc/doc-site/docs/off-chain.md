@@ -48,7 +48,7 @@ Additionally, [`index_orders_sdk()`] contains a `#[query]` attribute for off-cha
 
 The [`index_orders_sdk()`] function requires the signature of the `@econia` package account, such that malicious actors are unable to invoke the function during run time:
 the function is only intended for use during transaction simulation mode (which does not require the private key of `@econia`), via [Hippo's `move-to-ts` tool] `#[query]` interface.
-Here, the simulation might fail for a large [`OrderBook`] due to transaction gas limits, and it may be necessary run a custom node, for example with a high maximum transaction gas limit and a low minimum transaction gas unit price, so the simulation can process the entire data structure.
+Here, the simulation might fail for a large [`OrderBook`] due to transaction gas limits, and it may be necessary to run a custom node, for example with a high maximum transaction gas limit and a low minimum transaction gas unit price, so the simulation can process the entire data structure.
 
 :::tip
 

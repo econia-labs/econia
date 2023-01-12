@@ -36,9 +36,9 @@ If you haven't already, consider checking out Econia Labs' [Teach yourself Move 
 Econia is a protocol that lets anyone in the world trade a digital asset with anyone else in the world, at whatever price they want.
 More specifically, Econia is an order book, a fundamental financial tool utilized by financial institutions like stock markets, except unlike the New York Stock Exchange or the NASDAQ, Econia is decentralized, open-source, and permissionless.
 
-## Econia v4 is going to audit
+## Econia v4 is getting audited
 
-After an iterated build cycle, the fourth major version of Econia has just shipped and is now undergoing audit.
+After an iterated build cycle, the fourth major version of Econia has just shipped and is now undergoing multiple independent audits.
 Stand by for more documentation, and in the meantime, check out the [modules page] for a breakdown of Econia's Move code!
 
 ## Testnet account

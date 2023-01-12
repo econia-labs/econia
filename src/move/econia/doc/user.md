@@ -358,9 +358,9 @@ The below index is automatically generated from source code:
     -  [Testing](#@Testing_31)
 -  [Function `get_market_id`](#0xc0deb00c_user_get_market_id)
     -  [Testing](#@Testing_32)
--  [Function `has_market_account_by_market_account_id`](#0xc0deb00c_user_has_market_account_by_market_account_id)
-    -  [Testing](#@Testing_33)
 -  [Function `get_NO_CUSTODIAN`](#0xc0deb00c_user_get_NO_CUSTODIAN)
+    -  [Testing](#@Testing_33)
+-  [Function `has_market_account_by_market_account_id`](#0xc0deb00c_user_has_market_account_by_market_account_id)
     -  [Testing](#@Testing_34)
 -  [Function `has_market_account_by_market_id`](#0xc0deb00c_user_has_market_account_by_market_id)
     -  [Testing](#@Testing_35)
@@ -1604,6 +1604,34 @@ Return market ID encoded in market account ID.
 
 
 
+<a name="0xc0deb00c_user_get_NO_CUSTODIAN"></a>
+
+## Function `get_NO_CUSTODIAN`
+
+Public constant getter for <code><a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a></code>.
+
+
+<a name="@Testing_33"></a>
+
+### Testing
+
+
+* <code>test_get_NO_CUSTODIAN()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_NO_CUSTODIAN">get_NO_CUSTODIAN</a>(): u64
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_NO_CUSTODIAN">get_NO_CUSTODIAN</a>(): u64 {<a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a>}
+</code></pre>
+
+
+
 <a name="0xc0deb00c_user_has_market_account_by_market_account_id"></a>
 
 ## Function `has_market_account_by_market_account_id`
@@ -1612,7 +1640,7 @@ Return <code><b>true</b></code> if <code><a href="user.md#0xc0deb00c_user">user<
 given <code>market_account_id</code>.
 
 
-<a name="@Testing_33"></a>
+<a name="@Testing_34"></a>
 
 ### Testing
 
@@ -1641,34 +1669,6 @@ given <code>market_account_id</code>.
     // Return <b>if</b> map <b>has</b> entry for given <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> ID.
     <a href="_contains">table::contains</a>(market_accounts_map, market_account_id)
 }
-</code></pre>
-
-
-
-<a name="0xc0deb00c_user_get_NO_CUSTODIAN"></a>
-
-## Function `get_NO_CUSTODIAN`
-
-Public constant getter for <code><a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a></code>.
-
-
-<a name="@Testing_34"></a>
-
-### Testing
-
-
-* <code>test_get_NO_CUSTODIAN()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_NO_CUSTODIAN">get_NO_CUSTODIAN</a>(): u64
-</code></pre>
-
-
-
-##### Implementation
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_NO_CUSTODIAN">get_NO_CUSTODIAN</a>(): u64 {<a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a>}
 </code></pre>
 
 

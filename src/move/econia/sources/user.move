@@ -764,6 +764,14 @@ module econia::user {
     }
 
     #[app]
+    /// Public constant getter for `NO_CUSTODIAN`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_NO_CUSTODIAN()`
+    public fun get_NO_CUSTODIAN(): u64 {NO_CUSTODIAN}
+
+    #[app]
     /// Return `true` if `user` has market account registered with
     /// given `market_account_id`.
     ///
@@ -783,14 +791,6 @@ module econia::user {
         // Return if map has entry for given market account ID.
         table::contains(market_accounts_map, market_account_id)
     }
-
-    #[app]
-    /// Public constant getter for `NO_CUSTODIAN`.
-    ///
-    /// # Testing
-    ///
-    /// * `test_get_NO_CUSTODIAN()`
-    public fun get_NO_CUSTODIAN(): u64 {NO_CUSTODIAN}
 
     #[app]
     /// Return `true` if `user` has at least one market account

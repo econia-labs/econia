@@ -1919,6 +1919,7 @@ Public constant getter for <code><a href="market.md#0xc0deb00c_market_ASK">ASK</
 ### Testing
 
 
+* <code>test_direction_side_polarities()</code>
 * <code>test_get_ASK()</code>
 
 
@@ -1947,6 +1948,7 @@ Public constant getter for <code><a href="market.md#0xc0deb00c_market_BID">BID</
 ### Testing
 
 
+* <code>test_direction_side_polarities()</code>
 * <code>test_get_BID()</code>
 
 
@@ -1975,6 +1977,7 @@ Public constant getter for <code><a href="market.md#0xc0deb00c_market_BUY">BUY</
 ### Testing
 
 
+* <code>test_direction_side_polarities()</code>
 * <code>test_get_BUY()</code>
 
 
@@ -2405,6 +2408,7 @@ Public constant getter for <code><a href="market.md#0xc0deb00c_market_SELL">SELL
 ### Testing
 
 
+* <code>test_direction_side_polarities()</code>
 * <code>test_get_SELL()</code>
 
 

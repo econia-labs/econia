@@ -833,6 +833,7 @@ module econia::market {
     ///
     /// # Testing
     ///
+    /// * `test_direction_side_polarities()`
     /// * `test_get_ASK()`
     public fun get_ASK(): bool {ASK}
 
@@ -841,6 +842,7 @@ module econia::market {
     ///
     /// # Testing
     ///
+    /// * `test_direction_side_polarities()`
     /// * `test_get_BID()`
     public fun get_BID(): bool {BID}
 
@@ -849,6 +851,7 @@ module econia::market {
     ///
     /// # Testing
     ///
+    /// * `test_direction_side_polarities()`
     /// * `test_get_BUY()`
     public fun get_BUY(): bool {BUY}
 
@@ -979,6 +982,7 @@ module econia::market {
     ///
     /// # Testing
     ///
+    /// * `test_direction_side_polarities()`
     /// * `test_get_SELL()`
     public fun get_SELL(): bool {SELL}
 
@@ -4302,6 +4306,13 @@ module econia::market {
             restriction, self_match_behavior);
         change_order_size_user( // Attempt invalid order change.
             &attacker, market_id, side, market_order_id, size_end);
+    }
+
+    #[test]
+    /// Verify direction and side polarities.
+    fun test_direction_side_polarities() {
+        assert!(get_ASK() == get_SELL(), 0); // Verify ask equals sell.
+        assert!(get_BID() == get_BUY(), 0); // Verify bid equals buy.
     }
 
     #[test]

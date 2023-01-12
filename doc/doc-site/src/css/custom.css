@@ -125,6 +125,14 @@ th {
   text-align: left;
 }
 
+.table-of-contents__link {
+  color: #aaa;
+}
+
+.table-of-contents__link--active {
+  color: #ffffff;
+}
+
 .pagination-nav {
   gap: 16px;
 }

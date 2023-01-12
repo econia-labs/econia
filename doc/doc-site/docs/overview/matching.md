@@ -77,7 +77,7 @@ This is like saying "I am willing to buy up to 36 oranges (maximum base) but no 
 
 ## Self match behavior
 
-Econia's matching supports configurable self match behavior, with a self match defined as a hypothetical fill where taker and maker assets are derived from the same market account.
+Econia's matching engine supports configurable self match behavior, with a self match defined as a hypothetical fill where taker and maker assets are derived from the same [market account].
 Hence since [limit orders] and [market orders] can both fill as a taker, they require one of the following self match behavior flags:
 
 | Flag             | Behavior during self match     |
@@ -105,23 +105,47 @@ After matching and fees, the taker thus experiences a net change of up to 105 qu
 For taker sells, conversely, no quote coins are passed in.
 Rather, the base asset is passed in and matched, then a portion of quote proceeds are deducted for fees.
 For example, consider a hypothetical market with a 4% taker fee, where the taker specifies a maximum quote trade amount of 100 quote coins.
-Here, the matching engine matches up to 104 quote coins then assesses a 4% fee, withdrawn from the quote coins received in the trade.
+Here, the matching engine matches up to 104 quote coins then assesses a 4% fee, deducted from the quote coins received in the trade.
 After matching and fees, the taker thus experiences a net change of up to 100 quote coins, even though as many as 104 were matched.
+
+## Units and flags
+
+Both [limit orders] and [taker-only orders] accept an [integer price], but rely on different asset units and flags:
+
+For [limit orders]:
+
+* A `side`, either [`ASK`] or [`BID`].
+* A `size`, denoted in [lots].
+
+For [taker-only orders]:
+
+* A `direction`, either [`BUY`] or [`SELL`].
+* Minimum and maximum base and quote amounts, denoted in [indivisible subunits].
+
+For [limit orders], which can match as a maker or as a taker, the specified `size` is matched regardless of fees, whereas for [taker-only orders], maximum quote trade amounts are [adjusted for taker fees] per above.
+
+Per [issue 56], in the interest of developer ease, `side` and `direction` flag polarities are equivalent, such that [`ASK`] `==` [`SELL`] and [`BID`] `==` [`BUY`].
 
 <!---Alphabetized reference links-->
 
 [AVL queue]:                             ./orders#order-book-structure
+[adjusted for taker fees]:               #fee-assessment
 [base and quote asset]:                  ./orders#units-and-market-parameters
 [coins or generic assets]:               ./registry#markets
 [custodian]:                             ./registry#custodians
+[indivisible subunits]:                  ./orders#units-and-market-parameters
 [integer price]:                         ./orders#units-and-market-parameters
+[issue 56]:                              https://github.com/econia-labs/econia/issues/56
 [limit orders]:                          #limit-orders
 [lots]:                                  ./orders#units-and-market-parameters
-[market orders]:                         #taker-only-orders
 [market account]:                        ./market-accounts
 [market module documentation]:           https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md
+[market orders]:                         #taker-only-orders
 [taker fees]:                            ./incentives
+[taker-only orders]:                     #taker-only-orders
 [`ABORT`]:                               https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_ABORT
+[`ASK`]:                                 https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_ASK
+[`BID`]:                                 https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_BID
 [`BUY`]:                                 https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_BUY
 [`CANCEL_BOTH`]:                         https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_CANCEL_BOTH
 [`CANCEL_MAKER`]:                        https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_CANCEL_MAKER

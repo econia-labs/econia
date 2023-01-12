@@ -54,13 +54,15 @@
 }
 
 html {
-  background-color: #020202;
+  background: #020202;
+  background-image: url("https://global-uploads.webflow.com/62fce47e1be865a7155ff71c/633467a79910d8300a274060_bg-noise.png");
 }
 
 .navbar {
   border-bottom: 1px solid #565656;
   display: flex;
   justify-content: center;
+  background-image: url("https://global-uploads.webflow.com/62fce47e1be865a7155ff71c/633467a79910d8300a274060_bg-noise.png");
 }
 
 .navbar__inner {
@@ -184,5 +186,5 @@ th {
   }
   .welcome-heading-mobile {
     display: block;
-  };
+  }
 }

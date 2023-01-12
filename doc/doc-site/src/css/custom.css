@@ -97,21 +97,19 @@ html {
 
 .menu__link {
   border-radius: 0px;
-  color: #ffffff;
+  color: #aaa;
 }
 
 .menu__link:hover {
-  outline: 1px solid #ffffff;
-  color: #ffffff;
+  color: var(--ifm-color-primary);
 }
 
 .menu__link--active:not(.menu__link--sublist) {
-  color: var(--ifm-color-primary);
-  outline: 1px solid var(--ifm-color-primary);
+  color: #ffffff;
 }
 
-.menu__list-item-collapsible .menu__link--active {
-  outline: none;
+.menu__link--active:hover:not(.menu__link--sublist) {
+  color: var(--ifm-color-primary);
 }
 
 .customTable {

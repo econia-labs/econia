@@ -732,7 +732,7 @@ Buy direction flag, as defined in <code><a href="market.md#0xc0deb00c_market">ma
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_CUSTODIAN_REGISTRATION_FEE">CUSTODIAN_REGISTRATION_FEE</a>: u64 = 250000;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_CUSTODIAN_REGISTRATION_FEE">CUSTODIAN_REGISTRATION_FEE</a>: u64 = 75244;
 </code></pre>
 
 
@@ -1057,7 +1057,7 @@ Index of fee share in vectorized representation of an
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_MARKET_REGISTRATION_FEE">MARKET_REGISTRATION_FEE</a>: u64 = 625000000;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_MARKET_REGISTRATION_FEE">MARKET_REGISTRATION_FEE</a>: u64 = 188111361;
 </code></pre>
 
 
@@ -1141,7 +1141,7 @@ Genesis parameter.
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_1">TIER_ACTIVATION_FEE_1</a>: u64 = 5000000;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_1">TIER_ACTIVATION_FEE_1</a>: u64 = 1504890;
 </code></pre>
 
 
@@ -1151,7 +1151,7 @@ Genesis parameter.
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_2">TIER_ACTIVATION_FEE_2</a>: u64 = 75000000;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_2">TIER_ACTIVATION_FEE_2</a>: u64 = 22573363;
 </code></pre>
 
 
@@ -1161,7 +1161,7 @@ Genesis parameter.
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_3">TIER_ACTIVATION_FEE_3</a>: u64 = 1000000000;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_3">TIER_ACTIVATION_FEE_3</a>: u64 = 300978179;
 </code></pre>
 
 
@@ -1171,7 +1171,7 @@ Genesis parameter.
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_4">TIER_ACTIVATION_FEE_4</a>: u64 = 12500000000;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_4">TIER_ACTIVATION_FEE_4</a>: u64 = 3762227238;
 </code></pre>
 
 
@@ -1181,7 +1181,7 @@ Genesis parameter.
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_5">TIER_ACTIVATION_FEE_5</a>: u64 = 150000000000;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_5">TIER_ACTIVATION_FEE_5</a>: u64 = 45146726862;
 </code></pre>
 
 
@@ -1191,7 +1191,7 @@ Genesis parameter.
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_6">TIER_ACTIVATION_FEE_6</a>: u64 = 1750000000000;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_6">TIER_ACTIVATION_FEE_6</a>: u64 = 526711813393;
 </code></pre>
 
 
@@ -1212,7 +1212,7 @@ Index of tier activation fee in vectorized representation of an
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_UNDERWRITER_REGISTRATION_FEE">UNDERWRITER_REGISTRATION_FEE</a>: u64 = 250000;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_UNDERWRITER_REGISTRATION_FEE">UNDERWRITER_REGISTRATION_FEE</a>: u64 = 75244;
 </code></pre>
 
 
@@ -1222,7 +1222,7 @@ Genesis parameter.
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_0">WITHDRAWAL_FEE_0</a>: u64 = 5000000;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_0">WITHDRAWAL_FEE_0</a>: u64 = 1504890;
 </code></pre>
 
 
@@ -1232,7 +1232,7 @@ Genesis parameter.
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_1">WITHDRAWAL_FEE_1</a>: u64 = 4750000;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_1">WITHDRAWAL_FEE_1</a>: u64 = 1429646;
 </code></pre>
 
 
@@ -1242,7 +1242,7 @@ Genesis parameter.
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_2">WITHDRAWAL_FEE_2</a>: u64 = 4500000;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_2">WITHDRAWAL_FEE_2</a>: u64 = 1354401;
 </code></pre>
 
 
@@ -1252,7 +1252,7 @@ Genesis parameter.
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_3">WITHDRAWAL_FEE_3</a>: u64 = 4250000;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_3">WITHDRAWAL_FEE_3</a>: u64 = 1279157;
 </code></pre>
 
 
@@ -1262,7 +1262,7 @@ Genesis parameter.
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_4">WITHDRAWAL_FEE_4</a>: u64 = 4000000;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_4">WITHDRAWAL_FEE_4</a>: u64 = 1203912;
 </code></pre>
 
 
@@ -1272,7 +1272,7 @@ Genesis parameter.
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_5">WITHDRAWAL_FEE_5</a>: u64 = 3750000;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_5">WITHDRAWAL_FEE_5</a>: u64 = 1128668;
 </code></pre>
 
 
@@ -1282,7 +1282,7 @@ Genesis parameter.
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_6">WITHDRAWAL_FEE_6</a>: u64 = 3500000;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_6">WITHDRAWAL_FEE_6</a>: u64 = 1053423;
 </code></pre>
 
 

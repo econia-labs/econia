@@ -362,55 +362,55 @@ module econia::incentives {
     // Genesis parameters >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Genesis parameter.
-    const MARKET_REGISTRATION_FEE: u64 =   625000000;
+    const MARKET_REGISTRATION_FEE: u64 =  188111361;
     /// Genesis parameter.
-    const UNDERWRITER_REGISTRATION_FEE: u64 = 250000;
+    const UNDERWRITER_REGISTRATION_FEE: u64 = 75244;
     /// Genesis parameter.
-    const CUSTODIAN_REGISTRATION_FEE: u64 =   250000;
+    const CUSTODIAN_REGISTRATION_FEE: u64 =   75244;
     /// Genesis parameter.
-    const TAKER_FEE_DIVISOR: u64 =              2000;
+    const TAKER_FEE_DIVISOR: u64 =             2000;
     /// Genesis parameter.
-    const FEE_SHARE_DIVISOR_0: u64 =           10000;
+    const FEE_SHARE_DIVISOR_0: u64 =          10000;
     /// Genesis parameter.
-    const FEE_SHARE_DIVISOR_1: u64 =            8333;
+    const FEE_SHARE_DIVISOR_1: u64 =           8333;
     /// Genesis parameter.
-    const FEE_SHARE_DIVISOR_2: u64 =            7692;
+    const FEE_SHARE_DIVISOR_2: u64 =           7692;
     /// Genesis parameter.
-    const FEE_SHARE_DIVISOR_3: u64 =            7143;
+    const FEE_SHARE_DIVISOR_3: u64 =           7143;
     /// Genesis parameter.
-    const FEE_SHARE_DIVISOR_4: u64 =            6667;
+    const FEE_SHARE_DIVISOR_4: u64 =           6667;
     /// Genesis parameter.
-    const FEE_SHARE_DIVISOR_5: u64 =            6250;
+    const FEE_SHARE_DIVISOR_5: u64 =           6250;
     /// Genesis parameter.
-    const FEE_SHARE_DIVISOR_6: u64 =            5882;
+    const FEE_SHARE_DIVISOR_6: u64 =           5882;
     /// Genesis parameter.
-    const TIER_ACTIVATION_FEE_0: u64 =             0;
+    const TIER_ACTIVATION_FEE_0: u64 =            0;
     /// Genesis parameter.
-    const TIER_ACTIVATION_FEE_1: u64 =       5000000;
+    const TIER_ACTIVATION_FEE_1: u64 =      1504890;
     /// Genesis parameter.
-    const TIER_ACTIVATION_FEE_2: u64 =      75000000;
+    const TIER_ACTIVATION_FEE_2: u64 =     22573363;
     /// Genesis parameter.
-    const TIER_ACTIVATION_FEE_3: u64 =    1000000000;
+    const TIER_ACTIVATION_FEE_3: u64 =    300978179;
     /// Genesis parameter.
-    const TIER_ACTIVATION_FEE_4: u64 =   12500000000;
+    const TIER_ACTIVATION_FEE_4: u64 =   3762227238;
     /// Genesis parameter.
-    const TIER_ACTIVATION_FEE_5: u64 =  150000000000;
+    const TIER_ACTIVATION_FEE_5: u64 =  45146726862;
     /// Genesis parameter.
-    const TIER_ACTIVATION_FEE_6: u64 = 1750000000000;
+    const TIER_ACTIVATION_FEE_6: u64 = 526711813393;
     /// Genesis parameter.
-    const WITHDRAWAL_FEE_0: u64 =            5000000;
+    const WITHDRAWAL_FEE_0: u64 =           1504890;
     /// Genesis parameter.
-    const WITHDRAWAL_FEE_1: u64 =            4750000;
+    const WITHDRAWAL_FEE_1: u64 =           1429646;
     /// Genesis parameter.
-    const WITHDRAWAL_FEE_2: u64 =            4500000;
+    const WITHDRAWAL_FEE_2: u64 =           1354401;
     /// Genesis parameter.
-    const WITHDRAWAL_FEE_3: u64 =            4250000;
+    const WITHDRAWAL_FEE_3: u64 =           1279157;
     /// Genesis parameter.
-    const WITHDRAWAL_FEE_4: u64 =            4000000;
+    const WITHDRAWAL_FEE_4: u64 =           1203912;
     /// Genesis parameter.
-    const WITHDRAWAL_FEE_5: u64 =            3750000;
+    const WITHDRAWAL_FEE_5: u64 =           1128668;
     /// Genesis parameter.
-    const WITHDRAWAL_FEE_6: u64 =            3500000;
+    const WITHDRAWAL_FEE_6: u64 =           1053423;
 
     // Genesis parameters <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

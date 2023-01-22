@@ -40,6 +40,20 @@ Some functionality abstracted to be run from the command line:
     ...
 
 .. code-block:: zsh
+    :caption: Update genesis parameters in ``incentives.move``
+    :emphasize-lines: 3
+
+    # Still inside Move package directory
+    # Run genesis command
+    % python ../../python/econia/build.py genesis 12.00 8 ../../../
+    # Output corresponding file contents
+    % < ../../../src/move/econia/sources/incentives.move
+    ...
+        /// Genesis parameter.
+        const MARKET_REGISTRATION_FEE: u64 =  208333333;
+    ...
+
+.. code-block:: zsh
     :caption: Compile package using new named address
 
     # Still inside Move package directory
@@ -138,13 +152,16 @@ import re
 import shutil
 import sys
 
+from decimal import Decimal as dec
 from pathlib import Path
 from econia.account import Account, hex_leader
+from econia.incentives import generate_constants_block
 from econia.defs import (
     build_command_fields,
     econia_paths as ps,
     Econia,
     file_extensions,
+    incentive_parameters as params,
     named_addrs,
     regex_trio_group_ids as r_i,
     seps,
@@ -179,6 +196,24 @@ def get_move_util_path(
     )
     assert os.path.isfile(abs_path), abs_path
     return abs_path
+
+def get_incentives_path(
+    econia_root: str = seps.dot
+) -> str:
+    """Return absolute path of incentives.move file
+
+    Parameters
+    ----------
+    econia_root : str, optional
+        Relative path to Econia repository root directory
+
+    Returns
+    -------
+    str
+        Absolute path to incentives.move file
+    """
+    return get_move_util_path(ps.incentives_path, file_extensions.move,
+                              econia_root)
 
 def get_toml_path(
     econia_root: str = seps.dot
@@ -488,6 +523,40 @@ def sub_rev_hash(
     # Substitute new hash into middle group from RegEx search match
     sub_middle_group_file(get_toml_path(econia_root), pattern, new_hash)
 
+def update_genesis_parameters(
+    utility_coin_usd_value: dec,
+    utility_coin_decimals: int,
+    econia_root: str = seps.dot
+):
+    """Update genesis parameters in given ``incentives.move`` file
+
+    Parameters
+    ----------
+    utility_coin_usd_value : decimal.Decimal
+        Value of utility coin in US dollars.
+    utility_coin_decimals : int
+        Number of decimals in utility coin.
+    econia_root : str, optional
+        Relative path to econia repository root directory
+    """
+    # Get incentives module absolute path
+    abs_path = get_incentives_path(econia_root)
+    lines = Path(abs_path).read_text().splitlines() # Get file lines
+    found_block = False # Flag that scan is not yet in block
+    for i, line in enumerate(lines): # Scan over all lines in file
+        # If found first line of block:
+        if line == params.doc_comment[:-1] and not found_block:
+            found_block = True # Mark block found
+            block_start_line = i # Mark block start line
+        # If out of block:
+        if found_block and line == '':
+            line_after_block = i # Mark line after block
+            break # Stop scan
+    # Substitute in generated constants block.
+    lines[block_start_line:line_after_block] = generate_constants_block(
+        utility_coin_usd_value, utility_coin_decimals).splitlines()
+    Path(abs_path).write_text(seps.nl.join(lines))
+
 if __name__ == '__main__':
     """See module docstring for examples"""
 
@@ -497,14 +566,23 @@ if __name__ == '__main__':
     print_keyfile_address = build_command_fields.print_keyfile_address
     rev = build_command_fields.rev
     substitute = build_command_fields.substitute
+    genesis = build_command_fields.genesis
     action = sys.argv[1]
 
     if action == generate: # Generate new dev account
         econia_root = seps.dot # Assume in Econia root
-        if len (sys.argv) == 3: # If argument passed after action
+        if len(sys.argv) == 3: # If argument passed after action
             # Save it as relative path to Econia project root directory
             econia_root = sys.argv[2]
         gen_new_econia_dev_account(econia_root)
+    elif action == genesis: # Update genesis parameters
+        econia_root = seps.dot # Assume in Econia root
+        if (len(sys.argv) == 5): # If given 3 arguments
+            # Save last as relative path to Econia project root
+            # directory
+            econia_root = sys.argv[4]
+        update_genesis_parameters( # Update genesis parameters
+            dec(str(sys.argv[2])), int(sys.argv[3]), econia_root)
     elif action == print_keyfile_address: # If want keyfile address
         # Print address derived from hex seed in keyfile at relative
         # path

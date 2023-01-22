@@ -3,16 +3,66 @@
 Define all numbers/strings, etc. here so code has no unnamed values
 """
 
+from decimal import Decimal as dec
 from types import SimpleNamespace
 
 build_command_fields = SimpleNamespace(
     docgen = 'docgen',
     generate = 'generate',
+    genesis = 'genesis',
     print_keyfile_address = 'print-keyfile-address',
     rev = 'rev',
     substitute = 'substitute'
 )
 """Command line fields for automated building process"""
+
+incentive_parameters = SimpleNamespace(
+    market_registration_fee = SimpleNamespace(
+        constant_name = 'MARKET_REGISTRATION_FEE',
+        amount = dec('25')
+    ),
+    underwriter_registration_fee = SimpleNamespace(
+        constant_name = 'UNDERWRITER_REGISTRATION_FEE',
+        amount = dec('0.01')
+    ),
+    custodian_registration_fee = SimpleNamespace(
+        constant_name = 'CUSTODIAN_REGISTRATION_FEE',
+        amount = dec('0.01')
+    ),
+    taker_fee_percentage = SimpleNamespace(
+        constant_name = 'TAKER_FEE_DIVISOR',
+        amount = dec('0.05')
+    ),
+    tiers = SimpleNamespace(
+        fields = SimpleNamespace(
+            fee_share_percentage = SimpleNamespace(
+                constant_name_base = 'FEE_SHARE_DIVISOR',
+                field_index = 0
+            ),
+            tier_activation_fee = SimpleNamespace(
+                constant_name_base = 'TIER_ACTIVATION_FEE',
+                field_index = 1
+            ),
+            withdrawal_fee = SimpleNamespace(
+                constant_name_base = 'WITHDRAWAL_FEE',
+                field_index = 2
+            ),
+        ),
+        amounts = [[dec('0.01') , dec('0.00')  , dec('0.20')],
+                   [dec('0.012'), dec('0.20')  , dec('0.19')],
+                   [dec('0.013'), dec('3')     , dec('0.18')],
+                   [dec('0.014'), dec('40')    , dec('0.17')],
+                   [dec('0.015'), dec('500')   , dec('0.16')],
+                   [dec('0.016'), dec('6_000') , dec('0.15')],
+                   [dec('0.017'), dec('70_000'), dec('0.14')]]
+    ),
+    doc_comment = '    /// Genesis parameter.\n',
+    indent = '    ',
+    constant_token = 'const',
+    constant_type = 'u64',
+    percent_base = 100
+)
+"""Incentive parameters, values in USD"""
 
 Econia = 'Econia'
 """Project name"""
@@ -24,6 +74,8 @@ econia_paths = SimpleNamespace(
     ss_path = 'ss',
     # Relative to Move package root
     toml_path = 'Move',
+    # Relative to Move package root
+    incentives_path = 'sources/incentives'
 )
 """Econia Move code paths"""
 
@@ -34,7 +86,7 @@ e_msgs = SimpleNamespace(
 
 file_extensions = SimpleNamespace(
     key = 'key',
-    mv = 'mv',
+    move = 'move',
     sh = 'sh',
     toml = 'toml'
 )
@@ -71,6 +123,7 @@ seps = SimpleNamespace(
     qm = '?',
     rp = ')',
     rsb = ']',
+    sc = ";",
     sq = "'",
     sls = '/',
     sp = ' ',

@@ -1,0 +1,4 @@
+``incentives``
+##############
+
+.. automodule:: incentives

@@ -5,7 +5,7 @@
 repo_root=../../../ # Relative path to Econia repository root
 # Relative path to secrets directory
 secrets_dir=$repo_root".secrets/"
-# Realtive path to Python build file
+# Relative path to Python build file
 build_py=$repo_root"src/python/econia/build.py"
 
 # Variables <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -204,6 +204,12 @@ elif test $1 = ta; then aptos move test -i 1000000
 
 # Run aptos CLI test with filter and passed argument
 elif test $1 = tf; then aptos move test --filter $2 -i 1000000
+
+# Update genesis parameters for given utility coin USD value/decimals
+elif test $1 = ug; then
+    conda activate econia # Activate Econia conda environment
+    # Pass USD value and decimals to genesis build script
+    python $build_py genesis $2 $3 $repo_root
 
 # Watch source code and rebuild documentation if it changes
 # May require `brew install entr` beforehand

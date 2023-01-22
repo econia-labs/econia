@@ -8,6 +8,7 @@ Econia
 
    python/account
    python/build
+   python/incentives
    python/defs
 
 Indices and tables

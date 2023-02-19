@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "econia"
+version = "0.1.0"
+description = "Econia"
+authors = ["Econia Labs"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+pandas = "^1.5.3"
+jupyter = "^1.0.0"
+
+[tool.poetry.dev-dependencies]
+autoflake = "^2.0.1"
+black = "^23.1.0"
+isort = "^5.12.0"

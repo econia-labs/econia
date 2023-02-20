@@ -3,17 +3,11 @@
 # URL to download homebrew.
 brew_url="https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh"
 
-# Python package directory.
-python_dir="src/python/"
-
-# Path to this directory from Python directory.
-python_dir_inverse="../../"
-
 # Move package directory.
 move_dir="src/move/econia/"
 
-# Incentives Move module.
-incentives_module=$move_dir"sources/incentives.move"
+# Python package directory.
+python_dir="src/python/"
 
 # Helper functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -44,29 +38,24 @@ case "$1" in
             /bin/bash -c "$(curl -fsSL $brew_url)" # Install brew.
         fi
         brew_install aptos               # Install aptos CLI.
-        brew_install poetry              # Insall poetry.
+        brew_install poetry              # Install poetry.
         brew_install shfmt               # Install shell script formatter.
         cd $python_dir                   # Navigate to Python package directory.
         echo "Installing Python package" # Print notice.
         poetry install                   # Install the Python package and dependencies.
-        cd $python_dir_inverse           # Navigate back to Econia root directory.
+        source scripts.sh er             # Go back to Econia root.
         ;;
 
-    # Format Python code
-    fp)
-        echo "Formatting Python code"
-        cd $python_dir # Change working directory to Python package.
-        # Find all files ending in .py, pass to autoflake command.
-        find . -name "*.py" | xargs \
-            poetry run autoflake \
-            --in-place \
-            --recursive \
-            --remove-all-unused-imports \
-            --remove-unused-variables \
-            --ignore-init-module-imports
-        poetry run isort .                  # Sort imports.
-        poetry run black . --line-length 80 # Format code.
-        cd $python_dir_inverse              # Navigate back to Econia root directory.
+    # Develop Python (go to Python directory).
+    dp)
+        cd $python_dir
+        echo "Now at $(pwd)"
+        ;;
+
+    # Develop Move (go to Move package directory).
+    dm)
+        cd $move_dir
+        echo "Now at $(pwd)"
         ;;
 
     # Format shell scripts
@@ -74,25 +63,6 @@ case "$1" in
         echo "Formatting shell scripts" # Print notice.
         # Recursively format scripts.
         shfmt --list --write --simplify --case-indent --indent 4 .
-        ;;
-
-    # Set genesis parameters.
-    sg)
-        echo "Setting genesis parameters" # Print notice.
-        cd $python_dir                    # Change working directory to Python package.
-        # Run incentives CLI genesis command, passing arguments 2 onward.
-        poetry run python -m econia.incentives genesis \
-            $python_dir_inverse$incentives_module "${@:2}"
-        cd $python_dir_inverse # Navigate back to Econia root directory.
-        ;;
-
-    # Test Python code.
-    tp)
-        echo "Running Python tests" # Print notice.
-        cd $python_dir              # Change working directory to Python package.
-        # Doctest all source.
-        find . -name "*.py" | xargs python -m doctest
-        cd $python_dir_inverse # Navigate back to Econia root directory.
         ;;
 
 esac

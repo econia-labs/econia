@@ -6,6 +6,9 @@ from typing import List
 
 # Constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+UTILITY_COIN_DECIMALS = 8
+"""Number of decimals in utility coin."""
+
 MARKET_REGISTRATION_FEE = Decimal("25")
 """USD Cost to register a market."""
 
@@ -35,6 +38,9 @@ INDENT = "    "
 DOC_COMMENT = f"{INDENT}/// Genesis parameter."
 """Doc comment used for DocGen in incentives module file."""
 
+BLOCK_COMMENT = f"{INDENT}// Incentive parameters."
+"""Constant block delimiter for Move script file."""
+
 # Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 # Formatters >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -63,7 +69,7 @@ def format_constant_definition(
 
 def generate_constants_block(
     utility_coin_usd_value: Decimal,
-    utility_coin_decimals: int,
+    utility_coin_decimals: int = UTILITY_COIN_DECIMALS,
     market_registration_fee: Decimal = MARKET_REGISTRATION_FEE,
     underwriter_registration_fee: Decimal = UNDERWRITER_REGISTRATION_FEE,
     custodian_registration_fee: Decimal = CUSTODIAN_REGISTRATION_FEE,
@@ -93,6 +99,7 @@ def generate_constants_block(
     ...     custodian_registration_fee,
     ...     taker_fee_percentage,
     ...     tiers))
+        // Incentive parameters.
         const MARKET_REGISTRATION_FEE: u64 =  125000000;
         const UNDERWRITER_REGISTRATION_FEE: u64 = 50000;
         const CUSTODIAN_REGISTRATION_FEE: u64 =   50000;
@@ -143,7 +150,10 @@ def generate_constants_block(
         [tier[1] for tier in tiers],
         [tier[2] for tier in tiers],
     )
-    return justify_constants(  # Return justified constants block.
+    # Get block comment header if not a genesis parameter block.
+    header = "" if is_genesis_block else f"{BLOCK_COMMENT}\n"
+    # Return justified constants block.
+    return header + justify_constants(
         "\n".join(
             [
                 format_constant_definition(
@@ -255,53 +265,61 @@ parser = argparse.ArgumentParser(
 subparsers = parser.add_subparsers(required=True)
 
 
-def set_genesis_parameters(args):
-    """Update genesis parameters in incentives module file."""
-    lines = args.module_path.read_text().splitlines()  # Get file lines.
+def update_incentive_parameters(args):
+    """Update incentive parameters in indicated Move file."""
+    lines = args.path.read_text().splitlines()  # Get file lines.
     found_block = False  # Flag that scan is not yet in block.
+    # Get constants block delimiter.
+    delimiter = DOC_COMMENT if args.genesis_parameters else BLOCK_COMMENT
     for i, line in enumerate(lines):  # Scan over lines in file.
         # If found first line of block:
-        if line == DOC_COMMENT and not found_block:
+        if line == delimiter and not found_block:
             found_block = True  # Mark block found.
             block_start_line = i  # Mark block start line.
         # If out of block:
         if found_block and line == "":
             line_after_block = i  # Mark line after block.
             break  # Stop scan.
-    # Substitute in generated constants block, flagged as genesis block.
+    # Substitute in generated constants block.
     lines[block_start_line:line_after_block] = generate_constants_block(
         utility_coin_usd_value=args.utility_coin_usd_value,
         utility_coin_decimals=args.utility_coin_decimals,
-        is_genesis_block=True,
+        is_genesis_block=args.genesis_parameters,
     ).splitlines()
-    args.module_path.write_text("\n".join(lines))  # Write file.
+    args.path.write_text("\n".join(lines))  # Write file.
 
 
-# Genesis subcommand parser.
-parser_genesis = subparsers.add_parser(
+# Update subcommand parser.
+parser_update = subparsers.add_parser(
     name="genesis",
     aliases=["g"],
     description="Update genesis parameters in Move package.",
     help="Update genesis parameters.",
 )
-parser_genesis.set_defaults(func=set_genesis_parameters)
+parser_update.set_defaults(func=update_incentive_parameters)
 
-parser_genesis.add_argument(
-    "module_path",
-    metavar="module-path",
+parser_update.add_argument(
+    "path",
     type=Path,
-    help="Relative path to incentives.move module file.",
+    help="Relative path to Move file to update.",
 )
-parser_genesis.add_argument(
+parser_update.add_argument(
     "utility_coin_usd_value",
     metavar="utility-coin-usd-value",
     type=Decimal,
     help="Utility coin value in USD.",
 )
-parser_genesis.add_argument(
-    "utility_coin_decimals",
-    metavar="utility-coin-decimals",
+parser_update.add_argument(
+    "-g",
+    "--genesis-parameters",
+    action="store_true",
+    help="True if updating genesis parameters in incentives module.",
+)
+parser_update.add_argument(
+    "-d",
+    "--utility-coin-decimals",
     type=int,
+    default=UTILITY_COIN_DECIMALS,
     help="Utility coin decimals.",
 )
 

@@ -1,4 +1,0 @@
-``defs``
-########
-
-.. automodule:: defs

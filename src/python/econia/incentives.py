@@ -1,6 +1,7 @@
 """Incentive parameters functionality."""
-
+import argparse
 from decimal import Decimal
+from pathlib import Path
 from typing import List
 
 # Constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -31,7 +32,12 @@ TIERS = [
 INDENT = "    "
 """4-space indent."""
 
+DOC_COMMENT = f"{INDENT}/// Genesis parameter."
+"""Doc comment used for DocGen in incentives module file."""
+
 # Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+# Formatters >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 
 def format_constant_definition(
@@ -50,53 +56,9 @@ def format_constant_definition(
         const BAR: u64 = 500;
     """
     # Prepend genesis parameter doc comment if necessary.
-    base = f"{INDENT}/// Genesis parameter.\n" if is_genesis_parameter else ""
+    base = f"{DOC_COMMENT}\n" if is_genesis_parameter else ""
     # Return appended and formatted constant definition block.
     return f"{base}{INDENT}const {name}: u64 = {str(int(amount))};"
-
-
-def percent_to_divisor(percent: Decimal) -> int:
-    """Convert a percent to an integer divisor.
-
-    Example
-    -------
-    >>> percent_to_divisor(Decimal('0.05'))
-    2000
-    >>> percent_to_divisor(Decimal('0.03'))
-    3333
-    >>> percent_to_divisor(Decimal('0.015'))
-    6667
-    """
-    return int(round(1 / (percent / 100)))
-
-
-def justify_constants(block: str) -> str:
-    """Right justify all of the constants in a definition block.
-
-    Example
-    -------
-    >>> block = '''\\
-    ...     /// Short comment.
-    ...     const CONSTANT_1: u64 = 1;
-    ...     /// Long comment that is longer than longest line of code.
-    ...     const CONSTANT_2: u64 = 200;'''
-    >>> print(justify_constants(block))
-        /// Short comment.
-        const CONSTANT_1: u64 =   1;
-        /// Long comment that is longer than longest line of code.
-        const CONSTANT_2: u64 = 200;
-    """
-    lines = block.splitlines()  # Get all lines.
-    # Get maximum line length for lines of code (ending in semicolon).
-    max_length = max([len(line) for line in lines if line[-1] == ";"])
-    for i, line in enumerate(lines):  # Loop over all lines.
-        if line[-1] == ";":  # If line ends in semicolon (is code):
-            pad = (max_length - len(line)) * " "  # Get pad required.
-            if pad != "":  # If need to pad line:
-                tokens = line.split()  # Get tokens in line.
-                # Update line with padded integer value.
-                lines[i] = f"{INDENT}{' '.join(tokens[:-1])} {pad}{tokens[-1]}"
-    return "\n".join(lines)  # Return formatted block of new lines.
 
 
 def generate_constants_block(
@@ -237,3 +199,114 @@ def generate_constants_block(
             ]
         )
     )
+
+
+def justify_constants(block: str) -> str:
+    """Right justify all of the constants in a definition block.
+
+    Example
+    -------
+    >>> block = '''\\
+    ...     /// Short comment.
+    ...     const CONSTANT_1: u64 = 1;
+    ...     /// Long comment that is longer than longest line of code.
+    ...     const CONSTANT_2: u64 = 200;'''
+    >>> print(justify_constants(block))
+        /// Short comment.
+        const CONSTANT_1: u64 =   1;
+        /// Long comment that is longer than longest line of code.
+        const CONSTANT_2: u64 = 200;
+    """
+    lines = block.splitlines()  # Get all lines.
+    # Get maximum line length for lines of code (ending in semicolon).
+    max_length = max([len(line) for line in lines if line[-1] == ";"])
+    for i, line in enumerate(lines):  # Loop over all lines.
+        if line[-1] == ";":  # If line ends in semicolon (is code):
+            pad = (max_length - len(line)) * " "  # Get pad required.
+            if pad != "":  # If need to pad line:
+                tokens = line.split()  # Get tokens in line.
+                # Update line with padded integer value.
+                lines[i] = f"{INDENT}{' '.join(tokens[:-1])} {pad}{tokens[-1]}"
+    return "\n".join(lines)  # Return formatted block of new lines.
+
+
+def percent_to_divisor(percent: Decimal) -> int:
+    """Convert a percent to an integer divisor.
+
+    Example
+    -------
+    >>> percent_to_divisor(Decimal('0.05'))
+    2000
+    >>> percent_to_divisor(Decimal('0.03'))
+    3333
+    >>> percent_to_divisor(Decimal('0.015'))
+    6667
+    """
+    return int(round(1 / (percent / 100)))
+
+
+# Formatters <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+# Parser >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+parser = argparse.ArgumentParser(
+    description="""Assorted incentive parameter operations.""",
+)
+subparsers = parser.add_subparsers(required=True)
+
+
+def set_genesis_parameters(args):
+    """Update genesis parameters in incentives module file."""
+    lines = args.module_path.read_text().splitlines()  # Get file lines.
+    found_block = False  # Flag that scan is not yet in block.
+    for i, line in enumerate(lines):  # Scan over lines in file.
+        # If found first line of block:
+        if line == DOC_COMMENT and not found_block:
+            found_block = True  # Mark block found.
+            block_start_line = i  # Mark block start line.
+        # If out of block:
+        if found_block and line == "":
+            line_after_block = i  # Mark line after block.
+            break  # Stop scan.
+    # Substitute in generated constants block, flagged as genesis block.
+    lines[block_start_line:line_after_block] = generate_constants_block(
+        utility_coin_usd_value=args.utility_coin_usd_value,
+        utility_coin_decimals=args.utility_coin_decimals,
+        is_genesis_block=True,
+    ).splitlines()
+    args.module_path.write_text("\n".join(lines))  # Write file.
+
+
+# Genesis subcommand parser.
+parser_genesis = subparsers.add_parser(
+    name="genesis",
+    aliases=["g"],
+    description="Update genesis parameters in Move package.",
+    help="Update genesis parameters.",
+)
+parser_genesis.set_defaults(func=set_genesis_parameters)
+
+parser_genesis.add_argument(
+    "module_path",
+    metavar="module-path",
+    type=Path,
+    help="Relative path to incentives.move module file.",
+)
+parser_genesis.add_argument(
+    "utility_coin_usd_value",
+    metavar="utility-coin-usd-value",
+    type=Decimal,
+    help="Utility coin value in USD.",
+)
+parser_genesis.add_argument(
+    "utility_coin_decimals",
+    metavar="utility-coin-decimals",
+    type=int,
+    help="Utility coin decimals.",
+)
+
+# Parser <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+if __name__ == "__main__":
+    parsed_args = parser.parse_args()  # Parse command line arguments.
+    parsed_args.func(parsed_args)  # Call parsed args callback function.

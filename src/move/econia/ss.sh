@@ -17,15 +17,15 @@ build_py=$repo_root"src/python/econia/build.py"
 # Should be run from inside Move package directory.
 generate_temporary_devnet_address() {
     # Generate temporary keypair files
-    aptos key generate --output-file tmp --assume-yes > /dev/null
-    private_key=$(<tmp) # Store private key
+    aptos key generate --output-file tmp --assume-yes >/dev/null
+    private_key=$(<tmp)     # Store private key
     get_keyfile_address tmp # Store address for given hexseed
-    rm tmp* # Remove temporary keypair files
+    rm tmp*                 # Remove temporary keypair files
     # Move all non-dir files in secrets folder to old secrets folder
     # (https://unix.stackexchange.com/a/617582)
     mv $secrets_dir*(DN^/) $secrets_dir"old/"
     # Store private key in file having <address>.key as name
-    echo $private_key > $secrets_dir"$addr.key"
+    echo $private_key >$secrets_dir"$addr.key"
     echo $addr # Print corresponding address
 }
 
@@ -103,9 +103,9 @@ publish_from_keyfile() {
 # Should be run from inside Move package directory.
 substitute_econia_address() {
     # If flag is for temporary keyfile or for official devnet keyfile
-    if [[ $1 = temp || $1 = official ]]; then
+    if [[ $1 == temp || $1 == official ]]; then
         get_keyfile_info $1 # Get keyfile info for given flag
-    else # Else set address argument to the argument
+    else                    # Else set address argument to the argument
         addr=$1
     fi
     # Substitute address in memory in Move.toml
@@ -117,22 +117,25 @@ substitute_econia_address() {
 # Commands >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 # Return if no arguments passed
-if test "$#" = 0; then return
+if test "$#" = 0; then
+    return
 
 # Git add all and commit from project root, then come back
 elif test $1 = ac; then
-    cd $repo_root # Navigate to Econia project root directory
-    git add . # Add all files
-    git commit # Commit
-    cd src/move/econia # Navigate back to Move package
+    cd $repo_root         # Navigate to Econia project root directory
+    git add .             # Add all files
+    git commit            # Commit
+    cd src/move/econia    # Navigate back to Move package
     conda activate econia # Activate Econia conda environment
-    git_log_one_line # Show git log with one line
+    git_log_one_line      # Show git log with one line
 
 # Clear the terminal
-elif test $1 = c; then clear
+elif test $1 = c; then
+    clear
 
 # Conda activate econia environment
-elif test $1 = ca; then conda activate econia
+elif test $1 = ca; then
+    conda activate econia
 
 # Clean up temp files and terminal
 elif test $1 = cl; then
@@ -141,43 +144,52 @@ elif test $1 = cl; then
 
 # Build documentation
 elif test $1 = d; then
-    conda activate econia # Activate Econia conda environment
-    substitute_econia_address docgen # Substitute docgen address
+    conda activate econia              # Activate Econia conda environment
+    substitute_econia_address docgen   # Substitute docgen address
     aptos move document --include-impl # Build docs
     substitute_econia_address official # Substitute official address
 
 # Go back to Econia project repository root
-elif test $1 = er; then cd $repo_root
+elif test $1 = er; then
+    cd $repo_root
 
 # Get address of keyfile with relative path
-elif test $1 = ga; then get_keyfile_address $2; echo $addr
+elif test $1 = ga; then
+    get_keyfile_address $2
+    echo $addr
 
 # Show git log with one line
-elif test $1 = gl; then git_log_one_line
+elif test $1 = gl; then
+    git_log_one_line
 
 # Generate a temporary keyfile in secrets directory
 elif test $1 = gt; then
     generate_temporary_devnet_address
 
 # Git push then show the log in one line
-elif test $1 = gp; then git push; git_log_one_line
+elif test $1 = gp; then
+    git push
+    git_log_one_line
 
 # Verify that this script can be invoked
-elif test $1 = hello; then echo Hello, Econia developer
+elif test $1 = hello; then
+    echo Hello, Econia developer
 
 # Run pre-commit checks
 elif test $1 = pc; then
-    conda activate econia # Activate Econia conda environment
-    substitute_econia_address docgen # Substitute docgen address
-    aptos move test -i 1000000 # Run all tests
+    conda activate econia              # Activate Econia conda environment
+    substitute_econia_address docgen   # Substitute docgen address
+    aptos move test -i 1000000         # Run all tests
     aptos move document --include-impl # Build docs
     substitute_econia_address official # Substitute official address
 
 # Publish bytecode using official devnet address
-elif test $1 = po; then publish official
+elif test $1 = po; then
+    publish official
 
 # Publish bytecode using a temporary devnet address
-elif test $1 = pt; then publish temp
+elif test $1 = pt; then
+    publish temp
 
 # Substitute given address into Move.toml
 elif test $1 = sg; then
@@ -196,14 +208,16 @@ elif test $1 = so; then
 
 # Substitute generic address into Move.toml
 elif test $1 = s_; then
-    conda activate econia # Activate Econia conda environment
+    conda activate econia       # Activate Econia conda environment
     substitute_econia_address _ # Subsitute generic address
 
 # Run aptos CLI test on all modules
-elif test $1 = ta; then aptos move test -i 1000000
+elif test $1 = ta; then
+    aptos move test -i 1000000
 
 # Run aptos CLI test with filter and passed argument
-elif test $1 = tf; then aptos move test --filter $2 -i 1000000
+elif test $1 = tf; then
+    aptos move test --filter $2 -i 1000000
 
 # Update genesis parameters for given utility coin USD value/decimals
 elif test $1 = ug; then

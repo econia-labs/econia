@@ -1,7 +1,8 @@
 # Shell scripts for common developer workflows
 
 # Return if no arguments passed
-if test "$#" = 0; then return
+if test "$#" = 0; then
+    return
 
 # Initiate sphinx-autobuild
 elif test $1 = ab; then
@@ -10,7 +11,8 @@ elif test $1 = ab; then
     sphinx-autobuild doc/sphinx/src doc/sphinx/build --watch src/python
 
 # Clear terminal
-elif test $1 = c; then clear
+elif test $1 = c; then
+    clear
 
 # Run Sphinx doctest
 elif test $1 = dt; then
@@ -18,7 +20,8 @@ elif test $1 = dt; then
     make -C doc/sphinx doctest
 
 # Verify that this script can be invoked
-elif test $1 = hello; then echo Hello, Econia developer
+elif test $1 = hello; then
+    echo Hello, Econia developer
 
 # Go to Move package folder
 elif test $1 = mp; then

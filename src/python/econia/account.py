@@ -2,16 +2,14 @@
 
 import hashlib
 import os
-
 from pathlib import Path
+
 from nacl.signing import SigningKey
-from econia.defs import (
-    e_msgs,
-    file_extensions as exts,
-    single_sig_id,
-    seps,
-    util_paths
-)
+
+from econia.defs import e_msgs
+from econia.defs import file_extensions as exts
+from econia.defs import seps, single_sig_id, util_paths
+
 
 class Account:
     """Representation of account and keypair
@@ -67,16 +65,18 @@ class Account:
                 rrj = util_paths.econia_root_rel_jupyter
                 secrets = util_paths.secrets_dir
                 s_dir = os.path.join(os.path.abspath(rrj), secrets)
-                keyfile_name = \
-                    [p for p in os.listdir(s_dir) if p.endswith(exts.key)][0]
+                keyfile_name = [
+                    p for p in os.listdir(s_dir) if p.endswith(exts.key)
+                ][0]
                 abs_path = Path(s_dir) / keyfile_name
             elif path is None:
                 self.signing_key = SigningKey.generate()
                 return
             else:
                 abs_path = os.path.abspath(Path(os.getcwd()) / path)
-            self.signing_key = \
-                    SigningKey(bytes.fromhex(Path(abs_path).read_text()))
+            self.signing_key = SigningKey(
+                bytes.fromhex(Path(abs_path).read_text())
+            )
         else:
             self.signing_key = SigningKey(seed)
 
@@ -89,9 +89,7 @@ class Account:
             Account authentication key
         """
         hasher = hashlib.sha3_256()
-        hasher.update(
-            self.signing_key.verify_key.encode() + single_sig_id
-        )
+        hasher.update(self.signing_key.verify_key.encode() + single_sig_id)
         return hasher.hexdigest()
 
     def address(self) -> str:
@@ -148,16 +146,15 @@ class Account:
         if os.path.exists(abs_path):
             if Path(abs_path).read_text() != hex_seed:
                 raise ValueError(e_msgs.path_val_collision)
-            return # Seed already exists at path
+            return  # Seed already exists at path
         # If path does not already exist, create directories as needed
-        dirname = os.path.dirname(abs_path) # Cointaining directory
+        dirname = os.path.dirname(abs_path)  # Cointaining directory
         if not os.path.exists(dirname):
             Path(dirname).mkdir(parents=True)
         Path(abs_path).write_text(hex_seed)
 
-def hex_leader(
-    addr: str
-) -> str:
+
+def hex_leader(addr: str) -> str:
     """Return address with '0x' appended
 
     Parameters
@@ -176,4 +173,4 @@ def hex_leader(
     >>> hex_leader('f00cafe')
     '0xf00cafe'
     """
-    return seps.hex + f'{addr}'
+    return seps.hex + f"{addr}"

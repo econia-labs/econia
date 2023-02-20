@@ -151,22 +151,19 @@ import os
 import re
 import shutil
 import sys
-
 from decimal import Decimal as dec
 from pathlib import Path
+
 from econia.account import Account, hex_leader
+from econia.defs import Econia, build_command_fields
+from econia.defs import econia_paths as ps
+from econia.defs import file_extensions
+from econia.defs import incentive_parameters as params
+from econia.defs import named_addrs
+from econia.defs import regex_trio_group_ids as r_i
+from econia.defs import seps, util_paths
 from econia.incentives import generate_constants_block
-from econia.defs import (
-    build_command_fields,
-    econia_paths as ps,
-    Econia,
-    file_extensions,
-    incentive_parameters as params,
-    named_addrs,
-    regex_trio_group_ids as r_i,
-    seps,
-    util_paths
-)
+
 
 def get_move_util_path(
     filename: str,
@@ -192,14 +189,13 @@ def get_move_util_path(
     abs_path = os.path.join(
         os.path.abspath(econia_root),
         ps.move_package_root,
-        filename + seps.dot + file_extension
+        filename + seps.dot + file_extension,
     )
     assert os.path.isfile(abs_path), abs_path
     return abs_path
 
-def get_incentives_path(
-    econia_root: str = seps.dot
-) -> str:
+
+def get_incentives_path(econia_root: str = seps.dot) -> str:
     """Return absolute path of incentives.move file
 
     Parameters
@@ -212,12 +208,12 @@ def get_incentives_path(
     str
         Absolute path to incentives.move file
     """
-    return get_move_util_path(ps.incentives_path, file_extensions.move,
-                              econia_root)
+    return get_move_util_path(
+        ps.incentives_path, file_extensions.move, econia_root
+    )
 
-def get_toml_path(
-    econia_root: str = seps.dot
-) -> str:
+
+def get_toml_path(econia_root: str = seps.dot) -> str:
     """Return absolute path of Move.toml file
 
     Parameters
@@ -232,9 +228,8 @@ def get_toml_path(
     """
     return get_move_util_path(ps.toml_path, file_extensions.toml, econia_root)
 
-def get_sh_path(
-    econia_root: str = seps.dot
-) -> str:
+
+def get_sh_path(econia_root: str = seps.dot) -> str:
     """Return absolute path of Move package .sh file
 
     Parameters
@@ -249,9 +244,8 @@ def get_sh_path(
     """
     return get_move_util_path(ps.ss_path, file_extensions.sh, econia_root)
 
-def get_toml_lines(
-    abs_path: str
-) -> list[str]:
+
+def get_toml_lines(abs_path: str) -> list[str]:
     """Return all lines from Move.toml file
 
     Parameters
@@ -266,9 +260,8 @@ def get_toml_lines(
     """
     return Path(abs_path).read_text().splitlines()
 
-def get_addr_bytes(
-    hex: str
-) -> bytes:
+
+def get_addr_bytes(hex: str) -> bytes:
     """Return hexstring pre-padded with zeros as necessary
 
     Parameters
@@ -289,13 +282,12 @@ def get_addr_bytes(
     >>> get_addr_bytes('01')
     b'\\x01'
     """
-    if len(hex) % 2 != 0: # If not even number of characters
-        hex = '0' + hex
+    if len(hex) % 2 != 0:  # If not even number of characters
+        hex = "0" + hex
     return bytes.fromhex(hex)
 
-def normalized_hex(
-    addr_bytes: bytes
-) -> str:
+
+def normalized_hex(addr_bytes: bytes) -> str:
     """Output address bytes as hex string without leading zeroes
 
     Parameters
@@ -314,13 +306,10 @@ def normalized_hex(
     >>> normalized_hex(b'\\x00\\x01')
     '1'
     """
-    return addr_bytes.hex().lstrip('0')
+    return addr_bytes.hex().lstrip("0")
 
-def sub_middle_group_file(
-    abs_path: str,
-    pattern: str,
-    sub: str
-) -> str:
+
+def sub_middle_group_file(abs_path: str, pattern: str, sub: str) -> str:
     """Loop over lines in a file and replace middle RegEx group at match
 
     Parameters
@@ -340,16 +329,15 @@ def sub_middle_group_file(
     lines = Path(abs_path).read_text().splitlines()
     for i, line in enumerate(lines):
         m = re.search(pattern, line)
-        if m: # If RegEx matched, substitute middle value
+        if m:  # If RegEx matched, substitute middle value
             lines[i] = m.group(r_i.start) + sub + m.group(r_i.end)
             old = m.group(r_i.middle)
             break
     Path(abs_path).write_text(seps.nl.join(lines))
     return old
 
-def get_secrets_dir(
-    econia_root: str
-) -> str:
+
+def get_secrets_dir(econia_root: str) -> str:
     """Return absolute path of `econia/.secrets`
 
     Parameters
@@ -364,10 +352,8 @@ def get_secrets_dir(
     """
     return os.path.join(os.path.abspath(econia_root), util_paths.secrets_dir)
 
-def get_key_path(
-    address = str,
-    econia_root: str = seps.dot
-) -> str:
+
+def get_key_path(address=str, econia_root: str = seps.dot) -> str:
     """Return absolute path keyfile at `econia/.secrets/<address>.key`
 
     Parameters
@@ -383,14 +369,11 @@ def get_key_path(
         Absolute path of keyfile
     """
     return os.path.join(
-        get_secrets_dir(econia_root),
-        address + seps.dot + file_extensions.key
+        get_secrets_dir(econia_root), address + seps.dot + file_extensions.key
     )
 
-def sub_address_in_build_files(
-    address = str,
-    econia_root: str = seps.dot
-) -> str:
+
+def sub_address_in_build_files(address=str, econia_root: str = seps.dot) -> str:
     """Substitute new address into relevant build files
 
     Parameters
@@ -409,12 +392,12 @@ def sub_address_in_build_files(
     for path, pattern in [
         (
             get_toml_path(econia_root),
-            r'(' + Econia + r'.+' + seps.hex + r')(\w+)(' + seps.sq + r')',
+            r"(" + Econia + r".+" + seps.hex + r")(\w+)(" + seps.sq + r")",
         ),
         (
             get_sh_path(econia_root),
-            r'(.+' + util_paths.secrets_dir + seps.sls + r')(\w+)(.+)'
-        )
+            r"(.+" + util_paths.secrets_dir + seps.sls + r")(\w+)(.+)",
+        ),
     ]:
         old_address = sub_middle_group_file(path, pattern, address)
         if check is None:
@@ -423,9 +406,8 @@ def sub_address_in_build_files(
             assert old_address == check
     return old_address
 
-def archive_keyfile(
-    abs_path: str
-) -> None:
+
+def archive_keyfile(abs_path: str) -> None:
     """Move keyfile with given address into `.secrets/old`
 
     Parameters
@@ -434,17 +416,18 @@ def archive_keyfile(
         Absolute path of keyfile to archive
     """
     try:
-        Path(abs_path).replace(os.path.join(
-            os.path.dirname(abs_path),
-            util_paths.old_keys,
-            os.path.basename(abs_path)
-        ))
-    except FileNotFoundError: # Keyfile likely already deleted manually
+        Path(abs_path).replace(
+            os.path.join(
+                os.path.dirname(abs_path),
+                util_paths.old_keys,
+                os.path.basename(abs_path),
+            )
+        )
+    except FileNotFoundError:  # Keyfile likely already deleted manually
         pass
 
-def archive_keyfiles(
-    s_path: str
-) -> None:
+
+def archive_keyfiles(s_path: str) -> None:
     """Archive all keyfiles from `.secrets` into `.secrets/old`
 
     Parameters
@@ -452,9 +435,10 @@ def archive_keyfiles(
     abs_path:
         Absolute path to `.secrets` directory
     """
-    for i in os.listdir(s_path): # Loop over directory contents
-        if os.path.isfile(Path(s_path) / i): # Move only if is file
+    for i in os.listdir(s_path):  # Loop over directory contents
+        if os.path.isfile(Path(s_path) / i):  # Move only if is file
             shutil.move(Path(s_path) / i, Path(s_path) / util_paths.old_keys)
+
 
 def sub_named_toml_address(
     econia_root: str = seps.dot,
@@ -477,17 +461,23 @@ def sub_named_toml_address(
     str
         Old value enclosed in single quotes
     """
-    pattern = r'(' + named_addrs.econia.address_name + r'.+' + seps.sq + \
-        r')(\w+)(' + seps.sq + r')$'
+    pattern = (
+        r"("
+        + named_addrs.econia.address_name
+        + r".+"
+        + seps.sq
+        + r")(\w+)("
+        + seps.sq
+        + r")$"
+    )
     if generic:
         to_sub = seps.us
     else:
         to_sub = named
     return sub_middle_group_file(get_toml_path(econia_root), pattern, to_sub)
 
-def gen_new_econia_dev_account(
-    econia_root: str = seps.dot
-) -> None:
+
+def gen_new_econia_dev_account(econia_root: str = seps.dot) -> None:
     """Generate new Econia account, save keyfile to secrets directory
 
     Parameters
@@ -495,19 +485,17 @@ def gen_new_econia_dev_account(
     econia_root : str, optional
         Relative path to econia repository root directory
     """
-    account = Account() # Generate new account
+    account = Account()  # Generate new account
     # Archive old temp keyfiles in secrets directory
     archive_keyfiles(get_secrets_dir(econia_root))
     # Strip off potential leading 0 from filename for keyfile
     address = normalized_hex(get_addr_bytes(account.address()))
-    print(address) # Print address
+    print(address)  # Print address
     # Save keyfile to disk
     account.save_seed_to_disk(get_key_path(address, econia_root))
 
-def sub_rev_hash(
-    new_hash = str,
-    econia_root: str = seps.dot
-):
+
+def sub_rev_hash(new_hash=str, econia_root: str = seps.dot):
     """Substitute new hash into sole dependency rev field for Move.toml
 
     Parameters
@@ -518,15 +506,23 @@ def sub_rev_hash(
         Relative path to econia repository root directory
     """
     # Define RegEx pattern for substituting new hash to middle group
-    pattern = r'(' + build_command_fields.rev + r'.+' + seps.sq + \
-        r')(\w+)(' + seps.sq + r')' # (rev.+')(\w+)(')
+    pattern = (
+        r"("
+        + build_command_fields.rev
+        + r".+"
+        + seps.sq
+        + r")(\w+)("
+        + seps.sq
+        + r")"
+    )  # (rev.+')(\w+)(')
     # Substitute new hash into middle group from RegEx search match
     sub_middle_group_file(get_toml_path(econia_root), pattern, new_hash)
+
 
 def update_genesis_parameters(
     utility_coin_usd_value: dec,
     utility_coin_decimals: int,
-    econia_root: str = seps.dot
+    econia_root: str = seps.dot,
 ):
     """Update genesis parameters in given ``incentives.move`` file
 
@@ -541,23 +537,25 @@ def update_genesis_parameters(
     """
     # Get incentives module absolute path
     abs_path = get_incentives_path(econia_root)
-    lines = Path(abs_path).read_text().splitlines() # Get file lines
-    found_block = False # Flag that scan is not yet in block
-    for i, line in enumerate(lines): # Scan over all lines in file
+    lines = Path(abs_path).read_text().splitlines()  # Get file lines
+    found_block = False  # Flag that scan is not yet in block
+    for i, line in enumerate(lines):  # Scan over all lines in file
         # If found first line of block:
         if line == params.doc_comment[:-1] and not found_block:
-            found_block = True # Mark block found
-            block_start_line = i # Mark block start line
+            found_block = True  # Mark block found
+            block_start_line = i  # Mark block start line
         # If out of block:
-        if found_block and line == '':
-            line_after_block = i # Mark line after block
-            break # Stop scan
+        if found_block and line == "":
+            line_after_block = i  # Mark line after block
+            break  # Stop scan
     # Substitute in generated constants block.
     lines[block_start_line:line_after_block] = generate_constants_block(
-        utility_coin_usd_value, utility_coin_decimals).splitlines()
+        utility_coin_usd_value, utility_coin_decimals
+    ).splitlines()
     Path(abs_path).write_text(seps.nl.join(lines))
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     """See module docstring for examples"""
 
     # Aliases
@@ -569,46 +567,50 @@ if __name__ == '__main__':
     genesis = build_command_fields.genesis
     action = sys.argv[1]
 
-    if action == generate: # Generate new dev account
-        econia_root = seps.dot # Assume in Econia root
-        if len(sys.argv) == 3: # If argument passed after action
+    if action == generate:  # Generate new dev account
+        econia_root = seps.dot  # Assume in Econia root
+        if len(sys.argv) == 3:  # If argument passed after action
             # Save it as relative path to Econia project root directory
             econia_root = sys.argv[2]
         gen_new_econia_dev_account(econia_root)
-    elif action == genesis: # Update genesis parameters
-        econia_root = seps.dot # Assume in Econia root
-        if (len(sys.argv) == 5): # If given 3 arguments
+    elif action == genesis:  # Update genesis parameters
+        econia_root = seps.dot  # Assume in Econia root
+        if len(sys.argv) == 5:  # If given 3 arguments
             # Save last as relative path to Econia project root
             # directory
             econia_root = sys.argv[4]
-        update_genesis_parameters( # Update genesis parameters
-            dec(str(sys.argv[2])), int(sys.argv[3]), econia_root)
-    elif action == print_keyfile_address: # If want keyfile address
+        update_genesis_parameters(  # Update genesis parameters
+            dec(str(sys.argv[2])), int(sys.argv[3]), econia_root
+        )
+    elif action == print_keyfile_address:  # If want keyfile address
         # Print address derived from hex seed in keyfile at relative
         # path
         print(Account(path=sys.argv[2]).address())
-    elif action == rev: # Substitute given hash into Move.toml rev
-        econia_root = seps.dot # Assume in Econia repo root
+    elif action == rev:  # Substitute given hash into Move.toml rev
+        econia_root = seps.dot  # Assume in Econia repo root
         # First argument after build command is new hash
         new_hash = sys.argv[2]
-        if len(sys.argv) == 4: # If given one optional argument
+        if len(sys.argv) == 4:  # If given one optional argument
             # It is relative path to Econia project root directory
             econia_root = sys.argv[3]
         # Substitute the given hash into Move.toml
         sub_rev_hash(new_hash, econia_root)
-    elif action == substitute: # Substitute Move.toml named address
-        econia_root = seps.dot # Assume in Econia repo root
-        if len(sys.argv) >= 3: # If given one optional argument
-            address = sys.argv[2] # It is the address to substitute
-            if len(sys.argv) == 4: # If given second optional argument
+    elif action == substitute:  # Substitute Move.toml named address
+        econia_root = seps.dot  # Assume in Econia repo root
+        if len(sys.argv) >= 3:  # If given one optional argument
+            address = sys.argv[2]  # It is the address to substitute
+            if len(sys.argv) == 4:  # If given second optional argument
                 # It is relative path to Econia project root directory
                 econia_root = sys.argv[3]
-            if address == seps.us: # If flagged for generic address
-                sub_named_toml_address(econia_root) # Substitute it
-            elif address == docgen: # If flagged for docgen address
+            if address == seps.us:  # If flagged for generic address
+                sub_named_toml_address(econia_root)  # Substitute it
+            elif address == docgen:  # If flagged for docgen address
                 # Sub docgen address
                 sub_named_toml_address(econia_root, generic=False)
-            else: # If actually given an address
+            else:  # If actually given an address
                 # Substitute it into Move.toml
-                sub_named_toml_address(econia_root, generic=False,
-                    named=hex_leader(normalized_hex(get_addr_bytes(address))))
+                sub_named_toml_address(
+                    econia_root,
+                    generic=False,
+                    named=hex_leader(normalized_hex(get_addr_bytes(address))),
+                )

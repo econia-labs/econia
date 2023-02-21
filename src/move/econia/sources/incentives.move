@@ -2345,7 +2345,7 @@ module econia::incentives {
     }
 
     #[test]
-    #[expected_failure(abort_code = 13)]
+    #[expected_failure(abort_code = E_NOT_ENOUGH_UTILITY_COINS)]
     /// Verify failure for not enough utility coins.
     fun test_deposit_utility_coins_verified_not_enough()
     acquires
@@ -2379,7 +2379,7 @@ module econia::incentives {
     }
 
     #[test(integrator = @user)]
-    #[expected_failure(abort_code = 23)]
+    #[expected_failure(abort_code = E_TIER_COST_NOT_INCREASE)]
     /// Verify expected failure for not an increase in tier cost.
     fun test_get_cost_to_upgrade_integrator_fee_store_not_increase(
         integrator: &signer
@@ -2413,7 +2413,7 @@ module econia::incentives {
     }
 
     #[test(integrator = @user)]
-    #[expected_failure(abort_code = 15)]
+    #[expected_failure(abort_code = E_NOT_AN_UPGRADE)]
     /// Verify expected failure for not an upgrade.
     fun test_get_cost_to_upgrade_integrator_fee_store_not_upgrade(
         integrator: &signer
@@ -2433,7 +2433,7 @@ module econia::incentives {
     }
 
     #[test]
-    #[expected_failure(abort_code = 22)]
+    #[expected_failure(abort_code = E_INVALID_TIER)]
     /// Verify failure for invalid tier number.
     fun test_get_fee_share_divisor_invalid_tier()
     acquires IncentiveParameters {
@@ -2445,7 +2445,7 @@ module econia::incentives {
     }
 
     #[test]
-    #[expected_failure(abort_code = 22)]
+    #[expected_failure(abort_code = E_INVALID_TIER)]
     fun test_get_tier_activation_fee_invalid_tier()
     acquires IncentiveParameters {
         init_test(); // Init for testing.
@@ -2456,7 +2456,7 @@ module econia::incentives {
     }
 
     #[test]
-    #[expected_failure(abort_code = 22)]
+    #[expected_failure(abort_code = E_INVALID_TIER)]
     fun test_get_tier_withdrawal_fee_invalid_tier()
     acquires IncentiveParameters {
         init_test(); // Init for testing.
@@ -2626,7 +2626,7 @@ module econia::incentives {
     }
 
     #[test(account = @user)]
-    #[expected_failure(abort_code = 1)]
+    #[expected_failure(abort_code = E_NOT_COIN)]
     /// Verify failure for attempting to initialize with non-coin type.
     fun test_init_utility_coin_store_not_coin(
         account: &signer
@@ -2636,11 +2636,11 @@ module econia::incentives {
     }
 
     #[test]
-    #[expected_failure(abort_code = 12345)]
+    #[expected_failure(abort_code = 12345, location = Self)]
     /// Verify failure for overflow.
     fun test_range_check_coin_merge() {
-        let target_coins = assets::mint_test<QC>(HI_64); // Mint coins
-        // Attempt invalid invocation
+        let target_coins = assets::mint_test<QC>(HI_64); // Mint coins.
+        // Attempt invalid invocation.
         range_check_coin_merge(1, &target_coins, 12345);
         assets::burn(target_coins); // Burn target coins.
     }
@@ -2788,7 +2788,7 @@ module econia::incentives {
     }
 
     #[test]
-    #[expected_failure(abort_code = 17)]
+    #[expected_failure(abort_code = E_FIRST_TIER_ACTIVATION_FEE_NONZERO)]
     /// Verify failure for nonzero activation fee on first tier.
     fun test_set_incentive_params_parse_tiers_vec_activate_0() {
         // Declare mock inputs.
@@ -2805,7 +2805,7 @@ module econia::incentives {
     }
 
     #[test]
-    #[expected_failure(abort_code = 9)]
+    #[expected_failure(abort_code = E_ACTIVATION_FEE_TOO_SMALL)]
     /// Verify failure for activation fee too small on 1st tier.
     fun test_set_incentive_params_parse_tiers_vec_activate_1() {
         // Declare mock inputs.
@@ -2829,7 +2829,7 @@ module econia::incentives {
     }
 
     #[test]
-    #[expected_failure(abort_code = 3)]
+    #[expected_failure(abort_code = E_FEE_SHARE_DIVISOR_TOO_BIG)]
     /// Verify failure for fee share divisor too big on 0th tier.
     fun test_set_incentive_params_parse_tiers_vec_divisor_big_0() {
         // Declare mock inputs.
@@ -2845,7 +2845,7 @@ module econia::incentives {
     }
 
     #[test]
-    #[expected_failure(abort_code = 3)]
+    #[expected_failure(abort_code = E_FEE_SHARE_DIVISOR_TOO_BIG)]
     /// Verify failure for fee share divisor too big on 1st tier.
     fun test_set_incentive_params_parse_tiers_vec_divisor_big_1() {
         // Declare mock inputs.
@@ -2868,7 +2868,7 @@ module econia::incentives {
     }
 
     #[test]
-    #[expected_failure(abort_code = 4)]
+    #[expected_failure(abort_code = E_FEE_SHARE_DIVISOR_TOO_SMALL)]
     /// Verify failure for fee share divisor too small.
     fun test_set_incentive_params_parse_tiers_vec_divisor_small() {
         // Declare mock inputs.
@@ -2886,7 +2886,7 @@ module econia::incentives {
     }
 
     #[test]
-    #[expected_failure(abort_code = 10)]
+    #[expected_failure(abort_code = E_WITHDRAWAL_FEE_TOO_BIG)]
     /// Verify failure for withdrawal fee too big on 0th tier.
     fun test_set_incentive_params_parse_tiers_vec_withdraw_big_0() {
         // Declare mock inputs.
@@ -2904,7 +2904,7 @@ module econia::incentives {
     }
 
     #[test]
-    #[expected_failure(abort_code = 10)]
+    #[expected_failure(abort_code = E_WITHDRAWAL_FEE_TOO_BIG)]
     /// Verify failure for withdrawal fee too big on 1st tier.
     fun test_set_incentive_params_parse_tiers_vec_withdraw_big_1() {
         // Declare mock inputs.
@@ -2927,7 +2927,7 @@ module econia::incentives {
     }
 
     #[test]
-    #[expected_failure(abort_code = 11)]
+    #[expected_failure(abort_code = E_WITHDRAWAL_FEE_TOO_SMALL)]
     /// Verify failure for withdrawal fee too small.
     fun test_set_incentive_params_parse_tiers_vec_withdraw_small() {
         // Declare mock inputs.
@@ -2945,7 +2945,7 @@ module econia::incentives {
     }
 
     #[test]
-    #[expected_failure(abort_code = 8)]
+    #[expected_failure(abort_code = E_TIER_FIELDS_WRONG_LENGTH)]
     /// Verify failure for wrong length of inner vector.
     fun test_set_incentive_params_parse_tiers_vec_wrong_length() {
         // Declare mock inputs.
@@ -2958,7 +2958,9 @@ module econia::incentives {
     }
 
     #[test(econia = @econia)]
-    #[expected_failure(abort_code = 6)]
+    #[expected_failure(
+        abort_code = E_CUSTODIAN_REGISTRATION_FEE_LESS_THAN_MIN
+    )]
     /// Verify failure for custodian registration fee too low.
     fun test_set_incentive_params_range_check_inputs_custodian_fee(
         econia: &signer
@@ -2969,7 +2971,7 @@ module econia::incentives {
     }
 
     #[test(econia = @econia)]
-    #[expected_failure(abort_code = 7)]
+    #[expected_failure(abort_code = E_TAKER_DIVISOR_LESS_THAN_MIN)]
     /// Verify failure for divisor too low.
     fun test_set_incentive_params_range_check_inputs_divisor(
         econia: &signer
@@ -2980,7 +2982,7 @@ module econia::incentives {
     }
 
     #[test(econia = @econia)]
-    #[expected_failure(abort_code = 5)]
+    #[expected_failure(abort_code = E_MARKET_REGISTRATION_FEE_LESS_THAN_MIN)]
     /// Verify failure for market registration fee too low.
     fun test_set_incentive_params_range_check_inputs_market_fee(
         econia: &signer
@@ -2991,7 +2993,7 @@ module econia::incentives {
     }
 
     #[test(account = @user)]
-    #[expected_failure(abort_code = 0)]
+    #[expected_failure(abort_code = E_NOT_ECONIA)]
     /// Verify failure for not Econia account.
     fun test_set_incentive_params_range_check_inputs_not_econia(
         account: &signer
@@ -3002,7 +3004,9 @@ module econia::incentives {
     }
 
     #[test(econia = @econia)]
-    #[expected_failure(abort_code = 18)]
+    #[expected_failure(
+        abort_code = E_UNDERWRITER_REGISTRATION_FEE_LESS_THAN_MIN
+    )]
     /// Verify failure for underwriter registration fee too low.
     fun test_set_incentive_params_range_check_inputs_underwriter(
         econia: &signer
@@ -3013,7 +3017,7 @@ module econia::incentives {
     }
 
     #[test(econia = @econia)]
-    #[expected_failure(abort_code = 2)]
+    #[expected_failure(abort_code = E_EMPTY_FEE_STORE_TIERS)]
     /// Verify failure for empty fee store tiers.
     fun test_set_incentive_params_range_check_inputs_vector_empty(
         econia: &signer
@@ -3024,7 +3028,7 @@ module econia::incentives {
     }
 
     #[test(econia = @econia)]
-    #[expected_failure(abort_code = 14)]
+    #[expected_failure(abort_code = E_TOO_MANY_TIERS)]
     /// Verify failure for too many elements in fee store tiers vector.
     fun test_set_incentive_params_range_check_inputs_vector_long(
         econia: &signer
@@ -3045,7 +3049,7 @@ module econia::incentives {
     }
 
     #[test(econia = @econia)]
-    #[expected_failure(abort_code = 16)]
+    #[expected_failure(abort_code = E_FEWER_TIERS)]
     /// Verify failure for attempting to update incentive parameters
     /// with fewer integrator fee store tiers than before.
     fun test_update_incentives_fewer_tiers(
@@ -3106,7 +3110,7 @@ module econia::incentives {
     }
 
     #[test]
-    #[expected_failure(abort_code = 12)]
+    #[expected_failure(abort_code = E_INVALID_UTILITY_COIN_TYPE)]
     /// Verify failure for wrong type.
     fun test_verify_utility_coin_type()
     acquires
@@ -3117,7 +3121,7 @@ module econia::incentives {
     }
 
     #[test(account = @user)]
-    #[expected_failure(abort_code = 0)]
+    #[expected_failure(abort_code = E_NOT_ECONIA)]
     /// Verify failure for account is not Econia.
     fun test_withdraw_econia_fees_all_not_econia(
         account: &signer
@@ -3130,7 +3134,7 @@ module econia::incentives {
     }
 
     #[test(account = @user)]
-    #[expected_failure(abort_code = 0)]
+    #[expected_failure(abort_code = E_NOT_ECONIA)]
     /// Verify failure for account is not Econia.
     fun test_withdraw_econia_fees_not_econia(
         account: &signer
@@ -3192,7 +3196,7 @@ module econia::incentives {
     }
 
     #[test(account = @user)]
-    #[expected_failure(abort_code = 0)]
+    #[expected_failure(abort_code = E_NOT_ECONIA)]
     /// Verify failure for account is not Econia.
     fun test_withdraw_utility_coins_all_not_econia(
         account: &signer
@@ -3205,7 +3209,7 @@ module econia::incentives {
     }
 
     #[test(account = @user)]
-    #[expected_failure(abort_code = 0)]
+    #[expected_failure(abort_code = E_NOT_ECONIA)]
     /// Verify failure for account is not Econia.
     fun test_withdraw_utility_coins_not_econia(
         account: &signer

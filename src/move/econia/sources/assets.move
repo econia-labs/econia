@@ -182,7 +182,7 @@ module econia::assets {
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test(econia = @econia)]
-    #[expected_failure(abort_code = 1)]
+    #[expected_failure(abort_code = E_HAS_CAPABILITIES)]
     /// Verify failure for capabilities already registered.
     fun test_init_has_caps(
         econia: &signer
@@ -192,7 +192,7 @@ module econia::assets {
     }
 
     #[test(account = @user)]
-    #[expected_failure(abort_code = 0)]
+    #[expected_failure(abort_code = E_NOT_ECONIA)]
     /// Verify failure for unauthorized caller.
     fun test_init_not_econia(
         account: &signer
@@ -215,7 +215,7 @@ module econia::assets {
     }
 
     #[test(account = @user)]
-    #[expected_failure(abort_code = 0)]
+    #[expected_failure(abort_code = E_NOT_ECONIA)]
     /// Verify failure for unauthorized caller.
     fun test_mint_not_econia(
         account: &signer

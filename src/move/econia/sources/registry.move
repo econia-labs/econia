@@ -1557,7 +1557,7 @@ module econia::registry {
     }
 
     #[test]
-    #[expected_failure(abort_code = 13)]
+    #[expected_failure(abort_code = E_INVALID_BASE)]
     /// Verify failure for invalid base asset.
     fun test_get_market_info_for_market_account_invalid_base()
     acquires Registry {
@@ -1585,7 +1585,7 @@ module econia::registry {
     }
 
     #[test]
-    #[expected_failure(abort_code = 12)]
+    #[expected_failure(abort_code = E_INVALID_MARKET_ID)]
     /// Verify failure for invalid market ID.
     fun test_get_market_info_for_market_account_invalid_market_id()
     acquires Registry {
@@ -1597,7 +1597,7 @@ module econia::registry {
     }
 
     #[test]
-    #[expected_failure(abort_code = 14)]
+    #[expected_failure(abort_code = E_INVALID_QUOTE)]
     /// Verify failure for invalid quote asset.
     fun test_get_market_info_for_market_account_invalid_quote()
     acquires Registry {
@@ -1649,7 +1649,7 @@ module econia::registry {
     }
 
     #[test]
-    #[expected_failure(abort_code = 10)]
+    #[expected_failure(abort_code = E_NO_RECOGNIZED_MARKET)]
     /// Verify failure for no recognized market.
     fun test_get_recognized_market_info_no_market()
     acquires RecognizedMarkets {
@@ -1724,7 +1724,7 @@ module econia::registry {
     }
 
     #[test(user = @user)]
-    #[expected_failure(abort_code = 12)]
+    #[expected_failure(abort_code = E_INVALID_MARKET_ID)]
     /// Verify failure for no such market ID.
     fun test_register_integrator_fee_store_invalid_market_id(
         user: &signer
@@ -1735,7 +1735,7 @@ module econia::registry {
     }
 
     #[test(user = @user)]
-    #[expected_failure(abort_code = 14)]
+    #[expected_failure(abort_code = E_INVALID_QUOTE)]
     /// Verify failure for invalid quote coin.
     fun test_register_integrator_fee_store_invalid_quote(
         user: &signer
@@ -1865,7 +1865,7 @@ module econia::registry {
     }
 
     #[test]
-    #[expected_failure(abort_code = 6)]
+    #[expected_failure(abort_code = E_BASE_NOT_COIN)]
     /// Verify failure for non-coin type.
     fun test_register_market_base_not_coin()
     acquires Registry {
@@ -1879,7 +1879,7 @@ module econia::registry {
     }
 
     #[test]
-    #[expected_failure(abort_code = 7)]
+    #[expected_failure(abort_code = E_GENERIC_TOO_FEW_CHARACTERS)]
     /// Verify failure for too few characters in generic asset name.
     fun test_register_market_generic_name_too_few()
     acquires Registry {
@@ -1900,7 +1900,7 @@ module econia::registry {
     }
 
     #[test]
-    #[expected_failure(abort_code = 8)]
+    #[expected_failure(abort_code = E_GENERIC_TOO_MANY_CHARACTERS)]
     /// Verify failure for too many characters in generic asset name.
     fun test_register_market_generic_name_too_many()
     acquires Registry {
@@ -1924,7 +1924,7 @@ module econia::registry {
     }
 
     #[test]
-    #[expected_failure(abort_code = 0)]
+    #[expected_failure(abort_code = E_LOT_SIZE_0)]
     /// Verify failure for lot size 0.
     fun test_register_market_lot_size_0()
     acquires Registry {
@@ -1939,7 +1939,7 @@ module econia::registry {
     }
 
     #[test]
-    #[expected_failure(abort_code = 2)]
+    #[expected_failure(abort_code = E_MIN_SIZE_0)]
     /// Verify failure for minimum size 0.
     fun test_register_market_min_size_0()
     acquires Registry {
@@ -1954,7 +1954,7 @@ module econia::registry {
     }
 
     #[test]
-    #[expected_failure(abort_code = 3)]
+    #[expected_failure(abort_code = E_QUOTE_NOT_COIN)]
     /// Verify failure for quote asset not coin.
     fun test_register_market_quote_not_coin()
     acquires Registry {
@@ -1969,7 +1969,7 @@ module econia::registry {
     }
 
     #[test]
-    #[expected_failure(abort_code = 5)]
+    #[expected_failure(abort_code = E_MARKET_REGISTERED)]
     /// Verify failure for market already registered.
     fun test_register_market_registered()
     acquires Registry {
@@ -1989,7 +1989,7 @@ module econia::registry {
     }
 
     #[test]
-    #[expected_failure(abort_code = 4)]
+    #[expected_failure(abort_code = E_BASE_QUOTE_SAME)]
     /// Verify failure for base and quote same coin type.
     fun test_register_market_same_type()
     acquires Registry {
@@ -2004,7 +2004,7 @@ module econia::registry {
     }
 
     #[test]
-    #[expected_failure(abort_code = 1)]
+    #[expected_failure(abort_code = E_TICK_SIZE_0)]
     /// Verify failure for tick size 0.
     fun test_register_market_tick_size_0()
     acquires Registry {
@@ -2019,7 +2019,7 @@ module econia::registry {
     }
 
     #[test(account = @econia)]
-    #[expected_failure(abort_code = 10)]
+    #[expected_failure(abort_code = E_NO_RECOGNIZED_MARKET)]
     /// Verify failure for market no recognized market.
     fun test_remove_recognized_market_no_recognized(
         account: &signer
@@ -2042,7 +2042,7 @@ module econia::registry {
     }
 
     #[test(account = @user)]
-    #[expected_failure(abort_code = 9)]
+    #[expected_failure(abort_code = E_NOT_ECONIA)]
     /// Verify failure for account is not Econia.
     fun test_remove_recognized_market_not_econia(
         account: &signer
@@ -2055,7 +2055,7 @@ module econia::registry {
     }
 
     #[test(account = @econia)]
-    #[expected_failure(abort_code = 11)]
+    #[expected_failure(abort_code = E_WRONG_RECOGNIZED_MARKET)]
     /// Verify failure for wrong recognized market.
     fun test_remove_recognized_market_wrong_market(
         account: &signer
@@ -2082,7 +2082,7 @@ module econia::registry {
     }
 
     #[test(account = @user)]
-    #[expected_failure(abort_code = 9)]
+    #[expected_failure(abort_code = E_NOT_ECONIA)]
     /// Verify failure for account is not Econia.
     fun test_set_recognized_market_not_econia(
         account: &signer

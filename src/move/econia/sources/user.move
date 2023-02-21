@@ -2609,7 +2609,7 @@ module econia::user {
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test]
-    #[expected_failure(abort_code = 15)]
+    #[expected_failure(abort_code = E_INVALID_MARKET_ORDER_ID)]
     /// Verify failure for market account ID mismatch.
     fun test_cancel_order_internal_invalid_market_order_id()
     acquires
@@ -2636,7 +2636,7 @@ module econia::user {
     }
 
     #[test]
-    #[expected_failure(abort_code = 19)]
+    #[expected_failure(abort_code = E_START_SIZE_MISMATCH)]
     /// Verify failure for start size mismatch.
     fun test_cancel_order_internal_start_size_mismatch()
     acquires
@@ -2749,7 +2749,7 @@ module econia::user {
     }
 
     #[test]
-    #[expected_failure(abort_code = 14)]
+    #[expected_failure(abort_code = E_CHANGE_ORDER_NO_CHANGE)]
     /// Verify failure for no change in size.
     fun test_change_order_size_internal_no_change()
     acquires
@@ -2776,7 +2776,7 @@ module econia::user {
     }
 
     #[test]
-    #[expected_failure(abort_code = 16)]
+    #[expected_failure(abort_code = E_COIN_AMOUNT_MISMATCH)]
     /// Verify failure for amount mismatch.
     fun test_deposit_asset_amount_mismatch()
     acquires
@@ -2798,7 +2798,7 @@ module econia::user {
     }
 
     #[test]
-    #[expected_failure(abort_code = 3)]
+    #[expected_failure(abort_code = E_NO_MARKET_ACCOUNT)]
     /// Verify failure for no market account.
     fun test_deposit_asset_no_account()
     acquires
@@ -2812,7 +2812,7 @@ module econia::user {
     }
 
     #[test]
-    #[expected_failure(abort_code = 2)]
+    #[expected_failure(abort_code = E_NO_MARKET_ACCOUNTS)]
     /// Verify failure for no market accounts.
     fun test_deposit_asset_no_accounts()
     acquires
@@ -2824,7 +2824,7 @@ module econia::user {
     }
 
     #[test]
-    #[expected_failure(abort_code = 4)]
+    #[expected_failure(abort_code = E_ASSET_NOT_IN_PAIR)]
     /// Verify failure for asset not in pair.
     fun test_deposit_asset_not_in_pair()
     acquires
@@ -2839,7 +2839,7 @@ module econia::user {
     }
 
     #[test]
-    #[expected_failure(abort_code = 5)]
+    #[expected_failure(abort_code = E_DEPOSIT_OVERFLOW_ASSET_CEILING)]
     /// Verify failure for ceiling overflow.
     fun test_deposit_asset_overflow()
     acquires
@@ -2861,7 +2861,7 @@ module econia::user {
     }
 
     #[test]
-    #[expected_failure(abort_code = 6)]
+    #[expected_failure(abort_code = E_INVALID_UNDERWRITER)]
     /// Verify failure for invalid underwriter.
     fun test_deposit_asset_underwriter()
     acquires
@@ -2880,7 +2880,7 @@ module econia::user {
     }
 
     #[test(econia = @econia)]
-    #[expected_failure(abort_code = 18)]
+    #[expected_failure(abort_code = E_COIN_TYPE_IS_GENERIC_ASSET)]
     /// Assert failure for coin type is generic asset.
     fun test_deposit_coins_generic(
         econia: &signer
@@ -3328,7 +3328,7 @@ module econia::user {
     }
 
     #[test]
-    #[expected_failure(abort_code = 19)]
+    #[expected_failure(abort_code = E_START_SIZE_MISMATCH)]
     /// Verify failure for start size mismatch. Based on
     /// `test_fill_order_internal_ask_complete_base_coin()`.
     fun test_fill_order_internal_start_size_mismatch()
@@ -3425,7 +3425,7 @@ module econia::user {
     }
 
     #[test]
-    #[expected_failure(abort_code = 3)]
+    #[expected_failure(abort_code = E_NO_MARKET_ACCOUNT)]
     /// Verify failure for no market account resource.
     fun test_get_active_market_order_ids_internal_no_account()
     acquires
@@ -3440,7 +3440,7 @@ module econia::user {
     }
 
     #[test]
-    #[expected_failure(abort_code = 2)]
+    #[expected_failure(abort_code = E_NO_MARKET_ACCOUNTS)]
     /// Verify failure for no market accounts resource.
     fun test_get_active_market_order_ids_internal_no_accounts()
     acquires MarketAccounts {
@@ -3454,7 +3454,7 @@ module econia::user {
     fun test_get_ASK() {assert!(get_ASK() == ASK, 0)}
 
     #[test]
-    #[expected_failure(abort_code = 3)]
+    #[expected_failure(abort_code = E_NO_MARKET_ACCOUNT)]
     /// Verify failure for no market account resource.
     fun test_get_asset_counts_internal_no_account()
     acquires
@@ -3468,7 +3468,7 @@ module econia::user {
     }
 
     #[test]
-    #[expected_failure(abort_code = 2)]
+    #[expected_failure(abort_code = E_NO_MARKET_ACCOUNTS)]
     /// Verify failure for no market accounts resource.
     fun test_get_asset_counts_internal_no_accounts()
     acquires MarketAccounts {
@@ -3481,7 +3481,7 @@ module econia::user {
     fun test_get_BID() {assert!(get_BID() == BID, 0)}
 
     #[test]
-    #[expected_failure(abort_code = 3)]
+    #[expected_failure(abort_code = E_NO_MARKET_ACCOUNT)]
     /// Verify failure for no market account resource.
     fun test_get_market_account_market_info_no_account()
     acquires
@@ -3495,7 +3495,7 @@ module econia::user {
     }
 
     #[test]
-    #[expected_failure(abort_code = 2)]
+    #[expected_failure(abort_code = E_NO_MARKET_ACCOUNTS)]
     /// Verify failure for no market accounts resource.
     fun test_get_market_account_market_info_no_accounts()
     acquires MarketAccounts {
@@ -3504,7 +3504,7 @@ module econia::user {
     }
 
     #[test]
-    #[expected_failure(abort_code = 3)]
+    #[expected_failure(abort_code = E_NO_MARKET_ACCOUNT)]
     /// Verify failure for no market account.
     fun test_get_next_order_access_key_internal_no_account()
     acquires
@@ -3518,7 +3518,7 @@ module econia::user {
     }
 
     #[test]
-    #[expected_failure(abort_code = 2)]
+    #[expected_failure(abort_code = E_NO_MARKET_ACCOUNTS)]
     /// Verify failure for no market accounts.
     fun test_get_next_order_access_key_internal_no_accounts()
     acquires MarketAccounts {
@@ -3895,7 +3895,7 @@ module econia::user {
     }
 
     #[test]
-    #[expected_failure(abort_code = 17)]
+    #[expected_failure(abort_code = E_ACCESS_KEY_MISMATCH)]
     /// Verify failure for access key mismatch.
     fun test_place_order_internal_access_key_mismatch()
     acquires
@@ -3923,7 +3923,7 @@ module econia::user {
                              size, price, market_order_id, 2);
     }
     #[test]
-    #[expected_failure(abort_code = 12)]
+    #[expected_failure(abort_code = E_OVERFLOW_ASSET_IN)]
     /// Verify failure for overflowed inbound asset.
     fun test_place_order_internal_in_overflow()
     acquires
@@ -3952,7 +3952,7 @@ module econia::user {
     }
 
     #[test]
-    #[expected_failure(abort_code = 13)]
+    #[expected_failure(abort_code = E_NOT_ENOUGH_ASSET_OUT)]
     /// Verify failure for underflowed outbound asset.
     fun test_place_order_internal_out_underflow()
     acquires
@@ -3971,7 +3971,7 @@ module econia::user {
     }
 
     #[test]
-    #[expected_failure(abort_code = 8)]
+    #[expected_failure(abort_code = E_PRICE_0)]
     /// Verify failure for price 0.
     fun test_place_order_internal_price_0()
     acquires
@@ -3988,7 +3988,7 @@ module econia::user {
     }
 
     #[test]
-    #[expected_failure(abort_code = 9)]
+    #[expected_failure(abort_code = E_PRICE_TOO_HIGH)]
     /// Verify failure for price too high.
     fun test_place_order_internal_price_hi()
     acquires
@@ -4005,7 +4005,7 @@ module econia::user {
     }
 
     #[test]
-    #[expected_failure(abort_code = 10)]
+    #[expected_failure(abort_code = E_SIZE_TOO_LOW)]
     /// Verify failure for size too low.
     fun test_place_order_internal_size_lo()
     acquires
@@ -4024,7 +4024,7 @@ module econia::user {
     }
 
     #[test]
-    #[expected_failure(abort_code = 11)]
+    #[expected_failure(abort_code = E_TICKS_OVERFLOW)]
     /// Verify failure for overflowed ticks.
     fun test_place_order_internal_ticks_overflow()
     acquires
@@ -4043,7 +4043,7 @@ module econia::user {
     }
 
     #[test(user = @user)]
-    #[expected_failure(abort_code = 0)]
+    #[expected_failure(abort_code = E_EXISTS_MARKET_ACCOUNT)]
     /// Verify failure for market account already exists.
     fun test_register_market_account_account_entries_exists(
         user: &signer
@@ -4063,7 +4063,7 @@ module econia::user {
     }
 
     #[test(user = @user)]
-    #[expected_failure(abort_code = 1)]
+    #[expected_failure(abort_code = E_UNREGISTERED_CUSTODIAN)]
     /// Verify failure for unregistered custodian.
     fun test_register_market_account_unregistered_custodian(
         user: &signer
@@ -4262,7 +4262,7 @@ module econia::user {
     }
 
     #[test]
-    #[expected_failure(abort_code = 3)]
+    #[expected_failure(abort_code = E_NO_MARKET_ACCOUNT)]
     /// Verify failure for no market account.
     fun test_withdraw_asset_no_account()
     acquires
@@ -4276,7 +4276,7 @@ module econia::user {
     }
 
     #[test(user = @user)]
-    #[expected_failure(abort_code = 2)]
+    #[expected_failure(abort_code = E_NO_MARKET_ACCOUNTS)]
     /// Verify failure for no market accounts.
     fun test_withdraw_asset_no_accounts(
         user: &signer
@@ -4289,7 +4289,7 @@ module econia::user {
     }
 
     #[test]
-    #[expected_failure(abort_code = 4)]
+    #[expected_failure(abort_code = E_ASSET_NOT_IN_PAIR)]
     /// Verify failure for asset not in pair.
     fun test_withdraw_asset_not_in_pair()
     acquires
@@ -4303,7 +4303,7 @@ module econia::user {
     }
 
     #[test]
-    #[expected_failure(abort_code = 7)]
+    #[expected_failure(abort_code = E_WITHDRAW_TOO_LITTLE_AVAILABLE)]
     /// Verify failure for not enough asset available to withdraw.
     fun test_withdraw_asset_underflow()
     acquires
@@ -4317,7 +4317,7 @@ module econia::user {
     }
 
     #[test]
-    #[expected_failure(abort_code = 6)]
+    #[expected_failure(abort_code = E_INVALID_UNDERWRITER)]
     /// Verify failure for invalid underwriter.
     fun test_withdraw_asset_underwriter()
     acquires

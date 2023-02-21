@@ -5578,7 +5578,7 @@ module econia::avl_queue {
     }
 
     #[test]
-    #[expected_failure(abort_code = 2)]
+    #[expected_failure(abort_code = E_INSERTION_KEY_TOO_LARGE)]
     /// Verify failure for insertion key too big.
     fun test_has_key_too_big() {
         let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
@@ -5851,7 +5851,7 @@ module econia::avl_queue {
     }
 
     #[test]
-    #[expected_failure(abort_code = 5)]
+    #[expected_failure(abort_code = E_INVALID_HEIGHT)]
     /// Verify failure for invalid height.
     fun test_insert_check_eviction_invalid_height() {
         let avlq = new<u8>(ASCENDING, 0, 0); // Initialize AVL queue.
@@ -6034,7 +6034,7 @@ module econia::avl_queue {
     }
 
     #[test]
-    #[expected_failure(abort_code = 3)]
+    #[expected_failure(abort_code = E_EVICT_EMPTY)]
     /// Verify failure for insertion with eviction from empty AVL queue.
     fun test_insert_evict_tail_empty() {
         let avlq = new(ASCENDING, 0, 0); // Init AVL queue.
@@ -6044,7 +6044,7 @@ module econia::avl_queue {
     }
 
     #[test]
-    #[expected_failure(abort_code = 4)]
+    #[expected_failure(abort_code = E_EVICT_NEW_TAIL)]
     /// Verify failure for insertion with eviction for key-value
     /// insertion pair that would become tail.
     fun test_insert_evict_tail_new_tail_ascending() {
@@ -6057,7 +6057,7 @@ module econia::avl_queue {
     }
 
     #[test]
-    #[expected_failure(abort_code = 4)]
+    #[expected_failure(abort_code = E_EVICT_NEW_TAIL)]
     /// Verify failure for insertion with eviction for key-value
     /// insertion pair that would become tail.
     fun test_insert_evict_tail_new_tail_descending() {
@@ -6070,7 +6070,7 @@ module econia::avl_queue {
     }
 
     #[test]
-    #[expected_failure(abort_code = 2)]
+    #[expected_failure(abort_code = E_INSERTION_KEY_TOO_LARGE)]
     /// Verify failure for insertion key too large.
     fun test_insert_insertion_key_too_large() {
         let avlq = new(ASCENDING, 0, 0); // Init AVL queue.
@@ -6233,7 +6233,7 @@ module econia::avl_queue {
     }
 
     #[test]
-    #[expected_failure(abort_code = 1)]
+    #[expected_failure(abort_code = E_TOO_MANY_LIST_NODES)]
     /// Assert failure for too many list nodes.
     fun test_insert_too_many_list_nodes() {
         // Init AVL queue with max list nodes allocated.
@@ -6473,7 +6473,7 @@ module econia::avl_queue {
     }
 
     #[test]
-    #[expected_failure(abort_code = 1)]
+    #[expected_failure(abort_code = E_TOO_MANY_LIST_NODES)]
     /// Verify failure for attempting to allocate too many list nodes.
     fun test_new_too_many_list_nodes() {
         // Attempt invalid invocation.
@@ -6482,7 +6482,7 @@ module econia::avl_queue {
     }
 
     #[test]
-    #[expected_failure(abort_code = 0)]
+    #[expected_failure(abort_code = E_TOO_MANY_TREE_NODES)]
     /// Verify failure for attempting to allocate too many tree nodes.
     fun test_new_too_many_tree_nodes() {
         // Attempt invalid invocation.
@@ -8806,7 +8806,7 @@ module econia::avl_queue {
     }
 
     #[test]
-    #[expected_failure(abort_code = 100)]
+    #[expected_failure(abort_code = E_BIT_NOT_0_OR_1)]
     /// Verify failure for non-binary-representative byte string.
     fun test_u_128_failure() {u_128(b"2");}
 
@@ -8866,7 +8866,7 @@ module econia::avl_queue {
     }
 
     #[test]
-    #[expected_failure(abort_code = 2)]
+    #[expected_failure(abort_code = E_INSERTION_KEY_TOO_LARGE)]
     /// Verify failure for insertion key too large.
     fun test_would_update_head_too_big() {
         let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
@@ -8876,7 +8876,7 @@ module econia::avl_queue {
     }
 
     #[test]
-    #[expected_failure(abort_code = 2)]
+    #[expected_failure(abort_code = E_INSERTION_KEY_TOO_LARGE)]
     /// Verify failure for insertion key too large.
     fun test_would_update_tail_too_big() {
         let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.

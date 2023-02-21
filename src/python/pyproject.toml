@@ -1,10 +1,11 @@
 [tool.poetry]
 name = "econia"
-version = "0.1.0"
+version = "1.0.0"
 description = "Econia"
 authors = ["Econia Labs"]
 
 [tool.poetry.dependencies]
+aptos-sdk = "^0.5.1"
 python = "^3.9"
 pandas = "^1.5.3"
 jupyter = "^1.0.0"

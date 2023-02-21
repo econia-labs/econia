@@ -260,7 +260,7 @@ def percent_to_divisor(percent: Decimal) -> int:
 # Parser >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 parser = argparse.ArgumentParser(
-    description="""Assorted incentive parameter operations.""",
+    description="Assorted incentive parameter operations.",
 )
 subparsers = parser.add_subparsers(required=True)
 
@@ -271,7 +271,7 @@ def update_incentive_parameters(args):
     found_block = False  # Flag that scan is not yet in block.
     # Get constants block delimiter.
     delimiter = DOC_COMMENT if args.genesis_parameters else BLOCK_COMMENT
-    for i, line in enumerate(lines):  # Scan over lines in file.
+    for i, line in enumerate(lines):  # Scan over lines in file:
         # If found first line of block:
         if line == delimiter and not found_block:
             found_block = True  # Mark block found.
@@ -291,13 +291,13 @@ def update_incentive_parameters(args):
 
 # Update subcommand parser.
 parser_update = subparsers.add_parser(
-    name="genesis",
-    aliases=["g"],
-    description="Update genesis parameters in Move package.",
-    help="Update genesis parameters.",
+    name="update",
+    aliases=["u"],
+    description="Update update incentive parameters in Move file.",
+    help="Update incentive parameters.",
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter,
 )
 parser_update.set_defaults(func=update_incentive_parameters)
-
 parser_update.add_argument(
     "path",
     type=Path,

@@ -1,17 +1,17 @@
 [package]
-name = 'Econia'
-version = '4.0.0' # Per SemVer.
-upgrade_policy = 'compatible'
+name = "Econia"
+version = "4.0.0" # Per SemVer.
+upgrade_policy = "compatible"
 
 [addresses]
-econia = '_'
+econia = "_"
 # Mock addresses for testing.
-user = '0x1234'
-user_0 = '0x2345'
-user_1 = '0x3456'
-integrator = '0x4567'
+user = "0x1234"
+user_0 = "0x2345"
+user_1 = "0x3456"
+integrator = "0x4567"
 
 [dependencies.AptosFramework]
-git = 'https://github.com/aptos-labs/aptos-core.git'
-subdir = 'aptos-move/framework/aptos-framework'
-rev = 'mainnet'
+git = "https://github.com/aptos-labs/aptos-core.git"
+subdir = "aptos-move/framework/aptos-framework"
+rev = "mainnet"

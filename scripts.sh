@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
 # URL to download homebrew.
 brew_url="https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh"
 
@@ -8,6 +10,8 @@ move_dir="src/move/econia/"
 
 # Python package directory.
 python_dir="src/python/"
+
+# Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 # Helper functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -63,6 +67,11 @@ case "$1" in
         echo "Formatting shell scripts" # Print notice.
         # Recursively format scripts.
         shfmt --list --write --simplify --case-indent --indent 4 .
+        ;;
+
+    # Print invalid option.
+    *)
+        echo invalid
         ;;
 
 esac

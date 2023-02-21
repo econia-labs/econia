@@ -389,7 +389,7 @@ module econia::tablist {
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test]
-    #[expected_failure(abort_code = 0)]
+    #[expected_failure(abort_code = E_DESTROY_NOT_EMPTY)]
     /// Verify failure for non-empty tablist destruction.
     fun test_destroy_empty_not_empty() {destroy_empty(singleton(0, 0));}
 

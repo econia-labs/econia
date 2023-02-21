@@ -3909,7 +3909,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 23)]
+    #[expected_failure(abort_code = E_INVALID_CUSTODIAN)]
     /// Verify failure for invalid custodian.
     fun test_cancel_order_invalid_custodian()
     acquires OrderBooks {
@@ -3950,7 +3950,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 6)]
+    #[expected_failure(abort_code = E_INVALID_MARKET_ID)]
     /// Verify failure for invalid market ID.
     fun test_cancel_order_invalid_market_id()
     acquires OrderBooks {
@@ -3965,7 +3965,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 22)]
+    #[expected_failure(abort_code = E_INVALID_MARKET_ORDER_ID)]
     /// Verify failure for invalid bogus market order ID.
     fun test_cancel_order_invalid_market_order_id_bogus()
     acquires OrderBooks {
@@ -3980,7 +3980,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 22)]
+    #[expected_failure(abort_code = E_INVALID_MARKET_ORDER_ID)]
     /// Verify failure for invalid market order ID passed as `NIL`.
     fun test_cancel_order_invalid_market_order_id_null()
     acquires OrderBooks {
@@ -3995,7 +3995,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 24)]
+    #[expected_failure(abort_code = E_INVALID_USER)]
     /// Verify failure for invalid user.
     fun test_cancel_order_invalid_user()
     acquires OrderBooks {
@@ -4182,7 +4182,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 23)]
+    #[expected_failure(abort_code = E_INVALID_CUSTODIAN)]
     /// Verify failure for invalid custodian.
     fun test_change_order_size_invalid_custodian()
     acquires OrderBooks {
@@ -4224,7 +4224,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 6)]
+    #[expected_failure(abort_code = E_INVALID_MARKET_ID)]
     /// Verify failure for invalid market ID.
     fun test_change_order_size_invalid_market_id()
     acquires OrderBooks {
@@ -4240,7 +4240,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 22)]
+    #[expected_failure(abort_code = E_INVALID_MARKET_ORDER_ID)]
     /// Verify failure for invalid bogus market order ID.
     fun test_change_order_size_invalid_market_order_id_bogus()
     acquires OrderBooks {
@@ -4256,7 +4256,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 22)]
+    #[expected_failure(abort_code = E_INVALID_MARKET_ORDER_ID)]
     /// Verify failure for invalid market order ID passed as `NIL`.
     fun test_change_order_size_invalid_market_order_id_null()
     acquires OrderBooks {
@@ -4272,7 +4272,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 24)]
+    #[expected_failure(abort_code = E_INVALID_USER)]
     /// Verify failure for invalid user.
     fun test_change_order_size_invalid_user()
     acquires OrderBooks {
@@ -4518,7 +4518,7 @@ module econia::market {
     }
 
     #[test(account = @user)]
-    #[expected_failure(abort_code = 27)]
+    #[expected_failure(abort_code = E_NOT_SIMULATION_ACCOUNT)]
     /// Verify failure for invalid account.
     fun test_index_orders_sdk_not_sim_account(
         account: &signer
@@ -5086,7 +5086,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 9)]
+    #[expected_failure(abort_code = E_MIN_BASE_NOT_TRADED)]
     /// Verify failure for minimum base amount not traded.
     fun test_match_min_base_not_traded()
     acquires OrderBooks {
@@ -5115,7 +5115,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 10)]
+    #[expected_failure(abort_code = E_MIN_QUOTE_NOT_TRADED)]
     /// Verify failure for minimum quote amount not traded.
     fun test_match_min_quote_not_traded()
     acquires OrderBooks {
@@ -5606,7 +5606,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 26)]
+    #[expected_failure(abort_code = E_HEAD_KEY_PRICE_MISMATCH)]
     /// Verify failure for price mismatch between order and AVL queue
     /// head key. Test setup based on `test_match_fill_size_0()`
     fun test_match_price_mismatch()
@@ -5675,7 +5675,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 12)]
+    #[expected_failure(abort_code = E_PRICE_TOO_HIGH)]
     /// Verify failure for price too high.
     fun test_match_price_too_high()
     acquires OrderBooks {
@@ -5704,7 +5704,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 19)]
+    #[expected_failure(abort_code = E_SELF_MATCH)]
     /// Verify failure for self match with abort behavior.
     fun test_match_self_match_abort()
     acquires OrderBooks {
@@ -6123,7 +6123,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 28)]
+    #[expected_failure(abort_code = E_INVALID_SELF_MATCH_BEHAVIOR)]
     /// Verify failure for self match with invalid abort behavior.
     fun test_match_self_match_invalid()
     acquires OrderBooks {
@@ -6166,7 +6166,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 15)]
+    #[expected_failure(abort_code = E_SIZE_BASE_OVERFLOW)]
     /// Verify failure for base overflow.
     fun test_place_limit_order_base_overflow()
     acquires OrderBooks {
@@ -6983,7 +6983,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 25)]
+    #[expected_failure(abort_code = E_FILL_OR_ABORT_NOT_CROSS_SPREAD)]
     /// Verify failure for not crossing spread when fill-or-abort.
     fun test_place_limit_order_fill_or_abort_not_cross()
     acquires OrderBooks {
@@ -7007,7 +7007,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 9)]
+    #[expected_failure(abort_code = E_MIN_BASE_NOT_TRADED)]
     /// Verify failure for not filling completely across spread when
     /// fill-or-abort.
     fun test_place_limit_order_fill_or_abort_partial()
@@ -7040,7 +7040,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 7)]
+    #[expected_failure(abort_code = E_INVALID_BASE)]
     /// Verify failure for invalid base type argument.
     fun test_place_limit_order_invalid_base()
     acquires OrderBooks {
@@ -7064,7 +7064,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 8)]
+    #[expected_failure(abort_code = E_INVALID_QUOTE)]
     /// Verify failure for invalid quote type argument.
     fun test_place_limit_order_invalid_quote()
     acquires OrderBooks {
@@ -7088,7 +7088,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 18)]
+    #[expected_failure(abort_code = E_INVALID_RESTRICTION)]
     /// Verify failure for invalid restriction.
     fun test_place_limit_order_invalid_restriction()
     acquires OrderBooks {
@@ -7262,7 +7262,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 11)]
+    #[expected_failure(abort_code = E_PRICE_0)]
     /// Verify failure for invalid price.
     fun test_place_limit_order_no_price()
     acquires OrderBooks {
@@ -7279,7 +7279,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 7)]
+    #[expected_failure(abort_code = E_INVALID_BASE)]
     /// Verify failure for invalid base type argument.
     fun test_place_limit_order_passive_advance_invalid_base()
     acquires OrderBooks {
@@ -7299,7 +7299,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 6)]
+    #[expected_failure(abort_code = E_INVALID_MARKET_ID)]
     /// Verify failure for invalid market ID.
     fun test_place_limit_order_passive_advance_invalid_market_id()
     acquires OrderBooks {
@@ -7319,7 +7319,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 29)]
+    #[expected_failure(abort_code = E_INVALID_PERCENT)]
     /// Verify failure for invalid percent
     fun test_place_limit_order_passive_advance_invalid_percent()
     acquires OrderBooks {
@@ -7341,7 +7341,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 8)]
+    #[expected_failure(abort_code = E_INVALID_QUOTE)]
     /// Verify failure for invalid quote type argument.
     fun test_place_limit_order_passive_advance_invalid_quote()
     acquires OrderBooks {
@@ -7650,7 +7650,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 13)]
+    #[expected_failure(abort_code = E_POST_OR_ABORT_CROSSES_SPREAD)]
     /// Verify failure for not crossing spread as post-or-abort.
     fun test_place_limit_order_post_or_abort_crosses()
     acquires OrderBooks {
@@ -7682,7 +7682,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 12)]
+    #[expected_failure(abort_code = E_PRICE_TOO_HIGH)]
     /// Verify failure for invalid price.
     fun test_place_limit_order_price_hi()
     acquires OrderBooks {
@@ -7699,7 +7699,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 20)]
+    #[expected_failure(abort_code = E_PRICE_TIME_PRIORITY_TOO_LOW)]
     /// Verify failure for unable to insert to AVL queue. Modeled off
     /// `test_place_limit_order_evict()`.
     fun test_place_limit_order_price_time_priority_low()
@@ -7747,7 +7747,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 17)]
+    #[expected_failure(abort_code = E_SIZE_PRICE_QUOTE_OVERFLOW)]
     /// Verify failure for quote overflow.
     fun test_place_limit_order_quote_overflow()
     acquires OrderBooks {
@@ -7766,7 +7766,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 14)]
+    #[expected_failure(abort_code = E_SIZE_TOO_SMALL)]
     /// Verify failure for invalid size.
     fun test_place_limit_order_size_lo()
     acquires OrderBooks {
@@ -8025,7 +8025,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 16)]
+    #[expected_failure(abort_code = E_SIZE_PRICE_TICKS_OVERFLOW)]
     /// Verify failure for ticks overflow.
     fun test_place_limit_order_ticks_overflow()
     acquires OrderBooks {
@@ -8105,7 +8105,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 7)]
+    #[expected_failure(abort_code = E_INVALID_BASE)]
     /// Verify failure for invalid base type argument.
     fun test_place_market_order_invalid_base()
     acquires OrderBooks {
@@ -8131,7 +8131,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 8)]
+    #[expected_failure(abort_code = E_INVALID_QUOTE)]
     /// Verify failure for invalid quote type argument.
     fun test_place_market_order_invalid_quote()
     acquires OrderBooks {
@@ -8672,7 +8672,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 4)]
+    #[expected_failure(abort_code = E_OVERFLOW_ASSET_IN)]
     /// Verify failure for overflowing asset in for a buy.
     fun test_range_check_trade_asset_in_buy() {
         // Declare inputs.
@@ -8692,7 +8692,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 4)]
+    #[expected_failure(abort_code = E_OVERFLOW_ASSET_IN)]
     /// Verify failure for overflowing asset in for a sell.
     fun test_range_check_trade_asset_in_sell() {
         // Declare inputs.
@@ -8712,7 +8712,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 5)]
+    #[expected_failure(abort_code = E_NOT_ENOUGH_ASSET_OUT)]
     /// Verify failure for underflowing asset out for a buy.
     fun test_range_check_trade_asset_out_buy() {
         // Declare inputs.
@@ -8732,7 +8732,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 5)]
+    #[expected_failure(abort_code = E_NOT_ENOUGH_ASSET_OUT)]
     /// Verify failure for underflowing asset out for a sell.
     fun test_range_check_trade_asset_out_sell() {
         // Declare inputs.
@@ -8752,7 +8752,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 0)]
+    #[expected_failure(abort_code = E_MAX_BASE_0)]
     /// Verify failure for max base specified as 0.
     fun test_range_check_trade_base_0() {
         // Declare inputs.
@@ -8772,7 +8772,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 2)]
+    #[expected_failure(abort_code = E_MIN_BASE_EXCEEDS_MAX)]
     /// Verify failure for min base exceeds max
     fun test_range_check_trade_min_base_exceeds_max() {
         // Declare inputs.
@@ -8792,7 +8792,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 3)]
+    #[expected_failure(abort_code = E_MIN_QUOTE_EXCEEDS_MAX)]
     /// Verify failure for min quote exceeds max
     fun test_range_check_trade_min_quote_exceeds_max() {
         // Declare inputs.
@@ -8812,7 +8812,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 1)]
+    #[expected_failure(abort_code = E_MAX_QUOTE_0)]
     /// Verify failure for max quote specified as 0.
     fun test_range_check_trade_quote_0() {
         // Declare inputs.
@@ -10674,7 +10674,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 7)]
+    #[expected_failure(abort_code = E_INVALID_BASE)]
     /// Verify failure for invalid base type.
     fun test_swap_invalid_base()
     acquires OrderBooks {
@@ -10701,7 +10701,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 6)]
+    #[expected_failure(abort_code = E_INVALID_MARKET_ID)]
     /// Verify failure for invalid market ID.
     fun test_swap_invalid_market_id()
     acquires OrderBooks {
@@ -10728,7 +10728,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 8)]
+    #[expected_failure(abort_code = E_INVALID_QUOTE)]
     /// Verify failure for invalid quote type.
     fun test_swap_invalid_quote()
     acquires OrderBooks {
@@ -10755,7 +10755,7 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = 21)]
+    #[expected_failure(abort_code = E_INVALID_UNDERWRITER)]
     /// Verify failure for invalid underwriter.
     fun test_swap_invalid_underwriter()
     acquires OrderBooks {

@@ -27,9 +27,9 @@ def print_auth_key(args):
     # Get authentication key without hex prefix.
     auth_key = account.account_address.address.hex()
     # Print notice of secret file path.
-    print(f"Secret file:\n {os.path.abspath(secret_file)}")
+    print(f"Secret file:\n{os.path.abspath(secret_file)}")
     # Print notice of authentication key.
-    print(f"Authentication key:\n {auth_key}")
+    print(f"Authentication key:\n{auth_key}")
 
 
 # Authentication key subcommand parser.
@@ -71,7 +71,7 @@ def generate_secret_file(args):
     # Write private key hex to file.
     file_path.write_text(account.private_key.key.encode().hex())
     # Print notice.
-    print(f"New account secret file:\n {os.path.abspath(file_path)}")
+    print(f"New account secret file:\n{os.path.abspath(file_path)}")
 
 
 # Generate subcommand parser.

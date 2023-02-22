@@ -2,14 +2,14 @@
 
 # Constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-# Econia package root directory.
-econia_root="../../"
+# Econia repository root directory.
+repo_root="../../"
 
 # Move package directory.
-move_dir=$econia_root"src/move/econia/"
+move_dir=$repo_root"src/move/econia/"
 
 # Secrets directory.
-secrets_dir=$econia_root".secrets/"
+secrets_dir=$repo_root".secrets/"
 
 # Governance script path.
 governance_script=$move_dir"scripts/govern.move"
@@ -29,7 +29,8 @@ case "$1" in
     # Format code.
     f)
         echo "Formatting code"
-        # Find all files ending in .py, pass to autoflake command.
+        # Find all files ending in .py, pass to autoflake command (remove
+        # unused imports and variables).
         find . -name "*.py" | xargs \
             poetry run autoflake \
             --in-place \
@@ -57,9 +58,9 @@ case "$1" in
             $secrets_dir"temporary"
         ;;
 
-    # Go to Econia root.
-    er)
-        cd $econia_root
+    # Go to Econia repository root.
+    rr)
+        cd $repo_root
         echo "Now at $(pwd)"
         ;;
 
@@ -81,7 +82,7 @@ case "$1" in
 
     # Update named address in manifest.
     na)
-        echo "Updating named address" # Print notice.
+        echo "Updating Move.toml named address to $2" # Print notice.
         # Run manifest address setter command, passing remaining arguments.
         poetry run python -m econia.manifest address \
             $manifest "${@:2}"
@@ -111,7 +112,7 @@ case "$1" in
 
     # Print invalid option.
     *)
-        echo invalid
+        echo Invalid
         ;;
 
 esac

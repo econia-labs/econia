@@ -1,15 +1,21 @@
 #!/bin/bash
 
+# This file contains assorted developer scripts for common workflows. It calls
+# on the Econia Python package using the poetry package manager. Poetry only
+# allows for the instantiation of a virtual environment from inside a
+# directory containing a pyproject.toml file. Hence the commands to go to the
+# Python directory and back any time a Python script must be invoked.
+
 # Constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 # URL to download homebrew.
 brew_url="https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh"
 
+# DocGen address name.
+docgen_address="0xc0deb00c"
+
 # Move package directory.
 move_dir="src/move/econia/"
-
-# Manifest path.
-manifest=$move_dir"Move.toml"
 
 # Python directory.
 python_dir="src/python/"
@@ -20,8 +26,14 @@ python_dir_inverse="../../"
 # Secrets directory.
 secrets_dir=".secrets/"
 
-# DocGen address name.
-docgen_address="0xc0deb00c"
+# Manifest path.
+manifest=$move_dir"Move.toml"
+
+# Incentives Move module path.
+incentives_module=$move_dir"sources/incentives.move"
+
+# Governance script path.
+governance_script=$move_dir"scripts/govern.move"
 
 # Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -36,23 +48,6 @@ function brew_install {
         echo "Brew installing $package"   # Print installation notice.
         brew install $package             # Install package.
     fi
-}
-
-# Substiute econia named address.
-function set_econia_address {
-    address=$1     # Get address.
-    cd $python_dir # Navigate to Python package directory.
-    # Set address.
-    poetry run python -m econia.manifest address \
-        $python_dir_inverse$manifest \
-        $address
-    cd $python_dir_inverse # Go back to repository root.
-}
-
-# Build Move documentation.
-function build_move_docs {
-    set_econia_address $docgen_address
-    aptos move document --include-impl --package-dir $move_dir "$@"
 }
 
 # Generate temporary account.
@@ -75,22 +70,52 @@ function print_auth_key_message {
     cd $python_dir_inverse # Go back to repository root.
 }
 
+# Substiute econia named address.
+function set_econia_address {
+    address=$1 # Get address.
+    ## If address flagged as temporary or persistent type:
+    if [[ $address == temporary || $address == persistent ]]; then
+        # Extract authentication key from auth key message (4th line).
+        address=$(print_auth_key_message $address | sed -n '4 p')
+    fi             # Address now reassigned.
+    cd $python_dir # Navigate to Python package directory.
+    # Set address.
+    poetry run python -m econia.manifest address \
+        $python_dir_inverse$manifest \
+        $address
+    cd $python_dir_inverse # Go back to repository root.
+}
+
+# Build Move documentation.
+function build_move_docs {
+    set_econia_address $docgen_address
+    aptos move document --include-impl --package-dir $move_dir "$@"
+    set_econia_address persistent
+}
+
 # Run Move unit tests.
-function run_move_unit_tests {
+function test_move {
     aptos move test --instructions 1000000 --package-dir $move_dir "$@"
+}
+
+# Run Python tests.
+function test_python {
+    echo "Running Python tests" # Print notice.
+    cd $python_dir              # Navigate to Python package directory.
+    # Doctest all source.
+    find . -name "*.py" | xargs poetry run python -m doctest
+    cd $python_dir_inverse # Go back to repository root.
 }
 
 # Publish Move package using REST url in ~/.aptos/config.yaml config file.
 function publish {
     type=$1 # Get account type, persistent or temporary.
     # If a temporary account type, generate a temporary account.
-    if [ $type = temporary ]; then generate_temporary_account; fi
-    # Generate and store authentication key message.
-    auth_key_message=$(print_auth_key_message $type)
-    # Extract secret file path from message (2nd line).
-    secret_file_path=$(echo "$auth_key_message" | sed -n '2 p')
-    # Extract authentication key from message (4th line).
-    auth_key=$(echo "$auth_key_message" | sed -n '4 p')
+    if [[ $type == temporary ]]; then generate_temporary_account; fi
+    # Extract secret file path from auth key message (2nd line).
+    secret_file_path=$(print_auth_key_message $type | sed -n '2 p')
+    # Extract authentication key from auth key message (4th line).
+    auth_key=$(print_auth_key_message $type | sed -n '4 p')
     set_econia_address 0x$auth_key # Set Econia address in manifest.
     # Fund the account.
     aptos account fund-with-faucet \
@@ -107,8 +132,6 @@ function publish {
     echo https://aptos-explorer.netlify.app/account/0x$auth_key
     set_econia_address $docgen_address # Set DocGen address in manifest.
 }
-
-# Publish bytecode
 
 # Functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -144,17 +167,56 @@ case "$1" in
         set_econia_address $docgen_address
         ;;
 
+    # Set econia address to persistent address.
+    ap)
+        set_econia_address persistent
+        ;;
+
     # Develop Python (go to Python directory).
     dp)
         cd $python_dir
         echo "Now at $(pwd)"
         ;;
 
-    # Format shell scripts
-    fs)
+    # Format code.
+    fc)
         echo "Formatting shell scripts" # Print notice.
         # Recursively format scripts.
         shfmt --list --write --simplify --case-indent --indent 4 .
+        echo "Formatting Python code" # Print notice.
+        cd $python_dir                # Navigate to Python package directory.
+        # Find all files ending in .py, pass to autoflake command (remove
+        # unused imports and variables).
+        find . -name "*.py" | xargs \
+            poetry run autoflake \
+            --in-place \
+            --recursive \
+            --remove-all-unused-imports \
+            --remove-unused-variables \
+            --ignore-init-module-imports
+        poetry run isort .                  # Sort imports.
+        poetry run black . --line-length 80 # Format code.
+        cd $python_dir_inverse              # Go back to repository root.
+        ;;
+
+    # Update genesis incentive parameters.
+    ig)
+        echo "Updating genesis parameters" # Print notice.
+        cd $python_dir
+        # Run incentives CLI genesis command, passing remaining arguments.
+        poetry run python -m econia.incentives update \
+            $python_dir_inverse$incentives_module --genesis-parameters "${@:2}"
+        cd $python_dir_inverse # Go back to repository root.
+        ;;
+
+    # Update script incentive parameters.
+    is)
+        echo "Updating script parameters" # Print notice.
+        cd $python_dir
+        # Run incentives CLI command, passing remaining arguments.
+        poetry run python -m econia.incentives update \
+            $python_dir_inverse$governance_script "${@:2}"
+        cd $python_dir_inverse # Go back to repository root.
         ;;
 
     # Clean Move package directory.
@@ -178,14 +240,19 @@ case "$1" in
         publish temporary
         ;;
 
-    # Run all Move unit tests, passing possible additional arguments.
-    ta)
-        run_move_unit_tests "${@:2}"
+    # Run all Python tests.
+    tp)
+        test_python
         ;;
 
-    # Run unit tests with a filter, passing possible additional arguments.
+    # Run all Move unit tests, passing possible additional arguments.
+    tm)
+        test_move "${@:2}"
+        ;;
+
+    # Run Move unit tests with a filter, passing possible additional arguments.
     tf)
-        run_move_unit_tests --filter "${@:2}"
+        test_move --filter "${@:2}"
         ;;
 
     # Print invalid option.

@@ -12,10 +12,9 @@
 *Hyper-parallelized on-chain order book for the Aptos blockchain*
 
 - [Econia](#econia)
-  - [Developer setup](#developer-setup)
+  - [Developing Econia](#developing-econia)
     - [Shell scripts](#shell-scripts)
-    - [Command line setup](#command-line-setup)
-    - [Using the Python package](#using-the-python-package)
+    - [Environment setup](#environment-setup)
     - [Freeing up disk space](#freeing-up-disk-space)
   - [Major filetypes](#major-filetypes)
     - [Move](#move)
@@ -25,136 +24,63 @@
 
 If you haven't already, consider checking out Econia Labs' [Teach yourself Move on Aptos] guide for some helpful background information!
 
-## Developer setup
+## Developing Econia
 
 ### Shell scripts
 
-The easiest way to develop Econia is with the provided shell scripts, and the fastest way to run these scripts is by adding the following function to your runtime configuration file (`~/.zshrc`, `~/.bash_profile`, etc):
+The easiest way to develop Econia is with the provided `zsh` shell scripts at [`scripts.sh`], and the fastest way to run these scripts is by adding the following function to your runtime configuration file (`~/.zshrc`):
 
-```zsh
-# Shell script wrapper: pass all arguments to ./ss.sh
-s() {source ss.sh "$@"}
+```bash
+# Pass all commands to scripts.sh file.
+s() {source scripts.sh "$@"}
 ```
 
-Now you will be able to run the provided `ss.sh` shell script file in whatever directory you are in by simply typing `s`:
+Now you will be able to run the provided [`scripts.sh`] commands simply by typing `s`.
 
-```
-% git clone https://github.com/econia-exchange/econia.git
-% cd econia
-% s hello
+```bash
+git clone https://github.com/econia-exchange/econia.git
+cd econia
+s hello
 Hello, Econia developer
 ```
 
-See `ss.sh` within a given directory for its available options.
+See [`scripts.sh`] for more commands.
 
-### Command line setup
+### Environment setup
 
-1. First follow the [official Aptos developer setup guide].
+1. Run the `init` command for [`scripts.sh`]:
 
-1. Then [install the `aptos` CLI].
+    ```bash
+    # You should see output like this if you have already initialized.
+    s init
+    Initializing developer environment
+    brew already installed
+    aptos already installed
+    entr already installed
+    poetry already installed
+    shfmt already installed
+    Installing Python package
+    Installing dependencies from lock file
 
-    * Note that this will go faster if [adding a precompiled binary] to `~/.cargo/bin` rather than installing via `cargo`.
-    * If the precompiled binary has not been released yet, additionally consider installing from Git, a method that does not always require rebuilding intermediate artifacts (see same resource for instructions, noting that building from binary can take up plenty of disk space inside of the `aptos-core` directory).
+    No dependencies to install or update
 
+    Installing the current project: econia (1.0.0)
+    ```
 
-1. Now you should be able to run all Move tests:
+2. Now you should be able to run all Move tests:
 
-    ```zsh
-    # From inside Econia repository root directory
-    cd src/move/econia # Navigate to Move package
-    aptos move test -i 1000000 # Run all tests
+    ```bash
+    # Run all Move tests.
+    s tm
     INCLUDING DEPENDENCY AptosFramework
-    INCLUDING DEPENDENCY MoveNursery
+    INCLUDING DEPENDENCY AptosStdlib
     INCLUDING DEPENDENCY MoveStdlib
     BUILDING Econia
     Running Move unit tests
+    [ PASS    ] 0x0::tablist::test_destroy_empty_not_empty
+    [ PASS    ] 0x0::tablist::test_iterate
     ...
     ```
-1. Then try building the Move documentation:
-
-    ```zsh
-    # Still within Move package
-    aptos move document
-    INCLUDING DEPENDENCY AptosFramework
-    INCLUDING DEPENDENCY MoveNursery
-    INCLUDING DEPENDENCY MoveStdlib
-    BUILDING Econia
-    ```
-
-### Using the Python package
-
-Econia comes with a Python package for assorted build scripting functionality.
-The Python package is not as actively maintained as the Move code, and is mostly used for managing account addresses in `Move.toml` during package compilation (see [`src/move/econia/ss.sh`]).
-Econia uses `conda` (a command line tool for managing Python environments), the `econia` conda environment, and the Econia Python package within the `econia` conda environment.
-It is not necessary to use the Python package to develop Econia, but not all of the shell scripts will work without it.
-To install the `econia` Python package:
-
-1. First install Homebrew:
-
-    ```zsh
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-    ```
-
-1. Then `brew install` Miniconda:
-
-    ```zsh
-    brew install miniconda # Python package management
-    ```
-
-1. Create the `econia` conda environment with the `Econia` Python package inside:
-
-    ```zsh
-    # From inside Econia project root
-    conda env create -f conda.yml
-    conda activate econia
-    pip install -e src/python
-    ```
-
-1. Then [install the Aptos Python SDK from source] with the `econia` conda environment still active.
-
-1. Create the secrets directories as needed:
-
-    ```zsh
-    # From inside Econia project root
-    if ! test -d .secrets; then mkdir .secrets; fi
-    if ! test -d .secrets/devnet; then mkdir .secrets/old; fi
-    if ! test -d .secrets/old; then mkdir .secrets/old; fi
-    if ! test -d .secrets/vanity; then mkdir .secrets/devnet; fi
-    ```
-
-If using VS Code, select `econia` as the default Python interpreter, and the integrated terminal should automatically activate it as needed, otherwise use the command line:
-
-```zsh
-# To activate
-(base) % conda activate econia
-# To deactivate
-(econia) econia % conda deactivate
-```
-
-With the `econia` conda environment active, you can then build the Python package documentation, explore the provided interactive Jupyter notebook archive, and run package management shell scripts:
-
-```zsh
-# From inside Econia project root
-# Autobuild Sphinx documentation with realtime updates
-(econia) % s ab
-```
-
-```zsh
-# From inside Econia project root
-# Open Jupyter notebook gallery
-# Earliest notebooks subject to breaking changes
-(econia) % s nb
-```
-
-```zsh
-# From inside Jupyter notebook gallery
-# Go back up to the Econia project root
-(econia) % cd ../..
-# Change directory to the Econia Move package
-(econia) % s mp
-# Move package has its own utility shell scripts
-(econia) % s pt # Publish bytecode to temporary devnet address
-```
 
 ### Freeing up disk space
 
@@ -185,9 +111,8 @@ Documentation markdown source files are at [`doc/doc-site/docs`].
 
 ### Python
 
-The Econia Python package source code is at [`src/python/econia`].
-Python source is formatted according to the PEP8 style guide, and uses NumPy-style docstrings and PEP484-style type annotations, which are automatically parsed into a documentation website via Sphinx.
-Sphinx documentation source files are at [`doc/sphinx`].
+Econia comes with a Python package for assorted build scripting functionality, with dependencies managed by [Poetry].
+Most Python commands are called on by [`scripts.sh`] commands.
 
 ### Jupyter
 
@@ -197,20 +122,14 @@ Hence, older commits can be checked out and experimented with, but mostly they a
 
 <!---Alphabetized reference links-->
 
-[`aptos-core` #2142]:                       https://github.com/aptos-labs/aptos-core/issues/2142
 [`cargo cache`]:                            https://github.com/matthiaskrgr/cargo-cache
 [`detox`]:                                  https://github.com/whitfin/detox
 [`doc/doc-site/docs`]:                      doc/doc-site/docs
-[`doc/sphinx`]:                             doc/sphinx
 [`kondo`]:                                  https://github.com/tbillington/kondo
 [`src/jupyter`]:                            src/jupyter
 [`src/move/econia`]:                        src/move/econia
 [`src/move/econia/doc`]:                    src/move/econia/doc
-[`src/move/econia/ss.sh`]:                  src/move/econia/ss.sh
-[`src/python/econia`]:                      src/python/econia
-[adding a precompiled binary]:              https://aptos.dev/cli-tools/aptos-cli-tool/install-aptos-cli#install-precompiled-binary-easy-mode
-[install the `aptos` CLI]:                  https://aptos.dev/cli-tools/aptos-cli-tool/install-aptos-cli
-[install the Aptos Python SDK from source]: https://aptos.dev/sdks/python-sdk#install-from-the-source
+[Poetry]:                                   https://python-poetry.org/
 [local Time Machine snapshots]:             https://discussions.apple.com/thread/7676695
-[official Aptos developer setup guide]:     https://aptos.dev/guides/getting-started
+[`scripts.sh`]:                             scripts.sh
 [Teach yourself Move on Aptos]:             https://github.com/econia-labs/teach-yourself-move

@@ -1,10 +1,12 @@
 #!/bin/zsh
 
-# This file contains assorted developer scripts for common workflows. It calls
-# on the Econia Python package using the poetry package manager. Poetry only
-# allows for the instantiation of a virtual environment from inside a
-# directory containing a pyproject.toml file. Hence the commands to go to the
-# Python directory and back any time a Python script must be invoked.
+# This file contains assorted developer scripts for common workflows, with
+# shorthands defined in the argument parser case section at the bottom.
+
+# Some scripts call on the Econia Python package using the poetry package
+# manager. Poetry only allows for the instantiation of a virtual environment
+# from inside a directory containing a pyproject.toml file. Hence the commands
+# to go to the Python directory and back when a Python script must be invoked.
 
 # Constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -169,19 +171,22 @@ function run_on_source_change {
 
 case "$1" in
 
+    # Print hello message.
+    hello) echo "Hello, Econia developer" ;;
+
     # Initialize dev environment.
     init)
         echo "Initializing developer environment"  # Print notice.
         if which brew &>/dev/null; then            # If brew installed:
-            echo "Brew already installed"          # Print notice as such.
+            echo "brew already installed"          # Print notice as such.
         else                                       # Otherwise:
-            echo "installing Brew"                 # Print notice of installation.
+            echo "installing brew"                 # Print notice of installation.
             /bin/bash -c "$(curl -fsSL $brew_url)" # Install brew.
         fi
         brew_install aptos               # Install aptos CLI.
+        brew_install entr                # Install tool to run on file change.
         brew_install poetry              # Install poetry.
         brew_install shfmt               # Install shell script formatter.
-        brew_install entr                # Install tool to run on file change.
         cd $python_dir                   # Navigate to Python package directory.
         echo "Installing Python package" # Print notice.
         poetry install                   # Install the Python package and dependencies.

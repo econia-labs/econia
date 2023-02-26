@@ -362,11 +362,11 @@ module econia::incentives {
     // Genesis parameters >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Genesis parameter.
-    const MARKET_REGISTRATION_FEE: u64 =  187969924;
+    const MARKET_REGISTRATION_FEE: u64 =  204918032;
     /// Genesis parameter.
-    const UNDERWRITER_REGISTRATION_FEE: u64 = 75187;
+    const UNDERWRITER_REGISTRATION_FEE: u64 = 81967;
     /// Genesis parameter.
-    const CUSTODIAN_REGISTRATION_FEE: u64 =   75187;
+    const CUSTODIAN_REGISTRATION_FEE: u64 =   81967;
     /// Genesis parameter.
     const TAKER_FEE_DIVISOR: u64 =             2000;
     /// Genesis parameter.
@@ -386,31 +386,31 @@ module econia::incentives {
     /// Genesis parameter.
     const TIER_ACTIVATION_FEE_0: u64 =            0;
     /// Genesis parameter.
-    const TIER_ACTIVATION_FEE_1: u64 =      1503759;
+    const TIER_ACTIVATION_FEE_1: u64 =      1639344;
     /// Genesis parameter.
-    const TIER_ACTIVATION_FEE_2: u64 =     22556390;
+    const TIER_ACTIVATION_FEE_2: u64 =     24590163;
     /// Genesis parameter.
-    const TIER_ACTIVATION_FEE_3: u64 =    300751879;
+    const TIER_ACTIVATION_FEE_3: u64 =    327868852;
     /// Genesis parameter.
-    const TIER_ACTIVATION_FEE_4: u64 =   3759398496;
+    const TIER_ACTIVATION_FEE_4: u64 =   4098360655;
     /// Genesis parameter.
-    const TIER_ACTIVATION_FEE_5: u64 =  45112781954;
+    const TIER_ACTIVATION_FEE_5: u64 =  49180327868;
     /// Genesis parameter.
-    const TIER_ACTIVATION_FEE_6: u64 = 526315789473;
+    const TIER_ACTIVATION_FEE_6: u64 = 573770491803;
     /// Genesis parameter.
-    const WITHDRAWAL_FEE_0: u64 =           1503759;
+    const WITHDRAWAL_FEE_0: u64 =           1639344;
     /// Genesis parameter.
-    const WITHDRAWAL_FEE_1: u64 =           1428571;
+    const WITHDRAWAL_FEE_1: u64 =           1557377;
     /// Genesis parameter.
-    const WITHDRAWAL_FEE_2: u64 =           1353383;
+    const WITHDRAWAL_FEE_2: u64 =           1475409;
     /// Genesis parameter.
-    const WITHDRAWAL_FEE_3: u64 =           1278195;
+    const WITHDRAWAL_FEE_3: u64 =           1393442;
     /// Genesis parameter.
-    const WITHDRAWAL_FEE_4: u64 =           1203007;
+    const WITHDRAWAL_FEE_4: u64 =           1311475;
     /// Genesis parameter.
-    const WITHDRAWAL_FEE_5: u64 =           1127819;
+    const WITHDRAWAL_FEE_5: u64 =           1229508;
     /// Genesis parameter.
-    const WITHDRAWAL_FEE_6: u64 =           1052631;
+    const WITHDRAWAL_FEE_6: u64 =           1147540;
 
     // Genesis parameters <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

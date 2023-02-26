@@ -304,201 +304,150 @@ assess_taker_fees --> range_check_coin_merge
 The below index is automatically generated from source code:
 
 
-- [Module `0xc0deb00c::incentives`](#module-0xc0deb00cincentives)
-  - [General overview sections](#general-overview-sections)
-  - [Incentive model](#incentive-model)
-  - [Functions](#functions)
-    - [Public getters](#public-getters)
-    - [Other public functions](#other-public-functions)
-    - [Public entry functions](#public-entry-functions)
-    - [Public friend functions](#public-friend-functions)
-  - [Dependency charts](#dependency-charts)
-    - [Incentive parameter setters](#incentive-parameter-setters)
-    - [Econia fee account operations](#econia-fee-account-operations)
-    - [Registrant operations](#registrant-operations)
-    - [Integrator operations](#integrator-operations)
-    - [Match operations](#match-operations)
-  - [Complete DocGen index](#complete-docgen-index)
-  - [Resource `EconiaFeeStore`](#resource-econiafeestore)
-        - [Fields](#fields)
-  - [Resource `IncentiveParameters`](#resource-incentiveparameters)
-        - [Fields](#fields-1)
-  - [Struct `IntegratorFeeStore`](#struct-integratorfeestore)
-        - [Fields](#fields-2)
-  - [Resource `IntegratorFeeStores`](#resource-integratorfeestores)
-        - [Fields](#fields-3)
-  - [Struct `IntegratorFeeStoreTierParameters`](#struct-integratorfeestoretierparameters)
-        - [Fields](#fields-4)
-  - [Resource `UtilityCoinStore`](#resource-utilitycoinstore)
-        - [Fields](#fields-5)
-  - [Constants](#constants)
-  - [Function `get_cost_to_upgrade_integrator_fee_store`](#function-get_cost_to_upgrade_integrator_fee_store)
-    - [Type parameters](#type-parameters)
-    - [Parameters](#parameters)
-    - [Returns](#returns)
-    - [Aborts](#aborts)
-    - [Restrictions](#restrictions)
-    - [Testing](#testing)
-        - [Implementation](#implementation)
-  - [Function `get_custodian_registration_fee`](#function-get_custodian_registration_fee)
-    - [Testing](#testing-1)
-        - [Implementation](#implementation-1)
-  - [Function `get_fee_share_divisor`](#function-get_fee_share_divisor)
-    - [Testing](#testing-2)
-        - [Implementation](#implementation-2)
-  - [Function `get_integrator_withdrawal_fee`](#function-get_integrator_withdrawal_fee)
-    - [Restrictions](#restrictions-1)
-        - [Implementation](#implementation-3)
-  - [Function `get_market_registration_fee`](#function-get_market_registration_fee)
-    - [Testing](#testing-3)
-        - [Implementation](#implementation-4)
-  - [Function `get_n_fee_store_tiers`](#function-get_n_fee_store_tiers)
-    - [Testing](#testing-4)
-        - [Implementation](#implementation-5)
-  - [Function `get_taker_fee_divisor`](#function-get_taker_fee_divisor)
-    - [Testing](#testing-5)
-        - [Implementation](#implementation-6)
-  - [Function `get_tier_activation_fee`](#function-get_tier_activation_fee)
-    - [Testing](#testing-6)
-        - [Implementation](#implementation-7)
-  - [Function `get_tier_withdrawal_fee`](#function-get_tier_withdrawal_fee)
-    - [Testing](#testing-7)
-        - [Implementation](#implementation-8)
-  - [Function `get_underwriter_registration_fee`](#function-get_underwriter_registration_fee)
-    - [Testing](#testing-8)
-        - [Implementation](#implementation-9)
-  - [Function `is_utility_coin_type`](#function-is_utility_coin_type)
-    - [Testing](#testing-9)
-        - [Implementation](#implementation-10)
-  - [Function `upgrade_integrator_fee_store`](#function-upgrade_integrator_fee_store)
-    - [Type parameters](#type-parameters-1)
-    - [Parameters](#parameters-1)
-        - [Implementation](#implementation-11)
-  - [Function `verify_utility_coin_type`](#function-verify_utility_coin_type)
-    - [Aborts](#aborts-1)
-    - [Testing](#testing-10)
-        - [Implementation](#implementation-12)
-  - [Function `withdraw_econia_fees`](#function-withdraw_econia_fees)
-        - [Implementation](#implementation-13)
-  - [Function `withdraw_econia_fees_all`](#function-withdraw_econia_fees_all)
-        - [Implementation](#implementation-14)
-  - [Function `withdraw_integrator_fees`](#function-withdraw_integrator_fees)
-    - [Type parameters](#type-parameters-2)
-    - [Parameters](#parameters-2)
-    - [Returns](#returns-1)
-        - [Implementation](#implementation-15)
-  - [Function `withdraw_utility_coins`](#function-withdraw_utility_coins)
-    - [Testing](#testing-11)
-        - [Implementation](#implementation-16)
-  - [Function `withdraw_utility_coins_all`](#function-withdraw_utility_coins_all)
-    - [Testing](#testing-12)
-        - [Implementation](#implementation-17)
-  - [Function `update_incentives`](#function-update_incentives)
-    - [Testing](#testing-13)
-        - [Implementation](#implementation-18)
-  - [Function `upgrade_integrator_fee_store_via_coinstore`](#function-upgrade_integrator_fee_store_via_coinstore)
-    - [Testing](#testing-14)
-        - [Implementation](#implementation-19)
-  - [Function `withdraw_econia_fees_all_to_coin_store`](#function-withdraw_econia_fees_all_to_coin_store)
-    - [Testing](#testing-15)
-        - [Implementation](#implementation-20)
-  - [Function `withdraw_econia_fees_to_coin_store`](#function-withdraw_econia_fees_to_coin_store)
-    - [Testing](#testing-16)
-        - [Implementation](#implementation-21)
-  - [Function `withdraw_integrator_fees_via_coinstores`](#function-withdraw_integrator_fees_via_coinstores)
-    - [Type parameters](#type-parameters-3)
-    - [Parameters](#parameters-3)
-        - [Implementation](#implementation-22)
-  - [Function `withdraw_utility_coins_all_to_coin_store`](#function-withdraw_utility_coins_all_to_coin_store)
-    - [Testing](#testing-17)
-        - [Implementation](#implementation-23)
-  - [Function `withdraw_utility_coins_to_coin_store`](#function-withdraw_utility_coins_to_coin_store)
-    - [Testing](#testing-18)
-        - [Implementation](#implementation-24)
-  - [Function `assess_taker_fees`](#function-assess_taker_fees)
-    - [Type parameters](#type-parameters-4)
-    - [Parameters](#parameters-4)
-    - [Returns](#returns-2)
-    - [Aborts](#aborts-2)
-    - [Assumptions](#assumptions)
-        - [Implementation](#implementation-25)
-  - [Function `calculate_max_quote_match`](#function-calculate_max_quote_match)
-    - [Example buy](#example-buy)
-    - [Example sell](#example-sell)
-    - [Variables](#variables)
-    - [Equations](#equations)
-      - [Buy](#buy)
-      - [Sell](#sell)
-    - [Overflow correction](#overflow-correction)
-    - [Parameters](#parameters-5)
-    - [Returns](#returns-3)
-    - [Assumptions](#assumptions-1)
-    - [Testing](#testing-19)
-        - [Implementation](#implementation-26)
-  - [Function `deposit_custodian_registration_utility_coins`](#function-deposit_custodian_registration_utility_coins)
-    - [Testing](#testing-20)
-        - [Implementation](#implementation-27)
-  - [Function `deposit_market_registration_utility_coins`](#function-deposit_market_registration_utility_coins)
-    - [Testing](#testing-21)
-        - [Implementation](#implementation-28)
-  - [Function `deposit_underwriter_registration_utility_coins`](#function-deposit_underwriter_registration_utility_coins)
-    - [Testing](#testing-22)
-        - [Implementation](#implementation-29)
-  - [Function `register_econia_fee_store_entry`](#function-register_econia_fee_store_entry)
-        - [Implementation](#implementation-30)
-  - [Function `register_integrator_fee_store`](#function-register_integrator_fee_store)
-    - [Type parameters](#type-parameters-5)
-    - [Parameters](#parameters-6)
-        - [Implementation](#implementation-31)
-  - [Function `deposit_utility_coins`](#function-deposit_utility_coins)
-    - [Aborts](#aborts-3)
-    - [Testing](#testing-23)
-        - [Implementation](#implementation-32)
-  - [Function `deposit_utility_coins_verified`](#function-deposit_utility_coins_verified)
-    - [Aborts](#aborts-4)
-    - [Testing](#testing-24)
-        - [Implementation](#implementation-33)
-  - [Function `init_module`](#function-init_module)
-    - [Testing](#testing-25)
-        - [Implementation](#implementation-34)
-  - [Function `init_utility_coin_store`](#function-init_utility_coin_store)
-    - [Type Parameters](#type-parameters-6)
-    - [Parameters](#parameters-7)
-    - [Aborts](#aborts-5)
-    - [Testing](#testing-26)
-        - [Implementation](#implementation-35)
-  - [Function `range_check_coin_merge`](#function-range_check_coin_merge)
-    - [Aborts](#aborts-6)
-    - [Testing](#testing-27)
-        - [Implementation](#implementation-36)
-  - [Function `set_incentive_parameters`](#function-set_incentive_parameters)
-    - [Type Parameters](#type-parameters-7)
-    - [Parameters](#parameters-8)
-    - [Assumptions](#assumptions-2)
-    - [Aborts](#aborts-7)
-        - [Implementation](#implementation-37)
-  - [Function `set_incentive_parameters_parse_tiers_vector`](#function-set_incentive_parameters_parse_tiers_vector)
-    - [Aborts](#aborts-8)
-    - [Assumptions](#assumptions-3)
-    - [Testing](#testing-28)
-        - [Implementation](#implementation-38)
-  - [Function `set_incentive_parameters_range_check_inputs`](#function-set_incentive_parameters_range_check_inputs)
-    - [Parameters](#parameters-9)
-    - [Aborts](#aborts-9)
-    - [Testing](#testing-29)
-        - [Implementation](#implementation-39)
-  - [Function `withdraw_econia_fees_internal`](#function-withdraw_econia_fees_internal)
-    - [Aborts](#aborts-10)
-        - [Implementation](#implementation-40)
-  - [Function `withdraw_econia_fees_to_coin_store_internal`](#function-withdraw_econia_fees_to_coin_store_internal)
-    - [Testing](#testing-30)
-        - [Implementation](#implementation-41)
-  - [Function `withdraw_utility_coins_internal`](#function-withdraw_utility_coins_internal)
-    - [Aborts](#aborts-11)
-        - [Implementation](#implementation-42)
-  - [Function `withdraw_utility_coins_to_coin_store_internal`](#function-withdraw_utility_coins_to_coin_store_internal)
-    - [Testing](#testing-31)
-        - [Implementation](#implementation-43)
+-  [General overview sections](#@General_overview_sections_0)
+-  [Incentive model](#@Incentive_model_1)
+-  [Functions](#@Functions_2)
+    -  [Public getters](#@Public_getters_3)
+    -  [Other public functions](#@Other_public_functions_4)
+    -  [Public entry functions](#@Public_entry_functions_5)
+    -  [Public friend functions](#@Public_friend_functions_6)
+-  [Dependency charts](#@Dependency_charts_7)
+    -  [Incentive parameter setters](#@Incentive_parameter_setters_8)
+    -  [Econia fee account operations](#@Econia_fee_account_operations_9)
+    -  [Registrant operations](#@Registrant_operations_10)
+    -  [Integrator operations](#@Integrator_operations_11)
+    -  [Match operations](#@Match_operations_12)
+-  [Complete DocGen index](#@Complete_DocGen_index_13)
+-  [Resource `EconiaFeeStore`](#0xc0deb00c_incentives_EconiaFeeStore)
+-  [Resource `IncentiveParameters`](#0xc0deb00c_incentives_IncentiveParameters)
+-  [Struct `IntegratorFeeStore`](#0xc0deb00c_incentives_IntegratorFeeStore)
+-  [Resource `IntegratorFeeStores`](#0xc0deb00c_incentives_IntegratorFeeStores)
+-  [Struct `IntegratorFeeStoreTierParameters`](#0xc0deb00c_incentives_IntegratorFeeStoreTierParameters)
+-  [Resource `UtilityCoinStore`](#0xc0deb00c_incentives_UtilityCoinStore)
+-  [Constants](#@Constants_14)
+-  [Function `get_cost_to_upgrade_integrator_fee_store`](#0xc0deb00c_incentives_get_cost_to_upgrade_integrator_fee_store)
+    -  [Type parameters](#@Type_parameters_15)
+    -  [Parameters](#@Parameters_16)
+    -  [Returns](#@Returns_17)
+    -  [Aborts](#@Aborts_18)
+    -  [Restrictions](#@Restrictions_19)
+    -  [Testing](#@Testing_20)
+-  [Function `get_custodian_registration_fee`](#0xc0deb00c_incentives_get_custodian_registration_fee)
+    -  [Testing](#@Testing_21)
+-  [Function `get_fee_share_divisor`](#0xc0deb00c_incentives_get_fee_share_divisor)
+    -  [Testing](#@Testing_22)
+-  [Function `get_integrator_withdrawal_fee`](#0xc0deb00c_incentives_get_integrator_withdrawal_fee)
+    -  [Restrictions](#@Restrictions_23)
+-  [Function `get_market_registration_fee`](#0xc0deb00c_incentives_get_market_registration_fee)
+    -  [Testing](#@Testing_24)
+-  [Function `get_n_fee_store_tiers`](#0xc0deb00c_incentives_get_n_fee_store_tiers)
+    -  [Testing](#@Testing_25)
+-  [Function `get_taker_fee_divisor`](#0xc0deb00c_incentives_get_taker_fee_divisor)
+    -  [Testing](#@Testing_26)
+-  [Function `get_tier_activation_fee`](#0xc0deb00c_incentives_get_tier_activation_fee)
+    -  [Testing](#@Testing_27)
+-  [Function `get_tier_withdrawal_fee`](#0xc0deb00c_incentives_get_tier_withdrawal_fee)
+    -  [Testing](#@Testing_28)
+-  [Function `get_underwriter_registration_fee`](#0xc0deb00c_incentives_get_underwriter_registration_fee)
+    -  [Testing](#@Testing_29)
+-  [Function `is_utility_coin_type`](#0xc0deb00c_incentives_is_utility_coin_type)
+    -  [Testing](#@Testing_30)
+-  [Function `upgrade_integrator_fee_store`](#0xc0deb00c_incentives_upgrade_integrator_fee_store)
+    -  [Type parameters](#@Type_parameters_31)
+    -  [Parameters](#@Parameters_32)
+-  [Function `verify_utility_coin_type`](#0xc0deb00c_incentives_verify_utility_coin_type)
+    -  [Aborts](#@Aborts_33)
+    -  [Testing](#@Testing_34)
+-  [Function `withdraw_econia_fees`](#0xc0deb00c_incentives_withdraw_econia_fees)
+-  [Function `withdraw_econia_fees_all`](#0xc0deb00c_incentives_withdraw_econia_fees_all)
+-  [Function `withdraw_integrator_fees`](#0xc0deb00c_incentives_withdraw_integrator_fees)
+    -  [Type parameters](#@Type_parameters_35)
+    -  [Parameters](#@Parameters_36)
+    -  [Returns](#@Returns_37)
+-  [Function `withdraw_utility_coins`](#0xc0deb00c_incentives_withdraw_utility_coins)
+    -  [Testing](#@Testing_38)
+-  [Function `withdraw_utility_coins_all`](#0xc0deb00c_incentives_withdraw_utility_coins_all)
+    -  [Testing](#@Testing_39)
+-  [Function `update_incentives`](#0xc0deb00c_incentives_update_incentives)
+    -  [Testing](#@Testing_40)
+-  [Function `upgrade_integrator_fee_store_via_coinstore`](#0xc0deb00c_incentives_upgrade_integrator_fee_store_via_coinstore)
+    -  [Testing](#@Testing_41)
+-  [Function `withdraw_econia_fees_all_to_coin_store`](#0xc0deb00c_incentives_withdraw_econia_fees_all_to_coin_store)
+    -  [Testing](#@Testing_42)
+-  [Function `withdraw_econia_fees_to_coin_store`](#0xc0deb00c_incentives_withdraw_econia_fees_to_coin_store)
+    -  [Testing](#@Testing_43)
+-  [Function `withdraw_integrator_fees_via_coinstores`](#0xc0deb00c_incentives_withdraw_integrator_fees_via_coinstores)
+    -  [Type parameters](#@Type_parameters_44)
+    -  [Parameters](#@Parameters_45)
+-  [Function `withdraw_utility_coins_all_to_coin_store`](#0xc0deb00c_incentives_withdraw_utility_coins_all_to_coin_store)
+    -  [Testing](#@Testing_46)
+-  [Function `withdraw_utility_coins_to_coin_store`](#0xc0deb00c_incentives_withdraw_utility_coins_to_coin_store)
+    -  [Testing](#@Testing_47)
+-  [Function `assess_taker_fees`](#0xc0deb00c_incentives_assess_taker_fees)
+    -  [Type parameters](#@Type_parameters_48)
+    -  [Parameters](#@Parameters_49)
+    -  [Returns](#@Returns_50)
+    -  [Aborts](#@Aborts_51)
+    -  [Assumptions](#@Assumptions_52)
+-  [Function `calculate_max_quote_match`](#0xc0deb00c_incentives_calculate_max_quote_match)
+    -  [Example buy](#@Example_buy_53)
+    -  [Example sell](#@Example_sell_54)
+    -  [Variables](#@Variables_55)
+    -  [Equations](#@Equations_56)
+        -  [Buy](#@Buy_57)
+        -  [Sell](#@Sell_58)
+    -  [Overflow correction](#@Overflow_correction_59)
+    -  [Parameters](#@Parameters_60)
+    -  [Returns](#@Returns_61)
+    -  [Assumptions](#@Assumptions_62)
+    -  [Testing](#@Testing_63)
+-  [Function `deposit_custodian_registration_utility_coins`](#0xc0deb00c_incentives_deposit_custodian_registration_utility_coins)
+    -  [Testing](#@Testing_64)
+-  [Function `deposit_market_registration_utility_coins`](#0xc0deb00c_incentives_deposit_market_registration_utility_coins)
+    -  [Testing](#@Testing_65)
+-  [Function `deposit_underwriter_registration_utility_coins`](#0xc0deb00c_incentives_deposit_underwriter_registration_utility_coins)
+    -  [Testing](#@Testing_66)
+-  [Function `register_econia_fee_store_entry`](#0xc0deb00c_incentives_register_econia_fee_store_entry)
+-  [Function `register_integrator_fee_store`](#0xc0deb00c_incentives_register_integrator_fee_store)
+    -  [Type parameters](#@Type_parameters_67)
+    -  [Parameters](#@Parameters_68)
+-  [Function `deposit_utility_coins`](#0xc0deb00c_incentives_deposit_utility_coins)
+    -  [Aborts](#@Aborts_69)
+    -  [Testing](#@Testing_70)
+-  [Function `deposit_utility_coins_verified`](#0xc0deb00c_incentives_deposit_utility_coins_verified)
+    -  [Aborts](#@Aborts_71)
+    -  [Testing](#@Testing_72)
+-  [Function `init_module`](#0xc0deb00c_incentives_init_module)
+    -  [Testing](#@Testing_73)
+-  [Function `init_utility_coin_store`](#0xc0deb00c_incentives_init_utility_coin_store)
+    -  [Type Parameters](#@Type_Parameters_74)
+    -  [Parameters](#@Parameters_75)
+    -  [Aborts](#@Aborts_76)
+    -  [Testing](#@Testing_77)
+-  [Function `range_check_coin_merge`](#0xc0deb00c_incentives_range_check_coin_merge)
+    -  [Aborts](#@Aborts_78)
+    -  [Testing](#@Testing_79)
+-  [Function `set_incentive_parameters`](#0xc0deb00c_incentives_set_incentive_parameters)
+    -  [Type Parameters](#@Type_Parameters_80)
+    -  [Parameters](#@Parameters_81)
+    -  [Assumptions](#@Assumptions_82)
+    -  [Aborts](#@Aborts_83)
+-  [Function `set_incentive_parameters_parse_tiers_vector`](#0xc0deb00c_incentives_set_incentive_parameters_parse_tiers_vector)
+    -  [Aborts](#@Aborts_84)
+    -  [Assumptions](#@Assumptions_85)
+    -  [Testing](#@Testing_86)
+-  [Function `set_incentive_parameters_range_check_inputs`](#0xc0deb00c_incentives_set_incentive_parameters_range_check_inputs)
+    -  [Parameters](#@Parameters_87)
+    -  [Aborts](#@Aborts_88)
+    -  [Testing](#@Testing_89)
+-  [Function `withdraw_econia_fees_internal`](#0xc0deb00c_incentives_withdraw_econia_fees_internal)
+    -  [Aborts](#@Aborts_90)
+-  [Function `withdraw_econia_fees_to_coin_store_internal`](#0xc0deb00c_incentives_withdraw_econia_fees_to_coin_store_internal)
+    -  [Testing](#@Testing_91)
+-  [Function `withdraw_utility_coins_internal`](#0xc0deb00c_incentives_withdraw_utility_coins_internal)
+    -  [Aborts](#@Aborts_92)
+-  [Function `withdraw_utility_coins_to_coin_store_internal`](#0xc0deb00c_incentives_withdraw_utility_coins_to_coin_store_internal)
+    -  [Testing](#@Testing_93)
 
 
 <pre><code><b>use</b> <a href="">0x1::aptos_coin</a>;
@@ -783,7 +732,7 @@ Buy direction flag, as defined in <code><a href="market.md#0xc0deb00c_market">ma
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_CUSTODIAN_REGISTRATION_FEE">CUSTODIAN_REGISTRATION_FEE</a>: u64 = 75244;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_CUSTODIAN_REGISTRATION_FEE">CUSTODIAN_REGISTRATION_FEE</a>: u64 = 81967;
 </code></pre>
 
 
@@ -1108,7 +1057,7 @@ Index of fee share in vectorized representation of an
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_MARKET_REGISTRATION_FEE">MARKET_REGISTRATION_FEE</a>: u64 = 188111361;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_MARKET_REGISTRATION_FEE">MARKET_REGISTRATION_FEE</a>: u64 = 204918032;
 </code></pre>
 
 
@@ -1192,7 +1141,7 @@ Genesis parameter.
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_1">TIER_ACTIVATION_FEE_1</a>: u64 = 1504890;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_1">TIER_ACTIVATION_FEE_1</a>: u64 = 1639344;
 </code></pre>
 
 
@@ -1202,7 +1151,7 @@ Genesis parameter.
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_2">TIER_ACTIVATION_FEE_2</a>: u64 = 22573363;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_2">TIER_ACTIVATION_FEE_2</a>: u64 = 24590163;
 </code></pre>
 
 
@@ -1212,7 +1161,7 @@ Genesis parameter.
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_3">TIER_ACTIVATION_FEE_3</a>: u64 = 300978179;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_3">TIER_ACTIVATION_FEE_3</a>: u64 = 327868852;
 </code></pre>
 
 
@@ -1222,7 +1171,7 @@ Genesis parameter.
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_4">TIER_ACTIVATION_FEE_4</a>: u64 = 3762227238;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_4">TIER_ACTIVATION_FEE_4</a>: u64 = 4098360655;
 </code></pre>
 
 
@@ -1232,7 +1181,7 @@ Genesis parameter.
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_5">TIER_ACTIVATION_FEE_5</a>: u64 = 45146726862;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_5">TIER_ACTIVATION_FEE_5</a>: u64 = 49180327868;
 </code></pre>
 
 
@@ -1242,7 +1191,7 @@ Genesis parameter.
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_6">TIER_ACTIVATION_FEE_6</a>: u64 = 526711813393;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_6">TIER_ACTIVATION_FEE_6</a>: u64 = 573770491803;
 </code></pre>
 
 
@@ -1263,7 +1212,7 @@ Index of tier activation fee in vectorized representation of an
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_UNDERWRITER_REGISTRATION_FEE">UNDERWRITER_REGISTRATION_FEE</a>: u64 = 75244;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_UNDERWRITER_REGISTRATION_FEE">UNDERWRITER_REGISTRATION_FEE</a>: u64 = 81967;
 </code></pre>
 
 
@@ -1273,7 +1222,7 @@ Genesis parameter.
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_0">WITHDRAWAL_FEE_0</a>: u64 = 1504890;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_0">WITHDRAWAL_FEE_0</a>: u64 = 1639344;
 </code></pre>
 
 
@@ -1283,7 +1232,7 @@ Genesis parameter.
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_1">WITHDRAWAL_FEE_1</a>: u64 = 1429646;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_1">WITHDRAWAL_FEE_1</a>: u64 = 1557377;
 </code></pre>
 
 
@@ -1293,7 +1242,7 @@ Genesis parameter.
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_2">WITHDRAWAL_FEE_2</a>: u64 = 1354401;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_2">WITHDRAWAL_FEE_2</a>: u64 = 1475409;
 </code></pre>
 
 
@@ -1303,7 +1252,7 @@ Genesis parameter.
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_3">WITHDRAWAL_FEE_3</a>: u64 = 1279157;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_3">WITHDRAWAL_FEE_3</a>: u64 = 1393442;
 </code></pre>
 
 
@@ -1313,7 +1262,7 @@ Genesis parameter.
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_4">WITHDRAWAL_FEE_4</a>: u64 = 1203912;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_4">WITHDRAWAL_FEE_4</a>: u64 = 1311475;
 </code></pre>
 
 
@@ -1323,7 +1272,7 @@ Genesis parameter.
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_5">WITHDRAWAL_FEE_5</a>: u64 = 1128668;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_5">WITHDRAWAL_FEE_5</a>: u64 = 1229508;
 </code></pre>
 
 
@@ -1333,7 +1282,7 @@ Genesis parameter.
 Genesis parameter.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_6">WITHDRAWAL_FEE_6</a>: u64 = 1053423;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_6">WITHDRAWAL_FEE_6</a>: u64 = 1147540;
 </code></pre>
 
 

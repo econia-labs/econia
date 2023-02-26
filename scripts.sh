@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/zsh
 
 # This file contains assorted developer scripts for common workflows. It calls
 # on the Econia Python package using the poetry package manager. Poetry only
@@ -95,7 +95,10 @@ function build_move_docs {
 
 # Run Move unit tests.
 function test_move {
+    set_econia_address 0x0 # Set Econia address to null.
+    # Run Move tests with enough instruction time and optional arguments.
     aptos move test --instructions 1000000 --package-dir $move_dir "$@"
+    set_econia_address persistent
 }
 
 # Run Python tests.
@@ -133,6 +136,33 @@ function publish {
     set_econia_address $docgen_address # Set DocGen address in manifest.
 }
 
+# Format source code.
+function format_code {
+    echo "Formatting shell scripts" # Print notice.
+    # Recursively format scripts.
+    shfmt --list --write --simplify --case-indent --indent 4 .
+    echo "Formatting Python code" # Print notice.
+    cd $python_dir                # Navigate to Python package directory.
+    # Find all files ending in .py, pass to autoflake command (remove
+    # unused imports and variables).
+    find . -name "*.py" | xargs \
+        poetry run autoflake \
+        --in-place \
+        --recursive \
+        --remove-all-unused-imports \
+        --remove-unused-variables \
+        --ignore-init-module-imports
+    poetry run isort .                  # Sort imports.
+    poetry run black . --line-length 80 # Format code.
+    cd $python_dir_inverse              # Go back to repository root.
+}
+
+# Run script command on Move source change, passing arguments.
+function run_on_source_change {
+    find $move_dir"sources" -name "*.move" |
+        entr -s $(echo source scripts.sh $@)
+}
+
 # Functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 # Command line argument parsers >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -151,6 +181,7 @@ case "$1" in
         brew_install aptos               # Install aptos CLI.
         brew_install poetry              # Install poetry.
         brew_install shfmt               # Install shell script formatter.
+        brew_install entr                # Install tool to run on file change.
         cd $python_dir                   # Navigate to Python package directory.
         echo "Installing Python package" # Print notice.
         poetry install                   # Install the Python package and dependencies.
@@ -158,19 +189,13 @@ case "$1" in
         ;;
 
     # Set econia address to underscore.
-    a_)
-        set_econia_address _
-        ;;
+    a_) set_econia_address _ ;;
 
     # Set econia address to DocGen address.
-    ad)
-        set_econia_address $docgen_address
-        ;;
+    ad) set_econia_address $docgen_address ;;
 
     # Set econia address to persistent address.
-    ap)
-        set_econia_address persistent
-        ;;
+    ap) set_econia_address persistent ;;
 
     # Develop Python (go to Python directory).
     dp)
@@ -179,25 +204,7 @@ case "$1" in
         ;;
 
     # Format code.
-    fc)
-        echo "Formatting shell scripts" # Print notice.
-        # Recursively format scripts.
-        shfmt --list --write --simplify --case-indent --indent 4 .
-        echo "Formatting Python code" # Print notice.
-        cd $python_dir                # Navigate to Python package directory.
-        # Find all files ending in .py, pass to autoflake command (remove
-        # unused imports and variables).
-        find . -name "*.py" | xargs \
-            poetry run autoflake \
-            --in-place \
-            --recursive \
-            --remove-all-unused-imports \
-            --remove-unused-variables \
-            --ignore-init-module-imports
-        poetry run isort .                  # Sort imports.
-        poetry run black . --line-length 80 # Format code.
-        cd $python_dir_inverse              # Go back to repository root.
-        ;;
+    fc) format_code ;;
 
     # Update genesis incentive parameters.
     ig)
@@ -226,39 +233,38 @@ case "$1" in
         ;;
 
     # Build Move documentation.
-    md)
-        build_move_docs
+    md) build_move_docs ;;
+
+    # Run pre-commit checks.
+    pc)
+        test_move       # Test Move code.
+        build_move_docs # Build docs.
+        format_code     # Format code.
         ;;
 
     # Publish to persistent account.
-    pp)
-        publish persistent
-        ;;
+    pp) publish persistent ;;
 
     # Publish to temporary account.
-    pt)
-        publish temporary
-        ;;
+    pt) publish temporary ;;
 
     # Run all Python tests.
-    tp)
-        test_python
-        ;;
+    tp) test_python ;;
 
     # Run all Move unit tests, passing possible additional arguments.
-    tm)
-        test_move "${@:2}"
-        ;;
+    tm) test_move "${@:2}" ;;
 
     # Run Move unit tests with a filter, passing possible additional arguments.
-    tf)
-        test_move --filter "${@:2}"
-        ;;
+    tf) test_move --filter "${@:2}" ;;
+
+    # Watch source code, rebuilding docs when it changes.
+    wd) run_on_source_change md "${@:2}" ;;
+
+    # Watch source code, running Move tests when it changes.
+    wt) run_on_source_change tm "${@:2}" ;;
 
     # Print invalid option.
-    *)
-        echo Invalid
-        ;;
+    *) echo Invalid ;;
 
 esac
 

@@ -14,7 +14,7 @@ const config = {
     ecmaVersion: "latest",
     sourceType: "module",
   },
-  plugins: ["@typescript-eslint", "prettier"],
+  plugins: ["@typescript-eslint", "prettier", "simple-import-sort"],
   rules: {
     "no-unused-vars": "off",
     "@typescript-eslint/no-unused-vars": [
@@ -25,6 +25,8 @@ const config = {
       "error",
       { prefer: "type-imports", fixStyle: "inline-type-imports" },
     ],
+    "simple-import-sort/imports": "warn",
+    "simple-import-sort/exports": "warn",
   },
 };
 

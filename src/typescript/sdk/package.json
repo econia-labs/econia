@@ -4,6 +4,10 @@
   "description": "TypeScript SDK for Econia",
   "main": "index.js",
   "scripts": {
+    "build": "tsc",
+    "check": "tsc --noEmit",
+    "lint": "eslint . --ignore-path .eslintignore --ext .ts",
+    "format": "prettier --ignore-path .gitignore --write \"**/*.+(js|ts|json)\" --ignore-unknown --no-error-on-unmatched-pattern",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

@@ -1,8 +1,9 @@
 use diesel::prelude::*;
+use serde::{Deserialize, Serialize};
 
 use crate::schema::coins;
 
-#[derive(Queryable)]
+#[derive(Clone, Debug, Serialize, Deserialize, Queryable)]
 pub struct Coin {
     pub symbol: String,
     pub name: String,

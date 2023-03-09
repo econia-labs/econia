@@ -4,8 +4,8 @@ use serde::Deserialize;
 
 use crate::models::NewCoin;
 
-mod models;
-mod schema;
+pub mod models;
+pub mod schema;
 
 #[derive(Deserialize, Debug)]
 pub struct Config {

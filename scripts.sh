@@ -157,6 +157,11 @@ function format_code {
     poetry run isort .                  # Sort imports.
     poetry run black . --line-length 80 # Format code.
     cd $python_dir_inverse              # Go back to repository root.
+
+    echo "Formatting Rust code"
+    cd src/rust     # Navigate to Rust directory
+    cargo fmt --all # Format rust code
+    cd ../..        # Return to repository root
 }
 
 # Run script command on Move source change, passing arguments.

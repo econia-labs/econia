@@ -157,6 +157,13 @@ function format_code {
     poetry run isort .                  # Sort imports.
     poetry run black . --line-length 80 # Format code.
     cd $python_dir_inverse              # Go back to repository root.
+
+    # Format and lint TypeScript
+    echo "Formatting TypeScript code"
+    cd src/typescript/sdk               # Navigate to TypeScript SDK directory
+    pnpm format                         # Format code with prettier
+    pnpm lint                           # Lint code with eslint
+    cd ../../..                         # Return to repository root
 }
 
 # Run script command on Move source change, passing arguments.

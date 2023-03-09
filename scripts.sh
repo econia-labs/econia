@@ -3,11 +3,6 @@
 # This file contains assorted developer scripts for common workflows, with
 # shorthands defined in the argument parser case section at the bottom.
 
-# Some scripts call on the Econia Python package using the poetry package
-# manager. Poetry only allows for the instantiation of a virtual environment
-# from inside a directory containing a pyproject.toml file. Hence the commands
-# to go to the Python directory and back when a Python script must be invoked.
-
 # Constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 # URL to download homebrew.

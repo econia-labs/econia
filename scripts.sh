@@ -25,6 +25,18 @@ python_dir="src/python/"
 # Relative path to this directory from Python directory.
 python_dir_inverse="../../"
 
+# Rust directory.
+rust_dir="src/rust/"
+
+# Relative path to this directory from Rust directory.
+rust_dir_inverse="../../"
+
+# TypeScript SDK directory.
+ts_sdk_dir="src/typescript/sdk"
+
+# Relative path to this directory from TypeScript SDK directory.
+ts_sdk_dir_inverse="../../../"
+
 # Secrets directory.
 secrets_dir=".secrets/"
 
@@ -41,7 +53,7 @@ governance_script=$move_dir"scripts/govern.move"
 
 # Functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-# Install via brew, printing call to run.
+# Install via brew.
 function brew_install {
     package=$1                            # Package name is first argument.
     if which "$package" &>/dev/null; then # If package installed:
@@ -50,6 +62,13 @@ function brew_install {
         echo "Brew installing $package"   # Print installation notice.
         brew install $package             # Install package.
     fi
+}
+
+# Install via npm.
+function npm_install {
+    package=$1                      # Get package name.
+    echo "NPM installing $package"  # Print notice.
+    npm install $package --save-dev # Install package.
 }
 
 # Generate temporary account.
@@ -138,11 +157,8 @@ function publish {
     set_econia_address $docgen_address # Set DocGen address in manifest.
 }
 
-# Format source code.
-function format_code {
-    echo "Formatting shell scripts" # Print notice.
-    # Recursively format scripts.
-    shfmt --list --write --simplify --case-indent --indent 4 .
+# Format Python code.
+function format_code_python {
     echo "Formatting Python code" # Print notice.
     cd $python_dir                # Navigate to Python package directory.
     # Find all files ending in .py, pass to autoflake command (remove
@@ -158,10 +174,38 @@ function format_code {
     poetry run black . --line-length 80 # Format code.
     cd $python_dir_inverse              # Go back to repository root.
 
+}
+
+# Format Rust code.
+function format_code_rust {
     echo "Formatting Rust code"
-    cd src/rust     # Navigate to Rust directory
-    cargo fmt --all # Format rust code
-    cd ../..        # Return to repository root
+    cd $rust_dir         # Navigate to Rust directory
+    cargo fmt --all      # Format rust code
+    cd $rust_dir_inverse # Return to repository root
+}
+
+# Format shell scripts.
+function format_code_shell {
+    echo "Formatting shell scripts" # Print notice.
+    # Recursively format scripts.
+    shfmt --list --write --simplify --case-indent --indent 4 .
+}
+
+# Format TypeScript code.
+function format_code_typescript {
+    echo "Formatting TypeScript code"
+    cd $ts_sdk_dir         # Navigate to TypeScript SDK directory.
+    pnpm format            # Format code with prettier.
+    pnpm lint              # Lint code with eslint.
+    cd $ts_sdk_dir_inverse # Return to repository root.
+}
+
+# Format all code.
+function format_code {
+    format_code_python
+    format_code_rust
+    format_code_shell
+    format_code_typescript
 }
 
 # Run script command on Move source change, passing arguments.
@@ -188,14 +232,23 @@ case "$1" in
             echo "installing brew"                 # Print notice of installation.
             /bin/bash -c "$(curl -fsSL $brew_url)" # Install brew.
         fi
-        brew_install aptos               # Install aptos CLI.
-        brew_install entr                # Install tool to run on file change.
-        brew_install poetry              # Install poetry.
-        brew_install shfmt               # Install shell script formatter.
-        cd $python_dir                   # Navigate to Python package directory.
-        echo "Installing Python package" # Print notice.
-        poetry install                   # Install the Python package and dependencies.
-        cd $python_dir_inverse           # Go back to repository root.
+        brew_install aptos                                  # Install aptos CLI.
+        brew_install entr                                   # Install tool to run on file change.
+        brew_install eslint                                 # Install JavaScript linter.
+        brew_install node                                   # Install JavaScript package manager.
+        brew_install poetry                                 # Install Python environment manager.
+        brew_install rust                                   # Install Rust.
+        brew_install rustup                                 # Install Rust toolchain installer.
+        brew_install shfmt                                  # Install shell script formatter.
+        rustup install stable                               # Install stable Rust toolchain.
+        cd $ts_sdk_dir                                      # Go to TypeScript SDK directory.
+        npm_install @typescript-eslint/eslint-plugin@latest # Install TypeScript linter.
+        npm_install eslint-plugin-prettier@latest           # Intall Prettier plugin for linter.
+        cd $ts_sdk_dir_inverse                              # Go back to repository root.
+        cd $python_dir                                      # Navigate to Python package directory.
+        echo "Installing Python package"                    # Print notice.
+        poetry install                                      # Install Python package and dependencies.
+        cd $python_dir_inverse                              # Go back to repository root.
         ;;
 
     # Set econia address to underscore.

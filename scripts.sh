@@ -25,6 +25,12 @@ python_dir="src/python/"
 # Relative path to this directory from Python directory.
 python_dir_inverse="../../"
 
+# Rust directory.
+rust_dir="src/rust/"
+
+# Relative path to this directory from Rust directory.
+rust_dir_inverse="../../"
+
 # TypeScript SDK directory.
 ts_sdk_dir="src/typescript/sdk"
 
@@ -167,6 +173,15 @@ function format_code_python {
     poetry run isort .                  # Sort imports.
     poetry run black . --line-length 80 # Format code.
     cd $python_dir_inverse              # Go back to repository root.
+
+}
+
+# Format Rust code.
+function format_code_rust {
+    echo "Formatting Rust code"
+    cd $rust_dir         # Navigate to Rust directory
+    cargo fmt --all      # Format rust code
+    cd $rust_dir_inverse # Return to repository root
 }
 
 # Format shell scripts.
@@ -188,6 +203,7 @@ function format_code_typescript {
 # Format all code.
 function format_code {
     format_code_python
+    format_code_rust
     format_code_shell
     format_code_typescript
 }
@@ -221,7 +237,10 @@ case "$1" in
         brew_install eslint                                 # Install JavaScript linter.
         brew_install node                                   # Install JavaScript package manager.
         brew_install poetry                                 # Install Python environment manager.
+        brew_install rust                                   # Install Rust.
+        brew_install rustup                                 # Install Rust toolchain installer.
         brew_install shfmt                                  # Install shell script formatter.
+        rustup install stable                               # Install stable Rust toolchain.
         cd $ts_sdk_dir                                      # Go to TypeScript SDK directory.
         npm_install @typescript-eslint/eslint-plugin@latest # Install TypeScript linter.
         npm_install eslint-plugin-prettier@latest           # Intall Prettier plugin for linter.

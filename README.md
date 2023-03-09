@@ -20,6 +20,7 @@
     - [Move](#move)
     - [Markdown](#markdown)
     - [Python](#python)
+    - [Rust](#rust)
     - [TypeScript](#typescript)
     - [Jupyter](#jupyter)
 
@@ -115,6 +116,10 @@ Documentation markdown source files are at [`doc/doc-site/docs`].
 Econia comes with a Python package at [`src/python/econia`], used for assorted build scripting functionality.
 Most Python commands are called on by [`scripts.sh`] commands, with dependencies managed by [Poetry].
 
+### Rust
+
+Econia contains a Rust API backend at [`src/rust`].
+
 ### TypeScript
 
 Econia contains a TypeScript SDK at [`src/typescript/sdk`].
@@ -136,6 +141,7 @@ Hence, older commits can be checked out and experimented with, but mostly they a
 [`src/move/econia/doc`]:                    src/move/econia/doc
 [`src/python/econia`]:                      src/python/econia
 [`src/typescript/sdk`]:                     src/typescript/sdk
+[`src/rust`]:                               src/rust
 [Poetry]:                                   https://python-poetry.org/
 [local Time Machine snapshots]:             https://discussions.apple.com/thread/7676695
 [`scripts.sh`]:                             scripts.sh

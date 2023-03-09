@@ -2,7 +2,7 @@ create table coins (
     symbol varchar(8) not null primary key,
     name text not null,
     decimals smallint not null,
-    address text
+    address text not null
 );
 
 create table orderbooks (

@@ -5,7 +5,7 @@ diesel::table! {
         symbol -> Varchar,
         name -> Text,
         decimals -> Int2,
-        address -> Nullable<Text>,
+        address -> Text,
     }
 }
 

@@ -1,8 +1,8 @@
 use diesel::{prelude::*, Connection, PgConnection};
-use models::Coin;
+use models::{Coin, Orderbook};
 use serde::Deserialize;
 
-use crate::models::NewCoin;
+use crate::models::{NewCoin, NewOrderbook};
 
 pub mod models;
 pub mod schema;
@@ -45,4 +45,32 @@ pub fn create_coin(
         .values(&new_coin)
         .get_result(conn)
         .expect("Error adding new coin.")
+}
+
+pub fn create_orderbook(
+    conn: &mut PgConnection,
+    id: i32,
+    base: &str,
+    quote: &str,
+    lot_size: i32,
+    tick_size: i32,
+    min_size: i32,
+    underwriter_id: i32,
+) -> Orderbook {
+    use crate::schema::orderbooks;
+
+    let new_orderbook = NewOrderbook {
+        id,
+        base,
+        quote,
+        lot_size,
+        tick_size,
+        min_size,
+        underwriter_id,
+    };
+
+    diesel::insert_into(orderbooks::table)
+        .values(&new_orderbook)
+        .get_result(conn)
+        .expect("Error adding new orderbook.")
 }

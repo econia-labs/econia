@@ -11,13 +11,13 @@ diesel::table! {
 
 diesel::table! {
     orderbooks (id) {
-        id -> Numeric,
+        id -> Int4,
         base -> Varchar,
         quote -> Varchar,
-        lot_size -> Numeric,
-        tick_size -> Numeric,
-        min_size -> Numeric,
-        underwriter_id -> Numeric,
+        lot_size -> Int4,
+        tick_size -> Int4,
+        min_size -> Int4,
+        underwriter_id -> Int4,
     }
 }
 

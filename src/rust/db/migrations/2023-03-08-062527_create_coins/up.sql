@@ -6,11 +6,11 @@ create table coins (
 );
 
 create table orderbooks (
-    id numeric not null primary key,
+    id int not null primary key,
     base varchar(8) not null references coins(symbol),
     quote varchar(8) not null references coins(symbol),
-    lot_size numeric not null,
-    tick_size numeric not null,
-    min_size numeric not null,
-    underwriter_id numeric not null
+    lot_size int not null,
+    tick_size int not null,
+    min_size int not null,
+    underwriter_id int not null
 );

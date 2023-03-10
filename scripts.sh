@@ -59,13 +59,6 @@ function brew_install {
     fi
 }
 
-# Install via pnpm.
-function pnpm_install {
-    package=$1                       # Get package name.
-    echo "PNPM installing $package"  # Print notice.
-    pnpm install $package --save-dev # Install package.
-}
-
 # Generate temporary account.
 function generate_temporary_account {
     cd $python_dir # Navigate to Python package directory.
@@ -229,7 +222,6 @@ case "$1" in
         fi
         brew_install aptos                                   # Install aptos CLI.
         brew_install entr                                    # Install tool to run on file change.
-        brew_install eslint                                  # Install JavaScript linter.
         brew_install node                                    # Install JavaScript package manager.
         brew_install poetry                                  # Install Python environment manager.
         brew_install pnpm                                    # Install performant NPM variant.
@@ -238,8 +230,8 @@ case "$1" in
         brew_install shfmt                                   # Install shell script formatter.
         rustup install stable                                # Install stable Rust toolchain.
         cd $ts_sdk_dir                                       # Go to TypeScript SDK directory.
-        pnpm_install @typescript-eslint/eslint-plugin@latest # Install TypeScript linter.
-        pnpm_install eslint-plugin-prettier@latest           # Intall Prettier plugin for linter.
+        echo "Installing TypeScript dependencies via pnpm"   # Print notice.
+        pnpm install                                         # Install TypeScript dependencies.
         cd $ts_sdk_dir_inverse                               # Go back to repository root.
         cd $python_dir                                       # Navigate to Python package directory.
         echo "Installing Python package"                     # Print notice.

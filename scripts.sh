@@ -59,13 +59,6 @@ function brew_install {
     fi
 }
 
-# Install via pnpm.
-function pnpm_install {
-    package=$1                       # Get package name.
-    echo "PNPM installing $package"  # Print notice.
-    pnpm install $package --save-dev # Install package.
-}
-
 # Generate temporary account.
 function generate_temporary_account {
     cd $python_dir # Navigate to Python package directory.
@@ -227,24 +220,23 @@ case "$1" in
             echo "installing brew"                 # Print notice of installation.
             /bin/bash -c "$(curl -fsSL $brew_url)" # Install brew.
         fi
-        brew_install aptos                                   # Install aptos CLI.
-        brew_install entr                                    # Install tool to run on file change.
-        brew_install eslint                                  # Install JavaScript linter.
-        brew_install node                                    # Install JavaScript package manager.
-        brew_install poetry                                  # Install Python environment manager.
-        brew_install pnpm                                    # Install performant NPM variant.
-        brew_install rust                                    # Install Rust.
-        brew_install rustup                                  # Install Rust toolchain installer.
-        brew_install shfmt                                   # Install shell script formatter.
-        rustup install stable                                # Install stable Rust toolchain.
-        cd $ts_sdk_dir                                       # Go to TypeScript SDK directory.
-        pnpm_install @typescript-eslint/eslint-plugin@latest # Install TypeScript linter.
-        pnpm_install eslint-plugin-prettier@latest           # Intall Prettier plugin for linter.
-        cd $ts_sdk_dir_inverse                               # Go back to repository root.
-        cd $python_dir                                       # Navigate to Python package directory.
-        echo "Installing Python package"                     # Print notice.
-        poetry install                                       # Install Python package and dependencies.
-        cd $python_dir_inverse                               # Go back to repository root.
+        brew_install aptos                                 # Install aptos CLI.
+        brew_install entr                                  # Install tool to run on file change.
+        brew_install node                                  # Install JavaScript package manager.
+        brew_install poetry                                # Install Python environment manager.
+        brew_install pnpm                                  # Install performant NPM variant.
+        brew_install rust                                  # Install Rust.
+        brew_install rustup                                # Install Rust toolchain installer.
+        brew_install shfmt                                 # Install shell script formatter.
+        rustup install stable                              # Install stable Rust toolchain.
+        cd $ts_sdk_dir                                     # Go to TypeScript SDK directory.
+        echo "Installing TypeScript dependencies via pnpm" # Print notice.
+        pnpm install                                       # Install TypeScript dependencies.
+        cd $ts_sdk_dir_inverse                             # Go back to repository root.
+        cd $python_dir                                     # Navigate to Python package directory.
+        echo "Installing Python package"                   # Print notice.
+        poetry install                                     # Install Python package and dependencies.
+        cd $python_dir_inverse                             # Go back to repository root.
         ;;
 
     # Set econia address to underscore.

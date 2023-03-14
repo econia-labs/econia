@@ -1,8 +1,9 @@
+use bigdecimal::BigDecimal;
+use chrono::NaiveDateTime;
 use diesel::{prelude::*, Connection, PgConnection};
-use models::Coin;
 use serde::Deserialize;
 
-use crate::models::NewCoin;
+use crate::models::{Coin, MarketRegistrationEvent, NewCoin, NewMarketRegistrationEvent};
 
 pub mod models;
 pub mod schema;
@@ -51,30 +52,34 @@ pub fn create_coin(
         .expect("Error adding new coin.")
 }
 
-// pub fn create_orderbook(
-//     conn: &mut PgConnection,
-//     id: i32,
-//     base: &str,
-//     quote: &str,
-//     lot_size: i32,
-//     tick_size: i32,
-//     min_size: i32,
-//     underwriter_id: i32,
-// ) -> Orderbook {
-//     use crate::schema::orderbooks;
+pub fn register_market(
+    conn: &mut PgConnection,
+    market_id: BigDecimal,
+    time: NaiveDateTime,
+    base_id: i32,
+    base_name_generic: Option<&str>,
+    quote_id: i32,
+    lot_size: BigDecimal,
+    tick_size: BigDecimal,
+    min_size: BigDecimal,
+    underwriter_id: BigDecimal,
+) -> MarketRegistrationEvent {
+    use crate::schema::market_registration_events;
 
-//     let new_orderbook = NewOrderbook {
-//         id,
-//         base,
-//         quote,
-//         lot_size,
-//         tick_size,
-//         min_size,
-//         underwriter_id,
-//     };
+    let new_market_registration_event = NewMarketRegistrationEvent {
+        market_id,
+        time,
+        base_id,
+        base_name_generic,
+        quote_id,
+        lot_size,
+        tick_size,
+        min_size,
+        underwriter_id,
+    };
 
-//     diesel::insert_into(orderbooks::table)
-//         .values(&new_orderbook)
-//         .get_result(conn)
-//         .expect("Error adding new orderbook.")
-// }
+    diesel::insert_into(market_registration_events::table)
+        .values(&new_market_registration_event)
+        .get_result(conn)
+        .expect("Error adding market registration event.")
+}

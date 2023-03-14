@@ -42,15 +42,15 @@ pub struct Market {
 
 #[derive(Clone, Debug, Serialize, Deserialize, Queryable)]
 pub struct MarketRegistrationEvent {
-    pub market_id: i32,
+    pub market_id: BigDecimal,
     pub time: NaiveDateTime,
     pub base_id: i32,
     pub base_name_generic: Option<String>,
     pub quote_id: i32,
-    pub lot_size: i32,
-    pub tick_size: i32,
-    pub min_size: i32,
-    pub underwriter_id: i32,
+    pub lot_size: BigDecimal,
+    pub tick_size: BigDecimal,
+    pub min_size: BigDecimal,
+    pub underwriter_id: BigDecimal,
 }
 
 #[derive(Insertable, Debug)]

@@ -50,7 +50,7 @@ fn test_register_market() {
     register_market(
         conn,
         0.into(),
-        Utc::now().naive_utc(),
+        Utc::now(),
         aptos_coin.id,
         None,
         tusdc_coin.id,

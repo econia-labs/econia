@@ -1,5 +1,5 @@
 use bigdecimal::BigDecimal;
-use chrono::NaiveDateTime;
+use chrono::{DateTime, Utc};
 use diesel::{prelude::*, Connection, PgConnection};
 use serde::Deserialize;
 
@@ -55,7 +55,7 @@ pub fn create_coin(
 pub fn register_market(
     conn: &mut PgConnection,
     market_id: BigDecimal,
-    time: NaiveDateTime,
+    time: DateTime<Utc>,
     base_id: i32,
     base_name_generic: Option<&str>,
     quote_id: i32,

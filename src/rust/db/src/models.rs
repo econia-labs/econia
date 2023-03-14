@@ -1,5 +1,5 @@
 use bigdecimal::BigDecimal;
-use chrono::NaiveDateTime;
+use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -37,13 +37,13 @@ pub struct Market {
     pub tick_size: BigDecimal,
     pub min_size: BigDecimal,
     pub underwriter_id: BigDecimal,
-    pub created_at: NaiveDateTime,
+    pub created_at: DateTime<Utc>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Queryable)]
 pub struct MarketRegistrationEvent {
     pub market_id: BigDecimal,
-    pub time: NaiveDateTime,
+    pub time: DateTime<Utc>,
     pub base_id: i32,
     pub base_name_generic: Option<String>,
     pub quote_id: i32,
@@ -57,7 +57,7 @@ pub struct MarketRegistrationEvent {
 #[diesel(table_name = market_registration_events)]
 pub struct NewMarketRegistrationEvent<'a> {
     pub market_id: BigDecimal,
-    pub time: NaiveDateTime,
+    pub time: DateTime<Utc>,
     pub base_id: i32,
     pub base_name_generic: Option<&'a str>,
     pub quote_id: i32,

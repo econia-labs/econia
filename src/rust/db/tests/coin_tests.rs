@@ -31,4 +31,7 @@ fn test_create_coin() {
         .expect("Could not query coins.");
 
     assert_eq!(db_coins.len(), 1);
+
+    let db_aptos_coin = db_coins.get(0).unwrap();
+    assert_eq!(db_aptos_coin.symbol, Some("APT".to_string()));
 }

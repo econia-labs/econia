@@ -21,7 +21,7 @@ diesel::table! {
 diesel::table! {
     market_registration_events (market_id) {
         market_id -> Numeric,
-        time -> Timestamp,
+        time -> Timestamptz,
         base_id -> Int4,
         base_name_generic -> Nullable<Text>,
         quote_id -> Int4,
@@ -42,7 +42,7 @@ diesel::table! {
         tick_size -> Numeric,
         min_size -> Numeric,
         underwriter_id -> Numeric,
-        created_at -> Timestamp,
+        created_at -> Timestamptz,
     }
 }
 

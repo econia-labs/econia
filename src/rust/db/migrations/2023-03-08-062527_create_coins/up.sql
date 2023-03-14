@@ -20,7 +20,7 @@ create table markets (
     tick_size numeric(20) not null,
     min_size numeric(20) not null,
     underwriter_id numeric(20) not null,
-    created_at timestamp not null,
+    created_at timestamptz not null,
     foreign key (base_id) references coins(id),
     foreign key (quote_id) references coins(id)
 );
@@ -28,7 +28,7 @@ create table markets (
 -- Corresponds to econia::registry::MarketRegistrationEvent
 create table market_registration_events (
     market_id numeric(20) not null primary key,
-    time timestamp not null,
+    time timestamptz not null,
     base_id serial not null,
     base_name_generic text,
     quote_id serial not null,

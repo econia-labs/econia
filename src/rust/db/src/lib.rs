@@ -1,8 +1,8 @@
 use diesel::{prelude::*, Connection, PgConnection};
-use models::{Coin, Orderbook};
+use models::Coin;
 use serde::Deserialize;
 
-use crate::models::{NewCoin, NewOrderbook};
+use crate::models::NewCoin;
 
 pub mod models;
 pub mod schema;
@@ -27,18 +27,22 @@ pub fn establish_connection(url: String) -> PgConnection {
 
 pub fn create_coin(
     conn: &mut PgConnection,
-    symbol: &str,
-    name: &str,
-    decimals: i16,
-    address: &str,
+    account_address: &str,
+    module_name: &str,
+    struct_name: &str,
+    symbol: Option<&str>,
+    name: Option<&str>,
+    decimals: Option<i16>,
 ) -> Coin {
     use crate::schema::coins;
 
     let new_coin = NewCoin {
+        account_address,
+        module_name,
+        struct_name,
         symbol,
         name,
         decimals,
-        address,
     };
 
     diesel::insert_into(coins::table)
@@ -47,30 +51,30 @@ pub fn create_coin(
         .expect("Error adding new coin.")
 }
 
-pub fn create_orderbook(
-    conn: &mut PgConnection,
-    id: i32,
-    base: &str,
-    quote: &str,
-    lot_size: i32,
-    tick_size: i32,
-    min_size: i32,
-    underwriter_id: i32,
-) -> Orderbook {
-    use crate::schema::orderbooks;
+// pub fn create_orderbook(
+//     conn: &mut PgConnection,
+//     id: i32,
+//     base: &str,
+//     quote: &str,
+//     lot_size: i32,
+//     tick_size: i32,
+//     min_size: i32,
+//     underwriter_id: i32,
+// ) -> Orderbook {
+//     use crate::schema::orderbooks;
 
-    let new_orderbook = NewOrderbook {
-        id,
-        base,
-        quote,
-        lot_size,
-        tick_size,
-        min_size,
-        underwriter_id,
-    };
+//     let new_orderbook = NewOrderbook {
+//         id,
+//         base,
+//         quote,
+//         lot_size,
+//         tick_size,
+//         min_size,
+//         underwriter_id,
+//     };
 
-    diesel::insert_into(orderbooks::table)
-        .values(&new_orderbook)
-        .get_result(conn)
-        .expect("Error adding new orderbook.")
-}
+//     diesel::insert_into(orderbooks::table)
+//         .values(&new_orderbook)
+//         .get_result(conn)
+//         .expect("Error adding new orderbook.")
+// }

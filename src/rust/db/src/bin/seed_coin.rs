@@ -9,18 +9,36 @@ fn main() {
         .execute(conn)
         .expect("Error deleting coins");
 
-    create_coin(conn, "APT", "Aptos Coin", 8, "0x1::aptos_coin::AptosCoin");
+    create_coin(
+        conn,
+        "0x1",
+        "aptos_coin",
+        "AptosCoin",
+        Some("APT"),
+        Some("Aptos Coin"),
+        Some(8),
+    );
     println!("registered APT to the coins table");
 
-    create_coin(conn, "tUSDC", "TestUSDCoin", 6, "0x7c36a610d1cde8853a692c057e7bd2479ba9d5eeaeceafa24f125c23d2abf942::test_usdc::TestUSDCoin");
+    create_coin(
+        conn,
+        "0x7c36a610d1cde8853a692c057e7bd2479ba9d5eeaeceafa24f125c23d2abf942",
+        "test_usdc",
+        "TestUSDCoin",
+        Some("tUSDC"),
+        Some("Test USDC"),
+        Some(6),
+    );
     println!("registered tUSDC to the coins table");
 
     create_coin(
         conn,
-        "tETH",
+        "0x7c36a610d1cde8853a692c057e7bd2479ba9d5eeaeceafa24f125c23d2abf942",
+        "test_eth",
         "TestETHCoin",
-        6,
-        "0x7c36a610d1cde8853a692c057e7bd2479ba9d5eeaeceafa24f125c23d2abf942::test_eth::TestETHCoin",
+        Some("tETH"),
+        Some("Test ETH"),
+        Some(6),
     );
     println!("registered tETH to the coins table");
 }

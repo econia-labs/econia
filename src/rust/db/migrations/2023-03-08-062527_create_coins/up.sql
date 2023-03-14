@@ -41,7 +41,7 @@ create table market_registration_events (
 create function register_market() returns trigger as $register_market$ begin
 insert into markets
 values (
-        NEW.market,
+        NEW.market_id,
         NEW.base_id,
         NEW.base_name_generic,
         NEW.quote_id,
@@ -57,6 +57,10 @@ return NEW;
 end;
 
 $register_market$ language plpgsql;
+
+create trigger register_market_trigger
+after
+insert on market_registration_events for each row execute procedure register_market();
 
 -- Corresponds to econia::registry::RecognizedMarketInfo
 -- This id does not need to exist, but diesel only supports tables with primary keys

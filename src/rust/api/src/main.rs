@@ -1,13 +1,16 @@
 use std::net::SocketAddr;
 
-use axum::{routing::get, Router};
+use axum::{extract::State, routing::get, Json, Router};
+use db::models::Market;
 use serde::Deserialize;
+use sqlx::{PgPool, Pool, Postgres};
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::prelude::*;
 
 #[derive(Deserialize, Debug)]
 pub struct Config {
     port: u16,
+    database_url: String,
 }
 
 #[tokio::main]
@@ -22,8 +25,14 @@ async fn main() {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
+    let pool = PgPool::connect(&config.database_url)
+        .await
+        .expect("Could not connect to DATABASE_URL");
+
     let app = Router::new()
         .route("/", get(index))
+        .route("/markets", get(markets))
+        .with_state(pool)
         .layer(TraceLayer::new_for_http());
 
     let addr = SocketAddr::from(([0, 0, 0, 0], config.port));
@@ -45,4 +54,12 @@ fn load_config() -> Config {
 
 async fn index() -> String {
     String::from("Econia backend API")
+}
+
+async fn markets(State(pool): State<Pool<Postgres>>) -> Json<Vec<Market>> {
+    let markets: Vec<Market> = sqlx::query_as!(Market, r"select * from markets")
+        .fetch_all(&pool)
+        .await
+        .unwrap();
+    Json(markets)
 }

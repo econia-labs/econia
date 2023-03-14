@@ -7,11 +7,13 @@ edition = "2021"
 
 [dependencies]
 axum = "0.6.10"
+db = { path = "../db" }
 dotenvy = { workspace = true }
 envy = { workspace = true }
 futures-util = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
+sqlx = { version = "0.6.2", features = ["bigdecimal", "chrono", "macros", "postgres", "runtime-tokio-rustls", "time"] }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 tower = "0.4.13"

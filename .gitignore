@@ -52,3 +52,7 @@ doc/sphinx/build/*
 
 # Temporary markdown file for prototyping
 temp.md
+
+# IntelliJ settings
+.idea/
+

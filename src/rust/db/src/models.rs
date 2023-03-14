@@ -29,14 +29,14 @@ pub struct NewCoin<'a> {
 
 #[derive(Clone, Debug, Serialize, Deserialize, Queryable)]
 pub struct Market {
-    pub market_id: i32,
+    pub market_id: BigDecimal,
     pub base_id: i32,
-    pub base_name_generic: String,
+    pub base_name_generic: Option<String>,
     pub quote_id: i32,
-    pub lot_size: i32,
-    pub tick_size: i32,
-    pub min_size: i32,
-    pub underwriter_id: i32,
+    pub lot_size: BigDecimal,
+    pub tick_size: BigDecimal,
+    pub min_size: BigDecimal,
+    pub underwriter_id: BigDecimal,
     pub created_at: NaiveDateTime,
 }
 

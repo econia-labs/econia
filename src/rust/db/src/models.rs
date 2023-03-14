@@ -1,7 +1,9 @@
+use bigdecimal::BigDecimal;
+use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::schema::coins;
+use crate::schema::{coins, market_registration_events};
 
 #[derive(Clone, Debug, Serialize, Deserialize, Queryable)]
 pub struct Coin {
@@ -14,7 +16,7 @@ pub struct Coin {
     pub decimals: Option<i16>,
 }
 
-#[derive(Insertable)]
+#[derive(Insertable, Debug)]
 #[diesel(table_name = coins)]
 pub struct NewCoin<'a> {
     pub account_address: &'a str,
@@ -25,25 +27,42 @@ pub struct NewCoin<'a> {
     pub decimals: Option<i16>,
 }
 
-// #[derive(Clone, Debug, Serialize, Deserialize, Queryable)]
-// pub struct Orderbook {
-//     pub id: i32,
-//     pub base: String,
-//     pub quote: String,
-//     pub lot_size: i32,
-//     pub tick_size: i32,
-//     pub min_size: i32,
-//     pub underwriter_id: i32,
-// }
+#[derive(Clone, Debug, Serialize, Deserialize, Queryable)]
+pub struct Market {
+    pub market_id: i32,
+    pub base_id: i32,
+    pub base_name_generic: String,
+    pub quote_id: i32,
+    pub lot_size: i32,
+    pub tick_size: i32,
+    pub min_size: i32,
+    pub underwriter_id: i32,
+    pub created_at: NaiveDateTime,
+}
 
-// #[derive(Insertable)]
-// #[diesel(table_name = orderbooks)]
-// pub struct NewOrderbook<'a> {
-//     pub id: i32,
-//     pub base: &'a str,
-//     pub quote: &'a str,
-//     pub lot_size: i32,
-//     pub tick_size: i32,
-//     pub min_size: i32,
-//     pub underwriter_id: i32,
-// }
+#[derive(Clone, Debug, Serialize, Deserialize, Queryable)]
+pub struct MarketRegistrationEvent {
+    pub market_id: i32,
+    pub time: NaiveDateTime,
+    pub base_id: i32,
+    pub base_name_generic: Option<String>,
+    pub quote_id: i32,
+    pub lot_size: i32,
+    pub tick_size: i32,
+    pub min_size: i32,
+    pub underwriter_id: i32,
+}
+
+#[derive(Insertable, Debug)]
+#[diesel(table_name = market_registration_events)]
+pub struct NewMarketRegistrationEvent<'a> {
+    pub market_id: BigDecimal,
+    pub time: NaiveDateTime,
+    pub base_id: i32,
+    pub base_name_generic: Option<&'a str>,
+    pub quote_id: i32,
+    pub lot_size: BigDecimal,
+    pub tick_size: BigDecimal,
+    pub min_size: BigDecimal,
+    pub underwriter_id: BigDecimal,
+}

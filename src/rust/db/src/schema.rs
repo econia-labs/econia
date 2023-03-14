@@ -28,6 +28,7 @@ diesel::table! {
         lot_size -> Numeric,
         tick_size -> Numeric,
         min_size -> Numeric,
+        underwriter_id -> Numeric,
     }
 }
 

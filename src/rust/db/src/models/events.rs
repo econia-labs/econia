@@ -23,7 +23,7 @@ pub struct MakerEvent {
     pub side: Side,
     pub market_order_id: BigDecimal,
     pub user_address: String,
-    pub custodian_id: BigDecimal,
+    pub custodian_id: Option<BigDecimal>,
     pub event_type: MakerEventType,
     pub size: BigDecimal,
     pub price: BigDecimal,
@@ -32,12 +32,12 @@ pub struct MakerEvent {
 
 #[derive(Insertable, Debug)]
 #[diesel(table_name = maker_events)]
-pub struct NewOrder<'a> {
+pub struct NewMakerEvent<'a> {
     pub market_id: BigDecimal,
     pub side: Side,
     pub market_order_id: BigDecimal,
     pub user_address: &'a str,
-    pub custodian_id: BigDecimal,
+    pub custodian_id: Option<BigDecimal>,
     pub event_type: MakerEventType,
     pub size: BigDecimal,
     pub price: BigDecimal,

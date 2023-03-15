@@ -1,11 +1,15 @@
 use bigdecimal::BigDecimal;
 use chrono::{DateTime, Utc};
 use diesel::{prelude::*, Connection, PgConnection};
-use models::order::{NewOrder, Side};
+use models::{
+    events::{MakerEvent, MakerEventType},
+    order::Side,
+};
 use serde::Deserialize;
 
 use crate::models::{
     coin::{Coin, NewCoin},
+    events::NewMakerEvent,
     market::{MarketRegistrationEvent, NewMarketRegistrationEvent},
 };
 
@@ -86,4 +90,36 @@ pub fn register_market(
         .values(&new_market_registration_event)
         .get_result(conn)
         .expect("Error adding market registration event.")
+}
+
+pub fn add_maker_event(
+    conn: &mut PgConnection,
+    market_id: BigDecimal,
+    side: Side,
+    market_order_id: BigDecimal,
+    user_address: &str,
+    custodian_id: Option<BigDecimal>,
+    event_type: MakerEventType,
+    size: BigDecimal,
+    price: BigDecimal,
+    time: DateTime<Utc>,
+) -> MakerEvent {
+    use crate::schema::maker_events;
+
+    let new_maker_event = NewMakerEvent {
+        market_id,
+        side,
+        market_order_id,
+        user_address,
+        custodian_id,
+        event_type,
+        size,
+        price,
+        time,
+    };
+
+    diesel::insert_into(maker_events::table)
+        .values(&new_maker_event)
+        .get_result(conn)
+        .expect("Error adding maker event.")
 }

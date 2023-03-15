@@ -18,7 +18,7 @@ create table maker_events (
     side side not null,
     market_order_id numeric (39) not null,
     user_address varchar (70) not null,
-    custodian_id numeric (30),
+    custodian_id numeric (20),
     event_type maker_event_type not null,
     size numeric (20) not null,
     price numeric (20) not null,

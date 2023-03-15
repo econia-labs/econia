@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use crate::schema::orders;
 
 #[derive(Debug, DbEnum, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "lowercase")]
 #[ExistingTypePath = "crate::schema::sql_types::Side"]
 pub enum Side {
     Buy,

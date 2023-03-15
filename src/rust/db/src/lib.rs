@@ -1,6 +1,7 @@
 use bigdecimal::BigDecimal;
 use chrono::{DateTime, Utc};
 use diesel::{prelude::*, Connection, PgConnection};
+use models::order::{NewOrder, Side};
 use serde::Deserialize;
 
 use crate::models::{

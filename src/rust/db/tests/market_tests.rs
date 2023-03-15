@@ -1,17 +1,12 @@
 use chrono::Utc;
 use db::{
     create_coin, establish_connection, load_config,
-    models::{Market, MarketRegistrationEvent},
+    models::market::{Market, MarketRegistrationEvent},
     register_market,
 };
 use diesel::prelude::*;
 
-#[test]
-fn test_register_market() {
-    let config = load_config();
-    let conn = &mut establish_connection(config.database_url);
-
-    // Delete all entries in the tables used before running tests.
+fn reset_tables(conn: &mut PgConnection) {
     diesel::delete(db::schema::markets::table)
         .execute(conn)
         .expect("Error deleting markets table");
@@ -23,6 +18,15 @@ fn test_register_market() {
     diesel::delete(db::schema::coins::table)
         .execute(conn)
         .expect("Error deleting coins table");
+}
+
+#[test]
+fn test_register_market() {
+    let config = load_config();
+    let conn = &mut establish_connection(config.database_url);
+
+    // Delete all entries in the tables used before running tests.
+    reset_tables(conn);
 
     // Register coins first, so we can satisfy the foreign key constraint in markets.
     let aptos_coin = create_coin(
@@ -74,4 +78,6 @@ fn test_register_market() {
         .expect("Could not query markets.");
 
     assert_eq!(db_markets.len(), 1);
+
+    reset_tables(conn);
 }

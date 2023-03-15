@@ -1,4 +1,4 @@
-use db::{create_coin, establish_connection, load_config, models::Coin};
+use db::{create_coin, establish_connection, load_config, models::coin::Coin};
 use diesel::prelude::*;
 
 #[test]

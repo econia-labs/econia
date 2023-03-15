@@ -61,9 +61,8 @@ mod tests {
     use sqlx::PgPool;
     use tower::ServiceExt;
 
-    use crate::load_config;
-
     use super::*;
+    use crate::load_config;
 
     #[tokio::test]
     async fn test_index() {

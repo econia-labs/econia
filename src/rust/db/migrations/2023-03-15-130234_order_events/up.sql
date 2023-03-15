@@ -26,7 +26,8 @@ create table maker_events (
     price numeric (20) not null,
     time timestamptz not null,
     primary key (market_order_id, time),
-    foreign key (market_id) references markets (market_id)
+    foreign key (market_id) references markets (market_id),
+    foreign key (market_order_id) references orders (market_order_id)
 );
 
 create function place_order() returns trigger as $place_order$ begin
@@ -48,7 +49,7 @@ end;
 $place_order$ language plpgsql;
 
 create trigger place_order_trigger
-after
+before
 insert on maker_events for each row
 execute procedure place_order();
 
@@ -62,5 +63,6 @@ create table taker_events (
     price numeric (20) not null,
     time timestamptz not null,
     primary key (market_order_id, time),
-    foreign key (market_id) references markets (market_id)
+    foreign key (market_id) references markets (market_id),
+    foreign key (market_order_id) references orders (market_order_id)
 );

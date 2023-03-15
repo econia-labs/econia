@@ -6,6 +6,7 @@ use sqlx::PgPool;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::prelude::*;
 
+mod error;
 mod routes;
 
 #[derive(Deserialize, Debug)]

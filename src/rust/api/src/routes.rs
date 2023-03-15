@@ -1,11 +1,16 @@
 use axum::{extract::State, Json};
 use sqlx::{Pool, Postgres};
+use types::error::TypeError;
+
+use crate::error::ApiError;
 
 pub async fn index() -> String {
     String::from("Econia backend API")
 }
 
-pub async fn markets(State(pool): State<Pool<Postgres>>) -> Json<Vec<types::Market>> {
+pub async fn markets(
+    State(pool): State<Pool<Postgres>>,
+) -> Result<Json<Vec<types::Market>>, ApiError> {
     let query_markets = sqlx::query_as!(
         types::QueryMarket,
         r#"
@@ -35,18 +40,12 @@ pub async fn markets(State(pool): State<Pool<Postgres>>) -> Json<Vec<types::Mark
         "#
     )
     .fetch_all(&pool)
-    .await
-    .unwrap();
+    .await?;
 
-    let mut markets: Vec<types::Market> = vec![];
-    let mut iter = query_markets.into_iter();
+    let markets = query_markets
+        .into_iter()
+        .map(|v| v.try_into())
+        .collect::<Result<Vec<types::Market>, TypeError>>()?;
 
-    while let Some(query_market) = iter.next() {
-        let res: types::Market = query_market.try_into().unwrap();
-        markets.push(res);
-    }
-
-    tracing::info!("{:?}", markets);
-
-    Json(markets)
+    Ok(Json(markets))
 }

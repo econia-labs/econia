@@ -251,7 +251,6 @@ case "$1" in
         brew_install node                                  # Install JavaScript package manager.
         brew_install poetry                                # Install Python environment manager.
         brew_install pnpm                                  # Install performant NPM variant.
-        brew_install rust                                  # Install Rust.
         brew_install rustup                                # Install Rust toolchain installer.
         brew_install shfmt                                 # Install shell script formatter.
         rustup install stable                              # Install stable Rust toolchain.

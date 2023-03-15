@@ -1,4 +1,4 @@
-use bigdecimal::BigDecimal;
+use bigdecimal::{BigDecimal, ToPrimitive};
 use chrono::{DateTime, Utc};
 use error::TypeError;
 use serde::{Deserialize, Serialize};
@@ -17,14 +17,14 @@ pub struct Coin {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Market {
-    pub market_id: BigDecimal,
+    pub market_id: u64,
     pub base: Coin,
     pub base_name_generic: Option<String>,
     pub quote: Coin,
-    pub lot_size: BigDecimal,
-    pub tick_size: BigDecimal,
-    pub min_size: BigDecimal,
-    pub underwriter_id: BigDecimal,
+    pub lot_size: u64,
+    pub tick_size: u64,
+    pub min_size: u64,
+    pub underwriter_id: u64,
     pub created_at: DateTime<Utc>,
 }
 
@@ -95,15 +95,36 @@ impl TryFrom<QueryMarket> for Market {
             decimals: quote_decimals,
         };
 
+        // Convert BigDecimals to u64s.
+        // These are all u64 in the Move code, so no errors are expected to occur here.
+        let market_id = value.market_id.to_u64().ok_or(TypeError::ConversionError {
+            name: "market_id".into(),
+        })?;
+        let lot_size = value.lot_size.to_u64().ok_or(TypeError::ConversionError {
+            name: "lot_size".into(),
+        })?;
+        let tick_size = value.tick_size.to_u64().ok_or(TypeError::ConversionError {
+            name: "tick_size".into(),
+        })?;
+        let min_size = value.min_size.to_u64().ok_or(TypeError::ConversionError {
+            name: "min_size".into(),
+        })?;
+        let underwriter_id = value
+            .underwriter_id
+            .to_u64()
+            .ok_or(TypeError::ConversionError {
+                name: "underwriter_id".into(),
+            })?;
+
         let market = Market {
-            market_id: value.market_id,
+            market_id,
             base,
             base_name_generic: value.base_name_generic,
             quote,
-            lot_size: value.lot_size,
-            tick_size: value.tick_size,
-            min_size: value.min_size,
-            underwriter_id: value.underwriter_id,
+            lot_size,
+            tick_size,
+            min_size,
+            underwriter_id,
             created_at: value.created_at,
         };
 

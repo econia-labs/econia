@@ -23,14 +23,6 @@ pub fn load_config() -> Config {
     }
 }
 
-pub fn router(pool: Pool<Postgres>) -> Router {
-    Router::new()
-        .route("/", get(routes::index))
-        .route("/markets", get(routes::markets))
-        .with_state(pool)
-        .layer(TraceLayer::new_for_http())
-}
-
 #[tokio::main]
 async fn main() {
     let config = load_config();
@@ -47,7 +39,12 @@ async fn main() {
         .await
         .expect("Could not connect to DATABASE_URL");
 
-    let app = router(pool);
+    let app = Router::new()
+        .route("/", get(routes::index))
+        .route("/markets", get(routes::markets))
+        .with_state(pool)
+        .layer(TraceLayer::new_for_http());
+
     let addr = SocketAddr::from(([0, 0, 0, 0], config.port));
 
     tracing::info!("Listening on http://{}", addr);

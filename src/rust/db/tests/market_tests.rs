@@ -6,7 +6,7 @@ use db::{
 };
 use diesel::prelude::*;
 
-fn reset_tables(conn: &mut PgConnection) {
+fn reset_market_tables(conn: &mut PgConnection) {
     diesel::delete(db::schema::markets::table)
         .execute(conn)
         .expect("Error deleting markets table");
@@ -26,7 +26,7 @@ fn test_register_market() {
     let conn = &mut establish_connection(config.database_url);
 
     // Delete all entries in the tables used before running tests.
-    reset_tables(conn);
+    reset_market_tables(conn);
 
     // Register coins first, so we can satisfy the foreign key constraint in markets.
     let aptos_coin = create_coin(
@@ -79,5 +79,6 @@ fn test_register_market() {
 
     assert_eq!(db_markets.len(), 1);
 
-    reset_tables(conn);
+    // Clean up tables.
+    reset_market_tables(conn);
 }

@@ -1,15 +1,19 @@
 use db::{create_coin, establish_connection, load_config, models::coin::Coin};
 use diesel::prelude::*;
 
+fn reset_coin_table(conn: &mut PgConnection) {
+    diesel::delete(db::schema::coins::table)
+        .execute(conn)
+        .expect("Error deleting coins table");
+}
+
 #[test]
 fn test_create_coin() {
     let config = load_config();
     let conn = &mut establish_connection(config.database_url);
 
     // Delete all entries in the coins table before running tests.
-    diesel::delete(db::schema::coins::table)
-        .execute(conn)
-        .expect("Error deleting coins table");
+    reset_coin_table(conn);
 
     create_coin(
         conn,
@@ -33,4 +37,7 @@ fn test_create_coin() {
 
     // Assert that the symbol of the database entry matches the entry inserted.
     assert_eq!(db_aptos_coin.symbol, Some("APT".to_string()));
+
+    // Clean up table.
+    reset_coin_table(conn);
 }

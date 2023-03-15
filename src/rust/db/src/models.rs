@@ -1,8 +1,9 @@
-use crate::schema::{coins, market_registration_events};
 use bigdecimal::BigDecimal;
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
+
+use crate::schema::{coins, market_registration_events};
 
 #[derive(Clone, Debug, Serialize, Deserialize, Queryable)]
 pub struct Coin {

@@ -1,5 +1,5 @@
 imports_granularity = "Crate"
-group_imports = "One"
+group_imports = "StdExternalCrate"
 ignore = [
     "dependencies",
 ]

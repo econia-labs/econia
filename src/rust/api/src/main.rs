@@ -1,6 +1,7 @@
+use std::net::SocketAddr;
+
 use axum::{routing::get, Router};
 use serde::Deserialize;
-use std::net::SocketAddr;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::prelude::*;
 

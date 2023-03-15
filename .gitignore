@@ -46,6 +46,7 @@ src/move/econia/build/Econia/*.yaml
 # Cargo
 src/move/econia/target/*
 *Cargo.lock
+**/target
 
 # Sphinx
 doc/sphinx/build/*
@@ -55,4 +56,3 @@ temp.md
 
 # IntelliJ settings
 .idea/
-

@@ -1,0 +1,129 @@
+{
+  "db": "PostgreSQL",
+  "4c3fcb345c4c0b036c91ef48276201a7c6fc12b8f0d2020e86ea0f5aefaae2ad": {
+    "describe": {
+      "columns": [
+        {
+          "name": "market_id",
+          "ordinal": 0,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "base_symbol",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "base_name",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "base_decimals",
+          "ordinal": 3,
+          "type_info": "Int2"
+        },
+        {
+          "name": "base_account_address",
+          "ordinal": 4,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "base_module_name",
+          "ordinal": 5,
+          "type_info": "Text"
+        },
+        {
+          "name": "base_struct_name",
+          "ordinal": 6,
+          "type_info": "Text"
+        },
+        {
+          "name": "quote_symbol",
+          "ordinal": 7,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "quote_name",
+          "ordinal": 8,
+          "type_info": "Text"
+        },
+        {
+          "name": "quote_decimals",
+          "ordinal": 9,
+          "type_info": "Int2"
+        },
+        {
+          "name": "quote_account_address",
+          "ordinal": 10,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "quote_module_name",
+          "ordinal": 11,
+          "type_info": "Text"
+        },
+        {
+          "name": "quote_struct_name",
+          "ordinal": 12,
+          "type_info": "Text"
+        },
+        {
+          "name": "base_name_generic",
+          "ordinal": 13,
+          "type_info": "Text"
+        },
+        {
+          "name": "lot_size",
+          "ordinal": 14,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "tick_size",
+          "ordinal": 15,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "min_size",
+          "ordinal": 16,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "underwriter_id",
+          "ordinal": 17,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "created_at",
+          "ordinal": 18,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false,
+        true,
+        true,
+        true,
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        false,
+        false,
+        false,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "\n        select \n            market_id,\n            base_coins.symbol as base_symbol,\n            base_coins.name as base_name,\n            base_coins.decimals as base_decimals,\n            base_coins.account_address as base_account_address,\n            base_coins.module_name as base_module_name,\n            base_coins.struct_name as base_struct_name,\n            quote_coins.symbol as quote_symbol,\n            quote_coins.name as quote_name,\n            quote_coins.decimals as quote_decimals,\n            quote_coins.account_address as quote_account_address,\n            quote_coins.module_name as quote_module_name,\n            quote_coins.struct_name as quote_struct_name,\n            base_name_generic,\n            lot_size,\n            tick_size,\n            min_size,\n            underwriter_id,\n            created_at\n        from markets\n            join coins base_coins on markets.base_id = base_coins.id\n            join coins quote_coins on markets.quote_id = quote_coins.id\n        "
+  }
+}

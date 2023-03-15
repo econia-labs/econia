@@ -13,7 +13,7 @@ envy = { workspace = true }
 futures-util = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
-sqlx = { version = "0.6.2", features = ["bigdecimal", "chrono", "macros", "postgres", "runtime-tokio-rustls", "time"] }
+sqlx = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 tower = "0.4.13"

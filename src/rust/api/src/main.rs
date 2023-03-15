@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 
 use axum::{routing::get, Router};
 use serde::Deserialize;
-use sqlx::{PgPool, Pool, Postgres};
+use sqlx::{PgPool};
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::prelude::*;
 

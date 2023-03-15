@@ -14,7 +14,7 @@ pub async fn markets(
     let query_markets = sqlx::query_as!(
         types::QueryMarket,
         r#"
-        select 
+        select
             market_id,
             base_coins.symbol as base_symbol,
             base_coins.name as base_name,
@@ -61,9 +61,8 @@ mod tests {
     use sqlx::PgPool;
     use tower::ServiceExt;
 
-    use crate::load_config;
-
     use super::*;
+    use crate::load_config;
 
     #[tokio::test]
     async fn test_index() {

@@ -9,7 +9,8 @@ create table orders (
     user_address varchar (70) not null,
     custodian_id numeric (20),
     created_at timestamptz not null,
-    order_access_key numeric (20) not null
+    order_access_key numeric (20) not null,
+    foreign key (market_id) references markets (market_id)
 );
 
 create type maker_event_type as enum ('cancel', 'change', 'evict', 'place');
@@ -24,7 +25,8 @@ create table maker_events (
     size numeric (20) not null,
     price numeric (20) not null,
     time timestamptz not null,
-    primary key (market_order_id, time)
+    primary key (market_order_id, time),
+    foreign key (market_id) references markets (market_id)
 );
 
 create function place_order() returns trigger as $place_order$ begin
@@ -59,5 +61,6 @@ create table taker_events (
     size numeric (20) not null,
     price numeric (20) not null,
     time timestamptz not null,
-    primary key (market_order_id, time)
+    primary key (market_order_id, time),
+    foreign key (market_id) references markets (market_id)
 );

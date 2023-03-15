@@ -125,7 +125,10 @@ diesel::table! {
     }
 }
 
+diesel::joinable!(maker_events -> markets (market_id));
+diesel::joinable!(orders -> markets (market_id));
 diesel::joinable!(recognized_markets -> markets (market_id));
+diesel::joinable!(taker_events -> markets (market_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     coins,

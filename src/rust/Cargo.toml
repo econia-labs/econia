@@ -1,7 +1,8 @@
 [workspace]
 members = [
     "api",
-    "db"
+    "db",
+    "types"
 ]
 
 [workspace.dependencies]

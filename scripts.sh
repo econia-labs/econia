@@ -32,6 +32,12 @@ ts_sdk_dir="src/typescript/sdk"
 # Relative path to this directory from TypeScript SDK directory.
 ts_sdk_dir_inverse="../../../"
 
+# SQL directory.
+sql_dir="src/rust/db/migrations/"
+
+# Relative path to this directory from SQL directory.
+sql_dir_inverse="../../../../"
+
 # Secrets directory.
 secrets_dir=".secrets/"
 
@@ -56,6 +62,17 @@ function brew_install {
     else                                  # If package not installed:
         echo "Brew installing $package"   # Print installation notice.
         brew install $package             # Install package.
+    fi
+}
+
+# Install via pip.
+function pip_install {
+    package=$1                            # Package name is first argument.
+    if which "$package" &>/dev/null; then # If package installed:
+        echo "$package already installed" # Print notice.
+    else                                  # If package not installed:
+        echo "pip installing $package"    # Print installation notice.
+        pip install $package              # Install package.
     fi
 }
 
@@ -188,12 +205,21 @@ function format_code_typescript {
     cd $ts_sdk_dir_inverse # Return to repository root.
 }
 
+# Format SQL code.
+function format_code_sql {
+    echo "Formatting SQL code"
+    cd $sql_dir                                 # Navigate to directory with diesel migrations.
+    sqlfluff fix **/*.sql --dialect postgres -f # Format code with sqlfluff.
+    cd $sql_dir_inverse                         # Return to repository root.
+}
+
 # Format all code.
 function format_code {
     format_code_python
     format_code_rust
     format_code_shell
     format_code_typescript
+    format_code_sql
 }
 
 # Run script command on Move source change, passing arguments.
@@ -229,6 +255,7 @@ case "$1" in
         brew_install rustup                                # Install Rust toolchain installer.
         brew_install shfmt                                 # Install shell script formatter.
         rustup install stable                              # Install stable Rust toolchain.
+        pip_install sqlfluff                               # Install SQL linter.
         cd $ts_sdk_dir                                     # Go to TypeScript SDK directory.
         echo "Installing TypeScript dependencies via pnpm" # Print notice.
         pnpm install                                       # Install TypeScript dependencies.

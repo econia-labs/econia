@@ -58,7 +58,10 @@ mod tests {
         routing::get,
         Router,
     };
+    use sqlx::PgPool;
     use tower::ServiceExt;
+
+    use crate::load_config;
 
     use super::*;
 
@@ -75,5 +78,37 @@ mod tests {
 
         let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
         assert_eq!(&body[..], b"Econia backend API");
+    }
+
+    #[tokio::test]
+    async fn test_markets() {
+        let config = load_config();
+
+        let pool = PgPool::connect(&config.database_url)
+            .await
+            .expect("Could not connect to DATABASE_URL");
+
+        let app = Router::new()
+            .route("/markets", get(markets))
+            .with_state(pool);
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/markets")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
+        let s = String::from_utf8(body.to_vec()).unwrap();
+        let result: Result<Vec<types::Market>, serde_json::Error> =
+            serde_json::from_str(s.as_str());
+
+        assert!(result.is_ok());
     }
 }

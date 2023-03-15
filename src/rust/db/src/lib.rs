@@ -3,7 +3,10 @@ use chrono::{DateTime, Utc};
 use diesel::{prelude::*, Connection, PgConnection};
 use serde::Deserialize;
 
-use crate::models::{Coin, MarketRegistrationEvent, NewCoin, NewMarketRegistrationEvent};
+use crate::models::{
+    coin::{Coin, NewCoin},
+    market::{MarketRegistrationEvent, NewMarketRegistrationEvent},
+};
 
 pub mod models;
 pub mod schema;

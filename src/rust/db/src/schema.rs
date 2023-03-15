@@ -2,8 +2,16 @@
 
 pub mod sql_types {
     #[derive(diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "maker_event_type"))]
+    pub struct MakerEventType;
+
+    #[derive(diesel::sql_types::SqlType)]
     #[diesel(postgres_type(name = "market_event_type"))]
     pub struct MarketEventType;
+
+    #[derive(diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "side"))]
+    pub struct Side;
 }
 
 diesel::table! {
@@ -15,6 +23,24 @@ diesel::table! {
         symbol -> Nullable<Varchar>,
         name -> Nullable<Text>,
         decimals -> Nullable<Int2>,
+    }
+}
+
+diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::Side;
+    use super::sql_types::MakerEventType;
+
+    maker_events (market_order_id, time) {
+        market_id -> Numeric,
+        side -> Side,
+        market_order_id -> Numeric,
+        user_address -> Varchar,
+        custodian_id -> Nullable<Numeric>,
+        event_type -> MakerEventType,
+        size -> Numeric,
+        price -> Numeric,
+        time -> Timestamptz,
     }
 }
 
@@ -48,6 +74,21 @@ diesel::table! {
 
 diesel::table! {
     use diesel::sql_types::*;
+    use super::sql_types::Side;
+
+    orders (id) {
+        id -> Numeric,
+        side -> Side,
+        size -> Numeric,
+        price -> Numeric,
+        user_address -> Varchar,
+        custodian_id -> Nullable<Numeric>,
+        order_access_key -> Numeric,
+    }
+}
+
+diesel::table! {
+    use diesel::sql_types::*;
     use super::sql_types::MarketEventType;
 
     recognized_market_events (market_id) {
@@ -66,12 +107,31 @@ diesel::table! {
     }
 }
 
+diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::Side;
+
+    taker_events (market_order_id, time) {
+        market_id -> Numeric,
+        side -> Side,
+        market_order_id -> Numeric,
+        maker -> Varchar,
+        custodian_id -> Nullable<Numeric>,
+        size -> Numeric,
+        price -> Numeric,
+        time -> Timestamptz,
+    }
+}
+
 diesel::joinable!(recognized_markets -> markets (market_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     coins,
+    maker_events,
     market_registration_events,
     markets,
+    orders,
     recognized_market_events,
     recognized_markets,
+    taker_events,
 );

@@ -30,7 +30,7 @@ create table maker_events (
 );
 
 create function place_order() returns trigger as $place_order$ begin
-if new.event_type == 'place' then
+if new.event_type = 'place' then
     insert into orders values (
         new.market_order_id,
         new.market_id,
@@ -40,7 +40,7 @@ if new.event_type == 'place' then
         new.user_address,
         new.custodian_id,
         new.time,
-        0
+        0 -- TODO order access key
     );
     return new;
 end if;

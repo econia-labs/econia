@@ -16,12 +16,13 @@ pub enum Side {
 
 #[derive(Clone, Debug, Serialize, Deserialize, Queryable)]
 pub struct Order {
-    pub id: BigDecimal,
+    pub market_order_id: BigDecimal,
+    pub market_id: BigDecimal,
     pub side: Side,
     pub size: BigDecimal,
     pub price: BigDecimal,
     pub user_address: String,
-    pub custodian_id: BigDecimal,
+    pub custodian_id: Option<BigDecimal>,
     pub created_at: DateTime<Utc>,
     pub order_access_key: BigDecimal,
 }
@@ -29,12 +30,13 @@ pub struct Order {
 #[derive(Insertable, Debug)]
 #[diesel(table_name = orders)]
 pub struct NewOrder<'a> {
-    pub id: BigDecimal,
+    pub market_order_id: BigDecimal,
+    pub market_id: BigDecimal,
     pub side: Side,
     pub size: BigDecimal,
     pub price: BigDecimal,
     pub user_address: &'a str,
-    pub custodian_id: BigDecimal,
+    pub custodian_id: Option<BigDecimal>,
     pub created_at: DateTime<Utc>,
     pub order_access_key: BigDecimal,
 }

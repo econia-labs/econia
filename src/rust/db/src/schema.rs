@@ -76,8 +76,9 @@ diesel::table! {
     use diesel::sql_types::*;
     use super::sql_types::Side;
 
-    orders (id) {
-        id -> Numeric,
+    orders (market_order_id) {
+        market_order_id -> Numeric,
+        market_id -> Numeric,
         side -> Side,
         size -> Numeric,
         price -> Numeric,

@@ -26,17 +26,17 @@ rust_dir="src/rust/"
 # Relative path to this directory from Rust directory.
 rust_dir_inverse="../../"
 
-# TypeScript SDK directory.
-ts_sdk_dir="src/typescript/sdk"
-
-# Relative path to this directory from TypeScript SDK directory.
-ts_sdk_dir_inverse="../../../"
-
 # SQL directory.
 sql_dir="src/rust/db/migrations/"
 
 # Relative path to this directory from SQL directory.
 sql_dir_inverse="../../../../"
+
+# TypeScript SDK directory.
+ts_sdk_dir="src/typescript/sdk"
+
+# Relative path to this directory from TypeScript SDK directory.
+ts_sdk_dir_inverse="../../../"
 
 # Secrets directory.
 secrets_dir=".secrets/"
@@ -62,17 +62,6 @@ function brew_install {
     else                                  # If package not installed:
         echo "Brew installing $package"   # Print installation notice.
         brew install $package             # Install package.
-    fi
-}
-
-# Install via pip.
-function pip_install {
-    package=$1                            # Package name is first argument.
-    if which "$package" &>/dev/null; then # If package installed:
-        echo "$package already installed" # Print notice.
-    else                                  # If package not installed:
-        echo "pip installing $package"    # Print installation notice.
-        pip install $package              # Install package.
     fi
 }
 
@@ -196,6 +185,14 @@ function format_code_shell {
     shfmt --list --write --simplify --case-indent --indent 4 .
 }
 
+# Format SQL code.
+function format_code_sql {
+    echo "Formatting SQL code"
+    cd $sql_dir                                            # Navigate to directory with diesel migrations.
+    poetry run sqlfluff fix **/*.sql --dialect postgres -f # Format code with sqlfluff.
+    cd $sql_dir_inverse                                    # Return to repository root.
+}
+
 # Format TypeScript code.
 function format_code_typescript {
     echo "Formatting TypeScript code"
@@ -205,21 +202,13 @@ function format_code_typescript {
     cd $ts_sdk_dir_inverse # Return to repository root.
 }
 
-# Format SQL code.
-function format_code_sql {
-    echo "Formatting SQL code"
-    cd $sql_dir                                 # Navigate to directory with diesel migrations.
-    sqlfluff fix **/*.sql --dialect postgres -f # Format code with sqlfluff.
-    cd $sql_dir_inverse                         # Return to repository root.
-}
-
 # Format all code.
 function format_code {
     format_code_python
     format_code_rust
     format_code_shell
-    format_code_typescript
     format_code_sql
+    format_code_typescript
 }
 
 # Run script command on Move source change, passing arguments.
@@ -251,18 +240,22 @@ case "$1" in
         brew_install node                                  # Install JavaScript package manager.
         brew_install poetry                                # Install Python environment manager.
         brew_install pnpm                                  # Install performant NPM variant.
+        brew_install python                                # Install Python.
         brew_install rustup                                # Install Rust toolchain installer.
         brew_install shfmt                                 # Install shell script formatter.
         rustup install stable                              # Install stable Rust toolchain.
-        pip_install sqlfluff                               # Install SQL linter.
+        cd $python_dir                                     # Navigate to Python package directory.
+        echo "Installing Econia Python package"            # Print notice.
+        poetry install                                     # Install Python package and dependencies.
+        cd $python_dir_inverse                             # Go back to repository root.
+        cd $sql_dir                                        # Go to SQL directory.
+        echo "Installing SQL formatter Python package"     # Print notice.
+        poetry install                                     # Install SQL formatter Python package and dependencies.
+        cd $sql_dir_inverse                                # Go back to repository root.
         cd $ts_sdk_dir                                     # Go to TypeScript SDK directory.
         echo "Installing TypeScript dependencies via pnpm" # Print notice.
         pnpm install                                       # Install TypeScript dependencies.
         cd $ts_sdk_dir_inverse                             # Go back to repository root.
-        cd $python_dir                                     # Navigate to Python package directory.
-        echo "Installing Python package"                   # Print notice.
-        poetry install                                     # Install Python package and dependencies.
-        cd $python_dir_inverse                             # Go back to repository root.
         ;;
 
     # Set econia address to underscore.

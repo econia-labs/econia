@@ -3,6 +3,9 @@ members = [
     "api",
     "db"
 ]
+exclude = [
+    "dependencies"
+]
 
 [workspace.dependencies]
 bigdecimal = { version = "0.3.0", features = ["serde"] }

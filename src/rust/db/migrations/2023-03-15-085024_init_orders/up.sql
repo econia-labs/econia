@@ -7,6 +7,7 @@ create table orders (
     price numeric (20) not null,
     user_address varchar (70) not null,
     custodian_id numeric (20),
+    created_at timestamptz not null,
     order_access_key numeric (20) not null
 );
 

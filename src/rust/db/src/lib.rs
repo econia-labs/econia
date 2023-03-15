@@ -1,9 +1,8 @@
+use crate::models::{Coin, MarketRegistrationEvent, NewCoin, NewMarketRegistrationEvent};
 use bigdecimal::BigDecimal;
 use chrono::NaiveDateTime;
 use diesel::{prelude::*, Connection, PgConnection};
 use serde::Deserialize;
-
-use crate::models::{Coin, MarketRegistrationEvent, NewCoin, NewMarketRegistrationEvent};
 
 pub mod models;
 pub mod schema;

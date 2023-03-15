@@ -2,8 +2,13 @@ use std::net::SocketAddr;
 
 use axum::{routing::get, Router};
 use serde::Deserialize;
-use sqlx::{PgPool, Pool, Postgres};
-use tower_http::trace::TraceLayer;
+use sqlx::PgPool;
+use tower::ServiceBuilder;
+use tower_http::{
+    compression::CompressionLayer,
+    cors::{Any, CorsLayer},
+    trace::TraceLayer,
+};
 use tracing_subscriber::prelude::*;
 
 mod error;
@@ -39,11 +44,21 @@ async fn main() {
         .await
         .expect("Could not connect to DATABASE_URL");
 
+    let cors_layer = CorsLayer::new()
+        .allow_methods(Any)
+        .allow_headers(Any)
+        .allow_origin(Any);
+
+    let middleware_stack = ServiceBuilder::new()
+        .layer(CompressionLayer::new())
+        .layer(TraceLayer::new_for_http())
+        .layer(cors_layer);
+
     let app = Router::new()
         .route("/", get(routes::index))
         .route("/markets", get(routes::markets))
         .with_state(pool)
-        .layer(TraceLayer::new_for_http());
+        .layer(middleware_stack);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], config.port));
 

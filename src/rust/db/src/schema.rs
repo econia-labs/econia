@@ -83,6 +83,7 @@ diesel::table! {
         price -> Numeric,
         user_address -> Varchar,
         custodian_id -> Nullable<Numeric>,
+        created_at -> Timestamptz,
         order_access_key -> Numeric,
     }
 }

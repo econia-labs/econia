@@ -7,14 +7,20 @@ edition = "2021"
 
 [dependencies]
 axum = "0.6.10"
+db = { path = "../db" }
 dotenvy = { workspace = true }
 envy = { workspace = true }
 futures-util = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
+sqlx = { version = "0.6.2", features = ["bigdecimal", "chrono", "macros", "postgres", "runtime-tokio-rustls", "time"] }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 tower = "0.4.13"
 tower-http = { version = "0.4.0", features = ["trace"] }
 tracing = "0.1.37"
 tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
+types = { path = "../types" }
+
+[dev-dependencies]
+hyper = "0.14.24"

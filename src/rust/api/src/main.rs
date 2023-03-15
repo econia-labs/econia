@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 
 use axum::{routing::get, Router};
 use serde::Deserialize;
-use sqlx::PgPool;
+use sqlx::{PgPool, Pool, Postgres};
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::prelude::*;
 
@@ -13,6 +13,22 @@ mod routes;
 pub struct Config {
     port: u16,
     database_url: String,
+}
+
+pub fn load_config() -> Config {
+    dotenvy::dotenv().ok();
+    match envy::from_env::<Config>() {
+        Ok(cfg) => cfg,
+        Err(err) => panic!("{:?}", err),
+    }
+}
+
+pub fn router(pool: Pool<Postgres>) -> Router {
+    Router::new()
+        .route("/", get(routes::index))
+        .route("/markets", get(routes::markets))
+        .with_state(pool)
+        .layer(TraceLayer::new_for_http())
 }
 
 #[tokio::main]
@@ -31,12 +47,7 @@ async fn main() {
         .await
         .expect("Could not connect to DATABASE_URL");
 
-    let app = Router::new()
-        .route("/", get(routes::index))
-        .route("/markets", get(routes::markets))
-        .with_state(pool)
-        .layer(TraceLayer::new_for_http());
-
+    let app = router(pool);
     let addr = SocketAddr::from(([0, 0, 0, 0], config.port));
 
     tracing::info!("Listening on http://{}", addr);
@@ -44,12 +55,4 @@ async fn main() {
         .serve(app.into_make_service_with_connect_info::<SocketAddr>())
         .await
         .unwrap();
-}
-
-fn load_config() -> Config {
-    dotenvy::dotenv().ok();
-    match envy::from_env::<Config>() {
-        Ok(cfg) => cfg,
-        Err(err) => panic!("{:?}", err),
-    }
 }

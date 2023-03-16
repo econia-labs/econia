@@ -14,6 +14,15 @@ pub enum Side {
     Sell,
 }
 
+#[derive(Debug, DbEnum, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "lowercase")]
+#[ExistingTypePath = "crate::schema::sql_types::OrderState"]
+pub enum OrderState {
+    Open,
+    Filled,
+    Canceled,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, Queryable)]
 pub struct Order {
     pub market_order_id: BigDecimal,
@@ -23,8 +32,9 @@ pub struct Order {
     pub price: BigDecimal,
     pub user_address: String,
     pub custodian_id: Option<BigDecimal>,
+    pub order_state: OrderState,
+    pub remaining_size: BigDecimal,
     pub created_at: DateTime<Utc>,
-    pub order_access_key: BigDecimal,
 }
 
 #[derive(Insertable, Debug)]
@@ -37,6 +47,7 @@ pub struct NewOrder<'a> {
     pub price: BigDecimal,
     pub user_address: &'a str,
     pub custodian_id: Option<BigDecimal>,
+    pub order_state: OrderState,
+    pub remaining_size: BigDecimal,
     pub created_at: DateTime<Utc>,
-    pub order_access_key: BigDecimal,
 }

@@ -10,6 +10,10 @@ pub mod sql_types {
     pub struct MarketEventType;
 
     #[derive(diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "order_state"))]
+    pub struct OrderState;
+
+    #[derive(diesel::sql_types::SqlType)]
     #[diesel(postgres_type(name = "side"))]
     pub struct Side;
 }
@@ -82,6 +86,7 @@ diesel::table! {
 diesel::table! {
     use diesel::sql_types::*;
     use super::sql_types::Side;
+    use super::sql_types::OrderState;
 
     orders (market_order_id) {
         market_order_id -> Numeric,
@@ -91,8 +96,9 @@ diesel::table! {
         price -> Numeric,
         user_address -> Varchar,
         custodian_id -> Nullable<Numeric>,
+        order_state -> OrderState,
+        remaining_size -> Numeric,
         created_at -> Timestamptz,
-        order_access_key -> Numeric,
     }
 }
 

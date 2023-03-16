@@ -11,21 +11,21 @@ use db::{
 use diesel::prelude::*;
 
 fn reset_order_tables(conn: &mut PgConnection) {
-    diesel::delete(db::schema::orders::table)
-        .execute(conn)
-        .expect("Error deleting orders table");
-
     diesel::delete(db::schema::maker_events::table)
         .execute(conn)
         .expect("Error deleting maker events table");
 
-    diesel::delete(db::schema::markets::table)
+    diesel::delete(db::schema::orders::table)
         .execute(conn)
-        .expect("Error deleting markets table");
+        .expect("Error deleting orders table");
 
     diesel::delete(db::schema::market_registration_events::table)
         .execute(conn)
         .expect("Error deleting market registration event table");
+
+    diesel::delete(db::schema::markets::table)
+        .execute(conn)
+        .expect("Error deleting markets table");
 
     diesel::delete(db::schema::assets::table)
         .execute(conn)
@@ -115,8 +115,8 @@ fn test_place_order() {
 
     assert_eq!(db_orders.len(), 1);
 
-    // println!("orders:");
-    // println!("{:?}", db_orders);
+    println!("orders:");
+    println!("{:#?}", db_orders);
 
     // Clean up tables.
     reset_order_tables(conn);

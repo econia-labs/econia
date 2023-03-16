@@ -1,5 +1,7 @@
 create type side as enum ('buy', 'sell');
 
+create type order_state as enum ('open', 'filled', 'canceled');
+
 create table orders (
     market_order_id numeric (39) not null primary key,
     market_id numeric (20) not null,
@@ -8,8 +10,9 @@ create table orders (
     price numeric (20) not null,
     user_address varchar (70) not null,
     custodian_id numeric (20),
+    order_state order_state not null,
+    remaining_size numeric (20) not null,
     created_at timestamptz not null,
-    order_access_key numeric (20) not null,
     foreign key (market_id) references markets (market_id)
 );
 
@@ -40,8 +43,9 @@ if new.event_type = 'place' then
         new.price,
         new.user_address,
         new.custodian_id,
-        new.time,
-        0 -- TODO order access key
+        'open',
+        new.size,
+        new.time
     );
     return new;
 end if;

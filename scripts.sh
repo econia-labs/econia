@@ -26,6 +26,12 @@ rust_dir="src/rust/"
 # Relative path to this directory from Rust directory.
 rust_dir_inverse="../../"
 
+# SQL directory.
+sql_dir="src/rust/db/migrations/"
+
+# Relative path to this directory from SQL directory.
+sql_dir_inverse="../../../../"
+
 # TypeScript SDK directory.
 ts_sdk_dir="src/typescript/sdk"
 
@@ -179,6 +185,14 @@ function format_code_shell {
     shfmt --list --write --simplify --case-indent --indent 4 .
 }
 
+# Format SQL code.
+function format_code_sql {
+    echo "Formatting SQL code"
+    cd $sql_dir                                            # Navigate to directory with diesel migrations.
+    poetry run sqlfluff fix **/*.sql --dialect postgres -f # Format code with sqlfluff.
+    cd $sql_dir_inverse                                    # Return to repository root.
+}
+
 # Format TypeScript code.
 function format_code_typescript {
     echo "Formatting TypeScript code"
@@ -193,6 +207,7 @@ function format_code {
     format_code_python
     format_code_rust
     format_code_shell
+    format_code_sql
     format_code_typescript
 }
 
@@ -225,18 +240,22 @@ case "$1" in
         brew_install node                                  # Install JavaScript package manager.
         brew_install poetry                                # Install Python environment manager.
         brew_install pnpm                                  # Install performant NPM variant.
-        brew_install rust                                  # Install Rust.
+        brew_install python                                # Install Python.
         brew_install rustup                                # Install Rust toolchain installer.
         brew_install shfmt                                 # Install shell script formatter.
         rustup install stable                              # Install stable Rust toolchain.
+        cd $python_dir                                     # Navigate to Python package directory.
+        echo "Installing Econia Python package"            # Print notice.
+        poetry install                                     # Install Python package and dependencies.
+        cd $python_dir_inverse                             # Go back to repository root.
+        cd $sql_dir                                        # Go to SQL directory.
+        echo "Installing SQL formatter Python package"     # Print notice.
+        poetry install                                     # Install SQL formatter Python package and dependencies.
+        cd $sql_dir_inverse                                # Go back to repository root.
         cd $ts_sdk_dir                                     # Go to TypeScript SDK directory.
         echo "Installing TypeScript dependencies via pnpm" # Print notice.
         pnpm install                                       # Install TypeScript dependencies.
         cd $ts_sdk_dir_inverse                             # Go back to repository root.
-        cd $python_dir                                     # Navigate to Python package directory.
-        echo "Installing Python package"                   # Print notice.
-        poetry install                                     # Install Python package and dependencies.
-        cd $python_dir_inverse                             # Go back to repository root.
         ;;
 
     # Set econia address to underscore.

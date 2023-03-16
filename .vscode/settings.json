@@ -86,4 +86,7 @@
         "walkthrough"
     ],
     "esbonio.sphinx.confDir": "",
+    "rust-analyzer.linkedProjects": [
+        "./src/rust/Cargo.toml",
+    ]
 }

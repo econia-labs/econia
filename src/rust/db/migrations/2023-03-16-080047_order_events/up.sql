@@ -55,8 +55,8 @@ elsif new.event_type = 'change' then
     update orders set
         size = new.size,
         price = new.price,
-        remaining_size = greatest(new.size - (size - orders.remaining_size), 0),
-        order_state = (case when new.size - (size - orders.remaining_size) <= 0
+        remaining_size = greatest(new.size - size + remaining_size, 0),
+        order_state = (case when new.size - size + remaining_size <= 0
                        then 'filled' else order_state end)
     where market_order_id = new.market_order_id and market_id = new.market_id;
 elsif new.event_type = 'cancel' then

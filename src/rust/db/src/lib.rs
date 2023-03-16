@@ -110,15 +110,15 @@ pub fn register_market(
 
 pub fn add_maker_event(
     conn: &mut PgConnection,
-    market_id: BigDecimal,
-    side: Side,
-    market_order_id: BigDecimal,
+    market_id: &BigDecimal,
+    side: &Side,
+    market_order_id: &BigDecimal,
     user_address: &str,
     custodian_id: Option<BigDecimal>,
-    event_type: MakerEventType,
-    size: BigDecimal,
-    price: BigDecimal,
-    time: DateTime<Utc>,
+    event_type: &MakerEventType,
+    size: &BigDecimal,
+    price: &BigDecimal,
+    time: &DateTime<Utc>,
 ) -> MakerEvent {
     use crate::schema::maker_events;
 

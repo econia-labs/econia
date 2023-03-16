@@ -41,14 +41,14 @@ pub struct Order {
 #[derive(Insertable, Debug)]
 #[diesel(table_name = orders)]
 pub struct NewOrder<'a> {
-    pub market_order_id: BigDecimal,
-    pub market_id: BigDecimal,
-    pub side: Side,
-    pub size: BigDecimal,
-    pub price: BigDecimal,
+    pub market_order_id: &'a BigDecimal,
+    pub market_id: &'a BigDecimal,
+    pub side: &'a Side,
+    pub size: &'a BigDecimal,
+    pub price: &'a BigDecimal,
     pub user_address: &'a str,
     pub custodian_id: Option<BigDecimal>,
-    pub order_state: OrderState,
-    pub remaining_size: BigDecimal,
-    pub created_at: DateTime<Utc>,
+    pub order_state: &'a OrderState,
+    pub remaining_size: &'a BigDecimal,
+    pub created_at: &'a DateTime<Utc>,
 }

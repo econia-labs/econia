@@ -1,6 +1,6 @@
 create type side as enum ('buy', 'sell');
 
-create type order_state as enum ('open', 'filled', 'canceled');
+create type order_state as enum ('open', 'filled', 'cancelled');
 
 create table orders (
     market_order_id numeric (39) not null,
@@ -59,6 +59,11 @@ elsif new.event_type = 'change' then
         remaining_size = greatest(new.size - (size - orders.remaining_size), 0),
         order_state = (case when new.size - (size - orders.remaining_size) <= 0
                        then 'filled' else order_state end)
+    where market_order_id = new.market_order_id and market_id = new.market_id;
+    return new;
+elsif new.event_type = 'cancel' then
+    update orders set
+        order_state = 'cancelled'
     where market_order_id = new.market_order_id and market_id = new.market_id;
     return new;
 end if;

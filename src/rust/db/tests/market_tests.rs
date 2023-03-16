@@ -1,13 +1,13 @@
 use chrono::Utc;
 use db::{
     create_asset, establish_connection, load_config,
-    models::{Market, MarketRegistrationEvent},
+    models::market::{Market, MarketRegistrationEvent},
     register_market,
 };
 use diesel::prelude::*;
 use types::constants::ECONIA_ADDRESS;
 
-fn reset_market_databases(conn: &mut PgConnection) {
+fn reset_market_tables(conn: &mut PgConnection) {
     diesel::delete(db::schema::market_registration_events::table)
         .execute(conn)
         .expect("Error deleting market registration event table");
@@ -27,7 +27,7 @@ fn test_register_coin_market() {
     let conn = &mut establish_connection(config.database_url);
 
     // Delete all entries in the tables used before running tests.
-    reset_market_databases(conn);
+    reset_market_tables(conn);
 
     // Register coins first, so we can satisfy the foreign key constraint in markets.
     let aptos_coin = create_asset(
@@ -83,6 +83,9 @@ fn test_register_coin_market() {
         .expect("Could not query markets.");
 
     assert_eq!(db_markets.len(), 1);
+
+    // Clean up tables.
+    reset_market_tables(conn);
 }
 
 #[test]
@@ -91,7 +94,7 @@ fn test_register_generic_market() {
     let conn = &mut establish_connection(config.database_url);
 
     // Delete all entries in the tables used before running tests.
-    reset_market_databases(conn);
+    reset_market_tables(conn);
 
     // Register GenericAsset to assets table to satisfy foreign key constraint.
     create_asset(
@@ -157,7 +160,7 @@ fn test_register_generic_market_with_invalid_address() {
     let conn = &mut establish_connection(config.database_url);
 
     // Delete all entries in the tables used before running tests.
-    reset_market_databases(conn);
+    reset_market_tables(conn);
 
     // Register GenericAsset.
     create_asset(

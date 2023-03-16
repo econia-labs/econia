@@ -1,4 +1,4 @@
-use db::{create_asset, establish_connection, load_config, models::Asset};
+use db::{create_asset, establish_connection, load_config, models::asset::Asset};
 use diesel::prelude::*;
 
 #[test]

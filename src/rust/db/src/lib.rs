@@ -5,6 +5,7 @@ use serde::Deserialize;
 
 use crate::models::{Coin, MarketRegistrationEvent, NewCoin, NewMarketRegistrationEvent};
 
+pub mod error;
 pub mod models;
 pub mod schema;
 

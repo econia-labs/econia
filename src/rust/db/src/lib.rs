@@ -1,10 +1,12 @@
 use bigdecimal::BigDecimal;
-use chrono::NaiveDateTime;
+use chrono::{DateTime, Utc};
 use diesel::{prelude::*, Connection, PgConnection};
 use serde::Deserialize;
+use types::constants::ECONIA_ADDRESS;
 
-use crate::models::{Coin, MarketRegistrationEvent, NewCoin, NewMarketRegistrationEvent};
+use crate::models::{Asset, MarketRegistrationEvent, NewAsset, NewMarketRegistrationEvent};
 
+pub mod error;
 pub mod models;
 pub mod schema;
 
@@ -26,7 +28,7 @@ pub fn establish_connection(url: String) -> PgConnection {
         .unwrap_or_else(|_| panic!("Could not connect to database {}", url))
 }
 
-pub fn create_coin(
+pub fn create_asset(
     conn: &mut PgConnection,
     account_address: &str,
     module_name: &str,
@@ -34,10 +36,10 @@ pub fn create_coin(
     symbol: Option<&str>,
     name: Option<&str>,
     decimals: Option<i16>,
-) -> Coin {
-    use crate::schema::coins;
+) -> Asset {
+    use crate::schema::assets;
 
-    let new_coin = NewCoin {
+    let new_asset = NewAsset {
         account_address,
         module_name,
         struct_name,
@@ -46,19 +48,23 @@ pub fn create_coin(
         decimals,
     };
 
-    diesel::insert_into(coins::table)
-        .values(&new_coin)
+    diesel::insert_into(assets::table)
+        .values(&new_asset)
         .get_result(conn)
-        .expect("Error adding new coin.")
+        .expect("Error adding new asset.")
 }
 
 pub fn register_market(
     conn: &mut PgConnection,
     market_id: BigDecimal,
-    time: NaiveDateTime,
-    base_id: i32,
+    time: DateTime<Utc>,
+    base_account_address: &str,
+    base_module_name: &str,
+    base_struct_name: &str,
     base_name_generic: Option<&str>,
-    quote_id: i32,
+    quote_account_address: &str,
+    quote_module_name: &str,
+    quote_struct_name: &str,
     lot_size: BigDecimal,
     tick_size: BigDecimal,
     min_size: BigDecimal,
@@ -66,12 +72,22 @@ pub fn register_market(
 ) -> MarketRegistrationEvent {
     use crate::schema::market_registration_events;
 
+    if base_name_generic.is_some() {
+        assert_eq!(base_account_address, ECONIA_ADDRESS);
+        assert_eq!(base_module_name, "registry");
+        assert_eq!(base_struct_name, "GenericAsset");
+    }
+
     let new_market_registration_event = NewMarketRegistrationEvent {
         market_id,
         time,
-        base_id,
+        base_account_address,
+        base_module_name,
+        base_struct_name,
         base_name_generic,
-        quote_id,
+        quote_account_address,
+        quote_module_name,
+        quote_struct_name,
         lot_size,
         tick_size,
         min_size,

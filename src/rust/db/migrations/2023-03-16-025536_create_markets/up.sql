@@ -1,51 +1,68 @@
--- Corresponds to aptos_std::type_info::TypeInfo and 
--- aptos_framework::coin::CoinInfo.
-create table coins (
-    id serial not null primary key,
+-- Corresponds to aptos_std::type_info::TypeInfo and
+-- aptos_framework::coin::CoinInfo. GenericAsset will also be included.
+create table assets (
     account_address varchar (70) not null,
     module_name text not null,
     struct_name text not null,
     symbol varchar (8),
     name text,
-    decimals smallint
+    decimals smallint,
+    primary key (account_address, module_name, struct_name)
 );
 
 -- Corresponds to econia::registry::MarketInfo.
 -- Only recognized markets should be stored in the api database.
 create table markets (
     market_id numeric (20) not null primary key,
-    base_id serial not null,
+    base_account_address varchar (70) not null,
+    base_module_name text not null,
+    base_struct_name text not null,
     base_name_generic text,
-    quote_id serial not null,
+    quote_account_address varchar (70) not null,
+    quote_module_name text not null,
+    quote_struct_name text not null,
     lot_size numeric (20) not null,
     tick_size numeric (20) not null,
     min_size numeric (20) not null,
     underwriter_id numeric (20) not null,
     created_at timestamptz not null,
-    foreign key (base_id) references coins (id),
-    foreign key (quote_id) references coins (id)
+    foreign key (
+        base_account_address, base_module_name, base_struct_name
+    ) references assets (account_address, module_name, struct_name),
+    foreign key (
+        quote_account_address, quote_module_name, quote_struct_name
+    ) references assets (account_address, module_name, struct_name)
 );
 
 -- Corresponds to econia::registry::MarketRegistrationEvent
 create table market_registration_events (
     market_id numeric (20) not null primary key,
     time timestamptz not null,
-    base_id serial not null,
+    base_account_address varchar (70) not null,
+    base_module_name text not null,
+    base_struct_name text not null,
     base_name_generic text,
-    quote_id serial not null,
+    quote_account_address varchar (70) not null,
+    quote_module_name text not null,
+    quote_struct_name text not null,
     lot_size numeric (20) not null,
     tick_size numeric (20) not null,
     min_size numeric (20) not null,
-    underwriter_id numeric (20) not null
+    underwriter_id numeric (20) not null,
+    foreign key (market_id) references markets (market_id)
 );
 
 create function register_market() returns trigger as $register_market$ begin
 insert into markets
 values (
         NEW.market_id,
-        NEW.base_id,
+        NEW.base_account_address,
+        NEW.base_module_name,
+        NEW.base_struct_name,
         NEW.base_name_generic,
-        NEW.quote_id,
+        NEW.quote_account_address,
+        NEW.quote_module_name,
+        NEW.quote_struct_name,
         NEW.lot_size,
         NEW.tick_size,
         NEW.min_size,
@@ -60,12 +77,12 @@ end;
 $register_market$ language plpgsql;
 
 create trigger register_market_trigger
-after
+before
 insert on market_registration_events for each row
 execute procedure register_market();
 
 -- Corresponds to econia::registry::RecognizedMarketInfo
--- This id does not need to exist, but diesel only supports tables 
+-- This id does not need to exist, but diesel only supports tables
 -- with primary keys
 create table recognized_markets (
     id serial not null primary key,
@@ -76,7 +93,7 @@ create table recognized_markets (
 -- Type of events that can be emitted for a recognized market.
 create type market_event_type as enum ('add', 'remove', 'update');
 
--- Corresponds to econia::registry::RecognizedMarketEvent. 
+-- Corresponds to econia::registry::RecognizedMarketEvent.
 create table recognized_market_events (
     market_id numeric (20) not null primary key,
     event_type market_event_type not null,

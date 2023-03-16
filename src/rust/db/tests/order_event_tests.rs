@@ -1,10 +1,11 @@
+use bigdecimal::{BigDecimal, FromPrimitive};
 use chrono::Utc;
 use db::{
     add_maker_event, create_asset, establish_connection, load_config,
     models::{
         events::{MakerEvent, MakerEventType},
         market::MarketRegistrationEvent,
-        order::{Order, Side},
+        order::{Order, OrderState, Side},
     },
     register_market,
 };
@@ -117,6 +118,66 @@ fn test_place_order() {
 
     println!("orders:");
     println!("{:#?}", db_orders);
+
+    // Clean up tables.
+    reset_order_tables(conn);
+}
+
+#[test]
+fn test_change_order() {
+    let config = load_config();
+    let conn = &mut establish_connection(config.database_url);
+
+    // Delete all entries in the tables used before running tests.
+    reset_order_tables(conn);
+
+    // Set up market
+    let market = setup_market(conn);
+
+    add_maker_event(
+        conn,
+        market.market_id.clone(),
+        Side::Buy,
+        123.into(),
+        "0x123",
+        None,
+        MakerEventType::Place,
+        1000.into(),
+        1000.into(),
+        Utc::now(),
+    );
+
+    add_maker_event(
+        conn,
+        market.market_id,
+        Side::Buy,
+        123.into(),
+        "0x123",
+        None,
+        MakerEventType::Change,
+        2000.into(),
+        1000.into(),
+        Utc::now(),
+    );
+
+    // Check that the maker events table has one entry.
+    let db_maker_events = db::schema::maker_events::dsl::maker_events
+        .load::<MakerEvent>(conn)
+        .expect("Could not query maker events.");
+
+    assert_eq!(db_maker_events.len(), 2);
+
+    // Check that the orders table has one entry.
+    let db_orders = db::schema::orders::dsl::orders
+        .load::<Order>(conn)
+        .expect("Could not query orders.");
+
+    assert_eq!(db_orders.len(), 1);
+
+    let db_order = db_orders.get(0).unwrap();
+    assert_eq!(db_order.size, BigDecimal::from_i32(2000).unwrap());
+    assert_eq!(db_order.price, BigDecimal::from_i32(1000).unwrap());
+    assert_eq!(db_order.order_state, OrderState::Open);
 
     // Clean up tables.
     reset_order_tables(conn);

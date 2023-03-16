@@ -1,6 +1,6 @@
--- Corresponds to aptos_std::type_info::TypeInfo and 
--- aptos_framework::coin::CoinInfo.
-create table coins (
+-- Corresponds to aptos_std::type_info::TypeInfo and
+-- aptos_framework::coin::CoinInfo. GenericAsset will also be included.
+create table assets (
     account_address varchar (70) not null,
     module_name text not null,
     struct_name text not null,
@@ -28,10 +28,10 @@ create table markets (
     created_at timestamptz not null,
     foreign key (
         base_account_address, base_module_name, base_struct_name
-    ) references coins (account_address, module_name, struct_name),
+    ) references assets (account_address, module_name, struct_name),
     foreign key (
         quote_account_address, quote_module_name, quote_struct_name
-    ) references coins (account_address, module_name, struct_name)
+    ) references assets (account_address, module_name, struct_name)
 );
 
 -- Corresponds to econia::registry::MarketRegistrationEvent
@@ -82,7 +82,7 @@ insert on market_registration_events for each row
 execute procedure register_market();
 
 -- Corresponds to econia::registry::RecognizedMarketInfo
--- This id does not need to exist, but diesel only supports tables 
+-- This id does not need to exist, but diesel only supports tables
 -- with primary keys
 create table recognized_markets (
     id serial not null primary key,
@@ -93,7 +93,7 @@ create table recognized_markets (
 -- Type of events that can be emitted for a recognized market.
 create type market_event_type as enum ('add', 'remove', 'update');
 
--- Corresponds to econia::registry::RecognizedMarketEvent. 
+-- Corresponds to econia::registry::RecognizedMarketEvent.
 create table recognized_market_events (
     market_id numeric (20) not null primary key,
     event_type market_event_type not null,

@@ -1,6 +1,6 @@
 use chrono::Utc;
 use db::{
-    create_coin, establish_connection, load_config,
+    create_asset, establish_connection, load_config,
     models::{Market, MarketRegistrationEvent},
     register_market,
 };
@@ -16,9 +16,9 @@ fn reset_market_databases(conn: &mut PgConnection) {
         .execute(conn)
         .expect("Error deleting markets table");
 
-    diesel::delete(db::schema::coins::table)
+    diesel::delete(db::schema::assets::table)
         .execute(conn)
-        .expect("Error deleting coins table");
+        .expect("Error deleting assets table");
 }
 
 #[test]
@@ -30,7 +30,7 @@ fn test_register_coin_market() {
     reset_market_databases(conn);
 
     // Register coins first, so we can satisfy the foreign key constraint in markets.
-    let aptos_coin = create_coin(
+    let aptos_coin = create_asset(
         conn,
         "0x1",
         "aptos_coin",
@@ -40,7 +40,7 @@ fn test_register_coin_market() {
         Some(8),
     );
 
-    let tusdc_coin = create_coin(
+    let tusdc_coin = create_asset(
         conn,
         "0x7c36a610d1cde8853a692c057e7bd2479ba9d5eeaeceafa24f125c23d2abf942",
         "test_usdc",
@@ -93,8 +93,8 @@ fn test_register_generic_market() {
     // Delete all entries in the tables used before running tests.
     reset_market_databases(conn);
 
-    // Register GenericAsset to coins table to satisfy foreign key constraint.
-    create_coin(
+    // Register GenericAsset to assets table to satisfy foreign key constraint.
+    create_asset(
         conn,
         ECONIA_ADDRESS,
         "registry",
@@ -105,7 +105,7 @@ fn test_register_generic_market() {
     );
 
     // Register quote coin.
-    let tusdc_coin = create_coin(
+    let tusdc_coin = create_asset(
         conn,
         "0x7c36a610d1cde8853a692c057e7bd2479ba9d5eeaeceafa24f125c23d2abf942",
         "test_usdc",
@@ -160,7 +160,7 @@ fn test_register_generic_market_with_invalid_address() {
     reset_market_databases(conn);
 
     // Register GenericAsset.
-    create_coin(
+    create_asset(
         conn,
         ECONIA_ADDRESS,
         "registry",
@@ -171,7 +171,7 @@ fn test_register_generic_market_with_invalid_address() {
     );
 
     // Register quote coin.
-    let tusdc_coin = create_coin(
+    let tusdc_coin = create_asset(
         conn,
         "0x7c36a610d1cde8853a692c057e7bd2479ba9d5eeaeceafa24f125c23d2abf942",
         "test_usdc",

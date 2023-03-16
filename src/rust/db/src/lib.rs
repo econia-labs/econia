@@ -4,7 +4,7 @@ use diesel::{prelude::*, Connection, PgConnection};
 use serde::Deserialize;
 use types::constants::ECONIA_ADDRESS;
 
-use crate::models::{Coin, MarketRegistrationEvent, NewCoin, NewMarketRegistrationEvent};
+use crate::models::{Asset, MarketRegistrationEvent, NewAsset, NewMarketRegistrationEvent};
 
 pub mod error;
 pub mod models;
@@ -28,7 +28,7 @@ pub fn establish_connection(url: String) -> PgConnection {
         .unwrap_or_else(|_| panic!("Could not connect to database {}", url))
 }
 
-pub fn create_coin(
+pub fn create_asset(
     conn: &mut PgConnection,
     account_address: &str,
     module_name: &str,
@@ -36,10 +36,10 @@ pub fn create_coin(
     symbol: Option<&str>,
     name: Option<&str>,
     decimals: Option<i16>,
-) -> Coin {
-    use crate::schema::coins;
+) -> Asset {
+    use crate::schema::assets;
 
-    let new_coin = NewCoin {
+    let new_asset = NewAsset {
         account_address,
         module_name,
         struct_name,
@@ -48,10 +48,10 @@ pub fn create_coin(
         decimals,
     };
 
-    diesel::insert_into(coins::table)
-        .values(&new_coin)
+    diesel::insert_into(assets::table)
+        .values(&new_asset)
         .get_result(conn)
-        .expect("Error adding new coin.")
+        .expect("Error adding new asset.")
 }
 
 pub fn register_market(

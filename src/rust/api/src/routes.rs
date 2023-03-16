@@ -35,10 +35,10 @@ pub async fn markets(
             underwriter_id,
             created_at
         from markets
-            join coins base on markets.base_account_address = base.account_address
+            join assets base on markets.base_account_address = base.account_address
                                 and markets.base_module_name = base.module_name
                                 and markets.base_struct_name = base.struct_name
-            join coins quote on markets.quote_account_address = quote.account_address
+            join assets quote on markets.quote_account_address = quote.account_address
                                 and markets.quote_module_name = quote.module_name
                                 and markets.quote_struct_name = quote.struct_name;
         "#

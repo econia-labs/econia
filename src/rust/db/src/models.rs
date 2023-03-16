@@ -3,10 +3,10 @@ use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::schema::{coins, market_registration_events};
+use crate::schema::{assets, market_registration_events};
 
 #[derive(Clone, Debug, Serialize, Deserialize, Queryable)]
-pub struct Coin {
+pub struct Asset {
     pub account_address: String,
     pub module_name: String,
     pub struct_name: String,
@@ -16,8 +16,8 @@ pub struct Coin {
 }
 
 #[derive(Insertable, Debug)]
-#[diesel(table_name = coins)]
-pub struct NewCoin<'a> {
+#[diesel(table_name = assets)]
+pub struct NewAsset<'a> {
     pub account_address: &'a str,
     pub module_name: &'a str,
     pub struct_name: &'a str,

@@ -7,7 +7,7 @@ pub mod sql_types {
 }
 
 diesel::table! {
-    coins (account_address, module_name, struct_name) {
+    assets (account_address, module_name, struct_name) {
         account_address -> Varchar,
         module_name -> Text,
         struct_name -> Text,
@@ -77,7 +77,7 @@ diesel::joinable!(market_registration_events -> markets (market_id));
 diesel::joinable!(recognized_markets -> markets (market_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
-    coins,
+    assets,
     market_registration_events,
     markets,
     recognized_market_events,

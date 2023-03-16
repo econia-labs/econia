@@ -36,7 +36,8 @@ create table maker_events (
     ) references orders (market_order_id, market_id)
 );
 
-create function place_order() returns trigger as $place_order$ begin
+create function handle_maker_event() returns trigger
+as $handle_maker_event$ begin
 if new.event_type = 'place' then
     insert into orders values (
         new.market_order_id,
@@ -51,14 +52,23 @@ if new.event_type = 'place' then
         new.time
     );
     return new;
+elsif new.event_type = 'change' then
+    update orders set
+        size = new.size,
+        price = new.price,
+        remaining_size = greatest(new.size - (size - orders.remaining_size), 0),
+        order_state = (case when new.size - (size - orders.remaining_size) <= 0
+                       then 'filled' else order_state end)
+    where market_order_id = new.market_order_id and market_id = new.market_id;
+    return new;
 end if;
 end;
-$place_order$ language plpgsql;
+$handle_maker_event$ language plpgsql;
 
-create trigger place_order_trigger
+create trigger handle_maker_event_trigger
 before
 insert on maker_events for each row
-execute procedure place_order();
+execute procedure handle_maker_event();
 
 create table taker_events (
     market_id numeric (20) not null,

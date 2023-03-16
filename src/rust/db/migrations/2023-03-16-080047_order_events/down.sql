@@ -1,8 +1,8 @@
 drop table taker_events;
 
-drop trigger place_order_trigger on maker_events;
+drop trigger handle_maker_event_trigger on maker_events;
 
-drop function place_order;
+drop function handle_maker_event;
 
 drop table maker_events;
 

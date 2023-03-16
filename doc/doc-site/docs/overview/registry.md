@@ -77,6 +77,23 @@ A potential result of this loosely-defined market uniqueness is liquidity fractu
 if two markets both have reasonable [market size parameters], then market makers and takers may split liquidity between the two venues, leading to price discovery inefficiencies.
 To remedy this drawback, Econia additionally tabulates [recognized markets].
 
+## Base asset types
+
+Econia only supports `aptos_framework::coin::Coin`-type quote assets, but base assets do not have to be a `Coin`.
+This design enables spot markets, as well as derivatives markets where it is not practical to define a new `Coin` type for each new market.
+
+In the case of a spot market, where both the base asset and the quote asset are `Coin` types, a new market can be registered via [`register_market_base_coin()`], or [`register_market_base_coin_from_coinstore()`], simply by passing in the base `Coin` phantom `CoinType` as a type argument.
+
+When registering a market where the base asset is not a `Coin` type, a new market can be registered via [`register_market_base_generic()`], which instead requires passing in a string denoting the base asset name.
+Note that this function also requires an immutable reference to an [underwriter] capability for the underwriter who will certify base asset amounts on the given market.
+
+The corresponding [`MarketInfo`] fields generated for the market then correspond to:
+
+| Field               | If base asset is coin                   | If base asset is not coin         |
+|---------------------|-----------------------------------------|-----------------------------------|
+| `base_type`         | Phantom `CoinType` type info for `Coin` | [`GenericAsset`] type info        |
+| `base_name_generic` | Empty string                            | Name provided during registration |
+
 ## Recognized markets
 
 In addition to a permissionless global [`Registry`], Econia also defines a [`RecognizedMarkets`] structure that tabulates info for markets recognized as having proper [market size parameters]:
@@ -106,3 +123,6 @@ Here, users can simply decide what assets they want to trade, then look up the c
 [`UnderwriterCapability`]:                      https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_UnderwriterCapability
 [`get_market_account_market_info_user()`]:      https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/user.md#0xc0deb00c_user_get_market_account_market_info_user
 [`get_market_account_market_info_custodian()`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/user.md#0xc0deb00c_user_get_market_account_market_info_custodian
+[`register_market_base_coin()`]:                https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_register_market_base_coin
+[`register_market_base_coin_from_coinstore()`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_register_market_base_coin_from_coinstore
+[`register_market_base_generic()`]:             https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_register_market_base_generic

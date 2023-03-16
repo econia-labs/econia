@@ -1,6 +1,6 @@
 use chrono::Utc;
 use db::{
-    add_maker_event, create_coin, establish_connection, load_config,
+    add_maker_event, create_asset, establish_connection, load_config,
     models::{
         events::{MakerEvent, MakerEventType},
         market::MarketRegistrationEvent,
@@ -27,14 +27,14 @@ fn reset_order_tables(conn: &mut PgConnection) {
         .execute(conn)
         .expect("Error deleting market registration event table");
 
-    diesel::delete(db::schema::coins::table)
+    diesel::delete(db::schema::assets::table)
         .execute(conn)
-        .expect("Error deleting coins table");
+        .expect("Error deleting assets table");
 }
 
 fn setup_market(conn: &mut PgConnection) -> MarketRegistrationEvent {
     // Register coins first, so we can satisfy the foreign key constraint in markets.
-    let aptos_coin = create_coin(
+    let aptos_coin = create_asset(
         conn,
         "0x1",
         "aptos_coin",
@@ -44,7 +44,7 @@ fn setup_market(conn: &mut PgConnection) -> MarketRegistrationEvent {
         Some(8),
     );
 
-    let tusdc_coin = create_coin(
+    let tusdc_coin = create_asset(
         conn,
         "0x7c36a610d1cde8853a692c057e7bd2479ba9d5eeaeceafa24f125c23d2abf942",
         "test_usdc",
@@ -60,9 +60,13 @@ fn setup_market(conn: &mut PgConnection) -> MarketRegistrationEvent {
         conn,
         0.into(),
         Utc::now(),
-        aptos_coin.id,
+        &aptos_coin.account_address,
+        &aptos_coin.module_name,
+        &aptos_coin.struct_name,
         None,
-        tusdc_coin.id,
+        &tusdc_coin.account_address,
+        &tusdc_coin.module_name,
+        &tusdc_coin.struct_name,
         1000.into(),
         1000.into(),
         1000.into(),

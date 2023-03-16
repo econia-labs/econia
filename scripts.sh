@@ -188,9 +188,9 @@ function format_code_shell {
 # Format SQL code.
 function format_code_sql {
     echo "Formatting SQL code"
-    cd $sql_dir                                            # Navigate to directory with diesel migrations.
-    poetry run sqlfluff fix **/*.sql --dialect postgres -f # Format code with sqlfluff.
-    cd $sql_dir_inverse                                    # Return to repository root.
+    cd $sql_dir                                 # Navigate to directory with diesel migrations.
+    sqlfluff fix **/*.sql --dialect postgres -f # Format code with sqlfluff.
+    cd $sql_dir_inverse                         # Return to repository root.
 }
 
 # Format TypeScript code.
@@ -243,15 +243,12 @@ case "$1" in
         brew_install python                                # Install Python.
         brew_install rustup                                # Install Rust toolchain installer.
         brew_install shfmt                                 # Install shell script formatter.
+        brew_install sqlfluff                              # Install SQL formatter.
         rustup install stable                              # Install stable Rust toolchain.
         cd $python_dir                                     # Navigate to Python package directory.
         echo "Installing Econia Python package"            # Print notice.
         poetry install                                     # Install Python package and dependencies.
         cd $python_dir_inverse                             # Go back to repository root.
-        cd $sql_dir                                        # Go to SQL directory.
-        echo "Installing SQL formatter Python package"     # Print notice.
-        poetry install                                     # Install SQL formatter Python package and dependencies.
-        cd $sql_dir_inverse                                # Go back to repository root.
         cd $ts_sdk_dir                                     # Go to TypeScript SDK directory.
         echo "Installing TypeScript dependencies via pnpm" # Print notice.
         pnpm install                                       # Install TypeScript dependencies.

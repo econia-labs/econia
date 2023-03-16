@@ -14,11 +14,11 @@ docgen_address="0xc0deb00c"
 # Move package directory.
 move_dir="src/move/econia/"
 
-# Python directory.
-python_dir="src/python/"
+# Python build scripts directory.
+python_build_dir="src/python/"
 
-# Relative path to this directory from Python directory.
-python_dir_inverse="../../"
+# Relative path to this directory from Python build scripts directory.
+python_build_dir_inverse="../../"
 
 # Rust directory.
 rust_dir="src/rust/"
@@ -67,22 +67,22 @@ function brew_install {
 
 # Generate temporary account.
 function generate_temporary_account {
-    cd $python_dir # Navigate to Python package directory.
+    cd $python_build_dir # Navigate to Python build scripts directory.
     # Generate temporary account.
     poetry run python -m econia.account generate \
-        $python_dir_inverse$secrets_dir \
+        $python_build_dir_inverse$secrets_dir \
         --type temporary
-    cd $python_dir_inverse # Go back to repository root.
+    cd $python_build_dir_inverse # Go back to repository root.
 }
 
 # Print authentication key message for persistent or temporary account secret.
 function print_auth_key_message {
-    type=$1        # Get address.
-    cd $python_dir # Navigate to Python package directory.
+    type=$1              # Get address.
+    cd $python_build_dir # Navigate to Python build scripts directory.
     # Print authentication key message.
     poetry run python -m econia.account authentication-key \
-        $python_dir_inverse$secrets_dir$type
-    cd $python_dir_inverse # Go back to repository root.
+        $python_build_dir_inverse$secrets_dir$type
+    cd $python_build_dir_inverse # Go back to repository root.
 }
 
 # Substiute econia named address.
@@ -92,13 +92,13 @@ function set_econia_address {
     if [[ $address == temporary || $address == persistent ]]; then
         # Extract authentication key from auth key message (4th line).
         address=$(print_auth_key_message $address | sed -n '4 p')
-    fi             # Address now reassigned.
-    cd $python_dir # Navigate to Python package directory.
+    fi                   # Address now reassigned.
+    cd $python_build_dir # Navigate to Python build scripts directory.
     # Set address.
     poetry run python -m econia.manifest address \
-        $python_dir_inverse$manifest \
+        $python_build_dir_inverse$manifest \
         $address
-    cd $python_dir_inverse # Go back to repository root.
+    cd $python_build_dir_inverse # Go back to repository root.
 }
 
 # Build Move documentation.
@@ -119,10 +119,10 @@ function test_move {
 # Run Python tests.
 function test_python {
     echo "Running Python tests" # Print notice.
-    cd $python_dir              # Navigate to Python package directory.
+    cd $python_build_dir        # Navigate to Python build scripts directory.
     # Doctest all source.
     find . -name "*.py" | xargs poetry run python -m doctest
-    cd $python_dir_inverse # Go back to repository root.
+    cd $python_build_dir_inverse # Go back to repository root.
 }
 
 # Publish Move package using REST url in ~/.aptos/config.yaml config file.
@@ -156,7 +156,6 @@ function format_code_python {
     echo "Formatting Python code" # Print notice.
     isort .                       # Sort imports.
     black . --line-length 80      # Format code.
-    cd $python_dir                # Navigate to Python package directory.
     # Find all files ending in .py, pass to autoflake command (remove
     # unused imports and variables).
     find . -name "*.py" | xargs \
@@ -166,8 +165,6 @@ function format_code_python {
         --remove-all-unused-imports \
         --remove-unused-variables \
         --ignore-init-module-imports
-    cd $python_dir_inverse # Go back to repository root.
-
 }
 
 # Format Rust code.
@@ -211,12 +208,6 @@ function format_code {
     format_code_typescript
 }
 
-# Run script command on Move source change, passing arguments.
-function run_on_source_change {
-    find $move_dir"sources" -name "*.move" |
-        entr -s $(echo source scripts.sh $@)
-}
-
 # Functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 # Command line argument parsers >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -235,26 +226,28 @@ case "$1" in
             echo "installing brew"                 # Print notice of installation.
             /bin/bash -c "$(curl -fsSL $brew_url)" # Install brew.
         fi
-        brew_install aptos                                  # Install aptos CLI.
-        brew_install black                                  # Install Python code formatter.
-        brew_install entr                                   # Install tool to run on file change.
-        brew_install isort                                  # Install Python import sorter.
-        brew_install node                                   # Install JavaScript package manager.
-        brew_install poetry                                 # Install Python environment manager.
-        brew_install pnpm                                   # Install performant NPM variant.
-        brew_install python                                 # Install Python.
-        brew_install rustup                                 # Install Rust toolchain installer.
-        brew_install shfmt                                  # Install shell script formatter.
-        brew_install sqlfluff                               # Install SQL formatter.
-        rustup install stable                               # Install stable Rust toolchain.
-        cd $python_dir                                      # Navigate to Python package directory.
-        echo "Installing Python build package dependencies" # Print notice.
-        poetry install                                      # Install Python package and dependencies.
-        cd $python_dir_inverse                              # Go back to repository root.
-        cd $ts_sdk_dir                                      # Go to TypeScript SDK directory.
-        echo "Installing TypeScript dependencies via pnpm"  # Print notice.
-        pnpm install                                        # Install TypeScript dependencies.
-        cd $ts_sdk_dir_inverse                              # Go back to repository root.
+        brew_install aptos                                 # Install aptos CLI.
+        brew_install black                                 # Install Python code formatter.
+        brew_install entr                                  # Install tool to run on file change.
+        brew_install isort                                 # Install Python import sorter.
+        brew_install node                                  # Install JavaScript package manager.
+        brew_install poetry                                # Install Python environment manager.
+        brew_install pnpm                                  # Install performant NPM variant.
+        brew_install python                                # Install Python.
+        brew_install rustup                                # Install Rust toolchain installer.
+        brew_install shfmt                                 # Install shell script formatter.
+        brew_install sqlfluff                              # Install SQL formatter.
+        rustup install stable                              # Install stable Rust toolchain.
+        echo "Installing Python-based formatters"          # Print notice.
+        poetry install                                     # Install code formatters.
+        cd $python_build_dir                               # Navigate to Python build package directory.
+        echo "Installing Python build script dependencies" # Print notice.
+        poetry install                                     # Install Python build script dependencies.
+        cd $python_build_dir_inverse                       # Go back to repository root.
+        cd $ts_sdk_dir                                     # Go to TypeScript SDK directory.
+        echo "Installing TypeScript dependencies via pnpm" # Print notice.
+        pnpm install                                       # Install TypeScript dependencies.
+        cd $ts_sdk_dir_inverse                             # Go back to repository root.
         ;;
 
     # Set econia address to underscore.
@@ -266,33 +259,28 @@ case "$1" in
     # Set econia address to persistent address.
     ap) set_econia_address persistent ;;
 
-    # Develop Python (go to Python directory).
-    dp)
-        cd $python_dir
-        echo "Now at $(pwd)"
-        ;;
-
     # Format code.
     fc) format_code ;;
 
     # Update genesis incentive parameters.
     ig)
         echo "Updating genesis parameters" # Print notice.
-        cd $python_dir
+        cd $python_build_dir               # Navigate to Python build package.
         # Run incentives CLI genesis command, passing remaining arguments.
         poetry run python -m econia.incentives update \
-            $python_dir_inverse$incentives_module --genesis-parameters "${@:2}"
-        cd $python_dir_inverse # Go back to repository root.
+            $python_build_dir_inverse$incentives_module \
+            --genesis-parameters "${@:2}"
+        cd $python_build_dir_inverse # Go back to repository root.
         ;;
 
     # Update script incentive parameters.
     is)
         echo "Updating script parameters" # Print notice.
-        cd $python_dir
+        cd $python_build_dir              # Navigate to Python build package.
         # Run incentives CLI command, passing remaining arguments.
         poetry run python -m econia.incentives update \
-            $python_dir_inverse$governance_script "${@:2}"
-        cd $python_dir_inverse # Go back to repository root.
+            $python_build_dir_inverse$governance_script "${@:2}"
+        cd $python_build_dir_inverse # Go back to repository root.
         ;;
 
     # Clean Move package directory.
@@ -325,12 +313,6 @@ case "$1" in
 
     # Run Move unit tests with a filter, passing possible additional arguments.
     tf) test_move --filter "${@:2}" ;;
-
-    # Watch source code, rebuilding docs when it changes.
-    wd) run_on_source_change md "${@:2}" ;;
-
-    # Watch source code, running Move tests when it changes.
-    wt) run_on_source_change tm "${@:2}" ;;
 
     # Print invalid option.
     *) echo Invalid ;;

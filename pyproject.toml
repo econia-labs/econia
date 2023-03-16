@@ -1,0 +1,11 @@
+[tool.poetry]
+name = "econia-formatters"
+version = "1.0.0"
+description = "Python-based formatters not supported by brew"
+authors = ["Econia Labs"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+
+[tool.poetry.dev-dependencies]
+autoflake = "^2.0.1"

@@ -3,7 +3,7 @@ create type side as enum ('buy', 'sell');
 create type order_state as enum ('open', 'filled', 'canceled');
 
 create table orders (
-    market_order_id numeric (39) not null primary key,
+    market_order_id numeric (39) not null,
     market_id numeric (20) not null,
     side side not null,
     size numeric (20) not null,
@@ -13,6 +13,7 @@ create table orders (
     order_state order_state not null,
     remaining_size numeric (20) not null,
     created_at timestamptz not null,
+    primary key (market_order_id, market_id),
     foreign key (market_id) references markets (market_id)
 );
 
@@ -30,7 +31,9 @@ create table maker_events (
     time timestamptz not null,
     primary key (market_order_id, time),
     foreign key (market_id) references markets (market_id),
-    foreign key (market_order_id) references orders (market_order_id)
+    foreign key (
+        market_order_id, market_id
+    ) references orders (market_order_id, market_id)
 );
 
 create function place_order() returns trigger as $place_order$ begin
@@ -68,5 +71,7 @@ create table taker_events (
     time timestamptz not null,
     primary key (market_order_id, time),
     foreign key (market_id) references markets (market_id),
-    foreign key (market_order_id) references orders (market_order_id)
+    foreign key (
+        market_order_id, market_id
+    ) references orders (market_order_id, market_id)
 );

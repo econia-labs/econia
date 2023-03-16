@@ -10,4 +10,6 @@ drop type maker_event_type;
 
 drop table orders;
 
+drop type order_state;
+
 drop type side;

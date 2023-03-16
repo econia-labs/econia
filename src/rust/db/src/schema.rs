@@ -88,7 +88,7 @@ diesel::table! {
     use super::sql_types::Side;
     use super::sql_types::OrderState;
 
-    orders (market_order_id) {
+    orders (market_order_id, market_id) {
         market_order_id -> Numeric,
         market_id -> Numeric,
         side -> Side,
@@ -139,12 +139,10 @@ diesel::table! {
 }
 
 diesel::joinable!(maker_events -> markets (market_id));
-diesel::joinable!(maker_events -> orders (market_order_id));
 diesel::joinable!(market_registration_events -> markets (market_id));
 diesel::joinable!(orders -> markets (market_id));
 diesel::joinable!(recognized_markets -> markets (market_id));
 diesel::joinable!(taker_events -> markets (market_id));
-diesel::joinable!(taker_events -> orders (market_order_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     assets,

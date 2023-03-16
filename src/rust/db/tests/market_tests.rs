@@ -5,15 +5,16 @@ use db::{
     register_market,
 };
 use diesel::prelude::*;
+use types::constants::ECONIA_ADDRESS;
 
 fn reset_market_databases(conn: &mut PgConnection) {
-    diesel::delete(db::schema::markets::table)
-        .execute(conn)
-        .expect("Error deleting markets table");
-
     diesel::delete(db::schema::market_registration_events::table)
         .execute(conn)
         .expect("Error deleting market registration event table");
+
+    diesel::delete(db::schema::markets::table)
+        .execute(conn)
+        .expect("Error deleting markets table");
 
     diesel::delete(db::schema::coins::table)
         .execute(conn)
@@ -93,7 +94,15 @@ fn test_register_generic_market() {
     reset_market_databases(conn);
 
     // Register GenericAsset to coins table to satisfy foreign key constraint.
-    create_coin(conn, "econia", "registry", "GenericAsset", None, None, None);
+    create_coin(
+        conn,
+        ECONIA_ADDRESS,
+        "registry",
+        "GenericAsset",
+        None,
+        None,
+        None,
+    );
 
     // Register quote coin.
     let tusdc_coin = create_coin(
@@ -112,7 +121,7 @@ fn test_register_generic_market() {
         conn,
         1.into(),
         Utc::now(),
-        "econia",
+        ECONIA_ADDRESS,
         "registry",
         "GenericAsset",
         Some("APT-PERP"),

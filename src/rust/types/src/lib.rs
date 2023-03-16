@@ -3,6 +3,7 @@ use chrono::{DateTime, Utc};
 use error::TypeError;
 use serde::{Deserialize, Serialize};
 
+pub mod constants;
 pub mod error;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

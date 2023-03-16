@@ -14,29 +14,33 @@ pub async fn markets(
     let query_markets = sqlx::query_as!(
         types::QueryMarket,
         r#"
-        select 
+        select
             market_id,
-            base_coins.symbol as base_symbol,
-            base_coins.name as base_name,
-            base_coins.decimals as base_decimals,
-            base_coins.account_address as base_account_address,
-            base_coins.module_name as base_module_name,
-            base_coins.struct_name as base_struct_name,
-            quote_coins.symbol as quote_symbol,
-            quote_coins.name as quote_name,
-            quote_coins.decimals as quote_decimals,
-            quote_coins.account_address as quote_account_address,
-            quote_coins.module_name as quote_module_name,
-            quote_coins.struct_name as quote_struct_name,
+            base_account_address,
+            base.name as base_name,
+            base.symbol as base_symbol,
+            base.decimals as base_decimals,
+            base_module_name,
+            base_struct_name,
             base_name_generic,
+            quote.name as quote_name,
+            quote.symbol as quote_symbol,
+            quote.decimals as quote_decimals,
+            quote_account_address,
+            quote_module_name,
+            quote_struct_name,
             lot_size,
             tick_size,
             min_size,
             underwriter_id,
             created_at
         from markets
-            join coins base_coins on markets.base_id = base_coins.id
-            join coins quote_coins on markets.quote_id = quote_coins.id
+            join coins base on markets.base_account_address = base.account_address
+                                and markets.base_module_name = base.module_name
+                                and markets.base_struct_name = base.struct_name
+            join coins quote on markets.quote_account_address = quote.account_address
+                                and markets.quote_module_name = quote.module_name
+                                and markets.quote_struct_name = quote.struct_name;
         "#
     )
     .fetch_all(&pool)
@@ -61,9 +65,8 @@ mod tests {
     use sqlx::PgPool;
     use tower::ServiceExt;
 
-    use crate::load_config;
-
     use super::*;
+    use crate::load_config;
 
     #[tokio::test]
     async fn test_index() {

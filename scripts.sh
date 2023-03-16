@@ -188,9 +188,9 @@ function format_code_shell {
 # Format SQL code.
 function format_code_sql {
     echo "Formatting SQL code"
-    cd $sql_dir                                            # Navigate to directory with diesel migrations.
-    poetry run sqlfluff fix **/*.sql --dialect postgres -f # Format code with sqlfluff.
-    cd $sql_dir_inverse                                    # Return to repository root.
+    cd $sql_dir                                 # Navigate to directory with diesel migrations.
+    sqlfluff fix **/*.sql --dialect postgres -f # Format code with sqlfluff.
+    cd $sql_dir_inverse                         # Return to repository root.
 }
 
 # Format TypeScript code.

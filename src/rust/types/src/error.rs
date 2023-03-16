@@ -7,4 +7,7 @@ pub enum TypeError {
 
     #[error("missing value")]
     MissingValue { name: String },
+
+    #[error("unexpected value")]
+    UnexpectedValue { name: String },
 }

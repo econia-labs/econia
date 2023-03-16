@@ -38,10 +38,10 @@ diesel::table! {
 diesel::table! {
     markets (market_id) {
         market_id -> Numeric,
-        base_account_address -> Nullable<Varchar>,
+        base_account_address -> Varchar,
         base_module_name -> Text,
         base_struct_name -> Text,
-        base_name_generic -> Text,
+        base_name_generic -> Nullable<Text>,
         quote_account_address -> Varchar,
         quote_module_name -> Text,
         quote_struct_name -> Text,

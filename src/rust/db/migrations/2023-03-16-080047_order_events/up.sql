@@ -38,6 +38,8 @@ create table maker_events (
 
 create function handle_maker_event() returns trigger
 as $handle_maker_event$ begin
+
+-- Inserts a new row into the orders table if the event type is 'place'.
 if new.event_type = 'place' then
     insert into orders values (
         new.market_order_id,
@@ -51,6 +53,12 @@ if new.event_type = 'place' then
         new.size,
         new.time
     );
+
+-- Updates the row of the order if the event type is 'change'.
+-- This also updates the remaining_size column based on the updated order size,
+-- and if the order size is decreased to the point that there is no amount left
+-- to fill, remaining_size will be set to zero, and the order state will be set
+-- to 'filled'.
 elsif new.event_type = 'change' then
     update orders set
         size = new.size,
@@ -59,10 +67,14 @@ elsif new.event_type = 'change' then
         order_state = (case when new.size - size + remaining_size <= 0
                        then 'filled' else order_state end)
     where market_order_id = new.market_order_id and market_id = new.market_id;
+
+-- Order state is set to 'cancelled' if the event type is 'cancel'.
 elsif new.event_type = 'cancel' then
     update orders set
         order_state = 'cancelled'
     where market_order_id = new.market_order_id and market_id = new.market_id;
+
+-- Order state is set to 'evicted' if the event type is 'evict'.
 elsif new.event_type = 'evict' then
     update orders set
         order_state = 'evicted'
@@ -72,6 +84,10 @@ return new;
 end;
 $handle_maker_event$ language plpgsql;
 
+-- The trigger is configured so that it fires upon every row insertion to the
+-- maker_events table. The orders table must be updated before the maker_events
+-- table in order to satisfy the foreign key constraint on maker_events when
+-- a new order is placed.
 create trigger handle_maker_event_trigger
 before
 insert on maker_events for each row

@@ -1,6 +1,6 @@
 {
   "db": "PostgreSQL",
-  "4c3fcb345c4c0b036c91ef48276201a7c6fc12b8f0d2020e86ea0f5aefaae2ad": {
+  "1e10f4e95e605ed7778372c88323309201a3d9a294f668f722a0d70f56332157": {
     "describe": {
       "columns": [
         {
@@ -124,6 +124,6 @@
         "Left": []
       }
     },
-    "query": "\n        select \n            market_id,\n            base_coins.symbol as base_symbol,\n            base_coins.name as base_name,\n            base_coins.decimals as base_decimals,\n            base_coins.account_address as base_account_address,\n            base_coins.module_name as base_module_name,\n            base_coins.struct_name as base_struct_name,\n            quote_coins.symbol as quote_symbol,\n            quote_coins.name as quote_name,\n            quote_coins.decimals as quote_decimals,\n            quote_coins.account_address as quote_account_address,\n            quote_coins.module_name as quote_module_name,\n            quote_coins.struct_name as quote_struct_name,\n            base_name_generic,\n            lot_size,\n            tick_size,\n            min_size,\n            underwriter_id,\n            created_at\n        from markets\n            join coins base_coins on markets.base_id = base_coins.id\n            join coins quote_coins on markets.quote_id = quote_coins.id\n        "
+    "query": "\n        select\n            market_id,\n            base_coins.symbol as base_symbol,\n            base_coins.name as base_name,\n            base_coins.decimals as base_decimals,\n            base_coins.account_address as base_account_address,\n            base_coins.module_name as base_module_name,\n            base_coins.struct_name as base_struct_name,\n            quote_coins.symbol as quote_symbol,\n            quote_coins.name as quote_name,\n            quote_coins.decimals as quote_decimals,\n            quote_coins.account_address as quote_account_address,\n            quote_coins.module_name as quote_module_name,\n            quote_coins.struct_name as quote_struct_name,\n            base_name_generic,\n            lot_size,\n            tick_size,\n            min_size,\n            underwriter_id,\n            created_at\n        from markets\n            join coins base_coins on markets.base_id = base_coins.id\n            join coins quote_coins on markets.quote_id = quote_coins.id\n        "
   }
 }

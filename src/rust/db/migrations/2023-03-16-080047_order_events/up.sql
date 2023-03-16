@@ -1,6 +1,6 @@
 create type side as enum ('buy', 'sell');
 
-create type order_state as enum ('open', 'filled', 'cancelled');
+create type order_state as enum ('open', 'filled', 'cancelled', 'evicted');
 
 create table orders (
     market_order_id numeric (39) not null,
@@ -51,7 +51,6 @@ if new.event_type = 'place' then
         new.size,
         new.time
     );
-    return new;
 elsif new.event_type = 'change' then
     update orders set
         size = new.size,
@@ -60,13 +59,16 @@ elsif new.event_type = 'change' then
         order_state = (case when new.size - (size - orders.remaining_size) <= 0
                        then 'filled' else order_state end)
     where market_order_id = new.market_order_id and market_id = new.market_id;
-    return new;
 elsif new.event_type = 'cancel' then
     update orders set
         order_state = 'cancelled'
     where market_order_id = new.market_order_id and market_id = new.market_id;
-    return new;
+elsif new.event_type = 'evict' then
+    update orders set
+        order_state = 'evicted'
+    where market_order_id = new.market_order_id and market_id = new.market_id;
 end if;
+return new;
 end;
 $handle_maker_event$ language plpgsql;
 

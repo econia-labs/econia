@@ -21,6 +21,7 @@ pub enum OrderState {
     Open,
     Filled,
     Cancelled,
+    Evicted,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Queryable)]

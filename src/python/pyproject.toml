@@ -12,5 +12,3 @@ jupyter = "^1.0.0"
 
 [tool.poetry.dev-dependencies]
 autoflake = "^2.0.1"
-black = "^23.1.0"
-isort = "^5.12.0"

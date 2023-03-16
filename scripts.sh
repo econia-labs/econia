@@ -154,6 +154,8 @@ function publish {
 # Format Python code.
 function format_code_python {
     echo "Formatting Python code" # Print notice.
+    isort .                       # Sort imports.
+    black . --line-length 80      # Format code.
     cd $python_dir                # Navigate to Python package directory.
     # Find all files ending in .py, pass to autoflake command (remove
     # unused imports and variables).
@@ -164,9 +166,7 @@ function format_code_python {
         --remove-all-unused-imports \
         --remove-unused-variables \
         --ignore-init-module-imports
-    poetry run isort .                  # Sort imports.
-    poetry run black . --line-length 80 # Format code.
-    cd $python_dir_inverse              # Go back to repository root.
+    cd $python_dir_inverse # Go back to repository root.
 
 }
 
@@ -235,24 +235,26 @@ case "$1" in
             echo "installing brew"                 # Print notice of installation.
             /bin/bash -c "$(curl -fsSL $brew_url)" # Install brew.
         fi
-        brew_install aptos                                 # Install aptos CLI.
-        brew_install entr                                  # Install tool to run on file change.
-        brew_install node                                  # Install JavaScript package manager.
-        brew_install poetry                                # Install Python environment manager.
-        brew_install pnpm                                  # Install performant NPM variant.
-        brew_install python                                # Install Python.
-        brew_install rustup                                # Install Rust toolchain installer.
-        brew_install shfmt                                 # Install shell script formatter.
-        brew_install sqlfluff                              # Install SQL formatter.
-        rustup install stable                              # Install stable Rust toolchain.
-        cd $python_dir                                     # Navigate to Python package directory.
-        echo "Installing Econia Python package"            # Print notice.
-        poetry install                                     # Install Python package and dependencies.
-        cd $python_dir_inverse                             # Go back to repository root.
-        cd $ts_sdk_dir                                     # Go to TypeScript SDK directory.
-        echo "Installing TypeScript dependencies via pnpm" # Print notice.
-        pnpm install                                       # Install TypeScript dependencies.
-        cd $ts_sdk_dir_inverse                             # Go back to repository root.
+        brew_install aptos                                  # Install aptos CLI.
+        brew_install black                                  # Install Python code formatter.
+        brew_install entr                                   # Install tool to run on file change.
+        brew_install isort                                  # Install Python import sorter.
+        brew_install node                                   # Install JavaScript package manager.
+        brew_install poetry                                 # Install Python environment manager.
+        brew_install pnpm                                   # Install performant NPM variant.
+        brew_install python                                 # Install Python.
+        brew_install rustup                                 # Install Rust toolchain installer.
+        brew_install shfmt                                  # Install shell script formatter.
+        brew_install sqlfluff                               # Install SQL formatter.
+        rustup install stable                               # Install stable Rust toolchain.
+        cd $python_dir                                      # Navigate to Python package directory.
+        echo "Installing Python build package dependencies" # Print notice.
+        poetry install                                      # Install Python package and dependencies.
+        cd $python_dir_inverse                              # Go back to repository root.
+        cd $ts_sdk_dir                                      # Go to TypeScript SDK directory.
+        echo "Installing TypeScript dependencies via pnpm"  # Print notice.
+        pnpm install                                        # Install TypeScript dependencies.
+        cd $ts_sdk_dir_inverse                              # Go back to repository root.
         ;;
 
     # Set econia address to underscore.

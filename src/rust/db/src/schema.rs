@@ -7,8 +7,7 @@ pub mod sql_types {
 }
 
 diesel::table! {
-    coins (id) {
-        id -> Int4,
+    coins (account_address, module_name, struct_name) {
         account_address -> Varchar,
         module_name -> Text,
         struct_name -> Text,
@@ -22,9 +21,13 @@ diesel::table! {
     market_registration_events (market_id) {
         market_id -> Numeric,
         time -> Timestamptz,
-        base_id -> Int4,
+        base_account_address -> Varchar,
+        base_module_name -> Text,
+        base_struct_name -> Text,
         base_name_generic -> Nullable<Text>,
-        quote_id -> Int4,
+        quote_account_address -> Varchar,
+        quote_module_name -> Text,
+        quote_struct_name -> Text,
         lot_size -> Numeric,
         tick_size -> Numeric,
         min_size -> Numeric,
@@ -35,9 +38,13 @@ diesel::table! {
 diesel::table! {
     markets (market_id) {
         market_id -> Numeric,
-        base_id -> Int4,
-        base_name_generic -> Nullable<Text>,
-        quote_id -> Int4,
+        base_account_address -> Nullable<Varchar>,
+        base_module_name -> Text,
+        base_struct_name -> Text,
+        base_name_generic -> Text,
+        quote_account_address -> Varchar,
+        quote_module_name -> Text,
+        quote_struct_name -> Text,
         lot_size -> Numeric,
         tick_size -> Numeric,
         min_size -> Numeric,
@@ -66,6 +73,7 @@ diesel::table! {
     }
 }
 
+diesel::joinable!(market_registration_events -> markets (market_id));
 diesel::joinable!(recognized_markets -> markets (market_id));
 
 diesel::allow_tables_to_appear_in_same_query!(

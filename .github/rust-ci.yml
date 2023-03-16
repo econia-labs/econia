@@ -1,0 +1,63 @@
+name: Rust CI
+
+on:
+  push:
+    branches: [ "master" ]
+    paths:
+      - "src/rust/api/**"
+      - "src/rust/db/**"
+      - "src/rust/Cargo.toml"
+      - "src/rust/Cargo.lock"
+
+  pull_request:
+    branches: [ "master" ]
+    paths:
+      - "src/rust/api/**"
+      - "src/rust/db/**"
+      - "src/rust/Cargo.toml"
+      - "src/rust/Cargo.lock"
+
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  lint-build-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: "recursive"
+
+      - run: cd src/rust
+
+      - uses: rui314/setup-mold@v1
+
+      - run: rustup toolchain install nightly
+      - run: rustup component add rustfmt --toolchain nightly
+      - run: rustup component add clippy --toolchain nightly
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          prefix-key: "rustci"
+          shared-key: "ci"
+
+      - name: Rustfmt
+        run: cargo fmt --check
+
+      - name: Cargo sort
+        run: cargo install cargo-sort && cargo sort --grouped --check --workspace
+
+      - name: Check
+        run: cargo check --all-features --all-targets
+
+      - name: Clippy
+        run: cargo clippy --all-features --all-targets
+
+      - name: Build
+        run: cargo build --all-features --all-targets
+
+      - name: Run tests
+        run: cargo test --all-features --all-targets

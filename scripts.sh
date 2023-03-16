@@ -228,7 +228,6 @@ case "$1" in
         fi
         brew_install aptos                                 # Install aptos CLI.
         brew_install black                                 # Install Python code formatter.
-        brew_install entr                                  # Install tool to run on file change.
         brew_install isort                                 # Install Python import sorter.
         brew_install node                                  # Install JavaScript package manager.
         brew_install poetry                                # Install Python environment manager.

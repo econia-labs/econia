@@ -20,7 +20,7 @@ pub enum Side {
 pub enum OrderState {
     Open,
     Filled,
-    Canceled,
+    Cancelled,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Queryable)]

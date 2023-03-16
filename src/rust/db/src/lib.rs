@@ -2,6 +2,7 @@ use bigdecimal::BigDecimal;
 use chrono::{DateTime, Utc};
 use diesel::{prelude::*, Connection, PgConnection};
 use serde::Deserialize;
+use types::constants::ECONIA_ADDRESS;
 
 use crate::models::{Coin, MarketRegistrationEvent, NewCoin, NewMarketRegistrationEvent};
 
@@ -70,6 +71,12 @@ pub fn register_market(
     underwriter_id: BigDecimal,
 ) -> MarketRegistrationEvent {
     use crate::schema::market_registration_events;
+
+    if base_name_generic.is_some() {
+        assert_eq!(base_account_address, ECONIA_ADDRESS);
+        assert_eq!(base_module_name, "registry");
+        assert_eq!(base_struct_name, "GenericAsset");
+    }
 
     let new_market_registration_event = NewMarketRegistrationEvent {
         market_id,

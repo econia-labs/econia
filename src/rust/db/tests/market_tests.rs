@@ -149,3 +149,55 @@ fn test_register_generic_market() {
 
     assert_eq!(db_markets.len(), 1);
 }
+
+#[test]
+#[should_panic]
+fn test_register_generic_market_with_invalid_address() {
+    let config = load_config();
+    let conn = &mut establish_connection(config.database_url);
+
+    // Delete all entries in the tables used before running tests.
+    reset_market_databases(conn);
+
+    // Register GenericAsset.
+    create_coin(
+        conn,
+        ECONIA_ADDRESS,
+        "registry",
+        "GenericAsset",
+        None,
+        None,
+        None,
+    );
+
+    // Register quote coin.
+    let tusdc_coin = create_coin(
+        conn,
+        "0x7c36a610d1cde8853a692c057e7bd2479ba9d5eeaeceafa24f125c23d2abf942",
+        "test_usdc",
+        "TestUSDCoin",
+        Some("tUSDC"),
+        Some("Test USDC"),
+        Some(6),
+    );
+
+    // Attempt to register the market.
+    // Any market with a base_name_generic should reference the resource
+    // <econia_address>::registry::GenericAsset, so this should fail.
+    register_market(
+        conn,
+        1.into(),
+        Utc::now(),
+        "0x1",
+        "aptos_coin",
+        "AptosCoin",
+        Some("APT-PERP"),
+        &tusdc_coin.account_address,
+        &tusdc_coin.module_name,
+        &tusdc_coin.struct_name,
+        1000.into(),
+        1000.into(),
+        1000.into(),
+        0.into(),
+    );
+}

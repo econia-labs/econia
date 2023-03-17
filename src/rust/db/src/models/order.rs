@@ -24,7 +24,7 @@ pub enum OrderState {
     Evicted,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, Queryable)]
+#[derive(Clone, Debug, Queryable)]
 pub struct Order {
     pub market_order_id: BigDecimal,
     pub market_id: BigDecimal,

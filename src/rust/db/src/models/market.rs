@@ -1,11 +1,10 @@
 use bigdecimal::BigDecimal;
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
-use serde::{Deserialize, Serialize};
 
 use crate::schema::market_registration_events;
 
-#[derive(Clone, Debug, Serialize, Deserialize, Queryable)]
+#[derive(Clone, Debug, Queryable)]
 pub struct Market {
     pub market_id: BigDecimal,
     pub base_account_address: Option<String>,
@@ -22,7 +21,7 @@ pub struct Market {
     pub created_at: DateTime<Utc>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, Queryable)]
+#[derive(Clone, Debug, Queryable)]
 pub struct MarketRegistrationEvent {
     pub market_id: BigDecimal,
     pub time: DateTime<Utc>,

@@ -2,20 +2,17 @@ use bigdecimal::BigDecimal;
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 use diesel_derive_enum::DbEnum;
-use serde::{Deserialize, Serialize};
 
 use crate::schema::orders;
 
-#[derive(Debug, DbEnum, Serialize, Deserialize, Clone, PartialEq, Eq)]
-#[serde(rename_all = "lowercase")]
+#[derive(Debug, DbEnum, Clone, PartialEq, Eq)]
 #[ExistingTypePath = "crate::schema::sql_types::Side"]
 pub enum Side {
     Buy,
     Sell,
 }
 
-#[derive(Debug, DbEnum, Serialize, Deserialize, Clone, PartialEq, Eq)]
-#[serde(rename_all = "lowercase")]
+#[derive(Debug, DbEnum, Clone, PartialEq, Eq)]
 #[ExistingTypePath = "crate::schema::sql_types::OrderState"]
 pub enum OrderState {
     Open,
@@ -24,7 +21,7 @@ pub enum OrderState {
     Evicted,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, Queryable)]
+#[derive(Clone, Debug, Queryable)]
 pub struct Order {
     pub market_order_id: BigDecimal,
     pub market_id: BigDecimal,

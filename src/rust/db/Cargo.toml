@@ -6,18 +6,16 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bigdecimal = { workspace = true, features = ["serde"] }
-chrono = { workspace = true, features = ["serde"] }
+bigdecimal = { workspace = true }
+chrono = { workspace = true }
 diesel = { workspace = true, features = [
     "chrono",
     "numeric",
     "postgres",
-    "serde_json",
 ] }
 diesel-derive-enum = { version = "2.0.1", features = ["postgres"] }
 dotenvy = { workspace = true }
 envy = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
-serde_json = { workspace = true }
 thiserror = { workspace = true }
 types = { path = "../types" }

@@ -2,13 +2,11 @@ use bigdecimal::BigDecimal;
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 use diesel_derive_enum::DbEnum;
-use serde::{Deserialize, Serialize};
 
 use super::order::Side;
 use crate::schema::maker_events;
 
-#[derive(Debug, DbEnum, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "lowercase")]
+#[derive(Debug, DbEnum, Clone)]
 #[ExistingTypePath = "crate::schema::sql_types::MakerEventType"]
 pub enum MakerEventType {
     Cancel,
@@ -17,7 +15,7 @@ pub enum MakerEventType {
     Place,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, Queryable)]
+#[derive(Clone, Debug, Queryable)]
 pub struct MakerEvent {
     pub market_id: BigDecimal,
     pub side: Side,

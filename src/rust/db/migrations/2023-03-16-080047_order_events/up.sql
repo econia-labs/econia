@@ -112,6 +112,7 @@ create table taker_events (
 -- Decreases the remaining_size on the order by the fill size.
 create function handle_taker_event() returns trigger
 as $handle_taker_event$ begin
+    -- This updates the maker order corresponding to the taker event.
     -- new.size refers to fill size
     update orders set
         remaining_size = remaining_size - new.size,

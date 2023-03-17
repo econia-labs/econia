@@ -537,3 +537,88 @@ fn test_fill_order() {
     // Clean up tables.
     reset_order_tables(conn);
 }
+
+#[test]
+fn test_fully_fill_order() {
+    let config = load_config();
+    let conn = &mut establish_connection(config.database_url);
+
+    // Delete all entries in the tables used before running tests.
+    reset_order_tables(conn);
+
+    // Set up market.
+    let market = setup_market(conn);
+
+    // Place an order.
+    add_maker_event(
+        conn,
+        &market.market_id,
+        &Side::Buy,
+        &100.into(),
+        "0x1003",
+        None,
+        &MakerEventType::Place,
+        &1000.into(),
+        &1000.into(),
+        &Utc::now(),
+    );
+
+    // Place another order to fully fill the first order.
+    add_maker_event(
+        conn,
+        &market.market_id,
+        &Side::Sell,
+        &101.into(),
+        "0x1004",
+        None,
+        &MakerEventType::Place,
+        &1000.into(),
+        &1000.into(),
+        &Utc::now(),
+    );
+
+    // Fully fill the order.
+    add_taker_event(
+        conn,
+        &market.market_id,
+        &Side::Sell,
+        &100.into(),
+        "0x1004",
+        None,
+        &1000.into(),
+        &1000.into(),
+        &Utc::now(),
+    );
+
+    // Check that the maker events table has two entries.
+    let db_maker_events = db::schema::maker_events::dsl::maker_events
+        .load::<MakerEvent>(conn)
+        .expect("Could not query maker events.");
+
+    assert_eq!(db_maker_events.len(), 2);
+
+    // Check that the maker events table has one entry.
+    let db_taker_events = db::schema::taker_events::dsl::taker_events
+        .load::<TakerEvent>(conn)
+        .expect("Could not query taker events.");
+
+    assert_eq!(db_taker_events.len(), 1);
+
+    // Check that the orders table has two entries.
+    let db_orders = db::schema::orders::dsl::orders
+        .load::<Order>(conn)
+        .expect("Could not query orders.");
+
+    assert_eq!(db_orders.len(), 2);
+
+    let db_order_1 = db_orders.get(1).unwrap();
+
+    // Check that the maker order has the correct parameters.
+    assert_eq!(db_order_1.remaining_size, BigDecimal::from_i32(0).unwrap());
+    assert_eq!(db_order_1.order_state, OrderState::Filled);
+
+    // TODO: update taker order.
+
+    // Clean up tables.
+    reset_order_tables(conn);
+}

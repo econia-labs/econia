@@ -16,10 +16,10 @@ pub async fn markets(
         r#"
         select
             market_id,
+            base.name as "base_name?",
+            base.symbol as "base_symbol?",
+            base.decimals as "base_decimals?",
             base_account_address,
-            base.name as base_name,
-            base.symbol as base_symbol,
-            base.decimals as base_decimals,
             base_module_name,
             base_struct_name,
             base_name_generic,
@@ -35,10 +35,10 @@ pub async fn markets(
             underwriter_id,
             created_at
         from markets
-            join assets base on markets.base_account_address = base.account_address
+            left join coins base on markets.base_account_address = base.account_address
                                 and markets.base_module_name = base.module_name
                                 and markets.base_struct_name = base.struct_name
-            join assets quote on markets.quote_account_address = quote.account_address
+            join coins quote on markets.quote_account_address = quote.account_address
                                 and markets.quote_module_name = quote.module_name
                                 and markets.quote_struct_name = quote.struct_name;
         "#

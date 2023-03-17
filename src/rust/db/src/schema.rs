@@ -7,13 +7,13 @@ pub mod sql_types {
 }
 
 diesel::table! {
-    assets (account_address, module_name, struct_name) {
+    coins (account_address, module_name, struct_name) {
         account_address -> Varchar,
         module_name -> Text,
         struct_name -> Text,
-        symbol -> Nullable<Varchar>,
-        name -> Nullable<Text>,
-        decimals -> Nullable<Int2>,
+        symbol -> Varchar,
+        name -> Text,
+        decimals -> Int2,
     }
 }
 
@@ -21,9 +21,9 @@ diesel::table! {
     market_registration_events (market_id) {
         market_id -> Numeric,
         time -> Timestamptz,
-        base_account_address -> Varchar,
-        base_module_name -> Text,
-        base_struct_name -> Text,
+        base_account_address -> Nullable<Varchar>,
+        base_module_name -> Nullable<Text>,
+        base_struct_name -> Nullable<Text>,
         base_name_generic -> Nullable<Text>,
         quote_account_address -> Varchar,
         quote_module_name -> Text,
@@ -38,9 +38,9 @@ diesel::table! {
 diesel::table! {
     markets (market_id) {
         market_id -> Numeric,
-        base_account_address -> Varchar,
-        base_module_name -> Text,
-        base_struct_name -> Text,
+        base_account_address -> Nullable<Varchar>,
+        base_module_name -> Nullable<Text>,
+        base_struct_name -> Nullable<Text>,
         base_name_generic -> Nullable<Text>,
         quote_account_address -> Varchar,
         quote_module_name -> Text,
@@ -77,7 +77,7 @@ diesel::joinable!(market_registration_events -> markets (market_id));
 diesel::joinable!(recognized_markets -> markets (market_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
-    assets,
+    coins,
     market_registration_events,
     markets,
     recognized_market_events,

@@ -1,11 +1,11 @@
 [tool.poetry]
-name = "econia-sql-formatter"
+name = "econia-formatters"
 version = "1.0.0"
-description = "Econia SQL formatter"
+description = "Python-based formatters not supported by brew"
 authors = ["Econia Labs"]
 
 [tool.poetry.dependencies]
 python = "^3.9"
 
 [tool.poetry.dev-dependencies]
-sqlfluff = "^2.0.0"
+autoflake = "^2.0.1"

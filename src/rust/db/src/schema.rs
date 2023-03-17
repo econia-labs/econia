@@ -2,8 +2,20 @@
 
 pub mod sql_types {
     #[derive(diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "maker_event_type"))]
+    pub struct MakerEventType;
+
+    #[derive(diesel::sql_types::SqlType)]
     #[diesel(postgres_type(name = "market_event_type"))]
     pub struct MarketEventType;
+
+    #[derive(diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "order_state"))]
+    pub struct OrderState;
+
+    #[derive(diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "side"))]
+    pub struct Side;
 }
 
 diesel::table! {
@@ -14,6 +26,24 @@ diesel::table! {
         symbol -> Varchar,
         name -> Text,
         decimals -> Int2,
+    }
+}
+
+diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::Side;
+    use super::sql_types::MakerEventType;
+
+    maker_events (market_order_id, time) {
+        market_id -> Numeric,
+        side -> Side,
+        market_order_id -> Numeric,
+        user_address -> Varchar,
+        custodian_id -> Nullable<Numeric>,
+        event_type -> MakerEventType,
+        size -> Numeric,
+        price -> Numeric,
+        time -> Timestamptz,
     }
 }
 
@@ -55,6 +85,25 @@ diesel::table! {
 
 diesel::table! {
     use diesel::sql_types::*;
+    use super::sql_types::Side;
+    use super::sql_types::OrderState;
+
+    orders (market_order_id, market_id) {
+        market_order_id -> Numeric,
+        market_id -> Numeric,
+        side -> Side,
+        size -> Numeric,
+        price -> Numeric,
+        user_address -> Varchar,
+        custodian_id -> Nullable<Numeric>,
+        order_state -> OrderState,
+        remaining_size -> Numeric,
+        created_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
+    use diesel::sql_types::*;
     use super::sql_types::MarketEventType;
 
     recognized_market_events (market_id) {
@@ -73,13 +122,35 @@ diesel::table! {
     }
 }
 
+diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::Side;
+
+    taker_events (market_order_id, time) {
+        market_id -> Numeric,
+        side -> Side,
+        market_order_id -> Numeric,
+        maker -> Varchar,
+        custodian_id -> Nullable<Numeric>,
+        size -> Numeric,
+        price -> Numeric,
+        time -> Timestamptz,
+    }
+}
+
+diesel::joinable!(maker_events -> markets (market_id));
 diesel::joinable!(market_registration_events -> markets (market_id));
+diesel::joinable!(orders -> markets (market_id));
 diesel::joinable!(recognized_markets -> markets (market_id));
+diesel::joinable!(taker_events -> markets (market_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     coins,
+    maker_events,
     market_registration_events,
     markets,
+    orders,
     recognized_market_events,
     recognized_markets,
+    taker_events,
 );

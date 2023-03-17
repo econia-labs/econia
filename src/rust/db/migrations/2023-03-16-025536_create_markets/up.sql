@@ -1,12 +1,12 @@
 -- Corresponds to aptos_std::type_info::TypeInfo and
 -- aptos_framework::coin::CoinInfo. GenericAsset will also be included.
-create table assets (
+create table coins (
     account_address varchar (70) not null,
     module_name text not null,
     struct_name text not null,
-    symbol varchar (8),
-    name text,
-    decimals smallint,
+    symbol varchar (8) not null,
+    name text not null,
+    decimals smallint not null,
     primary key (account_address, module_name, struct_name)
 );
 
@@ -14,9 +14,9 @@ create table assets (
 -- Only recognized markets should be stored in the api database.
 create table markets (
     market_id numeric (20) not null primary key,
-    base_account_address varchar (70) not null,
-    base_module_name text not null,
-    base_struct_name text not null,
+    base_account_address varchar (70),
+    base_module_name text,
+    base_struct_name text,
     base_name_generic text,
     quote_account_address varchar (70) not null,
     quote_module_name text not null,
@@ -28,19 +28,19 @@ create table markets (
     created_at timestamptz not null,
     foreign key (
         base_account_address, base_module_name, base_struct_name
-    ) references assets (account_address, module_name, struct_name),
+    ) references coins (account_address, module_name, struct_name),
     foreign key (
         quote_account_address, quote_module_name, quote_struct_name
-    ) references assets (account_address, module_name, struct_name)
+    ) references coins (account_address, module_name, struct_name)
 );
 
 -- Corresponds to econia::registry::MarketRegistrationEvent
 create table market_registration_events (
     market_id numeric (20) not null primary key,
     time timestamptz not null,
-    base_account_address varchar (70) not null,
-    base_module_name text not null,
-    base_struct_name text not null,
+    base_account_address varchar (70),
+    base_module_name text,
+    base_struct_name text,
     base_name_generic text,
     quote_account_address varchar (70) not null,
     quote_module_name text not null,

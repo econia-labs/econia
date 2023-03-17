@@ -1,4 +1,4 @@
-use db::{create_asset, establish_connection, load_config, models::asset::Asset};
+use db::{create_coin, establish_connection, load_config, models::coin::Coin};
 use diesel::prelude::*;
 
 #[test]
@@ -7,23 +7,23 @@ fn test_create_asset() {
     let conn = &mut establish_connection(config.database_url);
 
     // Delete all entries in the assets table before running tests.
-    diesel::delete(db::schema::assets::table)
+    diesel::delete(db::schema::coins::table)
         .execute(conn)
         .expect("Error deleting assets table");
 
-    create_asset(
+    create_coin(
         conn,
         "0x1",
         "aptos_coin",
         "AptosCoin",
-        Some("APT"),
-        Some("Aptos Coin"),
-        Some(8),
+        "APT",
+        "Aptos Coin",
+        8,
     );
 
     // Query the assets table in the database.
-    let db_assets = db::schema::assets::dsl::assets
-        .load::<Asset>(conn)
+    let db_assets = db::schema::coins::dsl::coins
+        .load::<Coin>(conn)
         .expect("Could not query assets table.");
 
     // Assert that the assets table now has one entry.
@@ -32,5 +32,5 @@ fn test_create_asset() {
     let db_aptos_coin = db_assets.get(0).unwrap();
 
     // Assert that the symbol of the database entry matches the entry inserted.
-    assert_eq!(db_aptos_coin.symbol, Some("APT".to_string()));
+    assert_eq!(db_aptos_coin.symbol, "APT".to_string());
 }

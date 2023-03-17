@@ -6,10 +6,9 @@ use models::{
     order::Side,
 };
 use serde::Deserialize;
-use types::constants::ECONIA_ADDRESS;
 
 use crate::models::{
-    asset::{Asset, NewAsset},
+    coin::{Coin, NewCoin},
     events::NewMakerEvent,
     market::{MarketRegistrationEvent, NewMarketRegistrationEvent},
 };
@@ -36,18 +35,18 @@ pub fn establish_connection(url: String) -> PgConnection {
         .unwrap_or_else(|_| panic!("Could not connect to database {}", url))
 }
 
-pub fn create_asset(
+pub fn create_coin(
     conn: &mut PgConnection,
     account_address: &str,
     module_name: &str,
     struct_name: &str,
-    symbol: Option<&str>,
-    name: Option<&str>,
-    decimals: Option<i16>,
-) -> Asset {
-    use crate::schema::assets;
+    symbol: &str,
+    name: &str,
+    decimals: i16,
+) -> Coin {
+    use crate::schema::coins;
 
-    let new_asset = NewAsset {
+    let new_asset = NewCoin {
         account_address,
         module_name,
         struct_name,
@@ -56,7 +55,7 @@ pub fn create_asset(
         decimals,
     };
 
-    diesel::insert_into(assets::table)
+    diesel::insert_into(coins::table)
         .values(&new_asset)
         .get_result(conn)
         .expect("Error adding new asset.")
@@ -66,9 +65,9 @@ pub fn register_market(
     conn: &mut PgConnection,
     market_id: BigDecimal,
     time: DateTime<Utc>,
-    base_account_address: &str,
-    base_module_name: &str,
-    base_struct_name: &str,
+    base_account_address: Option<&str>,
+    base_module_name: Option<&str>,
+    base_struct_name: Option<&str>,
     base_name_generic: Option<&str>,
     quote_account_address: &str,
     quote_module_name: &str,
@@ -81,9 +80,9 @@ pub fn register_market(
     use crate::schema::market_registration_events;
 
     if base_name_generic.is_some() {
-        assert_eq!(base_account_address, ECONIA_ADDRESS);
-        assert_eq!(base_module_name, "registry");
-        assert_eq!(base_struct_name, "GenericAsset");
+        assert!(base_account_address.is_none());
+        assert!(base_module_name.is_none());
+        assert!(base_struct_name.is_none());
     }
 
     let new_market_registration_event = NewMarketRegistrationEvent {

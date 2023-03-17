@@ -35,12 +35,12 @@ pub struct QueryMarket {
     pub base_symbol: Option<String>,
     pub base_name: Option<String>,
     pub base_decimals: Option<i16>,
-    pub base_account_address: String,
-    pub base_module_name: String,
-    pub base_struct_name: String,
-    pub quote_symbol: Option<String>,
-    pub quote_name: Option<String>,
-    pub quote_decimals: Option<i16>,
+    pub base_account_address: Option<String>,
+    pub base_module_name: Option<String>,
+    pub base_struct_name: Option<String>,
+    pub quote_symbol: String,
+    pub quote_name: String,
+    pub quote_decimals: i16,
     pub quote_account_address: String,
     pub quote_module_name: String,
     pub quote_struct_name: String,
@@ -77,29 +77,29 @@ impl TryFrom<QueryMarket> for Market {
                 name: "underwriter_id".into(),
             })?;
 
-        // Check that all quote coin values are present.
-        let quote_symbol = value.quote_symbol.ok_or(TypeError::MissingValue {
-            name: "quote_symbol".into(),
-        })?;
-        let quote_name = value.quote_name.ok_or(TypeError::MissingValue {
-            name: "quote_name".into(),
-        })?;
-        let quote_decimals = value.quote_decimals.ok_or(TypeError::MissingValue {
-            name: "quote_decimals".into(),
-        })?;
-
         let quote = Coin {
             account_address: value.quote_account_address,
             module_name: value.quote_module_name,
             struct_name: value.quote_struct_name,
-            symbol: quote_symbol,
-            name: quote_name,
-            decimals: quote_decimals,
+            symbol: value.quote_symbol,
+            name: value.quote_name,
+            decimals: value.quote_decimals,
         };
 
         if value.base_name_generic.is_none() {
             // If the market is not a generic market, check that all coin
             // values are present.
+            let base_account_address =
+                value.base_account_address.ok_or(TypeError::MissingValue {
+                    name: "base_account_address".into(),
+                })?;
+            let base_module_name = value.base_module_name.ok_or(TypeError::MissingValue {
+                name: "base_module_name".into(),
+            })?;
+            let base_struct_name = value.base_struct_name.ok_or(TypeError::MissingValue {
+                name: "base_struct_name".into(),
+            })?;
+
             let base_symbol = value.base_symbol.ok_or(TypeError::MissingValue {
                 name: "base_symbol".into(),
             })?;
@@ -111,9 +111,9 @@ impl TryFrom<QueryMarket> for Market {
             })?;
 
             let base = Coin {
-                account_address: value.base_account_address,
-                module_name: value.base_module_name,
-                struct_name: value.base_struct_name,
+                account_address: base_account_address,
+                module_name: base_module_name,
+                struct_name: base_struct_name,
                 symbol: base_symbol,
                 name: base_name,
                 decimals: base_decimals,

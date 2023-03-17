@@ -8,9 +8,9 @@ use crate::schema::market_registration_events;
 #[derive(Clone, Debug, Serialize, Deserialize, Queryable)]
 pub struct Market {
     pub market_id: BigDecimal,
-    pub base_account_address: String,
-    pub base_module_name: String,
-    pub base_struct_name: String,
+    pub base_account_address: Option<String>,
+    pub base_module_name: Option<String>,
+    pub base_struct_name: Option<String>,
     pub base_name_generic: Option<String>,
     pub quote_account_address: String,
     pub quote_module_name: String,
@@ -26,9 +26,9 @@ pub struct Market {
 pub struct MarketRegistrationEvent {
     pub market_id: BigDecimal,
     pub time: DateTime<Utc>,
-    pub base_account_address: String,
-    pub base_module_name: String,
-    pub base_struct_name: String,
+    pub base_account_address: Option<String>,
+    pub base_module_name: Option<String>,
+    pub base_struct_name: Option<String>,
     pub base_name_generic: Option<String>,
     pub quote_account_address: String,
     pub quote_module_name: String,
@@ -44,9 +44,9 @@ pub struct MarketRegistrationEvent {
 pub struct NewMarketRegistrationEvent<'a> {
     pub market_id: BigDecimal,
     pub time: DateTime<Utc>,
-    pub base_account_address: &'a str,
-    pub base_module_name: &'a str,
-    pub base_struct_name: &'a str,
+    pub base_account_address: Option<&'a str>,
+    pub base_module_name: Option<&'a str>,
+    pub base_struct_name: Option<&'a str>,
     pub base_name_generic: Option<&'a str>,
     pub quote_account_address: &'a str,
     pub quote_module_name: &'a str,

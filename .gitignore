@@ -56,3 +56,4 @@ temp.md
 # IntelliJ settings
 .idea/
 
+**/target

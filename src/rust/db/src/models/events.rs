@@ -72,7 +72,7 @@ pub struct NewMakerEvent<'a> {
     pub side: &'a Side,
     pub market_order_id: &'a BigDecimal,
     pub user_address: &'a str,
-    pub custodian_id: Option<BigDecimal>,
+    pub custodian_id: Option<&'a BigDecimal>,
     pub event_type: &'a MakerEventType,
     pub size: &'a BigDecimal,
     pub price: &'a BigDecimal,

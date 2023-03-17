@@ -7,7 +7,7 @@ use crate::models::{
     coin::{Coin, NewCoin},
     events::{
         MakerEvent, MakerEventType, MarketRegistrationEvent, NewMakerEvent,
-        NewMarketRegistrationEvent,
+        NewMarketRegistrationEvent, NewTakerEvent, TakerEvent,
     },
     order::Side,
 };
@@ -112,7 +112,7 @@ pub fn add_maker_event(
     side: &Side,
     market_order_id: &BigDecimal,
     user_address: &str,
-    custodian_id: Option<BigDecimal>,
+    custodian_id: Option<&BigDecimal>,
     event_type: &MakerEventType,
     size: &BigDecimal,
     price: &BigDecimal,
@@ -136,4 +136,34 @@ pub fn add_maker_event(
         .values(&new_maker_event)
         .get_result(conn)
         .expect("Error adding maker event.")
+}
+
+pub fn add_taker_event(
+    conn: &mut PgConnection,
+    market_id: &BigDecimal,
+    side: &Side,
+    market_order_id: &BigDecimal,
+    maker: &str,
+    custodian_id: Option<&BigDecimal>,
+    size: &BigDecimal,
+    price: &BigDecimal,
+    time: &DateTime<Utc>,
+) -> TakerEvent {
+    use crate::schema::taker_events;
+
+    let new_taker_event = NewTakerEvent {
+        market_id,
+        side,
+        market_order_id,
+        maker,
+        custodian_id,
+        size,
+        price,
+        time,
+    };
+
+    diesel::insert_into(taker_events::table)
+        .values(&new_taker_event)
+        .get_result(conn)
+        .expect("Error adding taker event.")
 }

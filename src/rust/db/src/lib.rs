@@ -1,16 +1,15 @@
 use bigdecimal::BigDecimal;
 use chrono::{DateTime, Utc};
 use diesel::{prelude::*, Connection, PgConnection};
-use models::{
-    events::{MakerEvent, MakerEventType},
-    order::Side,
-};
 use serde::Deserialize;
 
 use crate::models::{
     coin::{Coin, NewCoin},
-    events::NewMakerEvent,
-    market::{MarketRegistrationEvent, NewMarketRegistrationEvent},
+    events::{
+        MakerEvent, MakerEventType, MarketRegistrationEvent, NewMakerEvent,
+        NewMarketRegistrationEvent,
+    },
+    order::Side,
 };
 
 pub mod error;

@@ -3,8 +3,7 @@ use chrono::Utc;
 use db::{
     add_maker_event, create_coin, establish_connection, load_config,
     models::{
-        events::{MakerEvent, MakerEventType},
-        market::MarketRegistrationEvent,
+        events::{MakerEvent, MakerEventType, MarketRegistrationEvent},
         order::{Order, OrderState, Side},
     },
     register_market,

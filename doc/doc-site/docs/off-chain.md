@@ -40,6 +40,47 @@ Hence, for 1-indexed market id $n$, maker events have creation number $2n$ and t
 | 10        | 20                                    | 21                                    |
 | $n$       | $2n$                                  | $2n + 1$                              |
 
+### Example 1
+
+1. Ace places an ask of size 1 price 1000 via [`place_limit_order_user_entry()`] with restriction [`NO_RESTRICTION`] against an empty book.
+   The order posts to the book, emitting `MakerEvent{side: ASK, user: 0xace..., type: PLACE, size: 1, price: 1000, ...}`.
+2. Bee places a bid of size 2 price 1000, also via [`place_limit_order_user_entry()`] with restriction [`NO_RESTRICTION`].
+   Bee's limit order first crosses the spread, matching as a taker buy against Ace's ask and clearing out the book, emitting `TakerEvent{side: ASK, maker: 0xace..., size: 1, price: 1000, ...}`.
+   Then, the remaining size posts to the book, emitting `MakerEvent{side: BID, user: 0xbee..., type: PLACE, size: 1, price: 1000, ...}`.
+
+Here, the event stream contains all adequate information for maintaining order book state.
+
+### Example 2
+
+1. Ace places an ask of size 1 price 1000 via [`place_limit_order_user_entry()`] with restriction [`NO_RESTRICTION`] against an empty book.
+   The order posts to the book, emitting `MakerEvent{side: ASK, user: 0xace..., type: PLACE, size: 1, price: 1000, ...}` (as in example 1).
+2. A DAO treasury management function autonomously submits a market buy of size 1 price 1000 via [`swap_coins()`], which matches against Ace's order.
+   This emits `TakerEvent{side: ASK, maker: 0xace..., size: 1, price: 1000, ...}`, and the book is now empty.
+3. Bee places a bid of size 1 price 1000 via [`place_limit_order_user_entry()`] with restriction [`NO_RESTRICTION`], emitting `MakerEvent{side: BID, user: 0xbee..., type: PLACE, size: 1, price: 1000, ...}`.
+
+:::note
+
+Ignoring `market_id`, `market_order_id`, and `custodian_id` fields for both event types, this example emits an event stream identical to that of example 1, hence the order book state is identical at the conclusion of both examples.
+
+:::
+
+### Example 3
+
+1. Ace places an ask of size 1 price 1000 via [`place_limit_order_user_entry()`] with restriction [`NO_RESTRICTION`] against an empty book.
+   The order posts to the book, emitting `MakerEvent{side: ASK, user: 0xace..., type: PLACE, size: 1, price: 1000, ...}` (as in example 1).
+2. A DAO treasury management function autonomously submits a market buy of size 1 price 1000 via [`swap_coins()`], which matches against Ace's order.
+   This emits `TakerEvent{side: ASK, maker: 0xace..., size: 1, price: 1000, ...}`, and the book is now empty (as in example 2).
+3. Bee places a bid of size 2 price 1000 via [`place_limit_order_user_entry()`] with restriction [`NO_RESTRICTION`], as in example 1, except this time against an empty book.
+   This emits `MakerEvent{side: BID, user: 0xbee..., type: PLACE, size: 2, price: 1000, ...}`.
+4. Bee changes the size of her order to 1 via [`change_order_size_user()`], emitting `MakerEvent{side: BID, user: 0xbee..., type: CHANGE, size: 1, price: 1000, ...}`.
+
+:::note
+
+This example results in the same final order book state as examples 1 and 2, despite a different event stream.
+
+:::
+
+
 ## `move-to-ts` hooks
 
 Econia is designed for use with [Hippo's `move-to-ts` tool], which auto-generates a TypeScript software development kit (SDK) from Move source code.
@@ -67,18 +108,22 @@ Alternatively, all [`MakerEvent`] and [`TakerEvent`] emissions since the incepti
 
 <!---Alphabetized reference links-->
 
-[events by creation number API]: https://fullnode.testnet.aptoslabs.com/v1/spec#/operations/get_events_by_creation_number
-[events by event handle API]:    https://fullnode.testnet.aptoslabs.com/v1/spec#/operations/get_events_by_event_handle
-[Hippo's `move-to-ts` tool]:     https://github.com/hippospace/move-to-ts
-[welcome page]:                  welcome.md
-[`index_orders_sdk()`]:          https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_index_orders_sdk
-[`MakerEvent`]:                  https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_MakerEvent
-[`MarketRegistrationEvent`]:     https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_MarketRegistrationEvent
-[`Move.toml`]:                   https://github.com/econia-labs/econia/tree/main/src/move/econia/Move.toml
-[`OrderBook`]:                   https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_OrderBook
-[`OrderBooks`]:                  https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_OrderBooks
-[`RecognizedMarketEvent`]:       https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_RecognizedMarketEvent
-[`RecognizedMarkets`]:           https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_RecognizedMarkets
-[`Registry`]:                    https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_Registry
-[`SignerCapabilityStore`]:       https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/resource_account.md#0xc0deb00c_resource_account_SignerCapabilityStore
-[`TakerEvent`]:                  https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_TakerEvent
+[events by creation number API]:    https://fullnode.testnet.aptoslabs.com/v1/spec#/operations/get_events_by_creation_number
+[events by event handle API]:       https://fullnode.testnet.aptoslabs.com/v1/spec#/operations/get_events_by_event_handle
+[Hippo's `move-to-ts` tool]:        https://github.com/hippospace/move-to-ts
+[welcome page]:                     welcome.md
+[`index_orders_sdk()`]:             https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_index_orders_sdk
+[`MakerEvent`]:                     https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_MakerEvent
+[`MarketRegistrationEvent`]:        https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_MarketRegistrationEvent
+[`Move.toml`]:                      https://github.com/econia-labs/econia/tree/main/src/move/econia/Move.toml
+[`NO_RESTRICTION`]:                 https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_NO_RESTRICTION
+[`OrderBook`]:                      https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_OrderBook
+[`OrderBooks`]:                     https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_OrderBooks
+[`RecognizedMarketEvent`]:          https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_RecognizedMarketEvent
+[`RecognizedMarkets`]:              https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_RecognizedMarkets
+[`Registry`]:                       https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_Registry
+[`SignerCapabilityStore`]:          https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/resource_account.md#0xc0deb00c_resource_account_SignerCapabilityStore
+[`TakerEvent`]:                     https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_TakerEvent
+[`change_order_size_user()`]:       https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_change_order_size_user
+[`place_limit_order_user_entry()`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_place_limit_order_user_entry
+[`swap_coins()`]:                   https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_swap_coins

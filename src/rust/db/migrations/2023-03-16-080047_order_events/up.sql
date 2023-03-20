@@ -1,4 +1,4 @@
-create type side as enum ('buy', 'sell');
+create type side as enum ('bid', 'ask');
 
 create type order_state as enum ('open', 'filled', 'cancelled', 'evicted');
 
@@ -108,3 +108,22 @@ create table taker_events (
         market_order_id, market_id
     ) references orders (market_order_id, market_id)
 );
+
+-- Decreases the remaining_size on the order by the fill size.
+create function handle_taker_event() returns trigger
+as $handle_taker_event$ begin
+    -- This updates the maker order corresponding to the taker event.
+    -- new.size refers to fill size
+    update orders set
+        remaining_size = remaining_size - new.size,
+        order_state = (case when remaining_size - new.size <= 0
+                       then 'filled' else order_state end)
+    where market_order_id = new.market_order_id and market_id = new.market_id;
+return new;
+end;
+$handle_taker_event$ language plpgsql;
+
+create trigger handle_taker_event_trigger
+before
+insert on taker_events for each row
+execute procedure handle_taker_event();

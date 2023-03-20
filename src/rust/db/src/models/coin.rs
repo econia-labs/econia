@@ -1,9 +1,8 @@
 use diesel::prelude::*;
-use serde::{Deserialize, Serialize};
 
 use crate::schema::coins;
 
-#[derive(Clone, Debug, Serialize, Deserialize, Queryable)]
+#[derive(Clone, Debug, Queryable)]
 pub struct Coin {
     pub account_address: String,
     pub module_name: String,

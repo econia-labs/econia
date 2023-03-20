@@ -8,8 +8,8 @@ use crate::schema::orders;
 #[derive(Debug, DbEnum, Clone, PartialEq, Eq)]
 #[ExistingTypePath = "crate::schema::sql_types::Side"]
 pub enum Side {
-    Buy,
-    Sell,
+    Bid,
+    Ask,
 }
 
 impl From<types::Side> for Side {

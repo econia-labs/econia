@@ -1,4 +1,4 @@
-create type side as enum ('buy', 'sell');
+create type side as enum ('bid', 'ask');
 
 create type order_state as enum ('open', 'filled', 'cancelled', 'evicted');
 

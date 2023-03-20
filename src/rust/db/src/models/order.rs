@@ -10,8 +10,8 @@ use crate::schema::orders;
 #[serde(rename_all = "lowercase")]
 #[ExistingTypePath = "crate::schema::sql_types::Side"]
 pub enum Side {
-    Buy,
-    Sell,
+    Bid,
+    Ask,
 }
 
 #[derive(Debug, DbEnum, Serialize, Deserialize, Clone, PartialEq, Eq)]

@@ -93,7 +93,7 @@ fn test_place_order() {
     add_maker_event(
         conn,
         &market.market_id,
-        &Side::Buy,
+        &Side::Bid,
         &100.into(),
         "0x123",
         None,
@@ -120,7 +120,7 @@ fn test_place_order() {
     let db_order = db_orders.get(0).unwrap();
 
     // Check that the order has the specified parameters.
-    assert_eq!(db_order.side, Side::Buy);
+    assert_eq!(db_order.side, Side::Bid);
     assert_eq!(db_order.size, BigDecimal::from_i32(1000).unwrap());
     assert_eq!(db_order.price, BigDecimal::from_i32(1000).unwrap());
     assert_eq!(db_order.order_state, OrderState::Open);
@@ -144,7 +144,7 @@ fn test_change_order_price() {
     add_maker_event(
         conn,
         &market.market_id,
-        &Side::Buy,
+        &Side::Bid,
         &101.into(),
         "0x123",
         None,
@@ -158,7 +158,7 @@ fn test_change_order_price() {
     add_maker_event(
         conn,
         &market.market_id,
-        &Side::Buy,
+        &Side::Bid,
         &101.into(),
         "0x123",
         None,
@@ -208,7 +208,7 @@ fn test_change_order_size() {
     add_maker_event(
         conn,
         &market.market_id,
-        &Side::Buy,
+        &Side::Bid,
         &102.into(),
         "0x123",
         None,
@@ -222,7 +222,7 @@ fn test_change_order_size() {
     add_maker_event(
         conn,
         &market.market_id,
-        &Side::Buy,
+        &Side::Bid,
         &102.into(),
         "0x123",
         None,
@@ -272,7 +272,7 @@ fn test_change_order_to_remaining_size_zero() {
     add_maker_event(
         conn,
         &market.market_id,
-        &Side::Buy,
+        &Side::Bid,
         &103.into(),
         "0x123",
         None,
@@ -286,7 +286,7 @@ fn test_change_order_to_remaining_size_zero() {
     add_maker_event(
         conn,
         &market.market_id,
-        &Side::Buy,
+        &Side::Bid,
         &103.into(),
         "0x123",
         None,
@@ -335,7 +335,7 @@ fn test_cancel_order() {
     let place_event = add_maker_event(
         conn,
         &market.market_id,
-        &Side::Buy,
+        &Side::Bid,
         &104.into(),
         "0x123",
         None,
@@ -349,7 +349,7 @@ fn test_cancel_order() {
     add_maker_event(
         conn,
         &market.market_id,
-        &Side::Buy,
+        &Side::Bid,
         &place_event.market_order_id,
         &place_event.user_address,
         None,
@@ -397,7 +397,7 @@ fn test_evict_order() {
     let place_event = add_maker_event(
         conn,
         &market.market_id,
-        &Side::Buy,
+        &Side::Bid,
         &105.into(),
         "0x123",
         None,
@@ -411,7 +411,7 @@ fn test_evict_order() {
     add_maker_event(
         conn,
         &market.market_id,
-        &Side::Buy,
+        &Side::Bid,
         &place_event.market_order_id,
         &place_event.user_address,
         None,
@@ -459,7 +459,7 @@ fn test_fill_order() {
     add_maker_event(
         conn,
         &market.market_id,
-        &Side::Buy,
+        &Side::Bid,
         &100.into(),
         "0x1001",
         None,
@@ -473,7 +473,7 @@ fn test_fill_order() {
     add_maker_event(
         conn,
         &market.market_id,
-        &Side::Sell,
+        &Side::Ask,
         &101.into(),
         "0x1002",
         None,
@@ -487,7 +487,7 @@ fn test_fill_order() {
     add_taker_event(
         conn,
         &market.market_id,
-        &Side::Sell,
+        &Side::Ask,
         &100.into(),
         "0x1001",
         None,
@@ -553,7 +553,7 @@ fn test_fully_fill_order() {
     add_maker_event(
         conn,
         &market.market_id,
-        &Side::Buy,
+        &Side::Bid,
         &100.into(),
         "0x1003",
         None,
@@ -567,7 +567,7 @@ fn test_fully_fill_order() {
     add_maker_event(
         conn,
         &market.market_id,
-        &Side::Sell,
+        &Side::Ask,
         &101.into(),
         "0x1004",
         None,
@@ -581,7 +581,7 @@ fn test_fully_fill_order() {
     add_taker_event(
         conn,
         &market.market_id,
-        &Side::Sell,
+        &Side::Ask,
         &100.into(),
         "0x1004",
         None,

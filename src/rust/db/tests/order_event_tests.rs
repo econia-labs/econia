@@ -172,7 +172,7 @@ fn test_change_order_price() {
     add_maker_event(
         conn,
         &NewMakerEvent {
-            market_id: market.market_id.clone(),
+            market_id: market.market_id,
             side: Side::Bid,
             market_order_id: 101.into(),
             user_address: "0x123",
@@ -240,7 +240,7 @@ fn test_change_order_size() {
     add_maker_event(
         conn,
         &NewMakerEvent {
-            market_id: market.market_id.clone(),
+            market_id: market.market_id,
             side: Side::Bid,
             market_order_id: 102.into(),
             user_address: "0x123",
@@ -308,7 +308,7 @@ fn test_change_order_to_remaining_size_zero() {
     add_maker_event(
         conn,
         &NewMakerEvent {
-            market_id: market.market_id.clone(),
+            market_id: market.market_id,
             side: Side::Bid,
             market_order_id: 103.into(),
             user_address: "0x123",

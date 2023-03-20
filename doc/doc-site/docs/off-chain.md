@@ -43,40 +43,54 @@ Hence, for 1-indexed market id $n$, maker events have creation number $2n$ and t
 ### Example 1
 
 1. Ace places an ask of size 1 price 1000 via [`place_limit_order_user_entry()`] with restriction [`NO_RESTRICTION`] against an empty book.
-   The order posts to the book, emitting `MakerEvent{side: ASK, user: 0xace..., type: PLACE, size: 1, price: 1000, ...}`.
-2. Bee places a bid of size 2 price 1000, also via [`place_limit_order_user_entry()`] with restriction [`NO_RESTRICTION`].
-   Bee's limit order first crosses the spread, matching as a taker buy against Ace's ask and clearing out the book, emitting `TakerEvent{side: ASK, maker: 0xace..., size: 1, price: 1000, ...}`.
-   Then, the remaining size posts to the book, emitting `MakerEvent{side: BID, user: 0xbee..., type: PLACE, size: 1, price: 1000, ...}`.
+    1. Ace's ask posts to the book: `Order{size: 1, price: 1000, user: 0xace, ...}`.
+    1. An event is emitted: `MakerEvent{side: ASK, user: 0xace..., type: PLACE, size: 1, price: 1000, ...}`.
+1. Bee places a bid of size 2 price 1000, also via [`place_limit_order_user_entry()`] with restriction [`NO_RESTRICTION`].
+   Bee's limit order first crosses the spread, matching as a taker buy against Ace's ask and clearing out the book.
+   Then the remaining size posts as a bid:
+    1. Bee's limit order matches fully against Ace's ask, clearing the book.
+    1. An event is emitted: `TakerEvent{side: ASK, maker: 0xace..., size: 1, price: 1000, ...}`.
+    1. Bee's remaining order size posts to the book as a bid: `Order{size: 1, price: 1000, user: 0xbee, ...}`.
+    1. An event is emitted: `MakerEvent{side: BID, user: 0xbee..., type: PLACE, size: 1, price: 1000, ...}`.
 
-Here, the event stream contains all adequate information for maintaining order book state.
+Here, the event stream contains all adequate information for maintaining the order book's depth chart state (e.g. how much size to fill at what price).
 
 ### Example 2
 
 1. Ace places an ask of size 1 price 1000 via [`place_limit_order_user_entry()`] with restriction [`NO_RESTRICTION`] against an empty book.
-   The order posts to the book, emitting `MakerEvent{side: ASK, user: 0xace..., type: PLACE, size: 1, price: 1000, ...}` (as in example 1).
-2. A DAO treasury management function autonomously submits a market buy of size 1 price 1000 via [`swap_coins()`], which matches against Ace's order.
-   This emits `TakerEvent{side: ASK, maker: 0xace..., size: 1, price: 1000, ...}`, and the book is now empty.
-3. Bee places a bid of size 1 price 1000 via [`place_limit_order_user_entry()`] with restriction [`NO_RESTRICTION`], emitting `MakerEvent{side: BID, user: 0xbee..., type: PLACE, size: 1, price: 1000, ...}`.
+    1. Ace's ask posts to the book: `Order{size: 1, price: 1000, user: 0xace, ...}`.
+    1. An event is emitted: `MakerEvent{side: ASK, user: 0xace..., type: PLACE, size: 1, price: 1000, ...}`.
+1. A DAO treasury management function autonomously submits a market buy of size 1 price 1000 via [`swap_coins()`], which matches against Ace's order.
+    1. The swap buy matches fully against Ace's ask, clearing the book.
+    1. An event is emitted: `TakerEvent{side: ASK, maker: 0xace..., size: 1, price: 1000, ...}`.
+1. Bee places a bid of size 1 price 1000 via [`place_limit_order_user_entry()`] with restriction [`NO_RESTRICTION`] against an empty book.
+    1. Bee's bid posts to the book: `Order{size: 1, price: 1000, user: 0xbee, ...}`.
+    1. An event is emitted: `MakerEvent{side: BID, user: 0xbee..., type: PLACE, size: 1, price: 1000, ...}`.
 
 :::note
 
-Ignoring `market_id`, `market_order_id`, and `custodian_id` fields for both event types, this example emits an event stream identical to that of example 1, hence the order book state is identical at the conclusion of both examples.
+Ignoring `market_id`, `market_order_id`, and `custodian_id` fields for both event types, this example emits an event stream identical to that of example 1, hence the order book depth chart state is identical at the conclusion of both examples.
 
 :::
 
 ### Example 3
 
 1. Ace places an ask of size 1 price 1000 via [`place_limit_order_user_entry()`] with restriction [`NO_RESTRICTION`] against an empty book.
-   The order posts to the book, emitting `MakerEvent{side: ASK, user: 0xace..., type: PLACE, size: 1, price: 1000, ...}` (as in example 1).
-2. A DAO treasury management function autonomously submits a market buy of size 1 price 1000 via [`swap_coins()`], which matches against Ace's order.
-   This emits `TakerEvent{side: ASK, maker: 0xace..., size: 1, price: 1000, ...}`, and the book is now empty (as in example 2).
-3. Bee places a bid of size 2 price 1000 via [`place_limit_order_user_entry()`] with restriction [`NO_RESTRICTION`], as in example 1, except this time against an empty book.
-   This emits `MakerEvent{side: BID, user: 0xbee..., type: PLACE, size: 2, price: 1000, ...}`.
-4. Bee changes the size of her order to 1 via [`change_order_size_user()`], emitting `MakerEvent{side: BID, user: 0xbee..., type: CHANGE, size: 1, price: 1000, ...}`.
+    1. Ace's ask posts to the book: `Order{size: 1, price: 1000, user: 0xace, ...}`.
+    1. An event is emitted: `MakerEvent{side: ASK, user: 0xace..., type: PLACE, size: 1, price: 1000, ...}`.
+1. A DAO treasury management function autonomously submits a market buy of size 1 price 1000 via [`swap_coins()`], which matches against Ace's order.
+    1. The swap buy matches fully against Ace's ask, clearing the book.
+    1. An event is emitted: `TakerEvent{side: ASK, maker: 0xace..., size: 1, price: 1000, ...}`.
+1. Bee places a bid of size 2 price 1000 via [`place_limit_order_user_entry()`] with restriction [`NO_RESTRICTION`] against an empty book.
+    1. Bee's bid posts to the book: `Order{size: 2, price: 1000, user: 0xbee, ...}`.
+    1. An event is emitted: `MakerEvent{side: BID, user: 0xbee..., type: PLACE, size: 2, price: 1000, ...}`.
+1. Bee changes the size of her order to 1 via [`change_order_size_user()`].
+    1. Bee's bid size on the book is updated to: `Order{size: 1, price: 1000, user: 0xbee, ...}`.
+    1. An event is emitted: `MakerEvent{side: BID, user: 0xbee..., type: CHANGE, size: 1, price: 1000, ...}`.
 
 :::note
 
-This example results in the same final order book state as examples 1 and 2, despite a different event stream.
+This sequence results in the same final order book depth chart state as in examples 1 and 2, despite a different event stream.
 
 :::
 

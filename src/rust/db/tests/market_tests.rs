@@ -1,7 +1,7 @@
 use chrono::Utc;
 use db::{
     create_coin, establish_connection, load_config,
-    models::market::{Market, MarketRegistrationEvent},
+    models::{events::MarketRegistrationEvent, market::Market},
     register_market,
 };
 use diesel::prelude::*;

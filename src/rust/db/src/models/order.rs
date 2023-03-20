@@ -10,8 +10,8 @@ use crate::schema::orders;
 #[serde(rename_all = "lowercase")]
 #[ExistingTypePath = "crate::schema::sql_types::Side"]
 pub enum Side {
-    Buy,
-    Sell,
+    Bid,
+    Ask,
 }
 
 #[derive(Debug, DbEnum, Serialize, Deserialize, Clone, PartialEq, Eq)]
@@ -24,7 +24,7 @@ pub enum OrderState {
     Evicted,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, Queryable)]
+#[derive(Clone, Debug, Queryable)]
 pub struct Order {
     pub market_order_id: BigDecimal,
     pub market_id: BigDecimal,

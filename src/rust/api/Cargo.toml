@@ -17,6 +17,7 @@ sqlx = { version = "0.6.2", features = [
     "bigdecimal",
     "chrono",
     "macros",
+    "offline",
     "postgres",
     "runtime-tokio-rustls",
     "time",

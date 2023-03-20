@@ -2,20 +2,35 @@ use bigdecimal::BigDecimal;
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 use diesel_derive_enum::DbEnum;
-use serde::{Deserialize, Serialize};
 
 use crate::schema::orders;
 
-#[derive(Debug, DbEnum, Serialize, Deserialize, Clone, PartialEq, Eq)]
-#[serde(rename_all = "lowercase")]
+#[derive(Debug, DbEnum, Clone, PartialEq, Eq, Copy)]
 #[ExistingTypePath = "crate::schema::sql_types::Side"]
 pub enum Side {
     Bid,
     Ask,
 }
 
-#[derive(Debug, DbEnum, Serialize, Deserialize, Clone, PartialEq, Eq)]
-#[serde(rename_all = "lowercase")]
+impl From<types::Side> for Side {
+    fn from(value: types::Side) -> Self {
+        match value {
+            types::Side::Bid => Self::Bid,
+            types::Side::Ask => Self::Ask,
+        }
+    }
+}
+
+impl From<Side> for types::Side {
+    fn from(value: Side) -> Self {
+        match value {
+            Side::Bid => Self::Bid,
+            Side::Ask => Self::Ask,
+        }
+    }
+}
+
+#[derive(Debug, DbEnum, Clone, PartialEq, Eq)]
 #[ExistingTypePath = "crate::schema::sql_types::OrderState"]
 pub enum OrderState {
     Open,

@@ -32,6 +32,25 @@ diesel::table! {
 diesel::table! {
     use diesel::sql_types::*;
     use super::sql_types::Side;
+
+    fills (market_id, maker_order_id, time) {
+        market_id -> Numeric,
+        maker_order_id -> Numeric,
+        maker -> Varchar,
+        maker_side -> Side,
+        maker_custodian_id -> Nullable<Numeric>,
+        taker_order_id -> Nullable<Numeric>,
+        taker -> Nullable<Varchar>,
+        taker_custodian_id -> Nullable<Numeric>,
+        fill_size -> Numeric,
+        price -> Numeric,
+        time -> Timestamptz,
+    }
+}
+
+diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::Side;
     use super::sql_types::MakerEventType;
 
     maker_events (market_order_id, time) {
@@ -138,6 +157,7 @@ diesel::table! {
     }
 }
 
+diesel::joinable!(fills -> markets (market_id));
 diesel::joinable!(maker_events -> markets (market_id));
 diesel::joinable!(market_registration_events -> markets (market_id));
 diesel::joinable!(orders -> markets (market_id));
@@ -146,6 +166,7 @@ diesel::joinable!(taker_events -> markets (market_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     coins,
+    fills,
     maker_events,
     market_registration_events,
     markets,

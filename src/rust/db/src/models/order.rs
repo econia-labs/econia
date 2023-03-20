@@ -5,7 +5,7 @@ use diesel_derive_enum::DbEnum;
 
 use crate::schema::orders;
 
-#[derive(Debug, DbEnum, Clone, PartialEq, Eq)]
+#[derive(Debug, DbEnum, Clone, PartialEq, Eq, Copy)]
 #[ExistingTypePath = "crate::schema::sql_types::Side"]
 pub enum Side {
     Bid,

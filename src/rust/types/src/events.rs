@@ -26,6 +26,18 @@ pub struct MakerEvent {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct TakerEvent {
+    pub market_id: u64,
+    pub side: Side,
+    pub market_order_id: u64,
+    pub maker: String,
+    pub custodian_id: Option<u64>,
+    pub size: u64,
+    pub price: u64,
+    pub time: DateTime<Utc>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct MarketRegistrationEvent {
     pub market_id: u64,
     pub time: DateTime<Utc>,

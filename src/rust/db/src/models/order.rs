@@ -15,8 +15,8 @@ pub enum Side {
 impl From<types::Side> for Side {
     fn from(value: types::Side) -> Self {
         match value {
-            types::Side::Buy => Self::Buy,
-            types::Side::Sell => Self::Sell,
+            types::Side::Bid => Self::Bid,
+            types::Side::Ask => Self::Ask,
         }
     }
 }
@@ -24,8 +24,8 @@ impl From<types::Side> for Side {
 impl From<Side> for types::Side {
     fn from(value: Side) -> Self {
         match value {
-            Side::Buy => Self::Buy,
-            Side::Sell => Self::Sell,
+            Side::Bid => Self::Bid,
+            Side::Ask => Self::Ask,
         }
     }
 }

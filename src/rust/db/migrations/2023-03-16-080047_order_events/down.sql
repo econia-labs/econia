@@ -1,3 +1,9 @@
+drop table fills;
+
+drop trigger handle_taker_event_trigger on taker_events;
+
+drop function handle_taker_event;
+
 drop table taker_events;
 
 drop trigger handle_maker_event_trigger on maker_events;

@@ -12,4 +12,4 @@ drop table market_registration_events;
 
 drop table markets;
 
-drop table assets;
+drop table coins;

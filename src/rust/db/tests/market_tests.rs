@@ -10,6 +10,8 @@ use db::{
 };
 use diesel::prelude::*;
 
+// TODO these tests are broken
+
 fn reset_market_tables(conn: &mut PgConnection) {
     diesel::delete(db::schema::market_registration_events::table)
         .execute(conn)

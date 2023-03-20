@@ -11,6 +11,10 @@ use db::{
 use diesel::prelude::*;
 
 fn reset_order_tables(conn: &mut PgConnection) {
+    diesel::delete(db::schema::fills::table)
+        .execute(conn)
+        .expect("Error deleting fills events table");
+
     diesel::delete(db::schema::taker_events::table)
         .execute(conn)
         .expect("Error deleting taker events table");

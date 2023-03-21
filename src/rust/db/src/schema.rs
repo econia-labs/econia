@@ -38,11 +38,8 @@ diesel::table! {
         maker_order_id -> Numeric,
         maker -> Varchar,
         maker_side -> Side,
-        maker_custodian_id -> Nullable<Numeric>,
-        taker_order_id -> Nullable<Numeric>,
-        taker -> Nullable<Varchar>,
-        taker_custodian_id -> Nullable<Numeric>,
-        fill_size -> Numeric,
+        custodian_id -> Nullable<Numeric>,
+        size -> Numeric,
         price -> Numeric,
         time -> Timestamptz,
     }
@@ -116,7 +113,6 @@ diesel::table! {
         user_address -> Varchar,
         custodian_id -> Nullable<Numeric>,
         order_state -> OrderState,
-        remaining_size -> Numeric,
         created_at -> Timestamptz,
     }
 }

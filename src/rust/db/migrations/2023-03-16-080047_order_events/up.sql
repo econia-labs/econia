@@ -11,7 +11,6 @@ create table orders (
     user_address varchar (70) not null,
     custodian_id numeric (20),
     order_state order_state not null,
-    remaining_size numeric (20) not null,
     created_at timestamptz not null,
     primary key (market_order_id, market_id),
     foreign key (market_id) references markets (market_id)
@@ -50,7 +49,6 @@ if new.event_type = 'place' then
         new.user_address,
         new.custodian_id,
         'open',
-        new.size,
         new.time
     );
 
@@ -62,10 +60,7 @@ if new.event_type = 'place' then
 elsif new.event_type = 'change' then
     update orders set
         size = new.size,
-        price = new.price,
-        remaining_size = greatest(new.size - size + remaining_size, 0),
-        order_state = (case when new.size - size + remaining_size <= 0
-                       then 'filled' else order_state end)
+        price = new.price
     where market_order_id = new.market_order_id and market_id = new.market_id;
 
 -- Order state is set to 'cancelled' if the event type is 'cancel'.
@@ -114,11 +109,8 @@ create table fills (
     maker_order_id numeric (39) not null,
     maker varchar (70) not null,
     maker_side side not null,
-    maker_custodian_id numeric (30),
-    taker_order_id numeric (39),
-    taker varchar (70),
-    taker_custodian_id numeric (30),
-    fill_size numeric (20) not null,
+    custodian_id numeric (30),
+    size numeric (20) not null,
     price numeric (20) not null,
     time timestamptz not null,
     primary key (market_id, maker_order_id, time),
@@ -134,8 +126,8 @@ as $handle_taker_event$ begin
     -- This updates the maker order corresponding to the taker event.
     -- new.size refers to fill size
     update orders set
-        remaining_size = remaining_size - new.size,
-        order_state = (case when remaining_size - new.size <= 0
+        size = size - new.size,
+        order_state = (case when size - new.size <= 0
                        then 'filled' else order_state end)
     where market_order_id = new.market_order_id and market_id = new.market_id;
 
@@ -145,9 +137,6 @@ as $handle_taker_event$ begin
         new.maker,
         new.side,
         new.custodian_id,
-        null,
-        null,
-        null,
         new.size,
         new.price,
         new.time

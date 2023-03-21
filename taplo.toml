@@ -1,0 +1,51 @@
+include = [
+    "**/Move.toml",
+    "**/Cargo.toml",
+    "**/rust-toolchain.toml",
+    "**/rustfmt.toml",
+    "**/diesel.toml",
+    "**/pyproject.toml",
+    "taplo.toml",
+]
+
+[formatting]
+align_entries = false
+allowed_blank_lines = 1
+array_auto_collapse = true
+array_auto_expand = true
+column_width = 80
+compact_arrays = true
+compact_inline_tables = false
+crlf = false
+indent_string = "    "
+reorder_keys = false
+trailing_newline = true
+
+[[rule]]
+include = ["**/Move.toml"]
+keys = ["dependencies"]
+formatting = { reorder_keys = true }
+
+[[rule]]
+include = ["**/Cargo.toml"]
+keys = [
+    "dependencies",
+    "dev-dependencies",
+    "workspace.dependencies",
+    "workspace.dev-dependencies",
+]
+formatting = { reorder_keys = true }
+
+[[rule]]
+include = ["**/rustfmt.toml"]
+formatting = { reorder_keys = true }
+
+[[rule]]
+include = ["**/pyproject.toml"]
+keys = ["tool.poetry.dependencies", "tool.poetry.dev-dependencies"]
+formatting = { reorder_keys = true }
+
+[[rule]]
+include = ["taplo.toml"]
+keys = ["formatting"]
+formatting = { reorder_keys = true }

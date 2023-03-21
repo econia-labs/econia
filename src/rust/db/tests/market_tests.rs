@@ -128,6 +128,9 @@ fn test_register_generic_market() {
         .expect("Could not query markets.");
 
     assert_eq!(db_markets.len(), 1);
+
+    // Clean up tables.
+    reset_tables(conn);
 }
 
 #[test]
@@ -209,6 +212,9 @@ fn test_register_coin_and_generic_market() {
         .expect("Could not query markets.");
 
     assert_eq!(db_markets.len(), 2);
+
+    // Clean up tables.
+    reset_tables(conn);
 }
 
 #[test]

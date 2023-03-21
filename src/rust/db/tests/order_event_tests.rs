@@ -4,6 +4,7 @@ use db::{
     add_maker_event, add_taker_event, establish_connection, load_config,
     models::{
         events::{MakerEvent, MakerEventType, TakerEvent},
+        fill::Fill,
         order::{Order, OrderState, Side},
     },
 };
@@ -358,7 +359,7 @@ fn test_fill_order() {
     add_taker_event(
         conn,
         &market.market_id,
-        &Side::Ask,
+        &Side::Bid,
         &100.into(),
         "0x1001",
         None,
@@ -398,6 +399,19 @@ fn test_fill_order() {
     // Check that the taker order has the correct parameters.
     assert_eq!(db_order_1.size, BigDecimal::from_i32(500).unwrap());
     assert_eq!(db_order_1.order_state, OrderState::Open);
+
+    // Check that the fills table has one entry.
+    let db_fills = db::schema::fills::dsl::fills
+        .load::<Fill>(conn)
+        .expect("Could not query fills");
+
+    assert_eq!(db_fills.len(), 1);
+
+    let db_fill_0 = db_fills.get(0).unwrap();
+
+    // Check that the fill has the correct parameters.
+    assert_eq!(db_fill_0.maker_order_id, BigDecimal::from_i32(100).unwrap());
+    assert_eq!(db_fill_0.maker, "0x1001");
 
     // Clean up tables.
     reset_tables(conn);

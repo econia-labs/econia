@@ -32,6 +32,10 @@ pub fn router(pool: Pool<Postgres>) -> Router {
             "/account/:account_address/order-history",
             get(order_history_by_account),
         )
+        .route(
+            "/account/:account_address/open-orders",
+            get(open_orders_by_account),
+        )
         .with_state(pool)
         .layer(middleware_stack)
 }
@@ -118,6 +122,42 @@ async fn order_history_by_account(
         .collect::<Result<Vec<types::order::Order>, TypeError>>()?;
 
     Ok(Json(order_history))
+}
+
+async fn open_orders_by_account(
+    Path(account_address): Path<String>,
+    State(pool): State<Pool<Postgres>>,
+) -> Result<Json<Vec<types::order::Order>>, ApiError> {
+    let open_orders_query = sqlx::query_as!(
+        db::models::order::Order,
+        r#"
+        select
+            market_order_id,
+            market_id,
+            side as "side: db::models::order::Side",
+            size,
+            price,
+            user_address,
+            custodian_id,
+            order_state as "order_state: db::models::order::OrderState",
+            created_at
+        from orders where user_address = $1 and order_state = 'open';
+        "#,
+        account_address
+    )
+    .fetch_all(&pool)
+    .await?;
+
+    if open_orders_query.len() == 0 {
+        return Err(ApiError::NotFound);
+    }
+
+    let open_orders = open_orders_query
+        .into_iter()
+        .map(|v| v.try_into())
+        .collect::<Result<Vec<types::order::Order>, TypeError>>()?;
+
+    Ok(Json(open_orders))
 }
 
 #[cfg(test)]

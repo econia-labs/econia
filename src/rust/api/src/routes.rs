@@ -108,6 +108,10 @@ async fn order_history_by_account(
     .fetch_all(&pool)
     .await?;
 
+    if order_history_query.len() == 0 {
+        return Err(ApiError::NotFound);
+    }
+
     let order_history = order_history_query
         .into_iter()
         .map(|v| v.try_into())

@@ -49,7 +49,6 @@ pub struct Order {
     pub user_address: String,
     pub custodian_id: Option<BigDecimal>,
     pub order_state: OrderState,
-    pub remaining_size: BigDecimal,
     pub created_at: DateTime<Utc>,
 }
 
@@ -64,6 +63,5 @@ pub struct NewOrder<'a> {
     pub user_address: &'a str,
     pub custodian_id: Option<BigDecimal>,
     pub order_state: &'a OrderState,
-    pub remaining_size: &'a BigDecimal,
     pub created_at: &'a DateTime<Utc>,
 }

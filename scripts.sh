@@ -190,6 +190,12 @@ function format_code_sql {
     cd $sql_dir_inverse                         # Return to repository root.
 }
 
+# Format TOML files.
+function format_code_toml {
+    echo "Formatting TOML files"
+    taplo format # Format code with taplo.
+}
+
 # Format TypeScript code.
 function format_code_typescript {
     echo "Formatting TypeScript code"
@@ -205,6 +211,7 @@ function format_code {
     format_code_rust
     format_code_shell
     format_code_sql
+    format_code_toml
     format_code_typescript
 }
 
@@ -236,6 +243,7 @@ case "$1" in
         brew_install rustup                                # Install Rust toolchain installer.
         brew_install shfmt                                 # Install shell script formatter.
         brew_install sqlfluff                              # Install SQL formatter.
+        brew_install taplo                                 # Install TOML formatter.
         rustup install stable                              # Install stable Rust toolchain.
         echo "Installing Python-based formatters"          # Print notice.
         poetry install                                     # Install code formatters.

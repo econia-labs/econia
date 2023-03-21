@@ -1,6 +1,6 @@
 [package]
 name = "Econia"
-version = "4.0.1" # Per SemVer.
+version = "4.0.1"             # Per SemVer.
 upgrade_policy = "compatible"
 
 [addresses]
@@ -13,5 +13,5 @@ integrator = "0x4567"
 
 [dependencies.AptosFramework]
 git = "https://github.com/aptos-labs/aptos-core.git"
-subdir = "aptos-move/framework/aptos-framework"
 rev = "mainnet"
+subdir = "aptos-move/framework/aptos-framework"

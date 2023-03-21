@@ -3,6 +3,7 @@ use std::net::SocketAddr;
 use serde::Deserialize;
 use sqlx::PgPool;
 use tracing_subscriber::prelude::*;
+
 use crate::routes::router;
 
 mod error;

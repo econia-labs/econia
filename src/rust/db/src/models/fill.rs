@@ -10,11 +10,8 @@ pub struct Fill {
     pub maker_order_id: BigDecimal,
     pub maker: String,
     pub maker_side: Side,
-    pub maker_custodian_id: Option<BigDecimal>,
-    pub taker_order_id: Option<BigDecimal>,
-    pub taker: Option<String>,
-    pub taker_custodian_id: Option<BigDecimal>,
-    pub fill_size: BigDecimal,
+    pub custodian_id: Option<BigDecimal>,
+    pub size: BigDecimal,
     pub price: BigDecimal,
     pub time: DateTime<Utc>,
 }

@@ -2,6 +2,7 @@ use bigdecimal::{BigDecimal, ToPrimitive};
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 use diesel_derive_enum::DbEnum;
+use field_count::FieldCount;
 use types::{error::TypeError, events};
 
 use super::order::Side;
@@ -196,7 +197,7 @@ impl TryFrom<MakerEvent> for events::MakerEvent {
     }
 }
 
-#[derive(Insertable, Debug)]
+#[derive(Insertable, Debug, FieldCount)]
 #[diesel(table_name = maker_events)]
 pub struct NewMakerEvent<'a> {
     pub market_id: BigDecimal,
@@ -281,7 +282,7 @@ impl TryFrom<TakerEvent> for events::TakerEvent {
     }
 }
 
-#[derive(Insertable, Debug)]
+#[derive(Insertable, Debug, FieldCount)]
 #[diesel(table_name = taker_events)]
 pub struct NewTakerEvent<'a> {
     pub market_id: BigDecimal,

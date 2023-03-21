@@ -1,6 +1,7 @@
 use bigdecimal::{BigDecimal, ToPrimitive};
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
+use field_count::FieldCount;
 use types::{error::TypeError, events};
 
 use crate::schema::market_registration_events;
@@ -85,7 +86,7 @@ impl TryFrom<MarketRegistrationEvent> for events::MarketRegistrationEvent {
     }
 }
 
-#[derive(Insertable, Debug)]
+#[derive(Insertable, Debug, FieldCount)]
 #[diesel(table_name = market_registration_events)]
 pub struct NewMarketRegistrationEvent<'a> {
     pub market_id: BigDecimal,

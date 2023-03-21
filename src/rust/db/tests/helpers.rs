@@ -1,5 +1,12 @@
 use chrono::Utc;
-use db::{create_coin, models::events::MarketRegistrationEvent, register_market};
+use db::{
+    create_coin,
+    models::{
+        coin::NewCoin,
+        events::{MarketRegistrationEvent, NewMarketRegistrationEvent},
+    },
+    register_market,
+};
 use diesel::prelude::*;
 
 pub fn reset_tables(conn: &mut PgConnection) {
@@ -33,43 +40,46 @@ pub fn reset_tables(conn: &mut PgConnection) {
 }
 
 pub fn setup_market(conn: &mut PgConnection) -> MarketRegistrationEvent {
-    // Register coins first, so we can satisfy the foreign key constraint in markets.
     let aptos_coin = create_coin(
         conn,
-        "0x1",
-        "aptos_coin",
-        "AptosCoin",
-        "APT",
-        "Aptos Coin",
-        8,
+        &NewCoin {
+            account_address: "0x1",
+            module_name: "aptos_coin",
+            struct_name: "AptosCoin",
+            symbol: "APT",
+            name: "Aptos Coin",
+            decimals: 8,
+        },
     );
 
     let tusdc_coin = create_coin(
         conn,
-        "0x7c36a610d1cde8853a692c057e7bd2479ba9d5eeaeceafa24f125c23d2abf942",
-        "test_usdc",
-        "TestUSDCoin",
-        "tUSDC",
-        "Test USDC",
-        6,
+        &NewCoin {
+            account_address: "0x7c36a610d1cde8853a692c057e7bd2479ba9d5eeaeceafa24f125c23d2abf942",
+            module_name: "test_usdc",
+            struct_name: "TestUSDCoin",
+            symbol: "tUSDC",
+            name: "Test USDC",
+            decimals: 6,
+        },
     );
 
-    // Register the market. Adding a new market registration event should create
-    // a new entry in the markets table as well.
     register_market(
         conn,
-        0.into(),
-        Utc::now(),
-        Some(&aptos_coin.account_address),
-        Some(&aptos_coin.module_name),
-        Some(&aptos_coin.struct_name),
-        None,
-        &tusdc_coin.account_address,
-        &tusdc_coin.module_name,
-        &tusdc_coin.struct_name,
-        1000.into(),
-        1000.into(),
-        1000.into(),
-        0.into(),
+        &NewMarketRegistrationEvent {
+            market_id: 0.into(),
+            time: Utc::now(),
+            base_account_address: Some(&aptos_coin.account_address),
+            base_module_name: Some(&aptos_coin.module_name),
+            base_struct_name: Some(&aptos_coin.struct_name),
+            base_name_generic: None,
+            quote_account_address: &tusdc_coin.account_address,
+            quote_module_name: &tusdc_coin.module_name,
+            quote_struct_name: &tusdc_coin.struct_name,
+            lot_size: 1000.into(),
+            tick_size: 1000.into(),
+            min_size: 1000.into(),
+            underwriter_id: 0.into(),
+        },
     )
 }

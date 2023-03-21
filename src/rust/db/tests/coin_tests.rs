@@ -1,4 +1,7 @@
-use db::{create_coin, establish_connection, load_config, models::coin::Coin};
+use db::{
+    create_coin, establish_connection, load_config,
+    models::coin::{Coin, NewCoin},
+};
 use diesel::prelude::*;
 use helpers::reset_tables;
 
@@ -12,15 +15,16 @@ fn test_create_coin() {
     // Delete all entries in the assets table before running tests.
     reset_tables(conn);
 
-    create_coin(
-        conn,
-        "0x1",
-        "aptos_coin",
-        "AptosCoin",
-        "APT",
-        "Aptos Coin",
-        8,
-    );
+    let coin = NewCoin {
+        account_address: "0x1",
+        module_name: "aptos_coin",
+        struct_name: "AptosCoin",
+        symbol: "APT",
+        name: "Aptos Coin",
+        decimals: 8,
+    };
+
+    create_coin(conn, &coin);
 
     // Query the assets table in the database.
     let db_coins = db::schema::coins::dsl::coins

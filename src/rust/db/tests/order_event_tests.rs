@@ -3,7 +3,7 @@ use chrono::Utc;
 use db::{
     add_maker_event, add_taker_event, establish_connection, load_config,
     models::{
-        events::{MakerEvent, MakerEventType, TakerEvent},
+        events::{MakerEvent, MakerEventType, NewMakerEvent, NewTakerEvent, TakerEvent},
         fill::Fill,
         order::{Order, OrderState, Side},
     },
@@ -27,15 +27,17 @@ fn test_place_order() {
     // Place an order.
     add_maker_event(
         conn,
-        &market.market_id,
-        &Side::Bid,
-        &100.into(),
-        "0x123",
-        None,
-        &MakerEventType::Place,
-        &1000.into(),
-        &1000.into(),
-        &Utc::now(),
+        &NewMakerEvent {
+            market_id: market.market_id,
+            side: Side::Bid,
+            market_order_id: 100.into(),
+            user_address: "0x123",
+            custodian_id: None,
+            event_type: MakerEventType::Place,
+            size: 1000.into(),
+            price: 1000.into(),
+            time: Utc::now(),
+        },
     );
 
     // Check that the maker events table has one entry.
@@ -78,29 +80,33 @@ fn test_change_order_price() {
     // Place an order with price 1000.
     add_maker_event(
         conn,
-        &market.market_id,
-        &Side::Bid,
-        &101.into(),
-        "0x123",
-        None,
-        &MakerEventType::Place,
-        &1000.into(),
-        &1000.into(),
-        &Utc::now(),
+        &NewMakerEvent {
+            market_id: market.market_id.clone(),
+            side: Side::Bid,
+            market_order_id: 101.into(),
+            user_address: "0x123",
+            custodian_id: None,
+            event_type: MakerEventType::Place,
+            size: 1000.into(),
+            price: 1000.into(),
+            time: Utc::now(),
+        },
     );
 
-    // Change the size of the price to 1500.
+    // Change the price to 1500.
     add_maker_event(
         conn,
-        &market.market_id,
-        &Side::Bid,
-        &101.into(),
-        "0x123",
-        None,
-        &MakerEventType::Change,
-        &1000.into(),
-        &1500.into(),
-        &Utc::now(),
+        &NewMakerEvent {
+            market_id: market.market_id,
+            side: Side::Bid,
+            market_order_id: 101.into(),
+            user_address: "0x123",
+            custodian_id: None,
+            event_type: MakerEventType::Change,
+            size: 1000.into(),
+            price: 1500.into(),
+            time: Utc::now(),
+        },
     );
 
     // Check that the maker events table has two entries.
@@ -142,29 +148,33 @@ fn test_change_order_size() {
     // Place an order with size 1000.
     add_maker_event(
         conn,
-        &market.market_id,
-        &Side::Bid,
-        &102.into(),
-        "0x123",
-        None,
-        &MakerEventType::Place,
-        &1000.into(),
-        &1000.into(),
-        &Utc::now(),
+        &NewMakerEvent {
+            market_id: market.market_id.clone(),
+            side: Side::Bid,
+            market_order_id: 102.into(),
+            user_address: "0x123",
+            custodian_id: None,
+            event_type: MakerEventType::Place,
+            size: 1000.into(),
+            price: 1000.into(),
+            time: Utc::now(),
+        },
     );
 
     // Change the size of the order to 2000.
     add_maker_event(
         conn,
-        &market.market_id,
-        &Side::Bid,
-        &102.into(),
-        "0x123",
-        None,
-        &MakerEventType::Change,
-        &2000.into(),
-        &1000.into(),
-        &Utc::now(),
+        &NewMakerEvent {
+            market_id: market.market_id,
+            side: Side::Bid,
+            market_order_id: 102.into(),
+            user_address: "0x123",
+            custodian_id: None,
+            event_type: MakerEventType::Change,
+            size: 2000.into(),
+            price: 1000.into(),
+            time: Utc::now(),
+        },
     );
 
     // Check that the maker events table has two entries.
@@ -206,29 +216,33 @@ fn test_cancel_order() {
     // Place an order.
     let place_event = add_maker_event(
         conn,
-        &market.market_id,
-        &Side::Bid,
-        &104.into(),
-        "0x123",
-        None,
-        &MakerEventType::Place,
-        &1000.into(),
-        &1000.into(),
-        &Utc::now(),
+        &NewMakerEvent {
+            market_id: market.market_id.clone(),
+            side: Side::Bid,
+            market_order_id: 104.into(),
+            user_address: "0x123",
+            custodian_id: None,
+            event_type: MakerEventType::Place,
+            size: 1000.into(),
+            price: 1000.into(),
+            time: Utc::now(),
+        },
     );
 
     // Cancel the order.
     add_maker_event(
         conn,
-        &market.market_id,
-        &Side::Bid,
-        &place_event.market_order_id,
-        &place_event.user_address,
-        None,
-        &MakerEventType::Cancel,
-        &place_event.size,
-        &place_event.price,
-        &Utc::now(),
+        &NewMakerEvent {
+            market_id: market.market_id,
+            side: Side::Bid,
+            market_order_id: place_event.market_order_id,
+            user_address: &place_event.user_address,
+            custodian_id: None,
+            event_type: MakerEventType::Cancel,
+            size: place_event.size,
+            price: place_event.price,
+            time: Utc::now(),
+        },
     );
 
     // Check that the maker events table has two entries.
@@ -268,29 +282,33 @@ fn test_evict_order() {
     // Place an order.
     let place_event = add_maker_event(
         conn,
-        &market.market_id,
-        &Side::Bid,
-        &105.into(),
-        "0x123",
-        None,
-        &MakerEventType::Place,
-        &1000.into(),
-        &1000.into(),
-        &Utc::now(),
+        &NewMakerEvent {
+            market_id: market.market_id.clone(),
+            side: Side::Bid,
+            market_order_id: 105.into(),
+            user_address: "0x123",
+            custodian_id: None,
+            event_type: MakerEventType::Place,
+            size: 1000.into(),
+            price: 1000.into(),
+            time: Utc::now(),
+        },
     );
 
     // Cancel the order.
     add_maker_event(
         conn,
-        &market.market_id,
-        &Side::Bid,
-        &place_event.market_order_id,
-        &place_event.user_address,
-        None,
-        &MakerEventType::Evict,
-        &place_event.size,
-        &place_event.price,
-        &Utc::now(),
+        &NewMakerEvent {
+            market_id: market.market_id,
+            side: Side::Bid,
+            market_order_id: place_event.market_order_id,
+            user_address: &place_event.user_address,
+            custodian_id: None,
+            event_type: MakerEventType::Evict,
+            size: place_event.size,
+            price: place_event.price,
+            time: Utc::now(),
+        },
     );
 
     // Check that the maker events table has two entries.
@@ -330,42 +348,48 @@ fn test_fill_order() {
     // Place an order.
     add_maker_event(
         conn,
-        &market.market_id,
-        &Side::Bid,
-        &100.into(),
-        "0x1001",
-        None,
-        &MakerEventType::Place,
-        &1000.into(),
-        &1000.into(),
-        &Utc::now(),
+        &NewMakerEvent {
+            market_id: market.market_id.clone(),
+            side: Side::Bid,
+            market_order_id: 100.into(),
+            user_address: "0x1001",
+            custodian_id: None,
+            event_type: MakerEventType::Place,
+            size: 1000.into(),
+            price: 1000.into(),
+            time: Utc::now(),
+        },
     );
 
     // Place another order to fill the first order.
     add_maker_event(
         conn,
-        &market.market_id,
-        &Side::Ask,
-        &101.into(),
-        "0x1002",
-        None,
-        &MakerEventType::Place,
-        &500.into(),
-        &1000.into(),
-        &Utc::now(),
+        &NewMakerEvent {
+            market_id: market.market_id.clone(),
+            side: Side::Ask,
+            market_order_id: 101.into(),
+            user_address: "0x1002",
+            custodian_id: None,
+            event_type: MakerEventType::Place,
+            size: 500.into(),
+            price: 1000.into(),
+            time: Utc::now(),
+        },
     );
 
     // Fill the order.
     add_taker_event(
         conn,
-        &market.market_id,
-        &Side::Bid,
-        &100.into(),
-        "0x1001",
-        None,
-        &500.into(),
-        &1000.into(),
-        &Utc::now(),
+        &NewTakerEvent {
+            market_id: market.market_id,
+            side: Side::Bid,
+            market_order_id: 100.into(),
+            maker: "0x1001",
+            custodian_id: None,
+            size: 500.into(),
+            price: 1000.into(),
+            time: Utc::now(),
+        },
     );
 
     // Check that the maker events table has two entries.
@@ -431,42 +455,48 @@ fn test_fully_fill_order() {
     // Place an order.
     add_maker_event(
         conn,
-        &market.market_id,
-        &Side::Bid,
-        &100.into(),
-        "0x1003",
-        None,
-        &MakerEventType::Place,
-        &1000.into(),
-        &1000.into(),
-        &Utc::now(),
+        &NewMakerEvent {
+            market_id: market.market_id.clone(),
+            side: Side::Bid,
+            market_order_id: 100.into(),
+            user_address: "0x1003",
+            custodian_id: None,
+            event_type: MakerEventType::Place,
+            size: 1000.into(),
+            price: 1000.into(),
+            time: Utc::now(),
+        },
     );
 
     // Place another order to fully fill the first order.
     add_maker_event(
         conn,
-        &market.market_id,
-        &Side::Ask,
-        &101.into(),
-        "0x1004",
-        None,
-        &MakerEventType::Place,
-        &1000.into(),
-        &1000.into(),
-        &Utc::now(),
+        &NewMakerEvent {
+            market_id: market.market_id.clone(),
+            side: Side::Ask,
+            market_order_id: 101.into(),
+            user_address: "0x1004",
+            custodian_id: None,
+            event_type: MakerEventType::Place,
+            size: 1000.into(),
+            price: 1000.into(),
+            time: Utc::now(),
+        },
     );
 
     // Fully fill the order.
     add_taker_event(
         conn,
-        &market.market_id,
-        &Side::Ask,
-        &100.into(),
-        "0x1004",
-        None,
-        &1000.into(),
-        &1000.into(),
-        &Utc::now(),
+        &NewTakerEvent {
+            market_id: market.market_id,
+            side: Side::Ask,
+            market_order_id: 100.into(),
+            maker: "0x1004",
+            custodian_id: None,
+            size: 1000.into(),
+            price: 1000.into(),
+            time: Utc::now(),
+        },
     );
 
     // Check that the maker events table has two entries.

@@ -1,16 +1,37 @@
-use axum::{extract::State, Json};
+use axum::{extract::State, Json, Router};
+use axum::routing::get;
 use sqlx::{Pool, Postgres};
+use tower::ServiceBuilder;
+use tower_http::compression::CompressionLayer;
+use tower_http::cors::{Any, CorsLayer};
+use tower_http::trace::TraceLayer;
 use types::error::TypeError;
 
 use crate::error::ApiError;
 
-pub async fn index() -> String {
+pub fn router(pool: Pool<Postgres>) -> Router {
+    let cors_layer = CorsLayer::new()
+        .allow_methods(Any)
+        .allow_headers(Any)
+        .allow_origin(Any);
+
+    let middleware_stack = ServiceBuilder::new()
+        .layer(CompressionLayer::new())
+        .layer(TraceLayer::new_for_http())
+        .layer(cors_layer);
+
+    Router::new()
+        .route("/", get(index))
+        .route("/markets", get(markets))
+        .with_state(pool)
+        .layer(middleware_stack)
+}
+
+async fn index() -> String {
     String::from("Econia backend API")
 }
 
-pub async fn markets(
-    State(pool): State<Pool<Postgres>>,
-) -> Result<Json<Vec<types::Market>>, ApiError> {
+async fn markets(State(pool): State<Pool<Postgres>>) -> Result<Json<Vec<types::Market>>, ApiError> {
     let query_markets = sqlx::query_as!(
         types::QueryMarket,
         r#"

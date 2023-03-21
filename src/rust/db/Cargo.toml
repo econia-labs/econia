@@ -13,5 +13,6 @@ diesel-derive-enum = { version = "2.0.1", features = ["postgres"] }
 dotenvy = { workspace = true }
 envy = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
+sqlx = { workspace = true, features = ["macros"] }
 thiserror = { workspace = true }
 types = { path = "../types" }

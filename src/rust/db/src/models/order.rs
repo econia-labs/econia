@@ -6,23 +6,24 @@ use types::error::TypeError;
 
 use crate::schema::orders;
 
-#[derive(Debug, DbEnum, Clone, PartialEq, Eq, Copy)]
+#[derive(Debug, DbEnum, Clone, PartialEq, Eq, Copy, sqlx::Type)]
 #[ExistingTypePath = "crate::schema::sql_types::Side"]
+#[sqlx(type_name = "side", rename_all = "snake_case")]
 pub enum Side {
     Bid,
     Ask,
 }
 
-impl From<types::Side> for Side {
-    fn from(value: types::Side) -> Self {
+impl From<types::order::Side> for Side {
+    fn from(value: types::order::Side) -> Self {
         match value {
-            types::Side::Bid => Self::Bid,
-            types::Side::Ask => Self::Ask,
+            types::order::Side::Bid => Self::Bid,
+            types::order::Side::Ask => Self::Ask,
         }
     }
 }
 
-impl From<Side> for types::Side {
+impl From<Side> for types::order::Side {
     fn from(value: Side) -> Self {
         match value {
             Side::Bid => Self::Bid,
@@ -31,8 +32,9 @@ impl From<Side> for types::Side {
     }
 }
 
-#[derive(Debug, DbEnum, Clone, PartialEq, Eq)]
+#[derive(Debug, DbEnum, Clone, PartialEq, Eq, sqlx::Type)]
 #[ExistingTypePath = "crate::schema::sql_types::OrderState"]
+#[sqlx(type_name = "order_state", rename_all = "snake_case")]
 pub enum OrderState {
     Open,
     Filled,
@@ -91,7 +93,7 @@ impl TryFrom<Order> for types::order::Order {
         let market_id = value.market_id.to_u64().ok_or(TypeError::ConversionError {
             name: "market_id".into(),
         })?;
-        let side: types::Side = value.side.into();
+        let side: types::order::Side = value.side.into();
         let size = value.size.to_u64().ok_or(TypeError::ConversionError {
             name: "size".into(),
         })?;

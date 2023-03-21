@@ -1,86 +1,16 @@
 use bigdecimal::{BigDecimal, FromPrimitive};
 use chrono::Utc;
 use db::{
-    add_maker_event, add_taker_event, create_coin, establish_connection, load_config,
+    add_maker_event, add_taker_event, establish_connection, load_config,
     models::{
-        events::{MakerEvent, MakerEventType, MarketRegistrationEvent, TakerEvent},
+        events::{MakerEvent, MakerEventType, TakerEvent},
         order::{Order, OrderState, Side},
     },
-    register_market,
 };
 use diesel::prelude::*;
+use helpers::{reset_tables, setup_market};
 
-fn reset_order_tables(conn: &mut PgConnection) {
-    diesel::delete(db::schema::fills::table)
-        .execute(conn)
-        .expect("Error deleting fills events table");
-
-    diesel::delete(db::schema::taker_events::table)
-        .execute(conn)
-        .expect("Error deleting taker events table");
-
-    diesel::delete(db::schema::maker_events::table)
-        .execute(conn)
-        .expect("Error deleting maker events table");
-
-    diesel::delete(db::schema::orders::table)
-        .execute(conn)
-        .expect("Error deleting orders table");
-
-    diesel::delete(db::schema::market_registration_events::table)
-        .execute(conn)
-        .expect("Error deleting market registration event table");
-
-    diesel::delete(db::schema::markets::table)
-        .execute(conn)
-        .expect("Error deleting markets table");
-
-    diesel::delete(db::schema::coins::table)
-        .execute(conn)
-        .expect("Error deleting coins table");
-}
-
-fn setup_market(conn: &mut PgConnection) -> MarketRegistrationEvent {
-    // Register coins first, so we can satisfy the foreign key constraint in markets.
-    let aptos_coin = create_coin(
-        conn,
-        "0x1",
-        "aptos_coin",
-        "AptosCoin",
-        "APT",
-        "Aptos Coin",
-        8,
-    );
-
-    let tusdc_coin = create_coin(
-        conn,
-        "0x7c36a610d1cde8853a692c057e7bd2479ba9d5eeaeceafa24f125c23d2abf942",
-        "test_usdc",
-        "TestUSDCoin",
-        "tUSDC",
-        "Test USDC",
-        6,
-    );
-
-    // Register the market. Adding a new market registration event should create
-    // a new entry in the markets table as well.
-    register_market(
-        conn,
-        0.into(),
-        Utc::now(),
-        Some(&aptos_coin.account_address),
-        Some(&aptos_coin.module_name),
-        Some(&aptos_coin.struct_name),
-        None,
-        &tusdc_coin.account_address,
-        &tusdc_coin.module_name,
-        &tusdc_coin.struct_name,
-        1000.into(),
-        1000.into(),
-        1000.into(),
-        0.into(),
-    )
-}
+mod helpers;
 
 #[test]
 fn test_place_order() {
@@ -88,7 +18,7 @@ fn test_place_order() {
     let conn = &mut establish_connection(config.database_url);
 
     // Delete all entries in the tables used before running tests.
-    reset_order_tables(conn);
+    reset_tables(conn);
 
     // Set up market.
     let market = setup_market(conn);
@@ -130,7 +60,7 @@ fn test_place_order() {
     assert_eq!(db_order.order_state, OrderState::Open);
 
     // Clean up tables.
-    reset_order_tables(conn);
+    reset_tables(conn);
 }
 
 #[test]
@@ -139,7 +69,7 @@ fn test_change_order_price() {
     let conn = &mut establish_connection(config.database_url);
 
     // Delete all entries in the tables used before running tests.
-    reset_order_tables(conn);
+    reset_tables(conn);
 
     // Set up market
     let market = setup_market(conn);
@@ -194,7 +124,7 @@ fn test_change_order_price() {
     assert_eq!(db_order.order_state, OrderState::Open);
 
     // Clean up tables.
-    reset_order_tables(conn);
+    reset_tables(conn);
 }
 
 #[test]
@@ -203,7 +133,7 @@ fn test_change_order_size() {
     let conn = &mut establish_connection(config.database_url);
 
     // Delete all entries in the tables used before running tests.
-    reset_order_tables(conn);
+    reset_tables(conn);
 
     // Set up market
     let market = setup_market(conn);
@@ -258,7 +188,7 @@ fn test_change_order_size() {
     assert_eq!(db_order.order_state, OrderState::Open);
 
     // Clean up tables.
-    reset_order_tables(conn);
+    reset_tables(conn);
 }
 
 #[test]
@@ -267,7 +197,7 @@ fn test_cancel_order() {
     let conn = &mut establish_connection(config.database_url);
 
     // Delete all entries in the tables used before running tests.
-    reset_order_tables(conn);
+    reset_tables(conn);
 
     // Set up market.
     let market = setup_market(conn);
@@ -320,7 +250,7 @@ fn test_cancel_order() {
     assert_eq!(db_order.order_state, OrderState::Cancelled);
 
     // Clean up tables.
-    reset_order_tables(conn);
+    reset_tables(conn);
 }
 
 #[test]
@@ -329,7 +259,7 @@ fn test_evict_order() {
     let conn = &mut establish_connection(config.database_url);
 
     // Delete all entries in the tables used before running tests.
-    reset_order_tables(conn);
+    reset_tables(conn);
 
     // Set up market.
     let market = setup_market(conn);
@@ -382,7 +312,7 @@ fn test_evict_order() {
     assert_eq!(db_order.order_state, OrderState::Evicted);
 
     // Clean up tables.
-    reset_order_tables(conn);
+    reset_tables(conn);
 }
 
 #[test]
@@ -391,7 +321,7 @@ fn test_fill_order() {
     let conn = &mut establish_connection(config.database_url);
 
     // Delete all entries in the tables used before running tests.
-    reset_order_tables(conn);
+    reset_tables(conn);
 
     // Set up market.
     let market = setup_market(conn);
@@ -470,7 +400,7 @@ fn test_fill_order() {
     assert_eq!(db_order_1.order_state, OrderState::Open);
 
     // Clean up tables.
-    reset_order_tables(conn);
+    reset_tables(conn);
 }
 
 #[test]
@@ -479,7 +409,7 @@ fn test_fully_fill_order() {
     let conn = &mut establish_connection(config.database_url);
 
     // Delete all entries in the tables used before running tests.
-    reset_order_tables(conn);
+    reset_tables(conn);
 
     // Set up market.
     let market = setup_market(conn);
@@ -555,5 +485,5 @@ fn test_fully_fill_order() {
     // TODO: update taker order.
 
     // Clean up tables.
-    reset_order_tables(conn);
+    reset_tables(conn);
 }

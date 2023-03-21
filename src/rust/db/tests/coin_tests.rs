@@ -1,5 +1,8 @@
 use db::{create_coin, establish_connection, load_config, models::coin::Coin};
 use diesel::prelude::*;
+use helpers::reset_tables;
+
+mod helpers;
 
 #[test]
 fn test_create_coin() {
@@ -7,9 +10,7 @@ fn test_create_coin() {
     let conn = &mut establish_connection(config.database_url);
 
     // Delete all entries in the assets table before running tests.
-    diesel::delete(db::schema::coins::table)
-        .execute(conn)
-        .expect("Error deleting assets table");
+    reset_tables(conn);
 
     create_coin(
         conn,

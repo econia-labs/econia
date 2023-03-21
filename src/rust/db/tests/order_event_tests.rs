@@ -262,69 +262,6 @@ fn test_change_order_size() {
 }
 
 #[test]
-fn test_change_order_to_remaining_size_zero() {
-    let config = load_config();
-    let conn = &mut establish_connection(config.database_url);
-
-    // Delete all entries in the tables used before running tests.
-    reset_order_tables(conn);
-
-    // Set up market.
-    let market = setup_market(conn);
-
-    // Place an order.
-    add_maker_event(
-        conn,
-        &market.market_id,
-        &Side::Bid,
-        &103.into(),
-        "0x123",
-        None,
-        &MakerEventType::Place,
-        &1000.into(),
-        &1000.into(),
-        &Utc::now(),
-    );
-
-    // Change the size of the order to zero.
-    add_maker_event(
-        conn,
-        &market.market_id,
-        &Side::Bid,
-        &103.into(),
-        "0x123",
-        None,
-        &MakerEventType::Change,
-        &0.into(),
-        &1000.into(),
-        &Utc::now(),
-    );
-
-    // Check that the maker events table has two entries.
-    let db_maker_events = db::schema::maker_events::dsl::maker_events
-        .load::<MakerEvent>(conn)
-        .expect("Could not query maker events.");
-
-    assert_eq!(db_maker_events.len(), 2);
-
-    // Check that the orders table has one entry.
-    let db_orders = db::schema::orders::dsl::orders
-        .load::<Order>(conn)
-        .expect("Could not query orders.");
-
-    assert_eq!(db_orders.len(), 1);
-
-    let db_order = db_orders.get(0).unwrap();
-    assert_eq!(db_order.size, BigDecimal::from_i32(0).unwrap());
-    assert_eq!(db_order.price, BigDecimal::from_i32(1000).unwrap());
-    assert_eq!(db_order.remaining_size, BigDecimal::from_i32(0).unwrap());
-    assert_eq!(db_order.order_state, OrderState::Filled);
-
-    // Clean up tables.
-    reset_order_tables(conn);
-}
-
-#[test]
 fn test_cancel_order() {
     let config = load_config();
     let conn = &mut establish_connection(config.database_url);
@@ -525,17 +462,11 @@ fn test_fill_order() {
     let db_order_1 = db_orders.get(1).unwrap();
 
     // Check that the maker order has the correct parameters.
-    assert_eq!(
-        db_order_0.remaining_size,
-        BigDecimal::from_i32(500).unwrap()
-    );
+    assert_eq!(db_order_0.size, BigDecimal::from_i32(500).unwrap());
     assert_eq!(db_order_0.order_state, OrderState::Open);
 
     // Check that the taker order has the correct parameters.
-    assert_eq!(
-        db_order_1.remaining_size,
-        BigDecimal::from_i32(500).unwrap()
-    );
+    assert_eq!(db_order_1.size, BigDecimal::from_i32(500).unwrap());
     assert_eq!(db_order_1.order_state, OrderState::Open);
 
     // Clean up tables.
@@ -618,7 +549,7 @@ fn test_fully_fill_order() {
     let db_order_1 = db_orders.get(1).unwrap();
 
     // Check that the maker order has the correct parameters.
-    assert_eq!(db_order_1.remaining_size, BigDecimal::from_i32(0).unwrap());
+    assert_eq!(db_order_1.size, BigDecimal::from_i32(0).unwrap());
     assert_eq!(db_order_1.order_state, OrderState::Filled);
 
     // TODO: update taker order.

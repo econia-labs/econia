@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 pub mod constants;
 pub mod error;
 pub mod events;
+pub mod order;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Coin {

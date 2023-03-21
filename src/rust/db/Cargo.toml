@@ -8,11 +8,7 @@ edition = "2021"
 [dependencies]
 bigdecimal = { workspace = true }
 chrono = { workspace = true }
-diesel = { workspace = true, features = [
-    "chrono",
-    "numeric",
-    "postgres",
-] }
+diesel = { workspace = true, features = ["chrono", "numeric", "postgres"] }
 diesel-derive-enum = { version = "2.0.1", features = ["postgres"] }
 dotenvy = { workspace = true }
 envy = { workspace = true }

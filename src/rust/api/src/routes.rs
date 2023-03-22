@@ -12,7 +12,7 @@ use tower_http::{
 };
 use types::error::TypeError;
 
-use crate::error::ApiError;
+use crate::{error::ApiError, ws::ws_handler};
 
 pub fn router(pool: Pool<Postgres>) -> Router {
     let cors_layer = CorsLayer::new()
@@ -36,6 +36,7 @@ pub fn router(pool: Pool<Postgres>) -> Router {
             "/account/:account_address/open-orders",
             get(open_orders_by_account),
         )
+        .route("/ws", get(ws_handler))
         .with_state(pool)
         .layer(middleware_stack)
 }

@@ -8,6 +8,7 @@ use crate::routes::router;
 
 mod error;
 mod routes;
+mod ws;
 
 #[derive(Deserialize, Debug)]
 pub struct Config {

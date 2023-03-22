@@ -8,22 +8,9 @@ use db::{
     register_market,
 };
 use diesel::prelude::*;
+use helpers::reset_tables;
 
-// TODO these tests are broken
-
-fn reset_market_tables(conn: &mut PgConnection) {
-    diesel::delete(db::schema::market_registration_events::table)
-        .execute(conn)
-        .expect("Error deleting market registration event table");
-
-    diesel::delete(db::schema::markets::table)
-        .execute(conn)
-        .expect("Error deleting markets table");
-
-    diesel::delete(db::schema::coins::table)
-        .execute(conn)
-        .expect("Error deleting coins table");
-}
+mod helpers;
 
 #[test]
 fn test_register_coin_market() {
@@ -31,7 +18,7 @@ fn test_register_coin_market() {
     let conn = &mut establish_connection(config.database_url);
 
     // Delete all entries in the tables used before running tests.
-    reset_market_tables(conn);
+    reset_tables(conn);
 
     // Register coins first, so we can satisfy the foreign key constraint in markets.
     let aptos_coin = create_coin(
@@ -95,7 +82,7 @@ fn test_register_coin_market() {
     assert_eq!(db_markets.len(), 1);
 
     // Clean up tables.
-    reset_market_tables(conn);
+    reset_tables(conn);
 }
 
 #[test]
@@ -104,7 +91,7 @@ fn test_register_generic_market() {
     let conn = &mut establish_connection(config.database_url);
 
     // Delete all entries in the tables used before running tests.
-    reset_market_tables(conn);
+    reset_tables(conn);
 
     // Register quote coin.
     let tusdc_coin = create_coin(
@@ -154,6 +141,9 @@ fn test_register_generic_market() {
         .expect("Could not query markets.");
 
     assert_eq!(db_markets.len(), 1);
+
+    // Clean up tables.
+    reset_tables(conn);
 }
 
 #[test]
@@ -162,7 +152,7 @@ fn test_register_coin_and_generic_market() {
     let conn = &mut establish_connection(config.database_url);
 
     // Delete all entries in the tables used before running tests.
-    reset_market_tables(conn);
+    reset_tables(conn);
 
     // Register coins first, so we can satisfy the foreign key constraint in markets.
     let aptos_coin = create_coin(
@@ -243,6 +233,9 @@ fn test_register_coin_and_generic_market() {
         .expect("Could not query markets.");
 
     assert_eq!(db_markets.len(), 2);
+
+    // Clean up tables.
+    reset_tables(conn);
 }
 
 #[test]
@@ -252,7 +245,7 @@ fn test_register_generic_market_with_base_coin_fails() {
     let conn = &mut establish_connection(config.database_url);
 
     // Delete all entries in the tables used before running tests.
-    reset_market_tables(conn);
+    reset_tables(conn);
 
     // Register coins first, so we can satisfy the foreign key constraint in markets.
     let aptos_coin = create_coin(

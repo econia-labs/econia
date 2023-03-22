@@ -125,5 +125,185 @@
       }
     },
     "query": "\n        select\n            market_id,\n            base.name as \"base_name?\",\n            base.symbol as \"base_symbol?\",\n            base.decimals as \"base_decimals?\",\n            base_account_address,\n            base_module_name,\n            base_struct_name,\n            base_name_generic,\n            quote.name as quote_name,\n            quote.symbol as quote_symbol,\n            quote.decimals as quote_decimals,\n            quote_account_address,\n            quote_module_name,\n            quote_struct_name,\n            lot_size,\n            tick_size,\n            min_size,\n            underwriter_id,\n            created_at\n        from markets\n            left join coins base on markets.base_account_address = base.account_address\n                                and markets.base_module_name = base.module_name\n                                and markets.base_struct_name = base.struct_name\n            join coins quote on markets.quote_account_address = quote.account_address\n                                and markets.quote_module_name = quote.module_name\n                                and markets.quote_struct_name = quote.struct_name;\n        "
+  },
+  "a39eafd185d90b2f3f88804dad6764bc900a09c838c3a5080c82a7586523a111": {
+    "describe": {
+      "columns": [
+        {
+          "name": "market_order_id",
+          "ordinal": 0,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "market_id",
+          "ordinal": 1,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "side: db::models::order::Side",
+          "ordinal": 2,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "bid",
+                  "ask"
+                ]
+              },
+              "name": "side"
+            }
+          }
+        },
+        {
+          "name": "size",
+          "ordinal": 3,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "price",
+          "ordinal": 4,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "user_address",
+          "ordinal": 5,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "custodian_id",
+          "ordinal": 6,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "order_state: db::models::order::OrderState",
+          "ordinal": 7,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "open",
+                  "filled",
+                  "cancelled",
+                  "evicted"
+                ]
+              },
+              "name": "order_state"
+            }
+          }
+        },
+        {
+          "name": "created_at",
+          "ordinal": 8,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      }
+    },
+    "query": "\n        select\n            market_order_id,\n            market_id,\n            side as \"side: db::models::order::Side\",\n            size,\n            price,\n            user_address,\n            custodian_id,\n            order_state as \"order_state: db::models::order::OrderState\",\n            created_at\n        from orders where user_address = $1;\n        "
+  },
+  "f32d53a691323ee26f27236fc3a27524312afb9bbbef53eb7ed08fcddd591668": {
+    "describe": {
+      "columns": [
+        {
+          "name": "market_order_id",
+          "ordinal": 0,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "market_id",
+          "ordinal": 1,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "side: db::models::order::Side",
+          "ordinal": 2,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "bid",
+                  "ask"
+                ]
+              },
+              "name": "side"
+            }
+          }
+        },
+        {
+          "name": "size",
+          "ordinal": 3,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "price",
+          "ordinal": 4,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "user_address",
+          "ordinal": 5,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "custodian_id",
+          "ordinal": 6,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "order_state: db::models::order::OrderState",
+          "ordinal": 7,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "open",
+                  "filled",
+                  "cancelled",
+                  "evicted"
+                ]
+              },
+              "name": "order_state"
+            }
+          }
+        },
+        {
+          "name": "created_at",
+          "ordinal": 8,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      }
+    },
+    "query": "\n        select\n            market_order_id,\n            market_id,\n            side as \"side: db::models::order::Side\",\n            size,\n            price,\n            user_address,\n            custodian_id,\n            order_state as \"order_state: db::models::order::OrderState\",\n            created_at\n        from orders where user_address = $1 and order_state = 'open';\n        "
   }
 }

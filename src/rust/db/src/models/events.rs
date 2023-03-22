@@ -9,7 +9,6 @@ use super::order::Side;
 use crate::schema::{maker_events, taker_events};
 
 #[derive(Debug, DbEnum, Clone, Copy, PartialEq, Eq)]
-#[repr(u8)]
 #[ExistingTypePath = "crate::schema::sql_types::MakerEventType"]
 pub enum MakerEventType {
     Cancel,

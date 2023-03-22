@@ -24,11 +24,11 @@ fn test_register_coin_market() {
     let aptos_coin = create_coin(
         conn,
         &NewCoin {
-            account_address: "0x1",
-            module_name: "aptos_coin",
-            struct_name: "AptosCoin",
-            symbol: "APT",
-            name: "Aptos Coin",
+            account_address: "0x1".to_string(),
+            module_name: "aptos_coin".to_string(),
+            struct_name: "AptosCoin".to_string(),
+            symbol: "APT".to_string(),
+            name: "Aptos Coin".to_string(),
             decimals: 8,
         },
     );
@@ -36,11 +36,12 @@ fn test_register_coin_market() {
     let tusdc_coin = create_coin(
         conn,
         &NewCoin {
-            account_address: "0x7c36a610d1cde8853a692c057e7bd2479ba9d5eeaeceafa24f125c23d2abf942",
-            module_name: "test_usdc",
-            struct_name: "TestUSDCoin",
-            symbol: "tUSDC",
-            name: "Test USDC",
+            account_address: "0x7c36a610d1cde8853a692c057e7bd2479ba9d5eeaeceafa24f125c23d2abf942"
+                .to_string(),
+            module_name: "test_usdc".to_string(),
+            struct_name: "TestUSDCoin".to_string(),
+            symbol: "tUSDC".to_string(),
+            name: "Test USDC".to_string(),
             decimals: 6,
         },
     );
@@ -97,11 +98,12 @@ fn test_register_generic_market() {
     let tusdc_coin = create_coin(
         conn,
         &NewCoin {
-            account_address: "0x7c36a610d1cde8853a692c057e7bd2479ba9d5eeaeceafa24f125c23d2abf942",
-            module_name: "test_usdc",
-            struct_name: "TestUSDCoin",
-            symbol: "tUSDC",
-            name: "Test USDC",
+            account_address: "0x7c36a610d1cde8853a692c057e7bd2479ba9d5eeaeceafa24f125c23d2abf942"
+                .to_string(),
+            module_name: "test_usdc".to_string(),
+            struct_name: "TestUSDCoin".to_string(),
+            symbol: "tUSDC".to_string(),
+            name: "Test USDC".to_string(),
             decimals: 6,
         },
     );
@@ -158,11 +160,11 @@ fn test_register_coin_and_generic_market() {
     let aptos_coin = create_coin(
         conn,
         &NewCoin {
-            account_address: "0x1",
-            module_name: "aptos_coin",
-            struct_name: "AptosCoin",
-            symbol: "APT",
-            name: "Aptos Coin",
+            account_address: "0x1".to_string(),
+            module_name: "aptos_coin".to_string(),
+            struct_name: "AptosCoin".to_string(),
+            symbol: "APT".to_string(),
+            name: "Aptos Coin".to_string(),
             decimals: 8,
         },
     );
@@ -170,11 +172,12 @@ fn test_register_coin_and_generic_market() {
     let tusdc_coin = create_coin(
         conn,
         &NewCoin {
-            account_address: "0x7c36a610d1cde8853a692c057e7bd2479ba9d5eeaeceafa24f125c23d2abf942",
-            module_name: "test_usdc",
-            struct_name: "TestUSDCoin",
-            symbol: "tUSDC",
-            name: "Test USDC",
+            account_address: "0x7c36a610d1cde8853a692c057e7bd2479ba9d5eeaeceafa24f125c23d2abf942"
+                .to_string(),
+            module_name: "test_usdc".to_string(),
+            struct_name: "TestUSDCoin".to_string(),
+            symbol: "tUSDC".to_string(),
+            name: "Test USDC".to_string(),
             decimals: 6,
         },
     );
@@ -251,11 +254,11 @@ fn test_register_generic_market_with_base_coin_fails() {
     let aptos_coin = create_coin(
         conn,
         &NewCoin {
-            account_address: "0x1",
-            module_name: "aptos_coin",
-            struct_name: "AptosCoin",
-            symbol: "APT",
-            name: "Aptos Coin",
+            account_address: "0x1".to_string(),
+            module_name: "aptos_coin".to_string(),
+            struct_name: "AptosCoin".to_string(),
+            symbol: "APT".to_string(),
+            name: "Aptos Coin".to_string(),
             decimals: 8,
         },
     );
@@ -263,11 +266,12 @@ fn test_register_generic_market_with_base_coin_fails() {
     let tusdc_coin = create_coin(
         conn,
         &NewCoin {
-            account_address: "0x7c36a610d1cde8853a692c057e7bd2479ba9d5eeaeceafa24f125c23d2abf942",
-            module_name: "test_usdc",
-            struct_name: "TestUSDCoin",
-            symbol: "tUSDC",
-            name: "Test USDC",
+            account_address: "0x7c36a610d1cde8853a692c057e7bd2479ba9d5eeaeceafa24f125c23d2abf942"
+                .to_string(),
+            module_name: "test_usdc".to_string(),
+            struct_name: "TestUSDCoin".to_string(),
+            symbol: "tUSDC".to_string(),
+            name: "Test USDC".to_string(),
             decimals: 6,
         },
     );

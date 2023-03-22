@@ -14,11 +14,11 @@ pub struct Coin {
 
 #[derive(Insertable, Debug)]
 #[diesel(table_name = coins)]
-pub struct NewCoin<'a> {
-    pub account_address: &'a str,
-    pub module_name: &'a str,
-    pub struct_name: &'a str,
-    pub symbol: &'a str,
-    pub name: &'a str,
+pub struct NewCoin {
+    pub account_address: String,
+    pub module_name: String,
+    pub struct_name: String,
+    pub symbol: String,
+    pub name: String,
     pub decimals: i16,
 }

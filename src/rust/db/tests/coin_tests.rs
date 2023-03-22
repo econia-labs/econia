@@ -16,11 +16,11 @@ fn test_create_coin() {
     reset_tables(conn);
 
     let coin = NewCoin {
-        account_address: "0x1",
-        module_name: "aptos_coin",
-        struct_name: "AptosCoin",
-        symbol: "APT",
-        name: "Aptos Coin",
+        account_address: "0x1".to_string(),
+        module_name: "aptos_coin".to_string(),
+        struct_name: "AptosCoin".to_string(),
+        symbol: "APT".to_string(),
+        name: "Aptos Coin".to_string(),
         decimals: 8,
     };
 

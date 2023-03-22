@@ -12,6 +12,19 @@ pub struct Coin {
     pub decimals: i16,
 }
 
+impl From<Coin> for types::Coin {
+    fn from(value: Coin) -> Self {
+        Self {
+            account_address: value.account_address,
+            module_name: value.module_name,
+            struct_name: value.struct_name,
+            symbol: value.symbol,
+            name: value.name,
+            decimals: value.decimals,
+        }
+    }
+}
+
 #[derive(Insertable, Debug)]
 #[diesel(table_name = coins)]
 pub struct NewCoin {

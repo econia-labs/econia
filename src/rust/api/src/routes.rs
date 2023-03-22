@@ -1,16 +1,51 @@
-use axum::{extract::State, Json};
+use axum::{
+    extract::{Path, State},
+    routing::get,
+    Json, Router,
+};
 use sqlx::{Pool, Postgres};
+use tower::ServiceBuilder;
+use tower_http::{
+    compression::CompressionLayer,
+    cors::{Any, CorsLayer},
+    trace::TraceLayer,
+};
 use types::error::TypeError;
 
-use crate::error::ApiError;
+use crate::{error::ApiError, ws::ws_handler};
 
-pub async fn index() -> String {
+pub fn router(pool: Pool<Postgres>) -> Router {
+    let cors_layer = CorsLayer::new()
+        .allow_methods(Any)
+        .allow_headers(Any)
+        .allow_origin(Any);
+
+    let middleware_stack = ServiceBuilder::new()
+        .layer(CompressionLayer::new())
+        .layer(TraceLayer::new_for_http())
+        .layer(cors_layer);
+
+    Router::new()
+        .route("/", get(index))
+        .route("/markets", get(markets))
+        .route(
+            "/account/:account_address/order-history",
+            get(order_history_by_account),
+        )
+        .route(
+            "/account/:account_address/open-orders",
+            get(open_orders_by_account),
+        )
+        .route("/ws", get(ws_handler))
+        .with_state(pool)
+        .layer(middleware_stack)
+}
+
+async fn index() -> String {
     String::from("Econia backend API")
 }
 
-pub async fn markets(
-    State(pool): State<Pool<Postgres>>,
-) -> Result<Json<Vec<types::Market>>, ApiError> {
+async fn markets(State(pool): State<Pool<Postgres>>) -> Result<Json<Vec<types::Market>>, ApiError> {
     let query_markets = sqlx::query_as!(
         types::QueryMarket,
         r#"
@@ -52,6 +87,78 @@ pub async fn markets(
         .collect::<Result<Vec<types::Market>, TypeError>>()?;
 
     Ok(Json(markets))
+}
+
+async fn order_history_by_account(
+    Path(account_address): Path<String>,
+    State(pool): State<Pool<Postgres>>,
+) -> Result<Json<Vec<types::order::Order>>, ApiError> {
+    let order_history_query = sqlx::query_as!(
+        db::models::order::Order,
+        r#"
+        select
+            market_order_id,
+            market_id,
+            side as "side: db::models::order::Side",
+            size,
+            price,
+            user_address,
+            custodian_id,
+            order_state as "order_state: db::models::order::OrderState",
+            created_at
+        from orders where user_address = $1;
+        "#,
+        account_address
+    )
+    .fetch_all(&pool)
+    .await?;
+
+    if order_history_query.len() == 0 {
+        return Err(ApiError::NotFound);
+    }
+
+    let order_history = order_history_query
+        .into_iter()
+        .map(|v| v.try_into())
+        .collect::<Result<Vec<types::order::Order>, TypeError>>()?;
+
+    Ok(Json(order_history))
+}
+
+async fn open_orders_by_account(
+    Path(account_address): Path<String>,
+    State(pool): State<Pool<Postgres>>,
+) -> Result<Json<Vec<types::order::Order>>, ApiError> {
+    let open_orders_query = sqlx::query_as!(
+        db::models::order::Order,
+        r#"
+        select
+            market_order_id,
+            market_id,
+            side as "side: db::models::order::Side",
+            size,
+            price,
+            user_address,
+            custodian_id,
+            order_state as "order_state: db::models::order::OrderState",
+            created_at
+        from orders where user_address = $1 and order_state = 'open';
+        "#,
+        account_address
+    )
+    .fetch_all(&pool)
+    .await?;
+
+    if open_orders_query.len() == 0 {
+        return Err(ApiError::NotFound);
+    }
+
+    let open_orders = open_orders_query
+        .into_iter()
+        .map(|v| v.try_into())
+        .collect::<Result<Vec<types::order::Order>, TypeError>>()?;
+
+    Ok(Json(open_orders))
 }
 
 #[cfg(test)]

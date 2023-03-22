@@ -6,6 +6,8 @@ use serde::{Deserialize, Serialize};
 pub mod constants;
 pub mod error;
 pub mod events;
+pub mod message;
+pub mod order;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Coin {
@@ -166,11 +168,4 @@ impl TryFrom<QueryMarket> for Market {
             Ok(market)
         }
     }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum Side {
-    Bid,
-    Ask,
 }

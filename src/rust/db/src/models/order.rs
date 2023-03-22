@@ -6,10 +6,20 @@ use diesel_derive_enum::DbEnum;
 use crate::schema::orders;
 
 #[derive(Debug, DbEnum, Clone, PartialEq, Eq, Copy)]
+#[repr(u8)]
 #[ExistingTypePath = "crate::schema::sql_types::Side"]
 pub enum Side {
-    Bid,
     Ask,
+    Bid,
+}
+
+impl From<bool> for Side {
+    fn from(value: bool) -> Self {
+        match value {
+            false => Self::Ask,
+            true => Self::Bid,
+        }
+    }
 }
 
 impl From<types::Side> for Side {

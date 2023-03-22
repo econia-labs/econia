@@ -96,6 +96,7 @@ create type market_event_type as enum ('add', 'remove', 'update');
 -- Corresponds to econia::registry::RecognizedMarketEvent.
 create table recognized_market_events (
     market_id numeric (20) not null primary key,
+    time timestamptz not null,
     event_type market_event_type not null,
     lot_size numeric (20),
     tick_size numeric (20),

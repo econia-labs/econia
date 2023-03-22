@@ -1,12 +1,10 @@
 use diesel::{prelude::*, Connection, PgConnection};
+use models::market::{MarketRegistrationEvent, NewMarketRegistrationEvent};
 use serde::Deserialize;
 
 use crate::models::{
     coin::{Coin, NewCoin},
-    events::{
-        MakerEvent, MarketRegistrationEvent, NewMakerEvent, NewMarketRegistrationEvent,
-        NewTakerEvent, TakerEvent,
-    },
+    events::{MakerEvent, NewMakerEvent, NewTakerEvent, TakerEvent},
 };
 
 pub mod error;

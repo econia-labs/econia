@@ -1,10 +1,11 @@
 use bigdecimal::{BigDecimal, ToPrimitive};
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
+use diesel_derive_enum::DbEnum;
 use field_count::FieldCount;
 use types::{error::TypeError, events};
 
-use crate::schema::market_registration_events;
+use crate::schema::{market_registration_events, recognized_market_events};
 
 #[derive(Clone, Debug, Queryable)]
 pub struct Market {
@@ -88,38 +89,48 @@ impl TryFrom<MarketRegistrationEvent> for events::MarketRegistrationEvent {
 
 #[derive(Insertable, Debug, FieldCount)]
 #[diesel(table_name = market_registration_events)]
-pub struct NewMarketRegistrationEvent<'a> {
+pub struct NewMarketRegistrationEvent {
     pub market_id: BigDecimal,
     pub time: DateTime<Utc>,
-    pub base_account_address: Option<&'a str>,
-    pub base_module_name: Option<&'a str>,
-    pub base_struct_name: Option<&'a str>,
-    pub base_name_generic: Option<&'a str>,
-    pub quote_account_address: &'a str,
-    pub quote_module_name: &'a str,
-    pub quote_struct_name: &'a str,
+    pub base_account_address: Option<String>,
+    pub base_module_name: Option<String>,
+    pub base_struct_name: Option<String>,
+    pub base_name_generic: Option<String>,
+    pub quote_account_address: String,
+    pub quote_module_name: String,
+    pub quote_struct_name: String,
     pub lot_size: BigDecimal,
     pub tick_size: BigDecimal,
     pub min_size: BigDecimal,
     pub underwriter_id: BigDecimal,
 }
 
-impl<'a> From<&'a events::MarketRegistrationEvent> for NewMarketRegistrationEvent<'a> {
-    fn from(value: &'a events::MarketRegistrationEvent) -> Self {
-        Self {
-            market_id: value.market_id.into(),
-            time: value.time,
-            base_account_address: value.base_account_address.as_deref(),
-            base_module_name: value.base_module_name.as_deref(),
-            base_struct_name: value.base_struct_name.as_deref(),
-            base_name_generic: value.base_name_generic.as_deref(),
-            quote_account_address: &value.quote_account_address,
-            quote_module_name: &value.quote_module_name,
-            quote_struct_name: &value.quote_struct_name,
-            lot_size: value.lot_size.into(),
-            tick_size: value.tick_size.into(),
-            min_size: value.min_size.into(),
-            underwriter_id: value.underwriter_id.into(),
-        }
-    }
+#[derive(Debug, DbEnum, Clone, Copy, PartialEq, Eq)]
+#[repr(u8)]
+#[ExistingTypePath = "crate::schema::sql_types::MarketEventType"]
+pub enum MarketEventType {
+    Add,
+    Remove,
+    Update,
+}
+
+#[derive(Clone, Debug, Queryable)]
+pub struct RecognizedMarketEvent {
+    pub market_id: BigDecimal,
+    pub time: DateTime<Utc>,
+    pub event_type: MarketEventType,
+    pub lot_size: BigDecimal,
+    pub tick_size: BigDecimal,
+    pub min_size: BigDecimal,
+}
+
+#[derive(Insertable, Debug, FieldCount)]
+#[diesel(table_name = recognized_market_events)]
+pub struct NewRecognizedMarketEvent {
+    pub market_id: BigDecimal,
+    pub time: DateTime<Utc>,
+    pub event_type: MarketEventType,
+    pub lot_size: BigDecimal,
+    pub tick_size: BigDecimal,
+    pub min_size: BigDecimal,
 }

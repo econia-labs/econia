@@ -108,6 +108,7 @@ diesel::table! {
 
     recognized_market_events (market_id) {
         market_id -> Numeric,
+        time -> Timestamptz,
         event_type -> MarketEventType,
         lot_size -> Nullable<Numeric>,
         tick_size -> Nullable<Numeric>,

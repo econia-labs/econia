@@ -1,0 +1,12 @@
+# git
+.git/
+.gitignore
+
+/target
+
+# env files
+.env
+.env.*
+
+# jetbrains settings
+.idea/

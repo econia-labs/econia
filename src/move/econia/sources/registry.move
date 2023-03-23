@@ -281,7 +281,7 @@ module econia::registry {
         market_id: u64,
         /// Number of base units exchanged per lot.
         lot_size: u64,
-        /// Number of quote units exchanged per tick.
+        // Number of quote units exchanged per tick.
         tick_size: u64,
         /// Minimum number of lots per order.
         min_size: u64,

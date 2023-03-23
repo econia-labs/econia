@@ -119,9 +119,9 @@ pub struct RecognizedMarketEvent {
     pub market_id: BigDecimal,
     pub time: DateTime<Utc>,
     pub event_type: MarketEventType,
-    pub lot_size: BigDecimal,
-    pub tick_size: BigDecimal,
-    pub min_size: BigDecimal,
+    pub lot_size: Option<BigDecimal>,
+    pub tick_size: Option<BigDecimal>,
+    pub min_size: Option<BigDecimal>,
 }
 
 #[derive(Insertable, Debug, FieldCount)]
@@ -130,7 +130,7 @@ pub struct NewRecognizedMarketEvent {
     pub market_id: BigDecimal,
     pub time: DateTime<Utc>,
     pub event_type: MarketEventType,
-    pub lot_size: BigDecimal,
-    pub tick_size: BigDecimal,
-    pub min_size: BigDecimal,
+    pub lot_size: Option<BigDecimal>,
+    pub tick_size: Option<BigDecimal>,
+    pub min_size: Option<BigDecimal>,
 }

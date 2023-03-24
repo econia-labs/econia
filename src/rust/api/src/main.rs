@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 
 use futures_util::StreamExt;
 use serde::Deserialize;
-use sqlx::PgPool;
+use sqlx::{PgPool, Pool, Postgres};
 use tokio::sync::broadcast;
 use tracing_subscriber::prelude::*;
 use types::order::Order;
@@ -18,6 +18,12 @@ pub struct Config {
     port: u16,
     database_url: String,
     redis_url: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct AppState {
+    pub pool: Pool<Postgres>,
+    pub sender: broadcast::Sender<Order>, // TODO add internal message type
 }
 
 pub fn load_config() -> Config {
@@ -47,7 +53,8 @@ async fn main() {
     let (btx, brx) = broadcast::channel(16);
     let _conn = start_redis_channels(config.redis_url, btx.clone()).await;
 
-    let app = router(pool, btx);
+    let state = AppState { pool, sender: btx };
+    let app = router(state);
     let addr = SocketAddr::from(([0, 0, 0, 0], config.port));
 
     tokio::spawn(async move {

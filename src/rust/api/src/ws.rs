@@ -3,23 +3,30 @@ use std::net::SocketAddr;
 use axum::{
     extract::{
         ws::{Message, WebSocket},
-        ConnectInfo, WebSocketUpgrade,
+        ConnectInfo, State, WebSocketUpgrade,
     },
     response::IntoResponse,
 };
 use futures_util::{SinkExt, StreamExt};
 use regex::Regex;
-use types::message::{InboundMessage, OutboundMessage};
+use tokio::sync::broadcast;
+use types::{
+    message::{InboundMessage, OutboundMessage},
+    order::Order,
+};
+
+use crate::AppState;
 
 pub async fn ws_handler(
     ws: WebSocketUpgrade,
+    State(state): State<AppState>,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
 ) -> impl IntoResponse {
     tracing::info!("new websocket connection with client {}", addr);
-    ws.on_upgrade(move |ws| handle_socket(ws, addr))
+    ws.on_upgrade(move |ws| handle_socket(ws, state.sender, addr))
 }
 
-async fn handle_socket(ws: WebSocket, who: SocketAddr) {
+async fn handle_socket(ws: WebSocket, sender: broadcast::Sender<Order>, who: SocketAddr) {
     let (mut sender, mut receiver) = ws.split();
 
     while let Some(Ok(msg)) = receiver.next().await {

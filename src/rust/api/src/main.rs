@@ -44,13 +44,11 @@ async fn main() {
         .await
         .expect("Could not connect to DATABASE_URL");
 
-    let app = router(pool);
-
-    let addr = SocketAddr::from(([0, 0, 0, 0], config.port));
-
     let (btx, brx) = broadcast::channel(16);
+    let _conn = start_redis_channels(config.redis_url, btx.clone()).await;
 
-    let _conn = start_redis_channels(config.redis_url, btx).await;
+    let app = router(pool, btx);
+    let addr = SocketAddr::from(([0, 0, 0, 0], config.port));
 
     tokio::spawn(async move {
         log_redis_messages(brx).await;

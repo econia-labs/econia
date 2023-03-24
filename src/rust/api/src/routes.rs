@@ -4,6 +4,7 @@ use axum::{
     Json, Router,
 };
 use sqlx::{Pool, Postgres};
+use tokio::sync::broadcast;
 use tower::ServiceBuilder;
 use tower_http::{
     compression::CompressionLayer,
@@ -14,7 +15,7 @@ use types::error::TypeError;
 
 use crate::{error::ApiError, ws::ws_handler};
 
-pub fn router(pool: Pool<Postgres>) -> Router {
+pub fn router(pool: Pool<Postgres>, sender: broadcast::Sender<types::order::Order>) -> Router {
     let cors_layer = CorsLayer::new()
         .allow_methods(Any)
         .allow_headers(Any)
@@ -38,6 +39,7 @@ pub fn router(pool: Pool<Postgres>) -> Router {
         )
         .route("/ws", get(ws_handler))
         .with_state(pool)
+        .with_state(sender)
         .layer(middleware_stack)
 }
 

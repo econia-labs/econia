@@ -151,6 +151,17 @@ function publish {
     set_econia_address $docgen_address # Set DocGen address in manifest.
 }
 
+# Format Markdown code.
+function format_code_markdown {
+    echo "Formatting Markdown" # Print notice.
+    # Pass to mdformat all Markdown files not from excluded patterns.
+    find . -name "*.md" \
+        ! -path "*node_modules*" \
+        ! -path "*move/*/doc/*" \
+        ! -path "doc/doc-site/src/pages/*" |
+        xargs poetry run mdformat
+}
+
 # Format Python code.
 function format_code_python {
     echo "Formatting Python code" # Print notice.
@@ -201,6 +212,7 @@ function format_code_typescript {
 
 # Format all code.
 function format_code {
+    format_code_markdown
     format_code_python
     format_code_rust
     format_code_shell

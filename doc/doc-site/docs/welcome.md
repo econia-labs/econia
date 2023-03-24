@@ -47,25 +47,23 @@ Stand by for more documentation, and in the meantime, check out the [modules pag
 As of 2022-12-23, Econia is initialized on the Aptos Testnet as follows:
 
 | Field      | Value                                                                |
-|------------|----------------------------------------------------------------------|
+| ---------- | -------------------------------------------------------------------- |
 | Account    | [0x3c04538036604862c67261221a6167fa4ae5121d3649e29b330fa8c248b66200] |
 | Public key | `0x86a82c05d5d89b65e684db85cfb77e8475d99b97ef31de5ae8bdf6152b2f3974` |
 
 ## External resources
 
-* [Discord]
-* [GitHub]
-* [Medium]
-* [Twitter]
-
-<!---Alphabetized reference links-->
+- [Discord]
+- [GitHub]
+- [Medium]
+- [Twitter]
 
 [0x3c04538036604862c67261221a6167fa4ae5121d3649e29b330fa8c248b66200]: https://explorer.aptoslabs.com/account/0x3c04538036604862c67261221a6167fa4ae5121d3649e29b330fa8c248b66200?network=testnet
-[Aptos]:                                                              https://aptos.dev
-[Discord]:                                                            https://discord.gg/econia
-[GitHub]:                                                             https://github.com/econia-labs/econia
-[Medium]:                                                             https://medium.com/econialabs
-[modules page]:                                                       modules
-[three independent audits]:                                           security
-[Teach yourself Move on Aptos]:                                       https://github.com/econia-labs/teach-yourself-move
-[Twitter]:                                                            https://twitter.com/econialabs
+[aptos]: https://aptos.dev
+[discord]: https://discord.gg/econia
+[github]: https://github.com/econia-labs/econia
+[medium]: https://medium.com/econialabs
+[modules page]: modules
+[teach yourself move on aptos]: https://github.com/econia-labs/teach-yourself-move
+[three independent audits]: security
+[twitter]: https://twitter.com/econialabs

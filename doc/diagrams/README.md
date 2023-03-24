@@ -2,20 +2,18 @@ This directory contains assorted diagrams, most of which are generated via [`mer
 
 ## General
 
-* [`mermaid.js`] diagrams are generated declaratively, and may present occasional rendering artifacts.
-* Most [`mermaid.js`] tutorials online present an `%%{init:}` directive on a single line, despite excessive line length.
-* `SVG` diagrams can be generated via [mermaid.live]
+- [`mermaid.js`] diagrams are generated declaratively, and may present occasional rendering artifacts.
+- Most [`mermaid.js`] tutorials online present an `%%{init:}` directive on a single line, despite excessive line length.
+- `SVG` diagrams can be generated via [mermaid.live]
 
 ## Representative diagrams
 
-* [matching.md] has a color theme matched to Econia's doc site schema.
-* [matching-engine.md] (deprecated) has complexly-nested subgraphs and different classes.
+- [matching.md] has a color theme matched to Econia's doc site schema.
+- [matching-engine.md] (deprecated) has complexly-nested subgraphs and different classes.
 
-<!---Alphabetized reference links-->
-
-[`images`]:              images
-[`mermaid.js`]:          https://mermaid-js.github.io
-[`src`]:                 src
-[mermaid.live]:          https://mermaid.live
-[matching.md]:           src/matching.md
-[matching-engine.md]:    src/scraps/matching-engine.md
+[matching-engine.md]: src/scraps/matching-engine.md
+[matching.md]: src/matching.md
+[mermaid.live]: https://mermaid.live
+[`images`]: images
+[`mermaid.js`]: https://mermaid-js.github.io
+[`src`]: src

@@ -3,22 +3,23 @@ Business Source License 1.1
 License text copyright (c) 2017 MariaDB Corporation Ab, All Rights Reserved.
 "Business Source License" is a trademark of MariaDB Corporation Ab.
 
------------------------------------------------------------------------------
+______________________________________________________________________
 
 Parameters
 
 Licensor:             Econia Labs, Inc.
 
 Licensed Work:        Econia Protocol
-                      The Licensed Work is (c) 2022 Econia Labs, Inc.
+
+Copyright:            The Licensed Work is (c) 2023 Econia Labs, Inc.
 
 Additional Use Grant: None
 
-Change Date:          September 21, 2024
+Change Date:          March 24, 2025
 
 Change License:       Apache License Version 2.0
 
------------------------------------------------------------------------------
+______________________________________________________________________
 
 Terms
 
@@ -66,7 +67,7 @@ MariaDB hereby grants you permission to use this License’s text to license
 your works, and to refer to it using the trademark "Business Source License",
 as long as you comply with the Covenants of Licensor below.
 
------------------------------------------------------------------------------
+______________________________________________________________________
 
 Covenants of Licensor
 
@@ -81,15 +82,15 @@ other recipients of the licensed work to be provided by Licensor:
    later version. Licensor may specify additional Change Licenses without
    limitation.
 
-2. To either: (a) specify an additional grant of rights to use that does not
+1. To either: (a) specify an additional grant of rights to use that does not
    impose any additional restriction on the right granted in this License, as
    the Additional Use Grant; or (b) insert the text "None".
 
-3. To specify a Change Date.
+1. To specify a Change Date.
 
-4. Not to modify this License in any other way.
+1. Not to modify this License in any other way.
 
------------------------------------------------------------------------------
+______________________________________________________________________
 
 Notice
 

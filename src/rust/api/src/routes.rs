@@ -113,7 +113,7 @@ async fn order_history_by_account(
     .fetch_all(&pool)
     .await?;
 
-    if order_history_query.len() == 0 {
+    if order_history_query.is_empty() {
         return Err(ApiError::NotFound);
     }
 
@@ -149,7 +149,7 @@ async fn open_orders_by_account(
     .fetch_all(&pool)
     .await?;
 
-    if open_orders_query.len() == 0 {
+    if open_orders_query.is_empty() {
         return Err(ApiError::NotFound);
     }
 

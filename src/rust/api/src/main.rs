@@ -1,8 +1,11 @@
 use std::net::SocketAddr;
 
+use futures_util::StreamExt;
 use serde::Deserialize;
 use sqlx::PgPool;
+use tokio::sync::broadcast;
 use tracing_subscriber::prelude::*;
+use types::order::Order;
 
 use crate::routes::router;
 
@@ -14,6 +17,7 @@ mod ws;
 pub struct Config {
     port: u16,
     database_url: String,
+    redis_url: String,
 }
 
 pub fn load_config() -> Config {
@@ -44,9 +48,48 @@ async fn main() {
 
     let addr = SocketAddr::from(([0, 0, 0, 0], config.port));
 
+    let (btx, brx) = broadcast::channel(16);
+
+    let _conn = start_redis_channels(config.redis_url, btx).await;
+
     tracing::info!("Listening on http://{}", addr);
     axum::Server::bind(&addr)
         .serve(app.into_make_service_with_connect_info::<SocketAddr>())
         .await
         .unwrap();
+}
+
+async fn start_redis_channels(
+    redis_url: String,
+    tx: broadcast::Sender<Order>,
+) -> redis::aio::MultiplexedConnection {
+    let client = redis::Client::open(redis_url).expect("could not start redis client");
+    let conn = client
+        .get_multiplexed_tokio_connection()
+        .await
+        .expect("could not connect to redis");
+
+    // TODO iterate over every channel
+    tokio::spawn(async move {
+        let pubsub_conn = client.get_async_connection().await.unwrap();
+
+        let mut pubsub = pubsub_conn.into_pubsub();
+        pubsub.subscribe("orders").await.unwrap();
+
+        tracing::info!("subscribed to channel `orders` on redis");
+
+        let mut stream = pubsub.on_message();
+
+        while let Some(msg) = stream.next().await {
+            let payload = msg.get_payload::<String>().unwrap();
+            tracing::info!("received message from redis");
+            tracing::info!("{}", payload);
+
+            let order: Order = serde_json::from_str(&payload).unwrap();
+            tracing::info!("{:?}", order);
+
+            tx.send(order).unwrap();
+        }
+    });
+    conn
 }

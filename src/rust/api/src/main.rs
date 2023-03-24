@@ -52,6 +52,10 @@ async fn main() {
 
     let _conn = start_redis_channels(config.redis_url, btx).await;
 
+    tokio::spawn(async move {
+        log_redis_messages(brx).await;
+    });
+
     tracing::info!("Listening on http://{}", addr);
     axum::Server::bind(&addr)
         .serve(app.into_make_service_with_connect_info::<SocketAddr>())
@@ -92,4 +96,11 @@ async fn start_redis_channels(
         }
     });
     conn
+}
+
+async fn log_redis_messages(mut rx: broadcast::Receiver<Order>) {
+    while let Ok(msg) = rx.recv().await {
+        let s = serde_json::to_string(&msg).unwrap();
+        tracing::info!("received message from redis: {}", s);
+    }
 }

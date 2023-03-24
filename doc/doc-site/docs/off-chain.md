@@ -5,7 +5,7 @@
 Econia emits two types of registry events:
 
 | Event                       | Event handle          | Field name                   |
-|-----------------------------|-----------------------|------------------------------|
+| --------------------------- | --------------------- | ---------------------------- |
 | [`MarketRegistrationEvent`] | [`Registry`]          | `market_registration_events` |
 | [`RecognizedMarketEvent`]   | [`RecognizedMarkets`] | `recognized_market_events`   |
 
@@ -17,7 +17,7 @@ Hence they can be easily queried via the Aptos node [events by event handle API]
 Econia emits two types of market events:
 
 | Event          | Event handle  | Field name     |
-|----------------|---------------|----------------|
+| -------------- | ------------- | -------------- |
 | [`MakerEvent`] | [`OrderBook`] | `maker_events` |
 | [`TakerEvent`] | [`OrderBook`] | `taker_events` |
 
@@ -34,7 +34,7 @@ Since the resource account is initialized with an `aptos_framework::account::Acc
 Hence, for 1-indexed market id $n$, maker events have creation number $2n$ and taker events have creation number $2n + 1$:
 
 | Market ID | [`MakerEvent`] handle creation number | [`TakerEvent`] handle creation number |
-|-----------|---------------------------------------|---------------------------------------|
+| --------- | ------------------------------------- | ------------------------------------- |
 | 1         | 2                                     | 3                                     |
 | 2         | 4                                     | 5                                     |
 | 10        | 20                                    | 21                                    |
@@ -65,20 +65,17 @@ A suggested method for indexing an [`OrderBook`] in real time involves the [`ind
 
 Alternatively, all [`MakerEvent`] and [`TakerEvent`] emissions since the inception of the market can be applied consecutively.
 
-<!---Alphabetized reference links-->
-
-[events by creation number API]: https://fullnode.testnet.aptoslabs.com/v1/spec#/operations/get_events_by_creation_number
-[events by event handle API]:    https://fullnode.testnet.aptoslabs.com/v1/spec#/operations/get_events_by_event_handle
-[Hippo's `move-to-ts` tool]:     https://github.com/hippospace/move-to-ts
-[welcome page]:                  welcome.md
-[`index_orders_sdk()`]:          https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_index_orders_sdk
-[`MakerEvent`]:                  https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_MakerEvent
-[`MarketRegistrationEvent`]:     https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_MarketRegistrationEvent
-[`Move.toml`]:                   https://github.com/econia-labs/econia/tree/main/src/move/econia/Move.toml
-[`OrderBook`]:                   https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_OrderBook
-[`OrderBooks`]:                  https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_OrderBooks
-[`RecognizedMarketEvent`]:       https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_RecognizedMarketEvent
-[`RecognizedMarkets`]:           https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_RecognizedMarkets
-[`Registry`]:                    https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_Registry
-[`SignerCapabilityStore`]:       https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/resource_account.md#0xc0deb00c_resource_account_SignerCapabilityStore
-[`TakerEvent`]:                  https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_TakerEvent
+[events by creation number api]: https://fullnode.testnet.aptoslabs.com/v1/spec#/operations/get_events_by_creation_number
+[events by event handle api]: https://fullnode.testnet.aptoslabs.com/v1/spec#/operations/get_events_by_event_handle
+[hippo's `move-to-ts` tool]: https://github.com/hippospace/move-to-ts
+[welcome page]: welcome.md
+[`index_orders_sdk()`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_index_orders_sdk
+[`makerevent`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_MakerEvent
+[`marketregistrationevent`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_MarketRegistrationEvent
+[`orderbooks`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_OrderBooks
+[`orderbook`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_OrderBook
+[`recognizedmarketevent`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_RecognizedMarketEvent
+[`recognizedmarkets`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_RecognizedMarkets
+[`registry`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_Registry
+[`signercapabilitystore`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/resource_account.md#0xc0deb00c_resource_account_SignerCapabilityStore
+[`takerevent`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_TakerEvent

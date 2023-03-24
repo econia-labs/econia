@@ -5,5 +5,5 @@ Hence [registration] APIs come before [trading] APIs, etc.
 
 <!---Alphabetized reference links-->
 
-[registration]: ./registration
-[trading]:      ./trading
+[registration]: registration
+[trading]: trading

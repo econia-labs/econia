@@ -52,46 +52,46 @@ See [`scripts.sh`] for more commands.
 
 1. Run the `init` command for [`scripts.sh`]:
 
-    ```bash
-    # You should see output like this if you have already initialized.
-    s init
-    Initializing developer environment
-    brew already installed
-    aptos already installed
-    entr already installed
-    poetry already installed
-    shfmt already installed
-    Installing Python package
-    Installing dependencies from lock file
+   ```bash
+   # You should see output like this if you have already initialized.
+   s init
+   Initializing developer environment
+   brew already installed
+   aptos already installed
+   entr already installed
+   poetry already installed
+   shfmt already installed
+   Installing Python package
+   Installing dependencies from lock file
 
-    No dependencies to install or update
+   No dependencies to install or update
 
-    Installing the current project: econia (1.0.0)
-    ```
+   Installing the current project: econia (1.0.0)
+   ```
 
-2. Now you should be able to run all Move tests:
+1. Now you should be able to run all Move tests:
 
-    ```bash
-    # Run all Move tests.
-    s tm
-    INCLUDING DEPENDENCY AptosFramework
-    INCLUDING DEPENDENCY AptosStdlib
-    INCLUDING DEPENDENCY MoveStdlib
-    BUILDING Econia
-    Running Move unit tests
-    [ PASS    ] 0x0::tablist::test_destroy_empty_not_empty
-    [ PASS    ] 0x0::tablist::test_iterate
-    ...
-    ```
+   ```bash
+   # Run all Move tests.
+   s tm
+   INCLUDING DEPENDENCY AptosFramework
+   INCLUDING DEPENDENCY AptosStdlib
+   INCLUDING DEPENDENCY MoveStdlib
+   BUILDING Econia
+   Running Move unit tests
+   [ PASS    ] 0x0::tablist::test_destroy_empty_not_empty
+   [ PASS    ] 0x0::tablist::test_iterate
+   ...
+   ```
 
 ### Freeing up disk space
 
 Installing all of the dependencies necessary to develop Econia can quickly take up disk space.
 To clean up cache files and intermediate artifacts, consider the following tools:
 
-* [`kondo`]
-* [`cargo cache`]
-* [`detox`]
+- [`kondo`]
+- [`cargo cache`]
+- [`detox`]
 
 In particular, if using a Mac [local Time Machine snapshots] of intermediate artifacts may lead to excessive "purgable" disk space should substantial time pass between backups.
 It is possible to disable snapshots as mentioned in the support thread, but backing up to Time Machine should also help purge snapshots of intermediate artifacts, once the above tools are invoked.
@@ -132,17 +132,17 @@ Hence, older commits can be checked out and experimented with, but mostly they a
 
 <!---Alphabetized reference links-->
 
-[`cargo cache`]:                            https://github.com/matthiaskrgr/cargo-cache
-[`detox`]:                                  https://github.com/whitfin/detox
-[`doc/doc-site/docs`]:                      doc/doc-site/docs
-[`kondo`]:                                  https://github.com/tbillington/kondo
-[`src/jupyter`]:                            src/jupyter
-[`src/move/econia`]:                        src/move/econia
-[`src/move/econia/doc`]:                    src/move/econia/doc
-[`src/python/econia`]:                      src/python/econia
-[`src/typescript/sdk`]:                     src/typescript/sdk
-[`src/rust`]:                               src/rust
-[Poetry]:                                   https://python-poetry.org/
-[local Time Machine snapshots]:             https://discussions.apple.com/thread/7676695
-[`scripts.sh`]:                             scripts.sh
-[Teach yourself Move on Aptos]:             https://github.com/econia-labs/teach-yourself-move
+[local time machine snapshots]: https://discussions.apple.com/thread/7676695
+[poetry]: https://python-poetry.org/
+[teach yourself move on aptos]: https://github.com/econia-labs/teach-yourself-move
+[`cargo cache`]: https://github.com/matthiaskrgr/cargo-cache
+[`detox`]: https://github.com/whitfin/detox
+[`doc/doc-site/docs`]: doc/doc-site/docs
+[`kondo`]: https://github.com/tbillington/kondo
+[`scripts.sh`]: scripts.sh
+[`src/jupyter`]: src/jupyter
+[`src/move/econia/doc`]: src/move/econia/doc
+[`src/move/econia`]: src/move/econia
+[`src/python/econia`]: src/python/econia
+[`src/rust`]: src/rust
+[`src/typescript/sdk`]: src/typescript/sdk

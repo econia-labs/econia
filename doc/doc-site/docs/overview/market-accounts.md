@@ -10,22 +10,22 @@ A user's [`MarketAccount`] tracks the amount of base and quote assets held, as w
 Instead, a separate [`Collateral`] resource is maintained for each relevant coin asset.
 This includes:
 
-* The quote coin type for the market.
-* The base coin type for the market, if the base type is not [`GenericAsset`].
+- The quote coin type for the market.
+- The base coin type for the market, if the base type is not [`GenericAsset`].
 
 Coin [`Collateral`] is stored separately from a user's [`MarketAccount`] to reduce type arguments for assorted functions, and is routed directly between counterparties during a trade.
 More specifically, when a user deposits assets to Econia for trading, their assets are held locally rather than in a global vault for the entire order book.
 Through this direct peer-to-peer trading approach, Econia:
 
-* Eliminates transaction collisions that would otherwise result from deposits and withdrawals against a global resource.
-* Reduces the size of a hypothetical economic attack target (a central vault) by distributing its contents across all users.
+- Eliminates transaction collisions that would otherwise result from deposits and withdrawals against a global resource.
+- Reduces the size of a hypothetical economic attack target (a central vault) by distributing its contents across all users.
 
 ## Asset counts
 
 An Econia [`MarketAccount`] tracks a user's open asks and bids, as well as the following fields:
 
 | Field           | Meaning                                               |
-|-----------------|-------------------------------------------------------|
+| --------------- | ----------------------------------------------------- |
 | Base total      | Total base asset holdings                             |
 | Base available  | Base asset holdings available for withdrawal          |
 | Base ceiling    | Amount base total increases to if all open bids fill  |
@@ -36,12 +36,12 @@ An Econia [`MarketAccount`] tracks a user's open asks and bids, as well as the f
 For example, consider the following sequence:
 
 1. A user opens a [`MarketAccount`] for an `APT/USDC` market.
-2. The user deposits 100.00 `USDC`.
-3. The user places a bid for 5.00 `APT` at a price of 4.00 `USDC` per `APT` (20.00 `USDC` total).
-4. The bid is completely filled.
+1. The user deposits 100.00 `USDC`.
+1. The user places a bid for 5.00 `APT` at a price of 4.00 `USDC` per `APT` (20.00 `USDC` total).
+1. The bid is completely filled.
 
 | Field           | Before deposit | After deposit | After bid placed | After bid fills |
-|-----------------|----------------|---------------|------------------|-----------------|
+| --------------- | -------------- | ------------- | ---------------- | --------------- |
 | Base total      | 0.00           | 0.00          | 0.00             | 5.00            |
 | Base available  | 0.00           | 0.00          | 0.00             | 5.00            |
 | Base ceiling    | 0.00           | 0.00          | 5.00             | 5.00            |
@@ -73,14 +73,12 @@ the amount of collateral required to cover the trade must simply be passed as an
 
 In the case of a [`GenericAsset`] for the base asset on a market, an [underwriter] is required to certify base asset amounts, either within a [`MarketAccount`] or during a swap.
 
-<!---Alphabetized reference links-->
-
-[custodian]:                 ./registry#custodians
-[integer units]:             ./orders#units-and-market-parameters
-[market]:                    ./registry#markets
-[underwriter]:               ./registry#underwriters
+[custodian]: ./registry#custodians
+[integer units]: ./orders#units-and-market-parameters
+[market]: ./registry#markets
+[underwriter]: ./registry#underwriters
 [user module documentation]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/user.md
-[`Collateral`]:              https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/user.md#0xc0deb00c_user_Collateral
-[`GenericAsset`]:            ./registry#underwriters
-[`MarketAccount`]:           https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/user.md#0xc0deb00c_user_MarketAccount
-[`MarketAccounts`]:          https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/user.md#0xc0deb00c_user_MarketAccounts
+[`collateral`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/user.md#0xc0deb00c_user_Collateral
+[`genericasset`]: ./registry#underwriters
+[`marketaccounts`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/user.md#0xc0deb00c_user_MarketAccounts
+[`marketaccount`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/user.md#0xc0deb00c_user_MarketAccount

@@ -198,7 +198,7 @@ mod tests {
             .await
             .expect("Could not connect to DATABASE_URL");
 
-        let (tx, rx) = broadcast::channel(16);
+        let (tx, _) = broadcast::channel(16);
 
         let state = AppState { pool, sender: tx };
 

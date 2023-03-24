@@ -26,8 +26,16 @@ pub async fn ws_handler(
     ws.on_upgrade(move |ws| handle_socket(ws, state.sender, addr))
 }
 
-async fn handle_socket(ws: WebSocket, sender: broadcast::Sender<Order>, who: SocketAddr) {
+async fn handle_socket(ws: WebSocket, btx: broadcast::Sender<Order>, who: SocketAddr) {
     let (mut sender, mut receiver) = ws.split();
+    let mut brx = btx.subscribe();
+
+    tokio::spawn(async move {
+        while let Ok(msg) = brx.recv().await {
+            let s = serde_json::to_string(&msg).unwrap();
+            sender.send(Message::Text(s)).await.unwrap();
+        }
+    });
 
     while let Some(Ok(msg)) = receiver.next().await {
         match msg {
@@ -38,7 +46,7 @@ async fn handle_socket(ws: WebSocket, sender: broadcast::Sender<Order>, who: Soc
                             tracing::info!("received ping message from client {}", who);
                             let msg_o = OutboundMessage::Pong;
                             let msg_str = serde_json::to_string(&msg_o).unwrap();
-                            sender.send(Message::Text(msg_str)).await.unwrap();
+                            // sender.send(Message::Text(msg_str)).await.unwrap();
                         }
                         _ => {
                             // TODO
@@ -55,7 +63,7 @@ async fn handle_socket(ws: WebSocket, sender: broadcast::Sender<Order>, who: Soc
                         message: "could not parse message".into(),
                     };
                     let msg_str = serde_json::to_string(&msg_o).unwrap();
-                    sender.send(Message::Text(msg_str)).await.unwrap();
+                    // sender.send(Message::Text(msg_str)).await.unwrap();
                 }
             }
             _ => {

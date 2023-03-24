@@ -15,8 +15,6 @@ Econia modules `use` each other as follows:
 
 ![](/img/modules.svg)
 
-<!---Alphabetized reference links-->
-
 [assets.md]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/assets.md
 [assets.move]: https://github.com/econia-labs/econia/tree/main/src/move/econia/sources/assets.move
 [avl_queue.md]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/avl_queue.md

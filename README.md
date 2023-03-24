@@ -130,8 +130,6 @@ Interactive Jupyter notebook examples are at [`src/jupyter`], listed in increasi
 The earliest notebooks are subject to breaking changes at the most recent commit, but they have been archived so as to be functional at the commit when they where finalized.
 Hence, older commits can be checked out and experimented with, but mostly they are useful for harvesting old code patterns.
 
-<!---Alphabetized reference links-->
-
 [local time machine snapshots]: https://discussions.apple.com/thread/7676695
 [poetry]: https://python-poetry.org/
 [teach yourself move on aptos]: https://github.com/econia-labs/teach-yourself-move

@@ -47,8 +47,6 @@ Econia's docs are built using [Docusaurus], and are served through [Cloudflare P
 
 1. Open http://localhost:3000
 
-<!---Alphabetized reference links-->
-
 [cloudflare pages]: https://pages.cloudflare.com/
 [docusaurus]: https://docusaurus.io/
 [homebrew]: https://brew.sh

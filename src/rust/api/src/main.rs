@@ -5,7 +5,7 @@ use serde::Deserialize;
 use sqlx::{PgPool, Pool, Postgres};
 use tokio::sync::broadcast;
 use tracing_subscriber::prelude::*;
-use types::order::Order;
+use types::message::Update;
 
 use crate::routes::router;
 
@@ -23,7 +23,7 @@ pub struct Config {
 #[derive(Debug, Clone)]
 pub struct AppState {
     pub pool: Pool<Postgres>,
-    pub sender: broadcast::Sender<Order>, // TODO add internal message type
+    pub sender: broadcast::Sender<Update>,
 }
 
 pub fn load_config() -> Config {
@@ -70,7 +70,7 @@ async fn main() {
 
 async fn start_redis_channels(
     redis_url: String,
-    tx: broadcast::Sender<Order>,
+    tx: broadcast::Sender<Update>,
 ) -> redis::aio::MultiplexedConnection {
     let client = redis::Client::open(redis_url).expect("could not start redis client");
     let conn = client
@@ -94,16 +94,16 @@ async fn start_redis_channels(
             tracing::info!("received message from redis");
             tracing::info!("{}", payload);
 
-            let order: Order = serde_json::from_str(&payload).unwrap();
-            tracing::info!("{:?}", order);
+            let update: Update = serde_json::from_str(&payload).unwrap();
+            tracing::info!("{:?}", update);
 
-            tx.send(order).unwrap();
+            tx.send(update).unwrap();
         }
     });
     conn
 }
 
-async fn log_redis_messages(mut rx: broadcast::Receiver<Order>) {
+async fn log_redis_messages(mut rx: broadcast::Receiver<Update>) {
     while let Ok(msg) = rx.recv().await {
         let s = serde_json::to_string(&msg).unwrap();
         tracing::info!("received message from redis: {}", s);

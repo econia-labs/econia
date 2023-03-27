@@ -10,10 +10,7 @@ use axum::{
 use futures_util::{SinkExt, StreamExt};
 use regex::Regex;
 use tokio::sync::broadcast;
-use types::{
-    message::{InboundMessage, OutboundMessage},
-    order::Order,
-};
+use types::message::{InboundMessage, OutboundMessage, Update};
 
 use crate::AppState;
 
@@ -26,7 +23,7 @@ pub async fn ws_handler(
     ws.on_upgrade(move |ws| handle_socket(ws, state.sender, addr))
 }
 
-async fn handle_socket(ws: WebSocket, btx: broadcast::Sender<Order>, who: SocketAddr) {
+async fn handle_socket(ws: WebSocket, btx: broadcast::Sender<Update>, who: SocketAddr) {
     let (mut sender, mut receiver) = ws.split();
     let mut brx = btx.subscribe();
 

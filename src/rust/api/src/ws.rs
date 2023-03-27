@@ -93,7 +93,7 @@ async fn handle_socket(ws: WebSocket, btx: broadcast::Sender<Update>, who: Socke
     let brx = btx.subscribe();
     let (mtx, mrx) = mpsc::channel(16);
 
-    tokio::spawn(async move {
+    let mut fwd_task = tokio::spawn(async move {
         if let Err(e) = forward_message_handler(sender, mrx).await {
             tracing::error!(
                 "websocket connection with client {} failed on message forward task: {}",
@@ -104,7 +104,7 @@ async fn handle_socket(ws: WebSocket, btx: broadcast::Sender<Update>, who: Socke
     });
 
     let mtx1 = mtx.clone();
-    tokio::spawn(async move {
+    let mut send_task = tokio::spawn(async move {
         if let Err(e) = outbound_message_handler(brx, mtx1).await {
             tracing::error!(
                 "websocket connection with client {} failed on outbound message handler: {}",
@@ -114,7 +114,7 @@ async fn handle_socket(ws: WebSocket, btx: broadcast::Sender<Update>, who: Socke
         }
     });
 
-    tokio::spawn(async move {
+    let mut recv_task = tokio::spawn(async move {
         if let Err(e) = inbound_message_handler(receiver, mtx, who).await {
             tracing::error!(
                 "websocket connection with client {} failed on inbound message handler: {}",
@@ -123,4 +123,22 @@ async fn handle_socket(ws: WebSocket, btx: broadcast::Sender<Update>, who: Socke
             );
         }
     });
+
+    // if one of these tasks end, abort the others
+    tokio::select! {
+        _ = &mut send_task => {
+            fwd_task.abort();
+            recv_task.abort();
+        }
+        _ = &mut recv_task => {
+            fwd_task.abort();
+            send_task.abort();
+        }
+        _ = &mut fwd_task => {
+            recv_task.abort();
+            send_task.abort();
+        }
+    }
+
+    tracing::info!("websocket context for client {} destroyed", who);
 }

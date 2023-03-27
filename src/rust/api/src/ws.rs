@@ -15,7 +15,7 @@ use regex::Regex;
 use tokio::sync::{broadcast, mpsc};
 use types::message::{InboundMessage, OutboundMessage, Update};
 
-use crate::AppState;
+use crate::{error::WebSocketError, AppState};
 
 pub async fn ws_handler(
     ws: WebSocketUpgrade,
@@ -29,28 +29,30 @@ pub async fn ws_handler(
 async fn forward_message_handler(
     mut sender: SplitSink<WebSocket, Message>,
     mut rx: mpsc::Receiver<OutboundMessage>,
-) {
+) -> Result<(), WebSocketError> {
     while let Some(msg) = rx.recv().await {
-        let s = serde_json::to_string(&msg).unwrap();
-        sender.send(Message::Text(s)).await.unwrap();
+        let s = serde_json::to_string(&msg)?;
+        sender.send(Message::Text(s)).await?;
     }
+    Ok(())
 }
 
 async fn outbound_message_handler(
     mut brx: broadcast::Receiver<Update>,
     tx: mpsc::Sender<OutboundMessage>,
-) {
+) -> Result<(), WebSocketError> {
     while let Ok(update) = brx.recv().await {
         let msg = OutboundMessage::Update(update);
-        tx.send(msg).await.unwrap();
+        tx.send(msg).await?;
     }
+    Ok(())
 }
 
 async fn inbound_message_handler(
     mut receiver: SplitStream<WebSocket>,
     tx: mpsc::Sender<OutboundMessage>,
     who: SocketAddr,
-) {
+) -> Result<(), WebSocketError> {
     while let Some(Ok(msg)) = receiver.next().await {
         match msg {
             Message::Text(s) => {
@@ -59,7 +61,7 @@ async fn inbound_message_handler(
                         InboundMessage::Ping => {
                             tracing::info!("received ping message from client {}", who);
                             let msg_o = OutboundMessage::Pong;
-                            tx.send(msg_o).await.unwrap();
+                            tx.send(msg_o).await?;
                         }
                         _ => {
                             // TODO
@@ -75,7 +77,7 @@ async fn inbound_message_handler(
                     let msg_o = OutboundMessage::Error {
                         message: "could not parse message".into(),
                     };
-                    tx.send(msg_o).await.unwrap();
+                    tx.send(msg_o).await?;
                 }
             }
             _ => {
@@ -83,6 +85,7 @@ async fn inbound_message_handler(
             }
         }
     }
+    Ok(())
 }
 
 async fn handle_socket(ws: WebSocket, btx: broadcast::Sender<Update>, who: SocketAddr) {

@@ -12,11 +12,9 @@ The documentation in this section provides a high-level technical overview of Ec
 Throughout the documentation there are links to assorted data structures and functions from Econia's auto-generated [Move module] documentation files.
 For example: [`OrderBook`].
 
-<!---Alphabetized reference links-->
-
-[Aptos]:        https://aptos.dev
-[Block-STM]:    https://arxiv.org/abs/2203.06871
-[Move]:         https://move-language.github.io/move/
-[Move module]:  ../modules
-[`OrderBook`]:  https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#struct-orderbook
+[aptos]: https://aptos.dev
+[block-stm]: https://arxiv.org/abs/2203.06871
+[move]: https://move-language.github.io/move/
+[move module]: ../modules
 [the registry]: registry
+[`orderbook`]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#struct-orderbook

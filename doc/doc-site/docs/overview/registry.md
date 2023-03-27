@@ -15,8 +15,8 @@ Hence market parameters are copied to [`MarketAccount`] and [`OrderBook`] struct
 
 To inspect info about a market from the [`Registry`] in the general case, it should either be done off-chain or via the following functions:
 
-* [`get_market_account_market_info_custodian()`]
-* [`get_market_account_market_info_user()`]
+- [`get_market_account_market_info_custodian()`]
+- [`get_market_account_market_info_user()`]
 
 :::tip
 
@@ -35,7 +35,7 @@ Via this custodian ID approach only a single entity (either signing user or a de
 For example, consider a user with the following market accounts:
 
 | Market ID | Custodian ID     | Authority     |
-|-----------|------------------|---------------|
+| --------- | ---------------- | ------------- |
 | 123       | [`NO_CUSTODIAN`] | Signing user  |
 | 123       | 456              | Custodian 456 |
 | 123       | 789              | Custodian 789 |
@@ -53,7 +53,7 @@ Underwriter operations are facilitated via an [`UnderwriterCapability`] with a u
 Here, an underwriter presides over asset amount verifications for an entire market, in the case of a generic market:
 
 | Market ID | Underwriter ID     | Asset amount verification authority |
-|-----------|--------------------|-------------------------------------|
+| --------- | ------------------ | ----------------------------------- |
 | 123       | [`NO_UNDERWRITER`] | `aptos_framework::coin::Coin` API   |
 | 234       | 456                | Underwriter 456                     |
 | 345       | 789                | Underwriter 789                     |
@@ -65,7 +65,7 @@ Note that the [`MarketInfo`] for a given market must be unique, but this does no
 For example, Econia support registration of the following two pure coin markets:
 
 | Base coin | Quote coin | Lot size    | Tick size   | Minimum order size |
-|-----------|------------|-------------|-------------|--------------------|
+| --------- | ---------- | ----------- | ----------- | ------------------ |
 | `APT`     | `USDC`     | 0.1 `APT`   | 0.01 `USDC` | 0.5 `APT`          |
 | `APT`     | `USDC`     | 0.01 `APT`  | 0.01 `USDC` | 0.05 `APT`         |
 | `APT`     | `USDC`     | 0.001 `APT` | 0.01 `USDC` | 0.005 `APT`        |
@@ -90,7 +90,7 @@ Note that this function also requires an immutable reference to an [underwriter]
 The corresponding [`MarketInfo`] fields generated for the market then correspond to:
 
 | Field               | If base asset is coin                   | If base asset is not coin         |
-|---------------------|-----------------------------------------|-----------------------------------|
+| ------------------- | --------------------------------------- | --------------------------------- |
 | `base_type`         | Phantom `CoinType` type info for `Coin` | [`GenericAsset`] type info        |
 | `base_name_generic` | Empty string                            | Name provided during registration |
 
@@ -102,27 +102,25 @@ for a given [`TradingPair`] there can be only one recognized market, such that, 
 Unlike the [`Registry`], which is a contended global resource, the [`RecognizedMarkets`] is almost always read-only, such that assorted getter functions can be used to look up the recognized market for a given [`TradingPair`].
 Here, users can simply decide what assets they want to trade, then look up the corresponding recognized market ID from the [`RecognizedMarkets`] structure.
 
-<!---Alphabetized reference links-->
-
-[custodians]:                                   #custodians
-[markets]:                                      #markets
-[market size parameters]:                       ./orders#units-and-market-parameters
-[recognized markets]:                           #recognized-markets
-[underwriter]:                                  #underwriters
-[underwriters]:                                 #underwriters
-[`CustodianCapability`]:                        https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_CustodianCapability
-[`GenericAsset`]:                               https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_GenericAsset
-[`MarketAccount`]:                              https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/user.md#0xc0deb00c_user_MarketAccount
-[`MarketInfo`]:                                 https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_MarketInfo
-[`NO_CUSTODIAN`]:                               https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_NO_CUSTODIAN
-[`NO_UNDERWRITER`]:                             https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_NO_UNDERWRITER
-[`OrderBook`]:                                  https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_OrderBook
-[`RecognizedMarkets`]:                          https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_RecognizedMarkets
-[`Registry`]:                                   https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_Registry
-[`TradingPair`]:                                https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_TradingPair
-[`UnderwriterCapability`]:                      https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_UnderwriterCapability
-[`get_market_account_market_info_user()`]:      https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/user.md#0xc0deb00c_user_get_market_account_market_info_user
+[custodians]: #custodians
+[market size parameters]: ./orders#units-and-market-parameters
+[markets]: #markets
+[recognized markets]: #recognized-markets
+[underwriter]: #underwriters
+[underwriters]: #underwriters
+[`custodiancapability`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_CustodianCapability
+[`genericasset`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_GenericAsset
 [`get_market_account_market_info_custodian()`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/user.md#0xc0deb00c_user_get_market_account_market_info_custodian
-[`register_market_base_coin()`]:                https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_register_market_base_coin
+[`get_market_account_market_info_user()`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/user.md#0xc0deb00c_user_get_market_account_market_info_user
+[`marketaccount`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/user.md#0xc0deb00c_user_MarketAccount
+[`marketinfo`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_MarketInfo
+[`no_custodian`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_NO_CUSTODIAN
+[`no_underwriter`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_NO_UNDERWRITER
+[`orderbook`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_OrderBook
+[`recognizedmarkets`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_RecognizedMarkets
+[`register_market_base_coin()`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_register_market_base_coin
 [`register_market_base_coin_from_coinstore()`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_register_market_base_coin_from_coinstore
-[`register_market_base_generic()`]:             https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_register_market_base_generic
+[`register_market_base_generic()`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_register_market_base_generic
+[`registry`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_Registry
+[`tradingpair`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_TradingPair
+[`underwritercapability`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_UnderwriterCapability

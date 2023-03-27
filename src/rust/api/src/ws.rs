@@ -94,15 +94,33 @@ async fn handle_socket(ws: WebSocket, btx: broadcast::Sender<Update>, who: Socke
     let (mtx, mrx) = mpsc::channel(16);
 
     tokio::spawn(async move {
-        forward_message_handler(sender, mrx).await;
+        if let Err(e) = forward_message_handler(sender, mrx).await {
+            tracing::error!(
+                "websocket connection with client {} failed on message forward task: {}",
+                who,
+                e
+            );
+        }
     });
 
     let mtx1 = mtx.clone();
     tokio::spawn(async move {
-        outbound_message_handler(brx, mtx1).await;
+        if let Err(e) = outbound_message_handler(brx, mtx1).await {
+            tracing::error!(
+                "websocket connection with client {} failed on outbound message handler: {}",
+                who,
+                e
+            );
+        }
     });
 
     tokio::spawn(async move {
-        inbound_message_handler(receiver, mtx, who).await;
+        if let Err(e) = inbound_message_handler(receiver, mtx, who).await {
+            tracing::error!(
+                "websocket connection with client {} failed on inbound message handler: {}",
+                who,
+                e
+            );
+        }
     });
 }

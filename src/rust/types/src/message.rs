@@ -37,7 +37,7 @@ pub enum InboundMessage {
 #[serde(tag = "event", rename_all = "snake_case")]
 pub enum OutboundMessage {
     Pong,
-    Confirm { channel: Channel },
+    Confirm(Channel),
     Update(Update),
     Error { message: String },
     Close,
@@ -66,6 +66,26 @@ mod tests {
                 market_id: 0,
                 user_address: "0x1".into(),
             })
+        );
+    }
+
+    #[test]
+    fn test_serialize_pong_message() {
+        let msg = OutboundMessage::Pong;
+        let s = serde_json::to_string(&msg).unwrap();
+        assert_eq!(s, r#"{"event":"pong"}"#);
+    }
+
+    #[test]
+    fn test_serialize_confirm_message() {
+        let msg = OutboundMessage::Confirm(Channel::Orders {
+            market_id: 0,
+            user_address: "0x1".into(),
+        });
+        let s = serde_json::to_string(&msg).unwrap();
+        assert_eq!(
+            s,
+            r#"{"event":"confirm","channel":"orders","market_id":0,"user_address":"0x1"}"#
         );
     }
 }

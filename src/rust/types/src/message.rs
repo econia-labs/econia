@@ -6,8 +6,8 @@ use crate::order::Order;
 #[serde(rename_all = "snake_case")]
 pub enum Channel {
     Orders { user_address: String },
-    Ticker1h { market_id: String },
-    Ticker3h { market_id: String },
+    Ticker1h { market: String },
+    Ticker3h { market: String },
     // TODO add more channels
 }
 
@@ -41,4 +41,5 @@ pub enum OutboundMessage {
     Confirm { channel: Channel },
     Update(Update),
     Error { message: String },
+    Close,
 }

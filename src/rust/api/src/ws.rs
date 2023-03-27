@@ -1,4 +1,8 @@
-use std::net::SocketAddr;
+use std::{
+    collections::HashSet,
+    net::SocketAddr,
+    sync::{Arc, Mutex},
+};
 
 use axum::{
     extract::{
@@ -13,7 +17,7 @@ use futures_util::{
 };
 use regex::Regex;
 use tokio::sync::{broadcast, mpsc};
-use types::message::{InboundMessage, OutboundMessage, Update};
+use types::message::{Channel, InboundMessage, OutboundMessage, Update};
 
 use crate::{error::WebSocketError, AppState};
 
@@ -40,10 +44,22 @@ async fn forward_message_handler(
 async fn outbound_message_handler(
     mut brx: broadcast::Receiver<Update>,
     tx: mpsc::Sender<OutboundMessage>,
+    subs: &Arc<Mutex<HashSet<Channel>>>,
 ) -> Result<(), WebSocketError> {
     while let Ok(update) = brx.recv().await {
-        let msg = OutboundMessage::Update(update);
-        tx.send(msg).await?;
+        let subbed = match update {
+            Update::Orders { ref data } => {
+                let ch = Channel::Orders {
+                    user_address: data.user_address.clone(),
+                };
+                let lock = subs.lock().unwrap();
+                (*lock).contains(&ch)
+            }
+        };
+        if subbed {
+            let msg = OutboundMessage::Update(update);
+            tx.send(msg).await?;
+        }
     }
     Ok(())
 }
@@ -100,6 +116,7 @@ async fn handle_socket(ws: WebSocket, btx: broadcast::Sender<Update>, who: Socke
     let (sender, receiver) = ws.split();
     let brx = btx.subscribe();
     let (mtx, mrx) = mpsc::channel(16);
+    let subs = Arc::new(Mutex::new(HashSet::<Channel>::new()));
 
     let mut fwd_task = tokio::spawn(async move {
         if let Err(e) = forward_message_handler(sender, mrx).await {
@@ -113,7 +130,7 @@ async fn handle_socket(ws: WebSocket, btx: broadcast::Sender<Update>, who: Socke
 
     let mtx1 = mtx.clone();
     let mut send_task = tokio::spawn(async move {
-        if let Err(e) = outbound_message_handler(brx, mtx1).await {
+        if let Err(e) = outbound_message_handler(brx, mtx1, &subs).await {
             tracing::error!(
                 "websocket connection with client {} failed on outbound message handler: {}",
                 who,

@@ -245,6 +245,8 @@ case "$1" in
         brew_install sqlfluff                              # Install SQL formatter.
         brew_install taplo                                 # Install TOML formatter.
         rustup install stable                              # Install stable Rust toolchain.
+        rustup toolchain install nightly                   # Install nightly rust toolchain.
+        rustup default nightly                             # Switch to default nightly toolchain.
         echo "Installing Python-based formatters"          # Print notice.
         poetry install                                     # Install code formatters.
         cd $python_build_dir                               # Navigate to Python build package directory.

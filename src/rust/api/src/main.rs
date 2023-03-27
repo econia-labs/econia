@@ -91,12 +91,7 @@ async fn start_redis_channels(
 
         while let Some(msg) = stream.next().await {
             let payload = msg.get_payload::<String>().unwrap();
-            tracing::info!("received message from redis");
-            tracing::info!("{}", payload);
-
             let update: Update = serde_json::from_str(&payload).unwrap();
-            tracing::info!("{:?}", update);
-
             tx.send(update).unwrap();
         }
     });

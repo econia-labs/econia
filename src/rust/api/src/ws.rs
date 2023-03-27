@@ -50,6 +50,7 @@ async fn outbound_message_handler(
         let subbed = match update {
             Update::Orders { ref data } => {
                 let ch = Channel::Orders {
+                    market_id: data.market_id,
                     user_address: data.user_address.clone(),
                 };
                 let lock = subs.lock().unwrap();
@@ -67,6 +68,7 @@ async fn outbound_message_handler(
 async fn inbound_message_handler(
     mut receiver: SplitStream<WebSocket>,
     tx: mpsc::Sender<OutboundMessage>,
+    subs: &Arc<Mutex<HashSet<Channel>>>,
     who: SocketAddr,
 ) -> Result<(), WebSocketError> {
     while let Some(Ok(msg)) = receiver.next().await {
@@ -78,6 +80,30 @@ async fn inbound_message_handler(
                             tracing::info!("received ping message from client {}", who);
                             let msg_o = OutboundMessage::Pong;
                             tx.send(msg_o).await?;
+                        }
+                        InboundMessage::Subscribe(channel) => {
+                            tracing::info!("received subscribe message from client {}", who);
+                            let already_subbed = {
+                                let lock = subs.lock().unwrap();
+                                (*lock).contains(&channel)
+                            };
+
+                            if already_subbed {
+                                let channel_s = serde_json::to_string(&channel)?;
+                                tx.send(OutboundMessage::Error {
+                                    message: format!(
+                                        "already subscribed to channel `{}`",
+                                        channel_s
+                                    ),
+                                })
+                                .await?;
+                            } else {
+                                {
+                                    let mut lock = subs.lock().unwrap();
+                                    (*lock).insert(channel.clone());
+                                }
+                                tx.send(OutboundMessage::Confirm(channel)).await?;
+                            }
                         }
                         _ => {
                             // TODO
@@ -98,9 +124,9 @@ async fn inbound_message_handler(
             }
             Message::Close(c) => {
                 if let Some(cf) = c {
-                    tracing::info!("client {} sent close with code {}", who, cf.code);
+                    tracing::info!("client {} sent close message with code {}", who, cf.code);
                 } else {
-                    tracing::info!("client {} sent close without CloseFrame", who);
+                    tracing::info!("client {} sent close message without CloseFrame", who);
                 }
                 return Ok(());
             }
@@ -129,8 +155,9 @@ async fn handle_socket(ws: WebSocket, btx: broadcast::Sender<Update>, who: Socke
     });
 
     let mtx1 = mtx.clone();
+    let subs1 = subs.clone();
     let mut send_task = tokio::spawn(async move {
-        if let Err(e) = outbound_message_handler(brx, mtx1, &subs).await {
+        if let Err(e) = outbound_message_handler(brx, mtx1, &subs1).await {
             tracing::error!(
                 "websocket connection with client {} failed on outbound message handler: {}",
                 who,
@@ -140,7 +167,7 @@ async fn handle_socket(ws: WebSocket, btx: broadcast::Sender<Update>, who: Socke
     });
 
     let mut recv_task = tokio::spawn(async move {
-        if let Err(e) = inbound_message_handler(receiver, mtx, who).await {
+        if let Err(e) = inbound_message_handler(receiver, mtx, &subs, who).await {
             tracing::error!(
                 "websocket connection with client {} failed on inbound message handler: {}",
                 who,

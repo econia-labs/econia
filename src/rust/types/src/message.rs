@@ -3,11 +3,18 @@ use serde::{Deserialize, Serialize};
 use crate::order::Order;
 
 #[derive(Debug, Deserialize, Serialize, Clone, Hash, PartialEq, Eq)]
-#[serde(rename_all = "snake_case")]
+#[serde(tag = "channel", rename_all = "snake_case")]
 pub enum Channel {
-    Orders { user_address: String },
-    Ticker1h { market: String },
-    Ticker3h { market: String },
+    Orders {
+        market_id: u64,
+        user_address: String,
+    },
+    Ticker1h {
+        market_id: u64,
+    },
+    Ticker3h {
+        market_id: u64,
+    },
     // TODO add more channels
 }
 
@@ -18,20 +25,12 @@ pub enum Update {
     // TODO add more update types
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, PartialEq, Eq)]
 #[serde(tag = "method", rename_all = "snake_case")]
 pub enum InboundMessage {
     Ping,
-    Subscribe {
-        channel: Channel,
-        market: String,
-        account_address: Option<String>,
-    },
-    Unsubscribe {
-        channel: Channel,
-        market: String,
-        account_address: Option<String>,
-    },
+    Subscribe(Channel),
+    Unsubscribe(Channel),
 }
 
 #[derive(Debug, Serialize, Clone)]
@@ -42,4 +41,31 @@ pub enum OutboundMessage {
     Update(Update),
     Error { message: String },
     Close,
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json;
+
+    use super::*;
+
+    #[test]
+    fn test_deserialize_ping_message() {
+        let s = r#"{"method":"ping"}"#;
+        let msg: InboundMessage = serde_json::from_str(s).unwrap();
+        assert_eq!(msg, InboundMessage::Ping);
+    }
+
+    #[test]
+    fn test_deserialize_subscribe_message() {
+        let s = r#"{"method":"subscribe","channel":"orders","market_id":0,"user_address":"0x1"}"#;
+        let msg: InboundMessage = serde_json::from_str(s).unwrap();
+        assert_eq!(
+            msg,
+            InboundMessage::Subscribe(Channel::Orders {
+                market_id: 0,
+                user_address: "0x1".into(),
+            })
+        );
+    }
 }

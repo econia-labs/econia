@@ -80,6 +80,14 @@ async fn inbound_message_handler(
                     tx.send(msg_o).await?;
                 }
             }
+            Message::Close(c) => {
+                if let Some(cf) = c {
+                    tracing::info!("client {} sent close with code {}", who, cf.code);
+                } else {
+                    tracing::info!("client {} sent close without CloseFrame", who);
+                }
+                return Ok(());
+            }
             _ => {
                 // TODO
             }

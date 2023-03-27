@@ -44,11 +44,11 @@ pub fn setup_market(conn: &mut PgConnection) -> MarketRegistrationEvent {
     let aptos_coin = create_coin(
         conn,
         &NewCoin {
-            account_address: "0x1".to_string(),
-            module_name: "aptos_coin".to_string(),
-            struct_name: "AptosCoin".to_string(),
-            symbol: "APT".to_string(),
-            name: "Aptos Coin".to_string(),
+            account_address: "0x1",
+            module_name: "aptos_coin",
+            struct_name: "AptosCoin",
+            symbol: "APT",
+            name: "Aptos Coin",
             decimals: 8,
         },
     );
@@ -56,12 +56,11 @@ pub fn setup_market(conn: &mut PgConnection) -> MarketRegistrationEvent {
     let tusdc_coin = create_coin(
         conn,
         &NewCoin {
-            account_address: "0x7c36a610d1cde8853a692c057e7bd2479ba9d5eeaeceafa24f125c23d2abf942"
-                .to_string(),
-            module_name: "test_usdc".to_string(),
-            struct_name: "TestUSDCoin".to_string(),
-            symbol: "tUSDC".to_string(),
-            name: "Test USDC".to_string(),
+            account_address: "0x7c36a610d1cde8853a692c057e7bd2479ba9d5eeaeceafa24f125c23d2abf942",
+            module_name: "test_usdc",
+            struct_name: "TestUSDCoin",
+            symbol: "tUSDC",
+            name: "Test USDC",
             decimals: 6,
         },
     );
@@ -69,19 +68,19 @@ pub fn setup_market(conn: &mut PgConnection) -> MarketRegistrationEvent {
     register_market(
         conn,
         &NewMarketRegistrationEvent {
-            market_id: 0.into(),
+            market_id: &0.into(),
             time: Utc::now(),
-            base_account_address: Some(aptos_coin.account_address),
-            base_module_name: Some(aptos_coin.module_name),
-            base_struct_name: Some(aptos_coin.struct_name),
+            base_account_address: Some(&aptos_coin.account_address),
+            base_module_name: Some(&aptos_coin.module_name),
+            base_struct_name: Some(&aptos_coin.struct_name),
             base_name_generic: None,
-            quote_account_address: tusdc_coin.account_address,
-            quote_module_name: tusdc_coin.module_name,
-            quote_struct_name: tusdc_coin.struct_name,
-            lot_size: 1000.into(),
-            tick_size: 1000.into(),
-            min_size: 1000.into(),
-            underwriter_id: 0.into(),
+            quote_account_address: &tusdc_coin.account_address,
+            quote_module_name: &tusdc_coin.module_name,
+            quote_struct_name: &tusdc_coin.struct_name,
+            lot_size: &1000.into(),
+            tick_size: &1000.into(),
+            min_size: &1000.into(),
+            underwriter_id: &0.into(),
         },
     )
 }

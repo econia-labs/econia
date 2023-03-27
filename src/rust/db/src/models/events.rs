@@ -5,7 +5,7 @@ use diesel_derive_enum::DbEnum;
 use field_count::FieldCount;
 use types::{error::TypeError, events};
 
-use super::order::Side;
+use super::{order::Side, IntoInsertable};
 use crate::schema::{maker_events, taker_events};
 
 #[derive(Debug, DbEnum, Clone, Copy, PartialEq, Eq)]
@@ -103,16 +103,34 @@ impl TryFrom<MakerEvent> for events::MakerEvent {
 
 #[derive(Insertable, Debug, FieldCount)]
 #[diesel(table_name = maker_events)]
-pub struct NewMakerEvent {
-    pub market_id: BigDecimal,
+pub struct NewMakerEvent<'a> {
+    pub market_id: &'a BigDecimal,
     pub side: Side,
-    pub market_order_id: BigDecimal,
-    pub user_address: String,
-    pub custodian_id: Option<BigDecimal>,
+    pub market_order_id: &'a BigDecimal,
+    pub user_address: &'a str,
+    pub custodian_id: Option<&'a BigDecimal>,
     pub event_type: MakerEventType,
-    pub size: BigDecimal,
-    pub price: BigDecimal,
+    pub size: &'a BigDecimal,
+    pub price: &'a BigDecimal,
     pub time: DateTime<Utc>,
+}
+
+impl<'a> IntoInsertable for &'a MakerEvent {
+    type Insertable = NewMakerEvent<'a>;
+
+    fn into_insertable(self) -> Self::Insertable {
+        NewMakerEvent::<'a> {
+            market_id: &self.market_id,
+            side: self.side,
+            market_order_id: &self.market_order_id,
+            user_address: &self.user_address,
+            custodian_id: self.custodian_id.as_ref(),
+            event_type: self.event_type,
+            size: &self.size,
+            price: &self.price,
+            time: self.time,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Queryable)]
@@ -172,13 +190,30 @@ impl TryFrom<TakerEvent> for events::TakerEvent {
 
 #[derive(Insertable, Debug, FieldCount)]
 #[diesel(table_name = taker_events)]
-pub struct NewTakerEvent {
-    pub market_id: BigDecimal,
+pub struct NewTakerEvent<'a> {
+    pub market_id: &'a BigDecimal,
     pub side: Side,
-    pub market_order_id: BigDecimal,
-    pub maker: String,
-    pub custodian_id: Option<BigDecimal>,
-    pub size: BigDecimal,
-    pub price: BigDecimal,
+    pub market_order_id: &'a BigDecimal,
+    pub maker: &'a str,
+    pub custodian_id: Option<&'a BigDecimal>,
+    pub size: &'a BigDecimal,
+    pub price: &'a BigDecimal,
     pub time: DateTime<Utc>,
+}
+
+impl<'a> IntoInsertable for &'a TakerEvent {
+    type Insertable = NewTakerEvent<'a>;
+
+    fn into_insertable(self) -> Self::Insertable {
+        NewTakerEvent::<'a> {
+            market_id: &self.market_id,
+            side: self.side,
+            market_order_id: &self.market_order_id,
+            maker: &self.maker,
+            custodian_id: self.custodian_id.as_ref(),
+            size: &self.size,
+            price: &self.price,
+            time: self.time,
+        }
+    }
 }

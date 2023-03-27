@@ -28,14 +28,14 @@ fn test_place_order() {
     add_maker_event(
         conn,
         &NewMakerEvent {
-            market_id: market.market_id,
+            market_id: &market.market_id,
             side: Side::Bid,
-            market_order_id: 100.into(),
-            user_address: "0x123".to_string(),
+            market_order_id: &100.into(),
+            user_address: "0x123",
             custodian_id: None,
             event_type: MakerEventType::Place,
-            size: 1000.into(),
-            price: 1000.into(),
+            size: &1000.into(),
+            price: &1000.into(),
             time: Utc::now(),
         },
     );
@@ -81,14 +81,14 @@ fn test_change_order_price() {
     add_maker_event(
         conn,
         &NewMakerEvent {
-            market_id: market.market_id.clone(),
+            market_id: &market.market_id.clone(),
             side: Side::Bid,
-            market_order_id: 101.into(),
-            user_address: "0x123".to_string(),
+            market_order_id: &101.into(),
+            user_address: "0x123",
             custodian_id: None,
             event_type: MakerEventType::Place,
-            size: 1000.into(),
-            price: 1000.into(),
+            size: &1000.into(),
+            price: &1000.into(),
             time: Utc::now(),
         },
     );
@@ -97,14 +97,14 @@ fn test_change_order_price() {
     add_maker_event(
         conn,
         &NewMakerEvent {
-            market_id: market.market_id,
+            market_id: &market.market_id,
             side: Side::Bid,
-            market_order_id: 101.into(),
-            user_address: "0x123".to_string(),
+            market_order_id: &101.into(),
+            user_address: "0x123",
             custodian_id: None,
             event_type: MakerEventType::Change,
-            size: 1000.into(),
-            price: 1500.into(),
+            size: &1000.into(),
+            price: &1500.into(),
             time: Utc::now(),
         },
     );
@@ -149,14 +149,14 @@ fn test_change_order_size() {
     add_maker_event(
         conn,
         &NewMakerEvent {
-            market_id: market.market_id.clone(),
+            market_id: &market.market_id,
             side: Side::Bid,
-            market_order_id: 102.into(),
-            user_address: "0x123".to_string(),
+            market_order_id: &102.into(),
+            user_address: "0x123",
             custodian_id: None,
             event_type: MakerEventType::Place,
-            size: 1000.into(),
-            price: 1000.into(),
+            size: &1000.into(),
+            price: &1000.into(),
             time: Utc::now(),
         },
     );
@@ -165,14 +165,14 @@ fn test_change_order_size() {
     add_maker_event(
         conn,
         &NewMakerEvent {
-            market_id: market.market_id,
+            market_id: &market.market_id,
             side: Side::Bid,
-            market_order_id: 102.into(),
-            user_address: "0x123".to_string(),
+            market_order_id: &102.into(),
+            user_address: "0x123",
             custodian_id: None,
             event_type: MakerEventType::Change,
-            size: 2000.into(),
-            price: 1000.into(),
+            size: &2000.into(),
+            price: &1000.into(),
             time: Utc::now(),
         },
     );
@@ -217,14 +217,14 @@ fn test_cancel_order() {
     let place_event = add_maker_event(
         conn,
         &NewMakerEvent {
-            market_id: market.market_id.clone(),
+            market_id: &market.market_id,
             side: Side::Bid,
-            market_order_id: 104.into(),
-            user_address: "0x123".to_string(),
+            market_order_id: &104.into(),
+            user_address: "0x123",
             custodian_id: None,
             event_type: MakerEventType::Place,
-            size: 1000.into(),
-            price: 1000.into(),
+            size: &1000.into(),
+            price: &1000.into(),
             time: Utc::now(),
         },
     );
@@ -233,14 +233,14 @@ fn test_cancel_order() {
     add_maker_event(
         conn,
         &NewMakerEvent {
-            market_id: market.market_id,
+            market_id: &market.market_id,
             side: Side::Bid,
-            market_order_id: place_event.market_order_id,
-            user_address: place_event.user_address,
+            market_order_id: &place_event.market_order_id,
+            user_address: &place_event.user_address,
             custodian_id: None,
             event_type: MakerEventType::Cancel,
-            size: place_event.size,
-            price: place_event.price,
+            size: &place_event.size,
+            price: &place_event.price,
             time: Utc::now(),
         },
     );
@@ -283,14 +283,14 @@ fn test_evict_order() {
     let place_event = add_maker_event(
         conn,
         &NewMakerEvent {
-            market_id: market.market_id.clone(),
+            market_id: &market.market_id,
             side: Side::Bid,
-            market_order_id: 105.into(),
-            user_address: "0x123".to_string(),
+            market_order_id: &105.into(),
+            user_address: "0x123",
             custodian_id: None,
             event_type: MakerEventType::Place,
-            size: 1000.into(),
-            price: 1000.into(),
+            size: &1000.into(),
+            price: &1000.into(),
             time: Utc::now(),
         },
     );
@@ -299,14 +299,14 @@ fn test_evict_order() {
     add_maker_event(
         conn,
         &NewMakerEvent {
-            market_id: market.market_id,
+            market_id: &market.market_id,
             side: Side::Bid,
-            market_order_id: place_event.market_order_id,
-            user_address: place_event.user_address,
+            market_order_id: &place_event.market_order_id,
+            user_address: &place_event.user_address,
             custodian_id: None,
             event_type: MakerEventType::Evict,
-            size: place_event.size,
-            price: place_event.price,
+            size: &place_event.size,
+            price: &place_event.price,
             time: Utc::now(),
         },
     );
@@ -349,14 +349,14 @@ fn test_fill_order() {
     add_maker_event(
         conn,
         &NewMakerEvent {
-            market_id: market.market_id.clone(),
+            market_id: &market.market_id,
             side: Side::Bid,
-            market_order_id: 100.into(),
-            user_address: "0x1001".to_string(),
+            market_order_id: &100.into(),
+            user_address: "0x1001",
             custodian_id: None,
             event_type: MakerEventType::Place,
-            size: 1000.into(),
-            price: 1000.into(),
+            size: &1000.into(),
+            price: &1000.into(),
             time: Utc::now(),
         },
     );
@@ -365,14 +365,14 @@ fn test_fill_order() {
     add_maker_event(
         conn,
         &NewMakerEvent {
-            market_id: market.market_id.clone(),
+            market_id: &market.market_id,
             side: Side::Ask,
-            market_order_id: 101.into(),
-            user_address: "0x1002".to_string(),
+            market_order_id: &101.into(),
+            user_address: "0x1002",
             custodian_id: None,
             event_type: MakerEventType::Place,
-            size: 500.into(),
-            price: 1000.into(),
+            size: &500.into(),
+            price: &1000.into(),
             time: Utc::now(),
         },
     );
@@ -381,13 +381,13 @@ fn test_fill_order() {
     add_taker_event(
         conn,
         &NewTakerEvent {
-            market_id: market.market_id,
+            market_id: &market.market_id,
             side: Side::Bid,
-            market_order_id: 100.into(),
-            maker: "0x1001".to_string(),
+            market_order_id: &100.into(),
+            maker: "0x1001",
             custodian_id: None,
-            size: 500.into(),
-            price: 1000.into(),
+            size: &500.into(),
+            price: &1000.into(),
             time: Utc::now(),
         },
     );
@@ -456,14 +456,14 @@ fn test_fully_fill_order() {
     add_maker_event(
         conn,
         &NewMakerEvent {
-            market_id: market.market_id.clone(),
+            market_id: &market.market_id,
             side: Side::Bid,
-            market_order_id: 100.into(),
-            user_address: "0x1003".to_string(),
+            market_order_id: &100.into(),
+            user_address: "0x1003",
             custodian_id: None,
             event_type: MakerEventType::Place,
-            size: 1000.into(),
-            price: 1000.into(),
+            size: &1000.into(),
+            price: &1000.into(),
             time: Utc::now(),
         },
     );
@@ -472,14 +472,14 @@ fn test_fully_fill_order() {
     add_maker_event(
         conn,
         &NewMakerEvent {
-            market_id: market.market_id.clone(),
+            market_id: &market.market_id,
             side: Side::Ask,
-            market_order_id: 101.into(),
-            user_address: "0x1004".to_string(),
+            market_order_id: &101.into(),
+            user_address: "0x1004",
             custodian_id: None,
             event_type: MakerEventType::Place,
-            size: 1000.into(),
-            price: 1000.into(),
+            size: &1000.into(),
+            price: &1000.into(),
             time: Utc::now(),
         },
     );
@@ -488,13 +488,13 @@ fn test_fully_fill_order() {
     add_taker_event(
         conn,
         &NewTakerEvent {
-            market_id: market.market_id,
+            market_id: &market.market_id,
             side: Side::Ask,
-            market_order_id: 100.into(),
-            maker: "0x1004".to_string(),
+            market_order_id: &100.into(),
+            maker: "0x1004",
             custodian_id: None,
-            size: 1000.into(),
-            price: 1000.into(),
+            size: &1000.into(),
+            price: &1000.into(),
             time: Utc::now(),
         },
     );

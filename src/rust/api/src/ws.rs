@@ -7,9 +7,12 @@ use axum::{
     },
     response::IntoResponse,
 };
-use futures_util::{SinkExt, StreamExt};
+use futures_util::{
+    stream::{SplitSink, SplitStream},
+    SinkExt, StreamExt,
+};
 use regex::Regex;
-use tokio::sync::broadcast;
+use tokio::sync::{broadcast, mpsc};
 use types::message::{InboundMessage, OutboundMessage, Update};
 
 use crate::AppState;
@@ -23,17 +26,31 @@ pub async fn ws_handler(
     ws.on_upgrade(move |ws| handle_socket(ws, state.sender, addr))
 }
 
-async fn handle_socket(ws: WebSocket, btx: broadcast::Sender<Update>, who: SocketAddr) {
-    let (mut sender, mut receiver) = ws.split();
-    let mut brx = btx.subscribe();
+async fn forward_message_handler(
+    mut sender: SplitSink<WebSocket, Message>,
+    mut rx: mpsc::Receiver<OutboundMessage>,
+) {
+    while let Some(msg) = rx.recv().await {
+        let s = serde_json::to_string(&msg).unwrap();
+        sender.send(Message::Text(s)).await.unwrap();
+    }
+}
 
-    tokio::spawn(async move {
-        while let Ok(msg) = brx.recv().await {
-            let s = serde_json::to_string(&msg).unwrap();
-            sender.send(Message::Text(s)).await.unwrap();
-        }
-    });
+async fn outbound_message_handler(
+    mut brx: broadcast::Receiver<Update>,
+    tx: mpsc::Sender<OutboundMessage>,
+) {
+    while let Ok(update) = brx.recv().await {
+        let msg = OutboundMessage::Update(update);
+        tx.send(msg).await.unwrap();
+    }
+}
 
+async fn inbound_message_handler(
+    mut receiver: SplitStream<WebSocket>,
+    tx: mpsc::Sender<OutboundMessage>,
+    who: SocketAddr,
+) {
     while let Some(Ok(msg)) = receiver.next().await {
         match msg {
             Message::Text(s) => {
@@ -42,8 +59,7 @@ async fn handle_socket(ws: WebSocket, btx: broadcast::Sender<Update>, who: Socke
                         InboundMessage::Ping => {
                             tracing::info!("received ping message from client {}", who);
                             let msg_o = OutboundMessage::Pong;
-                            let msg_str = serde_json::to_string(&msg_o).unwrap();
-                            // sender.send(Message::Text(msg_str)).await.unwrap();
+                            tx.send(msg_o).await.unwrap();
                         }
                         _ => {
                             // TODO
@@ -59,8 +75,7 @@ async fn handle_socket(ws: WebSocket, btx: broadcast::Sender<Update>, who: Socke
                     let msg_o = OutboundMessage::Error {
                         message: "could not parse message".into(),
                     };
-                    let msg_str = serde_json::to_string(&msg_o).unwrap();
-                    // sender.send(Message::Text(msg_str)).await.unwrap();
+                    tx.send(msg_o).await.unwrap();
                 }
             }
             _ => {
@@ -68,4 +83,23 @@ async fn handle_socket(ws: WebSocket, btx: broadcast::Sender<Update>, who: Socke
             }
         }
     }
+}
+
+async fn handle_socket(ws: WebSocket, btx: broadcast::Sender<Update>, who: SocketAddr) {
+    let (sender, receiver) = ws.split();
+    let brx = btx.subscribe();
+    let (mtx, mrx) = mpsc::channel(16);
+
+    tokio::spawn(async move {
+        forward_message_handler(sender, mrx).await;
+    });
+
+    let mtx1 = mtx.clone();
+    tokio::spawn(async move {
+        outbound_message_handler(brx, mtx1).await;
+    });
+
+    tokio::spawn(async move {
+        inbound_message_handler(receiver, mtx, who).await;
+    });
 }

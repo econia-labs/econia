@@ -794,6 +794,18 @@ The below index is automatically generated from source code:
 
 
 
+##### Show all the modules that "market" depends on directly or indirectly
+
+
+![](img/market_forward_dep.svg)
+
+
+##### Show all the modules that depend on "market" directly or indirectly
+
+
+![](img/market_backward_dep.svg)
+
+
 <a name="0xc0deb00c_market_MakerEvent"></a>
 
 ## Struct `MakerEvent`

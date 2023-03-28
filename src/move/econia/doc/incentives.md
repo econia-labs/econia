@@ -461,6 +461,18 @@ The below index is automatically generated from source code:
 
 
 
+##### Show all the modules that "incentives" depends on directly or indirectly
+
+
+![](img/incentives_forward_dep.svg)
+
+
+##### Show all the modules that depend on "incentives" directly or indirectly
+
+
+![](img/incentives_backward_dep.svg)
+
+
 <a name="0xc0deb00c_incentives_EconiaFeeStore"></a>
 
 ## Resource `EconiaFeeStore`

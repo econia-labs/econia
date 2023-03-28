@@ -104,7 +104,10 @@ function set_econia_address {
 # Build Move documentation.
 function build_move_docs {
     set_econia_address $docgen_address
-    aptos move document --include-impl --package-dir $move_dir "$@"
+    aptos move document \
+        --include-dep-diagram \
+        --include-impl \
+        --package-dir $move_dir "$@"
     set_econia_address persistent
 }
 
@@ -247,6 +250,7 @@ case "$1" in
         fi
         brew_install aptos                                 # Install aptos CLI.
         brew_install black                                 # Install Python code formatter.
+        brew_install graphviz                              # Install graph visualizer.
         brew_install isort                                 # Install Python import sorter.
         brew_install node                                  # Install JavaScript package manager.
         brew_install poetry                                # Install Python environment manager.

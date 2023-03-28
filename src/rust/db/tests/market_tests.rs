@@ -3,8 +3,7 @@ use db::{
     create_coin, establish_connection, load_config,
     models::{
         coin::NewCoin,
-        events::{MarketRegistrationEvent, NewMarketRegistrationEvent},
-        market::Market,
+        market::{Market, MarketRegistrationEvent, NewMarketRegistrationEvent},
     },
     register_market,
 };
@@ -51,7 +50,7 @@ fn test_register_coin_market() {
     register_market(
         conn,
         &NewMarketRegistrationEvent {
-            market_id: 0.into(),
+            market_id: &0.into(),
             time: Utc::now(),
             base_account_address: Some(&aptos_coin.account_address),
             base_module_name: Some(&aptos_coin.module_name),
@@ -60,10 +59,10 @@ fn test_register_coin_market() {
             quote_account_address: &tusdc_coin.account_address,
             quote_module_name: &tusdc_coin.module_name,
             quote_struct_name: &tusdc_coin.struct_name,
-            lot_size: 1000.into(),
-            tick_size: 1000.into(),
-            min_size: 1000.into(),
-            underwriter_id: 0.into(),
+            lot_size: &1000.into(),
+            tick_size: &1000.into(),
+            min_size: &1000.into(),
+            underwriter_id: &0.into(),
         },
     );
 
@@ -112,7 +111,7 @@ fn test_register_generic_market() {
     register_market(
         conn,
         &NewMarketRegistrationEvent {
-            market_id: 1.into(),
+            market_id: &1.into(),
             time: Utc::now(),
             base_account_address: None,
             base_module_name: None,
@@ -121,10 +120,10 @@ fn test_register_generic_market() {
             quote_account_address: &tusdc_coin.account_address,
             quote_module_name: &tusdc_coin.module_name,
             quote_struct_name: &tusdc_coin.struct_name,
-            lot_size: 1000.into(),
-            tick_size: 1000.into(),
-            min_size: 1000.into(),
-            underwriter_id: 0.into(),
+            lot_size: &1000.into(),
+            tick_size: &1000.into(),
+            min_size: &1000.into(),
+            underwriter_id: &0.into(),
         },
     );
 
@@ -184,7 +183,7 @@ fn test_register_coin_and_generic_market() {
     register_market(
         conn,
         &NewMarketRegistrationEvent {
-            market_id: 0.into(),
+            market_id: &0.into(),
             time: Utc::now(),
             base_account_address: Some(&aptos_coin.account_address),
             base_module_name: Some(&aptos_coin.module_name),
@@ -193,10 +192,10 @@ fn test_register_coin_and_generic_market() {
             quote_account_address: &tusdc_coin.account_address,
             quote_module_name: &tusdc_coin.module_name,
             quote_struct_name: &tusdc_coin.struct_name,
-            lot_size: 1000.into(),
-            tick_size: 1000.into(),
-            min_size: 1000.into(),
-            underwriter_id: 0.into(),
+            lot_size: &1000.into(),
+            tick_size: &1000.into(),
+            min_size: &1000.into(),
+            underwriter_id: &0.into(),
         },
     );
 
@@ -204,7 +203,7 @@ fn test_register_coin_and_generic_market() {
     register_market(
         conn,
         &NewMarketRegistrationEvent {
-            market_id: 1.into(),
+            market_id: &1.into(),
             time: Utc::now(),
             base_account_address: None,
             base_module_name: None,
@@ -213,10 +212,10 @@ fn test_register_coin_and_generic_market() {
             quote_account_address: &tusdc_coin.account_address,
             quote_module_name: &tusdc_coin.module_name,
             quote_struct_name: &tusdc_coin.struct_name,
-            lot_size: 1000.into(),
-            tick_size: 1000.into(),
-            min_size: 1000.into(),
-            underwriter_id: 0.into(),
+            lot_size: &1000.into(),
+            tick_size: &1000.into(),
+            min_size: &1000.into(),
+            underwriter_id: &0.into(),
         },
     );
 
@@ -279,7 +278,7 @@ fn test_register_generic_market_with_base_coin_fails() {
     register_market(
         conn,
         &NewMarketRegistrationEvent {
-            market_id: 1.into(),
+            market_id: &1.into(),
             time: Utc::now(),
             base_account_address: Some(&aptos_coin.account_address),
             base_module_name: Some(&aptos_coin.module_name),
@@ -288,10 +287,10 @@ fn test_register_generic_market_with_base_coin_fails() {
             quote_account_address: &tusdc_coin.account_address,
             quote_module_name: &tusdc_coin.module_name,
             quote_struct_name: &tusdc_coin.struct_name,
-            lot_size: 1000.into(),
-            tick_size: 1000.into(),
-            min_size: 1000.into(),
-            underwriter_id: 0.into(),
+            lot_size: &1000.into(),
+            tick_size: &1000.into(),
+            min_size: &1000.into(),
+            underwriter_id: &0.into(),
         },
     );
 }

@@ -45,7 +45,6 @@ src/move/econia/build/Econia/*.yaml
 
 # Cargo
 src/move/econia/target/*
-*Cargo.lock
 
 # Sphinx
 doc/sphinx/build/*

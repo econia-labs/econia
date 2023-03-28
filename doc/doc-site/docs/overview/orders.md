@@ -11,12 +11,14 @@ Econia uses a custom data structure, the [AVL queue], for storing orders.
 In short, the [AVL queue] combines an AVL tree with a doubly linked list at every tree node, where tree nodes are price levels and list nodes are orders.
 For example, consider the following "ascending" [AVL queue]:
 
->                                        1001 [35 -> 38]
->                                       /    \
->                   [50 -> 60 -> 55] 1000    1003 [20]
->     AVL queue head ^                      /    \
->                              [15 -> 5] 1002    1004 [4 -> 10]
->                                                           ^ AVL queue tail
+> ```
+>                                    1001 [35 -> 38]
+>                                   /    \
+>               [50 -> 60 -> 55] 1000    1003 [20]
+> AVL queue head ^                      /    \
+>                          [15 -> 5] 1002    1004 [4 -> 10]
+>                                                       ^ AVL queue tail
+> ```
 
 Here, orders are sorted by:
 
@@ -25,51 +27,55 @@ Here, orders are sorted by:
 
 Conversely, consider the following "descending" [AVL queue]:
 
->                             992 [25 -> 28]
->                            /   \
->        [30 -> 40 -> 45] 991    994 [18]
->      AVL queue tail ^         /   \
->                   [14 -> 4] 993   995 [11 -> 2]
->                                        ^ AVL queue head
+> ```
+>                         992 [25 -> 28]
+>                        /   \
+>    [30 -> 40 -> 45] 991    994 [18]
+>  AVL queue tail ^         /   \
+>               [14 -> 4] 993   995 [11 -> 2]
+>                                    ^ AVL queue head
+> ```
 
 Here, orders are sorted by:
 
 1. *Decreasing* price, then
-2. Increasing order of insertion within a price level.
+1. Increasing order of insertion within a price level.
 
 Each [`OrderBook`] has an ascending [AVL queue] for asks, and a descending [AVL queue] for bids, such that the two structures above produce the following price-time priority order book:
 
 <table>
 
+import ColoredText from '@site/src/components/ColoredText';
+
 <tr><td>
 
-| Price | Size | Side                                       |
-|-------|------|--------------------------------------------|
-| 1004  | 10   | <span style={{color: 'red'}}>Ask</span>    |
-| 1004  | 4    | <span style={{color: 'red'}}>Ask</span>    |
-| 1003  | 20   | <span style={{color: 'red'}}>Ask</span>    |
-| 1002  | 5    | <span style={{color: 'red'}}>Ask</span>    |
-| 1002  | 15   | <span style={{color: 'red'}}>Ask</span>    |
-| 1001  | 38   | <span style={{color: 'red'}}>Ask</span>    |
-| 1001  | 35   | <span style={{color: 'red'}}>Ask</span>    |
-| 1000  | 55   | <span style={{color: 'red'}}>Ask</span>    |
-| 1000  | 60   | <span style={{color: 'red'}}>Ask</span>    |
-| 1000  | 50   | <span style={{color: 'red'}}>Ask</span>    |
+| Price | Size | Side                                           |
+| ----- | ---- | ---------------------------------------------- |
+| 1004  | 10   | <ColoredText color="#ff0000">Ask</ColoredText> |
+| 1004  | 4    | <ColoredText color="#ff0000">Ask</ColoredText> |
+| 1003  | 20   | <ColoredText color="#ff0000">Ask</ColoredText> |
+| 1002  | 5    | <ColoredText color="#ff0000">Ask</ColoredText> |
+| 1002  | 15   | <ColoredText color="#ff0000">Ask</ColoredText> |
+| 1001  | 38   | <ColoredText color="#ff0000">Ask</ColoredText> |
+| 1001  | 35   | <ColoredText color="#ff0000">Ask</ColoredText> |
+| 1000  | 55   | <ColoredText color="#ff0000">Ask</ColoredText> |
+| 1000  | 60   | <ColoredText color="#ff0000">Ask</ColoredText> |
+| 1000  | 50   | <ColoredText color="#ff0000">Ask</ColoredText> |
 
 </td><td>
 
-| Price | Size | Side                                       |
-|-------|------|--------------------------------------------|
-| 995   | 11   | <span style={{color: 'green'}}>Bid</span>  |
-| 995   | 2    | <span style={{color: 'green'}}>Bid</span>  |
-| 994   | 18   | <span style={{color: 'green'}}>Bid</span>  |
-| 993   | 14   | <span style={{color: 'green'}}>Bid</span>  |
-| 993   | 4    | <span style={{color: 'green'}}>Bid</span>  |
-| 992   | 25   | <span style={{color: 'green'}}>Bid</span>  |
-| 992   | 28   | <span style={{color: 'green'}}>Bid</span>  |
-| 991   | 30   | <span style={{color: 'green'}}>Bid</span>  |
-| 991   | 40   | <span style={{color: 'green'}}>Bid</span>  |
-| 991   | 45   | <span style={{color: 'green'}}>Bid</span>  |
+| Price | Size | Side                                           |
+| ----- | ---- | ---------------------------------------------- |
+| 995   | 11   | <ColoredText color="#00ff00">Bid</ColoredText> |
+| 995   | 2    | <ColoredText color="#00ff00">Bid</ColoredText> |
+| 994   | 18   | <ColoredText color="#00ff00">Bid</ColoredText> |
+| 993   | 14   | <ColoredText color="#00ff00">Bid</ColoredText> |
+| 993   | 4    | <ColoredText color="#00ff00">Bid</ColoredText> |
+| 992   | 25   | <ColoredText color="#00ff00">Bid</ColoredText> |
+| 992   | 28   | <ColoredText color="#00ff00">Bid</ColoredText> |
+| 991   | 30   | <ColoredText color="#00ff00">Bid</ColoredText> |
+| 991   | 40   | <ColoredText color="#00ff00">Bid</ColoredText> |
+| 991   | 45   | <ColoredText color="#00ff00">Bid</ColoredText> |
 
 </td></tr></table>
 
@@ -94,29 +100,35 @@ Similarly, a large taker sell will fill against bids in the following sequence:
 When a new order is placed, it is inserted at the tail of the corresponding doubly linked list for the given price level, if such a price level is already in the tree.
 For instance, continuing the above example, placing an ask order for size 18 at price 1003 would lead to the following asks AVL queue:
 
->                          1001 [35 -> 38]
->                         /    \
->     [50 -> 60 -> 55] 1000    1003 [20 -> 18]
->                             /    \       ^ new list node
->                [15 -> 5] 1002    1004 [4 -> 10]
+> ```
+>                      1001 [35 -> 38]
+>                     /    \
+> [50 -> 60 -> 55] 1000    1003 [20 -> 18]
+>                         /    \       ^ new list node
+>            [15 -> 5] 1002    1004 [4 -> 10]
+> ```
 
 Attempting to place another ask at a price of 1005, however, would require inserting a new tree node, yielding an unbalanced AVL tree:
 
->         1001
+> ```
+>     1001
+>    /    \
+> 1000    1003
 >        /    \
->     1000    1003
->            /    \
->         1002    1004
->                     \
->                     1005
+>     1002    1004
+>                 \
+>                 1005
+> ```
 
 And this would require a rotation:
 
->             1003
->            /    \
->         1001    1004
->        /    \       \
->     1000    1002    1005
+> ```
+>         1003
+>        /    \
+>     1001    1004
+>    /    \       \
+> 1000    1002    1005
+> ```
 
 This self-balancing behavior reduces lookup cost reductions, since the upper limit on AVL tree height is approximately $1.44 \log_2 n$, where $n$ is the number of tree nodes.
 
@@ -145,47 +157,53 @@ Again, see [AVL queue height spec] for supporting calculations.
 
 :::
 
-| Tree height  | Min price levels | Max price levels |
-|--------------|------------------|------------------|
-| 0            | 1                | 1                |
-| 1            | 2                | 3                |
-| 2            | 4                | 7                |
-| ...          | ...              | ...              |
-| 10           | 232              | 2047             |
-| 11           | 376              | 4095             |
-| ...          | ...              | ...              |
-| 18           | 10945            | 524287           |
-| 19           | 17710            | 1048575          |
-
+| Tree height | Min price levels | Max price levels |
+| ----------- | ---------------- | ---------------- |
+| 0           | 1                | 1                |
+| 1           | 2                | 3                |
+| 2           | 4                | 7                |
+| ...         | ...              | ...              |
+| 10          | 232              | 2047             |
+| 11          | 376              | 4095             |
+| ...         | ...              | ...              |
+| 18          | 10945            | 524287           |
+| 19          | 17710            | 1048575          |
 
 For example, consider the following price level tree:
 
->         1001
->        /    \
->     1000    1003
+> ```
+>     1001
+>    /    \
+> 1000    1003
+> ```
 
 Here, the tree has a height of one, and if a critical height of 1 were chosen, the following order structure would be valid:
 
-
->                    1001 [12 -> 45 -> 67]
->                   /    \
->     [45 -> 78] 1000    1003 [19]
+> ```
+>                1001 [12 -> 45 -> 67]
+>               /    \
+> [45 -> 78] 1000    1003 [19]
+> ```
 
 Up to 16377 orders could be placed at a price of 1000 without meeting the eviction criteria, but if an order were placed at price 1002, the tree would exceed the critical height and the next insertion would result in an eviction.
 
 The first insertion at price 1002 results in a tree that exceeds the critical height for this example:
 
->                    1001 [12 -> 45 -> 67]
->                   /    \
->     [45 -> 78] 1000    1003 [19]
->                       /
->                   1002 [43]
+> ```
+>                1001 [12 -> 45 -> 67]
+>               /    \
+> [45 -> 78] 1000    1003 [19]
+>                   /
+>               1002 [43]
+> ```
 
 The next insertion at price 1002 results in an eviction, since the critical height has been exceeded prior to the insertion:
 
->                    1001 [12 -> 45 -> 67]
->                   /    \
->     [45 -> 78] 1000    1002 [43 -> 78]
+> ```
+>                1001 [12 -> 45 -> 67]
+>               /    \
+> [45 -> 78] 1000    1002 [43 -> 78]
+> ```
 
 Here, the single order at price 1003 has been evicted.
 
@@ -200,31 +218,31 @@ Econia does not use a critical height of 1. The actual critical height is define
 Consider a hypothetical trading pair `APT/USDC`, `APT` denominated in `USDC`.
 Here, `APT` is considered the "base" asset and `USDC` is considered the "quote asset", meaning that orders sized in `APT` are quoted in `USDC` per `APT`:
 
-| Term        | Specifies    | Symbol |
-|-------------|--------------|--------|
-| Base asset  | Order size   | `APT`  |
-| Quote asset | Order price  | `USDC` |
+| Term        | Specifies   | Symbol |
+| ----------- | ----------- | ------ |
+| Base asset  | Order size  | `APT`  |
+| Quote asset | Order price | `USDC` |
 
 In addition to a base/quote trading pair, each market in Econia additionally contains the following parameters, which are selected by the market registrant during registration:
 
 | Parameter          | Meaning                     | Example     |
-|--------------------|-----------------------------|-------------|
+| ------------------ | --------------------------- | ----------- |
 | Lot size           | Order size granularity      | 0.1 `APT`   |
 | Tick size          | Price granularity           | 0.01 `USDC` |
 | Minimum order size | Smallest allowed order size | 0.5 `APT`   |
 
 On this market, an order for 7.8 `APT` at a price of 5.23 `USDC` per `APT` would be valid, but the following would be invalid:
 
-| Size | Price  | Reason             |
-|------|--------|--------------------|
-| 7.85 | 5.23   | Size too granular  |
-| 7.8  | 5.235  | Price too granular |
-| 0.4  | 5.23   | Size too small     |
+| Size | Price | Reason             |
+| ---- | ----- | ------------------ |
+| 7.85 | 5.23  | Size too granular  |
+| 7.8  | 5.235 | Price too granular |
+| 0.4  | 5.23  | Size too small     |
 
 Econia's matching engine uses integers rather than decimals, such that conversion from decimal amounts to integer amounts requires the `aptos_framework::coin::CoinInfo.decimals` for a given `CoinType`:
 
 | Term           | Symbol       | Coin   | Amount |
-|----------------|--------------|--------|--------|
+| -------------- | ------------ | ------ | ------ |
 | Base decimals  | $\large d_b$ | `APT`  | 8      |
 | Quote decimals | $\large d_q$ | `USDC` | 6      |
 
@@ -242,7 +260,7 @@ Here, a decimal amount of coins (e.g. 7.8 `APT`), can be converted to an integer
 Similarly, other terms can be converted as follows:
 
 | Variable                   | Decimal symbol | Integer symbol |
-|----------------------------|----------------|----------------|
+| -------------------------- | -------------- | -------------- |
 | Lot size                   | $\large l_d$   | $\large l_i$   |
 | Tick size                  | $\large t_d$   | $\large t_i$   |
 | Minimum order size         | $\large m_d$   | $\large m_i$   |
@@ -251,132 +269,105 @@ Similarly, other terms can be converted as follows:
 | Total quote amount to fill | $\large a_d$   | $\large a_i$   |
 
 1. $$\LARGE l_i = l_d 10 ^ {d_b}$$
-
-    ```python
-    >>> decimals_base = 8
-    >>> lot_size_decimal = dec('0.1')
-    >>> lot_size_integer = int(lot_size_decimal * 10 ** decimals_base)
-    >>> lot_size_integer
-    10000000
-    ```
-
+   ```python
+   >>> decimals_base = 8
+   >>> lot_size_decimal = dec('0.1')
+   >>> lot_size_integer = int(lot_size_decimal * 10 ** decimals_base)
+   >>> lot_size_integer
+   10000000
+   ```
 1. $$\LARGE l_d = l_i 10 ^ {-d_b}$$
-
-    ```python
-    >>> lot_size_decimal = dec(lot_size_integer) / 10 ** decimals_base
-    >>> lot_size_decimal
-    Decimal('0.1')
-    ```
-
+   ```python
+   >>> lot_size_decimal = dec(lot_size_integer) / 10 ** decimals_base
+   >>> lot_size_decimal
+   Decimal('0.1')
+   ```
 1. $$\LARGE t_i = l_d t_d 10 ^ {d_q}$$
-
-    ```python
-    >>> decimals_quote = 6
-    >>> tick_size_decimal = dec('0.01')
-    >>> tick_size_integer = int(lot_size_decimal * tick_size_decimal
-    ...                         * 10 ** decimals_quote)
-    >>> tick_size_integer
-    1000
-    ```
-
+   ```python
+   >>> decimals_quote = 6
+   >>> tick_size_decimal = dec('0.01')
+   >>> tick_size_integer = int(lot_size_decimal * tick_size_decimal
+   ...                         * 10 ** decimals_quote)
+   >>> tick_size_integer
+   1000
+   ```
 1. $$\LARGE t_d = \frac{t_i}{l_i} 10 ^ {d_b - d_q}$$
-
-    ```python
-    >>> tick_size_decimal = (dec(tick_size_integer) / dec(lot_size_integer)
-    ...                      * 10 ** (decimals_base - decimals_quote)).normalize()
-    >>> tick_size_decimal
-    Decimal('0.01')
-    ```
-
+   ```python
+   >>> tick_size_decimal = (dec(tick_size_integer) / dec(lot_size_integer)
+   ...                      * 10 ** (decimals_base - decimals_quote)).normalize()
+   >>> tick_size_decimal
+   Decimal('0.01')
+   ```
 1. $$\LARGE m_i = m_d 10 ^ {d_b}$$
-
-    ```python
-    >>> min_size_decimal = dec('0.5')
-    >>> min_size_integer = int(min_size_decimal * 10 ** decimals_base)
-    >>> min_size_integer
-    50000000
-    ```
-
+   ```python
+   >>> min_size_decimal = dec('0.5')
+   >>> min_size_integer = int(min_size_decimal * 10 ** decimals_base)
+   >>> min_size_integer
+   50000000
+   ```
 1. $$\LARGE m_d = m_i 10 ^ {-d_b}$$
-
-    ```python
-    >>> min_size_decimal = dec(min_size_integer) / 10 ** decimals_base
-    >>> min_size_decimal
-    Decimal('0.5')
-    ```
-
+   ```python
+   >>> min_size_decimal = dec(min_size_integer) / 10 ** decimals_base
+   >>> min_size_decimal
+   Decimal('0.5')
+   ```
 1. $$\LARGE s_i = \frac{s_d}{l_d}$$
-
-    ```python
-    >>> size_decimal = dec('7.8')
-    >>> size_integer = int(size_decimal / lot_size_decimal)
-    >>> size_integer
-    78
-    ```
-
+   ```python
+   >>> size_decimal = dec('7.8')
+   >>> size_integer = int(size_decimal / lot_size_decimal)
+   >>> size_integer
+   78
+   ```
 1. $$\LARGE s_d = s_i l_i 10 ^ {-d_b}$$
-
-    ```python
-    >>> size_decimal = dec(size_integer) * lot_size_integer / 10 ** decimals_base
-    >>> size_decimal
-    Decimal('7.8')
-    ```
-
+   ```python
+   >>> size_decimal = dec(size_integer) * lot_size_integer / 10 ** decimals_base
+   >>> size_decimal
+   Decimal('7.8')
+   ```
 1. $$\LARGE p_i = \frac{p_d}{t_d}$$
-
-    ```python
-    >>> price_decimal = dec('5.23')
-    >>> price_integer = int(price_decimal / tick_size_decimal)
-    >>> price_integer
-    523
-    ```
-
+   ```python
+   >>> price_decimal = dec('5.23')
+   >>> price_integer = int(price_decimal / tick_size_decimal)
+   >>> price_integer
+   523
+   ```
 1. $$\LARGE p_d = \frac{p_i t_i}{l_i} 10 ^ {d_b - d_q}$$
-
-    ```python
-    >>> price_decimal = (dec(price_integer) * dec(tick_size_integer)
-    ...                  / dec(lot_size_integer)
-    ...                  * 10 ** (decimals_base - decimals_quote)).normalize()
-    >>> price_decimal
-    Decimal('5.23')
-    ```
-
+   ```python
+   >>> price_decimal = (dec(price_integer) * dec(tick_size_integer)
+   ...                  / dec(lot_size_integer)
+   ...                  * 10 ** (decimals_base - decimals_quote)).normalize()
+   >>> price_decimal
+   Decimal('5.23')
+   ```
 1. $$\LARGE a_d = s_d p_d$$
-
-    ```python
-    >>> amount_decimal = size_decimal * price_decimal
-    >>> amount_decimal
-    Decimal('40.794')
-    ```
-
+   ```python
+   >>> amount_decimal = size_decimal * price_decimal
+   >>> amount_decimal
+   Decimal('40.794')
+   ```
 1. $$\LARGE a_i = a_d 10 ^ {d_q}$$
-
-    ```python
-    >>> amount_integer = int(amount_decimal * 10 ** decimals_quote)
-    >>> amount_integer
-    40794000
-    ```
-
+   ```python
+   >>> amount_integer = int(amount_decimal * 10 ** decimals_quote)
+   >>> amount_integer
+   40794000
+   ```
 1. $$\LARGE a_i = s_i p_i t_i$$
-
-    ```python
-    >>> amount_integer = size_integer * price_integer * tick_size_integer
-    >>> amount_integer
-    40794000
-    ```
-
+   ```python
+   >>> amount_integer = size_integer * price_integer * tick_size_integer
+   >>> amount_integer
+   40794000
+   ```
 1. $$\LARGE a_d = a_i 10 ^ {-d_q}$$
-
-    ```python
-    >>> amount_decimal = dec(amount_integer) / 10 ** decimals_quote
-    >>> amount_decimal
-    Decimal('40.794')
-    ```
+   ```python
+   >>> amount_decimal = dec(amount_integer) / 10 ** decimals_quote
+   >>> amount_decimal
+   Decimal('40.794')
+   ```
 
 Hence:
 
 | Variable                   | Decimal amount | Integer amount |
-|----------------------------|----------------|----------------|
+| -------------------------- | -------------- | -------------- |
 | Lot size                   | 0.1 `APT`      | 10000000       |
 | Tick size                  | 0.01 `USDC`    | 1000           |
 | Minimum order size         | 0.5  `APT`     | 50000000       |
@@ -426,32 +417,32 @@ Hence to check that a lot size/tick size combination is even possible for a mark
 
 1. Pick a decimal lot size.
 
-    ```python
-    >>> lot_size_decimal = dec('0.1')
-    ```
+   ```python
+   >>> lot_size_decimal = dec('0.1')
+   ```
 
 1. Assert that integer lot size corresponds to an integer multiple of base subunits.
 
-    ```python
-    >>> to_check = lot_size_decimal * 10 ** decimals_base
-    >>> lot_size_integer = int(to_check)
-    >>> assert to_check >= 1 and to_check == lot_size_integer
-    ```
+   ```python
+   >>> to_check = lot_size_decimal * 10 ** decimals_base
+   >>> lot_size_integer = int(to_check)
+   >>> assert to_check >= 1 and to_check == lot_size_integer
+   ```
 
 1. Pick a decimal tick size.
 
-    ```python
-    >>> tick_size_decimal = dec('0.01')
-    ```
+   ```python
+   >>> tick_size_decimal = dec('0.01')
+   ```
 
 1. Assert that the integer tick size corresponds to an integer multiple of quote subunits.
 
-    ```python
-    >>> to_check = (lot_size_decimal * tick_size_decimal
-    ...             * 10 ** decimals_quote).normalize()
-    >>> tick_size_integer = int(to_check)
-    >>> assert to_check >= 1 and to_check == tick_size_integer
-    ```
+   ```python
+   >>> to_check = (lot_size_decimal * tick_size_decimal
+   ...             * 10 ** decimals_quote).normalize()
+   >>> tick_size_integer = int(to_check)
+   >>> assert to_check >= 1 and to_check == tick_size_integer
+   ```
 
 ### Noteworthy examples
 
@@ -459,7 +450,7 @@ Consider the trading pair `wBTC/USDC`:
 as of the time of this writing, one `BTC` costs approximately 17792.27 `USD`, so initial choices for lot size and tick size might entail:
 
 1. 0.00001 `wBTC` decimal lot size (corresponding to 0.1779227 `USDC` nominal).
-2. 0.01 `USDC` decimal tick size.
+1. 0.01 `USDC` decimal tick size.
 
 Notably, these choices yield a total quote amount increment that does not correspond to an integer multiple of `USDC` subunits:
 
@@ -480,7 +471,7 @@ AssertionError
 Thus a different combination must be chosen, for example, by increasing decimal lot size by a factor of 10:
 
 1. 0.0001 `wBTC` decimal lot size (corresponding to 1.779227 `USDC` nominal).
-2. 0.01 `USDC` decimal tick size.
+1. 0.01 `USDC` decimal tick size.
 
 Here, the resultant quote amount increment corresponds to 1 `USDC` subunit, for a tick size of 1:
 
@@ -498,7 +489,7 @@ However, the new decimal order size granularity corresponds to 1.779227 `USDC` n
 Hence alternative parametric inputs might entail:
 
 1. 0.00005 `wBTC` decimal order size granularity (corresponding to 0.8896135 `USDC` nominal).
-2. 0.02 `USDC` decimal price granularity.
+1. 0.02 `USDC` decimal price granularity.
 
 Here, the total quote amount increment again corresponds to an integer multiple of `USDC` subunits, for a tick size of 1:
 
@@ -537,7 +528,7 @@ Next, consider a liquid staking derivative `sAPT` trading against `APT`, `sAPT/A
 Here, high price precision may be appropriate:
 
 | Variable          | Value                     |
-|-------------------|---------------------------|
+| ----------------- | ------------------------- |
 | Decimal lot size  | 0.01 `sAPT`               |
 | Decimal tick size | 0.000001 `APT` per `sAPT` |
 | Base decimals     | 8                         |
@@ -571,12 +562,12 @@ Prices in Econia are represented as 32-bit integers, such that the maximum possi
 
 :::
 
-| Variable                       | Value                          |
-|--------------------------------|--------------------------------|
-| Decimal lot size               | 0.0001 `wBTC`                  |
-| Quote asset decimals           | 10                             |
-| Decimal tick size              | 0.000001 `USDX` per `wBTC`     |
-| Decimal price                  | 17792.280012 `USDX` per `wBTC` |
+| Variable             | Value                          |
+| -------------------- | ------------------------------ |
+| Decimal lot size     | 0.0001 `wBTC`                  |
+| Quote asset decimals | 10                             |
+| Decimal tick size    | 0.000001 `USDX` per `wBTC`     |
+| Decimal price        | 17792.280012 `USDX` per `wBTC` |
 
 ```python
 >>> lot_size_decimal = dec('0.0001')
@@ -605,12 +596,12 @@ Still, however, there are several guidelines that can aid the process:
    overly-granular lot size and tick size combinations do not properly translate to integer tick sizes, and may make indexing more difficult.
    Three orders at price 12.34 is easier to interpret than one order each at 12.3401, 12.3404, and 12.3407.
 
-2. **Specify a reasonable minimum order size that will help keep gas costs low**:
+1. **Specify a reasonable minimum order size that will help keep gas costs low**:
    when matching against the book, an AVL queue removal is required for each fill, which means that taker orders will require more global storage operations if they have to fill against more maker orders.
    For example, if the minimum order size for a market corresponds to \$ 0.1 USD nominal, and someone submits a market buy order for \$100 of the base asset, then they may have to pay the gas costs for up to $100 / 0.1 = 1000$ AVL queue operations.
    In contrast, for a more reasonable minimum order size of \$ 10 USD nominal, at most they will have to pay for 10 AVL queue operations.
 
-3. **Plan for price increases**:
+1. **Plan for price increases**:
    as shown above, prices must be able to fit into 32-bit integers.
    If a market's parameters have been calibrated such that a 3x price increase will lead to a 32-bit integer overflow, then a different lot size/tick size combination should be chosen.
    Notably, if prices go up on the order of 100x, for instance, then a new market will likely be necessary anyways, due to changes in the appropriate level of granularity for a lot size/tick size combination.
@@ -635,8 +626,8 @@ Here, orders far away from the spread are subject to cancellation if a better pr
 If an attacker were to attempt placing and cancelling during the same transaction to circumvent these implications, they would still have to pay for:
 
 1. [`N_NODES_MAX`] insertions to the AVL queue to place their malicious orders,
-2. [`N_NODES_MAX`] removals from the AVL queue for the evictee cancellations, and
-3. [`N_NODES_MAX`] removals from the AVL queue to cancel their own malicious orders.
+1. [`N_NODES_MAX`] removals from the AVL queue for the evictee cancellations, and
+1. [`N_NODES_MAX`] removals from the AVL queue to cancel their own malicious orders.
 
 Notably, each of these operations entails assorted function calls, global state mutation, etc., such that the requisite transaction would fail due to too high of a gas cost.
 In theory an attacker could split up the operation across multiple transactions, but then of course they risk having their orders filled at a price worse than the best market price (since they would have to place an order closer to the spread than that of the best order, in order to evict the order with the highest price-time priority).
@@ -670,16 +661,13 @@ As explained in the [market module documentation], a market order ID encodes the
 Notably, each market order ID also contains an [AVL queue]-specific access key, which essentially functions as a pointer into [AVL queue] memory for a similar inactive node stack paradigm.
 Whether in a [`MarketAccount`] or an [`OrderBook`], the inactive node stack approach decreases gas costs by minimizing the number of table item creations.
 
-
-<!---Alphabetized reference links-->
-
-[AVL queue]:                   https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/avl_queue.md
-[AVL queue height spec]:       https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/avl_queue.md#height
+[avl queue]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/avl_queue.md
+[avl queue height spec]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/avl_queue.md#height
 [market module documentation]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md
-[`CRITICAL_HEIGHT`]:           https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#0xc0deb00c_market_CRITICAL_HEIGHT
-[`MarketAccount`]:             https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/user.md#0xc0deb00c_user_MarketAccount
-[`N_NODES_MAX`]:               https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/avl_queue.md#0xc0deb00c_avl_queue_N_NODES_MAX
-[`OrderBook`]:                 https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_OrderBook
-[`Tablist`]:                   https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/tablist.md#0xc0deb00c_tablist_Tablist
-[`market::Order`]:             https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_Order
-[`user::Order`]:               https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/user.md#0xc0deb00c_user_Order
+[`critical_height`]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#0xc0deb00c_market_CRITICAL_HEIGHT
+[`market::order`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_Order
+[`marketaccount`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/user.md#0xc0deb00c_user_MarketAccount
+[`n_nodes_max`]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/avl_queue.md#0xc0deb00c_avl_queue_N_NODES_MAX
+[`orderbook`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_OrderBook
+[`tablist`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/tablist.md#0xc0deb00c_tablist_Tablist
+[`user::order`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/user.md#0xc0deb00c_user_Order

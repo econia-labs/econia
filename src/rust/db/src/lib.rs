@@ -1,12 +1,10 @@
 use diesel::{prelude::*, Connection, PgConnection};
+use models::market::{MarketRegistrationEvent, NewMarketRegistrationEvent};
 use serde::Deserialize;
 
 use crate::models::{
     coin::{Coin, NewCoin},
-    events::{
-        MakerEvent, MarketRegistrationEvent, NewMakerEvent, NewMarketRegistrationEvent,
-        NewTakerEvent, TakerEvent,
-    },
+    events::{MakerEvent, NewMakerEvent, NewTakerEvent, TakerEvent},
 };
 
 pub mod error;
@@ -31,7 +29,7 @@ pub fn establish_connection(url: String) -> PgConnection {
         .unwrap_or_else(|_| panic!("Could not connect to database {}", url))
 }
 
-pub fn create_coin(conn: &mut PgConnection, coin: &NewCoin<'_>) -> Coin {
+pub fn create_coin(conn: &mut PgConnection, coin: &NewCoin) -> Coin {
     use crate::schema::coins;
     diesel::insert_into(coins::table)
         .values(coin)

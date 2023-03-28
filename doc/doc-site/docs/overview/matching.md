@@ -31,7 +31,7 @@ Depending on the price and restriction, a limit order will first match across th
 Econia supports the following limit order restriction flags:
 
 | Flag                    | Meaning                                                             |
-|-------------------------|---------------------------------------------------------------------|
+| ----------------------- | ------------------------------------------------------------------- |
 | [`NO_RESTRICTION`]      | Optionally fill as a taker, then post to the book as a maker        |
 | [`FILL_OR_ABORT`]       | Abort if any size posts as a maker (only fill)                      |
 | [`POST_OR_ABORT`]       | Abort if any size fills as a taker (only post)                      |
@@ -45,7 +45,7 @@ As described in [`place_limit_order_passive_advance()`], a user can specify a pa
 For example, consider placing a passive advance limit order on a market where the maximum bid price is 100 and the minimum ask price is 106:
 
 | Order side | Advance style | Advance amount | Passive advance price |
-|------------|---------------|----------------|-----------------------|
+| ---------- | ------------- | -------------- | --------------------- |
 | Bid        | Ticks         | 0              | 100                   |
 | Bid        | Ticks         | 1              | 101                   |
 | Bid        | Percent       | 100            | 105                   |
@@ -57,10 +57,10 @@ For example, consider placing a passive advance limit order on a market where th
 
 Passive advance limit orders enable the following scenarios, without any knowledge of the maximum bid or minimum ask price:
 
-* Providing liquidity at the best price offered by the market (0% advance).
-* Providing liquidity at the least-aggressive price required to take price-time priority (1 tick advance).
-* Providing liquidity at the most-aggressive price while ensuring passivity (100% advance).
-* Providing liquidity at the mid price (50% advance).
+- Providing liquidity at the best price offered by the market (0% advance).
+- Providing liquidity at the least-aggressive price required to take price-time priority (1 tick advance).
+- Providing liquidity at the most-aggressive price while ensuring passivity (100% advance).
+- Providing liquidity at the mid price (50% advance).
 
 In the presence of miner extractable value (MEV)-style front-running, any passive advance limit order is essentially converted to a 100% passive advance:
 continuing the above example, if someone places a 0% passive advance bid, a front-runner simply needs to place a bid at price 105, execute the legitimate transaction, then cancel their malicious bid, to ensure that the passive advance limit order posts at a price of 105 instead of 100.
@@ -80,12 +80,12 @@ This is like saying "I am willing to buy up to 36 oranges (maximum base) but no 
 Econia's matching engine supports configurable self match behavior, with a self match defined as a hypothetical fill where taker and maker assets are derived from the same [market account].
 Hence since [limit orders] and [market orders] can both fill as a taker, they require one of the following self match behavior flags:
 
-| Flag             | Behavior during self match     |
-|------------------|--------------------------------|
-| [`ABORT`]        | Abort                          |
-| [`CANCEL_BOTH`]  | Cancel maker and taker orders  |
-| [`CANCEL_MAKER`] | Cancel maker order only        |
-| [`CANCEL_TAKER`] | Cancel taker order only        |
+| Flag             | Behavior during self match    |
+| ---------------- | ----------------------------- |
+| [`ABORT`]        | Abort                         |
+| [`CANCEL_BOTH`]  | Cancel maker and taker orders |
+| [`CANCEL_MAKER`] | Cancel maker order only       |
+| [`CANCEL_TAKER`] | Cancel taker order only       |
 
 Note that self matching only applies within a [market account]:
 one custodian cannot adversarially cancel orders placed by a different custodian for the same user and market.
@@ -114,51 +114,49 @@ Both [limit orders] and [taker-only orders] accept an [integer price], but rely 
 
 For [limit orders]:
 
-* A `side`, either [`ASK`] or [`BID`].
-* A `size`, denoted in [lots].
+- A `side`, either [`ASK`] or [`BID`].
+- A `size`, denoted in [lots].
 
 For [taker-only orders]:
 
-* A `direction`, either [`BUY`] or [`SELL`].
-* Minimum and maximum base and quote amounts, denoted in [indivisible subunits].
+- A `direction`, either [`BUY`] or [`SELL`].
+- Minimum and maximum base and quote amounts, denoted in [indivisible subunits].
 
 For [limit orders], which can match as a maker or as a taker, the specified `size` is matched regardless of fees, whereas for [taker-only orders], maximum quote trade amounts are [adjusted for taker fees] per above.
 
 Per [issue 56], in the interest of developer ease, `side` and `direction` flag polarities are equivalent, such that [`ASK`] `==` [`SELL`] and [`BID`] `==` [`BUY`].
 
-<!---Alphabetized reference links-->
-
-[AVL queue]:                             ./orders#order-book-structure
-[adjusted for taker fees]:               #fee-assessment
-[base and quote asset]:                  ./orders#units-and-market-parameters
-[coins or generic assets]:               ./registry#markets
-[custodian]:                             ./registry#custodians
-[indivisible subunits]:                  ./orders#units-and-market-parameters
-[integer price]:                         ./orders#units-and-market-parameters
-[issue 56]:                              https://github.com/econia-labs/econia/issues/56
-[limit orders]:                          #limit-orders
-[lots]:                                  ./orders#units-and-market-parameters
-[market account]:                        ./market-accounts
-[market module documentation]:           https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md
-[market orders]:                         #taker-only-orders
-[taker fees]:                            ./incentives
-[taker-only orders]:                     #taker-only-orders
-[`ABORT`]:                               https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_ABORT
-[`ASK`]:                                 https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_ASK
-[`BID`]:                                 https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_BID
-[`BUY`]:                                 https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_BUY
-[`CANCEL_BOTH`]:                         https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_CANCEL_BOTH
-[`CANCEL_MAKER`]:                        https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_CANCEL_MAKER
-[`CANCEL_TAKER`]:                        https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_CANCEL_TAKER
-[`FILL_OR_ABORT`]:                       https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_FILL_OR_ABORT
-[`IMMEDIATE_OR_CANCEL`]:                 https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_IMMEDIATE_OR_CANCEL
-[`NO_RESTRICTION`]:                      https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_NO_RESTRICTION
-[`POST_OR_ABORT`]:                       https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_POST_OR_ABORT
-[`SELL`]:                                https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_SELL
-[`assess_taker_fees()`]:                 https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/incentives.md#0xc0deb00c_incentives_assess_taker_fees
-[`calculate_max_quote_match()`]:         https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/incentives.md#0xc0deb00c_incentives_calculate_max_quote_match
-[`match()`]:                             https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_match
-[`place_limit_order()`]:                 https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_place_limit_order
+[adjusted for taker fees]: #fee-assessment
+[avl queue]: ./orders#order-book-structure
+[base and quote asset]: ./orders#units-and-market-parameters
+[coins or generic assets]: ./registry#markets
+[custodian]: ./registry#custodians
+[indivisible subunits]: ./orders#units-and-market-parameters
+[integer price]: ./orders#units-and-market-parameters
+[issue 56]: https://github.com/econia-labs/econia/issues/56
+[limit orders]: #limit-orders
+[lots]: ./orders#units-and-market-parameters
+[market account]: ./market-accounts
+[market module documentation]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md
+[market orders]: #taker-only-orders
+[taker fees]: ./incentives
+[taker-only orders]: #taker-only-orders
+[`abort`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_ABORT
+[`ask`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_ASK
+[`assess_taker_fees()`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/incentives.md#0xc0deb00c_incentives_assess_taker_fees
+[`bid`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_BID
+[`buy`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_BUY
+[`calculate_max_quote_match()`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/incentives.md#0xc0deb00c_incentives_calculate_max_quote_match
+[`cancel_both`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_CANCEL_BOTH
+[`cancel_maker`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_CANCEL_MAKER
+[`cancel_taker`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_CANCEL_TAKER
+[`fill_or_abort`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_FILL_OR_ABORT
+[`immediate_or_cancel`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_IMMEDIATE_OR_CANCEL
+[`match()`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_match
+[`no_restriction`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_NO_RESTRICTION
+[`place_limit_order()`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_place_limit_order
 [`place_limit_order_passive_advance()`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_place_limit_order_passive_advance
-[`place_market_order()`]:                https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_place_market_order
-[`swap()`]:                              https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_swap
+[`place_market_order()`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_place_market_order
+[`post_or_abort`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_POST_OR_ABORT
+[`sell`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_SELL
+[`swap()`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_swap

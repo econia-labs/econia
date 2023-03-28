@@ -3,7 +3,7 @@ use db::{
     create_coin,
     models::{
         coin::NewCoin,
-        events::{MarketRegistrationEvent, NewMarketRegistrationEvent},
+        market::{MarketRegistrationEvent, NewMarketRegistrationEvent},
     },
     register_market,
 };
@@ -39,6 +39,7 @@ pub fn reset_tables(conn: &mut PgConnection) {
         .expect("Error deleting coins table");
 }
 
+#[allow(dead_code)]
 pub fn setup_market(conn: &mut PgConnection) -> MarketRegistrationEvent {
     let aptos_coin = create_coin(
         conn,
@@ -67,7 +68,7 @@ pub fn setup_market(conn: &mut PgConnection) -> MarketRegistrationEvent {
     register_market(
         conn,
         &NewMarketRegistrationEvent {
-            market_id: 0.into(),
+            market_id: &0.into(),
             time: Utc::now(),
             base_account_address: Some(&aptos_coin.account_address),
             base_module_name: Some(&aptos_coin.module_name),
@@ -76,10 +77,10 @@ pub fn setup_market(conn: &mut PgConnection) -> MarketRegistrationEvent {
             quote_account_address: &tusdc_coin.account_address,
             quote_module_name: &tusdc_coin.module_name,
             quote_struct_name: &tusdc_coin.struct_name,
-            lot_size: 1000.into(),
-            tick_size: 1000.into(),
-            min_size: 1000.into(),
-            underwriter_id: 0.into(),
+            lot_size: &1000.into(),
+            tick_size: &1000.into(),
+            min_size: &1000.into(),
+            underwriter_id: &0.into(),
         },
     )
 }

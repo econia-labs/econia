@@ -6,12 +6,23 @@ use types::error::TypeError;
 
 use crate::schema::orders;
 
+use super::IntoInsertable;
+
 #[derive(Debug, DbEnum, Clone, PartialEq, Eq, Copy, sqlx::Type)]
 #[ExistingTypePath = "crate::schema::sql_types::Side"]
 #[sqlx(type_name = "side", rename_all = "snake_case")]
 pub enum Side {
-    Bid,
     Ask,
+    Bid,
+}
+
+impl From<bool> for Side {
+    fn from(value: bool) -> Self {
+        match value {
+            false => Self::Ask,
+            true => Self::Bid,
+        }
+    }
 }
 
 impl From<types::order::Side> for Side {
@@ -32,7 +43,7 @@ impl From<Side> for types::order::Side {
     }
 }
 
-#[derive(Debug, DbEnum, Clone, PartialEq, Eq, sqlx::Type)]
+#[derive(Debug, DbEnum, Clone, Copy, PartialEq, Eq, sqlx::Type)]
 #[ExistingTypePath = "crate::schema::sql_types::OrderState"]
 #[sqlx(type_name = "order_state", rename_all = "snake_case")]
 pub enum OrderState {
@@ -60,13 +71,31 @@ pub struct Order {
 pub struct NewOrder<'a> {
     pub market_order_id: &'a BigDecimal,
     pub market_id: &'a BigDecimal,
-    pub side: &'a Side,
+    pub side: Side,
     pub size: &'a BigDecimal,
     pub price: &'a BigDecimal,
     pub user_address: &'a str,
-    pub custodian_id: Option<BigDecimal>,
-    pub order_state: &'a OrderState,
+    pub custodian_id: Option<&'a BigDecimal>,
+    pub order_state: OrderState,
     pub created_at: &'a DateTime<Utc>,
+}
+
+impl<'a> IntoInsertable for &'a Order {
+    type Insertable = NewOrder<'a>;
+
+    fn into_insertable(self) -> Self::Insertable {
+        NewOrder {
+            market_order_id: &self.market_order_id,
+            market_id: &self.market_id,
+            side: self.side,
+            size: &self.size,
+            price: &self.price,
+            user_address: &self.user_address,
+            custodian_id: self.custodian_id.as_ref(),
+            order_state: self.order_state,
+            created_at: &self.created_at,
+        }
+    }
 }
 
 impl From<OrderState> for types::order::OrderState {

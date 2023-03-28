@@ -1,3 +1,0 @@
-group_imports = "StdExternalCrate"
-ignore = ["dependencies"]
-imports_granularity = "Crate"

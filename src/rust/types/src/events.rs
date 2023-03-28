@@ -40,7 +40,6 @@ pub struct TakerEvent {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct MarketRegistrationEvent {
     pub market_id: u64,
-    pub time: DateTime<Utc>,
     pub base_account_address: Option<String>,
     pub base_module_name: Option<String>,
     pub base_struct_name: Option<String>,
@@ -52,4 +51,5 @@ pub struct MarketRegistrationEvent {
     pub tick_size: u64,
     pub min_size: u64,
     pub underwriter_id: u64,
+    pub time: DateTime<Utc>,
 }

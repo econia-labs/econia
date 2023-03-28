@@ -45,7 +45,7 @@ pub async fn ws_handler(
 async fn outbound_message_handler(
     mut brx: broadcast::Receiver<Update>,
     tx: mpsc::Sender<OutboundMessage>,
-    subs: &Arc<Mutex<HashSet<Channel>>>,
+    subs: Arc<Mutex<HashSet<Channel>>>,
 ) -> Result<(), WebSocketError> {
     while let Ok(update) = brx.recv().await {
         let subbed = match update {
@@ -68,8 +68,8 @@ async fn outbound_message_handler(
 
 fn get_response_message(
     msg_i: InboundMessage,
-    subs: &Arc<Mutex<HashSet<Channel>>>,
-    last_ping: &Arc<Mutex<DateTime<Utc>>>,
+    subs: &Mutex<HashSet<Channel>>,
+    last_ping: &Mutex<DateTime<Utc>>,
     who: SocketAddr,
 ) -> Result<OutboundMessage, WebSocketError> {
     match msg_i {
@@ -132,8 +132,8 @@ fn get_response_message(
 async fn inbound_message_handler(
     mut receiver: SplitStream<WebSocket>,
     tx: mpsc::Sender<OutboundMessage>,
-    subs: &Arc<Mutex<HashSet<Channel>>>,
-    last_ping: &Arc<Mutex<DateTime<Utc>>>,
+    subs: Arc<Mutex<HashSet<Channel>>>,
+    last_ping: Arc<Mutex<DateTime<Utc>>>,
     who: SocketAddr,
 ) -> Result<(), WebSocketError> {
     // define regex to remove line breaks and whitespace
@@ -148,7 +148,7 @@ async fn inbound_message_handler(
                 );
                 match serde_json::from_str::<InboundMessage>(&s) {
                     Ok(msg_i) => {
-                        let msg_o = get_response_message(msg_i, subs, last_ping, who)?;
+                        let msg_o = get_response_message(msg_i, &subs, &last_ping, who)?;
                         tx.send(msg_o).await?;
                     }
                     Err(e) => {
@@ -188,7 +188,7 @@ async fn inbound_message_handler(
 
 async fn ping_check_handler(
     tx: mpsc::Sender<OutboundMessage>,
-    last_ping: &Arc<Mutex<DateTime<Utc>>>,
+    last_ping: Arc<Mutex<DateTime<Utc>>>,
     who: SocketAddr,
 ) -> Result<(), WebSocketError> {
     let mut interval = tokio::time::interval(PING_CHECK_INTERVAL);
@@ -207,7 +207,7 @@ async fn ping_check_handler(
                 who
             );
             tx.send(OutboundMessage::Error {
-                message: format!("more than 1 hour elapsed since last ping; closing connection"),
+                message: "more than 1 hour elapsed since last ping; closing connection".to_string(),
             })
             .await?;
             tokio::time::sleep(std::time::Duration::from_millis(100)).await;
@@ -223,7 +223,7 @@ async fn forward_message_handler(
 ) -> Result<(), WebSocketError> {
     while let Some(msg) = rx.recv().await {
         let s = serde_json::to_string(&msg)?;
-        tracing::info!("sending message `{}` to client {}", s, who);
+        tracing::debug!("sending message `{}` to client {}", s, who);
         sender.send(Message::Text(s)).await?;
     }
     Ok(())
@@ -247,9 +247,9 @@ async fn handle_socket(ws: WebSocket, btx: broadcast::Sender<Update>, who: Socke
     });
 
     let mtx1 = mtx.clone();
-    let subs1 = subs.clone();
+    let subs1 = Arc::clone(&subs);
     let mut send_task = tokio::spawn(async move {
-        if let Err(e) = outbound_message_handler(brx, mtx1, &subs1).await {
+        if let Err(e) = outbound_message_handler(brx, mtx1, subs1).await {
             tracing::error!(
                 "websocket connection with client {} failed on outbound message handler: {}",
                 who,
@@ -259,9 +259,9 @@ async fn handle_socket(ws: WebSocket, btx: broadcast::Sender<Update>, who: Socke
     });
 
     let mtx2 = mtx.clone();
-    let last_ping1 = last_ping.clone();
+    let last_ping1 = Arc::clone(&last_ping);
     let mut recv_task = tokio::spawn(async move {
-        if let Err(e) = inbound_message_handler(receiver, mtx2, &subs, &last_ping1, who).await {
+        if let Err(e) = inbound_message_handler(receiver, mtx2, subs, last_ping1, who).await {
             tracing::error!(
                 "websocket connection with client {} failed on inbound message handler: {}",
                 who,
@@ -271,7 +271,7 @@ async fn handle_socket(ws: WebSocket, btx: broadcast::Sender<Update>, who: Socke
     });
 
     let mut ping_check_task = tokio::spawn(async move {
-        if let Err(e) = ping_check_handler(mtx, &last_ping, who).await {
+        if let Err(e) = ping_check_handler(mtx, last_ping, who).await {
             tracing::error!(
                 "websocket connection with client {} failed on ping check handler: {}",
                 who,

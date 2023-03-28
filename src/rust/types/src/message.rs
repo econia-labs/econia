@@ -3,7 +3,12 @@ use serde::{Deserialize, Serialize};
 use crate::order::Order;
 
 #[derive(Debug, Deserialize, Serialize, Clone, Hash, PartialEq, Eq)]
-#[serde(tag = "channel", content = "params", rename_all = "snake_case")]
+#[serde(
+    deny_unknown_fields,
+    tag = "channel",
+    content = "params",
+    rename_all = "snake_case"
+)]
 pub enum Channel {
     Orders {
         market_id: u64,
@@ -19,14 +24,19 @@ pub enum Channel {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(tag = "channel", content = "data", rename_all = "snake_case")]
+#[serde(
+    deny_unknown_fields,
+    tag = "channel",
+    content = "data",
+    rename_all = "snake_case"
+)]
 pub enum Update {
     Orders(Order),
     // TODO add more update types
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
-#[serde(tag = "method", rename_all = "snake_case")]
+#[serde(deny_unknown_fields, tag = "method", rename_all = "snake_case")]
 pub enum InboundMessage {
     Ping,
     Subscribe(Channel),
@@ -41,7 +51,7 @@ pub enum ConfirmMethod {
 }
 
 #[derive(Debug, Serialize, Clone)]
-#[serde(tag = "event", rename_all = "snake_case")]
+#[serde(deny_unknown_fields, tag = "event", rename_all = "snake_case")]
 pub enum OutboundMessage {
     Pong,
     Confirm {

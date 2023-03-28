@@ -1,5 +1,6 @@
 use axum::{http::StatusCode, response::IntoResponse};
 use thiserror::Error;
+use types::message::OutboundMessage;
 
 #[derive(Error, Debug)]
 pub enum ApiError {
@@ -23,4 +24,16 @@ impl IntoResponse for ApiError {
         };
         res.into_response()
     }
+}
+
+#[derive(Error, Debug)]
+pub enum WebSocketError {
+    #[error(transparent)]
+    AxumError(#[from] axum::Error),
+
+    #[error(transparent)]
+    MpscSend(#[from] tokio::sync::mpsc::error::SendError<OutboundMessage>),
+
+    #[error(transparent)]
+    SerdeParse(#[from] serde_json::Error),
 }

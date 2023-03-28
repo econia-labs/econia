@@ -19,6 +19,7 @@ use futures_util::{
     SinkExt, StreamExt,
 };
 use regex::Regex;
+use serde::Serialize;
 use tokio::sync::{broadcast, mpsc};
 use types::message::{Channel, ConfirmMethod, InboundMessage, OutboundMessage, Update};
 
@@ -42,27 +43,48 @@ pub async fn ws_handler(
     ws.on_upgrade(move |ws| handle_socket(ws, state.sender, addr))
 }
 
-async fn outbound_message_handler(
-    mut brx: broadcast::Receiver<Update>,
-    tx: mpsc::Sender<OutboundMessage>,
-    subs: Arc<Mutex<HashSet<Channel>>>,
+async fn forward_message<M: Serialize>(
+    sender: &mut SplitSink<WebSocket, Message>,
+    msg: M,
+    who: SocketAddr,
 ) -> Result<(), WebSocketError> {
-    while let Ok(update) = brx.recv().await {
-        let subbed = match update {
-            Update::Orders(ref order) => {
-                let ch = Channel::Orders {
-                    market_id: order.market_id,
-                    user_address: order.user_address.clone(),
+    let s = serde_json::to_string(&msg)?;
+    tracing::debug!("sending message `{}` to client {}", s, who);
+    sender.send(Message::Text(s)).await?;
+    Ok(())
+}
+
+async fn outbound_message_handler(
+    mut sender: SplitSink<WebSocket, Message>,
+    mut brx: broadcast::Receiver<Update>,
+    mut mrx: mpsc::Receiver<OutboundMessage>,
+    subs: Arc<Mutex<HashSet<Channel>>>,
+    who: SocketAddr,
+) -> Result<(), WebSocketError> {
+    loop {
+        tokio::select! {
+            Ok(update) = brx.recv() => {
+                let subbed = match update {
+                    Update::Orders(ref order) => {
+                        let ch = Channel::Orders {
+                            market_id: order.market_id,
+                            user_address: order.user_address.clone(),
+                        };
+                        let lock = subs.lock().unwrap();
+                        (*lock).contains(&ch)
+                    }
                 };
-                let lock = subs.lock().unwrap();
-                (*lock).contains(&ch)
+                if subbed {
+                    forward_message(&mut sender, OutboundMessage::Update(update), who).await?;
+                }
+            },
+            Some(outbound) = mrx.recv() => forward_message(&mut sender, outbound, who).await?,
+            else => {
+                break
             }
-        };
-        if subbed {
-            let msg = OutboundMessage::Update(update);
-            tx.send(msg).await?;
         }
     }
+
     Ok(())
 }
 
@@ -216,18 +238,6 @@ async fn ping_check_handler(
     }
 }
 
-async fn forward_message_handler(
-    mut sender: SplitSink<WebSocket, Message>,
-    mut rx: mpsc::Receiver<OutboundMessage>,
-    who: SocketAddr,
-) -> Result<(), WebSocketError> {
-    while let Some(msg) = rx.recv().await {
-        let s = serde_json::to_string(&msg)?;
-        tracing::debug!("sending message `{}` to client {}", s, who);
-        sender.send(Message::Text(s)).await?;
-    }
-    Ok(())
-}
 
 async fn handle_socket(ws: WebSocket, btx: broadcast::Sender<Update>, who: SocketAddr) {
     let (sender, receiver) = ws.split();
@@ -236,20 +246,9 @@ async fn handle_socket(ws: WebSocket, btx: broadcast::Sender<Update>, who: Socke
     let subs = Arc::new(Mutex::new(HashSet::<Channel>::new()));
     let last_ping = Arc::new(Mutex::new(Utc::now()));
 
-    let mut fwd_task = tokio::spawn(async move {
-        if let Err(e) = forward_message_handler(sender, mrx, who).await {
-            tracing::error!(
-                "websocket connection with client {} failed on message forward task: {}",
-                who,
-                e
-            );
-        }
-    });
-
-    let mtx1 = mtx.clone();
     let subs1 = Arc::clone(&subs);
     let mut send_task = tokio::spawn(async move {
-        if let Err(e) = outbound_message_handler(brx, mtx1, subs1).await {
+        if let Err(e) = outbound_message_handler(sender, brx, mrx, subs1, who).await {
             tracing::error!(
                 "websocket connection with client {} failed on outbound message handler: {}",
                 who,
@@ -258,10 +257,10 @@ async fn handle_socket(ws: WebSocket, btx: broadcast::Sender<Update>, who: Socke
         }
     });
 
-    let mtx2 = mtx.clone();
     let last_ping1 = Arc::clone(&last_ping);
+    let mtx1 = mtx.clone();
     let mut recv_task = tokio::spawn(async move {
-        if let Err(e) = inbound_message_handler(receiver, mtx2, subs, last_ping1, who).await {
+        if let Err(e) = inbound_message_handler(receiver, mtx1, subs, last_ping1, who).await {
             tracing::error!(
                 "websocket connection with client {} failed on inbound message handler: {}",
                 who,
@@ -283,22 +282,14 @@ async fn handle_socket(ws: WebSocket, btx: broadcast::Sender<Update>, who: Socke
     // if one of these tasks end, abort the others
     tokio::select! {
         _ = &mut send_task => {
-            fwd_task.abort();
             recv_task.abort();
             ping_check_task.abort();
         }
         _ = &mut recv_task => {
-            fwd_task.abort();
-            send_task.abort();
-            ping_check_task.abort();
-        }
-        _ = &mut fwd_task => {
-            recv_task.abort();
             send_task.abort();
             ping_check_task.abort();
         }
         _ = &mut ping_check_task => {
-            fwd_task.abort();
             recv_task.abort();
             send_task.abort();
         }

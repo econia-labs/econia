@@ -23,6 +23,18 @@ Manages an Econia-owned resource account.
 
 
 
+##### Show all the modules that "resource_account" depends on directly or indirectly
+
+
+![](img/resource_account_forward_dep.svg)
+
+
+##### Show all the modules that depend on "resource_account" directly or indirectly
+
+
+![](img/resource_account_backward_dep.svg)
+
+
 <a name="0xc0deb00c_resource_account_SignerCapabilityStore"></a>
 
 ## Resource `SignerCapabilityStore`

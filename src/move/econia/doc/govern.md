@@ -15,6 +15,18 @@
 
 
 
+##### Show all the modules that "govern" depends on directly or indirectly
+
+
+![](img/govern_forward_dep.svg)
+
+
+##### Show all the modules that depend on "govern" directly or indirectly
+
+
+![](img/govern_backward_dep.svg)
+
+
 <a name="@Constants_0"></a>
 
 ## Constants

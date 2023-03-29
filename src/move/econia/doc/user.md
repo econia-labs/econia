@@ -479,6 +479,18 @@ The below index is automatically generated from source code:
 
 
 
+##### Show all the modules that "user" depends on directly or indirectly
+
+
+![](img/user_forward_dep.svg)
+
+
+##### Show all the modules that depend on "user" directly or indirectly
+
+
+![](img/user_backward_dep.svg)
+
+
 <a name="0xc0deb00c_user_Collateral"></a>
 
 ## Resource `Collateral`

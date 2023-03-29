@@ -29,3 +29,15 @@ pub struct Order {
     pub order_state: OrderState,
     pub created_at: DateTime<Utc>,
 }
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Fill {
+    pub market_id: u64,
+    pub maker_order_id: u64,
+    pub maker: String,
+    pub maker_side: Side,
+    pub custodian_id: Option<u64>,
+    pub size: u64,
+    pub price: u64,
+    pub time: DateTime<Utc>,
+}

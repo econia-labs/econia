@@ -364,6 +364,18 @@ The below index is automatically generated from source code:
 
 
 
+##### Show all the modules that "registry" depends on directly or indirectly
+
+
+![](img/registry_forward_dep.svg)
+
+
+##### Show all the modules that depend on "registry" directly or indirectly
+
+
+![](img/registry_backward_dep.svg)
+
+
 <a name="0xc0deb00c_registry_CustodianCapability"></a>
 
 ## Struct `CustodianCapability`

@@ -3,7 +3,6 @@ use axum::{
     routing::get,
     Json, Router,
 };
-use sqlx::{Pool, Postgres};
 use tower::ServiceBuilder;
 use tower_http::{
     compression::CompressionLayer,
@@ -12,9 +11,9 @@ use tower_http::{
 };
 use types::error::TypeError;
 
-use crate::{error::ApiError, ws::ws_handler};
+use crate::{error::ApiError, ws::ws_handler, AppState};
 
-pub fn router(pool: Pool<Postgres>) -> Router {
+pub fn router(state: AppState) -> Router {
     let cors_layer = CorsLayer::new()
         .allow_methods(Any)
         .allow_headers(Any)
@@ -37,7 +36,7 @@ pub fn router(pool: Pool<Postgres>) -> Router {
             get(open_orders_by_account),
         )
         .route("/ws", get(ws_handler))
-        .with_state(pool)
+        .with_state(state)
         .layer(middleware_stack)
 }
 
@@ -45,7 +44,7 @@ async fn index() -> String {
     String::from("Econia backend API")
 }
 
-async fn markets(State(pool): State<Pool<Postgres>>) -> Result<Json<Vec<types::Market>>, ApiError> {
+async fn markets(State(state): State<AppState>) -> Result<Json<Vec<types::Market>>, ApiError> {
     let query_markets = sqlx::query_as!(
         types::QueryMarket,
         r#"
@@ -78,7 +77,7 @@ async fn markets(State(pool): State<Pool<Postgres>>) -> Result<Json<Vec<types::M
                                 and markets.quote_struct_name = quote.struct_name;
         "#
     )
-    .fetch_all(&pool)
+    .fetch_all(&state.pool)
     .await?;
 
     let markets = query_markets
@@ -91,7 +90,7 @@ async fn markets(State(pool): State<Pool<Postgres>>) -> Result<Json<Vec<types::M
 
 async fn order_history_by_account(
     Path(account_address): Path<String>,
-    State(pool): State<Pool<Postgres>>,
+    State(state): State<AppState>,
 ) -> Result<Json<Vec<types::order::Order>>, ApiError> {
     let order_history_query = sqlx::query_as!(
         db::models::order::Order,
@@ -110,7 +109,7 @@ async fn order_history_by_account(
         "#,
         account_address
     )
-    .fetch_all(&pool)
+    .fetch_all(&state.pool)
     .await?;
 
     if order_history_query.is_empty() {
@@ -127,7 +126,7 @@ async fn order_history_by_account(
 
 async fn open_orders_by_account(
     Path(account_address): Path<String>,
-    State(pool): State<Pool<Postgres>>,
+    State(state): State<AppState>,
 ) -> Result<Json<Vec<types::order::Order>>, ApiError> {
     let open_orders_query = sqlx::query_as!(
         db::models::order::Order,
@@ -146,7 +145,7 @@ async fn open_orders_by_account(
         "#,
         account_address
     )
-    .fetch_all(&pool)
+    .fetch_all(&state.pool)
     .await?;
 
     if open_orders_query.is_empty() {
@@ -170,6 +169,7 @@ mod tests {
         Router,
     };
     use sqlx::PgPool;
+    use tokio::sync::broadcast;
     use tower::ServiceExt;
 
     use super::*;
@@ -198,9 +198,13 @@ mod tests {
             .await
             .expect("Could not connect to DATABASE_URL");
 
+        let (tx, _) = broadcast::channel(16);
+
+        let state = AppState { pool, sender: tx };
+
         let app = Router::new()
             .route("/markets", get(markets))
-            .with_state(pool);
+            .with_state(state);
 
         let response = app
             .oneshot(

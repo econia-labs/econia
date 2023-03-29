@@ -24,6 +24,18 @@ Mock asset types for on- and off-chain testing.
 
 
 
+##### Show all the modules that "assets" depends on directly or indirectly
+
+
+![](img/assets_forward_dep.svg)
+
+
+##### Show all the modules that depend on "assets" directly or indirectly
+
+
+![](img/assets_backward_dep.svg)
+
+
 <a name="0xc0deb00c_assets_CoinCapabilities"></a>
 
 ## Resource `CoinCapabilities`

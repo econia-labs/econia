@@ -1040,6 +1040,18 @@ The below index is automatically generated from source code:
 
 
 
+##### Show all the modules that "avl_queue" depends on directly or indirectly
+
+
+![](img/avl_queue_forward_dep.svg)
+
+
+##### Show all the modules that depend on "avl_queue" directly or indirectly
+
+
+![](img/avl_queue_backward_dep.svg)
+
+
 <a name="0xc0deb00c_avl_queue_AVLqueue"></a>
 
 ## Struct `AVLqueue`

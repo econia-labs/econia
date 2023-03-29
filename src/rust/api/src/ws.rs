@@ -222,7 +222,7 @@ async fn forward_message_handler(
 ) -> Result<(), WebSocketError> {
     while let Some(msg) = rx.recv().await {
         let s = serde_json::to_string(&msg)?;
-        tracing::debug!("sending message `{}` to client {}", s, who);
+        tracing::info!("sending message `{}` to client {}", s, who);
         sender.send(Message::Text(s)).await?;
     }
     Ok(())
@@ -246,7 +246,7 @@ async fn handle_socket(ws: WebSocket, btx: broadcast::Sender<Update>, who: Socke
     });
 
     let mtx1 = mtx.clone();
-    let subs1 = Arc::clone(&subs);
+    let subs1 = subs.clone();
     let mut send_task = tokio::spawn(async move {
         if let Err(e) = outbound_message_handler(brx, mtx1, subs1).await {
             tracing::error!(
@@ -258,7 +258,7 @@ async fn handle_socket(ws: WebSocket, btx: broadcast::Sender<Update>, who: Socke
     });
 
     let mtx2 = mtx.clone();
-    let last_ping1 = Arc::clone(&last_ping);
+    let last_ping1 = last_ping.clone();
     let mut recv_task = tokio::spawn(async move {
         if let Err(e) = inbound_message_handler(receiver, mtx2, subs, last_ping1, who).await {
             tracing::error!(

@@ -43,3 +43,5 @@ types = { path = "../types" }
 
 [dev-dependencies]
 hyper = "0.14.24"
+tokio-tungstenite = "0.18.0"
+url = "2.3.1"

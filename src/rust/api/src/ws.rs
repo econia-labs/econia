@@ -23,15 +23,16 @@ use types::message::{Channel, ConfirmMethod, InboundMessage, OutboundMessage, Up
 
 use crate::{error::WebSocketError, AppState};
 
-// The maximum time allowed since the last ping message is set to 1 hour.
-// If it has been over an hour since the last ping message was received, the
-// WebSocket connection is terminated.
+/// The maximum time allowed since the last ping message is set to 1 hour.
+/// If it has been over an hour since the last ping message was received, the
+/// WebSocket connection is terminated.
 static PING_ELAPSED_TIME_LIMIT: Duration = Duration::from_secs(3600);
 
-// The interval for checking that the time elapsed since the last ping has not
-// exceeded the limit. Set to every 10 minutes.
+/// The interval for checking that the time elapsed since the last ping has not
+/// exceeded the limit. Set to every 10 minutes.
 static PING_CHECK_INTERVAL: Duration = Duration::from_secs(600);
 
+/// Handler for WebSocket handshake request.
 pub async fn ws_handler(
     ws: WebSocketUpgrade,
     State(state): State<AppState>,
@@ -41,6 +42,15 @@ pub async fn ws_handler(
     ws.on_upgrade(move |ws| handle_socket(ws, state.sender, addr))
 }
 
+/// Checks whether the message received from the broadcast channel belongs to a
+/// channel that the client has subscribed to, and then sends the messages to an
+/// mpsc channel to be forwarded to the WebSocket client if it does.
+///
+/// # Arguments
+///
+/// * `brx` - a broadcast receiver which receives updates from the indexer via redis pubsub.
+/// * `tx` - an mpsc channel for sending messages that should be passed on to the client.
+/// * `subs` - a hashset containing the channels that the client is subscribed to.
 async fn outbound_message_handler(
     mut brx: broadcast::Receiver<Update>,
     tx: mpsc::Sender<OutboundMessage>,
@@ -65,6 +75,19 @@ async fn outbound_message_handler(
     Ok(())
 }
 
+/// Given an inbound message received from the WebSocket client and the current
+/// client state, returns a response message and updates the client state.
+///
+/// This function serves to both declutter the inbound message handler, and also
+/// enforces the rule that every client message should have a response from the
+/// WebSocket API.
+///
+/// # Arguments
+///
+/// * `msg_i` - inbound message received from WebSocket client.
+/// * `subs` - mutex containing a hashset storing all the channels the client is subscribed to.
+/// * `last_ping` - a mutex containing the date and time at which the last ping message was received.
+/// * `who` - client address.
 fn get_response_message(
     msg_i: InboundMessage,
     subs: &Mutex<HashSet<Channel>>,
@@ -128,6 +151,17 @@ fn get_response_message(
     }
 }
 
+/// Reads messages received from the WebSocket client, updates the client state
+/// according to any ping, subscribe, or unsubscribe messages it receives, and
+/// sends a response message to an mpsc sender to be forwarded to the client.
+///
+/// # Arguments
+///
+/// * `receiver` - stream of messages from the client.
+/// * `tx` - mpsc sender to send messages to be forwarded to the client.
+/// * `subs`- mutex containing a hashset storing all the channels the client is subscribed to.
+/// * `last_ping` - a mutex containing the date and time at which the last ping message was received.
+/// * `who` - client address.
 async fn inbound_message_handler(
     mut receiver: SplitStream<WebSocket>,
     tx: mpsc::Sender<OutboundMessage>,
@@ -185,6 +219,16 @@ async fn inbound_message_handler(
     Ok(())
 }
 
+/// Checks the time at which the client last sent a ping message at a regular
+/// interval, and sends a message indicating that too much time has passed since
+/// the last ping message and closes the WebSocket connection if too much time
+/// has passed.
+///
+/// # Arguments
+///
+/// * `tx` - mpsc sender to send messages to be forwarded to the client.
+/// * `last_ping` - a mutex containing the date and time at which the last ping message was received.
+/// * `who` - client address.
 async fn ping_check_handler(
     tx: mpsc::Sender<OutboundMessage>,
     last_ping: Arc<Mutex<DateTime<Utc>>>,
@@ -215,6 +259,13 @@ async fn ping_check_handler(
     }
 }
 
+/// Forwards messages from the mpsc receiver to the WebSocket client.
+///
+/// # Arguments
+///
+/// * `sender` - sink to send messages to websocket client
+/// * `rx` - mpsc receiver for receiving messages forwarded from the outbound, inbound, and ping check handlers.
+/// * `who` - client address.
 async fn forward_message_handler(
     mut sender: SplitSink<WebSocket, Message>,
     mut rx: mpsc::Receiver<OutboundMessage>,
@@ -228,6 +279,7 @@ async fn forward_message_handler(
     Ok(())
 }
 
+/// WebSocket connection handler.
 async fn handle_socket(ws: WebSocket, btx: broadcast::Sender<Update>, who: SocketAddr) {
     let (sender, receiver) = ws.split();
     let brx = btx.subscribe();
@@ -304,4 +356,116 @@ async fn handle_socket(ws: WebSocket, btx: broadcast::Sender<Update>, who: Socke
     }
 
     tracing::info!("websocket context for client {} destroyed", who);
+}
+
+#[cfg(test)]
+mod tests {
+    use std::net::TcpListener;
+
+    use axum::extract::connect_info::MockConnectInfo;
+    use sqlx::PgPool;
+    use tokio_tungstenite::{connect_async, tungstenite::Message};
+    use url::Url;
+
+    use crate::{load_config, routes::router, start_redis_channels};
+
+    use super::*;
+
+    #[tokio::test]
+    async fn test_websocket_ping_response() {
+        let config = load_config();
+        let pool = PgPool::connect(&config.database_url)
+            .await
+            .expect("Could not connect to DATABASE_URL");
+
+        let (btx, mut brx) = broadcast::channel(16);
+        let _conn = start_redis_channels(config.redis_url, btx.clone()).await;
+
+        let state = AppState { pool, sender: btx };
+        let app = router(state).layer(MockConnectInfo(SocketAddr::from(([0, 0, 0, 0], 3000))));
+
+        tokio::spawn(async move {
+            // keep broadcast channel alive
+            while let Ok(_) = brx.recv().await {}
+        });
+
+        let listener = TcpListener::bind("0.0.0.0:8000".parse::<SocketAddr>().unwrap()).unwrap();
+        let addr = listener.local_addr().unwrap();
+
+        tokio::spawn(async move {
+            axum::Server::from_tcp(listener)
+                .unwrap()
+                .serve(app.into_make_service())
+                .await
+                .unwrap();
+        });
+
+        let ws_url = Url::parse(&format!("ws://{}/ws", addr)).unwrap();
+        let (mut ws_stream, _) = connect_async(ws_url).await.unwrap();
+
+        let ping_msg = InboundMessage::Ping;
+
+        ws_stream
+            .send(Message::Text(serde_json::to_string(&ping_msg).unwrap()))
+            .await
+            .unwrap();
+
+        if let Some(Ok(msg)) = ws_stream.next().await {
+            assert_eq!(msg.to_string(), r#"{"event":"pong"}"#);
+        } else {
+            panic!("did not receive response from websocket");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_websocket_subscribe_response() {
+        let config = load_config();
+        let pool = PgPool::connect(&config.database_url)
+            .await
+            .expect("Could not connect to DATABASE_URL");
+
+        let (btx, mut brx) = broadcast::channel(16);
+        let _conn = start_redis_channels(config.redis_url, btx.clone()).await;
+
+        let state = AppState { pool, sender: btx };
+        let app = router(state).layer(MockConnectInfo(SocketAddr::from(([0, 0, 0, 0], 3000))));
+
+        tokio::spawn(async move {
+            // keep broadcast channel alive
+            while let Ok(_) = brx.recv().await {}
+        });
+
+        let listener = TcpListener::bind("0.0.0.0:8000".parse::<SocketAddr>().unwrap()).unwrap();
+        let addr = listener.local_addr().unwrap();
+
+        tokio::spawn(async move {
+            axum::Server::from_tcp(listener)
+                .unwrap()
+                .serve(app.into_make_service())
+                .await
+                .unwrap();
+        });
+
+        let ws_url = Url::parse(&format!("ws://{}/ws", addr)).unwrap();
+        let (mut ws_stream, _) = connect_async(ws_url).await.unwrap();
+
+        let sub_msg = InboundMessage::Subscribe(Channel::Orders {
+            market_id: 0,
+            user_address: "0x1".into(),
+        });
+
+        ws_stream
+            .send(Message::Text(serde_json::to_string(&sub_msg).unwrap()))
+            .await
+            .unwrap();
+
+        if let Some(Ok(msg)) = ws_stream.next().await {
+            assert_eq!(
+                msg.to_string(),
+                r#"{"event":"confirm","channel":"orders","params":{"market_id":0,"user_address":"0x1"},"method":"subscribe"}"#
+            );
+        } else {
+            panic!("did not receive response from websocket");
+        }
+    }
 }

@@ -416,4 +416,56 @@ mod tests {
             panic!("did not receive response from websocket");
         }
     }
+
+    #[tokio::test]
+    async fn test_websocket_subscribe_response() {
+        let config = load_config();
+        let pool = PgPool::connect(&config.database_url)
+            .await
+            .expect("Could not connect to DATABASE_URL");
+
+        let (btx, mut brx) = broadcast::channel(16);
+        let _conn = start_redis_channels(config.redis_url, btx.clone()).await;
+
+        let state = AppState { pool, sender: btx };
+        let app = router(state).layer(MockConnectInfo(SocketAddr::from(([0, 0, 0, 0], 3000))));
+
+        tokio::spawn(async move {
+            // keep broadcast channel alive
+            while let Ok(_) = brx.recv().await {}
+        });
+
+        let listener = TcpListener::bind("0.0.0.0:8000".parse::<SocketAddr>().unwrap()).unwrap();
+        let addr = listener.local_addr().unwrap();
+
+        tokio::spawn(async move {
+            axum::Server::from_tcp(listener)
+                .unwrap()
+                .serve(app.into_make_service())
+                .await
+                .unwrap();
+        });
+
+        let ws_url = Url::parse(&format!("ws://{}/ws", addr)).unwrap();
+        let (mut ws_stream, _) = connect_async(ws_url).await.unwrap();
+
+        let sub_msg = InboundMessage::Subscribe(Channel::Orders {
+            market_id: 0,
+            user_address: "0x1".into(),
+        });
+
+        ws_stream
+            .send(Message::Text(serde_json::to_string(&sub_msg).unwrap()))
+            .await
+            .unwrap();
+
+        if let Some(Ok(msg)) = ws_stream.next().await {
+            assert_eq!(
+                msg.to_string(),
+                r#"{"event":"confirm","channel":"orders","params":{"market_id":0,"user_address":"0x1"},"method":"subscribe"}"#
+            );
+        } else {
+            panic!("did not receive response from websocket");
+        }
+    }
 }

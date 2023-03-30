@@ -19,7 +19,10 @@ use futures_util::{
 };
 use regex::Regex;
 use tokio::sync::{broadcast, mpsc};
-use types::message::{Channel, ConfirmMethod, InboundMessage, OutboundMessage, Update};
+use types::{
+    message::{Channel, ConfirmMethod, InboundMessage, OutboundMessage, Update},
+    order::Fill,
+};
 
 use crate::{error::WebSocketError, AppState};
 
@@ -62,6 +65,14 @@ async fn outbound_message_handler(
                 let ch = Channel::Orders {
                     market_id: order.market_id,
                     user_address: order.user_address.clone(),
+                };
+                let lock = subs.lock().unwrap();
+                (*lock).contains(&ch)
+            }
+            Update::Fills(ref fill) => {
+                let ch = Channel::Fills {
+                    market_id: fill.market_id,
+                    user_address: fill.maker.clone(),
                 };
                 let lock = subs.lock().unwrap();
                 (*lock).contains(&ch)

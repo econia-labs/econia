@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::order::Order;
+use crate::order::{Fill, Order};
 
 #[derive(Debug, Deserialize, Serialize, Clone, Hash, PartialEq, Eq)]
 #[serde(
@@ -11,6 +11,10 @@ use crate::order::Order;
 )]
 pub enum Channel {
     Orders {
+        market_id: u64,
+        user_address: String,
+    },
+    Fills {
         market_id: u64,
         user_address: String,
     },
@@ -32,6 +36,7 @@ pub enum Channel {
 )]
 pub enum Update {
     Orders(Order),
+    Fills(Fill),
     // TODO add more update types
 }
 

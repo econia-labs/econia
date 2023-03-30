@@ -46,7 +46,7 @@ async fn index() -> String {
 
 async fn markets(State(state): State<AppState>) -> Result<Json<Vec<types::Market>>, ApiError> {
     let query_markets = sqlx::query_as!(
-        types::QueryMarket,
+        types::query::QueryMarket,
         r#"
         select
             market_id,

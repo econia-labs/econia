@@ -1,5 +1,6 @@
 use std::net::SocketAddr;
 
+use bigdecimal::ToPrimitive;
 use futures_util::StreamExt;
 use serde::Deserialize;
 use sqlx::{PgPool, Pool, Postgres};
@@ -50,8 +51,10 @@ async fn main() {
         .await
         .expect("Could not connect to DATABASE_URL");
 
+    let market_ids = get_market_ids(pool.clone()).await;
+
     let (btx, brx) = broadcast::channel(16);
-    let _conn = start_redis_channels(config.redis_url, btx.clone()).await;
+    let _conn = start_redis_channels(config.redis_url, market_ids, btx.clone()).await;
 
     let state = AppState { pool, sender: btx };
     let app = router(state);
@@ -68,8 +71,22 @@ async fn main() {
         .unwrap();
 }
 
+async fn get_market_ids(pool: Pool<Postgres>) -> Vec<u64> {
+    sqlx::query_as!(
+        types::query::MarketIdQuery,
+        r#"select market_id from markets;"#
+    )
+    .fetch_all(&pool)
+    .await
+    .unwrap()
+    .into_iter()
+    .map(|v| v.market_id.to_u64().unwrap())
+    .collect::<Vec<u64>>()
+}
+
 async fn start_redis_channels(
     redis_url: String,
+    market_ids: Vec<u64>,
     tx: broadcast::Sender<Update>,
 ) -> redis::aio::MultiplexedConnection {
     let client = redis::Client::open(redis_url).expect("could not start redis client");
@@ -78,15 +95,23 @@ async fn start_redis_channels(
         .await
         .expect("could not connect to redis");
 
-    // TODO iterate over every channel
+    let pubsub_conn = client.get_async_connection().await.unwrap();
+
+    let mut pubsub = pubsub_conn.into_pubsub();
+
+    for market_id in market_ids {
+        // TODO add more channels
+        let channels = vec!["orders", "fills"];
+        for channel in channels {
+            // Note: support for pubsub over a multiplexed connection should be coming soon.
+            let pubsub_ch = format!("{}:{}", channel, market_id);
+            (&mut pubsub).subscribe(pubsub_ch.as_str()).await.unwrap();
+
+            tracing::info!("subscribed to channel `{}` on redis", pubsub_ch.as_str());
+        }
+    }
+
     tokio::spawn(async move {
-        let pubsub_conn = client.get_async_connection().await.unwrap();
-
-        let mut pubsub = pubsub_conn.into_pubsub();
-        pubsub.subscribe("orders").await.unwrap();
-
-        tracing::info!("subscribed to channel `orders` on redis");
-
         let mut stream = pubsub.on_message();
 
         while let Some(msg) = stream.next().await {
@@ -95,6 +120,7 @@ async fn start_redis_channels(
             tx.send(update).unwrap();
         }
     });
+
     conn
 }
 

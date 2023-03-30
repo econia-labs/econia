@@ -105,7 +105,7 @@ async fn start_redis_channels(
         for channel in channels {
             // Note: support for pubsub over a multiplexed connection should be coming soon.
             let pubsub_ch = format!("{}:{}", channel, market_id);
-            (&mut pubsub).subscribe(pubsub_ch.as_str()).await.unwrap();
+            pubsub.subscribe(pubsub_ch.as_str()).await.unwrap();
 
             tracing::info!("subscribed to channel `{}` on redis", pubsub_ch.as_str());
         }

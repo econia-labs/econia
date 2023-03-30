@@ -19,10 +19,7 @@ use futures_util::{
 };
 use regex::Regex;
 use tokio::sync::{broadcast, mpsc};
-use types::{
-    message::{Channel, ConfirmMethod, InboundMessage, OutboundMessage, Update},
-    order::Fill,
-};
+use types::message::{Channel, ConfirmMethod, InboundMessage, OutboundMessage, Update};
 
 use crate::{error::WebSocketError, AppState};
 
@@ -378,7 +375,7 @@ mod tests {
     use tokio_tungstenite::{connect_async, tungstenite::Message};
     use url::Url;
 
-    use crate::{load_config, routes::router, start_redis_channels};
+    use crate::{get_market_ids, load_config, routes::router, start_redis_channels};
 
     use super::*;
 
@@ -389,8 +386,10 @@ mod tests {
             .await
             .expect("Could not connect to DATABASE_URL");
 
+        let market_ids = get_market_ids(pool.clone()).await;
+
         let (btx, mut brx) = broadcast::channel(16);
-        let _conn = start_redis_channels(config.redis_url, btx.clone()).await;
+        let _conn = start_redis_channels(config.redis_url, market_ids, btx.clone()).await;
 
         let state = AppState { pool, sender: btx };
         let app = router(state).layer(MockConnectInfo(SocketAddr::from(([0, 0, 0, 0], 3000))));
@@ -435,8 +434,10 @@ mod tests {
             .await
             .expect("Could not connect to DATABASE_URL");
 
+        let market_ids = get_market_ids(pool.clone()).await;
+
         let (btx, mut brx) = broadcast::channel(16);
-        let _conn = start_redis_channels(config.redis_url, btx.clone()).await;
+        let _conn = start_redis_channels(config.redis_url, market_ids, btx.clone()).await;
 
         let state = AppState { pool, sender: btx };
         let app = router(state).layer(MockConnectInfo(SocketAddr::from(([0, 0, 0, 0], 3000))));

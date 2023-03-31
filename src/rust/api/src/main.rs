@@ -52,6 +52,9 @@ async fn main() {
         .expect("Could not connect to DATABASE_URL");
 
     let market_ids = get_market_ids(pool.clone()).await;
+    if market_ids.is_empty() {
+        tracing::warn!("no markets registered in database");
+    }
 
     let (btx, brx) = broadcast::channel(16);
     let _conn = start_redis_channels(config.redis_url, market_ids, btx.clone()).await;

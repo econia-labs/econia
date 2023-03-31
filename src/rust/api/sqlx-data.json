@@ -216,6 +216,24 @@
     },
     "query": "\n        select\n            market_order_id,\n            market_id,\n            side as \"side: db::models::order::Side\",\n            size,\n            price,\n            user_address,\n            custodian_id,\n            order_state as \"order_state: db::models::order::OrderState\",\n            created_at\n        from orders where user_address = $1;\n        "
   },
+  "a65c6cd1719b1dfdf608c71366e0086b5eaa068f392296a6c98a506570b68a0d": {
+    "describe": {
+      "columns": [
+        {
+          "name": "market_id",
+          "ordinal": 0,
+          "type_info": "Numeric"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "select market_id from markets;"
+  },
   "f32d53a691323ee26f27236fc3a27524312afb9bbbef53eb7ed08fcddd591668": {
     "describe": {
       "columns": [

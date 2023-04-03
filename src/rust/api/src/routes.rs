@@ -1,18 +1,19 @@
 use std::str::FromStr;
 
 use axum::{
-    extract::{Path, State},
+    extract::{Path, Query, State},
     routing::get,
     Json, Router,
 };
 use bigdecimal::BigDecimal;
+use serde::Deserialize;
 use tower::ServiceBuilder;
 use tower_http::{
     compression::CompressionLayer,
     cors::{Any, CorsLayer},
     trace::TraceLayer,
 };
-use types::error::TypeError;
+use types::{bar::Resolution, error::TypeError};
 
 use crate::{error::ApiError, ws::ws_handler, AppState};
 
@@ -164,8 +165,16 @@ async fn open_orders_by_account(
     Ok(Json(open_orders))
 }
 
+#[derive(Debug, Deserialize)]
+struct MarketHistoryParams {
+    resolution: Resolution,
+    from: u64,
+    to: u64,
+}
+
 async fn market_history(
     Path(market_id): Path<String>,
+    Query(params): Query<MarketHistoryParams>,
     State(state): State<AppState>,
 ) -> Result<Json<Vec<types::bar::Bar>>, ApiError> {
     let market_id = BigDecimal::from_str(market_id.as_str())?;

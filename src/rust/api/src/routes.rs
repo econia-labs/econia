@@ -4,6 +4,7 @@ use axum::{
     Json, Router,
 };
 use bigdecimal::BigDecimal;
+use chrono::{DateTime, NaiveDateTime, Utc};
 use serde::Deserialize;
 use tower::ServiceBuilder;
 use tower_http::{
@@ -166,8 +167,8 @@ async fn open_orders_by_account(
 #[derive(Debug, Deserialize)]
 struct MarketHistoryParams {
     resolution: Resolution,
-    from: u64,
-    to: u64,
+    from: i64,
+    to: i64,
 }
 
 async fn market_history(
@@ -179,23 +180,61 @@ async fn market_history(
         return Err(ApiError::InvalidTimeRange);
     }
     let market_id = BigDecimal::from(market_id);
-    let market_history_query = sqlx::query_as!(
-        db::models::bar::Bar,
-        r#"
-        select
-            market_id,
-            start_time,
-            open,
-            high,
-            low,
-            close,
-            volume
-        from bars_1m where market_id = $1;
-        "#,
-        market_id
-    )
-    .fetch_all(&state.pool)
-    .await?;
+
+    let from_naive =
+        NaiveDateTime::from_timestamp_opt(params.from, 0).ok_or(ApiError::InvalidTimeRange)?;
+    let to_naive =
+        NaiveDateTime::from_timestamp_opt(params.to, 0).ok_or(ApiError::InvalidTimeRange)?;
+
+    let from_dt = DateTime::<Utc>::from_utc(from_naive, Utc);
+    let to_dt = DateTime::<Utc>::from_utc(to_naive, Utc);
+
+    tracing::debug!("querying range {} to {}", from_dt, to_dt);
+
+    let market_history_query = match params.resolution {
+        Resolution::I1m => {
+            sqlx::query_as!(
+                db::models::bar::Bar,
+                r#"
+                select
+                    market_id,
+                    start_time,
+                    open,
+                    high,
+                    low,
+                    close,
+                    volume
+                from bars_1m where market_id = $1 and start_time >= $2 and start_time < $3;
+                "#,
+                market_id,
+                from_dt,
+                to_dt
+            )
+            .fetch_all(&state.pool)
+            .await?
+        }
+        Resolution::I5m => {
+            sqlx::query_as!(
+                db::models::bar::Bar,
+                r#"
+                select
+                    market_id,
+                    start_time,
+                    open,
+                    high,
+                    low,
+                    close,
+                    volume
+                from bars_5m where market_id = $1 and start_time >= $2 and start_time < $3;
+                "#,
+                market_id,
+                from_dt,
+                to_dt
+            )
+            .fetch_all(&state.pool)
+            .await?
+        }
+    };
 
     if market_history_query.is_empty() {
         return Err(ApiError::NotFound);

@@ -6,7 +6,7 @@ create table bars_1m (
     low numeric (20) not null,
     close numeric (20) not null,
     volume numeric (20) not null,
-    primary key (market_id, time),
+    primary key (market_id, start_time),
     foreign key (market_id) references markets (market_id)
 );
 
@@ -18,6 +18,6 @@ create table bars_5m (
     low numeric (20) not null,
     close numeric (20) not null,
     volume numeric (20) not null,
-    primary key (market_id, time),
+    primary key (market_id, start_time),
     foreign key (market_id) references markets (market_id)
 );

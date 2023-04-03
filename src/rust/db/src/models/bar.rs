@@ -32,9 +32,6 @@ impl TryFrom<Bar> for types::bar::Bar {
     type Error = TypeError;
 
     fn try_from(value: Bar) -> Result<Self, Self::Error> {
-        let market_id = value.market_id.to_u64().ok_or(TypeError::ConversionError {
-            name: "market_id".into(),
-        })?;
         let open = value.open.to_u64().ok_or(TypeError::ConversionError {
             name: "open".into(),
         })?;
@@ -53,7 +50,6 @@ impl TryFrom<Bar> for types::bar::Bar {
         })?;
 
         Ok(types::bar::Bar {
-            market_id,
             start_time: value.start_time,
             open,
             high,

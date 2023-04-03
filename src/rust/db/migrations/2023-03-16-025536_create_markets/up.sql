@@ -1,10 +1,10 @@
 -- Corresponds to aptos_std::type_info::TypeInfo and
 -- aptos_framework::coin::CoinInfo. GenericAsset will also be included.
 create table coins (
-    account_address varchar(70) not null,
+    account_address varchar (70) not null,
     module_name text not null,
     struct_name text not null,
-    symbol varchar(8) not null,
+    symbol varchar (8) not null,
     name text not null,
     decimals smallint not null,
     primary key (account_address, module_name, struct_name)
@@ -13,18 +13,18 @@ create table coins (
 -- Corresponds to econia::registry::MarketInfo.
 -- Only recognized markets should be stored in the api database.
 create table markets (
-    market_id numeric(20) not null primary key,
-    base_account_address varchar(70),
+    market_id numeric (20) not null primary key,
+    base_account_address varchar (70),
     base_module_name text,
     base_struct_name text,
     base_name_generic text,
-    quote_account_address varchar(70) not null,
+    quote_account_address varchar (70) not null,
     quote_module_name text not null,
     quote_struct_name text not null,
-    lot_size numeric(20) not null,
-    tick_size numeric(20) not null,
-    min_size numeric(20) not null,
-    underwriter_id numeric(20) not null,
+    lot_size numeric (20) not null,
+    tick_size numeric (20) not null,
+    min_size numeric (20) not null,
+    underwriter_id numeric (20) not null,
     created_at timestamptz not null,
     foreign key (
         base_account_address, base_module_name, base_struct_name
@@ -36,19 +36,19 @@ create table markets (
 
 -- Corresponds to econia::registry::MarketRegistrationEvent
 create table market_registration_events (
-    market_id numeric(20) not null primary key,
+    market_id numeric (20) not null primary key,
     time timestamptz not null,
-    base_account_address varchar(70),
+    base_account_address varchar (70),
     base_module_name text,
     base_struct_name text,
     base_name_generic text,
-    quote_account_address varchar(70) not null,
+    quote_account_address varchar (70) not null,
     quote_module_name text not null,
     quote_struct_name text not null,
-    lot_size numeric(20) not null,
-    tick_size numeric(20) not null,
-    min_size numeric(20) not null,
-    underwriter_id numeric(20) not null,
+    lot_size numeric (20) not null,
+    tick_size numeric (20) not null,
+    min_size numeric (20) not null,
+    underwriter_id numeric (20) not null,
     foreign key (market_id) references markets (market_id)
 );
 
@@ -86,7 +86,7 @@ execute procedure register_market();
 -- with primary keys
 create table recognized_markets (
     id serial not null primary key,
-    market_id numeric(20) not null,
+    market_id numeric (20) not null,
     foreign key (market_id) references markets (market_id)
 );
 
@@ -95,10 +95,10 @@ create type market_event_type as enum ('add', 'remove', 'update');
 
 -- Corresponds to econia::registry::RecognizedMarketEvent.
 create table recognized_market_events (
-    market_id numeric(20) not null primary key,
+    market_id numeric (20) not null primary key,
     time timestamptz not null,
     event_type market_event_type not null,
-    lot_size numeric(20),
-    tick_size numeric(20),
-    min_size numeric(20)
+    lot_size numeric (20),
+    tick_size numeric (20),
+    min_size numeric (20)
 );

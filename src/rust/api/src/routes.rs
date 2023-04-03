@@ -1,8 +1,11 @@
+use std::str::FromStr;
+
 use axum::{
     extract::{Path, State},
     routing::get,
     Json, Router,
 };
+use bigdecimal::BigDecimal;
 use tower::ServiceBuilder;
 use tower_http::{
     compression::CompressionLayer,
@@ -35,6 +38,7 @@ pub fn router(state: AppState) -> Router {
             "/account/:account_address/open-orders",
             get(open_orders_by_account),
         )
+        .route("/market/:market_id/history", get(market_history))
         .route("/ws", get(ws_handler))
         .with_state(state)
         .layer(middleware_stack)
@@ -158,6 +162,41 @@ async fn open_orders_by_account(
         .collect::<Result<Vec<types::order::Order>, TypeError>>()?;
 
     Ok(Json(open_orders))
+}
+
+async fn market_history(
+    Path(market_id): Path<String>,
+    State(state): State<AppState>,
+) -> Result<Json<Vec<types::bar::Bar>>, ApiError> {
+    let market_id = BigDecimal::from_str(market_id.as_str())?;
+    let market_history_query = sqlx::query_as!(
+        db::models::bar::Bar,
+        r#"
+        select
+            market_id,
+            start_time,
+            open,
+            high,
+            low,
+            close,
+            volume
+        from bars_1m where market_id = $1;
+        "#,
+        market_id
+    )
+    .fetch_all(&state.pool)
+    .await?;
+
+    if market_history_query.is_empty() {
+        return Err(ApiError::NotFound);
+    }
+
+    let market_history = market_history_query
+        .into_iter()
+        .map(|v| v.try_into())
+        .collect::<Result<Vec<types::bar::Bar>, TypeError>>()?;
+
+    Ok(Json(market_history))
 }
 
 #[cfg(test)]

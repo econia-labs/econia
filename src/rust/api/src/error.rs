@@ -12,6 +12,9 @@ pub enum ApiError {
 
     #[error(transparent)]
     TypeError(#[from] types::error::TypeError),
+
+    #[error(transparent)]
+    ParseBigDecimal(#[from] bigdecimal::ParseBigDecimalError),
 }
 
 impl IntoResponse for ApiError {
@@ -21,6 +24,7 @@ impl IntoResponse for ApiError {
             Self::NotFound => (StatusCode::NOT_FOUND, self.to_string()),
             Self::SqlxError(_) => (StatusCode::INTERNAL_SERVER_ERROR, self.to_string()),
             Self::TypeError(_) => (StatusCode::INTERNAL_SERVER_ERROR, self.to_string()),
+            Self::ParseBigDecimal(_) => (StatusCode::BAD_REQUEST, self.to_string()),
         };
         res.into_response()
     }

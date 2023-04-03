@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use axum::{
     extract::{Path, Query, State},
     routing::get,
@@ -173,14 +171,14 @@ struct MarketHistoryParams {
 }
 
 async fn market_history(
-    Path(market_id): Path<String>,
+    Path(market_id): Path<u64>,
     Query(params): Query<MarketHistoryParams>,
     State(state): State<AppState>,
 ) -> Result<Json<Vec<types::bar::Bar>>, ApiError> {
     if params.from > params.to {
         return Err(ApiError::InvalidTimeRange);
     }
-    let market_id = BigDecimal::from_str(market_id.as_str())?;
+    let market_id = BigDecimal::from(market_id);
     let market_history_query = sqlx::query_as!(
         db::models::bar::Bar,
         r#"

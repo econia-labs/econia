@@ -28,11 +28,11 @@ as $handle_1m_interval_end$
 declare
     interval_rows bars_1m%rowtype;
 begin
-    if date_part('minute', new.start_time)::int % 5 = 0 then
+    if date_part('minute', new.start_time)::int % 5 = 4 then
         with bars as (
             select * from bars_1m
-            where start_time >= new.start_time - '5 minutes'::interval - '1 second'::interval
-            and start_time < new.start_time
+            where start_time > new.start_time - '4 minutes'::interval - '1 second'::interval
+            and start_time <= new.start_time
         ),
         first as (
             select start_time, first_value(open) over (order by start_time) as open
@@ -67,5 +67,5 @@ $handle_1m_interval_end$
 language plpgsql;
 
 create trigger handle_1m_interval_end_trigger
-before insert on bars_1m for each row
+after insert on bars_1m for each row
 execute procedure handle_1m_interval_end();

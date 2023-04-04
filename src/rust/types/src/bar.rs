@@ -14,14 +14,14 @@ pub struct Bar {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub enum Interval {
+pub enum Resolution {
     #[serde(rename = "1m")]
     I1m,
     #[serde(rename = "5m")]
     I5m,
 }
 
-impl fmt::Display for Interval {
+impl fmt::Display for Resolution {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match self {
             Self::I1m => "1m",

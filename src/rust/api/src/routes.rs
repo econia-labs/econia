@@ -186,11 +186,13 @@ async fn market_history(
     let to_naive =
         NaiveDateTime::from_timestamp_opt(params.to, 0).ok_or(ApiError::InvalidTimeRange)?;
 
-    let from_dt = DateTime::<Utc>::from_utc(from_naive, Utc);
-    let to_dt = DateTime::<Utc>::from_utc(to_naive, Utc);
+    let from = DateTime::<Utc>::from_utc(from_naive, Utc);
+    let to = DateTime::<Utc>::from_utc(to_naive, Utc);
 
-    tracing::debug!("querying range {} to {}", from_dt, to_dt);
+    tracing::debug!("querying range {} to {}", from, to);
 
+    // Compile time type checking not available if we dynamically compute the
+    // table name, so we use pattern matching instead.
     let market_history_query = match params.resolution {
         Resolution::I1m => {
             sqlx::query_as!(
@@ -207,8 +209,8 @@ async fn market_history(
                 from bars_1m where market_id = $1 and start_time >= $2 and start_time < $3;
                 "#,
                 market_id,
-                from_dt,
-                to_dt
+                from,
+                to
             )
             .fetch_all(&state.pool)
             .await?
@@ -228,8 +230,29 @@ async fn market_history(
                 from bars_5m where market_id = $1 and start_time >= $2 and start_time < $3;
                 "#,
                 market_id,
-                from_dt,
-                to_dt
+                from,
+                to
+            )
+            .fetch_all(&state.pool)
+            .await?
+        }
+        Resolution::I15m => {
+            sqlx::query_as!(
+                db::models::bar::Bar,
+                r#"
+                select
+                    market_id,
+                    start_time,
+                    open,
+                    high,
+                    low,
+                    close,
+                    volume
+                from bars_15m where market_id = $1 and start_time >= $2 and start_time < $3;
+                "#,
+                market_id,
+                from,
+                to
             )
             .fetch_all(&state.pool)
             .await?

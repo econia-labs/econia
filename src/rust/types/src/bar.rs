@@ -19,6 +19,8 @@ pub enum Resolution {
     I1m,
     #[serde(rename = "5m")]
     I5m,
+    #[serde(rename = "15m")]
+    I15m,
 }
 
 impl fmt::Display for Resolution {
@@ -26,6 +28,7 @@ impl fmt::Display for Resolution {
         let s = match self {
             Self::I1m => "1m",
             Self::I5m => "5m",
+            Self::I15m => "15m",
         };
         write!(f, "{}", s)
     }

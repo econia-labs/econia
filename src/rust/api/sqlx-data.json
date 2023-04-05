@@ -350,6 +350,64 @@
     },
     "query": "select market_id from markets;"
   },
+  "b3ac61f46746d3991bb3ec4221f434a55fbd8917f803b6cdf220308bf1459218": {
+    "describe": {
+      "columns": [
+        {
+          "name": "market_id",
+          "ordinal": 0,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "start_time",
+          "ordinal": 1,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "open",
+          "ordinal": 2,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "high",
+          "ordinal": 3,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "low",
+          "ordinal": 4,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "close",
+          "ordinal": 5,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "volume",
+          "ordinal": 6,
+          "type_info": "Numeric"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Numeric",
+          "Timestamptz",
+          "Timestamptz"
+        ]
+      }
+    },
+    "query": "\n                select\n                    market_id,\n                    start_time,\n                    open,\n                    high,\n                    low,\n                    close,\n                    volume\n                from bars_15m where market_id = $1 and start_time >= $2 and start_time < $3;\n                "
+  },
   "f32d53a691323ee26f27236fc3a27524312afb9bbbef53eb7ed08fcddd591668": {
     "describe": {
       "columns": [

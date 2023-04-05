@@ -151,7 +151,7 @@ declare
 begin
     if date_part('minute', new.start_time)::int % 30 = 15 then
         with bars as (
-            select * from bars_5m
+            select * from bars_15m
             where start_time > new.start_time - '15 minutes'::interval - '1 second'::interval
             and start_time <= new.start_time
         ),
@@ -177,7 +177,7 @@ begin
             inner join last on bars.start_time = last.start_time
         group by
             bars.market_id into interval_rows;
-        insert into bars_15m
+        insert into bars_30m
             values (interval_rows.market_id, interval_rows.start_time,
                 interval_rows.open, interval_rows.high, interval_rows.low,
                 interval_rows.close, interval_rows.volume);

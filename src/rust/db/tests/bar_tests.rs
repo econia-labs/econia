@@ -1,12 +1,16 @@
 use bigdecimal::BigDecimal;
 use chrono::{TimeZone, Utc};
-use db::{add_bar, establish_connection, load_config, models::bar::NewBar};
+use db::{
+    add_bar, establish_connection, load_config,
+    models::bar::{Bar, NewBar},
+};
+use diesel::prelude::*;
 use helpers::{reset_tables, setup_market};
 
 mod helpers;
 
 #[test]
-fn test_place_order() {
+fn test_add_1m_bars() {
     let config = load_config();
     let conn = &mut establish_connection(config.database_url);
 
@@ -30,6 +34,12 @@ fn test_place_order() {
         add_bar(conn, &bar);
     }
 
+    let db_1m_bars = db::schema::bars_1m::dsl::bars_1m
+        .load::<Bar>(conn)
+        .expect("Could not query 1m bars.");
+
+    assert_eq!(db_1m_bars.len(), 3);
+
     // Clean up tables.
-    // reset_tables(conn);
+    reset_tables(conn);
 }

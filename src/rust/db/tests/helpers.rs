@@ -9,7 +9,27 @@ use db::{
 };
 use diesel::prelude::*;
 
+fn reset_bar_tables(conn: &mut PgConnection) {
+    diesel::delete(db::schema::bars_30m::table)
+        .execute(conn)
+        .expect("Error deleting bars_30m table");
+
+    diesel::delete(db::schema::bars_15m::table)
+        .execute(conn)
+        .expect("Error deleting bars_15m table");
+
+    diesel::delete(db::schema::bars_5m::table)
+        .execute(conn)
+        .expect("Error deleting bars_5m table");
+
+    diesel::delete(db::schema::bars_1m::table)
+        .execute(conn)
+        .expect("Error deleting bars_1m table");
+}
+
 pub fn reset_tables(conn: &mut PgConnection) {
+    reset_bar_tables(conn);
+
     diesel::delete(db::schema::fills::table)
         .execute(conn)
         .expect("Error deleting fills events table");

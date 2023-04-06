@@ -66,6 +66,14 @@ async fn outbound_message_handler(
                 let lock = subs.lock().unwrap();
                 (*lock).contains(&ch)
             }
+            Update::Fills(ref fill) => {
+                let ch = Channel::Fills {
+                    market_id: fill.market_id,
+                    user_address: fill.maker.clone(),
+                };
+                let lock = subs.lock().unwrap();
+                (*lock).contains(&ch)
+            }
         };
         if subbed {
             let msg = OutboundMessage::Update(update);
@@ -363,11 +371,13 @@ mod tests {
     use std::net::TcpListener;
 
     use axum::extract::connect_info::MockConnectInfo;
+    use chrono::TimeZone;
+    use redis::AsyncCommands;
     use sqlx::PgPool;
     use tokio_tungstenite::{connect_async, tungstenite::Message};
     use url::Url;
 
-    use crate::{load_config, routes::router, start_redis_channels};
+    use crate::{get_market_ids, load_config, routes::router, start_redis_channels};
 
     use super::*;
 
@@ -378,8 +388,10 @@ mod tests {
             .await
             .expect("Could not connect to DATABASE_URL");
 
+        let market_ids = get_market_ids(pool.clone()).await;
+
         let (btx, mut brx) = broadcast::channel(16);
-        let _conn = start_redis_channels(config.redis_url, btx.clone()).await;
+        let _conn = start_redis_channels(config.redis_url, market_ids, btx.clone()).await;
 
         let state = AppState { pool, sender: btx };
         let app = router(state).layer(MockConnectInfo(SocketAddr::from(([0, 0, 0, 0], 3000))));
@@ -424,8 +436,10 @@ mod tests {
             .await
             .expect("Could not connect to DATABASE_URL");
 
+        let market_ids = get_market_ids(pool.clone()).await;
+
         let (btx, mut brx) = broadcast::channel(16);
-        let _conn = start_redis_channels(config.redis_url, btx.clone()).await;
+        let _conn = start_redis_channels(config.redis_url, market_ids, btx.clone()).await;
 
         let state = AppState { pool, sender: btx };
         let app = router(state).layer(MockConnectInfo(SocketAddr::from(([0, 0, 0, 0], 3000))));
@@ -466,6 +480,187 @@ mod tests {
             );
         } else {
             panic!("did not receive response from websocket");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_websocket_order_update() {
+        let config = load_config();
+        let pool = PgPool::connect(&config.database_url)
+            .await
+            .expect("Could not connect to DATABASE_URL");
+
+        let market_ids = get_market_ids(pool.clone()).await;
+
+        let (btx, mut brx) = broadcast::channel(16);
+        let mut conn = start_redis_channels(config.redis_url, market_ids, btx.clone()).await;
+
+        let state = AppState { pool, sender: btx };
+        let app = router(state).layer(MockConnectInfo(SocketAddr::from(([0, 0, 0, 0], 3000))));
+
+        tokio::spawn(async move {
+            // keep broadcast channel alive
+            while let Ok(_) = brx.recv().await {}
+        });
+
+        let listener = TcpListener::bind("0.0.0.0:8000".parse::<SocketAddr>().unwrap()).unwrap();
+        let addr = listener.local_addr().unwrap();
+
+        tokio::spawn(async move {
+            axum::Server::from_tcp(listener)
+                .unwrap()
+                .serve(app.into_make_service())
+                .await
+                .unwrap();
+        });
+
+        let ws_url = Url::parse(&format!("ws://{}/ws", addr)).unwrap();
+        let (mut ws_stream, _) = connect_async(ws_url).await.unwrap();
+
+        let market_id = 0;
+        let user_address = "0x1".to_string();
+
+        let sub_msg = InboundMessage::Subscribe(Channel::Orders {
+            market_id,
+            user_address: user_address.clone(),
+        });
+
+        ws_stream
+            .send(Message::Text(serde_json::to_string(&sub_msg).unwrap()))
+            .await
+            .unwrap();
+
+        tokio::spawn(async move {
+            let order = types::order::Order {
+                market_order_id: 100,
+                market_id,
+                side: types::order::Side::Bid,
+                size: 1000,
+                price: 1000,
+                user_address,
+                custodian_id: None,
+                order_state: types::order::OrderState::Open,
+                created_at: Utc.with_ymd_and_hms(2023, 3, 1, 0, 0, 0).unwrap(),
+            };
+            let update: Update = Update::Orders(order);
+            let s = serde_json::to_string(&update).unwrap();
+
+            conn.publish::<&str, String, i32>(format!("orders:{}", market_id).as_str(), s.clone())
+                .await
+                .unwrap();
+        });
+
+        let mut i = 0;
+        while let Some(Ok(msg)) = ws_stream.next().await {
+            match i {
+                0 => {
+                    assert_eq!(
+                        msg.to_string(),
+                        r#"{"event":"confirm","channel":"orders","params":{"market_id":0,"user_address":"0x1"},"method":"subscribe"}"#
+                    );
+                }
+                1 => {
+                    assert_eq!(
+                        msg.to_string(),
+                        r#"{"event":"update","channel":"orders","data":{"market_order_id":100,"market_id":0,"side":"bid","size":1000,"price":1000,"user_address":"0x1","custodian_id":null,"order_state":"open","created_at":"2023-03-01T00:00:00Z"}}"#
+                    );
+                    return;
+                }
+                _ => {
+                    panic!("received more messages than expected");
+                }
+            }
+            i += 1;
+        }
+    }
+
+    #[tokio::test]
+    async fn test_websocket_fill_update() {
+        let config = load_config();
+        let pool = PgPool::connect(&config.database_url)
+            .await
+            .expect("Could not connect to DATABASE_URL");
+
+        let market_ids = get_market_ids(pool.clone()).await;
+
+        let (btx, mut brx) = broadcast::channel(16);
+        let mut conn = start_redis_channels(config.redis_url, market_ids, btx.clone()).await;
+
+        let state = AppState { pool, sender: btx };
+        let app = router(state).layer(MockConnectInfo(SocketAddr::from(([0, 0, 0, 0], 3000))));
+
+        tokio::spawn(async move {
+            // keep broadcast channel alive
+            while let Ok(_) = brx.recv().await {}
+        });
+
+        let listener = TcpListener::bind("0.0.0.0:8000".parse::<SocketAddr>().unwrap()).unwrap();
+        let addr = listener.local_addr().unwrap();
+
+        tokio::spawn(async move {
+            axum::Server::from_tcp(listener)
+                .unwrap()
+                .serve(app.into_make_service())
+                .await
+                .unwrap();
+        });
+
+        let ws_url = Url::parse(&format!("ws://{}/ws", addr)).unwrap();
+        let (mut ws_stream, _) = connect_async(ws_url).await.unwrap();
+
+        let market_id = 0;
+        let user_address = "0x1".to_string();
+
+        let sub_msg = InboundMessage::Subscribe(Channel::Fills {
+            market_id,
+            user_address: user_address.clone(),
+        });
+
+        ws_stream
+            .send(Message::Text(serde_json::to_string(&sub_msg).unwrap()))
+            .await
+            .unwrap();
+
+        tokio::spawn(async move {
+            let fill = types::order::Fill {
+                market_id,
+                maker_order_id: 100,
+                maker: user_address,
+                maker_side: types::order::Side::Bid,
+                custodian_id: None,
+                size: 1000,
+                price: 1000,
+                time: Utc.with_ymd_and_hms(2023, 3, 1, 0, 0, 0).unwrap(),
+            };
+            let update: Update = Update::Fills(fill);
+            let s = serde_json::to_string(&update).unwrap();
+
+            conn.publish::<&str, String, i32>(format!("fills:{}", market_id).as_str(), s.clone())
+                .await
+                .unwrap();
+        });
+
+        let mut i = 0;
+        while let Some(Ok(msg)) = ws_stream.next().await {
+            match i {
+                0 => {
+                    assert_eq!(
+                        msg.to_string(),
+                        r#"{"event":"confirm","channel":"fills","params":{"market_id":0,"user_address":"0x1"},"method":"subscribe"}"#
+                    );
+                }
+                1 => {
+                    assert_eq!(
+                        msg.to_string(),
+                        r#"{"event":"update","channel":"fills","data":{"market_id":0,"maker_order_id":100,"maker":"0x1","maker_side":"bid","custodian_id":null,"size":1000,"price":1000,"time":"2023-03-01T00:00:00Z"}}"#
+                    );
+                    return;
+                }
+                _ => {
+                    panic!("received more messages than expected");
+                }
+            }
+            i += 1;
         }
     }
 }

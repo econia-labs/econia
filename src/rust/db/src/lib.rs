@@ -1,5 +1,8 @@
 use diesel::{prelude::*, Connection, PgConnection};
-use models::market::{MarketRegistrationEvent, NewMarketRegistrationEvent};
+use models::{
+    bar::{Bar, NewBar},
+    market::{MarketRegistrationEvent, NewMarketRegistrationEvent},
+};
 use serde::Deserialize;
 
 use crate::models::{
@@ -69,4 +72,12 @@ pub fn add_taker_event(conn: &mut PgConnection, event: &NewTakerEvent) -> TakerE
         .values(event)
         .get_result(conn)
         .expect("Error adding taker event.")
+}
+
+pub fn add_bar(conn: &mut PgConnection, bar: &NewBar) -> Bar {
+    use crate::schema::bars_1m;
+    diesel::insert_into(bars_1m::table)
+        .values(bar)
+        .get_result(conn)
+        .expect("Error adding bar.")
 }

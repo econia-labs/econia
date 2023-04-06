@@ -1,3 +1,4 @@
+pub mod bar;
 pub mod coin;
 pub mod events;
 pub mod fill;

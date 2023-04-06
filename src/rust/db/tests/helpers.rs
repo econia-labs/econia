@@ -10,6 +10,10 @@ use db::{
 use diesel::prelude::*;
 
 fn reset_bar_tables(conn: &mut PgConnection) {
+    diesel::delete(db::schema::bars_1h::table)
+        .execute(conn)
+        .expect("Error deleting bars_1h table");
+
     diesel::delete(db::schema::bars_30m::table)
         .execute(conn)
         .expect("Error deleting bars_30m table");

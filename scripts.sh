@@ -177,10 +177,10 @@ function format_code_python {
 
 # Format Rust code.
 function format_code_rust {
-    echo "Formatting Rust code"
-    cd $rust_dir         # Navigate to Rust directory.
-    cargo fmt --all      # Format rust code.
-    cd $rust_dir_inverse # Return to repository root.
+    echo "Formatting Rust code" # Print notice.
+    cd $rust_dir                # Navigate to Rust directory.
+    cargo fmt --all             # Format rust code.
+    cd $rust_dir_inverse        # Return to repository root.
 }
 
 # Format shell scripts.
@@ -192,7 +192,7 @@ function format_code_shell {
 
 # Format SQL code.
 function format_code_sql {
-    echo "Formatting SQL code"
+    echo "Formatting SQL code"                        # Print notice.
     cd $rust_dir                                      # Navigate to Rust directory.
     poetry run sqlfluff fix db/migrations/**/*.sql -f # Format code with sqlfluff.
     cd $rust_dir_inverse                              # Return to repository root.
@@ -206,11 +206,11 @@ function format_code_toml {
 
 # Format TypeScript code.
 function format_code_typescript {
-    echo "Formatting TypeScript code"
-    cd $ts_sdk_dir         # Navigate to TypeScript SDK directory.
-    pnpm format            # Format code with prettier.
-    pnpm lint              # Lint code with eslint.
-    cd $ts_sdk_dir_inverse # Return to repository root.
+    echo "Formatting TypeScript code" # Print notice.
+    cd $ts_sdk_dir                    # Navigate to TypeScript SDK directory.
+    pnpm format                       # Format code with prettier.
+    pnpm lint                         # Lint code with eslint.
+    cd $ts_sdk_dir_inverse            # Return to repository root.
 }
 
 # Format all code.

@@ -252,7 +252,6 @@ case "$1" in
         brew_install python                                # Install Python.
         brew_install rustup                                # Install Rust toolchain installer.
         brew_install shfmt                                 # Install shell script formatter.
-        brew_install sqlfluff                              # Install SQL formatter.
         brew_install taplo                                 # Install TOML formatter.
         rustup install stable                              # Install stable Rust toolchain.
         echo "Installing Python-based formatters"          # Print notice.

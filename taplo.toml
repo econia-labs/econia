@@ -42,7 +42,7 @@ formatting = { reorder_keys = true }
 
 [[rule]]
 include = ["**/pyproject.toml"]
-keys = ["tool.poetry.dependencies", "tool.poetry.dev-dependencies"]
+keys = ["tool.poetry.dependencies", "tool.poetry.group.dev.dependencies"]
 formatting = { reorder_keys = true }
 
 [[rule]]

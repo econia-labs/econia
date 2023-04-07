@@ -26,12 +26,6 @@ rust_dir="src/rust/"
 # Relative path to this directory from Rust directory.
 rust_dir_inverse="../../"
 
-# SQL directory.
-sql_dir="src/rust/db/migrations/"
-
-# Relative path to this directory from SQL directory.
-sql_dir_inverse="../../../../"
-
 # TypeScript SDK directory.
 ts_sdk_dir="src/typescript/sdk"
 
@@ -184,9 +178,9 @@ function format_code_python {
 # Format Rust code.
 function format_code_rust {
     echo "Formatting Rust code"
-    cd $rust_dir         # Navigate to Rust directory
-    cargo fmt --all      # Format rust code
-    cd $rust_dir_inverse # Return to repository root
+    cd $rust_dir         # Navigate to Rust directory.
+    cargo fmt --all      # Format rust code.
+    cd $rust_dir_inverse # Return to repository root.
 }
 
 # Format shell scripts.
@@ -199,9 +193,9 @@ function format_code_shell {
 # Format SQL code.
 function format_code_sql {
     echo "Formatting SQL code"
-    cd $sql_dir                                 # Navigate to directory with diesel migrations.
-    sqlfluff fix **/*.sql --dialect postgres -f # Format code with sqlfluff.
-    cd $sql_dir_inverse                         # Return to repository root.
+    cd $rust_dir                                      # Navigate to Rust directory.
+    poetry run sqlfluff fix db/migrations/**/*.sql -f # Format code with sqlfluff.
+    cd $rust_dir_inverse                              # Return to repository root.
 }
 
 # Format TOML files.
@@ -258,7 +252,6 @@ case "$1" in
         brew_install python                                # Install Python.
         brew_install rustup                                # Install Rust toolchain installer.
         brew_install shfmt                                 # Install shell script formatter.
-        brew_install sqlfluff                              # Install SQL formatter.
         brew_install taplo                                 # Install TOML formatter.
         rustup install stable                              # Install stable Rust toolchain.
         echo "Installing Python-based formatters"          # Print notice.

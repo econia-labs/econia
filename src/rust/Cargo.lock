@@ -51,6 +51,7 @@ name = "api"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "bigdecimal",
  "chrono",
  "db",
  "dotenvy",
@@ -64,11 +65,13 @@ dependencies = [
  "sqlx",
  "thiserror",
  "tokio",
+ "tokio-tungstenite",
  "tower",
  "tower-http",
  "tracing",
  "tracing-subscriber",
  "types",
+ "url",
 ]
 
 [[package]]

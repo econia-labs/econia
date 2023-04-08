@@ -3,13 +3,13 @@ create type side as enum ('bid', 'ask');
 create type order_state as enum ('open', 'filled', 'cancelled', 'evicted');
 
 create table orders (
-    market_order_id numeric(39) not null,
-    market_id numeric(20) not null,
+    market_order_id numeric (39) not null,
+    market_id numeric (20) not null,
     side side not null,
-    size numeric(20) not null,
-    price numeric(20) not null,
-    user_address varchar(70) not null,
-    custodian_id numeric(20),
+    size numeric (20) not null,
+    price numeric (20) not null,
+    user_address varchar (70) not null,
+    custodian_id numeric (20),
     order_state order_state not null,
     created_at timestamptz not null,
     primary key (market_order_id, market_id),
@@ -19,14 +19,14 @@ create table orders (
 create type maker_event_type as enum ('cancel', 'change', 'evict', 'place');
 
 create table maker_events (
-    market_id numeric(20) not null,
+    market_id numeric (20) not null,
     side side not null,
-    market_order_id numeric(39) not null,
-    user_address varchar(70) not null,
-    custodian_id numeric(20),
+    market_order_id numeric (39) not null,
+    user_address varchar (70) not null,
+    custodian_id numeric (20),
     event_type maker_event_type not null,
-    size numeric(20) not null,
-    price numeric(20) not null,
+    size numeric (20) not null,
+    price numeric (20) not null,
     time timestamptz not null,
     primary key (market_order_id, time),
     foreign key (market_id) references markets (market_id),
@@ -89,13 +89,13 @@ insert on maker_events for each row
 execute procedure handle_maker_event();
 
 create table taker_events (
-    market_id numeric(20) not null,
+    market_id numeric (20) not null,
     side side not null,
-    market_order_id numeric(39) not null,
-    maker varchar(70) not null,
-    custodian_id numeric(30),
-    size numeric(20) not null,
-    price numeric(20) not null,
+    market_order_id numeric (39) not null,
+    maker varchar (70) not null,
+    custodian_id numeric (30),
+    size numeric (20) not null,
+    price numeric (20) not null,
     time timestamptz not null,
     primary key (market_order_id, time),
     foreign key (market_id) references markets (market_id),
@@ -105,13 +105,13 @@ create table taker_events (
 );
 
 create table fills (
-    market_id numeric(20) not null,
-    maker_order_id numeric(39) not null,
-    maker varchar(70) not null,
+    market_id numeric (20) not null,
+    maker_order_id numeric (39) not null,
+    maker varchar (70) not null,
     maker_side side not null,
-    custodian_id numeric(30),
-    size numeric(20) not null,
-    price numeric(20) not null,
+    custodian_id numeric (30),
+    size numeric (20) not null,
+    price numeric (20) not null,
     time timestamptz not null,
     primary key (market_id, maker_order_id, time),
     foreign key (market_id) references markets (market_id),

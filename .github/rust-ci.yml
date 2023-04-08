@@ -6,6 +6,7 @@ on:
     paths:
       - "src/rust/api/**"
       - "src/rust/db/**"
+      - "src/rust/types/**"
       - "src/rust/Cargo.toml"
       - "src/rust/Cargo.lock"
 
@@ -14,6 +15,7 @@ on:
     paths:
       - "src/rust/api/**"
       - "src/rust/db/**"
+      - "src/rust/types/**"
       - "src/rust/Cargo.toml"
       - "src/rust/Cargo.lock"
 
@@ -25,19 +27,21 @@ env:
 jobs:
   lint-build-test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/rust
 
     steps:
       - uses: actions/checkout@v3
         with:
           submodules: "recursive"
 
-      - run: cd src/rust
-
       - uses: rui314/setup-mold@v1
 
-      - run: rustup toolchain install nightly
-      - run: rustup component add rustfmt --toolchain nightly
-      - run: rustup component add clippy --toolchain nightly
+      - uses: actions-rs/toolchain@v1
+        with:
+            toolchain: stable
+            components: rustfmt, clippy
 
       - uses: Swatinem/rust-cache@v2
         with:
@@ -61,3 +65,4 @@ jobs:
 
       - name: Run tests
         run: cargo test --all-features --all-targets
+

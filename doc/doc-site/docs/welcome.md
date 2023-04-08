@@ -27,7 +27,7 @@ description: Documentation for the Econia Protocol
     <p style={{ marginTop: "20px" }}>e·co·ni·a | /ə'känēə/</p>
 </div>
 
-Welcome to the developer documentation site for Econia, a hyper-parallelized on-chain order book for the [Aptos] blockchain.
+Foo to the developer documentation site for Econia, a hyper-parallelized on-chain order book for the [Aptos] blockchain.
 
 If you haven't already, consider checking out Econia Labs' [Teach yourself Move on Aptos] guide for some helpful background information!
 

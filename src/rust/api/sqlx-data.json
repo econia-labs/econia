@@ -242,6 +242,80 @@
     },
     "query": "\n                select\n                    market_id,\n                    start_time,\n                    open,\n                    high,\n                    low,\n                    close,\n                    volume\n                from bars_5m where market_id = $1 and start_time >= $2 and start_time < $3;\n                "
   },
+  "a182c31a8505d94233a599c907ca3666f195671cf7dece182a508bff83028e97": {
+    "describe": {
+      "columns": [
+        {
+          "name": "market_id",
+          "ordinal": 0,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "maker_order_id",
+          "ordinal": 1,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "maker",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "maker_side: db::models::order::Side",
+          "ordinal": 3,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "bid",
+                  "ask"
+                ]
+              },
+              "name": "side"
+            }
+          }
+        },
+        {
+          "name": "custodian_id",
+          "ordinal": 4,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "size",
+          "ordinal": 5,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "price",
+          "ordinal": 6,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "time",
+          "ordinal": 7,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        true,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Numeric",
+          "Timestamptz",
+          "Timestamptz"
+        ]
+      }
+    },
+    "query": "\n        select\n            market_id,\n            maker_order_id,\n            maker,\n            maker_side as \"maker_side: db::models::order::Side\",\n            custodian_id,\n            size,\n            price,\n            time\n        from fills where market_id = $1 and time >= $2 and time < $3;\n        "
+  },
   "a39eafd185d90b2f3f88804dad6764bc900a09c838c3a5080c82a7586523a111": {
     "describe": {
       "columns": [

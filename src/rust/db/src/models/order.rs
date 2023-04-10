@@ -43,6 +43,20 @@ impl From<Side> for types::order::Side {
     }
 }
 
+impl TryFrom<u8> for Side {
+    type Error = TypeError;
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Side::Ask),
+            1 => Ok(Side::Bid),
+            _ => Err(TypeError::ConversionError {
+                name: "Side".to_string(),
+            }),
+        }
+    }
+}
+
 #[derive(Debug, DbEnum, Clone, Copy, PartialEq, Eq, sqlx::Type)]
 #[ExistingTypePath = "crate::schema::sql_types::OrderState"]
 #[sqlx(type_name = "order_state", rename_all = "snake_case")]

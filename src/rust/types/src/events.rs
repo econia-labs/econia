@@ -1,15 +1,31 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::order::Side;
+use crate::{error::TypeError, order::Side};
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum MakerEventType {
     Cancel,
     Change,
     Evict,
     Place,
+}
+
+impl TryFrom<u8> for MakerEventType {
+    type Error = TypeError;
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(MakerEventType::Cancel),
+            1 => Ok(MakerEventType::Change),
+            2 => Ok(MakerEventType::Evict),
+            3 => Ok(MakerEventType::Place),
+            _ => Err(TypeError::ConversionError {
+                name: "MakerEventType".to_string(),
+            }),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

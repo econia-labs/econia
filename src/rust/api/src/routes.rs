@@ -41,6 +41,7 @@ pub fn router(state: AppState) -> Router {
             "/market/:market_id/history",
             get(market_routes::get_market_history),
         )
+        .route("/market/:market_id/fills", get(market_routes::get_fills))
         .route("/ws", get(ws_handler))
         .with_state(state)
         .layer(middleware_stack)

@@ -19,6 +19,66 @@ pub mod sql_types {
 }
 
 diesel::table! {
+    bars_15m (market_id, start_time) {
+        market_id -> Numeric,
+        start_time -> Timestamptz,
+        open -> Numeric,
+        high -> Numeric,
+        low -> Numeric,
+        close -> Numeric,
+        volume -> Numeric,
+    }
+}
+
+diesel::table! {
+    bars_1h (market_id, start_time) {
+        market_id -> Numeric,
+        start_time -> Timestamptz,
+        open -> Numeric,
+        high -> Numeric,
+        low -> Numeric,
+        close -> Numeric,
+        volume -> Numeric,
+    }
+}
+
+diesel::table! {
+    bars_1m (market_id, start_time) {
+        market_id -> Numeric,
+        start_time -> Timestamptz,
+        open -> Numeric,
+        high -> Numeric,
+        low -> Numeric,
+        close -> Numeric,
+        volume -> Numeric,
+    }
+}
+
+diesel::table! {
+    bars_30m (market_id, start_time) {
+        market_id -> Numeric,
+        start_time -> Timestamptz,
+        open -> Numeric,
+        high -> Numeric,
+        low -> Numeric,
+        close -> Numeric,
+        volume -> Numeric,
+    }
+}
+
+diesel::table! {
+    bars_5m (market_id, start_time) {
+        market_id -> Numeric,
+        start_time -> Timestamptz,
+        open -> Numeric,
+        high -> Numeric,
+        low -> Numeric,
+        close -> Numeric,
+        volume -> Numeric,
+    }
+}
+
+diesel::table! {
     coins (account_address, module_name, struct_name) {
         account_address -> Varchar,
         module_name -> Text,
@@ -154,6 +214,11 @@ diesel::table! {
     }
 }
 
+diesel::joinable!(bars_15m -> markets (market_id));
+diesel::joinable!(bars_1h -> markets (market_id));
+diesel::joinable!(bars_1m -> markets (market_id));
+diesel::joinable!(bars_30m -> markets (market_id));
+diesel::joinable!(bars_5m -> markets (market_id));
 diesel::joinable!(fills -> markets (market_id));
 diesel::joinable!(maker_events -> markets (market_id));
 diesel::joinable!(market_registration_events -> markets (market_id));
@@ -162,6 +227,11 @@ diesel::joinable!(recognized_markets -> markets (market_id));
 diesel::joinable!(taker_events -> markets (market_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
+    bars_15m,
+    bars_1h,
+    bars_1m,
+    bars_30m,
+    bars_5m,
     coins,
     fills,
     maker_events,

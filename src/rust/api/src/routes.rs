@@ -1,15 +1,18 @@
 use axum::{
-    extract::{Path, State},
+    extract::{Path, Query, State},
     routing::get,
     Json, Router,
 };
+use bigdecimal::BigDecimal;
+use chrono::{DateTime, NaiveDateTime, Utc};
+use serde::Deserialize;
 use tower::ServiceBuilder;
 use tower_http::{
     compression::CompressionLayer,
     cors::{Any, CorsLayer},
     trace::TraceLayer,
 };
-use types::error::TypeError;
+use types::{bar::Resolution, error::TypeError};
 
 use crate::{error::ApiError, ws::ws_handler, AppState};
 
@@ -35,6 +38,7 @@ pub fn router(state: AppState) -> Router {
             "/account/:account_address/open-orders",
             get(open_orders_by_account),
         )
+        .route("/market/:market_id/history", get(market_history))
         .route("/ws", get(ws_handler))
         .with_state(state)
         .layer(middleware_stack)
@@ -158,6 +162,113 @@ async fn open_orders_by_account(
         .collect::<Result<Vec<types::order::Order>, TypeError>>()?;
 
     Ok(Json(open_orders))
+}
+
+#[derive(Debug, Deserialize)]
+struct MarketHistoryParams {
+    resolution: Resolution,
+    from: i64,
+    to: i64,
+}
+
+async fn market_history(
+    Path(market_id): Path<u64>,
+    Query(params): Query<MarketHistoryParams>,
+    State(state): State<AppState>,
+) -> Result<Json<Vec<types::bar::Bar>>, ApiError> {
+    if params.from > params.to {
+        return Err(ApiError::InvalidTimeRange);
+    }
+    let market_id = BigDecimal::from(market_id);
+
+    let from_naive =
+        NaiveDateTime::from_timestamp_opt(params.from, 0).ok_or(ApiError::InvalidTimeRange)?;
+    let to_naive =
+        NaiveDateTime::from_timestamp_opt(params.to, 0).ok_or(ApiError::InvalidTimeRange)?;
+
+    let from = DateTime::<Utc>::from_utc(from_naive, Utc);
+    let to = DateTime::<Utc>::from_utc(to_naive, Utc);
+
+    tracing::debug!("querying range {} to {}", from, to);
+
+    // Compile time type checking not available if we dynamically compute the
+    // table name, so we use pattern matching instead.
+    let market_history_query = match params.resolution {
+        Resolution::I1m => {
+            sqlx::query_as!(
+                db::models::bar::Bar,
+                r#"
+                select
+                    market_id,
+                    start_time,
+                    open,
+                    high,
+                    low,
+                    close,
+                    volume
+                from bars_1m where market_id = $1 and start_time >= $2 and start_time < $3;
+                "#,
+                market_id,
+                from,
+                to
+            )
+            .fetch_all(&state.pool)
+            .await?
+        }
+        Resolution::I5m => {
+            sqlx::query_as!(
+                db::models::bar::Bar,
+                r#"
+                select
+                    market_id,
+                    start_time,
+                    open,
+                    high,
+                    low,
+                    close,
+                    volume
+                from bars_5m where market_id = $1 and start_time >= $2 and start_time < $3;
+                "#,
+                market_id,
+                from,
+                to
+            )
+            .fetch_all(&state.pool)
+            .await?
+        }
+        Resolution::I15m => {
+            sqlx::query_as!(
+                db::models::bar::Bar,
+                r#"
+                select
+                    market_id,
+                    start_time,
+                    open,
+                    high,
+                    low,
+                    close,
+                    volume
+                from bars_15m where market_id = $1 and start_time >= $2 and start_time < $3;
+                "#,
+                market_id,
+                from,
+                to
+            )
+            .fetch_all(&state.pool)
+            .await?
+        }
+    };
+
+    if market_history_query.is_empty() {
+        return Err(ApiError::NotFound);
+    }
+
+    let market_history = market_history_query
+        .into_iter()
+        .map(|v| v.try_into())
+        .collect::<Result<Vec<types::bar::Bar>, TypeError>>()?;
+
+    Ok(Json(market_history))
 }
 
 #[cfg(test)]

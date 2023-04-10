@@ -5,13 +5,13 @@
 [![Discord chat](https://img.shields.io/discord/988942344776736830?style=flat)](discord.gg/econia)
 [![License](https://img.shields.io/badge/license-Business_Source_License-white.svg)](LICENSE.md)
 
-# Econia
+# Foo
 
 **e·co·ni·a** | /ə'känēə/
 
 *Hyper-parallelized on-chain order book for the Aptos blockchain*
 
-- [Econia](#econia)
+- [Foo](#foo)
   - [Developing Econia](#developing-econia)
     - [Shell scripts](#shell-scripts)
     - [Environment setup](#environment-setup)

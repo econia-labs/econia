@@ -1,8 +1,4 @@
-use axum::{
-    extract::{Path, State},
-    routing::get,
-    Json, Router,
-};
+use axum::{extract::State, routing::get, Json, Router};
 use tower::ServiceBuilder;
 use tower_http::{
     compression::CompressionLayer,

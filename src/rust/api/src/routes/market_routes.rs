@@ -104,10 +104,6 @@ pub async fn get_market_history(
         }
     };
 
-    if market_history_query.is_empty() {
-        return Err(ApiError::NotFound);
-    }
-
     let market_history = market_history_query
         .into_iter()
         .map(|v| v.try_into())
@@ -162,10 +158,6 @@ pub async fn get_fills(
     )
     .fetch_all(&state.pool)
     .await?;
-
-    if fills_query.is_empty() {
-        return Err(ApiError::NotFound);
-    }
 
     let fills = fills_query
         .into_iter()

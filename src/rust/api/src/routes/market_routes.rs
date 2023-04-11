@@ -39,7 +39,7 @@ pub async fn get_market_history(
     // Compile time type checking not available if we dynamically compute the
     // table name, so we use pattern matching instead.
     let market_history_query = match params.resolution {
-        Resolution::I1m => {
+        Resolution::R1m => {
             sqlx::query_as!(
                 db::models::bar::Bar,
                 r#"
@@ -60,7 +60,7 @@ pub async fn get_market_history(
             .fetch_all(&state.pool)
             .await?
         }
-        Resolution::I5m => {
+        Resolution::R5m => {
             sqlx::query_as!(
                 db::models::bar::Bar,
                 r#"
@@ -81,7 +81,7 @@ pub async fn get_market_history(
             .fetch_all(&state.pool)
             .await?
         }
-        Resolution::I15m => {
+        Resolution::R15m => {
             sqlx::query_as!(
                 db::models::bar::Bar,
                 r#"
@@ -94,6 +94,48 @@ pub async fn get_market_history(
                     close,
                     volume
                 from bars_15m where market_id = $1 and start_time >= $2 and start_time < $3;
+                "#,
+                market_id,
+                from,
+                to
+            )
+            .fetch_all(&state.pool)
+            .await?
+        }
+        Resolution::R30m => {
+            sqlx::query_as!(
+                db::models::bar::Bar,
+                r#"
+                select
+                    market_id,
+                    start_time,
+                    open,
+                    high,
+                    low,
+                    close,
+                    volume
+                from bars_30m where market_id = $1 and start_time >= $2 and start_time < $3;
+                "#,
+                market_id,
+                from,
+                to
+            )
+            .fetch_all(&state.pool)
+            .await?
+        }
+        Resolution::R1h => {
+            sqlx::query_as!(
+                db::models::bar::Bar,
+                r#"
+                select
+                    market_id,
+                    start_time,
+                    open,
+                    high,
+                    low,
+                    close,
+                    volume
+                from bars_1h where market_id = $1 and start_time >= $2 and start_time < $3;
                 "#,
                 market_id,
                 from,
@@ -182,9 +224,9 @@ mod tests {
     use crate::{get_market_ids, load_config, routes::router, start_redis_channels};
 
     #[tokio::test]
-    async fn test_get_market_history() {
+    async fn test_get_market_history_1m_resolution() {
         let market_id = "0";
-        let resolution = Resolution::I1m;
+        let resolution = Resolution::R1m;
 
         let from = Utc
             .with_ymd_and_hms(2023, 4, 5, 0, 0, 0)

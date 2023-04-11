@@ -127,4 +127,41 @@ mod tests {
         let res = serde_json::from_slice::<Vec<types::order::Order>>(&body);
         assert!(res.is_ok());
     }
+
+    #[tokio::test]
+    async fn test_open_orders_by_account() {
+        let account_id = "0x123";
+        let config = load_config();
+
+        let pool = PgPool::connect(&config.database_url)
+            .await
+            .expect("Could not connect to DATABASE_URL");
+
+        let market_ids = get_market_ids(pool.clone()).await;
+        if market_ids.is_empty() {
+            tracing::warn!("no markets registered in database");
+        }
+
+        let (btx, _brx) = broadcast::channel(16);
+        let _conn = start_redis_channels(config.redis_url, market_ids, btx.clone()).await;
+
+        let state = AppState { pool, sender: btx };
+        let app = router(state);
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri(format!("/account/{}/open-orders", account_id))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
+        let res = serde_json::from_slice::<Vec<types::order::Order>>(&body);
+        assert!(res.is_ok());
+    }
 }

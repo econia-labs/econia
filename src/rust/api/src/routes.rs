@@ -25,8 +25,7 @@ pub fn router(state: AppState) -> Router {
         .layer(TraceLayer::new_for_http())
         .layer(cors_layer);
 
-    let state1 = state.clone();
-    let account_routes = get_account_routes().with_state(state1);
+    let account_routes = get_account_routes().with_state(state.pool.clone());
 
     Router::new()
         .route("/", get(index))

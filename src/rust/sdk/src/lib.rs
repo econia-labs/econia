@@ -1,22 +1,23 @@
 use anyhow::{anyhow, Context, Result};
-use aptos_api_types::{MoveModuleId, TransactionInfo, UserTransactionRequest, U64};
+use aptos_api_types::{TransactionInfo, UserTransactionRequest, U64};
 use aptos_sdk::crypto::ed25519::Ed25519PrivateKey;
 use aptos_sdk::crypto::ValidCryptoMaterialStringExt;
-use aptos_sdk::move_types::ident_str;
-use aptos_sdk::move_types::language_storage::{ModuleId, TypeTag};
+use aptos_sdk::move_types::language_storage::TypeTag;
 use aptos_sdk::rest_client::aptos::Balance;
 use aptos_sdk::rest_client::{Client, Resource};
 use aptos_sdk::types::account_address::AccountAddress;
 use aptos_sdk::types::chain_id::ChainId;
-use aptos_sdk::types::transaction::EntryFunction;
 use aptos_sdk::types::{AccountKey, LocalAccount};
-use econia_types::events::Events;
+use econia_types::events::EconiaEvent;
 use reqwest::Url;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::fs::File;
-use std::str::FromStr;
+
+use tx_builder::EconiaTransactionBuilder;
+
+mod tx_builder;
 
 pub const SUBMIT_ATTEMPTS: u8 = 10;
 
@@ -46,7 +47,7 @@ impl AptosConfig {
 pub struct EconiaTransaction {
     pub info: TransactionInfo,
     pub request: UserTransactionRequest,
-    pub events: Vec<Events>,
+    pub events: Vec<EconiaEvent>,
     pub timestamp: U64,
 }
 
@@ -149,8 +150,16 @@ impl EconiaClient {
         &self.aptos
     }
 
+    pub fn chain_id(&self) -> ChainId {
+        self.chain_id
+    }
+
     pub fn account(&self) -> &LocalAccount {
         &self.account
+    }
+
+    pub fn account_mut(&mut self) -> &mut LocalAccount {
+        &mut self.account
     }
 
     /// Update the econia clients aptos chain id.
@@ -213,17 +222,6 @@ impl EconiaClient {
             .map(|r| r.is_some())
     }
 
-    pub fn register_for_coin(coin: &TypeTag) -> Result<EntryFunction> {
-        let entry = EntryFunction::new(
-            ModuleId::from(MoveModuleId::from_str("0x1::managed_coin")?),
-            ident_str!("register").to_owned(),
-            vec![coin.clone()],
-            vec![],
-        );
-
-        Ok(entry)
-    }
-
     pub async fn get_coin_balance(&self, coin: &TypeTag) -> Result<U64> {
         let coin_store = format!("0x1::coin::CoinStore<{}>", coin);
         self.fetch_resource(self.account.address(), &coin_store)
@@ -233,6 +231,10 @@ impl EconiaClient {
                 serde_json::from_value::<Balance>(r.data).context("failed deserializing balance")
             })
             .map(|b| b.coin.value)
+    }
+
+    pub fn create_tx(&mut self) -> EconiaTransactionBuilder<'_> {
+        EconiaTransactionBuilder::new(self)
     }
 }
 

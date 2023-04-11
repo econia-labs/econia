@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use crate::{error::TypeError, order::Side};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub enum Events {
+pub enum EconiaEvent {
     Maker(Box<MakerEvent>),
     Taker(Box<TakerEvent>),
     MarketRegistration(Box<MarketRegistrationEvent>),

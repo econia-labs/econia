@@ -3,9 +3,16 @@ name: Push API Docker image to Artifact Registry
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - dev
     paths:
-      - src/rust
+      - src/rust/api/**
+      - src/rust/db/**
+      - src/rust/types/**
+      - src/rust/Cargo.toml
+      - src/rust/Cargo.lock
+      - src/rust/.dockerignore
 
 jobs:
   build:

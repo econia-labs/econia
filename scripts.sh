@@ -330,17 +330,17 @@ case "$1" in
     # Publish to temporary account.
     pt) publish temporary ;;
 
+    # Run Move unit tests with a filter, passing possible additional arguments.
+    tf) test_move --filter "${@:2}" ;;
+
+    # Run all Move unit tests, passing possible additional arguments.
+    tm) test_move "${@:2}" ;;
+
     # Run all Python tests.
     tp) test_python ;;
 
     # Run all Rust tests.
     tr) test_rust ;;
-
-    # Run all Move unit tests, passing possible additional arguments.
-    tm) test_move "${@:2}" ;;
-
-    # Run Move unit tests with a filter, passing possible additional arguments.
-    tf) test_move --filter "${@:2}" ;;
 
     # Print invalid option.
     *) echo Invalid ;;

@@ -2,6 +2,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 pub mod bar;
+pub mod book;
 pub mod constants;
 pub mod error;
 pub mod events;

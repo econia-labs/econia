@@ -1,20 +1,16 @@
-use axum::{
-    extract::{Path, Query, State},
-    routing::get,
-    Json, Router,
-};
-use bigdecimal::BigDecimal;
-use chrono::{DateTime, NaiveDateTime, Utc};
-use serde::Deserialize;
+use axum::{extract::State, routing::get, Json, Router};
 use tower::ServiceBuilder;
 use tower_http::{
     compression::CompressionLayer,
     cors::{Any, CorsLayer},
     trace::TraceLayer,
 };
-use types::{bar::Resolution, error::TypeError};
+use types::error::TypeError;
 
 use crate::{error::ApiError, ws::ws_handler, AppState};
+
+mod account_routes;
+mod market_routes;
 
 pub fn router(state: AppState) -> Router {
     let cors_layer = CorsLayer::new()
@@ -32,13 +28,17 @@ pub fn router(state: AppState) -> Router {
         .route("/markets", get(markets))
         .route(
             "/account/:account_address/order-history",
-            get(order_history_by_account),
+            get(account_routes::order_history_by_account),
         )
         .route(
             "/account/:account_address/open-orders",
-            get(open_orders_by_account),
+            get(account_routes::open_orders_by_account),
         )
-        .route("/market/:market_id/history", get(market_history))
+        .route(
+            "/market/:market_id/history",
+            get(market_routes::get_market_history),
+        )
+        .route("/market/:market_id/fills", get(market_routes::get_fills))
         .route("/ws", get(ws_handler))
         .with_state(state)
         .layer(middleware_stack)
@@ -90,185 +90,6 @@ async fn markets(State(state): State<AppState>) -> Result<Json<Vec<types::Market
         .collect::<Result<Vec<types::Market>, TypeError>>()?;
 
     Ok(Json(markets))
-}
-
-async fn order_history_by_account(
-    Path(account_address): Path<String>,
-    State(state): State<AppState>,
-) -> Result<Json<Vec<types::order::Order>>, ApiError> {
-    let order_history_query = sqlx::query_as!(
-        db::models::order::Order,
-        r#"
-        select
-            market_order_id,
-            market_id,
-            side as "side: db::models::order::Side",
-            size,
-            price,
-            user_address,
-            custodian_id,
-            order_state as "order_state: db::models::order::OrderState",
-            created_at
-        from orders where user_address = $1;
-        "#,
-        account_address
-    )
-    .fetch_all(&state.pool)
-    .await?;
-
-    if order_history_query.is_empty() {
-        return Err(ApiError::NotFound);
-    }
-
-    let order_history = order_history_query
-        .into_iter()
-        .map(|v| v.try_into())
-        .collect::<Result<Vec<types::order::Order>, TypeError>>()?;
-
-    Ok(Json(order_history))
-}
-
-async fn open_orders_by_account(
-    Path(account_address): Path<String>,
-    State(state): State<AppState>,
-) -> Result<Json<Vec<types::order::Order>>, ApiError> {
-    let open_orders_query = sqlx::query_as!(
-        db::models::order::Order,
-        r#"
-        select
-            market_order_id,
-            market_id,
-            side as "side: db::models::order::Side",
-            size,
-            price,
-            user_address,
-            custodian_id,
-            order_state as "order_state: db::models::order::OrderState",
-            created_at
-        from orders where user_address = $1 and order_state = 'open';
-        "#,
-        account_address
-    )
-    .fetch_all(&state.pool)
-    .await?;
-
-    if open_orders_query.is_empty() {
-        return Err(ApiError::NotFound);
-    }
-
-    let open_orders = open_orders_query
-        .into_iter()
-        .map(|v| v.try_into())
-        .collect::<Result<Vec<types::order::Order>, TypeError>>()?;
-
-    Ok(Json(open_orders))
-}
-
-#[derive(Debug, Deserialize)]
-struct MarketHistoryParams {
-    resolution: Resolution,
-    from: i64,
-    to: i64,
-}
-
-async fn market_history(
-    Path(market_id): Path<u64>,
-    Query(params): Query<MarketHistoryParams>,
-    State(state): State<AppState>,
-) -> Result<Json<Vec<types::bar::Bar>>, ApiError> {
-    if params.from > params.to {
-        return Err(ApiError::InvalidTimeRange);
-    }
-    let market_id = BigDecimal::from(market_id);
-
-    let from_naive =
-        NaiveDateTime::from_timestamp_opt(params.from, 0).ok_or(ApiError::InvalidTimeRange)?;
-    let to_naive =
-        NaiveDateTime::from_timestamp_opt(params.to, 0).ok_or(ApiError::InvalidTimeRange)?;
-
-    let from = DateTime::<Utc>::from_utc(from_naive, Utc);
-    let to = DateTime::<Utc>::from_utc(to_naive, Utc);
-
-    tracing::debug!("querying range {} to {}", from, to);
-
-    // Compile time type checking not available if we dynamically compute the
-    // table name, so we use pattern matching instead.
-    let market_history_query = match params.resolution {
-        Resolution::I1m => {
-            sqlx::query_as!(
-                db::models::bar::Bar,
-                r#"
-                select
-                    market_id,
-                    start_time,
-                    open,
-                    high,
-                    low,
-                    close,
-                    volume
-                from bars_1m where market_id = $1 and start_time >= $2 and start_time < $3;
-                "#,
-                market_id,
-                from,
-                to
-            )
-            .fetch_all(&state.pool)
-            .await?
-        }
-        Resolution::I5m => {
-            sqlx::query_as!(
-                db::models::bar::Bar,
-                r#"
-                select
-                    market_id,
-                    start_time,
-                    open,
-                    high,
-                    low,
-                    close,
-                    volume
-                from bars_5m where market_id = $1 and start_time >= $2 and start_time < $3;
-                "#,
-                market_id,
-                from,
-                to
-            )
-            .fetch_all(&state.pool)
-            .await?
-        }
-        Resolution::I15m => {
-            sqlx::query_as!(
-                db::models::bar::Bar,
-                r#"
-                select
-                    market_id,
-                    start_time,
-                    open,
-                    high,
-                    low,
-                    close,
-                    volume
-                from bars_15m where market_id = $1 and start_time >= $2 and start_time < $3;
-                "#,
-                market_id,
-                from,
-                to
-            )
-            .fetch_all(&state.pool)
-            .await?
-        }
-    };
-
-    if market_history_query.is_empty() {
-        return Err(ApiError::NotFound);
-    }
-
-    let market_history = market_history_query
-        .into_iter()
-        .map(|v| v.try_into())
-        .collect::<Result<Vec<types::bar::Bar>, TypeError>>()?;
-
-    Ok(Json(market_history))
 }
 
 #[cfg(test)]

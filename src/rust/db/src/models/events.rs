@@ -44,6 +44,17 @@ impl From<MakerEventType> for events::MakerEventType {
     }
 }
 
+impl From<events::MakerEventType> for MakerEventType {
+    fn from(value: events::MakerEventType) -> Self {
+        match value {
+            events::MakerEventType::Cancel => Self::Cancel,
+            events::MakerEventType::Change => Self::Change,
+            events::MakerEventType::Evict => Self::Evict,
+            events::MakerEventType::Place => Self::Place,
+        }
+    }
+}
+
 #[derive(Clone, Debug, Queryable)]
 pub struct MakerEvent {
     pub market_id: BigDecimal,
@@ -55,6 +66,22 @@ pub struct MakerEvent {
     pub size: BigDecimal,
     pub price: BigDecimal,
     pub time: DateTime<Utc>,
+}
+
+impl From<events::MakerEvent> for MakerEvent {
+    fn from(value: events::MakerEvent) -> Self {
+        Self {
+            market_id: value.market_id.into(),
+            side: value.side.into(),
+            market_order_id: value.market_order_id.into(),
+            user_address: value.user_address,
+            custodian_id: value.custodian_id.map(|id| id.into()),
+            event_type: value.event_type.into(),
+            size: value.size.into(),
+            price: value.price.into(),
+            time: value.time,
+        }
+    }
 }
 
 impl TryFrom<MakerEvent> for events::MakerEvent {
@@ -143,6 +170,21 @@ pub struct TakerEvent {
     pub size: BigDecimal,
     pub price: BigDecimal,
     pub time: DateTime<Utc>,
+}
+
+impl From<events::TakerEvent> for TakerEvent {
+    fn from(value: events::TakerEvent) -> Self {
+        Self {
+            market_id: value.market_id.into(),
+            side: value.side.into(),
+            market_order_id: value.market_order_id.into(),
+            maker: value.maker,
+            custodian_id: value.custodian_id.map(|id| id.into()),
+            size: value.size.into(),
+            price: value.price.into(),
+            time: value.time,
+        }
+    }
 }
 
 impl TryFrom<TakerEvent> for events::TakerEvent {

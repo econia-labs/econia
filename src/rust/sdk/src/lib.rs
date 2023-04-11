@@ -10,7 +10,6 @@ use aptos_sdk::types::account_address::AccountAddress;
 use aptos_sdk::types::chain_id::ChainId;
 use aptos_sdk::types::transaction::EntryFunction;
 use aptos_sdk::types::{AccountKey, LocalAccount};
-use econia_types;
 use econia_types::events::Events;
 use reqwest::Url;
 use serde::Deserialize;
@@ -239,4 +238,3 @@ impl EconiaClient {
 
 #[cfg(test)]
 mod tests {}
-

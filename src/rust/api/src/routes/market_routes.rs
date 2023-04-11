@@ -272,5 +272,8 @@ mod tests {
         let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
         let res = serde_json::from_slice::<Vec<types::bar::Bar>>(&body);
         assert!(res.is_ok());
+
+        let bars = res.unwrap();
+        assert_eq!(bars.len(), 10);
     }
 }

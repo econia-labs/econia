@@ -276,4 +276,58 @@ mod tests {
         let bars = res.unwrap();
         assert_eq!(bars.len(), 10);
     }
+
+    #[tokio::test]
+    async fn test_get_market_history_1h_resolution() {
+        let market_id = "0";
+        let resolution = Resolution::R1h;
+
+        let from = Utc
+            .with_ymd_and_hms(2023, 4, 5, 0, 0, 0)
+            .unwrap()
+            .timestamp();
+        let to = Utc
+            .with_ymd_and_hms(2023, 4, 5, 1, 0, 0)
+            .unwrap()
+            .timestamp();
+
+        let config = load_config();
+
+        let pool = PgPool::connect(&config.database_url)
+            .await
+            .expect("Could not connect to DATABASE_URL");
+
+        let market_ids = get_market_ids(pool.clone()).await;
+        if market_ids.is_empty() {
+            tracing::warn!("no markets registered in database");
+        }
+
+        let (btx, _brx) = broadcast::channel(16);
+        let _conn = start_redis_channels(config.redis_url, market_ids, btx.clone()).await;
+
+        let state = AppState { pool, sender: btx };
+        let app = router(state);
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri(format!(
+                        "/market/{}/history?resolution={}&from={}&to={}",
+                        market_id, resolution, from, to
+                    ))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
+        let res = serde_json::from_slice::<Vec<types::bar::Bar>>(&body);
+        assert!(res.is_ok());
+
+        let bars = res.unwrap();
+        assert_eq!(bars.len(), 1);
+    }
 }

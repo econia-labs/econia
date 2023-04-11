@@ -332,7 +332,54 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_get_market_history_invalid_timestamps() {
+    async fn test_get_market_history_invalid_resolution() {
+        let market_id = "0";
+        let resolution = "3m";
+
+        let from = Utc
+            .with_ymd_and_hms(2023, 4, 5, 0, 0, 0)
+            .unwrap()
+            .timestamp();
+        let to = Utc
+            .with_ymd_and_hms(2023, 4, 5, 1, 0, 0)
+            .unwrap()
+            .timestamp();
+
+        let config = load_config();
+
+        let pool = PgPool::connect(&config.database_url)
+            .await
+            .expect("Could not connect to DATABASE_URL");
+
+        let market_ids = get_market_ids(pool.clone()).await;
+        if market_ids.is_empty() {
+            tracing::warn!("no markets registered in database");
+        }
+
+        let (btx, _brx) = broadcast::channel(16);
+        let _conn = start_redis_channels(config.redis_url, market_ids, btx.clone()).await;
+
+        let state = AppState { pool, sender: btx };
+        let app = router(state);
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri(format!(
+                        "/market/{}/history?resolution={}&from={}&to={}",
+                        market_id, resolution, from, to
+                    ))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    }
+
+    #[tokio::test]
+    async fn test_get_market_history_to_before_from() {
         let market_id = "0";
         let resolution = Resolution::R1m;
 

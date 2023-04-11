@@ -1,12 +1,20 @@
 use axum::{
     extract::{Path, State},
-    Json,
+    routing::get,
+    Json, Router,
 };
+use hyper::Body;
 use types::error::TypeError;
 
 use crate::{error::ApiError, AppState};
 
-pub async fn order_history_by_account(
+pub fn get_account_routes() -> Router<AppState, Body> {
+    Router::new()
+        .route("/order-history", get(order_history_by_account))
+        .route("/open-orders", get(open_orders_by_account))
+}
+
+async fn order_history_by_account(
     Path(account_address): Path<String>,
     State(state): State<AppState>,
 ) -> Result<Json<Vec<types::order::Order>>, ApiError> {
@@ -42,7 +50,7 @@ pub async fn order_history_by_account(
     Ok(Json(order_history))
 }
 
-pub async fn open_orders_by_account(
+async fn open_orders_by_account(
     Path(account_address): Path<String>,
     State(state): State<AppState>,
 ) -> Result<Json<Vec<types::order::Order>>, ApiError> {

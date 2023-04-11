@@ -13,7 +13,6 @@ db = { path = "../db" }
 dotenvy = { workspace = true }
 envy = { workspace = true }
 futures-util = { workspace = true }
-hyper = "0.14.24"
 redis = { version = "0.22.3", features = [
     "tokio-comp",
     "tokio-native-tls-comp",
@@ -44,5 +43,6 @@ tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
 types = { path = "../types" }
 
 [dev-dependencies]
+hyper = "0.14.24"
 tokio-tungstenite = "0.18.0"
 url = "2.3.1"

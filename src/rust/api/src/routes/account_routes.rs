@@ -1,23 +1,14 @@
 use axum::{
     extract::{Path, State},
-    routing::get,
-    Json, Router,
+    Json,
 };
-use hyper::Body;
-use sqlx::{Pool, Postgres};
 use types::error::TypeError;
 
-use crate::error::ApiError;
+use crate::{error::ApiError, AppState};
 
-pub fn get_account_routes() -> Router<Pool<Postgres>, Body> {
-    Router::new()
-        .route("/order-history", get(order_history_by_account))
-        .route("/open-orders", get(open_orders_by_account))
-}
-
-async fn order_history_by_account(
+pub async fn order_history_by_account(
     Path(account_address): Path<String>,
-    State(pool): State<Pool<Postgres>>,
+    State(state): State<AppState>,
 ) -> Result<Json<Vec<types::order::Order>>, ApiError> {
     let order_history_query = sqlx::query_as!(
         db::models::order::Order,
@@ -36,7 +27,7 @@ async fn order_history_by_account(
         "#,
         account_address
     )
-    .fetch_all(&pool)
+    .fetch_all(&state.pool)
     .await?;
 
     if order_history_query.is_empty() {
@@ -51,9 +42,9 @@ async fn order_history_by_account(
     Ok(Json(order_history))
 }
 
-async fn open_orders_by_account(
+pub async fn open_orders_by_account(
     Path(account_address): Path<String>,
-    State(pool): State<Pool<Postgres>>,
+    State(state): State<AppState>,
 ) -> Result<Json<Vec<types::order::Order>>, ApiError> {
     let open_orders_query = sqlx::query_as!(
         db::models::order::Order,
@@ -72,7 +63,7 @@ async fn open_orders_by_account(
         "#,
         account_address
     )
-    .fetch_all(&pool)
+    .fetch_all(&state.pool)
     .await?;
 
     if open_orders_query.is_empty() {
@@ -97,7 +88,8 @@ mod tests {
     use tokio::sync::broadcast;
     use tower::ServiceExt;
 
-    use crate::{get_market_ids, load_config, routes::router, start_redis_channels, AppState};
+    use super::*;
+    use crate::{get_market_ids, load_config, routes::router, start_redis_channels};
 
     #[tokio::test]
     async fn test_order_history_by_account() {

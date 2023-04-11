@@ -9,8 +9,6 @@ use types::error::TypeError;
 
 use crate::{error::ApiError, ws::ws_handler, AppState};
 
-use self::account_routes::get_account_routes;
-
 mod account_routes;
 mod market_routes;
 
@@ -25,12 +23,17 @@ pub fn router(state: AppState) -> Router {
         .layer(TraceLayer::new_for_http())
         .layer(cors_layer);
 
-    let account_routes = get_account_routes().with_state(state.pool.clone());
-
     Router::new()
         .route("/", get(index))
         .route("/markets", get(markets))
-        .nest("/account/:account_address", account_routes)
+        .route(
+            "/account/:account_address/order-history",
+            get(account_routes::order_history_by_account),
+        )
+        .route(
+            "/account/:account_address/open-orders",
+            get(account_routes::open_orders_by_account),
+        )
         .route(
             "/market/:market_id/history",
             get(market_routes::get_market_history),

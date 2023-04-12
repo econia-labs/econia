@@ -4,6 +4,7 @@ use std::str::FromStr;
 use anyhow::{anyhow, Context, Result};
 use aptos_api_types::{AptosErrorCode, MoveModuleId, MoveType, Transaction};
 use aptos_sdk::bcs;
+use aptos_sdk::move_types::account_address::AccountAddress;
 use aptos_sdk::move_types::ident_str;
 use aptos_sdk::move_types::language_storage::TypeTag;
 use aptos_sdk::rest_client::error::RestError;
@@ -51,6 +52,8 @@ impl<'a> EconiaTransactionBuilder<'a> {
         self.entry = Some(Ok(entry));
         self
     }
+
+    // Incentives entry functions
 
     pub fn update_incentives(
         mut self,
@@ -112,6 +115,226 @@ impl<'a> EconiaTransactionBuilder<'a> {
                 ident_str!("withdraw_integrator_fees_via_coinstores").to_owned(),
                 vec![quote_coin.clone(), utility_coin.clone()],
                 vec![bcs::to_bytes(&market_id)?],
+            ))
+        })();
+
+        self.entry = Some(entry);
+        self
+    }
+
+    // Market entry functions
+    pub fn cancel_all_orders_user(mut self, market_id: u64, side: bool) -> Self {
+        let entry: Result<EntryFunction> = (|| {
+            Ok(EntryFunction::new(
+                ModuleId::from(self.client.econia_module().to_owned()),
+                ident_str!("cancel_all_orders_user").to_owned(),
+                vec![],
+                vec![bcs::to_bytes(&market_id)?, bcs::to_bytes(&side)?],
+            ))
+        })();
+
+        self.entry = Some(entry);
+        self
+    }
+
+    pub fn cancel_order_user(mut self, market_id: u64, side: bool, market_order_id: u128) -> Self {
+        let entry: Result<EntryFunction> = (|| {
+            Ok(EntryFunction::new(
+                ModuleId::from(self.client.econia_module().to_owned()),
+                ident_str!("cancel_order_user").to_owned(),
+                vec![],
+                vec![
+                    bcs::to_bytes(&market_id)?,
+                    bcs::to_bytes(&side)?,
+                    bcs::to_bytes(&market_order_id)?,
+                ],
+            ))
+        })();
+
+        self.entry = Some(entry);
+        self
+    }
+
+    pub fn change_order_size_user(
+        mut self,
+        market_id: u64,
+        side: bool,
+        market_order_id: u128,
+        new_size: u64,
+    ) -> Self {
+        let entry: Result<EntryFunction> = (|| {
+            Ok(EntryFunction::new(
+                ModuleId::from(self.client.econia_module().to_owned()),
+                ident_str!("change_order_size_user").to_owned(),
+                vec![],
+                vec![
+                    bcs::to_bytes(&market_id)?,
+                    bcs::to_bytes(&side)?,
+                    bcs::to_bytes(&market_order_id)?,
+                    bcs::to_bytes(&new_size)?,
+                ],
+            ))
+        })();
+
+        self.entry = Some(entry);
+        self
+    }
+
+    pub fn place_limit_order_passive_advance_user_entry(
+        mut self,
+        base: &TypeTag,
+        quote: &TypeTag,
+        market_id: u64,
+        integrator: &AccountAddress,
+        side: bool,
+        size: u64,
+        advance_style: bool,
+        target_advance_amount: u64,
+    ) -> Self {
+        let entry: Result<EntryFunction> = (|| {
+            Ok(EntryFunction::new(
+                ModuleId::from(self.client.econia_module().to_owned()),
+                ident_str!("place_limit_order_passive_advance_user_entry").to_owned(),
+                vec![base.clone(), quote.clone()],
+                vec![
+                    bcs::to_bytes(&market_id)?,
+                    bcs::to_bytes(&integrator)?,
+                    bcs::to_bytes(&side)?,
+                    bcs::to_bytes(&size)?,
+                    bcs::to_bytes(&advance_style)?,
+                    bcs::to_bytes(&target_advance_amount)?,
+                ],
+            ))
+        })();
+
+        self.entry = Some(entry);
+        self
+    }
+
+    pub fn place_limit_order_user_entry(
+        mut self,
+        base: &TypeTag,
+        quote: &TypeTag,
+        market_id: u64,
+        integrator: &AccountAddress,
+        side: bool,
+        size: u64,
+        price: u64,
+        restriction: u8,
+        self_match_behavior: u8,
+    ) -> Self {
+        let entry: Result<EntryFunction> = (|| {
+            Ok(EntryFunction::new(
+                ModuleId::from(self.client.econia_module().to_owned()),
+                ident_str!("place_limit_order_user_entry").to_owned(),
+                vec![base.clone(), quote.clone()],
+                vec![
+                    bcs::to_bytes(&market_id)?,
+                    bcs::to_bytes(&integrator)?,
+                    bcs::to_bytes(&side)?,
+                    bcs::to_bytes(&size)?,
+                    bcs::to_bytes(&price)?,
+                    bcs::to_bytes(&restriction)?,
+                    bcs::to_bytes(&self_match_behavior)?,
+                ],
+            ))
+        })();
+
+        self.entry = Some(entry);
+        self
+    }
+
+    pub fn place_market_order_user_entry(
+        mut self,
+        base: &TypeTag,
+        quote: &TypeTag,
+        market_id: u64,
+        integrator: &AccountAddress,
+        direction: bool,
+        min_base: u64,
+        max_base: u64,
+        min_quote: u64,
+        max_quote: u64,
+        limit_price: u64,
+        self_match_behavior: u8,
+    ) -> Self {
+        let entry: Result<EntryFunction> = (|| {
+            Ok(EntryFunction::new(
+                ModuleId::from(self.client.econia_module().to_owned()),
+                ident_str!("place_market_order_user_entry").to_owned(),
+                vec![base.clone(), quote.clone()],
+                vec![
+                    bcs::to_bytes(&market_id)?,
+                    bcs::to_bytes(&integrator)?,
+                    bcs::to_bytes(&direction)?,
+                    bcs::to_bytes(&min_base)?,
+                    bcs::to_bytes(&max_base)?,
+                    bcs::to_bytes(&min_quote)?,
+                    bcs::to_bytes(&max_quote)?,
+                    bcs::to_bytes(&limit_price)?,
+                    bcs::to_bytes(&self_match_behavior)?,
+                ],
+            ))
+        })();
+
+        self.entry = Some(entry);
+        self
+    }
+
+    pub fn register_market_base_coin_from_coinstore(
+        mut self,
+        base: &TypeTag,
+        quote: &TypeTag,
+        utility_coin: &TypeTag,
+        lot_size: u64,
+        tick_size: u64,
+        min_size: u64,
+    ) -> Self {
+        let entry: Result<EntryFunction> = (|| {
+            Ok(EntryFunction::new(
+                ModuleId::from(self.client.econia_module().to_owned()),
+                ident_str!("register_market_base_coin_from_coinstore").to_owned(),
+                vec![base.clone(), quote.clone(), utility_coin.clone()],
+                vec![
+                    bcs::to_bytes(&lot_size)?,
+                    bcs::to_bytes(&tick_size)?,
+                    bcs::to_bytes(&min_size)?,
+                ],
+            ))
+        })();
+
+        self.entry = Some(entry);
+        self
+    }
+
+    pub fn swap_between_coinstores_entry(
+        mut self,
+        base: &TypeTag,
+        quote: &TypeTag,
+        market_id: u64,
+        integrator: &AccountAddress,
+        direction: bool,
+        min_base: u64,
+        max_base: u64,
+        min_quote: u64,
+        max_quote: u64,
+        limit_price: u64,
+    ) -> Self {
+        let entry: Result<EntryFunction> = (|| {
+            Ok(EntryFunction::new(
+                ModuleId::from(self.client.econia_module().to_owned()),
+                ident_str!("swap_between_coinstores_entry").to_owned(),
+                vec![base.clone(), quote.clone()],
+                vec![
+                    bcs::to_bytes(&market_id)?,
+                    bcs::to_bytes(&integrator)?,
+                    bcs::to_bytes(&direction)?,
+                    bcs::to_bytes(&min_base)?,
+                    bcs::to_bytes(&max_base)?,
+                    bcs::to_bytes(&min_quote)?,
+                    bcs::to_bytes(&max_quote)?,
+                    bcs::to_bytes(&limit_price)?,
+                ],
             ))
         })();
 

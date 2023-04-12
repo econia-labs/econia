@@ -342,6 +342,75 @@ impl<'a> EconiaTransactionBuilder<'a> {
         self
     }
 
+    // Registry functions
+
+    pub fn register_integrator_fee_store_base_tier(
+        mut self,
+        quote: &TypeTag,
+        utility_coin: &TypeTag,
+        market_id: u64,
+    ) -> Self {
+        let entry: Result<EntryFunction> = (|| {
+            Ok(EntryFunction::new(
+                ModuleId::from(self.client.econia_module().to_owned()),
+                ident_str!("register_integrator_fee_store_base_tier").to_owned(),
+                vec![quote.clone(), utility_coin.clone()],
+                vec![bcs::to_bytes(&market_id)?],
+            ))
+        })();
+
+        self.entry = Some(entry);
+        self
+    }
+
+    pub fn register_integrator_fee_store_from_coinstore(
+        mut self,
+        quote: &TypeTag,
+        utility_coin: &TypeTag,
+        market_id: u64,
+        tier: u8,
+    ) -> Self {
+        let entry: Result<EntryFunction> = (|| {
+            Ok(EntryFunction::new(
+                ModuleId::from(self.client.econia_module().to_owned()),
+                ident_str!("register_integrator_fee_store_from_coinstore").to_owned(),
+                vec![quote.clone(), utility_coin.clone()],
+                vec![bcs::to_bytes(&market_id)?, bcs::to_bytes(&tier)?],
+            ))
+        })();
+
+        self.entry = Some(entry);
+        self
+    }
+
+    pub fn remove_recognized_markets(mut self, market_ids: Vec<u64>) -> Self {
+        let entry: Result<EntryFunction> = (|| {
+            Ok(EntryFunction::new(
+                ModuleId::from(self.client.econia_module().to_owned()),
+                ident_str!("remove_recognized_markets").to_owned(),
+                vec![],
+                vec![bcs::to_bytes(&market_ids)?],
+            ))
+        })();
+
+        self.entry = Some(entry);
+        self
+    }
+
+    pub fn set_recognized_market(mut self, market_id: u64) -> Self {
+        let entry: Result<EntryFunction> = (|| {
+            Ok(EntryFunction::new(
+                ModuleId::from(self.client.econia_module().to_owned()),
+                ident_str!("set_recognized_market").to_owned(),
+                vec![],
+                vec![bcs::to_bytes(&market_id)?],
+            ))
+        })();
+
+        self.entry = Some(entry);
+        self
+    }
+
     async fn submit_tx_internal(&mut self, payload: &EntryFunction) -> Result<EconiaTransaction> {
         let addr = self.client.account().address();
         let tx = TransactionFactory::new(self.client.chain_id)

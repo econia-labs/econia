@@ -1,5 +1,5 @@
-use anyhow::{anyhow, Context, Result};
-use aptos_api_types::{TransactionInfo, UserTransactionRequest, U64};
+use anyhow::{anyhow, bail, Context, Result};
+use aptos_api_types::{MoveModuleId, TransactionInfo, UserTransactionRequest, U64};
 use aptos_sdk::crypto::ed25519::Ed25519PrivateKey;
 use aptos_sdk::crypto::ValidCryptoMaterialStringExt;
 use aptos_sdk::move_types::language_storage::TypeTag;
@@ -14,6 +14,7 @@ use serde::Deserialize;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::fs::File;
+use std::str::FromStr;
 
 use tx_builder::EconiaTransactionBuilder;
 
@@ -53,6 +54,7 @@ pub struct EconiaTransaction {
 
 pub struct EconiaClient {
     econia: AccountAddress,
+    econia_module: MoveModuleId,
     aptos: Client,
     chain_id: ChainId,
     account: LocalAccount,
@@ -79,8 +81,13 @@ impl EconiaClient {
         let acc_seq_num = account.sequence_number_mut();
         *acc_seq_num = seq_num;
 
+        let Ok(econia_module) = MoveModuleId::from_str(&econia.to_hex_literal()) else {
+            bail!("invalid econia address provided")
+        };
+
         Ok(Self {
             econia,
+            econia_module,
             aptos,
             chain_id,
             account,
@@ -144,6 +151,10 @@ impl EconiaClient {
 
     pub fn econia(&self) -> &AccountAddress {
         &self.econia
+    }
+
+    pub fn econia_module(&self) -> &MoveModuleId {
+        &self.econia_module
     }
 
     pub fn aptos(&self) -> &Client {

@@ -3,6 +3,7 @@ use std::str::FromStr;
 
 use anyhow::{anyhow, Context, Result};
 use aptos_api_types::{AptosErrorCode, MoveModuleId, MoveType, Transaction};
+use aptos_sdk::bcs;
 use aptos_sdk::move_types::ident_str;
 use aptos_sdk::move_types::language_storage::TypeTag;
 use aptos_sdk::rest_client::error::RestError;
@@ -48,6 +49,73 @@ impl<'a> EconiaTransactionBuilder<'a> {
         );
 
         self.entry = Some(Ok(entry));
+        self
+    }
+
+    pub fn update_incentives(
+        mut self,
+        utility_coin: &TypeTag,
+        market_registration_fee: u64,
+        underwriter_registration_fee: u64,
+        custodian_registration_fee: u64,
+        taker_fee_divisor: u64,
+        integrator_fee_store_tiers: Vec<Vec<u64>>,
+    ) -> Self {
+        let entry: Result<EntryFunction> = (|| {
+            Ok(EntryFunction::new(
+                ModuleId::from(self.client.econia_module().to_owned()),
+                ident_str!("update_incentives").to_owned(),
+                vec![utility_coin.clone()],
+                vec![
+                    bcs::to_bytes(&market_registration_fee)?,
+                    bcs::to_bytes(&underwriter_registration_fee)?,
+                    bcs::to_bytes(&custodian_registration_fee)?,
+                    bcs::to_bytes(&taker_fee_divisor)?,
+                    bcs::to_bytes(&integrator_fee_store_tiers)?,
+                ],
+            ))
+        })();
+
+        self.entry = Some(entry);
+        self
+    }
+
+    pub fn upgrade_integrator_fee_store_via_coinstore(
+        mut self,
+        quote_coin: &TypeTag,
+        utility_coin: &TypeTag,
+        market_id: u64,
+        new_tier: u8,
+    ) -> Self {
+        let entry: Result<EntryFunction> = (|| {
+            Ok(EntryFunction::new(
+                ModuleId::from(self.client.econia_module().to_owned()),
+                ident_str!("upgrade_integrator_fee_store_via_coinstore").to_owned(),
+                vec![quote_coin.clone(), utility_coin.clone()],
+                vec![bcs::to_bytes(&market_id)?, bcs::to_bytes(&new_tier)?],
+            ))
+        })();
+
+        self.entry = Some(entry);
+        self
+    }
+
+    pub fn withdraw_integrator_fees_via_coinstores(
+        mut self,
+        quote_coin: &TypeTag,
+        utility_coin: &TypeTag,
+        market_id: u64,
+    ) -> Self {
+        let entry: Result<EntryFunction> = (|| {
+            Ok(EntryFunction::new(
+                ModuleId::from(self.client.econia_module().to_owned()),
+                ident_str!("withdraw_integrator_fees_via_coinstores").to_owned(),
+                vec![quote_coin.clone(), utility_coin.clone()],
+                vec![bcs::to_bytes(&market_id)?],
+            ))
+        })();
+
+        self.entry = Some(entry);
         self
     }
 

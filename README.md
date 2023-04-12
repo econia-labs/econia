@@ -1,3 +1,5 @@
+<a download="filename.png" href=".assets/cover-banner-blue.png"> Download link </a>
+
 ![](.assets/newbanner.png)
 
 [![Discord chat](https://img.shields.io/badge/docs-Econia-59f)](https://www.econia.dev)

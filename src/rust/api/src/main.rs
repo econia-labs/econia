@@ -1,4 +1,4 @@
-use std::net::SocketAddr;
+use std::{collections::HashSet, net::SocketAddr};
 
 use bigdecimal::ToPrimitive;
 use futures_util::StreamExt;
@@ -25,6 +25,7 @@ pub struct Config {
 pub struct AppState {
     pub pool: Pool<Postgres>,
     pub sender: broadcast::Sender<Update>,
+    pub market_ids: HashSet<u64>,
 }
 
 pub fn load_config() -> Config {
@@ -57,9 +58,13 @@ async fn main() {
     }
 
     let (btx, brx) = broadcast::channel(16);
-    let _conn = start_redis_channels(config.redis_url, market_ids, btx.clone()).await;
+    let _conn = start_redis_channels(config.redis_url, market_ids.clone(), btx.clone()).await;
 
-    let state = AppState { pool, sender: btx };
+    let state = AppState {
+        pool,
+        sender: btx,
+        market_ids: HashSet::from_iter(market_ids.into_iter()),
+    };
     let app = router(state);
     let addr = SocketAddr::from(([0, 0, 0, 0], config.port));
 

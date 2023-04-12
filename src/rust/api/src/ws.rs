@@ -457,7 +457,7 @@ mod tests {
             sender: btx,
             market_ids: HashSet::from_iter(market_ids.into_iter()),
         };
-        let app = router(state).layer(MockConnectInfo(SocketAddr::from(([0, 0, 0, 0], 3000))));
+        let app = router(state).layer(MockConnectInfo(SocketAddr::from(([0, 0, 0, 0], 3001))));
 
         tokio::spawn(async move {
             // keep broadcast channel alive
@@ -516,7 +516,7 @@ mod tests {
             sender: btx,
             market_ids: HashSet::from_iter(market_ids.into_iter()),
         };
-        let app = router(state).layer(MockConnectInfo(SocketAddr::from(([0, 0, 0, 0], 3000))));
+        let app = router(state).layer(MockConnectInfo(SocketAddr::from(([0, 0, 0, 0], 3002))));
 
         tokio::spawn(async move {
             // keep broadcast channel alive
@@ -612,7 +612,7 @@ mod tests {
             sender: btx,
             market_ids: HashSet::from_iter(market_ids.into_iter()),
         };
-        let app = router(state).layer(MockConnectInfo(SocketAddr::from(([0, 0, 0, 0], 3000))));
+        let app = router(state).layer(MockConnectInfo(SocketAddr::from(([0, 0, 0, 0], 3003))));
 
         tokio::spawn(async move {
             // keep broadcast channel alive

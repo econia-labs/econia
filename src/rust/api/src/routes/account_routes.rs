@@ -80,6 +80,8 @@ pub async fn open_orders_by_account(
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashSet;
+
     use axum::{
         body::Body,
         http::{Request, StatusCode},
@@ -106,9 +108,13 @@ mod tests {
         }
 
         let (btx, _brx) = broadcast::channel(16);
-        let _conn = start_redis_channels(config.redis_url, market_ids, btx.clone()).await;
+        let _conn = start_redis_channels(config.redis_url, market_ids.clone(), btx.clone()).await;
 
-        let state = AppState { pool, sender: btx };
+        let state = AppState {
+            pool,
+            sender: btx,
+            market_ids: HashSet::from_iter(market_ids.into_iter()),
+        };
         let app = router(state);
 
         let response = app
@@ -143,9 +149,13 @@ mod tests {
         }
 
         let (btx, _brx) = broadcast::channel(16);
-        let _conn = start_redis_channels(config.redis_url, market_ids, btx.clone()).await;
+        let _conn = start_redis_channels(config.redis_url, market_ids.clone(), btx.clone()).await;
 
-        let state = AppState { pool, sender: btx };
+        let state = AppState {
+            pool,
+            sender: btx,
+            market_ids: HashSet::from_iter(market_ids.into_iter()),
+        };
         let app = router(state);
 
         let response = app

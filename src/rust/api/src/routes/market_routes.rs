@@ -9,10 +9,14 @@ use types::{bar::Resolution, error::TypeError};
 
 use crate::{error::ApiError, AppState};
 
+/// Query parameters for the market history endpoint.
 #[derive(Debug, Deserialize)]
 pub struct MarketHistoryParams {
+    /// The resolution of the requested historical data.
     resolution: Resolution,
+    /// Unix timestamp (in seconds) for the start of the requested time range.
     from: i64,
+    /// Unix timestamp (in seconds) for the end of the requested time range.
     to: i64,
 }
 
@@ -154,9 +158,12 @@ pub async fn get_market_history(
     Ok(Json(market_history))
 }
 
+/// Query parameters for the fills endpoint.
 #[derive(Debug, Deserialize)]
 pub struct FillsParams {
+    /// Unix timestamp (in seconds) for the start of the requested time range.
     from: i64,
+    /// Unix timestamp (in seconds) for the end of the requested time range.
     to: i64,
 }
 
@@ -211,6 +218,8 @@ pub async fn get_fills(
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashSet;
+
     use axum::{
         body::Body,
         http::{Request, StatusCode},
@@ -257,9 +266,13 @@ mod tests {
         }
 
         let (btx, _brx) = broadcast::channel(16);
-        let _conn = start_redis_channels(config.redis_url, market_ids, btx.clone()).await;
+        let _conn = start_redis_channels(config.redis_url, market_ids.clone(), btx.clone()).await;
 
-        let state = AppState { pool, sender: btx };
+        let state = AppState {
+            pool,
+            sender: btx,
+            market_ids: HashSet::from_iter(market_ids.into_iter()),
+        };
         let app = router(state);
 
         let response = app
@@ -319,9 +332,13 @@ mod tests {
         }
 
         let (btx, _brx) = broadcast::channel(16);
-        let _conn = start_redis_channels(config.redis_url, market_ids, btx.clone()).await;
+        let _conn = start_redis_channels(config.redis_url, market_ids.clone(), btx.clone()).await;
 
-        let state = AppState { pool, sender: btx };
+        let state = AppState {
+            pool,
+            sender: btx,
+            market_ids: HashSet::from_iter(market_ids.into_iter()),
+        };
         let app = router(state);
 
         let response = app
@@ -379,9 +396,13 @@ mod tests {
         }
 
         let (btx, _brx) = broadcast::channel(16);
-        let _conn = start_redis_channels(config.redis_url, market_ids, btx.clone()).await;
+        let _conn = start_redis_channels(config.redis_url, market_ids.clone(), btx.clone()).await;
 
-        let state = AppState { pool, sender: btx };
+        let state = AppState {
+            pool,
+            sender: btx,
+            market_ids: HashSet::from_iter(market_ids.into_iter()),
+        };
         let app = router(state);
 
         let response = app
@@ -434,9 +455,13 @@ mod tests {
         }
 
         let (btx, _brx) = broadcast::channel(16);
-        let _conn = start_redis_channels(config.redis_url, market_ids, btx.clone()).await;
+        let _conn = start_redis_channels(config.redis_url, market_ids.clone(), btx.clone()).await;
 
-        let state = AppState { pool, sender: btx };
+        let state = AppState {
+            pool,
+            sender: btx,
+            market_ids: HashSet::from_iter(market_ids.into_iter()),
+        };
         let app = router(state);
 
         let response = app

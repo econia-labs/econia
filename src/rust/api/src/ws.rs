@@ -398,9 +398,13 @@ mod tests {
         let market_ids = get_market_ids(pool.clone()).await;
 
         let (btx, mut brx) = broadcast::channel(16);
-        let _conn = start_redis_channels(config.redis_url, market_ids, btx.clone()).await;
+        let _conn = start_redis_channels(config.redis_url, market_ids.clone(), btx.clone()).await;
 
-        let state = AppState { pool, sender: btx };
+        let state = AppState {
+            pool,
+            sender: btx,
+            market_ids: HashSet::from_iter(market_ids.into_iter()),
+        };
         let app = router(state).layer(MockConnectInfo(SocketAddr::from(([0, 0, 0, 0], 3000))));
 
         tokio::spawn(async move {
@@ -446,9 +450,13 @@ mod tests {
         let market_ids = get_market_ids(pool.clone()).await;
 
         let (btx, mut brx) = broadcast::channel(16);
-        let _conn = start_redis_channels(config.redis_url, market_ids, btx.clone()).await;
+        let _conn = start_redis_channels(config.redis_url, market_ids.clone(), btx.clone()).await;
 
-        let state = AppState { pool, sender: btx };
+        let state = AppState {
+            pool,
+            sender: btx,
+            market_ids: HashSet::from_iter(market_ids.into_iter()),
+        };
         let app = router(state).layer(MockConnectInfo(SocketAddr::from(([0, 0, 0, 0], 3000))));
 
         tokio::spawn(async move {
@@ -500,9 +508,14 @@ mod tests {
         let market_ids = get_market_ids(pool.clone()).await;
 
         let (btx, mut brx) = broadcast::channel(16);
-        let mut conn = start_redis_channels(config.redis_url, market_ids, btx.clone()).await;
+        let mut conn =
+            start_redis_channels(config.redis_url, market_ids.clone(), btx.clone()).await;
 
-        let state = AppState { pool, sender: btx };
+        let state = AppState {
+            pool,
+            sender: btx,
+            market_ids: HashSet::from_iter(market_ids.into_iter()),
+        };
         let app = router(state).layer(MockConnectInfo(SocketAddr::from(([0, 0, 0, 0], 3000))));
 
         tokio::spawn(async move {
@@ -591,9 +604,14 @@ mod tests {
         let market_ids = get_market_ids(pool.clone()).await;
 
         let (btx, mut brx) = broadcast::channel(16);
-        let mut conn = start_redis_channels(config.redis_url, market_ids, btx.clone()).await;
+        let mut conn =
+            start_redis_channels(config.redis_url, market_ids.clone(), btx.clone()).await;
 
-        let state = AppState { pool, sender: btx };
+        let state = AppState {
+            pool,
+            sender: btx,
+            market_ids: HashSet::from_iter(market_ids.into_iter()),
+        };
         let app = router(state).layer(MockConnectInfo(SocketAddr::from(([0, 0, 0, 0], 3000))));
 
         tokio::spawn(async move {

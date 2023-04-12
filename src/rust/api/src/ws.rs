@@ -39,7 +39,7 @@ pub async fn ws_handler(
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
 ) -> impl IntoResponse {
     tracing::info!("new websocket connection with client {}", addr);
-    ws.on_upgrade(move |ws| handle_socket(ws, state.sender, addr))
+    ws.on_upgrade(move |ws| handle_socket(ws, state.sender, state.market_ids, addr))
 }
 
 /// Checks whether the message received from the broadcast channel belongs to a
@@ -101,11 +101,13 @@ async fn outbound_message_handler(
 ///
 /// * `msg_i` - inbound message received from WebSocket client.
 /// * `subs` - mutex containing a hashset storing all the channels the client is subscribed to.
+/// * `market_ids` - hashset containing the ids of every available market.
 /// * `last_ping` - a mutex containing the date and time at which the last ping message was received.
 /// * `who` - client address.
 fn get_response_message(
     msg_i: InboundMessage,
     subs: &Mutex<HashSet<Channel>>,
+    market_ids: &HashSet<u64>,
     last_ping: &Mutex<DateTime<Utc>>,
     who: SocketAddr,
 ) -> Result<OutboundMessage, WebSocketError> {
@@ -136,6 +138,29 @@ fn get_response_message(
                     message: format!("already subscribed to channel `{}`", s),
                 })
             } else {
+                match channel {
+                    Channel::Orders {
+                        ref market_id,
+                        user_address: _,
+                    } => {
+                        if !market_ids.contains(market_id) {
+                            return Ok(OutboundMessage::Error {
+                                message: format!("market with id `{}` not found", market_id),
+                            });
+                        }
+                    }
+                    Channel::Fills {
+                        ref market_id,
+                        user_address: _,
+                    } => {
+                        if !market_ids.contains(market_id) {
+                            return Ok(OutboundMessage::Error {
+                                message: format!("market with id `{}` not found", market_id),
+                            });
+                        }
+                    }
+                    _ => {}
+                }
                 Ok(OutboundMessage::Confirm {
                     channel,
                     method: ConfirmMethod::Subscribe,
@@ -181,6 +206,7 @@ async fn inbound_message_handler(
     mut receiver: SplitStream<WebSocket>,
     tx: mpsc::Sender<OutboundMessage>,
     subs: Arc<Mutex<HashSet<Channel>>>,
+    market_ids: HashSet<u64>,
     last_ping: Arc<Mutex<DateTime<Utc>>>,
     who: SocketAddr,
 ) -> Result<(), WebSocketError> {
@@ -196,7 +222,8 @@ async fn inbound_message_handler(
                 );
                 match serde_json::from_str::<InboundMessage>(&s) {
                     Ok(msg_i) => {
-                        let msg_o = get_response_message(msg_i, &subs, &last_ping, who)?;
+                        let msg_o =
+                            get_response_message(msg_i, &subs, &market_ids, &last_ping, who)?;
                         tx.send(msg_o).await?;
                     }
                     Err(e) => {
@@ -295,7 +322,12 @@ async fn forward_message_handler(
 }
 
 /// WebSocket connection handler.
-async fn handle_socket(ws: WebSocket, btx: broadcast::Sender<Update>, who: SocketAddr) {
+async fn handle_socket(
+    ws: WebSocket,
+    btx: broadcast::Sender<Update>,
+    market_ids: HashSet<u64>,
+    who: SocketAddr,
+) {
     let (sender, receiver) = ws.split();
     let brx = btx.subscribe();
     let (mtx, mrx) = mpsc::channel(16);
@@ -327,7 +359,9 @@ async fn handle_socket(ws: WebSocket, btx: broadcast::Sender<Update>, who: Socke
     let mtx2 = mtx.clone();
     let last_ping1 = last_ping.clone();
     let mut recv_task = tokio::spawn(async move {
-        if let Err(e) = inbound_message_handler(receiver, mtx2, subs, last_ping1, who).await {
+        if let Err(e) =
+            inbound_message_handler(receiver, mtx2, subs, market_ids, last_ping1, who).await
+        {
             tracing::error!(
                 "websocket connection with client {} failed on inbound message handler: {}",
                 who,

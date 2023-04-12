@@ -93,6 +93,14 @@ mod tests {
     use super::*;
     use crate::{get_market_ids, load_config, routes::router, start_redis_channels};
 
+    /// Test that the order history by accoutn endpoint returns order history
+    /// for the specified user.
+    ///
+    /// This test sends a GET request to the `/accounts/{account_id}/order-history`
+    /// endpoint with the `account_id` parameter set to `0x123`. The response is
+    /// then checked to ensure that it has a `200 OK` status code, and the
+    /// response body is checked to ensure that it is a JSON response in the
+    /// correct format.
     #[tokio::test]
     async fn test_order_history_by_account() {
         let account_id = "0x123";

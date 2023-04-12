@@ -23,6 +23,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
       - name: Authenticate to Google Cloud
         id: "auth"
         uses: google-github-actions/auth@v1

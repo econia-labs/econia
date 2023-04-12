@@ -1,4 +1,4 @@
-<a download="filename.png" href=".assets/cover-banner-blue.png"> Download link </a>
+<a href=".assets/cover-banner-blue.png" download> Download link </a>
 
 ![](.assets/newbanner.png)
 

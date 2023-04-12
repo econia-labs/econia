@@ -123,6 +123,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     }
 
     // Market entry functions
+
     pub fn cancel_all_orders_user(mut self, market_id: u64, side: bool) -> Self {
         let entry: Result<EntryFunction> = (|| {
             Ok(EntryFunction::new(
@@ -404,6 +405,85 @@ impl<'a> EconiaTransactionBuilder<'a> {
                 ident_str!("set_recognized_market").to_owned(),
                 vec![],
                 vec![bcs::to_bytes(&market_id)?],
+            ))
+        })();
+
+        self.entry = Some(entry);
+        self
+    }
+
+    // User functions
+
+    pub fn deposit_from_coinstore(
+        mut self,
+        coin: &TypeTag,
+        market_id: u64,
+        custodian_id: u64,
+        amount: u64,
+    ) -> Self {
+        let entry: Result<EntryFunction> = (|| {
+            Ok(EntryFunction::new(
+                ModuleId::from(self.client.econia_module().to_owned()),
+                ident_str!("deposit_from_coinstore").to_owned(),
+                vec![coin.clone()],
+                vec![
+                    bcs::to_bytes(&market_id)?,
+                    bcs::to_bytes(&custodian_id)?,
+                    bcs::to_bytes(&amount)?,
+                ],
+            ))
+        })();
+
+        self.entry = Some(entry);
+        self
+    }
+
+    pub fn register_market_account(
+        mut self,
+        base: &TypeTag,
+        quote: &TypeTag,
+        market_id: u64,
+        custodian_id: u64,
+    ) -> Self {
+        let entry: Result<EntryFunction> = (|| {
+            Ok(EntryFunction::new(
+                ModuleId::from(self.client.econia_module().to_owned()),
+                ident_str!("register_market_account").to_owned(),
+                vec![base.clone(), quote.clone()],
+                vec![bcs::to_bytes(&market_id)?, bcs::to_bytes(&custodian_id)?],
+            ))
+        })();
+
+        self.entry = Some(entry);
+        self
+    }
+
+    pub fn register_market_account_generic_base(
+        mut self,
+        quote: &TypeTag,
+        market_id: u64,
+        custodian_id: u64,
+    ) -> Self {
+        let entry: Result<EntryFunction> = (|| {
+            Ok(EntryFunction::new(
+                ModuleId::from(self.client.econia_module().to_owned()),
+                ident_str!("register_market_account_generic_base").to_owned(),
+                vec![quote.clone()],
+                vec![bcs::to_bytes(&market_id)?, bcs::to_bytes(&custodian_id)?],
+            ))
+        })();
+
+        self.entry = Some(entry);
+        self
+    }
+
+    pub fn withdraw_to_coinstore(mut self, coin: &TypeTag, market_id: u64, amount: u64) -> Self {
+        let entry: Result<EntryFunction> = (|| {
+            Ok(EntryFunction::new(
+                ModuleId::from(self.client.econia_module().to_owned()),
+                ident_str!("withdraw_to_coinstore").to_owned(),
+                vec![coin.clone()],
+                vec![bcs::to_bytes(&market_id)?, bcs::to_bytes(&amount)?],
             ))
         })();
 

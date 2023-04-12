@@ -223,6 +223,14 @@ mod tests {
     use super::*;
     use crate::{get_market_ids, load_config, routes::router, start_redis_channels};
 
+    /// Test that the market history endpoint returns market data with a
+    /// resolution of 1 minute.
+    ///
+    /// This test sends a GET request to the `/market/{market_id}/history`
+    /// endpoint with the `resolution` parameter set to `1h`. The response is
+    /// then checked to ensure that it has a `200 OK` status code, and the
+    /// response body is checked to ensure that it is a JSON response in the
+    /// correct format.
     #[tokio::test]
     async fn test_get_market_history_1m_resolution() {
         let market_id = "0";
@@ -277,6 +285,14 @@ mod tests {
         assert_eq!(bars.len(), 10);
     }
 
+    /// Test that the market history endpoint returns market data with a
+    /// resolution of 1 hour.
+    ///
+    /// This test sends a GET request to the `/market/{market_id}/history`
+    /// endpoint with the `resolution` parameter set to `1h`. The response is
+    /// then checked to ensure that it has a `200 OK` status code, and the
+    /// response body is checked to ensure that it is a JSON response in the
+    /// correct format.
     #[tokio::test]
     async fn test_get_market_history_1h_resolution() {
         let market_id = "0";
@@ -331,10 +347,16 @@ mod tests {
         assert_eq!(bars.len(), 1);
     }
 
+    /// Test that the market history endpoint returns a `400 Bad Request` error
+    /// when the resolution parameter is set to an unsupported value.
+    ///
+    /// This test sends a GET request to the `/market/{market_id}/history`
+    /// endpoint with the `resolution` parameter set to `3m`, which is not
+    /// supported by the API. The response is then checked to ensure that it
+    /// has a `400 Bad Request` status code.
     #[tokio::test]
     async fn test_get_market_history_invalid_resolution() {
         let market_id = "0";
-        let resolution = "3m";
 
         let from = Utc
             .with_ymd_and_hms(2023, 4, 5, 0, 0, 0)
@@ -366,8 +388,8 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .uri(format!(
-                        "/market/{}/history?resolution={}&from={}&to={}",
-                        market_id, resolution, from, to
+                        "/market/{}/history?resolution=3m&from={}&to={}",
+                        market_id, from, to
                     ))
                     .body(Body::empty())
                     .unwrap(),
@@ -378,6 +400,14 @@ mod tests {
         assert_eq!(response.status(), StatusCode::BAD_REQUEST);
     }
 
+    /// Test that the market history endpoint returns a `400 Bad Request` error
+    /// when the `to` timestamp comes before the `from` timestamp.
+    ///
+    /// This test sends a GET request to the `/market/{market_id}/history`
+    /// endpoint with the `resolution` parameter set to `1m`, and with the `to`
+    /// timestamp set to a value that is before the `from` timestamp. The
+    /// response is then checked to ensure that it has a `400 Bad Request`
+    /// status code.
     #[tokio::test]
     async fn test_get_market_history_to_before_from() {
         let market_id = "0";

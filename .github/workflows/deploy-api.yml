@@ -3,9 +3,16 @@ name: Push API Docker image to Artifact Registry
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - dev
     paths:
-      - src/rust
+      - src/rust/api/**
+      - src/rust/db/**
+      - src/rust/types/**
+      - src/rust/Cargo.toml
+      - src/rust/Cargo.lock
+      - src/rust/.dockerignore
 
 jobs:
   build:
@@ -16,6 +23,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
       - name: Authenticate to Google Cloud
         id: "auth"
         uses: google-github-actions/auth@v1

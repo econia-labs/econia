@@ -94,6 +94,8 @@ async fn markets(State(state): State<AppState>) -> Result<Json<Vec<types::Market
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashSet;
+
     use axum::{
         body::Body,
         http::{Request, StatusCode},
@@ -132,7 +134,11 @@ mod tests {
 
         let (tx, _) = broadcast::channel(16);
 
-        let state = AppState { pool, sender: tx };
+        let state = AppState {
+            pool,
+            sender: tx,
+            market_ids: HashSet::new(),
+        };
 
         let app = Router::new()
             .route("/markets", get(markets))

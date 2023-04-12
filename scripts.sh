@@ -320,6 +320,8 @@ case "$1" in
     # Run pre-commit checks.
     pc)
         test_move       # Test Move code.
+        test_python     # Test Python code.
+        test_rust       # Test Rust code.
         build_move_docs # Build docs.
         format_code     # Format code.
         ;;

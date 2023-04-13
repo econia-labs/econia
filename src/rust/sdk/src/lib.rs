@@ -117,8 +117,7 @@ impl EconiaClient {
         let node_url = Url::parse(node_url).expect("node url is not valid");
         let econia = AccountAddress::from_hex_literal(econia_address)?;
         let account_address = AccountAddress::from_hex_literal(account_address)?;
-        let private_key = Ed25519PrivateKey::from_encoded_string(account_private_key)
-            .expect("private key provided is not valid");
+        let private_key = Ed25519PrivateKey::from_encoded_string(account_private_key)?;
         let account_key = AccountKey::from(private_key);
         let account = LocalAccount::new(account_address, account_key, 0);
         Self::connect(node_url, econia, account).await

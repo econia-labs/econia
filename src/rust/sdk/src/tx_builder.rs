@@ -11,6 +11,7 @@ use aptos_sdk::rest_client::error::RestError;
 use aptos_sdk::transaction_builder::TransactionFactory;
 use aptos_sdk::{move_types::language_storage::ModuleId, types::transaction::EntryFunction};
 use econia_types::events::EconiaEvent;
+use econia_types::order::{AdvanceStyle, Restriction, SelfMatchBehavior, Side};
 
 use crate::{EconiaClient, EconiaTransaction};
 
@@ -124,7 +125,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
 
     // Market entry functions
 
-    pub fn cancel_all_orders_user(mut self, market_id: u64, side: bool) -> Self {
+    pub fn cancel_all_orders_user(mut self, market_id: u64, side: Side) -> Self {
         let entry: Result<EntryFunction> = (|| {
             Ok(EntryFunction::new(
                 ModuleId::from(self.client.econia_module().to_owned()),
@@ -138,7 +139,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
         self
     }
 
-    pub fn cancel_order_user(mut self, market_id: u64, side: bool, market_order_id: u128) -> Self {
+    pub fn cancel_order_user(mut self, market_id: u64, side: Side, market_order_id: u128) -> Self {
         let entry: Result<EntryFunction> = (|| {
             Ok(EntryFunction::new(
                 ModuleId::from(self.client.econia_module().to_owned()),
@@ -159,7 +160,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     pub fn change_order_size_user(
         mut self,
         market_id: u64,
-        side: bool,
+        side: Side,
         market_order_id: u128,
         new_size: u64,
     ) -> Self {
@@ -181,15 +182,16 @@ impl<'a> EconiaTransactionBuilder<'a> {
         self
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn place_limit_order_passive_advance_user_entry(
         mut self,
         base: &TypeTag,
         quote: &TypeTag,
         market_id: u64,
         integrator: &AccountAddress,
-        side: bool,
+        side: Side,
         size: u64,
-        advance_style: bool,
+        advance_style: AdvanceStyle,
         target_advance_amount: u64,
     ) -> Self {
         let entry: Result<EntryFunction> = (|| {
@@ -212,17 +214,18 @@ impl<'a> EconiaTransactionBuilder<'a> {
         self
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn place_limit_order_user_entry(
         mut self,
         base: &TypeTag,
         quote: &TypeTag,
         market_id: u64,
         integrator: &AccountAddress,
-        side: bool,
+        side: Side,
         size: u64,
         price: u64,
-        restriction: u8,
-        self_match_behavior: u8,
+        restriction: Restriction,
+        self_match_behavior: SelfMatchBehavior,
     ) -> Self {
         let entry: Result<EntryFunction> = (|| {
             Ok(EntryFunction::new(
@@ -245,6 +248,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
         self
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn place_market_order_user_entry(
         mut self,
         base: &TypeTag,
@@ -257,7 +261,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
         min_quote: u64,
         max_quote: u64,
         limit_price: u64,
-        self_match_behavior: u8,
+        self_match_behavior: SelfMatchBehavior,
     ) -> Self {
         let entry: Result<EntryFunction> = (|| {
             Ok(EntryFunction::new(
@@ -308,6 +312,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
         self
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn swap_between_coinstores_entry(
         mut self,
         base: &TypeTag,
@@ -556,5 +561,18 @@ impl<'a> EconiaTransactionBuilder<'a> {
             }
             Err(e) => Err(e),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use aptos_sdk::bcs;
+    use econia_types::order::Side;
+
+    #[test]
+    fn test_side_conversion() {
+        let x = Side::Bid;
+        let y = bcs::to_bytes(&x).unwrap();
+        println!("{:?}", y);
     }
 }

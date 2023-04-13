@@ -67,7 +67,7 @@ impl EconiaClient {
     ///
     /// * `node_url` - Url of aptos node.
     /// * `econia_address` - Aptos `AccountAddress`.
-    /// * `account` - `LocalAccount` representing Aptos user account
+    /// * `account` - `LocalAccount` representing Aptos user account.
     pub async fn connect(
         node_url: Url,
         econia: AccountAddress,
@@ -175,7 +175,7 @@ impl EconiaClient {
 
     /// Update the econia clients aptos chain id.
     /// If the aptos team pushes out a new node deployment, the chain id may change.
-    /// In case of a change the internal chain id needs to be updated
+    /// In case of a change the internal chain id needs to be updated.
     pub async fn update_chain_id(&mut self) -> Result<()> {
         let index = self.aptos.get_index().await?.into_inner();
         let chain_id = ChainId::new(index.chain_id);

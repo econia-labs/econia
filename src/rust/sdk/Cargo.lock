@@ -1908,7 +1908,6 @@ dependencies = [
 name = "econia-sdk"
 version = "1.0.0"
 dependencies = [
- "anyhow",
  "aptos-api-types",
  "aptos-sdk",
  "futures",
@@ -1917,6 +1916,7 @@ dependencies = [
  "serde 1.0.160",
  "serde_json",
  "serde_yaml 0.9.21",
+ "thiserror",
  "types",
 ]
 

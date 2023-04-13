@@ -11,7 +11,6 @@ repository = "https://github.com/econia-labs/rust_sdk"
 keywords = ["aptos", "econia", "dex", "clob", "sdk", "blockchain"]
 
 [dependencies]
-anyhow = { version = "1.0.62" }
 aptos-api-types = { git = "https://github.com/aptos-labs/aptos-core", branch = "main" }
 aptos-sdk = { git = "https://github.com/aptos-labs/aptos-core", branch = "main" }
 econia-types = { package = "types", path = "../types" }
@@ -21,6 +20,7 @@ reqwest = { version = "0.11.11" }
 serde = { version = "1.0.145", features = ["derive"] }
 serde_json = { version = "1.0.85" }
 serde_yaml = { version = "0.9.10" }
+thiserror = "1.0.40"
 
 [lib]
 path = "src/lib.rs"

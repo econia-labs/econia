@@ -1,4 +1,3 @@
-use anyhow::{anyhow, bail, Context, Result};
 use aptos_api_types::{MoveModuleId, TransactionInfo, UserTransactionRequest, U64};
 use aptos_sdk::crypto::ed25519::Ed25519PrivateKey;
 use aptos_sdk::crypto::ValidCryptoMaterialStringExt;
@@ -9,6 +8,7 @@ use aptos_sdk::types::account_address::AccountAddress;
 use aptos_sdk::types::chain_id::ChainId;
 use aptos_sdk::types::{AccountKey, LocalAccount};
 use econia_types::events::EconiaEvent;
+use errors::EconiaError;
 use reqwest::Url;
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -18,7 +18,8 @@ use std::str::FromStr;
 
 use tx_builder::EconiaTransactionBuilder;
 
-mod tx_builder;
+pub mod errors;
+pub mod tx_builder;
 
 pub const SUBMIT_ATTEMPTS: u8 = 10;
 
@@ -44,6 +45,8 @@ impl AptosConfig {
             .clone()
     }
 }
+
+pub type EconiaResult<T> = std::result::Result<T, EconiaError>;
 
 pub struct EconiaTransaction {
     pub info: TransactionInfo,
@@ -72,7 +75,7 @@ impl EconiaClient {
         node_url: Url,
         econia: AccountAddress,
         mut account: LocalAccount,
-    ) -> Result<Self> {
+    ) -> EconiaResult<Self> {
         let aptos = Client::new(node_url);
         let index = aptos.get_index().await?.into_inner();
         let chain_id = ChainId::new(index.chain_id);
@@ -81,8 +84,9 @@ impl EconiaClient {
         let acc_seq_num = account.sequence_number_mut();
         *acc_seq_num = seq_num;
 
-        let Ok(econia_module) = MoveModuleId::from_str(&econia.to_hex_literal()) else {
-            bail!("invalid econia address provided")
+        let addr_str = econia.to_hex_literal();
+        let Ok(econia_module) = MoveModuleId::from_str(&addr_str) else {
+            return Err(EconiaError::InvalidEconiaAddress(addr_str))
         };
 
         Ok(Self {
@@ -113,7 +117,7 @@ impl EconiaClient {
         econia_address: &str,
         account_address: &str,
         account_private_key: &str,
-    ) -> Result<Self> {
+    ) -> EconiaResult<Self> {
         let node_url = Url::parse(node_url).expect("node url is not valid");
         let econia = AccountAddress::from_hex_literal(econia_address)?;
         let account_address = AccountAddress::from_hex_literal(account_address)?;
@@ -137,7 +141,7 @@ impl EconiaClient {
         econia_address: &str,
         config_path: &str,
         config_profile_name: &str,
-    ) -> Result<Self> {
+    ) -> EconiaResult<Self> {
         let config = AptosConfig::from_config(config_path, config_profile_name);
         Self::connect_with_strings(
             node_url,
@@ -151,7 +155,7 @@ impl EconiaClient {
     /// Update the econia client's aptos chain id.
     /// If the aptos team pushes out a new node deployment, the chain id may change.
     /// In case of a change the internal chain id needs to be updated.
-    pub async fn update_chain_id(&mut self) -> Result<()> {
+    pub async fn update_chain_id(&mut self) -> EconiaResult<()> {
         let index = self.aptos_client.get_index().await?.into_inner();
         let chain_id = ChainId::new(index.chain_id);
         self.chain_id = chain_id;
@@ -159,41 +163,30 @@ impl EconiaClient {
     }
 
     // TODO doc strings for these functions
-    pub async fn get_sequence_number(&self) -> Result<u64> {
+    pub async fn get_sequence_number(&self) -> EconiaResult<u64> {
         self.aptos_client
             .get_account(self.user_account.address())
             .await
-            .with_context(|| {
-                format!(
-                    "failed getting account: {}",
-                    self.user_account.address().to_hex_literal()
-                )
-            })
             .map(|a| a.inner().sequence_number)
+            .map_err(EconiaError::AptosError)
     }
 
     async fn fetch_resource(
         &self,
         address: AccountAddress,
         resource: &str,
-    ) -> Result<Option<Resource>> {
+    ) -> EconiaResult<Option<Resource>> {
         self.aptos_client
             .get_account_resource(address, resource)
             .await
-            .with_context(|| {
-                format!(
-                    "failed getting resource: {} for account: {}",
-                    resource,
-                    address.to_hex_literal()
-                )
-            })
             .map(|a| a.into_inner())
+            .map_err(EconiaError::AptosError)
     }
 
-    pub async fn does_coin_exist(&self, coin: &TypeTag) -> Result<bool> {
+    pub async fn does_coin_exist(&self, coin: &TypeTag) -> EconiaResult<bool> {
         let coin_info = format!("0x1::coin::CoinInfo<{}>", coin);
         let TypeTag::Struct(tag) = coin else {
-            return Err(anyhow!("failed extracting coin typetag"))
+            return Err(EconiaError::InvalidTypeTag(coin.clone()))
         };
 
         self.fetch_resource(tag.address, &coin_info)
@@ -201,21 +194,19 @@ impl EconiaClient {
             .map(|r| r.is_some())
     }
 
-    pub async fn is_registered_for_coin(&self, coin: &TypeTag) -> Result<bool> {
+    pub async fn is_registered_for_coin(&self, coin: &TypeTag) -> EconiaResult<bool> {
         let coin_store = format!("0x1::coin::CoinStore<{}>", coin);
         self.fetch_resource(self.user_account.address(), &coin_store)
             .await
             .map(|r| r.is_some())
     }
 
-    pub async fn get_coin_balance(&self, coin: &TypeTag) -> Result<U64> {
+    pub async fn get_coin_balance(&self, coin: &TypeTag) -> EconiaResult<U64> {
         let coin_store = format!("0x1::coin::CoinStore<{}>", coin);
         self.fetch_resource(self.user_account.address(), &coin_store)
             .await?
-            .with_context(|| format!("user is not registered for coin: {}", &coin_store))
-            .and_then(|r| {
-                serde_json::from_value::<Balance>(r.data).context("failed deserializing balance")
-            })
+            .ok_or_else(|| EconiaError::AccountNotRegisteredForCoin(coin.clone()))
+            .and_then(|r| serde_json::from_value::<Balance>(r.data).map_err(EconiaError::JsonError))
             .map(|b| b.coin.value)
     }
 

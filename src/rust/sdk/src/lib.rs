@@ -53,11 +53,11 @@ pub struct EconiaTransaction {
 }
 
 pub struct EconiaClient {
-    econia: AccountAddress,
-    econia_module: MoveModuleId,
-    aptos: Client,
-    chain_id: ChainId,
-    account: LocalAccount,
+    pub econia_address: AccountAddress,
+    pub econia_module: MoveModuleId,
+    pub aptos_client: Client,
+    pub chain_id: ChainId,
+    pub user_account: LocalAccount,
 }
 
 impl EconiaClient {
@@ -86,11 +86,11 @@ impl EconiaClient {
         };
 
         Ok(Self {
-            econia,
+            econia_address: econia,
             econia_module,
-            aptos,
+            aptos_client: aptos,
             chain_id,
-            account,
+            user_account: account,
         })
     }
 
@@ -149,35 +149,11 @@ impl EconiaClient {
         .await
     }
 
-    pub fn econia(&self) -> &AccountAddress {
-        &self.econia
-    }
-
-    pub fn econia_module(&self) -> &MoveModuleId {
-        &self.econia_module
-    }
-
-    pub fn aptos(&self) -> &Client {
-        &self.aptos
-    }
-
-    pub fn chain_id(&self) -> ChainId {
-        self.chain_id
-    }
-
-    pub fn account(&self) -> &LocalAccount {
-        &self.account
-    }
-
-    pub fn account_mut(&mut self) -> &mut LocalAccount {
-        &mut self.account
-    }
-
     /// Update the econia clients aptos chain id.
     /// If the aptos team pushes out a new node deployment, the chain id may change.
     /// In case of a change the internal chain id needs to be updated.
     pub async fn update_chain_id(&mut self) -> Result<()> {
-        let index = self.aptos.get_index().await?.into_inner();
+        let index = self.aptos_client.get_index().await?.into_inner();
         let chain_id = ChainId::new(index.chain_id);
         self.chain_id = chain_id;
         Ok(())
@@ -185,13 +161,13 @@ impl EconiaClient {
 
     // TODO doc strings for these functions
     pub async fn get_sequence_number(&self) -> Result<u64> {
-        self.aptos
-            .get_account(self.account.address())
+        self.aptos_client
+            .get_account(self.user_account.address())
             .await
             .with_context(|| {
                 format!(
                     "failed getting account: {}",
-                    self.account.address().to_hex_literal()
+                    self.user_account.address().to_hex_literal()
                 )
             })
             .map(|a| a.inner().sequence_number)
@@ -202,7 +178,7 @@ impl EconiaClient {
         address: AccountAddress,
         resource: &str,
     ) -> Result<Option<Resource>> {
-        self.aptos
+        self.aptos_client
             .get_account_resource(address, resource)
             .await
             .with_context(|| {
@@ -228,14 +204,14 @@ impl EconiaClient {
 
     pub async fn is_registered_for_coin(&self, coin: &TypeTag) -> Result<bool> {
         let coin_store = format!("0x1::coin::CoinStore<{}>", coin);
-        self.fetch_resource(self.account.address(), &coin_store)
+        self.fetch_resource(self.user_account.address(), &coin_store)
             .await
             .map(|r| r.is_some())
     }
 
     pub async fn get_coin_balance(&self, coin: &TypeTag) -> Result<U64> {
         let coin_store = format!("0x1::coin::CoinStore<{}>", coin);
-        self.fetch_resource(self.account.address(), &coin_store)
+        self.fetch_resource(self.user_account.address(), &coin_store)
             .await?
             .with_context(|| format!("user is not registered for coin: {}", &coin_store))
             .and_then(|r| {

@@ -67,7 +67,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     ) -> Self {
         let entry: Result<EntryFunction> = (|| {
             Ok(EntryFunction::new(
-                ModuleId::from(self.client.econia_module().to_owned()),
+                ModuleId::from(self.client.econia_module.to_owned()),
                 ident_str!("update_incentives").to_owned(),
                 vec![utility_coin.clone()],
                 vec![
@@ -93,7 +93,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     ) -> Self {
         let entry: Result<EntryFunction> = (|| {
             Ok(EntryFunction::new(
-                ModuleId::from(self.client.econia_module().to_owned()),
+                ModuleId::from(self.client.econia_module.to_owned()),
                 ident_str!("upgrade_integrator_fee_store_via_coinstore").to_owned(),
                 vec![quote_coin.clone(), utility_coin.clone()],
                 vec![bcs::to_bytes(&market_id)?, bcs::to_bytes(&new_tier)?],
@@ -112,7 +112,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     ) -> Self {
         let entry: Result<EntryFunction> = (|| {
             Ok(EntryFunction::new(
-                ModuleId::from(self.client.econia_module().to_owned()),
+                ModuleId::from(self.client.econia_module.to_owned()),
                 ident_str!("withdraw_integrator_fees_via_coinstores").to_owned(),
                 vec![quote_coin.clone(), utility_coin.clone()],
                 vec![bcs::to_bytes(&market_id)?],
@@ -128,7 +128,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     pub fn cancel_all_orders_user(mut self, market_id: u64, side: Side) -> Self {
         let entry: Result<EntryFunction> = (|| {
             Ok(EntryFunction::new(
-                ModuleId::from(self.client.econia_module().to_owned()),
+                ModuleId::from(self.client.econia_module.to_owned()),
                 ident_str!("cancel_all_orders_user").to_owned(),
                 vec![],
                 vec![bcs::to_bytes(&market_id)?, bcs::to_bytes(&side)?],
@@ -142,7 +142,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     pub fn cancel_order_user(mut self, market_id: u64, side: Side, market_order_id: u128) -> Self {
         let entry: Result<EntryFunction> = (|| {
             Ok(EntryFunction::new(
-                ModuleId::from(self.client.econia_module().to_owned()),
+                ModuleId::from(self.client.econia_module.to_owned()),
                 ident_str!("cancel_order_user").to_owned(),
                 vec![],
                 vec![
@@ -166,7 +166,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     ) -> Self {
         let entry: Result<EntryFunction> = (|| {
             Ok(EntryFunction::new(
-                ModuleId::from(self.client.econia_module().to_owned()),
+                ModuleId::from(self.client.econia_module.to_owned()),
                 ident_str!("change_order_size_user").to_owned(),
                 vec![],
                 vec![
@@ -196,7 +196,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     ) -> Self {
         let entry: Result<EntryFunction> = (|| {
             Ok(EntryFunction::new(
-                ModuleId::from(self.client.econia_module().to_owned()),
+                ModuleId::from(self.client.econia_module.to_owned()),
                 ident_str!("place_limit_order_passive_advance_user_entry").to_owned(),
                 vec![base.clone(), quote.clone()],
                 vec![
@@ -229,7 +229,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     ) -> Self {
         let entry: Result<EntryFunction> = (|| {
             Ok(EntryFunction::new(
-                ModuleId::from(self.client.econia_module().to_owned()),
+                ModuleId::from(self.client.econia_module.to_owned()),
                 ident_str!("place_limit_order_user_entry").to_owned(),
                 vec![base.clone(), quote.clone()],
                 vec![
@@ -265,7 +265,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     ) -> Self {
         let entry: Result<EntryFunction> = (|| {
             Ok(EntryFunction::new(
-                ModuleId::from(self.client.econia_module().to_owned()),
+                ModuleId::from(self.client.econia_module.to_owned()),
                 ident_str!("place_market_order_user_entry").to_owned(),
                 vec![base.clone(), quote.clone()],
                 vec![
@@ -297,7 +297,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     ) -> Self {
         let entry: Result<EntryFunction> = (|| {
             Ok(EntryFunction::new(
-                ModuleId::from(self.client.econia_module().to_owned()),
+                ModuleId::from(self.client.econia_module.to_owned()),
                 ident_str!("register_market_base_coin_from_coinstore").to_owned(),
                 vec![base.clone(), quote.clone(), utility_coin.clone()],
                 vec![
@@ -328,7 +328,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     ) -> Self {
         let entry: Result<EntryFunction> = (|| {
             Ok(EntryFunction::new(
-                ModuleId::from(self.client.econia_module().to_owned()),
+                ModuleId::from(self.client.econia_module.to_owned()),
                 ident_str!("swap_between_coinstores_entry").to_owned(),
                 vec![base.clone(), quote.clone()],
                 vec![
@@ -358,7 +358,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     ) -> Self {
         let entry: Result<EntryFunction> = (|| {
             Ok(EntryFunction::new(
-                ModuleId::from(self.client.econia_module().to_owned()),
+                ModuleId::from(self.client.econia_module.to_owned()),
                 ident_str!("register_integrator_fee_store_base_tier").to_owned(),
                 vec![quote.clone(), utility_coin.clone()],
                 vec![bcs::to_bytes(&market_id)?],
@@ -378,7 +378,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     ) -> Self {
         let entry: Result<EntryFunction> = (|| {
             Ok(EntryFunction::new(
-                ModuleId::from(self.client.econia_module().to_owned()),
+                ModuleId::from(self.client.econia_module.to_owned()),
                 ident_str!("register_integrator_fee_store_from_coinstore").to_owned(),
                 vec![quote.clone(), utility_coin.clone()],
                 vec![bcs::to_bytes(&market_id)?, bcs::to_bytes(&tier)?],
@@ -392,7 +392,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     pub fn remove_recognized_markets(mut self, market_ids: Vec<u64>) -> Self {
         let entry: Result<EntryFunction> = (|| {
             Ok(EntryFunction::new(
-                ModuleId::from(self.client.econia_module().to_owned()),
+                ModuleId::from(self.client.econia_module.to_owned()),
                 ident_str!("remove_recognized_markets").to_owned(),
                 vec![],
                 vec![bcs::to_bytes(&market_ids)?],
@@ -406,7 +406,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     pub fn set_recognized_market(mut self, market_id: u64) -> Self {
         let entry: Result<EntryFunction> = (|| {
             Ok(EntryFunction::new(
-                ModuleId::from(self.client.econia_module().to_owned()),
+                ModuleId::from(self.client.econia_module.to_owned()),
                 ident_str!("set_recognized_market").to_owned(),
                 vec![],
                 vec![bcs::to_bytes(&market_id)?],
@@ -428,7 +428,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     ) -> Self {
         let entry: Result<EntryFunction> = (|| {
             Ok(EntryFunction::new(
-                ModuleId::from(self.client.econia_module().to_owned()),
+                ModuleId::from(self.client.econia_module.to_owned()),
                 ident_str!("deposit_from_coinstore").to_owned(),
                 vec![coin.clone()],
                 vec![
@@ -452,7 +452,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     ) -> Self {
         let entry: Result<EntryFunction> = (|| {
             Ok(EntryFunction::new(
-                ModuleId::from(self.client.econia_module().to_owned()),
+                ModuleId::from(self.client.econia_module.to_owned()),
                 ident_str!("register_market_account").to_owned(),
                 vec![base.clone(), quote.clone()],
                 vec![bcs::to_bytes(&market_id)?, bcs::to_bytes(&custodian_id)?],
@@ -471,7 +471,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     ) -> Self {
         let entry: Result<EntryFunction> = (|| {
             Ok(EntryFunction::new(
-                ModuleId::from(self.client.econia_module().to_owned()),
+                ModuleId::from(self.client.econia_module.to_owned()),
                 ident_str!("register_market_account_generic_base").to_owned(),
                 vec![quote.clone()],
                 vec![bcs::to_bytes(&market_id)?, bcs::to_bytes(&custodian_id)?],
@@ -485,7 +485,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     pub fn withdraw_to_coinstore(mut self, coin: &TypeTag, market_id: u64, amount: u64) -> Self {
         let entry: Result<EntryFunction> = (|| {
             Ok(EntryFunction::new(
-                ModuleId::from(self.client.econia_module().to_owned()),
+                ModuleId::from(self.client.econia_module.to_owned()),
                 ident_str!("withdraw_to_coinstore").to_owned(),
                 vec![coin.clone()],
                 vec![bcs::to_bytes(&market_id)?, bcs::to_bytes(&amount)?],
@@ -497,16 +497,16 @@ impl<'a> EconiaTransactionBuilder<'a> {
     }
 
     async fn submit_tx_internal(&mut self, payload: &EntryFunction) -> Result<EconiaTransaction> {
-        let addr = self.client.account().address();
+        let addr = self.client.user_account.address();
         let tx = TransactionFactory::new(self.client.chain_id)
             .entry_function(payload.clone())
             .sender(addr)
-            .sequence_number(self.client.account().sequence_number())
+            .sequence_number(self.client.user_account.sequence_number())
             .max_gas_amount(1_000_000)
             .build();
 
-        let signed_tx = self.client.account().sign_transaction(tx);
-        let pending = match self.client.aptos().submit(&signed_tx).await {
+        let signed_tx = self.client.user_account.sign_transaction(tx);
+        let pending = match self.client.aptos_client.submit(&signed_tx).await {
             Ok(res) => res.into_inner(),
             Err(RestError::Api(a)) => {
                 return match a.error.error_code {
@@ -514,7 +514,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
                     | AptosErrorCode::SequenceNumberTooOld
                     | AptosErrorCode::VmError => {
                         let seq_num = self.client.get_sequence_number().await?;
-                        let acc_seq_num = self.client.account_mut().sequence_number_mut();
+                        let acc_seq_num = self.client.user_account.sequence_number_mut();
                         *acc_seq_num = max(seq_num, *acc_seq_num + 1);
                         Err(anyhow!(a))
                     }
@@ -524,14 +524,21 @@ impl<'a> EconiaTransactionBuilder<'a> {
             Err(e) => return Err(anyhow!(e)),
         };
 
-        let Transaction::UserTransaction(ut) = self.client.aptos().wait_for_transaction(&pending).await?.into_inner() else {
+        let tx = self
+            .client
+            .aptos_client
+            .wait_for_transaction(&pending)
+            .await?
+            .into_inner();
+
+        let Transaction::UserTransaction(ut) = tx else {
             return Err(anyhow!("not a user transaction"))
         };
 
         let events = ut
             .events
             .iter()
-            .filter(|e| matches!(&e.typ, MoveType::Struct(s) if s.address.inner() == self.client.econia()))
+            .filter(|e| matches!(&e.typ, MoveType::Struct(s) if s.address.inner() == &self.client.econia_address))
             .map(|e| serde_json::from_value(e.data.clone()).context("failed deserializing event"))
             .collect::<Result<Vec<EconiaEvent>>>()?;
 

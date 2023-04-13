@@ -148,7 +148,7 @@ impl EconiaClient {
         .await
     }
 
-    /// Update the econia clients aptos chain id.
+    /// Update the econia client's aptos chain id.
     /// If the aptos team pushes out a new node deployment, the chain id may change.
     /// In case of a change the internal chain id needs to be updated.
     pub async fn update_chain_id(&mut self) -> Result<()> {

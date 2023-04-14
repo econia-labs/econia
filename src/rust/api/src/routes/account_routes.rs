@@ -91,7 +91,9 @@ mod tests {
     use tower::ServiceExt;
 
     use super::*;
-    use crate::{get_market_ids, load_config, routes::router, start_redis_channels};
+    use crate::{
+        get_market_ids, load_config, routes::router, start_redis_channels, tests::make_test_server,
+    };
 
     /// Test that the order history by accoutn endpoint returns order history
     /// for the specified user.
@@ -105,25 +107,7 @@ mod tests {
     async fn test_order_history_by_account() {
         let account_id = "0x123";
         let config = load_config();
-
-        let pool = PgPool::connect(&config.database_url)
-            .await
-            .expect("Could not connect to DATABASE_URL");
-
-        let market_ids = get_market_ids(pool.clone()).await;
-        if market_ids.is_empty() {
-            tracing::warn!("no markets registered in database");
-        }
-
-        let (btx, _brx) = broadcast::channel(16);
-        let _conn = start_redis_channels(config.redis_url, market_ids.clone(), btx.clone()).await;
-
-        let state = AppState {
-            pool,
-            sender: btx,
-            market_ids: HashSet::from_iter(market_ids.into_iter()),
-        };
-        let app = router(state);
+        let app = make_test_server(config).await;
 
         let response = app
             .oneshot(
@@ -146,26 +130,7 @@ mod tests {
     async fn test_open_orders_by_account() {
         let account_id = "0x123";
         let config = load_config();
-        // let addr = spawn_server(config).await;
-
-        let pool = PgPool::connect(&config.database_url)
-            .await
-            .expect("Could not connect to DATABASE_URL");
-
-        let market_ids = get_market_ids(pool.clone()).await;
-        if market_ids.is_empty() {
-            tracing::warn!("no markets registered in database");
-        }
-
-        let (btx, _brx) = broadcast::channel(16);
-        let _conn = start_redis_channels(config.redis_url, market_ids.clone(), btx.clone()).await;
-
-        let state = AppState {
-            pool,
-            sender: btx,
-            market_ids: HashSet::from_iter(market_ids.into_iter()),
-        };
-        let app = router(state);
+        let app = make_test_server(config).await;
 
         let response = app
             .oneshot(

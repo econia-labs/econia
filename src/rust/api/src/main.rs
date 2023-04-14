@@ -183,7 +183,7 @@ pub mod tests {
         router(state)
     }
 
-    pub async fn spawn_server(config: Config) -> SocketAddr {
+    pub async fn spawn_test_server(config: Config) -> SocketAddr {
         let port = gen_random_port();
         let app = make_test_server(config)
             .await

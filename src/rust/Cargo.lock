@@ -58,6 +58,7 @@ dependencies = [
  "envy",
  "futures-util",
  "hyper",
+ "rand",
  "redis",
  "regex",
  "serde",

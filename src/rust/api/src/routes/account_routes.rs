@@ -80,20 +80,13 @@ pub async fn open_orders_by_account(
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashSet;
-
     use axum::{
         body::Body,
         http::{Request, StatusCode},
     };
-    use sqlx::PgPool;
-    use tokio::sync::broadcast;
     use tower::ServiceExt;
 
-    use super::*;
-    use crate::{
-        get_market_ids, load_config, routes::router, start_redis_channels, tests::make_test_server,
-    };
+    use crate::{load_config, tests::make_test_server};
 
     /// Test that the order history by accoutn endpoint returns order history
     /// for the specified user.

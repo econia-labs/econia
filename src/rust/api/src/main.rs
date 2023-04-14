@@ -138,3 +138,71 @@ async fn log_redis_messages(mut rx: broadcast::Receiver<Update>) {
         tracing::info!("received message from redis: {}", s);
     }
 }
+
+#[cfg(test)]
+pub mod tests {
+    use std::{
+        collections::HashSet,
+        net::{SocketAddr, TcpListener},
+    };
+
+    use axum::{extract::connect_info::MockConnectInfo, Router};
+    use rand::Rng;
+    use sqlx::PgPool;
+    use tokio::sync::broadcast;
+
+    use super::*;
+
+    pub fn gen_random_port() -> u16 {
+        let mut rng = rand::thread_rng();
+        let port = rng.gen_range(1024..65535);
+        port
+    }
+
+    pub async fn make_test_server(config: Config) -> Router {
+        let pool = PgPool::connect(&config.database_url)
+            .await
+            .expect("Could not connect to DATABASE_URL");
+
+        let market_ids = get_market_ids(pool.clone()).await;
+
+        let (btx, mut brx) = broadcast::channel(16);
+        let _conn = start_redis_channels(config.redis_url, market_ids.clone(), btx.clone()).await;
+
+        let state = AppState {
+            pool,
+            sender: btx,
+            market_ids: HashSet::from_iter(market_ids.into_iter()),
+        };
+
+        tokio::spawn(async move {
+            // keep broadcast channel alive
+            while let Ok(_) = brx.recv().await {}
+        });
+
+        router(state)
+    }
+
+    pub async fn spawn_test_server(config: Config) -> SocketAddr {
+        let port = gen_random_port();
+        let app = make_test_server(config)
+            .await
+            .layer(MockConnectInfo(SocketAddr::from(([0, 0, 0, 0], port))));
+
+        let listener = TcpListener::bind("0.0.0.0:8000".parse::<SocketAddr>().unwrap()).unwrap();
+        let addr = listener.local_addr().unwrap();
+
+        tokio::spawn(async move {
+            axum::Server::from_tcp(listener)
+                .unwrap()
+                .serve(app.into_make_service())
+                .await
+                .unwrap();
+        });
+
+        addr
+    }
+    pub fn return_two() -> usize {
+        2
+    }
+}

@@ -409,16 +409,12 @@ async fn handle_socket(
 
 #[cfg(test)]
 mod tests {
-    use std::net::TcpListener;
-
-    use axum::extract::connect_info::MockConnectInfo;
     use chrono::TimeZone;
     use redis::AsyncCommands;
-    use sqlx::PgPool;
     use tokio_tungstenite::{connect_async, tungstenite::Message};
     use url::Url;
 
-    use crate::{get_market_ids, load_config, routes::router, start_redis_channels};
+    use crate::{load_config, tests::spawn_test_server};
 
     use super::*;
 
@@ -427,37 +423,7 @@ mod tests {
     #[tokio::test]
     async fn test_websocket_ping_response() {
         let config = load_config();
-        let pool = PgPool::connect(&config.database_url)
-            .await
-            .expect("Could not connect to DATABASE_URL");
-
-        let market_ids = get_market_ids(pool.clone()).await;
-
-        let (btx, mut brx) = broadcast::channel(16);
-        let _conn = start_redis_channels(config.redis_url, market_ids.clone(), btx.clone()).await;
-
-        let state = AppState {
-            pool,
-            sender: btx,
-            market_ids: HashSet::from_iter(market_ids.into_iter()),
-        };
-        let app = router(state).layer(MockConnectInfo(SocketAddr::from(([0, 0, 0, 0], 3000))));
-
-        tokio::spawn(async move {
-            // keep broadcast channel alive
-            while let Ok(_) = brx.recv().await {}
-        });
-
-        let listener = TcpListener::bind("0.0.0.0:8000".parse::<SocketAddr>().unwrap()).unwrap();
-        let addr = listener.local_addr().unwrap();
-
-        tokio::spawn(async move {
-            axum::Server::from_tcp(listener)
-                .unwrap()
-                .serve(app.into_make_service())
-                .await
-                .unwrap();
-        });
+        let addr = spawn_test_server(config).await;
 
         let ws_url = Url::parse(&format!("ws://{}/ws", addr)).unwrap();
         let (mut ws_stream, _) = connect_async(ws_url).await.unwrap();
@@ -482,37 +448,7 @@ mod tests {
     #[tokio::test]
     async fn test_websocket_subscribe_response() {
         let config = load_config();
-        let pool = PgPool::connect(&config.database_url)
-            .await
-            .expect("Could not connect to DATABASE_URL");
-
-        let market_ids = get_market_ids(pool.clone()).await;
-
-        let (btx, mut brx) = broadcast::channel(16);
-        let _conn = start_redis_channels(config.redis_url, market_ids.clone(), btx.clone()).await;
-
-        let state = AppState {
-            pool,
-            sender: btx,
-            market_ids: HashSet::from_iter(market_ids.into_iter()),
-        };
-        let app = router(state).layer(MockConnectInfo(SocketAddr::from(([0, 0, 0, 0], 3001))));
-
-        tokio::spawn(async move {
-            // keep broadcast channel alive
-            while let Ok(_) = brx.recv().await {}
-        });
-
-        let listener = TcpListener::bind("0.0.0.0:8000".parse::<SocketAddr>().unwrap()).unwrap();
-        let addr = listener.local_addr().unwrap();
-
-        tokio::spawn(async move {
-            axum::Server::from_tcp(listener)
-                .unwrap()
-                .serve(app.into_make_service())
-                .await
-                .unwrap();
-        });
+        let addr = spawn_test_server(config).await;
 
         let ws_url = Url::parse(&format!("ws://{}/ws", addr)).unwrap();
         let (mut ws_stream, _) = connect_async(ws_url).await.unwrap();
@@ -544,38 +480,9 @@ mod tests {
     #[tokio::test]
     async fn test_websocket_order_update() {
         let config = load_config();
-        let pool = PgPool::connect(&config.database_url)
-            .await
-            .expect("Could not connect to DATABASE_URL");
-
-        let market_ids = get_market_ids(pool.clone()).await;
-
-        let (btx, mut brx) = broadcast::channel(16);
-        let mut conn =
-            start_redis_channels(config.redis_url, market_ids.clone(), btx.clone()).await;
-
-        let state = AppState {
-            pool,
-            sender: btx,
-            market_ids: HashSet::from_iter(market_ids.into_iter()),
-        };
-        let app = router(state).layer(MockConnectInfo(SocketAddr::from(([0, 0, 0, 0], 3002))));
-
-        tokio::spawn(async move {
-            // keep broadcast channel alive
-            while let Ok(_) = brx.recv().await {}
-        });
-
-        let listener = TcpListener::bind("0.0.0.0:8000".parse::<SocketAddr>().unwrap()).unwrap();
-        let addr = listener.local_addr().unwrap();
-
-        tokio::spawn(async move {
-            axum::Server::from_tcp(listener)
-                .unwrap()
-                .serve(app.into_make_service())
-                .await
-                .unwrap();
-        });
+        let client = redis::Client::open(config.redis_url.clone()).unwrap();
+        let mut conn = client.get_tokio_connection().await.unwrap();
+        let addr = spawn_test_server(config).await;
 
         let ws_url = Url::parse(&format!("ws://{}/ws", addr)).unwrap();
         let (mut ws_stream, _) = connect_async(ws_url).await.unwrap();
@@ -644,38 +551,9 @@ mod tests {
     #[tokio::test]
     async fn test_websocket_fill_update() {
         let config = load_config();
-        let pool = PgPool::connect(&config.database_url)
-            .await
-            .expect("Could not connect to DATABASE_URL");
-
-        let market_ids = get_market_ids(pool.clone()).await;
-
-        let (btx, mut brx) = broadcast::channel(16);
-        let mut conn =
-            start_redis_channels(config.redis_url, market_ids.clone(), btx.clone()).await;
-
-        let state = AppState {
-            pool,
-            sender: btx,
-            market_ids: HashSet::from_iter(market_ids.into_iter()),
-        };
-        let app = router(state).layer(MockConnectInfo(SocketAddr::from(([0, 0, 0, 0], 3003))));
-
-        tokio::spawn(async move {
-            // keep broadcast channel alive
-            while let Ok(_) = brx.recv().await {}
-        });
-
-        let listener = TcpListener::bind("0.0.0.0:8000".parse::<SocketAddr>().unwrap()).unwrap();
-        let addr = listener.local_addr().unwrap();
-
-        tokio::spawn(async move {
-            axum::Server::from_tcp(listener)
-                .unwrap()
-                .serve(app.into_make_service())
-                .await
-                .unwrap();
-        });
+        let client = redis::Client::open(config.redis_url.clone()).unwrap();
+        let mut conn = client.get_tokio_connection().await.unwrap();
+        let addr = spawn_test_server(config).await;
 
         let ws_url = Url::parse(&format!("ws://{}/ws", addr)).unwrap();
         let (mut ws_stream, _) = connect_async(ws_url).await.unwrap();
@@ -742,37 +620,7 @@ mod tests {
     #[tokio::test]
     async fn test_websocket_unknown_market_id() {
         let config = load_config();
-        let pool = PgPool::connect(&config.database_url)
-            .await
-            .expect("Could not connect to DATABASE_URL");
-
-        let market_ids = get_market_ids(pool.clone()).await;
-
-        let (btx, mut brx) = broadcast::channel(16);
-        let _conn = start_redis_channels(config.redis_url, market_ids.clone(), btx.clone()).await;
-
-        let state = AppState {
-            pool,
-            sender: btx,
-            market_ids: HashSet::from_iter(market_ids.into_iter()),
-        };
-        let app = router(state).layer(MockConnectInfo(SocketAddr::from(([0, 0, 0, 0], 3004))));
-
-        tokio::spawn(async move {
-            // keep broadcast channel alive
-            while let Ok(_) = brx.recv().await {}
-        });
-
-        let listener = TcpListener::bind("0.0.0.0:8000".parse::<SocketAddr>().unwrap()).unwrap();
-        let addr = listener.local_addr().unwrap();
-
-        tokio::spawn(async move {
-            axum::Server::from_tcp(listener)
-                .unwrap()
-                .serve(app.into_make_service())
-                .await
-                .unwrap();
-        });
+        let addr = spawn_test_server(config).await;
 
         let ws_url = Url::parse(&format!("ws://{}/ws", addr)).unwrap();
         let (mut ws_stream, _) = connect_async(ws_url).await.unwrap();
@@ -797,6 +645,103 @@ mod tests {
             );
         } else {
             panic!("did not receive response from websocket");
+        }
+    }
+
+    /// Test to send a subscribe message to the WebSocket API and first checks
+    /// that the correct confirmation message is returned. Then, it sends a
+    /// cancellation update to the corresponding Redis pubsub channel, and checks
+    /// that the correct order update is sent to the client.
+    #[tokio::test]
+    async fn test_websocket_order_cancel() {
+        let config = load_config();
+        let client = redis::Client::open(config.redis_url.clone()).unwrap();
+        let mut conn = client.get_tokio_connection().await.unwrap();
+        let addr = spawn_test_server(config).await;
+
+        let ws_url = Url::parse(&format!("ws://{}/ws", addr)).unwrap();
+        let (mut ws_stream, _) = connect_async(ws_url).await.unwrap();
+
+        let market_id = 0;
+        let user_address = "0x1".to_string();
+
+        let sub_msg = InboundMessage::Subscribe(Channel::Orders {
+            market_id,
+            user_address: user_address.clone(),
+        });
+
+        ws_stream
+            .send(Message::Text(serde_json::to_string(&sub_msg).unwrap()))
+            .await
+            .unwrap();
+
+        tokio::spawn(async move {
+            // Send message for placing order.
+            let order = types::order::Order {
+                market_order_id: 100,
+                market_id,
+                side: types::order::Side::Bid,
+                size: 1000,
+                price: 1000,
+                user_address: user_address.clone(),
+                custodian_id: None,
+                order_state: types::order::OrderState::Open,
+                created_at: Utc.with_ymd_and_hms(2023, 3, 1, 0, 0, 0).unwrap(),
+            };
+            let update: Update = Update::Orders(order);
+            let s = serde_json::to_string(&update).unwrap();
+
+            conn.publish::<&str, String, i32>(format!("orders:{}", market_id).as_str(), s.clone())
+                .await
+                .unwrap();
+
+            // Send message for cancelling order.
+            let order = types::order::Order {
+                market_order_id: 100,
+                market_id,
+                side: types::order::Side::Bid,
+                size: 1000,
+                price: 1000,
+                user_address,
+                custodian_id: None,
+                order_state: types::order::OrderState::Cancelled,
+                created_at: Utc.with_ymd_and_hms(2023, 3, 1, 0, 0, 0).unwrap(),
+            };
+            let update: Update = Update::Orders(order);
+            let s = serde_json::to_string(&update).unwrap();
+
+            conn.publish::<&str, String, i32>(format!("orders:{}", market_id).as_str(), s.clone())
+                .await
+                .unwrap();
+        });
+
+        let mut i = 0;
+        while let Some(Ok(msg)) = ws_stream.next().await {
+            match i {
+                0 => {
+                    assert_eq!(
+                        msg.to_string(),
+                        r#"{"event":"confirm","channel":"orders","params":{"market_id":0,"user_address":"0x1"},"method":"subscribe"}"#
+                    );
+                }
+                1 => {
+                    assert_eq!(
+                        msg.to_string(),
+                        r#"{"event":"update","channel":"orders","data":{"market_order_id":100,"market_id":0,"side":"bid","size":1000,"price":1000,"user_address":"0x1","custodian_id":null,"order_state":"open","created_at":"2023-03-01T00:00:00Z"}}"#
+                    );
+                }
+                2 => {
+                    assert_eq!(
+                        msg.to_string(),
+                        r#"{"event":"update","channel":"orders","data":{"market_order_id":100,"market_id":0,"side":"bid","size":1000,"price":1000,"user_address":"0x1","custodian_id":null,"order_state":"cancelled","created_at":"2023-03-01T00:00:00Z"}}"#
+                    );
+                    return;
+                }
+                _ => {
+                    panic!("received more messages than expected");
+                }
+            }
+            i += 1;
         }
     }
 }

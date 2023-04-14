@@ -454,37 +454,7 @@ mod tests {
     #[tokio::test]
     async fn test_websocket_subscribe_response() {
         let config = load_config();
-        let pool = PgPool::connect(&config.database_url)
-            .await
-            .expect("Could not connect to DATABASE_URL");
-
-        let market_ids = get_market_ids(pool.clone()).await;
-
-        let (btx, mut brx) = broadcast::channel(16);
-        let _conn = start_redis_channels(config.redis_url, market_ids.clone(), btx.clone()).await;
-
-        let state = AppState {
-            pool,
-            sender: btx,
-            market_ids: HashSet::from_iter(market_ids.into_iter()),
-        };
-        let app = router(state).layer(MockConnectInfo(SocketAddr::from(([0, 0, 0, 0], 3001))));
-
-        tokio::spawn(async move {
-            // keep broadcast channel alive
-            while let Ok(_) = brx.recv().await {}
-        });
-
-        let listener = TcpListener::bind("0.0.0.0:8000".parse::<SocketAddr>().unwrap()).unwrap();
-        let addr = listener.local_addr().unwrap();
-
-        tokio::spawn(async move {
-            axum::Server::from_tcp(listener)
-                .unwrap()
-                .serve(app.into_make_service())
-                .await
-                .unwrap();
-        });
+        let addr = spawn_server(config).await;
 
         let ws_url = Url::parse(&format!("ws://{}/ws", addr)).unwrap();
         let (mut ws_stream, _) = connect_async(ws_url).await.unwrap();
@@ -516,6 +486,7 @@ mod tests {
     #[tokio::test]
     async fn test_websocket_order_update() {
         let config = load_config();
+        // let addr = spawn_server(config)
 
         // spawn_server(config).await;
         let pool = PgPool::connect(&config.database_url)

@@ -146,6 +146,7 @@ mod tests {
     async fn test_open_orders_by_account() {
         let account_id = "0x123";
         let config = load_config();
+        // let addr = spawn_server(config).await;
 
         let pool = PgPool::connect(&config.database_url)
             .await

@@ -146,7 +146,7 @@ pub mod tests {
         net::{SocketAddr, TcpListener},
     };
 
-    use axum::extract::connect_info::MockConnectInfo;
+    use axum::{extract::connect_info::MockConnectInfo, Router};
     use rand::Rng;
     use sqlx::PgPool;
     use tokio::sync::broadcast;
@@ -159,7 +159,7 @@ pub mod tests {
         port
     }
 
-    pub async fn spawn_server(config: Config) -> SocketAddr {
+    pub async fn make_test_server(config: Config) -> Router {
         let pool = PgPool::connect(&config.database_url)
             .await
             .expect("Could not connect to DATABASE_URL");
@@ -174,13 +174,20 @@ pub mod tests {
             sender: btx,
             market_ids: HashSet::from_iter(market_ids.into_iter()),
         };
-        let port = gen_random_port();
-        let app = router(state).layer(MockConnectInfo(SocketAddr::from(([0, 0, 0, 0], port))));
 
         tokio::spawn(async move {
             // keep broadcast channel alive
             while let Ok(_) = brx.recv().await {}
         });
+
+        router(state)
+    }
+
+    pub async fn spawn_server(config: Config) -> SocketAddr {
+        let port = gen_random_port();
+        let app = make_test_server(config)
+            .await
+            .layer(MockConnectInfo(SocketAddr::from(([0, 0, 0, 0], port))));
 
         let listener = TcpListener::bind("0.0.0.0:8000".parse::<SocketAddr>().unwrap()).unwrap();
         let addr = listener.local_addr().unwrap();
@@ -192,6 +199,7 @@ pub mod tests {
                 .await
                 .unwrap();
         });
+
         addr
     }
     pub fn return_two() -> usize {

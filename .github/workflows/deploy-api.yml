@@ -47,6 +47,7 @@ jobs:
       - name: Build and push to Artifact Registry
         uses: docker/build-push-action@v4
         with:
+          context: .
           push: true
           tags: asia-northeast1-docker.pkg.dev/econia-0/econia-backend/api:latest
           file: ./src/rust/api/Dockerfile

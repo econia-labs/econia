@@ -147,10 +147,17 @@ pub mod tests {
     };
 
     use axum::extract::connect_info::MockConnectInfo;
+    use rand::Rng;
     use sqlx::PgPool;
     use tokio::sync::broadcast;
 
     use super::*;
+
+    pub fn gen_random_port() -> u16 {
+        let mut rng = rand::thread_rng();
+        let port = rng.gen_range(1024..65535);
+        port
+    }
 
     pub async fn spawn_server(config: Config) -> SocketAddr {
         let pool = PgPool::connect(&config.database_url)
@@ -167,7 +174,8 @@ pub mod tests {
             sender: btx,
             market_ids: HashSet::from_iter(market_ids.into_iter()),
         };
-        let app = router(state).layer(MockConnectInfo(SocketAddr::from(([0, 0, 0, 0], 3000))));
+        let port = gen_random_port();
+        let app = router(state).layer(MockConnectInfo(SocketAddr::from(([0, 0, 0, 0], port))));
 
         tokio::spawn(async move {
             // keep broadcast channel alive

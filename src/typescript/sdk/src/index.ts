@@ -1,1 +1,1 @@
-export * from "../types/global";
+export * as order from "./types/order";

@@ -1,4 +1,1 @@
-/**
- * Order side.
- */
-export type Side = "buy" | "sell";
+export * as order from "../types/order";

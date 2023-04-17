@@ -1,1 +1,1 @@
-export type { Side } from "../types/global";
+export * from "../types/global";

@@ -1,3 +1,5 @@
+import { type BCS } from "aptos";
+
 // Order Side
 export enum Side {
   Ask = 0,
@@ -35,25 +37,25 @@ export enum OrderState {
 
 // Order
 export type Order = {
-  market_order_id: bigint;
-  market_id: bigint;
+  market_order_id: BCS.Uint64;
+  market_id: BCS.Uint64;
   side: Side;
-  size: bigint;
-  price: bigint;
+  size: BCS.Uint64;
+  price: BCS.Uint64;
   user_address: string;
-  custodian_id?: bigint;
+  custodian_id?: BCS.Uint64;
   order_state: OrderState;
   created_at: Date;
 };
 
 // Fill
 export type Fill = {
-  market_id: bigint;
-  maker_order_id: bigint;
+  market_id: BCS.Uint64;
+  maker_order_id: BCS.Uint64;
   maker: string;
   maker_side: Side;
-  custodian_id?: bigint;
-  size: bigint;
-  price: bigint;
+  custodian_id?: BCS.Uint64;
+  size: BCS.Uint64;
+  price: BCS.Uint64;
   time: Date;
 };

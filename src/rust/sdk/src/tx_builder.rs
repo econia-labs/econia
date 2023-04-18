@@ -68,7 +68,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     ) -> Self {
         let entry: EconiaResult<EntryFunction> = (|| {
             let module = ModuleId::from(
-                MoveModuleId::from_str(&format!("{}:incentives", self.client.econia_address))
+                MoveModuleId::from_str(&format!("{}::incentives", self.client.econia_address))
                     .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
             );
             Ok(EntryFunction::new(
@@ -98,7 +98,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     ) -> Self {
         let entry: EconiaResult<EntryFunction> = (|| {
             let module = ModuleId::from(
-                MoveModuleId::from_str(&format!("{}:incentives", self.client.econia_address))
+                MoveModuleId::from_str(&format!("{}::incentives", self.client.econia_address))
                     .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
             );
             Ok(EntryFunction::new(
@@ -121,7 +121,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     ) -> Self {
         let entry: EconiaResult<EntryFunction> = (|| {
             let module = ModuleId::from(
-                MoveModuleId::from_str(&format!("{}:incentives", self.client.econia_address))
+                MoveModuleId::from_str(&format!("{}::incentives", self.client.econia_address))
                     .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
             );
             Ok(EntryFunction::new(
@@ -141,7 +141,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     pub fn cancel_all_orders_user(mut self, market_id: u64, side: Side) -> Self {
         let entry: EconiaResult<EntryFunction> = (|| {
             let module = ModuleId::from(
-                MoveModuleId::from_str(&format!("{}:market", self.client.econia_address))
+                MoveModuleId::from_str(&format!("{}::market", self.client.econia_address))
                     .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
             );
             Ok(EntryFunction::new(
@@ -159,7 +159,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     pub fn cancel_order_user(mut self, market_id: u64, side: Side, market_order_id: u128) -> Self {
         let entry: EconiaResult<EntryFunction> = (|| {
             let module = ModuleId::from(
-                MoveModuleId::from_str(&format!("{}:market", self.client.econia_address))
+                MoveModuleId::from_str(&format!("{}::market", self.client.econia_address))
                     .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
             );
             Ok(EntryFunction::new(
@@ -187,7 +187,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     ) -> Self {
         let entry: EconiaResult<EntryFunction> = (|| {
             let module = ModuleId::from(
-                MoveModuleId::from_str(&format!("{}:market", self.client.econia_address))
+                MoveModuleId::from_str(&format!("{}::market", self.client.econia_address))
                     .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
             );
             Ok(EntryFunction::new(
@@ -221,7 +221,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     ) -> Self {
         let entry: EconiaResult<EntryFunction> = (|| {
             let module = ModuleId::from(
-                MoveModuleId::from_str(&format!("{}:market", self.client.econia_address))
+                MoveModuleId::from_str(&format!("{}::market", self.client.econia_address))
                     .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
             );
             Ok(EntryFunction::new(
@@ -258,7 +258,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     ) -> Self {
         let entry: EconiaResult<EntryFunction> = (|| {
             let module = ModuleId::from(
-                MoveModuleId::from_str(&format!("{}:market", self.client.econia_address))
+                MoveModuleId::from_str(&format!("{}::market", self.client.econia_address))
                     .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
             );
             Ok(EntryFunction::new(
@@ -298,7 +298,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     ) -> Self {
         let entry: EconiaResult<EntryFunction> = (|| {
             let module = ModuleId::from(
-                MoveModuleId::from_str(&format!("{}:market", self.client.econia_address))
+                MoveModuleId::from_str(&format!("{}::market", self.client.econia_address))
                     .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
             );
             Ok(EntryFunction::new(
@@ -334,7 +334,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     ) -> Self {
         let entry: EconiaResult<EntryFunction> = (|| {
             let module = ModuleId::from(
-                MoveModuleId::from_str(&format!("{}:market", self.client.econia_address))
+                MoveModuleId::from_str(&format!("{}::market", self.client.econia_address))
                     .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
             );
             Ok(EntryFunction::new(
@@ -369,7 +369,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     ) -> Self {
         let entry: EconiaResult<EntryFunction> = (|| {
             let module = ModuleId::from(
-                MoveModuleId::from_str(&format!("{}:market", self.client.econia_address))
+                MoveModuleId::from_str(&format!("{}::market", self.client.econia_address))
                     .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
             );
             Ok(EntryFunction::new(
@@ -403,7 +403,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     ) -> Self {
         let entry: EconiaResult<EntryFunction> = (|| {
             let module = ModuleId::from(
-                MoveModuleId::from_str(&format!("{}:registry", self.client.econia_address))
+                MoveModuleId::from_str(&format!("{}::registry", self.client.econia_address))
                     .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
             );
             Ok(EntryFunction::new(
@@ -427,7 +427,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     ) -> Self {
         let entry: EconiaResult<EntryFunction> = (|| {
             let module = ModuleId::from(
-                MoveModuleId::from_str(&format!("{}:registry", self.client.econia_address))
+                MoveModuleId::from_str(&format!("{}::registry", self.client.econia_address))
                     .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
             );
             Ok(EntryFunction::new(
@@ -445,7 +445,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     pub fn remove_recognized_markets(mut self, market_ids: Vec<u64>) -> Self {
         let entry: EconiaResult<EntryFunction> = (|| {
             let module = ModuleId::from(
-                MoveModuleId::from_str(&format!("{}:registry", self.client.econia_address))
+                MoveModuleId::from_str(&format!("{}::registry", self.client.econia_address))
                     .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
             );
             Ok(EntryFunction::new(
@@ -463,7 +463,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     pub fn set_recognized_market(mut self, market_id: u64) -> Self {
         let entry: EconiaResult<EntryFunction> = (|| {
             let module = ModuleId::from(
-                MoveModuleId::from_str(&format!("{}:registry", self.client.econia_address))
+                MoveModuleId::from_str(&format!("{}::registry", self.client.econia_address))
                     .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
             );
             Ok(EntryFunction::new(
@@ -489,7 +489,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     ) -> Self {
         let entry: EconiaResult<EntryFunction> = (|| {
             let module = ModuleId::from(
-                MoveModuleId::from_str(&format!("{}:user", self.client.econia_address))
+                MoveModuleId::from_str(&format!("{}::user", self.client.econia_address))
                     .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
             );
             Ok(EntryFunction::new(
@@ -517,7 +517,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     ) -> Self {
         let entry: EconiaResult<EntryFunction> = (|| {
             let module = ModuleId::from(
-                MoveModuleId::from_str(&format!("{}:user", self.client.econia_address))
+                MoveModuleId::from_str(&format!("{}::user", self.client.econia_address))
                     .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
             );
             Ok(EntryFunction::new(
@@ -540,7 +540,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     ) -> Self {
         let entry: EconiaResult<EntryFunction> = (|| {
             let module = ModuleId::from(
-                MoveModuleId::from_str(&format!("{}:user", self.client.econia_address))
+                MoveModuleId::from_str(&format!("{}::user", self.client.econia_address))
                     .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
             );
             Ok(EntryFunction::new(
@@ -558,7 +558,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     pub fn withdraw_to_coinstore(mut self, coin: &TypeTag, market_id: u64, amount: u64) -> Self {
         let entry: EconiaResult<EntryFunction> = (|| {
             let module = ModuleId::from(
-                MoveModuleId::from_str(&format!("{}:user", self.client.econia_address))
+                MoveModuleId::from_str(&format!("{}::user", self.client.econia_address))
                     .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
             );
             Ok(EntryFunction::new(

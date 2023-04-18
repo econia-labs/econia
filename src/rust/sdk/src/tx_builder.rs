@@ -67,8 +67,12 @@ impl<'a> EconiaTransactionBuilder<'a> {
         integrator_fee_store_tiers: Vec<Vec<u64>>,
     ) -> Self {
         let entry: EconiaResult<EntryFunction> = (|| {
+            let module = ModuleId::from(
+                MoveModuleId::from_str(&format!("{}::incentives", self.client.econia_address))
+                    .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
+            );
             Ok(EntryFunction::new(
-                ModuleId::from(self.client.econia_module.to_owned()),
+                module,
                 ident_str!("update_incentives").to_owned(),
                 vec![utility_coin.clone()],
                 vec![
@@ -93,8 +97,12 @@ impl<'a> EconiaTransactionBuilder<'a> {
         new_tier: u8,
     ) -> Self {
         let entry: EconiaResult<EntryFunction> = (|| {
+            let module = ModuleId::from(
+                MoveModuleId::from_str(&format!("{}::incentives", self.client.econia_address))
+                    .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
+            );
             Ok(EntryFunction::new(
-                ModuleId::from(self.client.econia_module.to_owned()),
+                module,
                 ident_str!("upgrade_integrator_fee_store_via_coinstore").to_owned(),
                 vec![quote_coin.clone(), utility_coin.clone()],
                 vec![bcs::to_bytes(&market_id)?, bcs::to_bytes(&new_tier)?],
@@ -112,8 +120,12 @@ impl<'a> EconiaTransactionBuilder<'a> {
         market_id: u64,
     ) -> Self {
         let entry: EconiaResult<EntryFunction> = (|| {
+            let module = ModuleId::from(
+                MoveModuleId::from_str(&format!("{}::incentives", self.client.econia_address))
+                    .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
+            );
             Ok(EntryFunction::new(
-                ModuleId::from(self.client.econia_module.to_owned()),
+                module,
                 ident_str!("withdraw_integrator_fees_via_coinstores").to_owned(),
                 vec![quote_coin.clone(), utility_coin.clone()],
                 vec![bcs::to_bytes(&market_id)?],
@@ -128,8 +140,12 @@ impl<'a> EconiaTransactionBuilder<'a> {
 
     pub fn cancel_all_orders_user(mut self, market_id: u64, side: Side) -> Self {
         let entry: EconiaResult<EntryFunction> = (|| {
+            let module = ModuleId::from(
+                MoveModuleId::from_str(&format!("{}::market", self.client.econia_address))
+                    .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
+            );
             Ok(EntryFunction::new(
-                ModuleId::from(self.client.econia_module.to_owned()),
+                module,
                 ident_str!("cancel_all_orders_user").to_owned(),
                 vec![],
                 vec![bcs::to_bytes(&market_id)?, bcs::to_bytes(&side)?],
@@ -142,8 +158,12 @@ impl<'a> EconiaTransactionBuilder<'a> {
 
     pub fn cancel_order_user(mut self, market_id: u64, side: Side, market_order_id: u128) -> Self {
         let entry: EconiaResult<EntryFunction> = (|| {
+            let module = ModuleId::from(
+                MoveModuleId::from_str(&format!("{}::market", self.client.econia_address))
+                    .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
+            );
             Ok(EntryFunction::new(
-                ModuleId::from(self.client.econia_module.to_owned()),
+                module,
                 ident_str!("cancel_order_user").to_owned(),
                 vec![],
                 vec![
@@ -166,8 +186,12 @@ impl<'a> EconiaTransactionBuilder<'a> {
         new_size: u64,
     ) -> Self {
         let entry: EconiaResult<EntryFunction> = (|| {
+            let module = ModuleId::from(
+                MoveModuleId::from_str(&format!("{}::market", self.client.econia_address))
+                    .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
+            );
             Ok(EntryFunction::new(
-                ModuleId::from(self.client.econia_module.to_owned()),
+                module,
                 ident_str!("change_order_size_user").to_owned(),
                 vec![],
                 vec![
@@ -196,8 +220,12 @@ impl<'a> EconiaTransactionBuilder<'a> {
         target_advance_amount: u64,
     ) -> Self {
         let entry: EconiaResult<EntryFunction> = (|| {
+            let module = ModuleId::from(
+                MoveModuleId::from_str(&format!("{}::market", self.client.econia_address))
+                    .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
+            );
             Ok(EntryFunction::new(
-                ModuleId::from(self.client.econia_module.to_owned()),
+                module,
                 ident_str!("place_limit_order_passive_advance_user_entry").to_owned(),
                 vec![base.clone(), quote.clone()],
                 vec![
@@ -229,8 +257,12 @@ impl<'a> EconiaTransactionBuilder<'a> {
         self_match_behavior: SelfMatchBehavior,
     ) -> Self {
         let entry: EconiaResult<EntryFunction> = (|| {
+            let module = ModuleId::from(
+                MoveModuleId::from_str(&format!("{}::market", self.client.econia_address))
+                    .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
+            );
             Ok(EntryFunction::new(
-                ModuleId::from(self.client.econia_module.to_owned()),
+                module,
                 ident_str!("place_limit_order_user_entry").to_owned(),
                 vec![base.clone(), quote.clone()],
                 vec![
@@ -265,8 +297,12 @@ impl<'a> EconiaTransactionBuilder<'a> {
         self_match_behavior: SelfMatchBehavior,
     ) -> Self {
         let entry: EconiaResult<EntryFunction> = (|| {
+            let module = ModuleId::from(
+                MoveModuleId::from_str(&format!("{}::market", self.client.econia_address))
+                    .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
+            );
             Ok(EntryFunction::new(
-                ModuleId::from(self.client.econia_module.to_owned()),
+                module,
                 ident_str!("place_market_order_user_entry").to_owned(),
                 vec![base.clone(), quote.clone()],
                 vec![
@@ -297,8 +333,12 @@ impl<'a> EconiaTransactionBuilder<'a> {
         min_size: u64,
     ) -> Self {
         let entry: EconiaResult<EntryFunction> = (|| {
+            let module = ModuleId::from(
+                MoveModuleId::from_str(&format!("{}::market", self.client.econia_address))
+                    .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
+            );
             Ok(EntryFunction::new(
-                ModuleId::from(self.client.econia_module.to_owned()),
+                module,
                 ident_str!("register_market_base_coin_from_coinstore").to_owned(),
                 vec![base.clone(), quote.clone(), utility_coin.clone()],
                 vec![
@@ -328,8 +368,12 @@ impl<'a> EconiaTransactionBuilder<'a> {
         limit_price: u64,
     ) -> Self {
         let entry: EconiaResult<EntryFunction> = (|| {
+            let module = ModuleId::from(
+                MoveModuleId::from_str(&format!("{}::market", self.client.econia_address))
+                    .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
+            );
             Ok(EntryFunction::new(
-                ModuleId::from(self.client.econia_module.to_owned()),
+                module,
                 ident_str!("swap_between_coinstores_entry").to_owned(),
                 vec![base.clone(), quote.clone()],
                 vec![
@@ -358,8 +402,12 @@ impl<'a> EconiaTransactionBuilder<'a> {
         market_id: u64,
     ) -> Self {
         let entry: EconiaResult<EntryFunction> = (|| {
+            let module = ModuleId::from(
+                MoveModuleId::from_str(&format!("{}::registry", self.client.econia_address))
+                    .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
+            );
             Ok(EntryFunction::new(
-                ModuleId::from(self.client.econia_module.to_owned()),
+                module,
                 ident_str!("register_integrator_fee_store_base_tier").to_owned(),
                 vec![quote.clone(), utility_coin.clone()],
                 vec![bcs::to_bytes(&market_id)?],
@@ -378,8 +426,12 @@ impl<'a> EconiaTransactionBuilder<'a> {
         tier: u8,
     ) -> Self {
         let entry: EconiaResult<EntryFunction> = (|| {
+            let module = ModuleId::from(
+                MoveModuleId::from_str(&format!("{}::registry", self.client.econia_address))
+                    .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
+            );
             Ok(EntryFunction::new(
-                ModuleId::from(self.client.econia_module.to_owned()),
+                module,
                 ident_str!("register_integrator_fee_store_from_coinstore").to_owned(),
                 vec![quote.clone(), utility_coin.clone()],
                 vec![bcs::to_bytes(&market_id)?, bcs::to_bytes(&tier)?],
@@ -392,8 +444,12 @@ impl<'a> EconiaTransactionBuilder<'a> {
 
     pub fn remove_recognized_markets(mut self, market_ids: Vec<u64>) -> Self {
         let entry: EconiaResult<EntryFunction> = (|| {
+            let module = ModuleId::from(
+                MoveModuleId::from_str(&format!("{}::registry", self.client.econia_address))
+                    .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
+            );
             Ok(EntryFunction::new(
-                ModuleId::from(self.client.econia_module.to_owned()),
+                module,
                 ident_str!("remove_recognized_markets").to_owned(),
                 vec![],
                 vec![bcs::to_bytes(&market_ids)?],
@@ -406,8 +462,12 @@ impl<'a> EconiaTransactionBuilder<'a> {
 
     pub fn set_recognized_market(mut self, market_id: u64) -> Self {
         let entry: EconiaResult<EntryFunction> = (|| {
+            let module = ModuleId::from(
+                MoveModuleId::from_str(&format!("{}::registry", self.client.econia_address))
+                    .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
+            );
             Ok(EntryFunction::new(
-                ModuleId::from(self.client.econia_module.to_owned()),
+                module,
                 ident_str!("set_recognized_market").to_owned(),
                 vec![],
                 vec![bcs::to_bytes(&market_id)?],
@@ -428,8 +488,12 @@ impl<'a> EconiaTransactionBuilder<'a> {
         amount: u64,
     ) -> Self {
         let entry: EconiaResult<EntryFunction> = (|| {
+            let module = ModuleId::from(
+                MoveModuleId::from_str(&format!("{}::user", self.client.econia_address))
+                    .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
+            );
             Ok(EntryFunction::new(
-                ModuleId::from(self.client.econia_module.to_owned()),
+                module,
                 ident_str!("deposit_from_coinstore").to_owned(),
                 vec![coin.clone()],
                 vec![
@@ -452,8 +516,12 @@ impl<'a> EconiaTransactionBuilder<'a> {
         custodian_id: u64,
     ) -> Self {
         let entry: EconiaResult<EntryFunction> = (|| {
+            let module = ModuleId::from(
+                MoveModuleId::from_str(&format!("{}::user", self.client.econia_address))
+                    .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
+            );
             Ok(EntryFunction::new(
-                ModuleId::from(self.client.econia_module.to_owned()),
+                module,
                 ident_str!("register_market_account").to_owned(),
                 vec![base.clone(), quote.clone()],
                 vec![bcs::to_bytes(&market_id)?, bcs::to_bytes(&custodian_id)?],
@@ -471,8 +539,12 @@ impl<'a> EconiaTransactionBuilder<'a> {
         custodian_id: u64,
     ) -> Self {
         let entry: EconiaResult<EntryFunction> = (|| {
+            let module = ModuleId::from(
+                MoveModuleId::from_str(&format!("{}::user", self.client.econia_address))
+                    .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
+            );
             Ok(EntryFunction::new(
-                ModuleId::from(self.client.econia_module.to_owned()),
+                module,
                 ident_str!("register_market_account_generic_base").to_owned(),
                 vec![quote.clone()],
                 vec![bcs::to_bytes(&market_id)?, bcs::to_bytes(&custodian_id)?],
@@ -485,8 +557,12 @@ impl<'a> EconiaTransactionBuilder<'a> {
 
     pub fn withdraw_to_coinstore(mut self, coin: &TypeTag, market_id: u64, amount: u64) -> Self {
         let entry: EconiaResult<EntryFunction> = (|| {
+            let module = ModuleId::from(
+                MoveModuleId::from_str(&format!("{}::user", self.client.econia_address))
+                    .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
+            );
             Ok(EntryFunction::new(
-                ModuleId::from(self.client.econia_module.to_owned()),
+                module,
                 ident_str!("withdraw_to_coinstore").to_owned(),
                 vec![coin.clone()],
                 vec![bcs::to_bytes(&market_id)?, bcs::to_bytes(&amount)?],

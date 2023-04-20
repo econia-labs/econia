@@ -26,6 +26,10 @@ pub async fn get_orderbook(
     Query(params): Query<OrderbookParams>,
     State(state): State<AppState>,
 ) -> Result<Json<OrderbookResponse>, ApiError> {
+    if params.depth < 1 {
+        return Err(ApiError::InvalidDepth);
+    }
+
     let market_id = BigDecimal::from(market_id);
 
     // TODO: why does sqlx need a non-null assertion here to consider this of

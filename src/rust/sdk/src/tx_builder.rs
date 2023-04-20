@@ -281,48 +281,6 @@ impl<'a> EconiaTransactionBuilder<'a> {
         self
     }
 
-    #[allow(clippy::too_many_arguments)]
-    pub fn place_market_order_user_entry(
-        mut self,
-        base: &TypeTag,
-        quote: &TypeTag,
-        market_id: u64,
-        integrator: &AccountAddress,
-        direction: bool,
-        min_base: u64,
-        max_base: u64,
-        min_quote: u64,
-        max_quote: u64,
-        limit_price: u64,
-        self_match_behavior: SelfMatchBehavior,
-    ) -> Self {
-        let entry: EconiaResult<EntryFunction> = (|| {
-            let module = ModuleId::from(
-                MoveModuleId::from_str(&format!("{}::market", self.client.econia_address))
-                    .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
-            );
-            Ok(EntryFunction::new(
-                module,
-                ident_str!("place_market_order_user_entry").to_owned(),
-                vec![base.clone(), quote.clone()],
-                vec![
-                    bcs::to_bytes(&market_id)?,
-                    bcs::to_bytes(&integrator)?,
-                    bcs::to_bytes(&direction)?,
-                    bcs::to_bytes(&min_base)?,
-                    bcs::to_bytes(&max_base)?,
-                    bcs::to_bytes(&min_quote)?,
-                    bcs::to_bytes(&max_quote)?,
-                    bcs::to_bytes(&limit_price)?,
-                    bcs::to_bytes(&self_match_behavior)?,
-                ],
-            ))
-        })();
-
-        self.entry = Some(entry);
-        self
-    }
-
     pub fn register_market_base_coin_from_coinstore(
         mut self,
         base: &TypeTag,

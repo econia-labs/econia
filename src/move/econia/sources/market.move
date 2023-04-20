@@ -1173,11 +1173,7 @@ module econia::market {
         market_id: u64,
         integrator: address,
         direction: bool,
-        min_base: u64,
-        max_base: u64,
-        min_quote: u64,
-        max_quote: u64,
-        limit_price: u64,
+        size: u64,
         self_match_behavior: u8,
         custodian_capability_ref: &CustodianCapability
     ): (
@@ -1191,11 +1187,7 @@ module econia::market {
             registry::get_custodian_id(custodian_capability_ref),
             integrator,
             direction,
-            min_base,
-            max_base,
-            min_quote,
-            max_quote,
-            limit_price,
+            size,
             self_match_behavior)
     }
 
@@ -1214,11 +1206,7 @@ module econia::market {
         market_id: u64,
         integrator: address,
         direction: bool,
-        min_base: u64,
-        max_base: u64,
-        min_quote: u64,
-        max_quote: u64,
-        limit_price: u64,
+        size: u64,
         self_match_behavior: u8
     ): (
         u64,
@@ -1231,11 +1219,7 @@ module econia::market {
             NO_CUSTODIAN,
             integrator,
             direction,
-            min_base,
-            max_base,
-            min_quote,
-            max_quote,
-            limit_price,
+            size,
             self_match_behavior)
     }
 
@@ -1803,16 +1787,11 @@ module econia::market {
         market_id: u64,
         integrator: address,
         direction: bool,
-        min_base: u64,
-        max_base: u64,
-        min_quote: u64,
-        max_quote: u64,
-        limit_price: u64,
+        size: u64,
         self_match_behavior: u8
     ) acquires OrderBooks {
         place_market_order_user<BaseType, QuoteType>(
-            user, market_id, integrator, direction, min_base, max_base,
-            min_quote, max_quote, limit_price, self_match_behavior);
+            user, market_id, integrator, direction, size, self_match_behavior);
     }
 
     #[cmd]
@@ -2922,15 +2901,7 @@ module econia::market {
     /// * `custodian_id`: Same as for `match()`.
     /// * `integrator`: Same as for `match()`.
     /// * `direction`: Same as for `match()`.
-    /// * `min_base`: Same as for `match()`.
-    /// * `max_base`: Same as for `match()`. If passed as `MAX_POSSIBLE`
-    ///   will attempt to trade maximum possible amount for market
-    ///   account.
-    /// * `min_quote`: Same as for `match()`.
-    /// * `max_quote`: Same as for `match()`. If passed as
-    ///   `MAX_POSSIBLE` will attempt to trade maximum possible amount
-    ///   for market account.
-    /// * `limit_price`: Same as for `match()`.
+    /// * `size`: The size, in lots, to fill.
     /// * `self_match_behavior`: Same as for `match()`.
     ///
     /// # Returns
@@ -2964,11 +2935,7 @@ module econia::market {
         custodian_id: u64,
         integrator: address,
         direction: bool,
-        min_base: u64,
-        max_base: u64,
-        min_quote: u64,
-        max_quote: u64,
-        limit_price: u64,
+        size: u64,
         self_match_behavior: u8
     ): (
         u64,
@@ -2992,16 +2959,27 @@ module econia::market {
                 == order_book_ref_mut.quote_type, E_INVALID_QUOTE);
         // Get market underwriter ID.
         let underwriter_id = order_book_ref_mut.underwriter_id;
-        // If max base to trade flagged as max possible and a buy,
-        // update to max amount that can be bought. If a sell, update
-        // to all available to sell.
-        if (max_base == MAX_POSSIBLE) max_base = if (direction == BUY)
+        // Calculate max base that user could trade: if a buy, max base
+        // that can fit in market account. If a sell, base available in
+        // market account.
+        let max_base = if (direction == BUY)
             (HI_64 - base_ceiling) else base_available;
-        // If max quote to trade flagged as max possible and a buy,
-        // update to max amount that can spend. If a sell, update
-        // to max amount that can receive when selling.
-        if (max_quote == MAX_POSSIBLE) max_quote = if (direction == BUY)
+        // Get max lots that could be traded by user.
+        let max_lots = max_base / order_book_ref_mut.lot_size;
+        // If market order size is less than number of lots user could
+        // trade based on account limits, adjust the max base trade
+        // amount to correspond with the market order size.
+        if (size < max_lots) max_base = size * order_book_ref_mut.lot_size;
+        // Calculate max quote that can be traded: if a buy, quote
+        // available in market account. If a sell, max quote that can
+        // fit in market account.
+        let max_quote = if (direction == BUY)
             quote_available else (HI_64 - quote_ceiling);
+        // Declare min base and quote trade amounts 0, enabling silent
+        // return without fills if there is no depth on the book, and
+        // silent return with max possible fills if order takes all
+        // liquidity before filling user-indicated size.
+        let (min_base, min_quote) = (0, 0);
         range_check_trade( // Range check trade amounts.
             direction, min_base, max_base, min_quote, max_quote,
             base_available, base_ceiling, quote_available, quote_ceiling);
@@ -3015,6 +2993,9 @@ module econia::market {
             user::withdraw_assets_internal<BaseType, QuoteType>(
                 user_address, market_id, custodian_id, base_withdraw,
                 quote_withdraw, underwriter_id);
+        // Calculate limit price for matching engine: 0 when selling,
+        // max price possible when buying.
+        let limit_price = if (direction == SELL) 0 else HI_PRICE;
         // Match against order book, storing optionally modified asset
         // inputs, base and quote trade amounts, and quote fees paid.
         let (optional_base_coins, quote_coins, base_traded, quote_traded, fees,

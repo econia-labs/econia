@@ -9,6 +9,37 @@ use types::{bar::Resolution, error::TypeError};
 
 use crate::{error::ApiError, AppState};
 
+/// Query parameters for the orderbook endpoint.
+#[derive(Debug, Deserialize)]
+pub struct OrderbookParams {
+    depth: i64,
+}
+
+pub async fn get_orderbook(
+    Path(market_id): Path<u64>,
+    Query(params): Query<OrderbookParams>,
+    State(state): State<AppState>,
+) -> Result<(), ApiError> {
+    let market_id = BigDecimal::from(market_id);
+
+    // TODO: why does sqlx need a non-null assertion here to consider this of
+    // type BigDecimal rather than Option<Decimal>?
+    let bids_query = sqlx::query_as!(
+        db::models::market::PriceLevel,
+        r#"
+        select price, sum(size) as "size!" from orders
+        where market_id = $1 and order_state = 'open' and side = 'bid'
+        group by price order by price desc limit $2;
+    "#,
+        market_id,
+        params.depth
+    )
+    .fetch_all(&state.pool)
+    .await?;
+
+    Ok(())
+}
+
 /// Query parameters for the market history endpoint.
 #[derive(Debug, Deserialize)]
 pub struct MarketHistoryParams {

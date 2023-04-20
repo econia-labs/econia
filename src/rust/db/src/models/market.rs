@@ -173,3 +173,9 @@ impl<'a> IntoInsertable for &'a RecognizedMarketEvent {
         }
     }
 }
+
+#[derive(Clone, Debug)]
+pub struct PriceLevel {
+    pub price: BigDecimal,
+    pub size: BigDecimal,
+}

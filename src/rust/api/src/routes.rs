@@ -34,6 +34,7 @@ pub fn router(state: AppState) -> Router {
             "/account/:account_address/open-orders",
             get(account::open_orders_by_account),
         )
+        .route("/market/:market_id/orderbook", get(market::get_orderbook))
         .route(
             "/market/:market_id/history",
             get(market::get_market_history),

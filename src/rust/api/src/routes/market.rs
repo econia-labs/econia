@@ -4,7 +4,7 @@ use axum::{
 };
 use bigdecimal::BigDecimal;
 use chrono::{DateTime, NaiveDateTime, Utc};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use types::{bar::Resolution, book::PriceLevel, error::TypeError};
 
 use crate::{error::ApiError, AppState};
@@ -15,7 +15,7 @@ pub struct OrderbookParams {
     depth: i64,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize)]
 pub struct OrderbookResponse {
     bids: Vec<PriceLevel>,
     asks: Vec<PriceLevel>,
@@ -25,7 +25,7 @@ pub async fn get_orderbook(
     Path(market_id): Path<u64>,
     Query(params): Query<OrderbookParams>,
     State(state): State<AppState>,
-) -> Result<(), ApiError> {
+) -> Result<Json<OrderbookResponse>, ApiError> {
     let market_id = BigDecimal::from(market_id);
 
     // TODO: why does sqlx need a non-null assertion here to consider this of
@@ -67,7 +67,7 @@ pub async fn get_orderbook(
         .map(|v| v.try_into())
         .collect::<Result<Vec<PriceLevel>, TypeError>>()?;
 
-    Ok(())
+    Ok(Json(OrderbookResponse { bids, asks }))
 }
 
 /// Query parameters for the market history endpoint.

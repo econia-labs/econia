@@ -8,16 +8,10 @@ import { type EconiaClient } from ".";
 
 export class EconiaTransactionBuilder {
   client: EconiaClient;
-  retryAmount?: number;
   entry?: Types.EntryFunctionPayload;
 
   public constructor(client: EconiaClient) {
     this.client = client;
-  }
-
-  public setRetryAmount(retryAmount: number): EconiaTransactionBuilder {
-    this.retryAmount = retryAmount;
-    return this;
   }
 
   // Incentives entry functions
@@ -328,5 +322,24 @@ export class EconiaTransactionBuilder {
     };
     this.entry = entry;
     return this;
+  }
+
+  public async submitTx(): Promise<Types.Transaction> {
+    if (!this.entry) {
+      throw new Error("No entry function set");
+    }
+    const tx = await this.client.aptosClient.generateTransaction(
+      this.client.userAccount.address(),
+      this.entry
+    );
+    const signedTx = await this.client.aptosClient.signTransaction(
+      this.client.userAccount,
+      tx
+    );
+    const pendingTx = await this.client.aptosClient.submitTransaction(signedTx);
+    const result = await this.client.aptosClient.waitForTransactionWithResult(
+      pendingTx.hash
+    );
+    return result;
   }
 }

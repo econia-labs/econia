@@ -28,7 +28,7 @@ export class EconiaTransactionBuilder {
     underwriterRegistrationFee: BCS.Uint64,
     custodianRegistrationFee: BCS.Uint64,
     takerFeeDivisor: BCS.Uint64,
-    integratorFeeStoreTiers: Array<Array<BCS.Uint64>>
+    integratorFeeStoreTiers: BCS.Uint64[][]
   ): EconiaTransactionBuilder {
     const entry: Types.EntryFunctionPayload = {
       function: `${this.client.econiaAddress}::incentives::update_incentives`,
@@ -172,38 +172,6 @@ export class EconiaTransactionBuilder {
     return this;
   }
 
-  public placeMarketOrderUserEntry(
-    base: Types.MoveType,
-    quote: Types.MoveType,
-    marketId: BCS.Uint64,
-    integrator: MaybeHexString,
-    direction: boolean,
-    minBase: BCS.Uint64,
-    maxBase: BCS.Uint64,
-    minQuote: BCS.Uint64,
-    maxQuote: BCS.Uint64,
-    limitPrice: BCS.Uint64,
-    selfMatchBehavior: SelfMatchBehavior
-  ): EconiaTransactionBuilder {
-    const entry: Types.EntryFunctionPayload = {
-      function: `${this.client.econiaAddress}::market::place_market_order_user_entry`,
-      type_arguments: [base, quote],
-      arguments: [
-        marketId,
-        integrator,
-        direction,
-        minBase,
-        maxBase,
-        minQuote,
-        maxQuote,
-        limitPrice,
-        selfMatchBehavior,
-      ],
-    };
-    this.entry = entry;
-    return this;
-  }
-
   public registerMarketBaseCoinFromCoinstore(
     base: Types.MoveType,
     quote: Types.MoveType,
@@ -246,6 +214,117 @@ export class EconiaTransactionBuilder {
         maxQuote,
         limitPrice,
       ],
+    };
+    this.entry = entry;
+    return this;
+  }
+
+  // registry functions
+
+  public registerIntegratorFeeStoreBaseTier(
+    quote: Types.MoveType,
+    utilityCoin: Types.MoveType,
+    marketId: BCS.Uint64
+  ): EconiaTransactionBuilder {
+    const entry: Types.EntryFunctionPayload = {
+      function: `${this.client.econiaAddress}::registry::register_integrator_fee_store_base_tier`,
+      type_arguments: [quote, utilityCoin],
+      arguments: [marketId],
+    };
+    this.entry = entry;
+    return this;
+  }
+
+  public registerIntegratorFeeStoreFromCoinstore(
+    quote: Types.MoveType,
+    utilityCoin: Types.MoveType,
+    marketId: BCS.Uint64,
+    tier: BCS.Uint8
+  ): EconiaTransactionBuilder {
+    const entry: Types.EntryFunctionPayload = {
+      function: `${this.client.econiaAddress}::registry::register_integrator_fee_store_from_coinstore`,
+      type_arguments: [quote, utilityCoin],
+      arguments: [marketId, tier],
+    };
+    this.entry = entry;
+    return this;
+  }
+
+  public removeRecognizedMarkets(
+    marketIds: BCS.Uint64[]
+  ): EconiaTransactionBuilder {
+    const entry: Types.EntryFunctionPayload = {
+      function: `${this.client.econiaAddress}::registry::remove_recognized_markets`,
+      type_arguments: [],
+      arguments: [marketIds],
+    };
+    this.entry = entry;
+    return this;
+  }
+
+  public setRecognizedMarket(marketId: BCS.Uint64): EconiaTransactionBuilder {
+    const entry: Types.EntryFunctionPayload = {
+      function: `${this.client.econiaAddress}::registry::set_recognized_market`,
+      type_arguments: [],
+      arguments: [marketId],
+    };
+    this.entry = entry;
+    return this;
+  }
+
+  public depositFromCoinstore(
+    coin: Types.MoveType,
+    marketId: BCS.Uint64,
+    custodianId: BCS.Uint64,
+    amount: BCS.Uint64
+  ): EconiaTransactionBuilder {
+    const entry: Types.EntryFunctionPayload = {
+      function: `${this.client.econiaAddress}::user::deposit_from_coinstore`,
+      type_arguments: [coin],
+      arguments: [marketId, custodianId, amount],
+    };
+    this.entry = entry;
+    return this;
+  }
+
+  public registerMarketAccount(
+    base: Types.MoveType,
+    quote: Types.MoveType,
+    marketId: BCS.Uint64,
+    custodianId: BCS.Uint64
+  ): EconiaTransactionBuilder {
+    const entry: Types.EntryFunctionPayload = {
+      function: `${this.client.econiaAddress}::user::register_market_account`,
+      type_arguments: [base, quote],
+      arguments: [marketId, custodianId],
+    };
+    this.entry = entry;
+    return this;
+  }
+
+  public registerMarketAccountGenericBase(
+    quote: Types.MoveType,
+    marketId: BCS.Uint64,
+    custodianId: BCS.Uint64
+  ): EconiaTransactionBuilder {
+    const entry: Types.EntryFunctionPayload = {
+      function: `${this.client.econiaAddress}::user::register_market_account_generic_base`,
+      type_arguments: [quote],
+      arguments: [marketId, custodianId],
+    };
+    this.entry = entry;
+    return this;
+  }
+
+  public withdrawToCoinstore(
+    coin: Types.MoveType,
+    marketId: BCS.Uint64,
+    amount: BCS.Uint64
+  ): EconiaTransactionBuilder {
+    const entry: Types.EntryFunctionPayload = {
+      function: `${this.client.econiaAddress}::user::withdraw_to_coinstore`,
+      type_arguments: [coin],
+      arguments: [marketId, amount],
     };
     this.entry = entry;
     return this;

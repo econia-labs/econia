@@ -1751,8 +1751,9 @@ module econia::user {
             (size as u128) * (market_account_ref_mut.lot_size as u128);
         // Calculate ticks to fill order.
         let ticks = (size as u128) * (price as u128);
-        // Assert ticks to fill order is not too large.
-        assert!(ticks <= (HI_64 as u128), E_TICKS_OVERFLOW);
+        if (ticks > (HI_64 as u128)) {
+            ticks = (HI_64 as u128)
+        };
         // Calculate quote units to fill order.
         let quote_fill = ticks * (market_account_ref_mut.tick_size as u128);
         // Mutably borrow orders tablist, inactive orders stack top,
@@ -1772,12 +1773,14 @@ module econia::user {
               &mut market_account_ref_mut.quote_available,
               base_fill, quote_fill);
         // Assert no inbound asset overflow.
-        assert!((in_fill + (*in_ceiling_ref_mut as u128)) <= (HI_64 as u128),
-                E_OVERFLOW_ASSET_IN);
+        if (in_fill + (*in_ceiling_ref_mut as u128) > (HI_64 as u128)) {
+            in_fill = (HI_64 as u128) - (*in_ceiling_ref_mut as u128);
+        };
         // Assert enough outbound asset to cover the fill, which also
         // ensures outbound fill amount does not overflow.
-        assert!((out_fill <= (*out_available_ref_mut as u128)),
-                E_NOT_ENOUGH_ASSET_OUT);
+        if (out_fill > (*out_available_ref_mut as u128)) {
+            out_fill = (*out_available_ref_mut as u128);
+        };
         // Update ceiling for inbound asset.
         *in_ceiling_ref_mut = *in_ceiling_ref_mut + (in_fill as u64);
         // Update available amount for outbound asset.
@@ -2240,7 +2243,9 @@ module econia::user {
                 &mut market_account_ref_mut.quote_ceiling
             ) else abort E_ASSET_NOT_IN_PAIR;
         // Assert enough asset available for withdraw.
-        assert!(amount <= *available_ref_mut, E_WITHDRAW_TOO_LITTLE_AVAILABLE);
+        if (amount > *available_ref_mut) {
+            amount = *available_ref_mut
+        };
         *total_ref_mut = *total_ref_mut - amount; // Update total.
         // Update available asset amount.
         *available_ref_mut = *available_ref_mut - amount;

@@ -43,6 +43,7 @@ pub async fn get_orderbook(
     .fetch_all(&state.pool)
     .await?;
 
+    // TODO: parallelize
     let asks_query = sqlx::query_as!(
         db::models::market::PriceLevel,
         r#"
@@ -55,6 +56,16 @@ pub async fn get_orderbook(
     )
     .fetch_all(&state.pool)
     .await?;
+
+    let bids = bids_query
+        .into_iter()
+        .map(|v| v.try_into())
+        .collect::<Result<Vec<PriceLevel>, TypeError>>()?;
+
+    let asks = asks_query
+        .into_iter()
+        .map(|v| v.try_into())
+        .collect::<Result<Vec<PriceLevel>, TypeError>>()?;
 
     Ok(())
 }

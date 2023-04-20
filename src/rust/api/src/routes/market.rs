@@ -5,7 +5,7 @@ use axum::{
 use bigdecimal::BigDecimal;
 use chrono::{DateTime, NaiveDateTime, Utc};
 use serde::Deserialize;
-use types::{bar::Resolution, error::TypeError};
+use types::{bar::Resolution, book::PriceLevel, error::TypeError};
 
 use crate::{error::ApiError, AppState};
 
@@ -13,6 +13,12 @@ use crate::{error::ApiError, AppState};
 #[derive(Debug, Deserialize)]
 pub struct OrderbookParams {
     depth: i64,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct OrderbookResponse {
+    bids: Vec<PriceLevel>,
+    asks: Vec<PriceLevel>,
 }
 
 pub async fn get_orderbook(
@@ -31,6 +37,19 @@ pub async fn get_orderbook(
         where market_id = $1 and order_state = 'open' and side = 'bid'
         group by price order by price desc limit $2;
     "#,
+        market_id,
+        params.depth
+    )
+    .fetch_all(&state.pool)
+    .await?;
+
+    let asks_query = sqlx::query_as!(
+        db::models::market::PriceLevel,
+        r#"
+            select price, sum(size) as "size!" from orders
+            where market_id = $1 and order_state = 'open' and side = 'ask'
+            group by price order by price limit $2;
+        "#,
         market_id,
         params.depth
     )

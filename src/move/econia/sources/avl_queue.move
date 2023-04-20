@@ -1533,6 +1533,26 @@ module econia::avl_queue {
             (NIL as u128) // Return true if no AVL queue head.
     }
 
+    /// Return `true` if access key corresponds to a list node at the
+    /// tail of its corresponding doubly linked list, aborting for an
+    /// invalid list node ID.
+    public fun is_local_tail<V>(
+        avlq_ref: &AVLqueue<V>,
+        access_key: u64
+    ): bool {
+        let list_node_id = // Extract list node ID from access key.
+            (access_key >> SHIFT_ACCESS_LIST_NODE_ID) & HI_NODE_ID;
+        let list_node_ref = // Immutably borrow corresponding list node.
+            table_with_length::borrow(&avlq_ref.list_nodes, list_node_id);
+        // Get virtual next field from node.
+        let next = ((list_node_ref.next_msbs as u64) << BITS_PER_BYTE) |
+                   (list_node_ref.next_lsbs as u64);
+        // Declare bitmask for flagging a tree node.
+        let is_tree_node = ((BIT_FLAG_TREE_NODE as u64) << SHIFT_NODE_TYPE);
+        // Return true if next field indicates a tree node.
+        return (next | is_tree_node == is_tree_node)
+    }
+
     /// Return a new AVL queue, optionally allocating inactive nodes.
     ///
     /// # Parameters

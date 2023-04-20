@@ -680,6 +680,9 @@ module econia::market {
     const E_INVALID_SELF_MATCH_BEHAVIOR: u64 = 28;
     /// Passive advance percent is not less than or equal to 100.
     const E_INVALID_PERCENT: u64 = 29;
+    /// Order size change requiring insertion resulted in an AVL queue
+    /// access key mismatch.
+    const E_SIZE_CHANGE_INSERTION_ERROR: u64 = 30;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -2058,6 +2061,9 @@ module econia::market {
             orders_ref_mut, avlq_access_key);
         // Assert that borrow from the AVL queue is possible.
         assert!(borrow_possible, E_INVALID_MARKET_ORDER_ID);
+        // Check if order is at tail of queue for given price level.
+        let tail_of_price_level_queue =
+            avl_queue::is_local_tail(orders_ref_mut, avlq_access_key);
         let order_ref_mut = // Mutably borrow order on order book.
             avl_queue::borrow_mut(orders_ref_mut, avlq_access_key);
         // Assert passed user address is user holding order.
@@ -2070,12 +2076,40 @@ module econia::market {
         user::change_order_size_internal(
             user, market_id, custodian_id, side, order_ref_mut.size, new_size,
             order_ref_mut.price, order_ref_mut.order_access_key, market_order_id);
-        // Update order on book with new size.
-        order_ref_mut.size = new_size;
+        // Get order price.
+        let price = avl_queue::get_access_key_insertion_key(avlq_access_key);
+        // If size change is for a size decrease or if order is at tail
+        // of given price level:
+        if ((new_size < order_ref_mut.size) || tail_of_price_level_queue) {
+            // Mutate order on book to reflect new size, preserving spot
+            // in queue for the given price level.
+            order_ref_mut.size = new_size;
+        // If new size is more than old size (user-side function
+        // verifies that size is not equal) but order is not tail of
+        // queue for the given price level, priority should be lost:
+        } else {
+            // Remove order from AVL queue, pushing corresponding AVL
+            // queue list node onto unused list node stack.
+            let order = avl_queue::remove(orders_ref_mut, avlq_access_key);
+            order.size = new_size; // Mutate order size.
+            // Insert at back of queue for given price level.
+            let new_avlq_access_key =
+                avl_queue::insert(orders_ref_mut, price, order);
+            // Verify that new AVL queue access key is the same as
+            // before the size change: since list nodes are re-used, the
+            // AVL queue access key should be the same, even though the
+            // order is now the new tail of a doubly linked list for the
+            // given insertion key (back of queue for the given price
+            // level). Eviction is not checked because the AVL queue
+            // shape is the same before and after the remove/insert
+            // compound operation.
+            assert!(new_avlq_access_key == avlq_access_key,
+                    E_SIZE_CHANGE_INSERTION_ERROR);
+        };
         // Emit a maker change event.
         event::emit_event(&mut order_book_ref_mut.maker_events, MakerEvent{
             market_id, side, market_order_id, user, custodian_id, type: CHANGE,
-            size: order_ref_mut.size, price: order_ref_mut.price});
+            size: new_size, price});
     }
 
     /// Initialize the order books map upon module publication.

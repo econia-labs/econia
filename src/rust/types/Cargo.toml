@@ -9,6 +9,7 @@ edition = "2021"
 bigdecimal = { workspace = true, features = ["serde"] }
 chrono = { workspace = true, features = ["serde"] }
 serde = { workspace = true, features = ["derive"] }
+sqlx = { workspace = true, features = ["postgres"] }
 thiserror = { workspace = true }
 
 [dev-dependencies]

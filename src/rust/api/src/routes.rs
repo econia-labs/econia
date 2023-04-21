@@ -9,8 +9,8 @@ use types::error::TypeError;
 
 use crate::{error::ApiError, ws::ws_handler, AppState};
 
-mod account_routes;
-mod market_routes;
+mod account;
+mod market;
 
 pub fn router(state: AppState) -> Router {
     let cors_layer = CorsLayer::new()
@@ -28,17 +28,18 @@ pub fn router(state: AppState) -> Router {
         .route("/markets", get(markets))
         .route(
             "/account/:account_address/order-history",
-            get(account_routes::order_history_by_account),
+            get(account::order_history_by_account),
         )
         .route(
             "/account/:account_address/open-orders",
-            get(account_routes::open_orders_by_account),
+            get(account::open_orders_by_account),
         )
+        .route("/market/:market_id/orderbook", get(market::get_orderbook))
         .route(
             "/market/:market_id/history",
-            get(market_routes::get_market_history),
+            get(market::get_market_history),
         )
-        .route("/market/:market_id/fills", get(market_routes::get_fills))
+        .route("/market/:market_id/fills", get(market::get_fills))
         .route("/ws", get(ws_handler))
         .with_state(state)
         .layer(middleware_stack)

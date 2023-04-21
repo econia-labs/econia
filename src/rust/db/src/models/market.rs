@@ -173,3 +173,24 @@ impl<'a> IntoInsertable for &'a RecognizedMarketEvent {
         }
     }
 }
+
+#[derive(Clone, Debug)]
+pub struct PriceLevel {
+    pub price: BigDecimal,
+    pub size: BigDecimal,
+}
+
+impl TryFrom<PriceLevel> for types::book::PriceLevel {
+    type Error = TypeError;
+
+    fn try_from(value: PriceLevel) -> Result<Self, Self::Error> {
+        let size = value.size.to_u64().ok_or(TypeError::ConversionError {
+            name: "size".into(),
+        })?;
+        let price = value.price.to_u64().ok_or(TypeError::ConversionError {
+            name: "price".into(),
+        })?;
+
+        Ok(types::book::PriceLevel { size, price })
+    }
+}

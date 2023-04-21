@@ -3,9 +3,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::TypeError;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
 #[serde(rename_all = "snake_case")]
-#[repr(u8)]
+#[sqlx(type_name = "side", rename_all = "snake_case")]
 pub enum Side {
     Ask,
     Bid,
@@ -115,8 +115,9 @@ impl TryFrom<u8> for Restriction {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
 #[serde(rename_all = "snake_case")]
+#[sqlx(type_name = "order_state", rename_all = "snake_case")]
 pub enum OrderState {
     Open,
     Filled,

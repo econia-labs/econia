@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    book::PriceLevel,
+    book::PriceLevelWithId,
     order::{Fill, Order},
 };
 
@@ -42,7 +42,7 @@ pub enum Channel {
 pub enum Update {
     Orders(Order),
     Fills(Fill),
-    PriceLevels(PriceLevel), // TODO add more update types
+    PriceLevels(PriceLevelWithId), // TODO add more update types
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]

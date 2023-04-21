@@ -104,8 +104,14 @@ impl OrderBook {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct PriceLevel {
+pub struct PriceLevelWithId {
     pub market_id: u64,
+    pub price: u64,
+    pub size: u64,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct PriceLevel {
     pub price: u64,
     pub size: u64,
 }

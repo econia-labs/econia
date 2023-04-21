@@ -122,6 +122,14 @@ function test_python {
     cd $python_build_dir_inverse # Go back to repository root.
 }
 
+# Run Rust tests.
+function test_rust {
+    echo "Running Rust tests" # Print notice.
+    cd $rust_dir              # Navigate to Rust directory.
+    cargo test                # Run all tests.
+    cd $rust_dir_inverse      # Go back to repository root.
+}
+
 # Publish Move package using REST url in ~/.aptos/config.yaml config file.
 function publish {
     type=$1 # Get account type, persistent or temporary.
@@ -246,6 +254,7 @@ case "$1" in
         brew_install black                                 # Install Python code formatter.
         brew_install graphviz                              # Install graph visualizer.
         brew_install isort                                 # Install Python import sorter.
+        brew_install libpq                                 # Install Postgres C library.
         brew_install node                                  # Install JavaScript package manager.
         brew_install poetry                                # Install Python environment manager.
         brew_install pnpm                                  # Install performant NPM variant.
@@ -311,6 +320,8 @@ case "$1" in
     # Run pre-commit checks.
     pc)
         test_move       # Test Move code.
+        test_python     # Test Python code.
+        test_rust       # Test Rust code.
         build_move_docs # Build docs.
         format_code     # Format code.
         ;;
@@ -321,14 +332,17 @@ case "$1" in
     # Publish to temporary account.
     pt) publish temporary ;;
 
-    # Run all Python tests.
-    tp) test_python ;;
+    # Run Move unit tests with a filter, passing possible additional arguments.
+    tf) test_move --filter "${@:2}" ;;
 
     # Run all Move unit tests, passing possible additional arguments.
     tm) test_move "${@:2}" ;;
 
-    # Run Move unit tests with a filter, passing possible additional arguments.
-    tf) test_move --filter "${@:2}" ;;
+    # Run all Python tests.
+    tp) test_python ;;
+
+    # Run all Rust tests.
+    tr) test_rust ;;
 
     # Print invalid option.
     *) echo Invalid ;;

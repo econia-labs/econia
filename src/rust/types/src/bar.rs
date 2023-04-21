@@ -16,19 +16,25 @@ pub struct Bar {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Resolution {
     #[serde(rename = "1m")]
-    I1m,
+    R1m,
     #[serde(rename = "5m")]
-    I5m,
+    R5m,
     #[serde(rename = "15m")]
-    I15m,
+    R15m,
+    #[serde(rename = "30m")]
+    R30m,
+    #[serde(rename = "1h")]
+    R1h,
 }
 
 impl fmt::Display for Resolution {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match self {
-            Self::I1m => "1m",
-            Self::I5m => "5m",
-            Self::I15m => "15m",
+            Self::R1m => "1m",
+            Self::R5m => "5m",
+            Self::R15m => "15m",
+            Self::R30m => "30m",
+            Self::R1h => "1h",
         };
         write!(f, "{}", s)
     }

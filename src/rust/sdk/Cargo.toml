@@ -1,0 +1,26 @@
+[package]
+name = "econia-sdk"
+version = "1.0.0"
+edition = "2021"
+categories = ["crypto", "defi", "trading", "sdk"]
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+description = "SDK for interacting with Econia on Aptos"
+homepage = "https://econialabs.com"
+repository = "https://github.com/econia-labs/rust_sdk"
+keywords = ["aptos", "econia", "dex", "clob", "sdk", "blockchain"]
+
+[dependencies]
+aptos-api-types = { git = "https://github.com/aptos-labs/aptos-core", branch = "main" }
+aptos-sdk = { git = "https://github.com/aptos-labs/aptos-core", branch = "main" }
+econia-types = { package = "types", path = "../types" }
+futures = "0.3.24"
+hex = { version = "0.4.3" }
+reqwest = { version = "0.11.11" }
+serde = { version = "1.0.145", features = ["derive"] }
+serde_json = { version = "1.0.85" }
+serde_yaml = { version = "0.9.10" }
+thiserror = "1.0.40"
+
+[lib]
+path = "src/lib.rs"

@@ -44,5 +44,6 @@ types = { path = "../types" }
 
 [dev-dependencies]
 hyper = "0.14.24"
+rand = { version = "0.8.5", features = ["std_rng"] }
 tokio-tungstenite = "0.18.0"
 url = "2.3.1"

@@ -25,6 +25,7 @@
         "conda",
         "counterparties",
         "counterparty",
+        "crankless",
         "critbit",
         "critqueue",
         "deallocate",
@@ -88,5 +89,7 @@
     "esbonio.sphinx.confDir": "",
     "rust-analyzer.linkedProjects": [
         "./src/rust/Cargo.toml",
+        "./src/rust/sdk/Cargo.toml"
     ]
 }
+

@@ -39,7 +39,7 @@ pub async fn ws_handler(
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
 ) -> impl IntoResponse {
     tracing::info!("new websocket connection with client {}", addr);
-    ws.on_upgrade(move |ws| handle_socket(ws, state.sender, addr))
+    ws.on_upgrade(move |ws| handle_socket(ws, state.sender, state.market_ids, addr))
 }
 
 /// Checks whether the message received from the broadcast channel belongs to a
@@ -101,11 +101,13 @@ async fn outbound_message_handler(
 ///
 /// * `msg_i` - inbound message received from WebSocket client.
 /// * `subs` - mutex containing a hashset storing all the channels the client is subscribed to.
+/// * `market_ids` - hashset containing the ids of every available market.
 /// * `last_ping` - a mutex containing the date and time at which the last ping message was received.
 /// * `who` - client address.
 fn get_response_message(
     msg_i: InboundMessage,
     subs: &Mutex<HashSet<Channel>>,
+    market_ids: &HashSet<u64>,
     last_ping: &Mutex<DateTime<Utc>>,
     who: SocketAddr,
 ) -> Result<OutboundMessage, WebSocketError> {
@@ -136,6 +138,29 @@ fn get_response_message(
                     message: format!("already subscribed to channel `{}`", s),
                 })
             } else {
+                match channel {
+                    Channel::Orders {
+                        ref market_id,
+                        user_address: _,
+                    } => {
+                        if !market_ids.contains(market_id) {
+                            return Ok(OutboundMessage::Error {
+                                message: format!("market with id `{}` not found", market_id),
+                            });
+                        }
+                    }
+                    Channel::Fills {
+                        ref market_id,
+                        user_address: _,
+                    } => {
+                        if !market_ids.contains(market_id) {
+                            return Ok(OutboundMessage::Error {
+                                message: format!("market with id `{}` not found", market_id),
+                            });
+                        }
+                    }
+                    _ => {}
+                }
                 Ok(OutboundMessage::Confirm {
                     channel,
                     method: ConfirmMethod::Subscribe,
@@ -181,6 +206,7 @@ async fn inbound_message_handler(
     mut receiver: SplitStream<WebSocket>,
     tx: mpsc::Sender<OutboundMessage>,
     subs: Arc<Mutex<HashSet<Channel>>>,
+    market_ids: HashSet<u64>,
     last_ping: Arc<Mutex<DateTime<Utc>>>,
     who: SocketAddr,
 ) -> Result<(), WebSocketError> {
@@ -196,7 +222,8 @@ async fn inbound_message_handler(
                 );
                 match serde_json::from_str::<InboundMessage>(&s) {
                     Ok(msg_i) => {
-                        let msg_o = get_response_message(msg_i, &subs, &last_ping, who)?;
+                        let msg_o =
+                            get_response_message(msg_i, &subs, &market_ids, &last_ping, who)?;
                         tx.send(msg_o).await?;
                     }
                     Err(e) => {
@@ -295,7 +322,12 @@ async fn forward_message_handler(
 }
 
 /// WebSocket connection handler.
-async fn handle_socket(ws: WebSocket, btx: broadcast::Sender<Update>, who: SocketAddr) {
+async fn handle_socket(
+    ws: WebSocket,
+    btx: broadcast::Sender<Update>,
+    market_ids: HashSet<u64>,
+    who: SocketAddr,
+) {
     let (sender, receiver) = ws.split();
     let brx = btx.subscribe();
     let (mtx, mrx) = mpsc::channel(16);
@@ -327,7 +359,9 @@ async fn handle_socket(ws: WebSocket, btx: broadcast::Sender<Update>, who: Socke
     let mtx2 = mtx.clone();
     let last_ping1 = last_ping.clone();
     let mut recv_task = tokio::spawn(async move {
-        if let Err(e) = inbound_message_handler(receiver, mtx2, subs, last_ping1, who).await {
+        if let Err(e) =
+            inbound_message_handler(receiver, mtx2, subs, market_ids, last_ping1, who).await
+        {
             tracing::error!(
                 "websocket connection with client {} failed on inbound message handler: {}",
                 who,
@@ -375,49 +409,21 @@ async fn handle_socket(ws: WebSocket, btx: broadcast::Sender<Update>, who: Socke
 
 #[cfg(test)]
 mod tests {
-    use std::net::TcpListener;
-
-    use axum::extract::connect_info::MockConnectInfo;
     use chrono::TimeZone;
     use redis::AsyncCommands;
-    use sqlx::PgPool;
     use tokio_tungstenite::{connect_async, tungstenite::Message};
     use url::Url;
 
-    use crate::{get_market_ids, load_config, routes::router, start_redis_channels};
+    use crate::{load_config, tests::spawn_test_server};
 
     use super::*;
 
+    /// Test to send a ping message to the WebSocket API and checks that
+    /// a pong message is returned.
     #[tokio::test]
     async fn test_websocket_ping_response() {
         let config = load_config();
-        let pool = PgPool::connect(&config.database_url)
-            .await
-            .expect("Could not connect to DATABASE_URL");
-
-        let market_ids = get_market_ids(pool.clone()).await;
-
-        let (btx, mut brx) = broadcast::channel(16);
-        let _conn = start_redis_channels(config.redis_url, market_ids, btx.clone()).await;
-
-        let state = AppState { pool, sender: btx };
-        let app = router(state).layer(MockConnectInfo(SocketAddr::from(([0, 0, 0, 0], 3000))));
-
-        tokio::spawn(async move {
-            // keep broadcast channel alive
-            while let Ok(_) = brx.recv().await {}
-        });
-
-        let listener = TcpListener::bind("0.0.0.0:8000".parse::<SocketAddr>().unwrap()).unwrap();
-        let addr = listener.local_addr().unwrap();
-
-        tokio::spawn(async move {
-            axum::Server::from_tcp(listener)
-                .unwrap()
-                .serve(app.into_make_service())
-                .await
-                .unwrap();
-        });
+        let addr = spawn_test_server(config).await;
 
         let ws_url = Url::parse(&format!("ws://{}/ws", addr)).unwrap();
         let (mut ws_stream, _) = connect_async(ws_url).await.unwrap();
@@ -436,36 +442,13 @@ mod tests {
         }
     }
 
+    /// Test to send a subscribe message to the WebSocket API and checks that
+    /// a confirmation message is returned, and that the confirmation message
+    /// is in the correct format.
     #[tokio::test]
     async fn test_websocket_subscribe_response() {
         let config = load_config();
-        let pool = PgPool::connect(&config.database_url)
-            .await
-            .expect("Could not connect to DATABASE_URL");
-
-        let market_ids = get_market_ids(pool.clone()).await;
-
-        let (btx, mut brx) = broadcast::channel(16);
-        let _conn = start_redis_channels(config.redis_url, market_ids, btx.clone()).await;
-
-        let state = AppState { pool, sender: btx };
-        let app = router(state).layer(MockConnectInfo(SocketAddr::from(([0, 0, 0, 0], 3000))));
-
-        tokio::spawn(async move {
-            // keep broadcast channel alive
-            while let Ok(_) = brx.recv().await {}
-        });
-
-        let listener = TcpListener::bind("0.0.0.0:8000".parse::<SocketAddr>().unwrap()).unwrap();
-        let addr = listener.local_addr().unwrap();
-
-        tokio::spawn(async move {
-            axum::Server::from_tcp(listener)
-                .unwrap()
-                .serve(app.into_make_service())
-                .await
-                .unwrap();
-        });
+        let addr = spawn_test_server(config).await;
 
         let ws_url = Url::parse(&format!("ws://{}/ws", addr)).unwrap();
         let (mut ws_stream, _) = connect_async(ws_url).await.unwrap();
@@ -490,36 +473,16 @@ mod tests {
         }
     }
 
+    /// Test to send a subscribe message to the WebSocket API and first checks
+    /// that the correct confirmation message is returned. Then, it sends an
+    /// order update to the corresponding Redis pubsub channel, and checks that
+    /// the correct order update message is sent to the client.
     #[tokio::test]
     async fn test_websocket_order_update() {
         let config = load_config();
-        let pool = PgPool::connect(&config.database_url)
-            .await
-            .expect("Could not connect to DATABASE_URL");
-
-        let market_ids = get_market_ids(pool.clone()).await;
-
-        let (btx, mut brx) = broadcast::channel(16);
-        let mut conn = start_redis_channels(config.redis_url, market_ids, btx.clone()).await;
-
-        let state = AppState { pool, sender: btx };
-        let app = router(state).layer(MockConnectInfo(SocketAddr::from(([0, 0, 0, 0], 3000))));
-
-        tokio::spawn(async move {
-            // keep broadcast channel alive
-            while let Ok(_) = brx.recv().await {}
-        });
-
-        let listener = TcpListener::bind("0.0.0.0:8000".parse::<SocketAddr>().unwrap()).unwrap();
-        let addr = listener.local_addr().unwrap();
-
-        tokio::spawn(async move {
-            axum::Server::from_tcp(listener)
-                .unwrap()
-                .serve(app.into_make_service())
-                .await
-                .unwrap();
-        });
+        let client = redis::Client::open(config.redis_url.clone()).unwrap();
+        let mut conn = client.get_tokio_connection().await.unwrap();
+        let addr = spawn_test_server(config).await;
 
         let ws_url = Url::parse(&format!("ws://{}/ws", addr)).unwrap();
         let (mut ws_stream, _) = connect_async(ws_url).await.unwrap();
@@ -581,36 +544,16 @@ mod tests {
         }
     }
 
+    /// Test to send a subscribe message to the WebSocket API and first checks
+    /// that the correct confirmation message is returned. Then, it sends an
+    /// fill update to the corresponding Redis pubsub channel, and checks that
+    /// the correct fill update message is sent to the client.
     #[tokio::test]
     async fn test_websocket_fill_update() {
         let config = load_config();
-        let pool = PgPool::connect(&config.database_url)
-            .await
-            .expect("Could not connect to DATABASE_URL");
-
-        let market_ids = get_market_ids(pool.clone()).await;
-
-        let (btx, mut brx) = broadcast::channel(16);
-        let mut conn = start_redis_channels(config.redis_url, market_ids, btx.clone()).await;
-
-        let state = AppState { pool, sender: btx };
-        let app = router(state).layer(MockConnectInfo(SocketAddr::from(([0, 0, 0, 0], 3000))));
-
-        tokio::spawn(async move {
-            // keep broadcast channel alive
-            while let Ok(_) = brx.recv().await {}
-        });
-
-        let listener = TcpListener::bind("0.0.0.0:8000".parse::<SocketAddr>().unwrap()).unwrap();
-        let addr = listener.local_addr().unwrap();
-
-        tokio::spawn(async move {
-            axum::Server::from_tcp(listener)
-                .unwrap()
-                .serve(app.into_make_service())
-                .await
-                .unwrap();
-        });
+        let client = redis::Client::open(config.redis_url.clone()).unwrap();
+        let mut conn = client.get_tokio_connection().await.unwrap();
+        let addr = spawn_test_server(config).await;
 
         let ws_url = Url::parse(&format!("ws://{}/ws", addr)).unwrap();
         let (mut ws_stream, _) = connect_async(ws_url).await.unwrap();
@@ -660,6 +603,137 @@ mod tests {
                     assert_eq!(
                         msg.to_string(),
                         r#"{"event":"update","channel":"fills","data":{"market_id":0,"maker_order_id":100,"maker":"0x1","maker_side":"bid","custodian_id":null,"size":1000,"price":1000,"time":"2023-03-01T00:00:00Z"}}"#
+                    );
+                    return;
+                }
+                _ => {
+                    panic!("received more messages than expected");
+                }
+            }
+            i += 1;
+        }
+    }
+
+    /// Test to send a subscribe message to the WebSocket API with an invalid
+    /// `market_id` parameter, and checks that an error message indicating that
+    /// a market with the provided ID could not be found is sent.
+    #[tokio::test]
+    async fn test_websocket_unknown_market_id() {
+        let config = load_config();
+        let addr = spawn_test_server(config).await;
+
+        let ws_url = Url::parse(&format!("ws://{}/ws", addr)).unwrap();
+        let (mut ws_stream, _) = connect_async(ws_url).await.unwrap();
+
+        let market_id = 999;
+        let user_address = "0x1".to_string();
+
+        let sub_msg = InboundMessage::Subscribe(Channel::Orders {
+            market_id,
+            user_address: user_address.clone(),
+        });
+
+        ws_stream
+            .send(Message::Text(serde_json::to_string(&sub_msg).unwrap()))
+            .await
+            .unwrap();
+
+        if let Some(Ok(msg)) = ws_stream.next().await {
+            assert_eq!(
+                msg.to_string(),
+                r#"{"event":"error","message":"market with id `999` not found"}"#
+            );
+        } else {
+            panic!("did not receive response from websocket");
+        }
+    }
+
+    /// Test to send a subscribe message to the WebSocket API and first checks
+    /// that the correct confirmation message is returned. Then, it sends a
+    /// cancellation update to the corresponding Redis pubsub channel, and checks
+    /// that the correct order update is sent to the client.
+    #[tokio::test]
+    async fn test_websocket_order_cancel() {
+        let config = load_config();
+        let client = redis::Client::open(config.redis_url.clone()).unwrap();
+        let mut conn = client.get_tokio_connection().await.unwrap();
+        let addr = spawn_test_server(config).await;
+
+        let ws_url = Url::parse(&format!("ws://{}/ws", addr)).unwrap();
+        let (mut ws_stream, _) = connect_async(ws_url).await.unwrap();
+
+        let market_id = 0;
+        let user_address = "0x1".to_string();
+
+        let sub_msg = InboundMessage::Subscribe(Channel::Orders {
+            market_id,
+            user_address: user_address.clone(),
+        });
+
+        ws_stream
+            .send(Message::Text(serde_json::to_string(&sub_msg).unwrap()))
+            .await
+            .unwrap();
+
+        tokio::spawn(async move {
+            // Send message for placing order.
+            let order = types::order::Order {
+                market_order_id: 100,
+                market_id,
+                side: types::order::Side::Bid,
+                size: 1000,
+                price: 1000,
+                user_address: user_address.clone(),
+                custodian_id: None,
+                order_state: types::order::OrderState::Open,
+                created_at: Utc.with_ymd_and_hms(2023, 3, 1, 0, 0, 0).unwrap(),
+            };
+            let update: Update = Update::Orders(order);
+            let s = serde_json::to_string(&update).unwrap();
+
+            conn.publish::<&str, String, i32>(format!("orders:{}", market_id).as_str(), s.clone())
+                .await
+                .unwrap();
+
+            // Send message for cancelling order.
+            let order = types::order::Order {
+                market_order_id: 100,
+                market_id,
+                side: types::order::Side::Bid,
+                size: 1000,
+                price: 1000,
+                user_address,
+                custodian_id: None,
+                order_state: types::order::OrderState::Cancelled,
+                created_at: Utc.with_ymd_and_hms(2023, 3, 1, 0, 0, 0).unwrap(),
+            };
+            let update: Update = Update::Orders(order);
+            let s = serde_json::to_string(&update).unwrap();
+
+            conn.publish::<&str, String, i32>(format!("orders:{}", market_id).as_str(), s.clone())
+                .await
+                .unwrap();
+        });
+
+        let mut i = 0;
+        while let Some(Ok(msg)) = ws_stream.next().await {
+            match i {
+                0 => {
+                    assert_eq!(
+                        msg.to_string(),
+                        r#"{"event":"confirm","channel":"orders","params":{"market_id":0,"user_address":"0x1"},"method":"subscribe"}"#
+                    );
+                }
+                1 => {
+                    assert_eq!(
+                        msg.to_string(),
+                        r#"{"event":"update","channel":"orders","data":{"market_order_id":100,"market_id":0,"side":"bid","size":1000,"price":1000,"user_address":"0x1","custodian_id":null,"order_state":"open","created_at":"2023-03-01T00:00:00Z"}}"#
+                    );
+                }
+                2 => {
+                    assert_eq!(
+                        msg.to_string(),
+                        r#"{"event":"update","channel":"orders","data":{"market_order_id":100,"market_id":0,"side":"bid","size":1000,"price":1000,"user_address":"0x1","custodian_id":null,"order_state":"cancelled","created_at":"2023-03-01T00:00:00Z"}}"#
                     );
                     return;
                 }

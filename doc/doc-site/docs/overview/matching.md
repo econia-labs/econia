@@ -1,15 +1,15 @@
 # Matching
 
-Econia's matching engine is atomic, which means that taker orders either fill against maker orders during the transaction in which they were placed, or do not fill at all.
+Econia's matching engine is atomic and crankless, which means that taker orders either fill against maker orders during the transaction in which they are placed, or do not fill at all.
 This fully-autonomous process eliminates the need for a so-called "crank" sometimes required by other on-chain order books, which rely on third parties to trigger the matching process via external transactions.
 In practice, this means that Econia matching operations can be stacked back-to-back within a single transaction, for maximum composability.
 
 Moreover, Econia's matching engine routes assets directly between counterparties, rather than updating units of account within a central vault.
-This peer-to-peer approach reduces the size of an economic attack target (the vault) by distributing assets among constituents, and eliminates transaction collisions against the matching engine that would otherwise result from user deposits or withdrawals against a global resource.
+This peer-to-peer approach reduces the size of an economic attack target (a hypothetical vault) by distributing assets among constituents, and eliminates transaction collisions against the matching engine that would otherwise result from user deposits or withdrawals against a global resource.
 Econia's matching engine is additionally parallelized across markets, such that `APT/USDC` orders and `wBTC/USDC` orders, for example, can fill concurrently.
 
 Econia's matching engine operates purely on integers, thus eliminating potential arithmetic errors incurred by floating point operations.
-This efficient computational strategy is essentially implemented as a loop over head of the [AVL queue] for a market, as seen in [`match()`].
+This efficient computational strategy is essentially implemented as a loop over the head of the [AVL queue] for a market, as seen in [`match()`].
 
 ## Functions
 
@@ -17,11 +17,11 @@ Econia's [market module documentation] contains a comprehensive breakdown of the
 
 ![](/img/matching.svg)
 
-Assorted wrappers allow for orders to be placed by a signing user, by a [custodian], in a `public fun` or in a `public entry fun`, etc.
+Assorted wrappers allow for orders to be placed by a signing user, by a [custodian], in a `public fun` or in a `public entry fun` context, etc.
 
 ## Limit orders
 
-Econia supports limit orders with a side, size, price, and restriction, per [`place_limit_order()`].
+Econia supports limit orders with a side, size, price, and restriction, per [`place_limit_order()`] and its associated wrappers.
 Notably, this include a size in [lots] and an [integer price].
 
 Depending on the price and restriction, a limit order will first match across the spread as a taker, then will post as a maker order.
@@ -67,12 +67,15 @@ continuing the above example, if someone places a 0% passive advance bid, a fron
 Notably, however, even if the legitimate order holder has their bid filled at a price of 105, they will still end up buying at a better price than if they were to place a market order (which would fill against the minimum ask at a price of 106).
 Hence passive advance orders can, in the presence of MEV, be used to effectively eliminate paying taker fees, if a user is willing to risk that their order might not fill.
 
-## Taker-only orders
+## Market orders
 
-Per [`place_market_order()`], Econia supports taker-only market orders that fill from a user's [market account].
+Per [`place_market_order()`] and its associated wrappers, Econia supports taker-only market orders that fill from a user's [market account].
+Like [limit orders], market orders specify an [integer price] and a size in [lots].
+
+## Swaps
+
 Econia also supports taker-only swaps per assorted wrappers for [`swap()`], which fill from [coins or generic assets] held outside of a [market account].
-
-Like [limit orders], taker-only orders specify an [integer price], but instead of specifying a size in [lots], taker-only orders indicate a minimum and maximum amount of [base and quote asset] to trade.
+Like [limit orders], swaps specify an [integer price], but instead of specifying a size in [lots], swaps indicate a minimum and maximum amount of [base and quote asset] to trade.
 This is like saying "I am willing to buy up to 36 oranges (maximum base) but no fewer than 12 (minimum base), and I am willing to spend up to $3.50 (maximum quote) but no more than $1.50 per dozen (price)".
 
 ## Self match behavior
@@ -110,19 +113,24 @@ After matching and fees, the taker thus experiences a net change of up to 100 qu
 
 ## Units and flags
 
-Both [limit orders] and [taker-only orders] accept an [integer price], but rely on different asset units and flags:
+[Limit orders], [market orders], and [swaps] rely on different asset units and flags:
 
 For [limit orders]:
 
 - A `side`, either [`ASK`] or [`BID`].
+- An integer limit price.
 - A `size`, denoted in [lots].
 
-For [taker-only orders]:
+For [market orders] and [swaps]:
 
 - A `direction`, either [`BUY`] or [`SELL`].
-- Minimum and maximum base and quote amounts, denoted in [indivisible subunits].
+- A `size`, denoted in [lots].
 
-For [limit orders], which can match as a maker or as a taker, the specified `size` is matched regardless of fees, whereas for [taker-only orders], maximum quote trade amounts are [adjusted for taker fees] per above.
+For [market orders] and [swaps]:
+
+- A `direction`, either [`BUY`] or [`SELL`].
+- An integer limit price.
+- Minimum and maximum base and quote amounts, denoted in [indivisible subunits].
 
 Per [issue 56], in the interest of developer ease, `side` and `direction` flag polarities are equivalent, such that [`ASK`] `==` [`SELL`] and [`BID`] `==` [`BUY`].
 
@@ -139,6 +147,7 @@ Per [issue 56], in the interest of developer ease, `side` and `direction` flag p
 [market account]: ./market-accounts
 [market module documentation]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md
 [market orders]: #taker-only-orders
+[swaps]: #swaps
 [taker fees]: ./incentives
 [taker-only orders]: #taker-only-orders
 [`abort`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_ABORT

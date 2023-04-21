@@ -23,6 +23,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
       - name: Authenticate to Google Cloud
         id: "auth"
         uses: google-github-actions/auth@v1
@@ -44,6 +47,7 @@ jobs:
       - name: Build and push to Artifact Registry
         uses: docker/build-push-action@v4
         with:
+          context: .
           push: true
           tags: asia-northeast1-docker.pkg.dev/econia-0/econia-backend/api:latest
           file: ./src/rust/api/Dockerfile

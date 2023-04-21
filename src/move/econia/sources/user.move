@@ -2604,6 +2604,33 @@ module econia::user {
         market_order_id != (NIL as u128) // Return true if non-null ID.
     }
 
+    #[test_only]
+    /// Set market order ID for given order.
+    public fun set_market_order_id_test(
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64,
+        side: bool,
+        order_access_key: u64,
+        market_order_id: u128
+    ) acquires MarketAccounts {
+        // Mutably borrow market accounts map.
+        let market_accounts_map_ref_mut =
+            &mut borrow_global_mut<MarketAccounts>(user_address).map;
+        // Get market account ID.
+        let market_account_id = get_market_account_id(market_id, custodian_id);
+        let market_account_ref_mut = // Mutably borrow market account.
+            table::borrow_mut(market_accounts_map_ref_mut, market_account_id);
+        // Mutably borrow corresponding orders tablist based on side.
+        let (orders_ref_mut) = if (side == ASK)
+            &mut market_account_ref_mut.asks else
+            &mut market_account_ref_mut.bids;
+        let order_ref_mut = // Mutably borrow order.
+            tablist::borrow_mut(orders_ref_mut, order_access_key);
+        // Set new market order ID.
+        order_ref_mut.market_order_id = market_order_id;
+    }
+
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

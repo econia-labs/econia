@@ -1971,6 +1971,9 @@ module econia::market {
 
     /// Change maker order size on book and in user's market account.
     ///
+    /// Priority for given price level is preserved for size decrease,
+    /// but lost for size increase.
+    ///
     /// The market order ID is first checked to see if the AVL queue
     /// access key encoded within can even be used for an AVL queue
     /// borrow operation in the first place. Then during the call to
@@ -2005,9 +2008,11 @@ module econia::market {
     ///
     /// * `test_change_order_size_ask_custodian()`
     /// * `test_change_order_size_bid_user()`
+    /// * `test_change_order_size_bid_user_new_tail()`
     ///
     /// # Failure testing
     ///
+    /// * `test_change_order_size_insertion_error()`
     /// * `test_change_order_size_invalid_custodian()`
     /// * `test_change_order_size_invalid_market_id()`
     /// * `test_change_order_size_invalid_market_order_id_bogus()`
@@ -3615,6 +3620,28 @@ module econia::market {
         option::is_some(value_option_ref)
     }
 
+    #[test_only]
+    /// Return if order with market order ID is local price queue tail.
+    public fun is_local_tail_test(
+        market_id: u64,
+        side: bool,
+        market_order_id: u128
+    ): bool acquires OrderBooks {
+        // Get address of resource account having order books.
+        let resource_address = resource_account::get_address();
+        let order_books_map_ref = // Immutably borrow order books map.
+            &borrow_global<OrderBooks>(resource_address).map;
+        let order_book_ref = // Immutably borrow market order book.
+            tablist::borrow(order_books_map_ref, market_id);
+        // Immutably borrow corresponding orders AVL queue.
+        let orders_ref = if (side == ASK) &order_book_ref.asks else
+            &order_book_ref.bids;
+        // Get AVL queue access key from market order ID.
+        let avlq_access_key = ((market_order_id & (HI_64 as u128)) as u64);
+        // Return if corresponding order is tail of local price queue.
+        avl_queue::is_local_tail(orders_ref, avlq_access_key)
+    }
+
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Test-only constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -4053,7 +4080,7 @@ module econia::market {
 
     #[test]
     /// Verify state updates for changing ask under authority of
-    /// custodian.
+    /// custodian, for size increase at tail of price level queue.
     fun test_change_order_size_ask_custodian()
     acquires OrderBooks {
         // Initialize markets, users, and an integrator.
@@ -4093,9 +4120,13 @@ module econia::market {
         let (market_order_id, _, _, _) = place_limit_order_custodian<BC, QC>(
             maker_address, market_id, integrator, side, size_start,
             price, restriction, self_match_behavior, &custodian_capability);
+        // Check if order is tail of corresponding price level.
+        assert!(is_local_tail_test(market_id, side, market_order_id), 0);
         change_order_size_custodian( // Change order size.
             maker_address, market_id, side, market_order_id, size_end,
             &custodian_capability);
+        // Check if order is tail of corresponding price level.
+        assert!(is_local_tail_test(market_id, side, market_order_id), 0);
         // Drop custodian capability.
         registry::drop_custodian_capability_test(custodian_capability);
         // Get fields for maker order on book.
@@ -4131,7 +4162,7 @@ module econia::market {
 
     #[test]
     /// Verify state updates for changing bid under authority of signing
-    /// user.
+    /// user, for size decrease at tail of queue.
     fun test_change_order_size_bid_user()
     acquires OrderBooks {
         // Initialize markets, users, and an integrator.
@@ -4144,21 +4175,21 @@ module econia::market {
         let maker_address       = address_of(&maker);
         let restriction         = NO_RESTRICTION;
         let price               = 10;
-        let size_start          = MIN_SIZE_COIN;
-        let size_end            = size_start * 2;
+        let size_start          = MIN_SIZE_COIN * 2;
+        let size_end            = MIN_SIZE_COIN;
         let self_match_behavior = ABORT;
         // Declare base/quote posted with final order.
         let base_maker  = size_end * LOT_SIZE_COIN;
         let quote_maker = size_end * price * TICK_SIZE_COIN;
         // Declare maker deposit amounts.
-        let deposit_base  = HI_64 - base_maker;
-        let deposit_quote = quote_maker;
+        let deposit_base  = HI_64 / 2;
+        let deposit_quote = HI_64 / 2;
         // Declare expected maker asset counts after size change.
         let base_total_end      = deposit_base;
         let base_available_end  = base_total_end;
-        let base_ceiling_end    = HI_64;
+        let base_ceiling_end    = base_total_end + base_maker;
         let quote_total_end     = deposit_quote;
-        let quote_available_end = 0;
+        let quote_available_end = deposit_quote - quote_maker;
         let quote_ceiling_end   = deposit_quote;
         // Deposit maker coins.
         user::deposit_coins<BC>(maker_address, market_id, custodian_id,
@@ -4169,8 +4200,12 @@ module econia::market {
         let (market_order_id, _, _, _) = place_limit_order_user<BC, QC>(
             &maker, market_id, integrator, side, size_start, price,
             restriction, self_match_behavior);
+        // Check if order is tail of corresponding price level.
+        assert!(is_local_tail_test(market_id, side, market_order_id), 0);
         change_order_size_user( // Change order size.
             &maker, market_id, side, market_order_id, size_end);
+        // Check if order is tail of corresponding price level.
+        assert!(is_local_tail_test(market_id, side, market_order_id), 0);
         // Get fields for maker order on book.
         let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
             get_order_fields_test(market_id, side, market_order_id);
@@ -4200,6 +4235,156 @@ module econia::market {
             maker_address, market_id, custodian_id) == base_total_end, 0);
         assert!(user::get_collateral_value_simple_test<QC>(
             maker_address, market_id, custodian_id) == quote_total_end, 0);
+    }
+
+    #[test]
+    /// Verify state updates for changing bid under authority of signing
+    /// user, for size increase not at tail of queue.
+    fun test_change_order_size_bid_user_new_tail()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (maker, _) = init_markets_users_integrator_test();
+        // Declare order parameters.
+        let side                = BID;
+        let market_id           = MARKET_ID_COIN;
+        let integrator          = @integrator;
+        let custodian_id        = NO_CUSTODIAN;
+        let maker_address       = address_of(&maker);
+        let restriction         = NO_RESTRICTION;
+        let price               = 10;
+        let size_start_0        = MIN_SIZE_COIN;
+        let size_end_0          = MIN_SIZE_COIN * 2;
+        let size_1              = MIN_SIZE_COIN;
+        let self_match_behavior = ABORT;
+        // Declare base/quote posted per final orders.
+        let base_maker  = (size_end_0 + size_1) * LOT_SIZE_COIN;
+        let quote_maker = (size_end_0 + size_1) * price * TICK_SIZE_COIN;
+        // Declare maker deposit amounts.
+        let deposit_base  = HI_64 / 2;
+        let deposit_quote = HI_64 / 2;
+        // Declare expected maker asset counts after size change.
+        let base_total_end      = deposit_base;
+        let base_available_end  = base_total_end;
+        let base_ceiling_end    = base_total_end + base_maker;
+        let quote_total_end     = deposit_quote;
+        let quote_available_end = deposit_quote - quote_maker;
+        let quote_ceiling_end   = deposit_quote;
+        // Deposit maker coins.
+        user::deposit_coins<BC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(deposit_base));
+        user::deposit_coins<QC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(deposit_quote));
+        // Place first maker order, storing market order ID for lookup.
+        let (market_order_id_0, _, _, _) = place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, side, size_start_0, price,
+            restriction, self_match_behavior);
+        // Check if order is tail of corresponding price level.
+        assert!(is_local_tail_test(market_id, side, market_order_id_0), 0);
+        // Place second maker order, storing market order ID for lookup.
+        let (market_order_id_1, _, _, _) = place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, side, size_1, price,
+            restriction, self_match_behavior);
+        // Verify order tail checks at corresponding price level.
+        assert!(!is_local_tail_test(market_id, side, market_order_id_0), 0);
+        assert!(is_local_tail_test(market_id, side, market_order_id_1), 0);
+        change_order_size_user( // Change order size.
+            &maker, market_id, side, market_order_id_0, size_end_0);
+        // Verify order tail checks at corresponding price level.
+        assert!(is_local_tail_test(market_id, side, market_order_id_0), 0);
+        assert!(!is_local_tail_test(market_id, side, market_order_id_1), 0);
+        // Get fields for maker order on book.
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
+            get_order_fields_test(market_id, side, market_order_id_0);
+        // Assert field returns except access key, used for user lookup.
+        assert!(size_r         == size_end_0, 0);
+        assert!(price_r        == price, 0);
+        assert!(user_r         == maker_address, 0);
+        assert!(custodian_id_r == custodian_id, 0);
+        // Assert user-side maker order fields.
+        let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
+            maker_address, market_id, custodian_id, side, order_access_key);
+        assert!(market_order_id_r == market_order_id_0, 0);
+        assert!(size_r            == size_end_0, 0);
+        // Assert maker's asset counts.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            user::get_asset_counts_internal(
+                maker_address, market_id, custodian_id);
+        assert!(base_total      == base_total_end, 0);
+        assert!(base_available  == base_available_end, 0);
+        assert!(base_ceiling    == base_ceiling_end, 0);
+        assert!(quote_total     == quote_total_end, 0);
+        assert!(quote_available == quote_available_end, 0);
+        assert!(quote_ceiling   == quote_ceiling_end, 0);
+        // Assert collateral amounts.
+        assert!(user::get_collateral_value_simple_test<BC>(
+            maker_address, market_id, custodian_id) == base_total_end, 0);
+        assert!(user::get_collateral_value_simple_test<QC>(
+            maker_address, market_id, custodian_id) == quote_total_end, 0);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = E_SIZE_CHANGE_INSERTION_ERROR)]
+    /// Verify failure for changing bid under authority of signing user,
+    /// for size increase not at tail of queue, where there is an AVL
+    /// queue access key mismatch. Based on
+    /// `test_change_order_size_bid_user_new_tail`.
+    fun test_change_order_size_insertion_error()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (maker, _) = init_markets_users_integrator_test();
+        // Declare order parameters.
+        let side                = BID;
+        let market_id           = MARKET_ID_COIN;
+        let integrator          = @integrator;
+        let custodian_id        = NO_CUSTODIAN;
+        let maker_address       = address_of(&maker);
+        let restriction         = NO_RESTRICTION;
+        let price               = 10;
+        let size_start_0        = MIN_SIZE_COIN;
+        let size_end_0          = MIN_SIZE_COIN * 2;
+        let size_1              = MIN_SIZE_COIN;
+        let self_match_behavior = ABORT;
+        // Declare maker deposit amounts.
+        let deposit_base  = HI_64 / 2;
+        let deposit_quote = HI_64 / 2;
+        // Deposit maker coins.
+        user::deposit_coins<BC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(deposit_base));
+        user::deposit_coins<QC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(deposit_quote));
+        // Place first maker order, storing market order ID for lookup.
+        let (market_order_id, _, _, _) = place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, side, size_start_0, price,
+            restriction, self_match_behavior);
+        // Get order access key for looking up user-side.
+        let (_, _, _, _, order_access_key) = get_order_fields_test(
+            market_id, side, market_order_id);
+        place_limit_order_user<BC, QC>( // Place second maker order.
+            &maker, market_id, integrator, side, size_1, price,
+            restriction, self_match_behavior);
+        // Get maker order counter from market order ID.
+        let order_counter = ((market_order_id >> SHIFT_COUNTER) as u64);
+        // Get AVL queue access key from market order ID.
+        let avlq_access_key = ((market_order_id & (HI_64 as u128)) as u64);
+        // Flip AVL queue access key sort order bit flag.
+        let avlq_access_key_doctored =
+            avl_queue::flip_access_key_sort_order_bit_test(avlq_access_key);
+        // Get new market order ID from AVL queue access key, counter.
+        let market_order_id_doctored = (avlq_access_key_doctored as u128) |
+            ((order_counter as u128) << SHIFT_COUNTER);
+        // Set doctored market order ID user-side.
+        user::set_market_order_id_test(
+            maker_address, market_id, custodian_id, side, order_access_key,
+            market_order_id_doctored);
+        // Change order size by calling with the doctored market order
+        // ID, which is identical except for having the sort order bit
+        // flag flipped. The bit flag is metadata that goes unchecked
+        // during AVL queue insert/remove operations. Hence the relevant
+        // AVL queue access key check can be tripped without tripping
+        // user-side market order ID checks.
+        change_order_size_user(
+            &maker, market_id, side, market_order_id_doctored, size_end_0);
     }
 
     #[test]

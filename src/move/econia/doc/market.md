@@ -1612,6 +1612,17 @@ Limit order size results in base asset amount overflow.
 
 
 
+<a name="0xc0deb00c_market_E_SIZE_CHANGE_INSERTION_ERROR"></a>
+
+Order size change requiring insertion resulted in an AVL queue
+access key mismatch.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_SIZE_CHANGE_INSERTION_ERROR">E_SIZE_CHANGE_INSERTION_ERROR</a>: u64 = 30;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_market_E_SIZE_PRICE_QUOTE_OVERFLOW"></a>
 
 Limit order size and price results in quote amount overflow.
@@ -3952,6 +3963,9 @@ custodian ID of order on order book having market order ID.
 
 Change maker order size on book and in user's market account.
 
+Priority for given price level is preserved for size decrease,
+but lost for size increase.
+
 The market order ID is first checked to see if the AVL queue
 access key encoded within can even be used for an AVL queue
 borrow operation in the first place. Then during the call to
@@ -4002,6 +4016,7 @@ custodian ID of order on order book having market order ID.
 
 * <code>test_change_order_size_ask_custodian()</code>
 * <code>test_change_order_size_bid_user()</code>
+* <code>test_change_order_size_bid_user_new_tail()</code>
 
 
 <a name="@Failure_testing_91"></a>
@@ -4009,6 +4024,7 @@ custodian ID of order on order book having market order ID.
 ### Failure testing
 
 
+* <code>test_change_order_size_insertion_error()</code>
 * <code>test_change_order_size_invalid_custodian()</code>
 * <code>test_change_order_size_invalid_market_id()</code>
 * <code>test_change_order_size_invalid_market_order_id_bogus()</code>
@@ -4051,6 +4067,9 @@ custodian ID of order on order book having market order ID.
         orders_ref_mut, avlq_access_key);
     // Assert that borrow from the AVL queue is possible.
     <b>assert</b>!(borrow_possible, <a href="market.md#0xc0deb00c_market_E_INVALID_MARKET_ORDER_ID">E_INVALID_MARKET_ORDER_ID</a>);
+    // Check <b>if</b> order is at tail of queue for given price level.
+    <b>let</b> tail_of_price_level_queue =
+        <a href="avl_queue.md#0xc0deb00c_avl_queue_is_local_tail">avl_queue::is_local_tail</a>(orders_ref_mut, avlq_access_key);
     <b>let</b> order_ref_mut = // Mutably borrow order on order book.
         <a href="avl_queue.md#0xc0deb00c_avl_queue_borrow_mut">avl_queue::borrow_mut</a>(orders_ref_mut, avlq_access_key);
     // Assert passed <a href="user.md#0xc0deb00c_user">user</a> <b>address</b> is <a href="user.md#0xc0deb00c_user">user</a> holding order.
@@ -4063,12 +4082,40 @@ custodian ID of order on order book having market order ID.
     <a href="user.md#0xc0deb00c_user_change_order_size_internal">user::change_order_size_internal</a>(
         <a href="user.md#0xc0deb00c_user">user</a>, market_id, custodian_id, side, order_ref_mut.size, new_size,
         order_ref_mut.price, order_ref_mut.order_access_key, market_order_id);
-    // Update order on book <b>with</b> new size.
-    order_ref_mut.size = new_size;
+    // Get order price.
+    <b>let</b> price = <a href="avl_queue.md#0xc0deb00c_avl_queue_get_access_key_insertion_key">avl_queue::get_access_key_insertion_key</a>(avlq_access_key);
+    // If size change is for a size decrease or <b>if</b> order is at tail
+    // of given price level:
+    <b>if</b> ((new_size &lt; order_ref_mut.size) || tail_of_price_level_queue) {
+        // Mutate order on book <b>to</b> reflect new size, preserving spot
+        // in queue for the given price level.
+        order_ref_mut.size = new_size;
+    // If new size is more than <b>old</b> size (<a href="user.md#0xc0deb00c_user">user</a>-side function
+    // verifies that size is not equal) but order is not tail of
+    // queue for the given price level, priority should be lost:
+    } <b>else</b> {
+        // Remove order from AVL queue, pushing corresponding AVL
+        // queue list node onto unused list node stack.
+        <b>let</b> order = <a href="avl_queue.md#0xc0deb00c_avl_queue_remove">avl_queue::remove</a>(orders_ref_mut, avlq_access_key);
+        order.size = new_size; // Mutate order size.
+        // Insert at back of queue for given price level.
+        <b>let</b> new_avlq_access_key =
+            <a href="avl_queue.md#0xc0deb00c_avl_queue_insert">avl_queue::insert</a>(orders_ref_mut, price, order);
+        // Verify that new AVL queue access key is the same <b>as</b>
+        // before the size change: since list nodes are re-used, the
+        // AVL queue access key should be the same, even though the
+        // order is now the new tail of a doubly linked list for the
+        // given insertion key (back of queue for the given price
+        // level). Eviction is not checked because the AVL queue
+        // shape is the same before and after the remove/insert
+        // compound operation.
+        <b>assert</b>!(new_avlq_access_key == avlq_access_key,
+                <a href="market.md#0xc0deb00c_market_E_SIZE_CHANGE_INSERTION_ERROR">E_SIZE_CHANGE_INSERTION_ERROR</a>);
+    };
     // Emit a maker change <a href="">event</a>.
     <a href="_emit_event">event::emit_event</a>(&<b>mut</b> order_book_ref_mut.maker_events, <a href="market.md#0xc0deb00c_market_MakerEvent">MakerEvent</a>{
         market_id, side, market_order_id, <a href="user.md#0xc0deb00c_user">user</a>, custodian_id, type: <a href="market.md#0xc0deb00c_market_CHANGE">CHANGE</a>,
-        size: order_ref_mut.size, price: order_ref_mut.price});
+        size: new_size, price});
 }
 </code></pre>
 

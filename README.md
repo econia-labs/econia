@@ -118,11 +118,11 @@ Most Python commands are called on by [`scripts.sh`] commands, with dependencies
 
 ### Rust
 
-Econia contains a Rust API backend at [`src/rust`].
+Econia contains a Rust API backend (in development) at [`src/rust`].
 
 ### TypeScript
 
-Econia contains a TypeScript SDK at [`src/typescript/sdk`].
+Econia contains a TypeScript SDK (in development) at [`src/typescript/sdk`].
 
 ### Jupyter
 

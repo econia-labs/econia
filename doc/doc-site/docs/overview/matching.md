@@ -134,7 +134,6 @@ For [market orders] and [swaps]:
 
 Per [issue 56], in the interest of developer ease, `side` and `direction` flag polarities are equivalent, such that [`ASK`] `==` [`SELL`] and [`BID`] `==` [`BUY`].
 
-[adjusted for taker fees]: #fee-assessment
 [avl queue]: ./orders#order-book-structure
 [base and quote asset]: ./orders#units-and-market-parameters
 [coins or generic assets]: ./registry#markets
@@ -149,7 +148,6 @@ Per [issue 56], in the interest of developer ease, `side` and `direction` flag p
 [market orders]: #taker-only-orders
 [swaps]: #swaps
 [taker fees]: ./incentives
-[taker-only orders]: #taker-only-orders
 [`abort`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_ABORT
 [`ask`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_ASK
 [`assess_taker_fees()`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/incentives.md#0xc0deb00c_incentives_assess_taker_fees

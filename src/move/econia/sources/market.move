@@ -5704,11 +5704,7 @@ module econia::market {
         // Declare taker order parameters.
         let direction_taker     = if (side_maker == ASK) BUY else SELL;
         let self_match_behavior = ABORT;
-        let min_base            = 0;
         let max_base            = MAX_POSSIBLE;
-        let min_quote           = 0;
-        let max_quote           = MAX_POSSIBLE;
-        let limit_price         = price_maker;
         // Declare deposit amounts.
         let deposit_base  = HI_64 / 2;
         let deposit_quote = HI_64 / 2;
@@ -5723,8 +5719,8 @@ module econia::market {
             restriction, self_match_behavior);
         // Place an invalid taker order.
         place_market_order_user<BC, QC>(
-            &user, market_id, integrator, direction_taker, min_base, max_base,
-            min_quote, max_quote, limit_price, self_match_behavior);
+            &user, market_id, integrator, direction_taker, max_base,
+            self_match_behavior);
     }
 
     #[test]
@@ -5760,11 +5756,7 @@ module econia::market {
         let price_hi = integrator_divisor * taker_divisor * 2;
         // Declare taker order parameters.
         let direction_taker           = if (side_maker == ASK) BUY else SELL;
-        let min_base                  = 0;
         let max_base                  = MAX_POSSIBLE;
-        let min_quote                 = 0;
-        let max_quote                 = MAX_POSSIBLE;
-        let limit_price               = price_hi;
         let self_match_behavior_taker = CANCEL_BOTH;
         // Declare deposit amounts.
         let deposit_base  = HI_64 / 2;
@@ -5803,8 +5795,8 @@ module econia::market {
             market_id, side_maker, market_order_id_hi), 0);
         // Place taker order with self match.
         place_market_order_user<BC, QC>(
-            &user, market_id, integrator, direction_taker, min_base, max_base,
-            min_quote, max_quote, limit_price, self_match_behavior_taker);
+            &user, market_id, integrator, direction_taker,
+            max_base, self_match_behavior_taker);
         // Assert list node order inactive for low price, active for
         // high price.
         assert!(!is_list_node_order_active(
@@ -5874,11 +5866,7 @@ module econia::market {
         let price_hi = integrator_divisor * taker_divisor * 2;
         // Declare taker order parameters.
         let direction_taker           = if (side_maker == ASK) BUY else SELL;
-        let min_base                  = 0;
         let max_base                  = MAX_POSSIBLE;
-        let min_quote                 = 0;
-        let max_quote                 = MAX_POSSIBLE;
-        let limit_price               = price_hi;
         let self_match_behavior_taker = CANCEL_MAKER;
         // Declare taker match amounts.
         let size_taker  = size_maker;
@@ -5937,8 +5925,8 @@ module econia::market {
         // Place taker order with self match.
         let (base_trade_r, quote_trade_r, fee_r) =
                 place_market_order_user<BC, QC>(
-            &user, market_id, integrator, direction_taker, min_base, max_base,
-            min_quote, max_quote, limit_price, self_match_behavior_taker);
+            &user, market_id, integrator, direction_taker, max_base,
+            self_match_behavior_taker);
         // Assert returns.
         assert!(base_trade_r  == base_trade, 0);
         assert!(quote_trade_r == quote_trade, 0);
@@ -6012,11 +6000,7 @@ module econia::market {
         let price_hi = integrator_divisor * taker_divisor * 2;
         // Declare taker order parameters.
         let direction_taker           = if (side_maker == ASK) BUY else SELL;
-        let min_base                  = 0;
         let max_base                  = MAX_POSSIBLE;
-        let min_quote                 = 0;
-        let max_quote                 = MAX_POSSIBLE;
-        let limit_price               = price_hi;
         let self_match_behavior_taker = CANCEL_TAKER;
         // Declare deposit amounts.
         let deposit_base  = HI_64 / 2;
@@ -6066,8 +6050,8 @@ module econia::market {
             market_id, side_maker, market_order_id_hi), 0);
         // Place taker order with self match.
         place_market_order_user<BC, QC>(
-            &user, market_id, integrator, direction_taker, min_base, max_base,
-            min_quote, max_quote, limit_price, self_match_behavior_taker);
+            &user, market_id, integrator, direction_taker, max_base,
+            self_match_behavior_taker);
         // Assert list node orders active.
         assert!(is_list_node_order_active(
             market_id, side_maker, market_order_id_lo), 0);
@@ -6123,11 +6107,7 @@ module econia::market {
         // Declare taker order parameters.
         let direction_taker     = if (side_maker == ASK) BUY else SELL;
         let self_match_behavior = 0xff;
-        let min_base            = 0;
         let max_base            = MAX_POSSIBLE;
-        let min_quote           = 0;
-        let max_quote           = MAX_POSSIBLE;
-        let limit_price         = price_maker;
         // Declare deposit amounts.
         let deposit_base  = HI_64 / 2;
         let deposit_quote = HI_64 / 2;
@@ -6142,8 +6122,8 @@ module econia::market {
             restriction, self_match_behavior);
         // Place an invalid taker order.
         place_market_order_user<BC, QC>(
-            &user, market_id, integrator, direction_taker, min_base, max_base,
-            min_quote, max_quote, limit_price, self_match_behavior);
+            &user, market_id, integrator, direction_taker, max_base,
+            self_match_behavior);
     }
 
     #[test]
@@ -8098,17 +8078,12 @@ module econia::market {
         let custodian_id = NO_CUSTODIAN;
         let integrator = @integrator;
         let direction = BUY;
-        let min_base = 0;
         let max_base = MAX_POSSIBLE;
-        let min_quote = 0;
-        let max_quote = MAX_POSSIBLE;
-        let limit_price = HI_PRICE;
         let self_match_behavior = ABORT;
         // Attempt invalid invocation.
         place_market_order<QC, QC>(
             user_address, market_id, custodian_id, integrator, direction,
-            min_base, max_base, min_quote, max_quote, limit_price,
-            self_match_behavior);
+            max_base, self_match_behavior);
     }
 
     #[test]
@@ -8124,17 +8099,12 @@ module econia::market {
         let custodian_id = NO_CUSTODIAN;
         let integrator = @integrator;
         let direction = BUY;
-        let min_base = 0;
         let max_base = MAX_POSSIBLE;
-        let min_quote = 0;
-        let max_quote = MAX_POSSIBLE;
-        let limit_price = HI_PRICE;
         let self_match_behavior = ABORT;
         // Attempt invalid invocation.
         place_market_order<BC, BC>(
             user_address, market_id, custodian_id, integrator, direction,
-            min_base, max_base, min_quote, max_quote, limit_price,
-            self_match_behavior);
+            max_base, self_match_behavior);
     }
 
     #[test]
@@ -8184,8 +8154,8 @@ module econia::market {
             NO_RESTRICTION, self_match_behavior);
         // Place taker order.
         let (base_trade_r, quote_trade_r, fee_r) = place_market_order_user<
-            BC, QC>(&user_1, MARKET_ID_COIN, @integrator, BUY, 0, MAX_POSSIBLE,
-            0, quote_deposit, price, self_match_behavior);
+            BC, QC>(&user_1, MARKET_ID_COIN, @integrator, BUY, MAX_POSSIBLE,
+            self_match_behavior);
         // Assert returns.
         assert!(base_trade_r  == base_match, 0);
         assert!(quote_trade_r == quote_trade, 0);
@@ -8288,8 +8258,8 @@ module econia::market {
             CUSTODIAN_ID_USER_1); // Get custodian capability.
         let (base_trade_r, quote_trade_r, fee_r) =
             place_market_order_custodian<BC, QC>( // Place taker order.
-                @user_1, MARKET_ID_COIN, @integrator, SELL, 0, MAX_POSSIBLE,
-                0, max_quote, price, self_match_behavior,
+                @user_1, MARKET_ID_COIN, @integrator, SELL, MAX_POSSIBLE,
+                self_match_behavior,
                 &custodian_capability);
         // Drop custodian capability.
         registry::drop_custodian_capability_test(custodian_capability);
@@ -8395,8 +8365,8 @@ module econia::market {
             CUSTODIAN_ID_USER_1); // Get custodian capability.
         let (base_trade_r, quote_trade_r, fee_r) =
             place_market_order_custodian<BC, QC>( // Place taker order.
-                @user_1, MARKET_ID_COIN, @integrator, BUY, 0, max_base, 0,
-                MAX_POSSIBLE, price, self_match_behavior,
+                @user_1, MARKET_ID_COIN, @integrator, BUY, max_base,
+                self_match_behavior,
                 &custodian_capability);
         // Drop custodian capability.
         registry::drop_custodian_capability_test(custodian_capability);
@@ -8500,8 +8470,8 @@ module econia::market {
             NO_RESTRICTION, self_match_behavior); // Place maker order.
         let (base_trade_r, quote_trade_r, fee_r) =
             place_market_order_user<BC, QC>( // Place taker order.
-                &user_1, MARKET_ID_COIN, @integrator, SELL, 0, max_base, 0,
-                MAX_POSSIBLE, price, self_match_behavior);
+                &user_1, MARKET_ID_COIN, @integrator, SELL,
+                MAX_POSSIBLE, self_match_behavior);
         // Assert returns.
         assert!(base_trade_r  == base_match, 0);
         assert!(quote_trade_r == quote_trade, 0);
@@ -8600,8 +8570,8 @@ module econia::market {
             &user_0, MARKET_ID_COIN, @integrator, side, size_post, price,
             NO_RESTRICTION, self_match_behavior); // Place maker order.
         place_market_order_user_entry<BC, QC>( // Place taker order.
-            &user_1, MARKET_ID_COIN, @integrator, BUY, 0, MAX_POSSIBLE,
-            0, quote_deposit, price, self_match_behavior);
+            &user_1, MARKET_ID_COIN, @integrator, BUY,
+            MAX_POSSIBLE, self_match_behavior);
         // Get fields for maker order on book.
         let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
             get_order_fields_test(MARKET_ID_COIN, side, market_order_id_0);

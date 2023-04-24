@@ -12,15 +12,15 @@ use super::IntoInsertable;
 #[ExistingTypePath = "crate::schema::sql_types::Side"]
 #[sqlx(type_name = "side", rename_all = "snake_case")]
 pub enum Side {
-    Ask,
     Bid,
+    Ask,
 }
 
 impl From<bool> for Side {
     fn from(value: bool) -> Self {
         match value {
-            false => Self::Ask,
-            true => Self::Bid,
+            false => Self::Bid,
+            true => Self::Ask,
         }
     }
 }
@@ -48,8 +48,8 @@ impl TryFrom<u8> for Side {
 
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         match value {
-            0 => Ok(Side::Ask),
-            1 => Ok(Side::Bid),
+            0 => Ok(Side::Bid),
+            1 => Ok(Side::Ask),
             _ => Err(TypeError::ConversionError {
                 name: "Side".to_string(),
             }),

@@ -1,9 +1,13 @@
-import { type AptosAccount, AptosClient, type MaybeHexString } from "aptos";
-
-import { EconiaTransactionBuilder } from "./tx-builder";
+import {
+  type AptosAccount,
+  AptosClient,
+  type MaybeHexString,
+  type Types,
+} from "aptos";
 
 export * as events from "../types/events";
 export * as order from "../types/order";
+export * as entryFunctions from "./entry_functions";
 
 export class EconiaClient {
   public readonly econiaAddress: MaybeHexString;
@@ -20,7 +24,21 @@ export class EconiaClient {
     this.userAccount = userAccount;
   }
 
-  public createTx(): EconiaTransactionBuilder {
-    return new EconiaTransactionBuilder(this);
+  public async submitTx(
+    entry: Types.EntryFunctionPayload
+  ): Promise<Types.Transaction> {
+    const tx = await this.aptosClient.generateTransaction(
+      this.userAccount.address(),
+      entry
+    );
+    const signedTx = await this.aptosClient.signTransaction(
+      this.userAccount,
+      tx
+    );
+    const pendingTx = await this.aptosClient.submitTransaction(signedTx);
+    const result = await this.aptosClient.waitForTransactionWithResult(
+      pendingTx.hash
+    );
+    return result;
   }
 }

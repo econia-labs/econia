@@ -4,6 +4,13 @@ import { type MaybeHexString } from "aptos";
 import { type AdvanceStyle, type Side } from "../types/order";
 import { type Restriction } from "../types/order";
 import { type SelfMatchBehavior } from "../types/order";
+import {
+  advanceStyleToNumber,
+  restrictionToNumber,
+  selfMatchBehaviorToNumber,
+  sideToBoolean,
+  sideToNumber,
+} from "./utils";
 
 // Incentives entry functions
 
@@ -59,7 +66,7 @@ export const cancelAllOrdersUser = (
 ): Types.EntryFunctionPayload => ({
   function: `${econiaAddress}::market::cancel_all_orders_user`,
   type_arguments: [],
-  arguments: [marketId, side],
+  arguments: [marketId, sideToNumber(side)],
 });
 
 export const cancelOrderUser = (
@@ -70,7 +77,7 @@ export const cancelOrderUser = (
 ): Types.EntryFunctionPayload => ({
   function: `${econiaAddress}::market::cancel_order_user`,
   type_arguments: [],
-  arguments: [marketId, side, marketOrderId],
+  arguments: [marketId, sideToNumber(side), marketOrderId],
 });
 
 export const changeOrderSizeUser = (
@@ -82,7 +89,7 @@ export const changeOrderSizeUser = (
 ): Types.EntryFunctionPayload => ({
   function: `${econiaAddress}::market::change_order_size_user`,
   type_arguments: [],
-  arguments: [marketId, side, marketOrderId, newSize],
+  arguments: [marketId, sideToNumber(side), marketOrderId, newSize],
 });
 
 export const placeLimitOrderPassiveAdvanceUserEntry = (
@@ -101,9 +108,9 @@ export const placeLimitOrderPassiveAdvanceUserEntry = (
   arguments: [
     marketId,
     integrator,
-    side,
+    sideToNumber(side),
     size,
-    advanceStyle,
+    advanceStyleToNumber(advanceStyle),
     targetAdvanceAmount,
   ],
 });
@@ -125,11 +132,11 @@ export const placeLimitOrderUserEntry = (
   arguments: [
     marketId,
     integrator,
-    side,
+    sideToNumber(side),
     size,
     price,
-    restriction,
-    selfMatchBehavior,
+    restrictionToNumber(restriction),
+    selfMatchBehaviorToNumber(selfMatchBehavior),
   ],
 });
 
@@ -153,7 +160,7 @@ export const swapBetweenCoinstoresEntry = (
   quote: Types.MoveType,
   marketId: BCS.Uint64,
   integrator: MaybeHexString,
-  direction: boolean,
+  side: Side,
   minBase: BCS.Uint64,
   maxBase: BCS.Uint64,
   minQuote: BCS.Uint64,
@@ -165,7 +172,7 @@ export const swapBetweenCoinstoresEntry = (
   arguments: [
     marketId,
     integrator,
-    direction,
+    sideToBoolean(side),
     minBase,
     maxBase,
     minQuote,

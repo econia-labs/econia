@@ -2,12 +2,7 @@ import { type BCS } from "aptos";
 
 import { type Side } from "./order";
 
-export enum MakerEventType {
-  Cancel = 0,
-  Change = 1,
-  Evict = 2,
-  Place = 3,
-}
+export type MakerEventType = "Cancel" | "Change" | "Evict" | "Place";
 
 export type MakerEvent = {
   market_id: BCS.Uint64;

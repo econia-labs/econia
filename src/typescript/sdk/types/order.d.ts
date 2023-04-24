@@ -1,39 +1,23 @@
 import { type BCS } from "aptos";
 
 // Order Side
-export enum Side {
-  Ask = 0,
-  Bid = 1,
-}
+export type Side = "Bid" | "Ask";
 
 // Advance Style
-export enum AdvanceStyle {
-  Ticks = 0,
-  Percent = 1,
-}
+export type AdvanceStyle = "Ticks" | "Percent";
 
 // Self Match Behavior
-export enum SelfMatchBehavior {
-  Abort = 0,
-  CancelBoth = 1,
-  CancelMaker = 2,
-  CancelTaker = 3,
-}
+export type SelfMatchBehavior =
+  | "Abort"
+  | "CancelBoth"
+  | "CancelMaker"
+  | "CancelTaker";
 
 // Restriction
-export enum Restriction {
-  NoRestriction = 0,
-  FillOrAbort = 1,
-  ImmediateOrCancel = 2,
-}
+export type Restriction = "NoRestriction" | "FillOrAbort" | "ImmediateOrCancel";
 
 // Order State
-export enum OrderState {
-  Open = 0,
-  Filled = 1,
-  Cancelled = 2,
-  Evicted = 3,
-}
+export type OrderState = "Open" | "Filled" | "Cancelled" | "Evicted";
 
 // Order
 export type Order = {

@@ -8,6 +8,7 @@ import {
 export * as events from "../types/events";
 export * as order from "../types/order";
 export * as entryFunctions from "./entry_functions";
+export * as utils from "./utils";
 
 export class EconiaClient {
   public readonly econiaAddress: MaybeHexString;

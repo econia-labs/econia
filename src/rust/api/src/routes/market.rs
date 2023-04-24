@@ -4,10 +4,85 @@ use axum::{
 };
 use bigdecimal::BigDecimal;
 use chrono::{DateTime, NaiveDateTime, Utc};
-use serde::Deserialize;
-use types::{bar::Resolution, error::TypeError};
+use serde::{Deserialize, Serialize};
+use types::{bar::Resolution, book::PriceLevel, error::TypeError};
 
 use crate::{error::ApiError, AppState};
+
+/// Query parameters for the orderbook endpoint.
+#[derive(Debug, Deserialize)]
+pub struct OrderbookParams {
+    depth: i64,
+}
+
+#[derive(Debug, Serialize)]
+pub struct OrderbookResponse {
+    bids: Vec<PriceLevel>,
+    asks: Vec<PriceLevel>,
+}
+
+pub async fn get_orderbook(
+    Path(market_id): Path<u64>,
+    Query(params): Query<OrderbookParams>,
+    State(state): State<AppState>,
+) -> Result<Json<OrderbookResponse>, ApiError> {
+    if params.depth < 1 {
+        return Err(ApiError::InvalidDepth);
+    }
+
+    let market_id = BigDecimal::from(market_id);
+
+    // TODO: why does sqlx need a non-null assertion here to consider this of
+    // type BigDecimal rather than Option<Decimal>?
+    let bids_query = sqlx::query_as!(
+        db::models::market::PriceLevel,
+        r#"
+        select
+            price,
+            sum(size) as "size!"
+        from orders where
+            market_id = $1 and
+            order_state = 'open' and
+            side = 'bid'
+        group by price order by price desc limit $2;
+        "#,
+        market_id,
+        params.depth
+    )
+    .fetch_all(&state.pool)
+    .await?;
+
+    // TODO: parallelize
+    let asks_query = sqlx::query_as!(
+        db::models::market::PriceLevel,
+        r#"
+        select
+            price,
+            sum(size) as "size!"
+        from orders where
+            market_id = $1 and
+            order_state = 'open' and
+            side = 'ask'
+        group by price order by price limit $2;
+        "#,
+        market_id,
+        params.depth
+    )
+    .fetch_all(&state.pool)
+    .await?;
+
+    let bids = bids_query
+        .into_iter()
+        .map(|v| v.try_into())
+        .collect::<Result<Vec<PriceLevel>, TypeError>>()?;
+
+    let asks = asks_query
+        .into_iter()
+        .map(|v| v.try_into())
+        .collect::<Result<Vec<PriceLevel>, TypeError>>()?;
+
+    Ok(Json(OrderbookResponse { bids, asks }))
+}
 
 /// Query parameters for the market history endpoint.
 #[derive(Debug, Deserialize)]

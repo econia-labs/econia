@@ -44,12 +44,12 @@ Stand by for more documentation, and in the meantime, check out the [modules pag
 
 ## Testnet account
 
-As of 2022-12-23, Econia is initialized on the Aptos Testnet as follows:
+As of 2022-04-21, Econia is initialized on the Aptos Testnet as follows:
 
 | Field      | Value                                                                |
 | ---------- | -------------------------------------------------------------------- |
-| Account    | [0x3c04538036604862c67261221a6167fa4ae5121d3649e29b330fa8c248b66200] |
-| Public key | `0x86a82c05d5d89b65e684db85cfb77e8475d99b97ef31de5ae8bdf6152b2f3974` |
+| Account    | [0x40b119411c6a975fca28f1ba5800a8a418bba1e16a3f13b1de92f731e023d135] |
+| Public key | `0x91a50d9a266133c1921bb3be982af33eae1c661a1ae80fafde8f46d1fddcd2d2` |
 
 ## External resources
 
@@ -58,7 +58,7 @@ As of 2022-12-23, Econia is initialized on the Aptos Testnet as follows:
 - [Medium]
 - [Twitter]
 
-[0x3c04538036604862c67261221a6167fa4ae5121d3649e29b330fa8c248b66200]: https://explorer.aptoslabs.com/account/0x3c04538036604862c67261221a6167fa4ae5121d3649e29b330fa8c248b66200?network=testnet
+[0x40b119411c6a975fca28f1ba5800a8a418bba1e16a3f13b1de92f731e023d135]: https://explorer.aptoslabs.com/account/0x40b119411c6a975fca28f1ba5800a8a418bba1e16a3f13b1de92f731e023d135?network=testnet
 [aptos]: https://aptos.dev
 [discord]: https://discord.gg/econia
 [github]: https://github.com/econia-labs/econia

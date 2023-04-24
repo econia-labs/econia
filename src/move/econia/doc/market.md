@@ -1612,6 +1612,17 @@ Limit order size results in base asset amount overflow.
 
 
 
+<a name="0xc0deb00c_market_E_SIZE_CHANGE_INSERTION_ERROR"></a>
+
+Order size change requiring insertion resulted in an AVL queue
+access key mismatch.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_SIZE_CHANGE_INSERTION_ERROR">E_SIZE_CHANGE_INSERTION_ERROR</a>: u64 = 30;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_market_E_SIZE_PRICE_QUOTE_OVERFLOW"></a>
 
 Limit order size and price results in quote amount overflow.
@@ -1634,7 +1645,7 @@ Limit order size and price results in ticks amount overflow.
 
 <a name="0xc0deb00c_market_E_SIZE_TOO_SMALL"></a>
 
-Limit order size does not meet minimum size for market.
+Order size does not meet minimum size for market.
 
 
 <pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_SIZE_TOO_SMALL">E_SIZE_TOO_SMALL</a>: u64 = 14;
@@ -2730,7 +2741,7 @@ order under authority of delegated custodian.
 * <code>test_place_market_order_max_quote_buy_custodian()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_market_order_custodian">place_market_order_custodian</a>&lt;BaseType, QuoteType&gt;(user_address: <b>address</b>, market_id: u64, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64, self_match_behavior: u8, custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>): (u64, u64, u64)
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_market_order_custodian">place_market_order_custodian</a>&lt;BaseType, QuoteType&gt;(user_address: <b>address</b>, market_id: u64, integrator: <b>address</b>, direction: bool, size: u64, self_match_behavior: u8, custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>): (u64, u64, u64)
 </code></pre>
 
 
@@ -2746,11 +2757,7 @@ order under authority of delegated custodian.
     market_id: u64,
     integrator: <b>address</b>,
     direction: bool,
-    min_base: u64,
-    max_base: u64,
-    min_quote: u64,
-    max_quote: u64,
-    limit_price: u64,
+    size: u64,
     self_match_behavior: u8,
     custodian_capability_ref: &CustodianCapability
 ): (
@@ -2764,11 +2771,7 @@ order under authority of delegated custodian.
         <a href="registry.md#0xc0deb00c_registry_get_custodian_id">registry::get_custodian_id</a>(custodian_capability_ref),
         integrator,
         direction,
-        min_base,
-        max_base,
-        min_quote,
-        max_quote,
-        limit_price,
+        size,
         self_match_behavior)
 }
 </code></pre>
@@ -2792,7 +2795,7 @@ order under authority of signing user.
 * <code>test_place_market_order_max_quote_sell_user()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_market_order_user">place_market_order_user</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64, self_match_behavior: u8): (u64, u64, u64)
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_market_order_user">place_market_order_user</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, integrator: <b>address</b>, direction: bool, size: u64, self_match_behavior: u8): (u64, u64, u64)
 </code></pre>
 
 
@@ -2808,11 +2811,7 @@ order under authority of signing user.
     market_id: u64,
     integrator: <b>address</b>,
     direction: bool,
-    min_base: u64,
-    max_base: u64,
-    min_quote: u64,
-    max_quote: u64,
-    limit_price: u64,
+    size: u64,
     self_match_behavior: u8
 ): (
     u64,
@@ -2825,11 +2824,7 @@ order under authority of signing user.
         <a href="market.md#0xc0deb00c_market_NO_CUSTODIAN">NO_CUSTODIAN</a>,
         integrator,
         direction,
-        min_base,
-        max_base,
-        min_quote,
-        max_quote,
-        limit_price,
+        size,
         self_match_behavior)
 }
 </code></pre>
@@ -3666,7 +3661,7 @@ Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_pla
 * <code>test_place_market_order_user_entry()</code>
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_place_market_order_user_entry">place_market_order_user_entry</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64, self_match_behavior: u8)
+<pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_place_market_order_user_entry">place_market_order_user_entry</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, integrator: <b>address</b>, direction: bool, size: u64, self_match_behavior: u8)
 </code></pre>
 
 
@@ -3682,16 +3677,11 @@ Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_pla
     market_id: u64,
     integrator: <b>address</b>,
     direction: bool,
-    min_base: u64,
-    max_base: u64,
-    min_quote: u64,
-    max_quote: u64,
-    limit_price: u64,
+    size: u64,
     self_match_behavior: u8
 ) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
     <a href="market.md#0xc0deb00c_market_place_market_order_user">place_market_order_user</a>&lt;BaseType, QuoteType&gt;(
-        <a href="user.md#0xc0deb00c_user">user</a>, market_id, integrator, direction, min_base, max_base,
-        min_quote, max_quote, limit_price, self_match_behavior);
+        <a href="user.md#0xc0deb00c_user">user</a>, market_id, integrator, direction, size, self_match_behavior);
 }
 </code></pre>
 
@@ -3973,6 +3963,9 @@ custodian ID of order on order book having market order ID.
 
 Change maker order size on book and in user's market account.
 
+Priority for given price level is preserved for size decrease,
+but lost for size increase.
+
 The market order ID is first checked to see if the AVL queue
 access key encoded within can even be used for an AVL queue
 borrow operation in the first place. Then during the call to
@@ -4023,6 +4016,7 @@ custodian ID of order on order book having market order ID.
 
 * <code>test_change_order_size_ask_custodian()</code>
 * <code>test_change_order_size_bid_user()</code>
+* <code>test_change_order_size_bid_user_new_tail()</code>
 
 
 <a name="@Failure_testing_91"></a>
@@ -4030,6 +4024,7 @@ custodian ID of order on order book having market order ID.
 ### Failure testing
 
 
+* <code>test_change_order_size_insertion_error()</code>
 * <code>test_change_order_size_invalid_custodian()</code>
 * <code>test_change_order_size_invalid_market_id()</code>
 * <code>test_change_order_size_invalid_market_order_id_bogus()</code>
@@ -4072,6 +4067,9 @@ custodian ID of order on order book having market order ID.
         orders_ref_mut, avlq_access_key);
     // Assert that borrow from the AVL queue is possible.
     <b>assert</b>!(borrow_possible, <a href="market.md#0xc0deb00c_market_E_INVALID_MARKET_ORDER_ID">E_INVALID_MARKET_ORDER_ID</a>);
+    // Check <b>if</b> order is at tail of queue for given price level.
+    <b>let</b> tail_of_price_level_queue =
+        <a href="avl_queue.md#0xc0deb00c_avl_queue_is_local_tail">avl_queue::is_local_tail</a>(orders_ref_mut, avlq_access_key);
     <b>let</b> order_ref_mut = // Mutably borrow order on order book.
         <a href="avl_queue.md#0xc0deb00c_avl_queue_borrow_mut">avl_queue::borrow_mut</a>(orders_ref_mut, avlq_access_key);
     // Assert passed <a href="user.md#0xc0deb00c_user">user</a> <b>address</b> is <a href="user.md#0xc0deb00c_user">user</a> holding order.
@@ -4084,12 +4082,40 @@ custodian ID of order on order book having market order ID.
     <a href="user.md#0xc0deb00c_user_change_order_size_internal">user::change_order_size_internal</a>(
         <a href="user.md#0xc0deb00c_user">user</a>, market_id, custodian_id, side, order_ref_mut.size, new_size,
         order_ref_mut.price, order_ref_mut.order_access_key, market_order_id);
-    // Update order on book <b>with</b> new size.
-    order_ref_mut.size = new_size;
+    // Get order price.
+    <b>let</b> price = <a href="avl_queue.md#0xc0deb00c_avl_queue_get_access_key_insertion_key">avl_queue::get_access_key_insertion_key</a>(avlq_access_key);
+    // If size change is for a size decrease or <b>if</b> order is at tail
+    // of given price level:
+    <b>if</b> ((new_size &lt; order_ref_mut.size) || tail_of_price_level_queue) {
+        // Mutate order on book <b>to</b> reflect new size, preserving spot
+        // in queue for the given price level.
+        order_ref_mut.size = new_size;
+    // If new size is more than <b>old</b> size (<a href="user.md#0xc0deb00c_user">user</a>-side function
+    // verifies that size is not equal) but order is not tail of
+    // queue for the given price level, priority should be lost:
+    } <b>else</b> {
+        // Remove order from AVL queue, pushing corresponding AVL
+        // queue list node onto unused list node stack.
+        <b>let</b> order = <a href="avl_queue.md#0xc0deb00c_avl_queue_remove">avl_queue::remove</a>(orders_ref_mut, avlq_access_key);
+        order.size = new_size; // Mutate order size.
+        // Insert at back of queue for given price level.
+        <b>let</b> new_avlq_access_key =
+            <a href="avl_queue.md#0xc0deb00c_avl_queue_insert">avl_queue::insert</a>(orders_ref_mut, price, order);
+        // Verify that new AVL queue access key is the same <b>as</b>
+        // before the size change: since list nodes are re-used, the
+        // AVL queue access key should be the same, even though the
+        // order is now the new tail of a doubly linked list for the
+        // given insertion key (back of queue for the given price
+        // level). Eviction is not checked because the AVL queue
+        // shape is the same before and after the remove/insert
+        // compound operation.
+        <b>assert</b>!(new_avlq_access_key == avlq_access_key,
+                <a href="market.md#0xc0deb00c_market_E_SIZE_CHANGE_INSERTION_ERROR">E_SIZE_CHANGE_INSERTION_ERROR</a>);
+    };
     // Emit a maker change <a href="">event</a>.
     <a href="_emit_event">event::emit_event</a>(&<b>mut</b> order_book_ref_mut.maker_events, <a href="market.md#0xc0deb00c_market_MakerEvent">MakerEvent</a>{
         market_id, side, market_order_id, <a href="user.md#0xc0deb00c_user">user</a>, custodian_id, type: <a href="market.md#0xc0deb00c_market_CHANGE">CHANGE</a>,
-        size: order_ref_mut.size, price: order_ref_mut.price});
+        size: new_size, price});
 }
 </code></pre>
 
@@ -5115,15 +5141,7 @@ Place market order against order book from user market account.
 * <code>custodian_id</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 * <code>integrator</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 * <code>direction</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
-* <code>min_base</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
-* <code>max_base</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>. If passed as <code><a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a></code>
-will attempt to trade maximum possible amount for market
-account.
-* <code>min_quote</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
-* <code>max_quote</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>. If passed as
-<code><a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a></code> will attempt to trade maximum possible amount
-for market account.
-* <code>limit_price</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>size</code>: The maximum size, in lots, to fill.
 * <code>self_match_behavior</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
@@ -5144,6 +5162,8 @@ for market account.
 
 * <code><a href="market.md#0xc0deb00c_market_E_INVALID_BASE">E_INVALID_BASE</a></code>: Base asset type is invalid.
 * <code><a href="market.md#0xc0deb00c_market_E_INVALID_QUOTE">E_INVALID_QUOTE</a></code>: Quote asset type is invalid.
+* <code><a href="market.md#0xc0deb00c_market_E_SIZE_TOO_SMALL">E_SIZE_TOO_SMALL</a></code>: Market order size does not meet minimum
+size for market.
 
 
 <a name="@Expected_value_testing_120"></a>
@@ -5151,6 +5171,7 @@ for market account.
 ### Expected value testing
 
 
+* <code>test_place_market_order_max_base_adjust_buy_user()</code>
 * <code>test_place_market_order_max_base_buy_user()</code>
 * <code>test_place_market_order_max_base_sell_custodian()</code>
 * <code>test_place_market_order_max_quote_buy_custodian()</code>
@@ -5164,9 +5185,10 @@ for market account.
 
 * <code>test_place_market_order_invalid_base()</code>
 * <code>test_place_market_order_invalid_quote()</code>
+* <code>test_place_market_order_size_too_small()</code>
 
 
-<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_place_market_order">place_market_order</a>&lt;BaseType, QuoteType&gt;(user_address: <b>address</b>, market_id: u64, custodian_id: u64, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64, self_match_behavior: u8): (u64, u64, u64)
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_place_market_order">place_market_order</a>&lt;BaseType, QuoteType&gt;(user_address: <b>address</b>, market_id: u64, custodian_id: u64, integrator: <b>address</b>, direction: bool, size: u64, self_match_behavior: u8): (u64, u64, u64)
 </code></pre>
 
 
@@ -5183,11 +5205,7 @@ for market account.
     custodian_id: u64,
     integrator: <b>address</b>,
     direction: bool,
-    min_base: u64,
-    max_base: u64,
-    min_quote: u64,
-    max_quote: u64,
-    limit_price: u64,
+    size: u64,
     self_match_behavior: u8
 ): (
     u64,
@@ -5209,18 +5227,31 @@ for market account.
             == order_book_ref_mut.base_type, <a href="market.md#0xc0deb00c_market_E_INVALID_BASE">E_INVALID_BASE</a>);
     <b>assert</b>!(<a href="_type_of">type_info::type_of</a>&lt;QuoteType&gt;() // Assert quote type.
             == order_book_ref_mut.quote_type, <a href="market.md#0xc0deb00c_market_E_INVALID_QUOTE">E_INVALID_QUOTE</a>);
+    // Assert order size is at least minimum size for <a href="market.md#0xc0deb00c_market">market</a>.
+    <b>assert</b>!(size &gt;= order_book_ref_mut.min_size, <a href="market.md#0xc0deb00c_market_E_SIZE_TOO_SMALL">E_SIZE_TOO_SMALL</a>);
     // Get <a href="market.md#0xc0deb00c_market">market</a> underwriter ID.
     <b>let</b> underwriter_id = order_book_ref_mut.underwriter_id;
-    // If max base <b>to</b> trade flagged <b>as</b> max possible and a buy,
-    // <b>update</b> <b>to</b> max amount that can be bought. If a sell, <b>update</b>
-    // <b>to</b> all available <b>to</b> sell.
-    <b>if</b> (max_base == <a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a>) max_base = <b>if</b> (direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>)
+    // Calculate max base that can be traded: <b>if</b> a buy, max base
+    // that can fit in <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>. If a sell, base available in
+    // <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
+    <b>let</b> max_base = <b>if</b> (direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>)
         (<a href="market.md#0xc0deb00c_market_HI_64">HI_64</a> - base_ceiling) <b>else</b> base_available;
-    // If max quote <b>to</b> trade flagged <b>as</b> max possible and a buy,
-    // <b>update</b> <b>to</b> max amount that can spend. If a sell, <b>update</b>
-    // <b>to</b> max amount that can receive when selling.
-    <b>if</b> (max_quote == <a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a>) max_quote = <b>if</b> (direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>)
+    // Get max lots that can be traded by <a href="user.md#0xc0deb00c_user">user</a>.
+    <b>let</b> max_lots = max_base / order_book_ref_mut.lot_size;
+    // If <a href="market.md#0xc0deb00c_market">market</a> order size is less than number of lots <a href="user.md#0xc0deb00c_user">user</a> can
+    // trade based on <a href="">account</a> limits, adjust the max base trade
+    // amount <b>to</b> correspond <b>with</b> the <a href="market.md#0xc0deb00c_market">market</a> order size.
+    <b>if</b> (size &lt; max_lots) max_base = size * order_book_ref_mut.lot_size;
+    // Calculate max quote that can be traded: <b>if</b> a buy, quote
+    // available in <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>. If a sell, max quote that can
+    // fit in <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
+    <b>let</b> max_quote = <b>if</b> (direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>)
         quote_available <b>else</b> (<a href="market.md#0xc0deb00c_market_HI_64">HI_64</a> - quote_ceiling);
+    // Declare <b>min</b> base and quote trade amounts 0, enabling silent
+    // <b>return</b> without fills <b>if</b> there is no depth on the book, and
+    // silent <b>return</b> <b>with</b> max possible fills <b>if</b> order takes all
+    // liquidity before filling <a href="user.md#0xc0deb00c_user">user</a>-indicated size.
+    <b>let</b> (min_base, min_quote) = (0, 0);
     <a href="market.md#0xc0deb00c_market_range_check_trade">range_check_trade</a>( // Range check trade amounts.
         direction, min_base, max_base, min_quote, max_quote,
         base_available, base_ceiling, quote_available, quote_ceiling);
@@ -5234,6 +5265,9 @@ for market account.
         <a href="user.md#0xc0deb00c_user_withdraw_assets_internal">user::withdraw_assets_internal</a>&lt;BaseType, QuoteType&gt;(
             user_address, market_id, custodian_id, base_withdraw,
             quote_withdraw, underwriter_id);
+    // Calculate limit price for matching engine: 0 when selling,
+    // max price possible when buying.
+    <b>let</b> limit_price = <b>if</b> (direction == <a href="market.md#0xc0deb00c_market_SELL">SELL</a>) 0 <b>else</b> <a href="market.md#0xc0deb00c_market_HI_PRICE">HI_PRICE</a>;
     // Match against order book, storing optionally modified asset
     // inputs, base and quote trade amounts, and quote fees paid.
     <b>let</b> (optional_base_coins, quote_coins, base_traded, quote_traded, fees,

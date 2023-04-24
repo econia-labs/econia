@@ -648,7 +648,7 @@ module econia::market {
     const E_PRICE_TOO_HIGH: u64 = 12;
     /// Post-or-abort limit order price crosses spread.
     const E_POST_OR_ABORT_CROSSES_SPREAD: u64 = 13;
-    /// Limit order size does not meet minimum size for market.
+    /// Order size does not meet minimum size for market.
     const E_SIZE_TOO_SMALL: u64 = 14;
     /// Limit order size results in base asset amount overflow.
     const E_SIZE_BASE_OVERFLOW: u64 = 15;
@@ -680,6 +680,9 @@ module econia::market {
     const E_INVALID_SELF_MATCH_BEHAVIOR: u64 = 28;
     /// Passive advance percent is not less than or equal to 100.
     const E_INVALID_PERCENT: u64 = 29;
+    /// Order size change requiring insertion resulted in an AVL queue
+    /// access key mismatch.
+    const E_SIZE_CHANGE_INSERTION_ERROR: u64 = 30;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -1173,11 +1176,7 @@ module econia::market {
         market_id: u64,
         integrator: address,
         direction: bool,
-        min_base: u64,
-        max_base: u64,
-        min_quote: u64,
-        max_quote: u64,
-        limit_price: u64,
+        size: u64,
         self_match_behavior: u8,
         custodian_capability_ref: &CustodianCapability
     ): (
@@ -1191,11 +1190,7 @@ module econia::market {
             registry::get_custodian_id(custodian_capability_ref),
             integrator,
             direction,
-            min_base,
-            max_base,
-            min_quote,
-            max_quote,
-            limit_price,
+            size,
             self_match_behavior)
     }
 
@@ -1214,11 +1209,7 @@ module econia::market {
         market_id: u64,
         integrator: address,
         direction: bool,
-        min_base: u64,
-        max_base: u64,
-        min_quote: u64,
-        max_quote: u64,
-        limit_price: u64,
+        size: u64,
         self_match_behavior: u8
     ): (
         u64,
@@ -1231,11 +1222,7 @@ module econia::market {
             NO_CUSTODIAN,
             integrator,
             direction,
-            min_base,
-            max_base,
-            min_quote,
-            max_quote,
-            limit_price,
+            size,
             self_match_behavior)
     }
 
@@ -1803,16 +1790,11 @@ module econia::market {
         market_id: u64,
         integrator: address,
         direction: bool,
-        min_base: u64,
-        max_base: u64,
-        min_quote: u64,
-        max_quote: u64,
-        limit_price: u64,
+        size: u64,
         self_match_behavior: u8
     ) acquires OrderBooks {
         place_market_order_user<BaseType, QuoteType>(
-            user, market_id, integrator, direction, min_base, max_base,
-            min_quote, max_quote, limit_price, self_match_behavior);
+            user, market_id, integrator, direction, size, self_match_behavior);
     }
 
     #[cmd]
@@ -1989,6 +1971,9 @@ module econia::market {
 
     /// Change maker order size on book and in user's market account.
     ///
+    /// Priority for given price level is preserved for size decrease,
+    /// but lost for size increase.
+    ///
     /// The market order ID is first checked to see if the AVL queue
     /// access key encoded within can even be used for an AVL queue
     /// borrow operation in the first place. Then during the call to
@@ -2023,9 +2008,11 @@ module econia::market {
     ///
     /// * `test_change_order_size_ask_custodian()`
     /// * `test_change_order_size_bid_user()`
+    /// * `test_change_order_size_bid_user_new_tail()`
     ///
     /// # Failure testing
     ///
+    /// * `test_change_order_size_insertion_error()`
     /// * `test_change_order_size_invalid_custodian()`
     /// * `test_change_order_size_invalid_market_id()`
     /// * `test_change_order_size_invalid_market_order_id_bogus()`
@@ -2058,6 +2045,9 @@ module econia::market {
             orders_ref_mut, avlq_access_key);
         // Assert that borrow from the AVL queue is possible.
         assert!(borrow_possible, E_INVALID_MARKET_ORDER_ID);
+        // Check if order is at tail of queue for given price level.
+        let tail_of_price_level_queue =
+            avl_queue::is_local_tail(orders_ref_mut, avlq_access_key);
         let order_ref_mut = // Mutably borrow order on order book.
             avl_queue::borrow_mut(orders_ref_mut, avlq_access_key);
         // Assert passed user address is user holding order.
@@ -2070,12 +2060,40 @@ module econia::market {
         user::change_order_size_internal(
             user, market_id, custodian_id, side, order_ref_mut.size, new_size,
             order_ref_mut.price, order_ref_mut.order_access_key, market_order_id);
-        // Update order on book with new size.
-        order_ref_mut.size = new_size;
+        // Get order price.
+        let price = avl_queue::get_access_key_insertion_key(avlq_access_key);
+        // If size change is for a size decrease or if order is at tail
+        // of given price level:
+        if ((new_size < order_ref_mut.size) || tail_of_price_level_queue) {
+            // Mutate order on book to reflect new size, preserving spot
+            // in queue for the given price level.
+            order_ref_mut.size = new_size;
+        // If new size is more than old size (user-side function
+        // verifies that size is not equal) but order is not tail of
+        // queue for the given price level, priority should be lost:
+        } else {
+            // Remove order from AVL queue, pushing corresponding AVL
+            // queue list node onto unused list node stack.
+            let order = avl_queue::remove(orders_ref_mut, avlq_access_key);
+            order.size = new_size; // Mutate order size.
+            // Insert at back of queue for given price level.
+            let new_avlq_access_key =
+                avl_queue::insert(orders_ref_mut, price, order);
+            // Verify that new AVL queue access key is the same as
+            // before the size change: since list nodes are re-used, the
+            // AVL queue access key should be the same, even though the
+            // order is now the new tail of a doubly linked list for the
+            // given insertion key (back of queue for the given price
+            // level). Eviction is not checked because the AVL queue
+            // shape is the same before and after the remove/insert
+            // compound operation.
+            assert!(new_avlq_access_key == avlq_access_key,
+                    E_SIZE_CHANGE_INSERTION_ERROR);
+        };
         // Emit a maker change event.
         event::emit_event(&mut order_book_ref_mut.maker_events, MakerEvent{
             market_id, side, market_order_id, user, custodian_id, type: CHANGE,
-            size: order_ref_mut.size, price: order_ref_mut.price});
+            size: new_size, price});
     }
 
     /// Initialize the order books map upon module publication.
@@ -2922,15 +2940,7 @@ module econia::market {
     /// * `custodian_id`: Same as for `match()`.
     /// * `integrator`: Same as for `match()`.
     /// * `direction`: Same as for `match()`.
-    /// * `min_base`: Same as for `match()`.
-    /// * `max_base`: Same as for `match()`. If passed as `MAX_POSSIBLE`
-    ///   will attempt to trade maximum possible amount for market
-    ///   account.
-    /// * `min_quote`: Same as for `match()`.
-    /// * `max_quote`: Same as for `match()`. If passed as
-    ///   `MAX_POSSIBLE` will attempt to trade maximum possible amount
-    ///   for market account.
-    /// * `limit_price`: Same as for `match()`.
+    /// * `size`: The maximum size, in lots, to fill.
     /// * `self_match_behavior`: Same as for `match()`.
     ///
     /// # Returns
@@ -2943,9 +2953,12 @@ module econia::market {
     ///
     /// * `E_INVALID_BASE`: Base asset type is invalid.
     /// * `E_INVALID_QUOTE`: Quote asset type is invalid.
+    /// * `E_SIZE_TOO_SMALL`: Market order size does not meet minimum
+    ///   size for market.
     ///
     /// # Expected value testing
     ///
+    /// * `test_place_market_order_max_base_adjust_buy_user()`
     /// * `test_place_market_order_max_base_buy_user()`
     /// * `test_place_market_order_max_base_sell_custodian()`
     /// * `test_place_market_order_max_quote_buy_custodian()`
@@ -2955,6 +2968,7 @@ module econia::market {
     ///
     /// * `test_place_market_order_invalid_base()`
     /// * `test_place_market_order_invalid_quote()`
+    /// * `test_place_market_order_size_too_small()`
     fun place_market_order<
         BaseType,
         QuoteType
@@ -2964,11 +2978,7 @@ module econia::market {
         custodian_id: u64,
         integrator: address,
         direction: bool,
-        min_base: u64,
-        max_base: u64,
-        min_quote: u64,
-        max_quote: u64,
-        limit_price: u64,
+        size: u64,
         self_match_behavior: u8
     ): (
         u64,
@@ -2990,18 +3000,31 @@ module econia::market {
                 == order_book_ref_mut.base_type, E_INVALID_BASE);
         assert!(type_info::type_of<QuoteType>() // Assert quote type.
                 == order_book_ref_mut.quote_type, E_INVALID_QUOTE);
+        // Assert order size is at least minimum size for market.
+        assert!(size >= order_book_ref_mut.min_size, E_SIZE_TOO_SMALL);
         // Get market underwriter ID.
         let underwriter_id = order_book_ref_mut.underwriter_id;
-        // If max base to trade flagged as max possible and a buy,
-        // update to max amount that can be bought. If a sell, update
-        // to all available to sell.
-        if (max_base == MAX_POSSIBLE) max_base = if (direction == BUY)
+        // Calculate max base that can be traded: if a buy, max base
+        // that can fit in market account. If a sell, base available in
+        // market account.
+        let max_base = if (direction == BUY)
             (HI_64 - base_ceiling) else base_available;
-        // If max quote to trade flagged as max possible and a buy,
-        // update to max amount that can spend. If a sell, update
-        // to max amount that can receive when selling.
-        if (max_quote == MAX_POSSIBLE) max_quote = if (direction == BUY)
+        // Get max lots that can be traded by user.
+        let max_lots = max_base / order_book_ref_mut.lot_size;
+        // If market order size is less than number of lots user can
+        // trade based on account limits, adjust the max base trade
+        // amount to correspond with the market order size.
+        if (size < max_lots) max_base = size * order_book_ref_mut.lot_size;
+        // Calculate max quote that can be traded: if a buy, quote
+        // available in market account. If a sell, max quote that can
+        // fit in market account.
+        let max_quote = if (direction == BUY)
             quote_available else (HI_64 - quote_ceiling);
+        // Declare min base and quote trade amounts 0, enabling silent
+        // return without fills if there is no depth on the book, and
+        // silent return with max possible fills if order takes all
+        // liquidity before filling user-indicated size.
+        let (min_base, min_quote) = (0, 0);
         range_check_trade( // Range check trade amounts.
             direction, min_base, max_base, min_quote, max_quote,
             base_available, base_ceiling, quote_available, quote_ceiling);
@@ -3015,6 +3038,9 @@ module econia::market {
             user::withdraw_assets_internal<BaseType, QuoteType>(
                 user_address, market_id, custodian_id, base_withdraw,
                 quote_withdraw, underwriter_id);
+        // Calculate limit price for matching engine: 0 when selling,
+        // max price possible when buying.
+        let limit_price = if (direction == SELL) 0 else HI_PRICE;
         // Match against order book, storing optionally modified asset
         // inputs, base and quote trade amounts, and quote fees paid.
         let (optional_base_coins, quote_coins, base_traded, quote_traded, fees,
@@ -3594,6 +3620,28 @@ module econia::market {
         option::is_some(value_option_ref)
     }
 
+    #[test_only]
+    /// Return if order with market order ID is local price queue tail.
+    public fun is_local_tail_test(
+        market_id: u64,
+        side: bool,
+        market_order_id: u128
+    ): bool acquires OrderBooks {
+        // Get address of resource account having order books.
+        let resource_address = resource_account::get_address();
+        let order_books_map_ref = // Immutably borrow order books map.
+            &borrow_global<OrderBooks>(resource_address).map;
+        let order_book_ref = // Immutably borrow market order book.
+            tablist::borrow(order_books_map_ref, market_id);
+        // Immutably borrow corresponding orders AVL queue.
+        let orders_ref = if (side == ASK) &order_book_ref.asks else
+            &order_book_ref.bids;
+        // Get AVL queue access key from market order ID.
+        let avlq_access_key = ((market_order_id & (HI_64 as u128)) as u64);
+        // Return if corresponding order is tail of local price queue.
+        avl_queue::is_local_tail(orders_ref, avlq_access_key)
+    }
+
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Test-only constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -4032,7 +4080,7 @@ module econia::market {
 
     #[test]
     /// Verify state updates for changing ask under authority of
-    /// custodian.
+    /// custodian, for size increase at tail of price level queue.
     fun test_change_order_size_ask_custodian()
     acquires OrderBooks {
         // Initialize markets, users, and an integrator.
@@ -4072,9 +4120,13 @@ module econia::market {
         let (market_order_id, _, _, _) = place_limit_order_custodian<BC, QC>(
             maker_address, market_id, integrator, side, size_start,
             price, restriction, self_match_behavior, &custodian_capability);
+        // Check if order is tail of corresponding price level.
+        assert!(is_local_tail_test(market_id, side, market_order_id), 0);
         change_order_size_custodian( // Change order size.
             maker_address, market_id, side, market_order_id, size_end,
             &custodian_capability);
+        // Check if order is tail of corresponding price level.
+        assert!(is_local_tail_test(market_id, side, market_order_id), 0);
         // Drop custodian capability.
         registry::drop_custodian_capability_test(custodian_capability);
         // Get fields for maker order on book.
@@ -4110,7 +4162,7 @@ module econia::market {
 
     #[test]
     /// Verify state updates for changing bid under authority of signing
-    /// user.
+    /// user, for size decrease at tail of queue.
     fun test_change_order_size_bid_user()
     acquires OrderBooks {
         // Initialize markets, users, and an integrator.
@@ -4123,21 +4175,21 @@ module econia::market {
         let maker_address       = address_of(&maker);
         let restriction         = NO_RESTRICTION;
         let price               = 10;
-        let size_start          = MIN_SIZE_COIN;
-        let size_end            = size_start * 2;
+        let size_start          = MIN_SIZE_COIN * 2;
+        let size_end            = MIN_SIZE_COIN;
         let self_match_behavior = ABORT;
         // Declare base/quote posted with final order.
         let base_maker  = size_end * LOT_SIZE_COIN;
         let quote_maker = size_end * price * TICK_SIZE_COIN;
         // Declare maker deposit amounts.
-        let deposit_base  = HI_64 - base_maker;
-        let deposit_quote = quote_maker;
+        let deposit_base  = HI_64 / 2;
+        let deposit_quote = HI_64 / 2;
         // Declare expected maker asset counts after size change.
         let base_total_end      = deposit_base;
         let base_available_end  = base_total_end;
-        let base_ceiling_end    = HI_64;
+        let base_ceiling_end    = base_total_end + base_maker;
         let quote_total_end     = deposit_quote;
-        let quote_available_end = 0;
+        let quote_available_end = deposit_quote - quote_maker;
         let quote_ceiling_end   = deposit_quote;
         // Deposit maker coins.
         user::deposit_coins<BC>(maker_address, market_id, custodian_id,
@@ -4148,8 +4200,12 @@ module econia::market {
         let (market_order_id, _, _, _) = place_limit_order_user<BC, QC>(
             &maker, market_id, integrator, side, size_start, price,
             restriction, self_match_behavior);
+        // Check if order is tail of corresponding price level.
+        assert!(is_local_tail_test(market_id, side, market_order_id), 0);
         change_order_size_user( // Change order size.
             &maker, market_id, side, market_order_id, size_end);
+        // Check if order is tail of corresponding price level.
+        assert!(is_local_tail_test(market_id, side, market_order_id), 0);
         // Get fields for maker order on book.
         let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
             get_order_fields_test(market_id, side, market_order_id);
@@ -4179,6 +4235,156 @@ module econia::market {
             maker_address, market_id, custodian_id) == base_total_end, 0);
         assert!(user::get_collateral_value_simple_test<QC>(
             maker_address, market_id, custodian_id) == quote_total_end, 0);
+    }
+
+    #[test]
+    /// Verify state updates for changing bid under authority of signing
+    /// user, for size increase not at tail of queue.
+    fun test_change_order_size_bid_user_new_tail()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (maker, _) = init_markets_users_integrator_test();
+        // Declare order parameters.
+        let side                = BID;
+        let market_id           = MARKET_ID_COIN;
+        let integrator          = @integrator;
+        let custodian_id        = NO_CUSTODIAN;
+        let maker_address       = address_of(&maker);
+        let restriction         = NO_RESTRICTION;
+        let price               = 10;
+        let size_start_0        = MIN_SIZE_COIN;
+        let size_end_0          = MIN_SIZE_COIN * 2;
+        let size_1              = MIN_SIZE_COIN;
+        let self_match_behavior = ABORT;
+        // Declare base/quote posted per final orders.
+        let base_maker  = (size_end_0 + size_1) * LOT_SIZE_COIN;
+        let quote_maker = (size_end_0 + size_1) * price * TICK_SIZE_COIN;
+        // Declare maker deposit amounts.
+        let deposit_base  = HI_64 / 2;
+        let deposit_quote = HI_64 / 2;
+        // Declare expected maker asset counts after size change.
+        let base_total_end      = deposit_base;
+        let base_available_end  = base_total_end;
+        let base_ceiling_end    = base_total_end + base_maker;
+        let quote_total_end     = deposit_quote;
+        let quote_available_end = deposit_quote - quote_maker;
+        let quote_ceiling_end   = deposit_quote;
+        // Deposit maker coins.
+        user::deposit_coins<BC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(deposit_base));
+        user::deposit_coins<QC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(deposit_quote));
+        // Place first maker order, storing market order ID for lookup.
+        let (market_order_id_0, _, _, _) = place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, side, size_start_0, price,
+            restriction, self_match_behavior);
+        // Check if order is tail of corresponding price level.
+        assert!(is_local_tail_test(market_id, side, market_order_id_0), 0);
+        // Place second maker order, storing market order ID for lookup.
+        let (market_order_id_1, _, _, _) = place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, side, size_1, price,
+            restriction, self_match_behavior);
+        // Verify order tail checks at corresponding price level.
+        assert!(!is_local_tail_test(market_id, side, market_order_id_0), 0);
+        assert!(is_local_tail_test(market_id, side, market_order_id_1), 0);
+        change_order_size_user( // Change order size.
+            &maker, market_id, side, market_order_id_0, size_end_0);
+        // Verify order tail checks at corresponding price level.
+        assert!(is_local_tail_test(market_id, side, market_order_id_0), 0);
+        assert!(!is_local_tail_test(market_id, side, market_order_id_1), 0);
+        // Get fields for maker order on book.
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
+            get_order_fields_test(market_id, side, market_order_id_0);
+        // Assert field returns except access key, used for user lookup.
+        assert!(size_r         == size_end_0, 0);
+        assert!(price_r        == price, 0);
+        assert!(user_r         == maker_address, 0);
+        assert!(custodian_id_r == custodian_id, 0);
+        // Assert user-side maker order fields.
+        let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
+            maker_address, market_id, custodian_id, side, order_access_key);
+        assert!(market_order_id_r == market_order_id_0, 0);
+        assert!(size_r            == size_end_0, 0);
+        // Assert maker's asset counts.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            user::get_asset_counts_internal(
+                maker_address, market_id, custodian_id);
+        assert!(base_total      == base_total_end, 0);
+        assert!(base_available  == base_available_end, 0);
+        assert!(base_ceiling    == base_ceiling_end, 0);
+        assert!(quote_total     == quote_total_end, 0);
+        assert!(quote_available == quote_available_end, 0);
+        assert!(quote_ceiling   == quote_ceiling_end, 0);
+        // Assert collateral amounts.
+        assert!(user::get_collateral_value_simple_test<BC>(
+            maker_address, market_id, custodian_id) == base_total_end, 0);
+        assert!(user::get_collateral_value_simple_test<QC>(
+            maker_address, market_id, custodian_id) == quote_total_end, 0);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = E_SIZE_CHANGE_INSERTION_ERROR)]
+    /// Verify failure for changing bid under authority of signing user,
+    /// for size increase not at tail of queue, where there is an AVL
+    /// queue access key mismatch. Based on
+    /// `test_change_order_size_bid_user_new_tail`.
+    fun test_change_order_size_insertion_error()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (maker, _) = init_markets_users_integrator_test();
+        // Declare order parameters.
+        let side                = BID;
+        let market_id           = MARKET_ID_COIN;
+        let integrator          = @integrator;
+        let custodian_id        = NO_CUSTODIAN;
+        let maker_address       = address_of(&maker);
+        let restriction         = NO_RESTRICTION;
+        let price               = 10;
+        let size_start_0        = MIN_SIZE_COIN;
+        let size_end_0          = MIN_SIZE_COIN * 2;
+        let size_1              = MIN_SIZE_COIN;
+        let self_match_behavior = ABORT;
+        // Declare maker deposit amounts.
+        let deposit_base  = HI_64 / 2;
+        let deposit_quote = HI_64 / 2;
+        // Deposit maker coins.
+        user::deposit_coins<BC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(deposit_base));
+        user::deposit_coins<QC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(deposit_quote));
+        // Place first maker order, storing market order ID for lookup.
+        let (market_order_id, _, _, _) = place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, side, size_start_0, price,
+            restriction, self_match_behavior);
+        // Get order access key for looking up user-side.
+        let (_, _, _, _, order_access_key) = get_order_fields_test(
+            market_id, side, market_order_id);
+        place_limit_order_user<BC, QC>( // Place second maker order.
+            &maker, market_id, integrator, side, size_1, price,
+            restriction, self_match_behavior);
+        // Get maker order counter from market order ID.
+        let order_counter = ((market_order_id >> SHIFT_COUNTER) as u64);
+        // Get AVL queue access key from market order ID.
+        let avlq_access_key = ((market_order_id & (HI_64 as u128)) as u64);
+        // Flip AVL queue access key sort order bit flag.
+        let avlq_access_key_doctored =
+            avl_queue::flip_access_key_sort_order_bit_test(avlq_access_key);
+        // Get new market order ID from AVL queue access key, counter.
+        let market_order_id_doctored = (avlq_access_key_doctored as u128) |
+            ((order_counter as u128) << SHIFT_COUNTER);
+        // Set doctored market order ID user-side.
+        user::set_market_order_id_test(
+            maker_address, market_id, custodian_id, side, order_access_key,
+            market_order_id_doctored);
+        // Change order size by calling with the doctored market order
+        // ID, which is identical except for having the sort order bit
+        // flag flipped. The bit flag is metadata that goes unchecked
+        // during AVL queue insert/remove operations. Hence the relevant
+        // AVL queue access key check can be tripped without tripping
+        // user-side market order ID checks.
+        change_order_size_user(
+            &maker, market_id, side, market_order_id_doctored, size_end_0);
     }
 
     #[test]
@@ -5723,11 +5929,7 @@ module econia::market {
         // Declare taker order parameters.
         let direction_taker     = if (side_maker == ASK) BUY else SELL;
         let self_match_behavior = ABORT;
-        let min_base            = 0;
-        let max_base            = MAX_POSSIBLE;
-        let min_quote           = 0;
-        let max_quote           = MAX_POSSIBLE;
-        let limit_price         = price_maker;
+        let size                = MAX_POSSIBLE;
         // Declare deposit amounts.
         let deposit_base  = HI_64 / 2;
         let deposit_quote = HI_64 / 2;
@@ -5742,8 +5944,8 @@ module econia::market {
             restriction, self_match_behavior);
         // Place an invalid taker order.
         place_market_order_user<BC, QC>(
-            &user, market_id, integrator, direction_taker, min_base, max_base,
-            min_quote, max_quote, limit_price, self_match_behavior);
+            &user, market_id, integrator, direction_taker, size,
+            self_match_behavior);
     }
 
     #[test]
@@ -5779,11 +5981,7 @@ module econia::market {
         let price_hi = integrator_divisor * taker_divisor * 2;
         // Declare taker order parameters.
         let direction_taker           = if (side_maker == ASK) BUY else SELL;
-        let min_base                  = 0;
-        let max_base                  = MAX_POSSIBLE;
-        let min_quote                 = 0;
-        let max_quote                 = MAX_POSSIBLE;
-        let limit_price               = price_hi;
+        let size_taker                = MAX_POSSIBLE;
         let self_match_behavior_taker = CANCEL_BOTH;
         // Declare deposit amounts.
         let deposit_base  = HI_64 / 2;
@@ -5822,8 +6020,8 @@ module econia::market {
             market_id, side_maker, market_order_id_hi), 0);
         // Place taker order with self match.
         place_market_order_user<BC, QC>(
-            &user, market_id, integrator, direction_taker, min_base, max_base,
-            min_quote, max_quote, limit_price, self_match_behavior_taker);
+            &user, market_id, integrator, direction_taker, size_taker,
+            self_match_behavior_taker);
         // Assert list node order inactive for low price, active for
         // high price.
         assert!(!is_list_node_order_active(
@@ -5893,16 +6091,12 @@ module econia::market {
         let price_hi = integrator_divisor * taker_divisor * 2;
         // Declare taker order parameters.
         let direction_taker           = if (side_maker == ASK) BUY else SELL;
-        let min_base                  = 0;
-        let max_base                  = MAX_POSSIBLE;
-        let min_quote                 = 0;
-        let max_quote                 = MAX_POSSIBLE;
-        let limit_price               = price_hi;
+        let size_taker                = MAX_POSSIBLE;
         let self_match_behavior_taker = CANCEL_MAKER;
         // Declare taker match amounts.
-        let size_taker  = size_maker;
-        let base_taker  = size_taker * LOT_SIZE_COIN;
-        let quote_taker = size_taker * price_hi * TICK_SIZE_COIN;
+        let size_taker_match = size_maker;
+        let base_taker       = size_taker_match * LOT_SIZE_COIN;
+        let quote_taker      = size_taker_match * price_hi * TICK_SIZE_COIN;
         // Declare trade and fee amounts.
         let base_trade       = base_taker;
         let integrator_share = quote_taker / integrator_divisor;
@@ -5956,8 +6150,8 @@ module econia::market {
         // Place taker order with self match.
         let (base_trade_r, quote_trade_r, fee_r) =
                 place_market_order_user<BC, QC>(
-            &user, market_id, integrator, direction_taker, min_base, max_base,
-            min_quote, max_quote, limit_price, self_match_behavior_taker);
+            &user, market_id, integrator, direction_taker, size_taker,
+            self_match_behavior_taker);
         // Assert returns.
         assert!(base_trade_r  == base_trade, 0);
         assert!(quote_trade_r == quote_trade, 0);
@@ -6031,11 +6225,7 @@ module econia::market {
         let price_hi = integrator_divisor * taker_divisor * 2;
         // Declare taker order parameters.
         let direction_taker           = if (side_maker == ASK) BUY else SELL;
-        let min_base                  = 0;
-        let max_base                  = MAX_POSSIBLE;
-        let min_quote                 = 0;
-        let max_quote                 = MAX_POSSIBLE;
-        let limit_price               = price_hi;
+        let size_taker                = MAX_POSSIBLE;
         let self_match_behavior_taker = CANCEL_TAKER;
         // Declare deposit amounts.
         let deposit_base  = HI_64 / 2;
@@ -6085,8 +6275,8 @@ module econia::market {
             market_id, side_maker, market_order_id_hi), 0);
         // Place taker order with self match.
         place_market_order_user<BC, QC>(
-            &user, market_id, integrator, direction_taker, min_base, max_base,
-            min_quote, max_quote, limit_price, self_match_behavior_taker);
+            &user, market_id, integrator, direction_taker, size_taker,
+            self_match_behavior_taker);
         // Assert list node orders active.
         assert!(is_list_node_order_active(
             market_id, side_maker, market_order_id_lo), 0);
@@ -6142,11 +6332,7 @@ module econia::market {
         // Declare taker order parameters.
         let direction_taker     = if (side_maker == ASK) BUY else SELL;
         let self_match_behavior = 0xff;
-        let min_base            = 0;
-        let max_base            = MAX_POSSIBLE;
-        let min_quote           = 0;
-        let max_quote           = MAX_POSSIBLE;
-        let limit_price         = price_maker;
+        let size_taker          = MAX_POSSIBLE;
         // Declare deposit amounts.
         let deposit_base  = HI_64 / 2;
         let deposit_quote = HI_64 / 2;
@@ -6161,8 +6347,8 @@ module econia::market {
             restriction, self_match_behavior);
         // Place an invalid taker order.
         place_market_order_user<BC, QC>(
-            &user, market_id, integrator, direction_taker, min_base, max_base,
-            min_quote, max_quote, limit_price, self_match_behavior);
+            &user, market_id, integrator, direction_taker, size_taker,
+            self_match_behavior);
     }
 
     #[test]
@@ -8117,17 +8303,12 @@ module econia::market {
         let custodian_id = NO_CUSTODIAN;
         let integrator = @integrator;
         let direction = BUY;
-        let min_base = 0;
-        let max_base = MAX_POSSIBLE;
-        let min_quote = 0;
-        let max_quote = MAX_POSSIBLE;
-        let limit_price = HI_PRICE;
+        let size = MAX_POSSIBLE;
         let self_match_behavior = ABORT;
         // Attempt invalid invocation.
         place_market_order<QC, QC>(
             user_address, market_id, custodian_id, integrator, direction,
-            min_base, max_base, min_quote, max_quote, limit_price,
-            self_match_behavior);
+            size, self_match_behavior);
     }
 
     #[test]
@@ -8143,17 +8324,138 @@ module econia::market {
         let custodian_id = NO_CUSTODIAN;
         let integrator = @integrator;
         let direction = BUY;
-        let min_base = 0;
-        let max_base = MAX_POSSIBLE;
-        let min_quote = 0;
-        let max_quote = MAX_POSSIBLE;
-        let limit_price = HI_PRICE;
+        let size = MAX_POSSIBLE;
         let self_match_behavior = ABORT;
         // Attempt invalid invocation.
         place_market_order<BC, BC>(
             user_address, market_id, custodian_id, integrator, direction,
-            min_base, max_base, min_quote, max_quote, limit_price,
+            size, self_match_behavior);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = E_SIZE_TOO_SMALL)]
+    /// Verify failure for invalid size argument.
+    fun test_place_market_order_size_too_small()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        init_markets_users_integrator_test();
+        // Declare order arguments.
+        let user_address = @user_0;
+        let market_id = MARKET_ID_COIN;
+        let custodian_id = NO_CUSTODIAN;
+        let integrator = @integrator;
+        let direction = BUY;
+        let size = MIN_SIZE_COIN - 1;
+        let self_match_behavior = ABORT;
+        // Attempt invalid invocation.
+        place_market_order<BC, QC>(
+            user_address, market_id, custodian_id, integrator, direction,
+            size, self_match_behavior);
+    }
+
+    #[test]
+    /// Verify state updates, returns for market buy when user specifies
+    /// base trade amount that is less than max possible, under
+    /// authority of signing user.
+    fun test_place_market_order_max_base_adjust_buy_user()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (user_0, user_1) = init_markets_users_integrator_test();
+        // Get fee divisors.
+        let (taker_divisor, integrator_divisor) =
+            (incentives::get_taker_fee_divisor(),
+             incentives::get_fee_share_divisor(INTEGRATOR_TIER));
+        // Declare order parameters with price set to product of
+        // divisors, to prevent truncation effects on estimates.
+        let side                = ASK; // Maker sell.
+        let size_post           = 10; // Maker order size.
+        let size_match          = MIN_SIZE_COIN; // Taker order size.
+        let base_match          = size_match * LOT_SIZE_COIN;
+        let base_post           = size_post  * LOT_SIZE_COIN;
+        let price               = integrator_divisor * taker_divisor;
+        let quote_match         = size_match * price * TICK_SIZE_COIN;
+        let quote_post          = size_post  * price * TICK_SIZE_COIN;
+        let integrator_share    = quote_match / integrator_divisor;
+        let econia_share        =
+            quote_match / taker_divisor - integrator_share;
+        let fee                 = integrator_share + econia_share;
+        let quote_trade         = quote_match + fee;
+        let self_match_behavior = ABORT;
+        let base_deposit_taker  = HI_64 / 2;
+        let quote_deposit_taker = HI_64 / 2;
+        // Deposit to maker's account enough to impinge on min and max
+        // amounts after complete fill.
+        user::deposit_coins<BC>(@user_0, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(base_post));
+        user::deposit_coins<QC>(@user_0, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(HI_64 - quote_post));
+        // Deposit to taker's account such that size, not max possible
+        // match amount, is limiting factor for matching.
+        user::deposit_coins<BC>(@user_1, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(base_deposit_taker));
+        user::deposit_coins<QC>(@user_1, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(quote_deposit_taker));
+        // Place maker order.
+        let (market_order_id_0, _, _, _) = place_limit_order_user<BC, QC>(
+            &user_0, MARKET_ID_COIN, @integrator, side, size_post, price,
+            NO_RESTRICTION, self_match_behavior);
+        // Place taker order.
+        let (base_trade_r, quote_trade_r, fee_r) = place_market_order_user<
+            BC, QC>(&user_1, MARKET_ID_COIN, @integrator, BUY, size_match,
             self_match_behavior);
+        // Assert returns.
+        assert!(base_trade_r  == base_match, 0);
+        assert!(quote_trade_r == quote_trade, 0);
+        assert!(fee_r         == fee, 0);
+        // Get fields for maker order on book.
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
+            get_order_fields_test(MARKET_ID_COIN, side, market_order_id_0);
+        // Assert field returns except access key, used for user lookup.
+        assert!(size_r         == size_post - size_match, 0);
+        assert!(price_r        == price, 0);
+        assert!(user_r         == @user_0, 0);
+        assert!(custodian_id_r == NO_CUSTODIAN, 0);
+        // Assert user-side order fields.
+        let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
+            @user_0, MARKET_ID_COIN, NO_CUSTODIAN, side, order_access_key);
+        assert!(market_order_id_r == market_order_id_0, 0);
+        assert!(size_r            == size_post - size_match, 0);
+        // Assert maker's asset counts.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            user::get_asset_counts_internal(
+                @user_0, MARKET_ID_COIN, NO_CUSTODIAN);
+        assert!(base_total      == base_post - base_match, 0);
+        assert!(base_available  == 0, 0);
+        assert!(base_ceiling    == base_post - base_match, 0);
+        assert!(quote_total     == HI_64 - quote_post + quote_match, 0);
+        assert!(quote_available == HI_64 - quote_post + quote_match, 0);
+        assert!(quote_ceiling   == HI_64, 0);
+        // Assert collateral amounts.
+        assert!(user::get_collateral_value_simple_test<BC>(
+            @user_0, MARKET_ID_COIN, NO_CUSTODIAN)
+            == base_post - base_match, 0);
+        assert!(user::get_collateral_value_simple_test<QC>(
+            @user_0, MARKET_ID_COIN, NO_CUSTODIAN)
+            == HI_64 - quote_post + quote_match, 0);
+        // Assert taker's asset counts.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            user::get_asset_counts_internal(
+                @user_1, MARKET_ID_COIN, NO_CUSTODIAN);
+        assert!(base_total      == base_deposit_taker + base_match, 0);
+        assert!(base_available  == base_deposit_taker + base_match, 0);
+        assert!(base_ceiling    == base_deposit_taker + base_match, 0);
+        assert!(quote_total     == quote_deposit_taker - quote_trade, 0);
+        assert!(quote_available == quote_deposit_taker - quote_trade, 0);
+        assert!(quote_ceiling   == quote_deposit_taker - quote_trade, 0);
+        // Assert collateral amounts.
+        assert!(user::get_collateral_value_simple_test<BC>(
+            @user_1, MARKET_ID_COIN, NO_CUSTODIAN)
+            == base_deposit_taker + base_match, 0);
+        assert!(user::get_collateral_value_simple_test<QC>(
+            @user_1, MARKET_ID_COIN, NO_CUSTODIAN)
+            == quote_deposit_taker - quote_trade, 0);
     }
 
     #[test]
@@ -8185,13 +8487,13 @@ module econia::market {
         let quote_trade         = quote_match + fee;
         let quote_deposit       = quote_trade + TICK_SIZE_COIN;
         let self_match_behavior = ABORT;
-        // Deposit to first maker's account enough to impinge on min
-        // and max amounts after fill.
+        // Deposit to maker's account enough to impinge on min and max
+        // amounts after fill.
         user::deposit_coins<BC>(@user_0, MARKET_ID_COIN, NO_CUSTODIAN,
                                 assets::mint_test(base_post));
         user::deposit_coins<QC>(@user_0, MARKET_ID_COIN, NO_CUSTODIAN,
                                 assets::mint_test(HI_64 - quote_post));
-        // Deposit to maker's account similarly, for base match amount
+        // Deposit to takers's account similarly, for base match amount
         // as limiting factor in matching engine.
         user::deposit_coins<BC>(@user_1, MARKET_ID_COIN, NO_CUSTODIAN,
                                 assets::mint_test(HI_64 - base_match));
@@ -8203,8 +8505,8 @@ module econia::market {
             NO_RESTRICTION, self_match_behavior);
         // Place taker order.
         let (base_trade_r, quote_trade_r, fee_r) = place_market_order_user<
-            BC, QC>(&user_1, MARKET_ID_COIN, @integrator, BUY, 0, MAX_POSSIBLE,
-            0, quote_deposit, price, self_match_behavior);
+            BC, QC>(&user_1, MARKET_ID_COIN, @integrator, BUY, MAX_POSSIBLE,
+            self_match_behavior);
         // Assert returns.
         assert!(base_trade_r  == base_match, 0);
         assert!(quote_trade_r == quote_trade, 0);
@@ -8288,13 +8590,13 @@ module econia::market {
         let max_quote           = quote_trade + TICK_SIZE_COIN;
         let quote_deposit       = HI_64 - max_quote;
         let self_match_behavior = ABORT;
-        // Deposit to first maker's account enough to impinge on min
-        // and max amounts after fill.
+        // Deposit to maker's account enough to impinge on min and max
+        // amounts after fill.
         user::deposit_coins<BC>(@user_0, MARKET_ID_COIN, NO_CUSTODIAN,
                                 assets::mint_test(HI_64 - base_post));
         user::deposit_coins<QC>(@user_0, MARKET_ID_COIN, NO_CUSTODIAN,
                                 assets::mint_test(quote_post));
-        // Deposit to maker's account similarly, for base match amount
+        // Deposit to takers's account similarly, for base match amount
         // as limiting factor in matching engine.
         user::deposit_coins<BC>(@user_1, MARKET_ID_COIN, CUSTODIAN_ID_USER_1,
                                 assets::mint_test(base_match));
@@ -8307,8 +8609,8 @@ module econia::market {
             CUSTODIAN_ID_USER_1); // Get custodian capability.
         let (base_trade_r, quote_trade_r, fee_r) =
             place_market_order_custodian<BC, QC>( // Place taker order.
-                @user_1, MARKET_ID_COIN, @integrator, SELL, 0, MAX_POSSIBLE,
-                0, max_quote, price, self_match_behavior,
+                @user_1, MARKET_ID_COIN, @integrator, SELL, MAX_POSSIBLE,
+                self_match_behavior,
                 &custodian_capability);
         // Drop custodian capability.
         registry::drop_custodian_capability_test(custodian_capability);
@@ -8392,16 +8694,16 @@ module econia::market {
             quote_match / taker_divisor - integrator_share;
         let fee                 = integrator_share + econia_share;
         let quote_trade         = quote_match + fee;
-        let max_base            = base_match + LOT_SIZE_COIN;
-        let base_deposit        = HI_64 - max_base;
+        let size_taker          = base_match + LOT_SIZE_COIN;
+        let base_deposit        = HI_64 - size_taker;
         let self_match_behavior = ABORT;
-        // Deposit to first maker's account enough to impinge on min
-        // and max amounts after fill.
+        // Deposit to maker's account enough to impinge on min and max
+        // amounts after fill.
         user::deposit_coins<BC>(@user_0, MARKET_ID_COIN, NO_CUSTODIAN,
                                 assets::mint_test(base_post));
         user::deposit_coins<QC>(@user_0, MARKET_ID_COIN, NO_CUSTODIAN,
                                 assets::mint_test(HI_64 - quote_post));
-        // Deposit to maker's account similarly, for quote match amount
+        // Deposit to takers's account similarly, for quote match amount
         // as limiting factor in matching engine.
         user::deposit_coins<BC>(@user_1, MARKET_ID_COIN, CUSTODIAN_ID_USER_1,
                                 assets::mint_test(base_deposit));
@@ -8414,9 +8716,8 @@ module econia::market {
             CUSTODIAN_ID_USER_1); // Get custodian capability.
         let (base_trade_r, quote_trade_r, fee_r) =
             place_market_order_custodian<BC, QC>( // Place taker order.
-                @user_1, MARKET_ID_COIN, @integrator, BUY, 0, max_base, 0,
-                MAX_POSSIBLE, price, self_match_behavior,
-                &custodian_capability);
+                @user_1, MARKET_ID_COIN, @integrator, BUY, size_taker,
+                self_match_behavior, &custodian_capability);
         // Drop custodian capability.
         registry::drop_custodian_capability_test(custodian_capability);
         // Assert returns.
@@ -8499,16 +8800,16 @@ module econia::market {
             quote_match / taker_divisor - integrator_share;
         let fee                 = integrator_share + econia_share;
         let quote_trade         = quote_match - fee;
-        let max_base            = base_match + LOT_SIZE_COIN;
-        let base_deposit        = max_base;
+        let size_taker          = base_match + LOT_SIZE_COIN;
+        let base_deposit        = size_taker;
         let self_match_behavior = ABORT;
-        // Deposit to first maker's account enough to impinge on min
-        // and max amounts after fill.
+        // Deposit to maker's account enough to impinge on min and max
+        // amounts after fill.
         user::deposit_coins<BC>(@user_0, MARKET_ID_COIN, NO_CUSTODIAN,
                                 assets::mint_test(HI_64 - base_post));
         user::deposit_coins<QC>(@user_0, MARKET_ID_COIN, NO_CUSTODIAN,
                                 assets::mint_test(quote_post));
-        // Deposit to maker's account similarly, for quote match amount
+        // Deposit to taker's account similarly, for quote match amount
         // as limiting factor in matching engine.
         user::deposit_coins<BC>(@user_1, MARKET_ID_COIN, NO_CUSTODIAN,
                                 assets::mint_test(base_deposit));
@@ -8519,8 +8820,8 @@ module econia::market {
             NO_RESTRICTION, self_match_behavior); // Place maker order.
         let (base_trade_r, quote_trade_r, fee_r) =
             place_market_order_user<BC, QC>( // Place taker order.
-                &user_1, MARKET_ID_COIN, @integrator, SELL, 0, max_base, 0,
-                MAX_POSSIBLE, price, self_match_behavior);
+                &user_1, MARKET_ID_COIN, @integrator, SELL,
+                MAX_POSSIBLE, self_match_behavior);
         // Assert returns.
         assert!(base_trade_r  == base_match, 0);
         assert!(quote_trade_r == quote_trade, 0);
@@ -8603,13 +8904,13 @@ module econia::market {
         let quote_trade         = quote_match + fee;
         let quote_deposit       = quote_trade + TICK_SIZE_COIN;
         let self_match_behavior = ABORT;
-        // Deposit to first maker's account enough to impinge on min
-        // and max amounts after fill.
+        // Deposit to maker's account enough to impinge on min and max
+        // amounts after fill.
         user::deposit_coins<BC>(@user_0, MARKET_ID_COIN, NO_CUSTODIAN,
                                 assets::mint_test(base_post));
         user::deposit_coins<QC>(@user_0, MARKET_ID_COIN, NO_CUSTODIAN,
                                 assets::mint_test(HI_64 - quote_post));
-        // Deposit to maker's account similarly, for base match amount
+        // Deposit to taker's account similarly, for base match amount
         // as limiting factor in matching engine.
         user::deposit_coins<BC>(@user_1, MARKET_ID_COIN, NO_CUSTODIAN,
                                 assets::mint_test(HI_64 - base_match));
@@ -8619,8 +8920,8 @@ module econia::market {
             &user_0, MARKET_ID_COIN, @integrator, side, size_post, price,
             NO_RESTRICTION, self_match_behavior); // Place maker order.
         place_market_order_user_entry<BC, QC>( // Place taker order.
-            &user_1, MARKET_ID_COIN, @integrator, BUY, 0, MAX_POSSIBLE,
-            0, quote_deposit, price, self_match_behavior);
+            &user_1, MARKET_ID_COIN, @integrator, BUY, MAX_POSSIBLE,
+            self_match_behavior);
         // Get fields for maker order on book.
         let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
             get_order_fields_test(MARKET_ID_COIN, side, market_order_id_0);

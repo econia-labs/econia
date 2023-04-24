@@ -566,6 +566,7 @@
 /// * `is_ascending()`
 /// * `is_ascending_access_key()`
 /// * `is_empty()`
+/// * `is_local_tail()`
 /// * `new()`
 /// * `pop_head()`
 /// * `pop_tail()`
@@ -1531,6 +1532,31 @@ module econia::avl_queue {
     ): bool {
         ((avlq_ref.bits >> SHIFT_HEAD_NODE_ID) & (HI_NODE_ID as u128)) ==
             (NIL as u128) // Return true if no AVL queue head.
+    }
+
+    /// Return `true` if access key corresponds to a list node at the
+    /// tail of its corresponding doubly linked list, aborting for an
+    /// invalid list node ID.
+    ///
+    /// # Testing
+    ///
+    /// * `test_insert()`
+    /// * `test_remove_2()`
+    public fun is_local_tail<V>(
+        avlq_ref: &AVLqueue<V>,
+        access_key: u64
+    ): bool {
+        let list_node_id = // Extract list node ID from access key.
+            (access_key >> SHIFT_ACCESS_LIST_NODE_ID) & HI_NODE_ID;
+        let list_node_ref = // Immutably borrow corresponding list node.
+            table_with_length::borrow(&avlq_ref.list_nodes, list_node_id);
+        // Get virtual next field from node.
+        let next = ((list_node_ref.next_msbs as u64) << BITS_PER_BYTE) |
+                   (list_node_ref.next_lsbs as u64);
+        let tree_node_flag_bit = // Get tree node flag bit.
+            (((next >> SHIFT_NODE_TYPE) & (BIT_FLAG_TREE_NODE as u64)) as u8);
+        // Return true if next node is flagged as a tree node.
+        return (tree_node_flag_bit == BIT_FLAG_TREE_NODE)
     }
 
     /// Return a new AVL queue, optionally allocating inactive nodes.
@@ -4590,6 +4616,14 @@ module econia::avl_queue {
     }
 
     #[test_only]
+    /// Flip access key sort order bit.
+    public fun flip_access_key_sort_order_bit_test(
+        access_key: u64
+    ): u64 {
+        access_key ^ ((BIT_FLAG_ASCENDING as u64) << (SHIFT_ACCESS_SORT_ORDER))
+    }
+
+    #[test_only]
     /// Get list node ID encoded in an access key.
     ///
     /// # Testing
@@ -5592,12 +5626,20 @@ module econia::avl_queue {
     fun test_insert() {
         // Init ascending AVL queue with allocated nodes.
         let avlq = new(ASCENDING, 7, 3);
-        // Insert per reference diagram, storing access keys.
+        // Insert per reference diagram, storing access keys and testing
+        // local tail check updates.
         let access_key_3_9 = insert(&mut avlq, 3, 9);
+        assert!(is_local_tail(&avlq, access_key_3_9), 0);
         let access_key_4_8 = insert(&mut avlq, 4, 8);
+        assert!(is_local_tail(&avlq, access_key_4_8), 0);
         let access_key_5_7 = insert(&mut avlq, 5, 7);
+        assert!(is_local_tail(&avlq, access_key_5_7), 0);
         let access_key_3_6 = insert(&mut avlq, 3, 6);
+        assert!(is_local_tail(&avlq, access_key_3_6), 0);
+        assert!(!is_local_tail(&avlq, access_key_3_9), 0);
         let access_key_5_5 = insert(&mut avlq, 5, 5);
+        assert!(!is_local_tail(&avlq, access_key_5_7), 0);
+        assert!(is_local_tail(&avlq, access_key_5_5), 0);
         // Declare expected node IDs per initial node allocations.
         let tree_node_id_3_9 = 7;
         let tree_node_id_4_8 = 6;
@@ -6666,8 +6708,14 @@ module econia::avl_queue {
         let node_id_4 = get_access_key_list_node_id_test(access_key_2_4);
         let node_id_5 = get_access_key_list_node_id_test(access_key_1_5);
         let node_id_6 = get_access_key_list_node_id_test(access_key_1_6);
+        // Assert local tail state for tree node with insertion key 2.
+        assert!(!is_local_tail(&avlq, access_key_2_3), 0);
+        assert!(is_local_tail(&avlq, access_key_2_4), 0);
         // Execute first removal, asserting returned insertion value.
         assert!(remove(&mut avlq, access_key_2_4) == 4, 0);
+        // Assert local tail state for tree node with insertion key 2.
+        assert!(is_local_tail(&avlq, access_key_2_3), 0);
+        assert!(!is_local_tail(&avlq, access_key_2_4), 0);
         // Assert AVL queue state.
         assert!(get_tree_top_test(    &avlq) == (NIL as u64), 0);
         assert!(get_list_top_test(    &avlq) == node_id_4, 0);

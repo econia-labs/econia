@@ -579,13 +579,15 @@ mod tests {
     #[tokio::test]
     async fn test_get_l1_orderbook() {
         let market_id = 0;
+        let depth = 1;
+
         let config = load_config();
         let app = make_test_server(config).await;
 
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri(format!("/market/{}/orderbook?depth=1", market_id))
+                    .uri(format!("/market/{}/orderbook?depth={}", market_id, depth))
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -601,6 +603,39 @@ mod tests {
         let book_data = res.unwrap();
         assert_eq!(book_data.bids.len(), 1);
         assert_eq!(book_data.asks.len(), 1);
+    }
+
+    /// Test that the orderbook endpoint returns L2 market data when a request
+    /// with depth set to 10 is sent.
+    ///
+    /// This test sends a GET request to the `/market/{market_id}/orderbook`
+    /// endpoint with the `depth` parameter set to `10`. The response is
+    /// then checked to ensure that it has a `200 OK` status code, and the
+    /// response body is checked to ensure that it is a JSON response in the
+    /// correct format.
+    #[tokio::test]
+    async fn test_get_l2_orderbook() {
+        let market_id = 0;
+        let depth = 10;
+
+        let config = load_config();
+        let app = make_test_server(config).await;
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri(format!("/market/{}/orderbook?depth={}", market_id, depth))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
+        let res = serde_json::from_slice::<TestOnlyOrderbookResponse>(&body);
+        assert!(res.is_ok());
     }
 
     /// Test that the orderbook endpoint returns a `400 Bad Request` error

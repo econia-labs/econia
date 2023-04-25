@@ -8,13 +8,14 @@ export default function Home({ marketData }: { marketData: ApiMarket[] }) {
   const marketNames: string[] = marketData
     .sort((a, b) => a.market_id - b.market_id)
     .map((market) => `${market.base.symbol}-${market.quote.symbol}`);
+
   return (
     <>
       <Head>
         <title>Econia</title>
       </Head>
       <Layout>
-        <StatsBar />
+        <StatsBar marketNames={marketNames} />
         <main>
           <p className="font-roboto-mono text-white">
             {JSON.stringify(marketNames)}
@@ -38,9 +39,6 @@ export async function getStaticProps() {
     props: {
       marketData,
     },
-    // Next.js will attempt to re-generate the page:
-    // - When a request comes in
-    // - At most once every 10 seconds
-    revalidate: 10, // In seconds
+    revalidate: 600, // 10 minutes
   };
 }

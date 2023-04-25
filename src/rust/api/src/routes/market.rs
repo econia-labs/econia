@@ -309,6 +309,13 @@ mod tests {
         get_market_ids, load_config, routes::router, start_redis_channels, tests::make_test_server,
     };
 
+    #[allow(dead_code)]
+    #[derive(Deserialize)]
+    struct TestOnlyOrderbookResponse {
+        bids: Vec<PriceLevel>,
+        asks: Vec<PriceLevel>,
+    }
+
     /// Test that the market history endpoint returns market data with a
     /// resolution of 1 minute.
     ///
@@ -574,5 +581,9 @@ mod tests {
             .unwrap();
 
         assert_eq!(response.status(), StatusCode::OK);
+
+        let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
+        let res = serde_json::from_slice::<TestOnlyOrderbookResponse>(&body);
+        assert!(res.is_ok());
     }
 }

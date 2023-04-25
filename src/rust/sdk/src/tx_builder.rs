@@ -24,6 +24,10 @@ pub struct EconiaTransactionBuilder<'a> {
 }
 
 impl<'a> EconiaTransactionBuilder<'a> {
+    /// Create a new [EconiaTransactionBuilder].
+    ///
+    /// Arguments:
+    /// * `client`: a mutable reference to the underlying [EconiaClient].
     pub fn new(client: &'a mut EconiaClient) -> Self {
         Self {
             client,
@@ -32,11 +36,19 @@ impl<'a> EconiaTransactionBuilder<'a> {
         }
     }
 
+    /// Set the retry amount for the transaction.
+    ///
+    /// Arguments:
+    /// * `amount`: the amount of times to retry the transaction.
     pub fn retry_amount(mut self, amount: u8) -> Self {
         self.retry_amount = Some(amount);
         self
     }
 
+    /// Set the internal [EntryFunction] as register_for_coin
+    ///
+    /// Arguments:
+    /// * `amount`: the amount of times to retry the transaction.
     pub fn register_for_coin(mut self, coin: &TypeTag) -> Self {
         let managed_coin = "0x1::managed_coin";
         let Ok(id) = MoveModuleId::from_str(managed_coin) else {
@@ -57,6 +69,20 @@ impl<'a> EconiaTransactionBuilder<'a> {
 
     // Incentives entry functions
 
+    /// Set the internal [EntryFunction] as [update_incentives](https://github.com/econia-labs/econia/blob/dev/src/move/econia/doc/incentives.md#0xc0deb00c_incentives_update_incentives)
+    ///
+    /// Arguments:
+    /// * `utility_coin`: [TypeTag] of the utility coin to use.
+    /// * `market_registration_fee`: Market registration fee to set.
+    /// * `underwriter_registration_fee`: Underwriter registration fee
+    ///   to set.
+    /// * `custodian_registration_fee`: Custodian registration fee to
+    ///   set.
+    /// * `taker_fee_divisor`: Taker fee divisor to set.
+    /// * `integrator_fee_store_tiers_ref`: Immutable reference to
+    ///   0-indexed vector of 3-element vectors, with each 3-element
+    ///   vector containing fields for a corresponding
+    ///   `IntegratorFeeStoreTierParameters`.
     pub fn update_incentives(
         mut self,
         utility_coin: &TypeTag,
@@ -89,6 +115,13 @@ impl<'a> EconiaTransactionBuilder<'a> {
         self
     }
 
+    /// Set the internal [EntryFunction] as [upgrade_integrator_fee_store_via_coinstore](https://github.com/econia-labs/econia/blob/dev/src/move/econia/doc/incentives.md#0xc0deb00c_incentives_upgrade_integrator_fee_store_via_coinstore)
+    ///
+    /// Arguments:
+    /// * `quote_coin`: [TypeTag] of the quote coin to use.
+    /// * `utility_coin`: [TypeTag] of the utility coin to use.
+    /// * `market_id`: Market ID for corresponding market.
+    /// * `new_tier`: Tier to upgrade to.
     pub fn upgrade_integrator_fee_store_via_coinstore(
         mut self,
         quote_coin: &TypeTag,
@@ -113,6 +146,12 @@ impl<'a> EconiaTransactionBuilder<'a> {
         self
     }
 
+    /// Set the internal [EntryFunction] as [withdraw_integrator_fees_via_coinstores](https://github.com/econia-labs/econia/blob/dev/src/move/econia/doc/incentives.md#0xc0deb00c_incentives_withdraw_integrator_fees_via_coinstores)
+    ///
+    /// Arguments:
+    /// * `quote_coin`: [TypeTag] of the quote coin to use.
+    /// * `utility_coin`: [TypeTag] of the utility coin to use.
+    /// * `market_id`: Market ID for corresponding market.
     pub fn withdraw_integrator_fees_via_coinstores(
         mut self,
         quote_coin: &TypeTag,

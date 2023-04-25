@@ -1,7 +1,7 @@
 import Head from "next/head";
 
+import { Header } from "@/components/Header";
 import { StatsBar } from "@/components/StatsBar";
-import { Layout } from "@/layouts/Layout";
 import { type ApiMarket } from "@/types/api";
 
 export default function Home({ marketData }: { marketData: ApiMarket[] }) {
@@ -14,14 +14,21 @@ export default function Home({ marketData }: { marketData: ApiMarket[] }) {
       <Head>
         <title>Econia</title>
       </Head>
-      <Layout>
+      <div className="flex min-h-screen w-full flex-col bg-black">
+        <Header />
         <StatsBar marketNames={marketNames} />
-        <main>
-          <p className="font-roboto-mono text-white">
-            {JSON.stringify(marketNames)}
-          </p>
+        <main className="flex flex-1">
+          <div className="flex-1 border-r border-neutral-600 px-4 py-2">
+            <p className="font-jost text-white">Price Chart</p>
+          </div>
+          <div className="w-[320px] flex-initial border-r border-neutral-600 px-4 py-2">
+            <p className="font-jost text-white">Orderbook</p>
+          </div>
+          <div className="w-[320px] flex-initial px-4 py-2">
+            <p className="font-jost text-white">Order Entry</p>
+          </div>
         </main>
-      </Layout>
+      </div>
     </>
   );
 }

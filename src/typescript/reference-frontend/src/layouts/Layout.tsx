@@ -1,11 +1,12 @@
-import { Jost } from "next/font/google";
-import Image from "next/image";
-import React, { type PropsWithChildren } from "react";
+import { type PropsWithChildren } from "react";
 
-const jost = Jost({ subsets: ["latin"] });
+import { Header } from "@/components/Header";
 
-export const Layout: React.FC<PropsWithChildren> = ({ children }) => {
+export function Layout({ children }: PropsWithChildren) {
   return (
-    <div className={`h-screen bg-black ${jost.className}`}>{children}</div>
+    <div className={`min-h-screen w-full bg-black`}>
+      <Header />
+      {children}
+    </div>
   );
-};
+}

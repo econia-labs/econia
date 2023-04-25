@@ -305,7 +305,9 @@ mod tests {
     use tower::ServiceExt;
 
     use super::*;
-    use crate::{get_market_ids, load_config, routes::router, start_redis_channels};
+    use crate::{
+        get_market_ids, load_config, routes::router, start_redis_channels, tests::make_test_server,
+    };
 
     /// Test that the market history endpoint returns market data with a
     /// resolution of 1 minute.
@@ -553,5 +555,24 @@ mod tests {
             .unwrap();
 
         assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    }
+
+    #[tokio::test]
+    async fn test_get_l1_orderbook() {
+        let market_id = 0;
+        let config = load_config();
+        let app = make_test_server(config).await;
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri(format!("/market/{}/orderbook?depth=1", market_id))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
     }
 }

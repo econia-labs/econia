@@ -662,4 +662,31 @@ mod tests {
 
         assert_eq!(response.status(), StatusCode::BAD_REQUEST);
     }
+
+    /// Test that the orderbook endpoint returns a `400 Bad Request` error
+    /// when the depth parameter is set to a negative number.
+    ///
+    /// This test sends a GET request to the `/market/{market_id}/orderbook`
+    /// endpoint with the `depth` parameter of `-1`. The response is then
+    /// checked to ensure that it has a `400 Bad Request` status code.
+    #[tokio::test]
+    async fn test_get_orderbook_negative_depth_param() {
+        let market_id = 0;
+        let depth = -1;
+
+        let config = load_config();
+        let app = make_test_server(config).await;
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri(format!("/market/{}/orderbook?depth={}", market_id, depth))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    }
 }

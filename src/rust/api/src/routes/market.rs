@@ -597,6 +597,10 @@ mod tests {
         let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
         let res = serde_json::from_slice::<TestOnlyOrderbookResponse>(&body);
         assert!(res.is_ok());
+
+        let book_data = res.unwrap();
+        assert_eq!(book_data.bids.len(), 1);
+        assert_eq!(book_data.asks.len(), 1);
     }
 
     /// Test that the orderbook endpoint returns a `400 Bad Request` error

@@ -10,7 +10,7 @@ export function StatsBar({ marketNames }: Props) {
   const [selectedMarket, setSelectedMarket] = useState<string>(marketNames[0]);
 
   return (
-    <div className="flex border-b border-neutral-600 px-4 py-2">
+    <div className="flex border-b border-neutral-600 bg-black px-4 py-2">
       <div className="flex flex-1 items-center">
         <Listbox value={selectedMarket} onChange={setSelectedMarket}>
           <div className="relative w-[160px]">

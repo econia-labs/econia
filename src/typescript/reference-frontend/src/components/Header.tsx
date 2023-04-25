@@ -2,8 +2,8 @@ import Image from "next/image";
 
 export function Header() {
   return (
-    <header className="border-b border-neutral-600 bg-black">
-      <nav className="flex items-center justify-between px-8 py-4">
+    <header className="flex flex-col border-b border-neutral-600 bg-black">
+      <nav className="flex items-center justify-between px-8 py-6">
         <div className="my-auto flex-1 items-center">
           <Image
             className=""
@@ -24,9 +24,21 @@ export function Header() {
           <p className="font-lg font-roboto-mono font-light uppercase tracking-wide text-white hover:text-neutral-400">
             Trade
           </p>
+          <p className="font-lg font-roboto-mono font-light uppercase tracking-wide text-neutral-600">
+            /
+          </p>
+          <p className="font-lg font-roboto-mono font-light uppercase tracking-wide text-white hover:text-neutral-400">
+            Faucet
+          </p>
+          <p className="font-lg font-roboto-mono font-light uppercase tracking-wide text-neutral-600">
+            /
+          </p>
+          <p className="font-lg font-roboto-mono font-light uppercase tracking-wide text-white hover:text-neutral-400">
+            Docs
+          </p>
         </div>
         <div className="flex flex-1 justify-end">
-          <p className="font-roboto-mono text-white">Twitter</p>
+          <p className="font-roboto-mono text-white">Socials</p>
         </div>
       </nav>
     </header>

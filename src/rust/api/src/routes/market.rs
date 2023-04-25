@@ -586,4 +586,23 @@ mod tests {
         let res = serde_json::from_slice::<TestOnlyOrderbookResponse>(&body);
         assert!(res.is_ok());
     }
+
+    #[tokio::test]
+    async fn test_get_orderbook_no_depth_param() {
+        let market_id = 0;
+        let config = load_config();
+        let app = make_test_server(config).await;
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri(format!("/market/{}/orderbook", market_id))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    }
 }

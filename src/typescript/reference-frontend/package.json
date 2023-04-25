@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "format": "prettier --ignore-path .gitignore --write \"src/**/*.+(js|ts|json)\" --ignore-unknown --no-error-on-unmatched-pattern"
   },
   "dependencies": {
     "next": "13.3.1",

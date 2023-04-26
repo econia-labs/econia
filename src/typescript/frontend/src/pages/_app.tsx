@@ -5,7 +5,8 @@ import {
   PontemWalletAdapter,
   WalletProvider,
 } from "@manahippo/aptos-wallet-adapter";
-import type { AppProps } from "next/app";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { type AppProps } from "next/app";
 import { Jost, Roboto_Mono } from "next/font/google";
 import { useMemo } from "react";
 
@@ -21,18 +22,22 @@ const robotoMono = Roboto_Mono({
   variable: "--font-roboto-mono",
 });
 
+const queryClient = new QueryClient();
+
 export default function App({ Component, pageProps }: AppProps) {
   const wallets = useMemo(
     () => [new AptosWalletAdapter(), new PontemWalletAdapter()],
     []
   );
   return (
-    <WalletProvider wallets={wallets}>
-      <AptosContextProvider>
-        <div className={`${jost.variable} ${robotoMono.variable}`}>
-          <Component {...pageProps} />
-        </div>
-      </AptosContextProvider>
-    </WalletProvider>
+    <QueryClientProvider client={queryClient}>
+      <WalletProvider wallets={wallets}>
+        <AptosContextProvider>
+          <div className={`${jost.variable} ${robotoMono.variable}`}>
+            <Component {...pageProps} />
+          </div>
+        </AptosContextProvider>
+      </WalletProvider>
+    </QueryClientProvider>
   );
 }

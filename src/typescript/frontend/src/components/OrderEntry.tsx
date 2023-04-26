@@ -1,3 +1,4 @@
+import { Tab } from "@headlessui/react";
 import { useState } from "react";
 
 import { type Side } from "@/types/global";
@@ -28,6 +29,30 @@ export function OrderEntry() {
           Sell
         </button>
       </div>
+      <Tab.Group>
+        <Tab.List className="mt-3 flex">
+          <Tab className="w-full font-roboto-mono text-sm font-light uppercase outline-none ui-selected:text-white ui-not-selected:text-neutral-500">
+            Limit
+          </Tab>
+          <Tab className="w-full font-roboto-mono text-sm font-light uppercase outline-none ui-selected:text-white ui-not-selected:text-neutral-500">
+            Market
+          </Tab>
+          <Tab className="w-full font-roboto-mono text-sm font-light uppercase outline-none ui-selected:text-white ui-not-selected:text-neutral-500">
+            Stop Limit
+          </Tab>
+        </Tab.List>
+        <Tab.Panels className="mt-2">
+          <Tab.Panel className="px-2 font-jost text-white">
+            Market Order Entry
+          </Tab.Panel>
+          <Tab.Panel className="px-2 font-jost text-white">
+            Limit Order Entry
+          </Tab.Panel>
+          <Tab.Panel className="px-2 font-jost text-white">
+            Stop Limit Order Entry
+          </Tab.Panel>
+        </Tab.Panels>
+      </Tab.Group>
     </div>
   );
 }

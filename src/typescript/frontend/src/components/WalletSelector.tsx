@@ -1,10 +1,5 @@
 import { Dialog, Transition } from "@headlessui/react";
-import {
-  useWallet,
-  Wallet,
-  WalletName,
-  WalletReadyState,
-} from "@manahippo/aptos-wallet-adapter";
+import { useWallet, WalletReadyState } from "@manahippo/aptos-wallet-adapter";
 import { Fragment, useEffect, useState } from "react";
 
 export function WalletSelector() {

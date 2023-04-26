@@ -1,6 +1,7 @@
 import { Listbox } from "@headlessui/react";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import { useState } from "react";
+
 import { WalletSelector } from "./WalletSelector";
 
 type Props = {

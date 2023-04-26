@@ -9,6 +9,8 @@ import type { AppProps } from "next/app";
 import { Jost, Roboto_Mono } from "next/font/google";
 import { useMemo } from "react";
 
+import { AptosContextProvider } from "@/contexts/AptosContext";
+
 const jost = Jost({
   subsets: ["latin"],
   variable: "--font-jost",
@@ -25,10 +27,12 @@ export default function App({ Component, pageProps }: AppProps) {
     []
   );
   return (
-    <div className={`${jost.variable} ${robotoMono.variable}`}>
-      <WalletProvider wallets={wallets}>
-        <Component {...pageProps} />
-      </WalletProvider>
-    </div>
+    <WalletProvider wallets={wallets}>
+      <AptosContextProvider>
+        <div className={`${jost.variable} ${robotoMono.variable}`}>
+          <Component {...pageProps} />
+        </div>
+      </AptosContextProvider>
+    </WalletProvider>
   );
 }

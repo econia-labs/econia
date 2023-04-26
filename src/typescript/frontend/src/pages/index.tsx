@@ -1,9 +1,9 @@
 import Head from "next/head";
 
 import { Header } from "@/components/Header";
+import { OrderEntry } from "@/components/OrderEntry";
 import { StatsBar } from "@/components/StatsBar";
 import { type ApiMarket } from "@/types/api";
-import { OrderEntry } from "@/components/OrderEntry";
 
 export default function Home({ marketData }: { marketData: ApiMarket[] }) {
   const marketNames: string[] = marketData

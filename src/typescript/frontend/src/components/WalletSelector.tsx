@@ -5,7 +5,7 @@ import { Fragment, useEffect, useState } from "react";
 export function WalletSelector() {
   const { account, connect, disconnect, select, wallet, wallets, connected } =
     useWallet();
-  const [isOpen, setIsOpen] = useState<boolean>(true);
+  const [isOpen, setIsOpen] = useState<boolean>(false);
 
   useEffect(() => {
     const connectWallet = async () => {

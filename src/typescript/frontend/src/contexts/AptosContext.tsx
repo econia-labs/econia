@@ -10,12 +10,11 @@ export const AptosContext = createContext<AptosContextState | undefined>(
 );
 
 export function AptosContextProvider({ children }: PropsWithChildren) {
-  const { NEXT_PUBLIC_RPC_URL } = process.env;
-  if (NEXT_PUBLIC_RPC_URL == null) {
-    throw new Error("NEXT_PUBLIC_RPC_URL not set.");
+  if (process.env.NEXT_PUBLIC_RPC_NODE_URL == null) {
+    throw new Error("NEXT_PUBLIC_RPC_NODE_URL not set.");
   }
 
-  const aptosClient = new AptosClient(NEXT_PUBLIC_RPC_URL);
+  const aptosClient = new AptosClient(process.env.NEXT_PUBLIC_RPC_NODE_URL);
   const value: AptosContextState = { aptosClient };
 
   return (

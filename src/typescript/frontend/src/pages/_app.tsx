@@ -6,6 +6,7 @@ import {
   WalletProvider,
 } from "@manahippo/aptos-wallet-adapter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { type AppProps } from "next/app";
 import { Jost, Roboto_Mono } from "next/font/google";
 import { useMemo } from "react";
@@ -38,6 +39,7 @@ export default function App({ Component, pageProps }: AppProps) {
           </div>
         </AptosContextProvider>
       </WalletProvider>
+      <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );
 }

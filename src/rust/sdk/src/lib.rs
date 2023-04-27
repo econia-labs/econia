@@ -196,7 +196,7 @@ impl EconiaClient {
             .map(|r| r.is_some())
     }
 
-    /// Checks if the user is registered for a coin.
+    /// Checks if the user is registered for a coin's CoinStore.
     ///
     /// # Arguments:
     ///
@@ -208,7 +208,7 @@ impl EconiaClient {
             .map(|r| r.is_some())
     }
 
-    /// Returns the user's coin balance.
+    /// Returns the user's coin balance in their CoinStore.
     ///
     /// # Arguments:
     ///

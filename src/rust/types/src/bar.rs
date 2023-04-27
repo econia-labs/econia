@@ -13,7 +13,7 @@ pub struct Bar {
     pub volume: u64,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub enum Resolution {
     #[serde(rename = "1m")]
     R1m,

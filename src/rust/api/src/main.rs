@@ -1,9 +1,9 @@
 use std::{collections::HashSet, net::SocketAddr};
 
 use bigdecimal::ToPrimitive;
+use db::EconiaDbClient;
 use futures_util::StreamExt;
 use serde::Deserialize;
-use sqlx::{PgPool, Pool, Postgres};
 use tokio::sync::broadcast;
 use tracing_subscriber::prelude::*;
 use types::message::Update;
@@ -23,7 +23,7 @@ pub struct Config {
 
 #[derive(Debug, Clone)]
 pub struct AppState {
-    pub pool: Pool<Postgres>,
+    pub econia_db: EconiaDbClient,
     pub sender: broadcast::Sender<Update>,
     pub market_ids: HashSet<u64>,
 }
@@ -48,11 +48,17 @@ async fn main() {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    let pool = PgPool::connect(&config.database_url)
+    let econia_db = EconiaDbClient::connect(db::Config {
+        database_url: config.database_url.clone(),
+    })
+    .await;
+    let market_ids = econia_db
+        .get_market_ids()
         .await
-        .expect("Could not connect to DATABASE_URL");
+        .into_iter()
+        .map(|b| b.to_u64().unwrap())
+        .collect::<Vec<u64>>();
 
-    let market_ids = get_market_ids(pool.clone()).await;
     if market_ids.is_empty() {
         tracing::warn!("no markets registered in database");
     }
@@ -61,7 +67,7 @@ async fn main() {
     let _conn = start_redis_channels(config.redis_url, market_ids.clone(), btx.clone()).await;
 
     let state = AppState {
-        pool,
+        econia_db,
         sender: btx,
         market_ids: HashSet::from_iter(market_ids.into_iter()),
     };
@@ -77,19 +83,6 @@ async fn main() {
         .serve(app.into_make_service_with_connect_info::<SocketAddr>())
         .await
         .unwrap();
-}
-
-async fn get_market_ids(pool: Pool<Postgres>) -> Vec<u64> {
-    sqlx::query_as!(
-        types::query::MarketIdQuery,
-        r#"select market_id from markets;"#
-    )
-    .fetch_all(&pool)
-    .await
-    .unwrap()
-    .into_iter()
-    .map(|v| v.market_id.to_u64().unwrap())
-    .collect::<Vec<u64>>()
 }
 
 async fn start_redis_channels(
@@ -148,7 +141,6 @@ pub mod tests {
 
     use axum::{extract::connect_info::MockConnectInfo, Router};
     use rand::Rng;
-    use sqlx::PgPool;
     use tokio::sync::broadcast;
 
     use super::*;
@@ -160,17 +152,23 @@ pub mod tests {
     }
 
     pub async fn make_test_server(config: Config) -> Router {
-        let pool = PgPool::connect(&config.database_url)
-            .await
-            .expect("Could not connect to DATABASE_URL");
+        let econia_db = EconiaDbClient::connect(db::Config {
+            database_url: config.database_url,
+        })
+        .await;
 
-        let market_ids = get_market_ids(pool.clone()).await;
+        let market_ids = econia_db
+            .get_market_ids()
+            .await
+            .into_iter()
+            .map(|b| b.to_u64().unwrap())
+            .collect::<Vec<u64>>();
 
         let (btx, mut brx) = broadcast::channel(16);
         let _conn = start_redis_channels(config.redis_url, market_ids.clone(), btx.clone()).await;
 
         let state = AppState {
-            pool,
+            econia_db,
             sender: btx,
             market_ids: HashSet::from_iter(market_ids.into_iter()),
         };

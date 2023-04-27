@@ -10,6 +10,8 @@ axum = { version = "0.6.10", features = ["query", "ws"] }
 bigdecimal = { workspace = true }
 chrono = { workspace = true }
 db = { path = "../db" }
+diesel = { workspace = true }
+diesel-async = { workspace = true }
 dotenvy = { workspace = true }
 envy = { workspace = true }
 futures-util = { workspace = true }
@@ -21,15 +23,6 @@ redis = { version = "0.22.3", features = [
 regex = "1.7.2"
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
-sqlx = { workspace = true, features = [
-    "bigdecimal",
-    "chrono",
-    "macros",
-    "offline",
-    "postgres",
-    "runtime-tokio-rustls",
-    "time",
-] }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 tower = "0.4.13"

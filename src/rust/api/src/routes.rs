@@ -1,4 +1,7 @@
+use std::iter::zip;
+
 use axum::{extract::State, routing::get, Json, Router};
+use bigdecimal::ToPrimitive;
 use tower::ServiceBuilder;
 use tower_http::{
     compression::CompressionLayer,
@@ -50,45 +53,78 @@ async fn index() -> String {
 }
 
 async fn markets(State(state): State<AppState>) -> Result<Json<Vec<types::Market>>, ApiError> {
-    let query_markets = sqlx::query_as!(
-        types::query::QueryMarket,
-        r#"
-        select
-            market_id,
-            base.name as "base_name?",
-            base.symbol as "base_symbol?",
-            base.decimals as "base_decimals?",
-            base_account_address,
-            base_module_name,
-            base_struct_name,
-            base_name_generic,
-            quote.name as quote_name,
-            quote.symbol as quote_symbol,
-            quote.decimals as quote_decimals,
-            quote_account_address,
-            quote_module_name,
-            quote_struct_name,
-            lot_size,
-            tick_size,
-            min_size,
-            underwriter_id,
-            created_at
-        from markets
-            left join coins base on markets.base_account_address = base.account_address
-                                and markets.base_module_name = base.module_name
-                                and markets.base_struct_name = base.struct_name
-            join coins quote on markets.quote_account_address = quote.account_address
-                                and markets.quote_module_name = quote.module_name
-                                and markets.quote_struct_name = quote.struct_name;
-        "#
-    )
-    .fetch_all(&state.pool)
-    .await?;
+    let mut conn = state.econia_db.get().await?;
+    let quote_markets = {
+        use db::schema::markets::dsl::*;
+        use diesel::prelude::*;
+        use diesel_async::RunQueryDsl;
 
-    let markets = query_markets
-        .into_iter()
-        .map(|v| v.try_into())
-        .collect::<Result<Vec<types::Market>, TypeError>>()?;
+        markets
+            .inner_join(
+                db::schema::coins::table.on(quote_account_address
+                    .eq(db::schema::coins::account_address)
+                    .and(quote_module_name.eq(db::schema::coins::module_name))
+                    .and(quote_struct_name.eq(db::schema::coins::struct_name))),
+            )
+            .load::<(db::models::market::Market, db::models::coin::Coin)>(&mut conn)
+            .await
+            .unwrap()
+    };
+
+    let base_markets = {
+        use db::schema::markets::dsl::*;
+        use diesel::prelude::*;
+        use diesel_async::RunQueryDsl;
+
+        markets
+            .left_join(
+                db::schema::coins::table.on(base_account_address
+                    .eq(db::schema::coins::account_address.nullable())
+                    .and(base_module_name.eq(db::schema::coins::module_name.nullable()))
+                    .and(base_struct_name.eq(db::schema::coins::struct_name.nullable()))),
+            )
+            .load::<(db::models::market::Market, Option<db::models::coin::Coin>)>(&mut conn)
+            .await
+            .unwrap()
+    };
+
+    let markets = zip(quote_markets.into_iter(), base_markets.into_iter())
+        .map(|((market, quote), (_, base))| {
+            let market =
+                types::Market {
+                    market_id: market.market_id.to_u64().ok_or_else(|| {
+                        TypeError::ConversionError {
+                            name: "market_id".to_string(),
+                        }
+                    })?,
+                    base: base.map(|b| b.into()),
+                    base_name_generic: market.base_name_generic,
+                    quote: quote.into(),
+                    lot_size: market.lot_size.to_u64().ok_or_else(|| {
+                        TypeError::ConversionError {
+                            name: "lot_size".to_string(),
+                        }
+                    })?,
+                    tick_size: market.tick_size.to_u64().ok_or_else(|| {
+                        TypeError::ConversionError {
+                            name: "tick_size".to_string(),
+                        }
+                    })?,
+                    min_size: market.min_size.to_u64().ok_or_else(|| {
+                        TypeError::ConversionError {
+                            name: "min_size".to_string(),
+                        }
+                    })?,
+                    underwriter_id: market.underwriter_id.to_u64().ok_or_else(|| {
+                        TypeError::ConversionError {
+                            name: "underwriter_id".to_string(),
+                        }
+                    })?,
+                    created_at: market.created_at,
+                };
+            Ok::<types::Market, TypeError>(market)
+        })
+        .collect::<Result<Vec<_>, TypeError>>()?;
 
     Ok(Json(markets))
 }
@@ -103,7 +139,7 @@ mod tests {
         routing::get,
         Router,
     };
-    use sqlx::PgPool;
+    use db::EconiaDbClient;
     use tokio::sync::broadcast;
     use tower::ServiceExt;
 
@@ -128,15 +164,15 @@ mod tests {
     #[tokio::test]
     async fn test_markets() {
         let config = load_config();
-
-        let pool = PgPool::connect(&config.database_url)
-            .await
-            .expect("Could not connect to DATABASE_URL");
+        let econia_db = EconiaDbClient::connect(db::Config {
+            database_url: config.database_url,
+        })
+        .await;
 
         let (tx, _) = broadcast::channel(16);
 
         let state = AppState {
-            pool,
+            econia_db,
             sender: tx,
             market_ids: HashSet::new(),
         };

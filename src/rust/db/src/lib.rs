@@ -1,6 +1,10 @@
+use std::fmt::Debug;
 use std::ops::Deref;
 
-use diesel::insert_into;
+use bigdecimal::BigDecimal;
+use chrono::{DateTime, Utc};
+use diesel::dsl::sum;
+use diesel::{insert_into, prelude::*};
 use diesel_async::pooled_connection::deadpool::Pool;
 use diesel_async::pooled_connection::AsyncDieselConnectionManager;
 use diesel_async::{AsyncPgConnection, RunQueryDsl};
@@ -9,6 +13,7 @@ use models::{
     market::{MarketRegistrationEvent, NewMarketRegistrationEvent},
 };
 use serde::Deserialize;
+use types::bar::Resolution;
 
 use crate::models::{
     coin::{Coin, NewCoin},
@@ -19,7 +24,7 @@ pub mod error;
 pub mod models;
 pub mod schema;
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct Config {
     pub database_url: String,
 }
@@ -32,7 +37,14 @@ pub fn load_config() -> Config {
     }
 }
 
+#[derive(Clone)]
 pub struct EconiaDbClient(Pool<AsyncPgConnection>);
+
+impl Debug for EconiaDbClient {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("EconiaDbClient").finish()
+    }
+}
 
 impl Deref for EconiaDbClient {
     type Target = Pool<AsyncPgConnection>;
@@ -42,6 +54,7 @@ impl Deref for EconiaDbClient {
     }
 }
 
+// TODO make these return Result<...>
 impl EconiaDbClient {
     pub async fn connect(Config { database_url }: Config) -> Self {
         let manager = AsyncDieselConnectionManager::<AsyncPgConnection>::new(database_url);
@@ -108,5 +121,142 @@ impl EconiaDbClient {
             .get_result(&mut conn)
             .await
             .expect("Error adding bar.")
+    }
+
+    pub async fn get_market_ids(&self) -> Vec<BigDecimal> {
+        let mut conn = self.get().await.unwrap();
+        use crate::schema::markets::dsl::*;
+        markets
+            .select(market_id)
+            .distinct()
+            .load(&mut conn)
+            .await
+            .expect("Error loading market ids.")
+    }
+
+    pub async fn get_order_history_by_account(
+        &self,
+        account_address: &str,
+    ) -> Vec<models::order::Order> {
+        let mut conn = self.get().await.unwrap();
+        use crate::schema::orders::dsl::*;
+        orders
+            .filter(user_address.eq(account_address))
+            .load(&mut conn)
+            .await
+            .expect("Error loading order history.")
+    }
+
+    pub async fn get_open_orders_by_account(
+        &self,
+        account_address: &str,
+    ) -> Vec<models::order::Order> {
+        let mut conn = self.get().await.unwrap();
+        use crate::schema::orders::dsl::*;
+        orders
+            .filter(user_address.eq(account_address))
+            .filter(order_state.eq(models::order::OrderState::Open))
+            .load(&mut conn)
+            .await
+            .expect("Error loading open orders.")
+    }
+
+    pub async fn get_market_history(
+        &self,
+        resolution: Resolution,
+        market_id_param: &BigDecimal,
+        from: DateTime<Utc>,
+        to: DateTime<Utc>,
+    ) -> Vec<models::bar::Bar> {
+        let mut conn = self.get().await.unwrap();
+        match resolution {
+            Resolution::R1m => {
+                use crate::schema::bars_1m::dsl::*;
+                bars_1m
+                    .filter(market_id.eq(market_id_param))
+                    .filter(start_time.ge(from))
+                    .filter(start_time.lt(to))
+                    .load(&mut conn)
+                    .await
+                    .expect("Error loading market history.")
+            }
+            Resolution::R5m => {
+                use crate::schema::bars_5m::dsl::*;
+                bars_5m
+                    .filter(market_id.eq(market_id_param))
+                    .filter(start_time.ge(from))
+                    .filter(start_time.lt(to))
+                    .load(&mut conn)
+                    .await
+                    .expect("Error loading market history.")
+            }
+            Resolution::R15m => {
+                use crate::schema::bars_15m::dsl::*;
+                bars_15m
+                    .filter(market_id.eq(market_id_param))
+                    .filter(start_time.ge(from))
+                    .filter(start_time.lt(to))
+                    .load(&mut conn)
+                    .await
+                    .expect("Error loading market history.")
+            }
+            Resolution::R30m => {
+                use crate::schema::bars_30m::dsl::*;
+                bars_30m
+                    .filter(market_id.eq(market_id_param))
+                    .filter(start_time.ge(from))
+                    .filter(start_time.lt(to))
+                    .load(&mut conn)
+                    .await
+                    .expect("Error loading market history.")
+            }
+            Resolution::R1h => {
+                use crate::schema::bars_1h::dsl::*;
+                bars_1h
+                    .filter(market_id.eq(market_id_param))
+                    .filter(start_time.ge(from))
+                    .filter(start_time.lt(to))
+                    .load(&mut conn)
+                    .await
+                    .expect("Error loading market history.")
+            }
+        }
+    }
+
+    pub async fn get_fills(
+        &self,
+        market_id_param: &BigDecimal,
+        from: DateTime<Utc>,
+        to: DateTime<Utc>,
+    ) -> Vec<models::fill::Fill> {
+        let mut conn = self.0.get().await.unwrap();
+        use crate::schema::fills::dsl::*;
+        fills
+            .filter(market_id.eq(market_id_param))
+            .filter(time.ge(from))
+            .filter(time.lt(to))
+            .load(&mut conn)
+            .await
+            .expect("Error loading market history.")
+    }
+
+    pub async fn get_order_book_price_levels(
+        &self,
+        market_id_param: &BigDecimal,
+        book_side: models::order::Side,
+        depth: i64,
+    ) -> Vec<models::market::PriceLevel> {
+        let mut conn = self.0.get().await.unwrap();
+        use crate::schema::orders::dsl::*;
+        orders
+            .filter(market_id.eq(market_id_param))
+            .filter(side.eq(book_side))
+            .filter(order_state.eq(models::order::OrderState::Open))
+            .group_by(price)
+            .select((price, sum(size).assume_not_null()))
+            .limit(depth)
+            .load::<models::market::PriceLevel>(&mut conn)
+            .await
+            .expect("fail")
     }
 }

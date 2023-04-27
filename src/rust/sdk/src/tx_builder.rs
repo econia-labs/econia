@@ -205,7 +205,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     /// Arguments:
     /// * `market_id`: Market ID for corresponding market.
     /// * `side`: Order [`Side`].
-    /// * `market_order_id`: Id of the order to caancel.
+    /// * `market_order_id`: ID of the order to caancel.
     pub fn cancel_order_user(mut self, market_id: u64, side: Side, market_order_id: u128) -> Self {
         let entry: EconiaResult<EntryFunction> = (|| {
             let module = ModuleId::from(
@@ -233,7 +233,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     /// Arguments:
     /// * `market_id`: Market ID for corresponding market.
     /// * `side`: Order [`Side`].
-    /// * `market_order_id`: Id of the order to caancel.
+    /// * `market_order_id`: ID of the order to caancel.
     /// * `new_size`: New size of the order.
     pub fn change_order_size_user(
         mut self,
@@ -272,7 +272,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     /// * `market_id`: Market ID for corresponding market.
     /// * `integrator`: Integrator's [`AccountAddress`].
     /// * `side`: Order [`Side`].
-    /// * `size`: Size of the order.
+    /// * `size`: Size of the order in lots.
     /// * `advance_style`: The [`AdvanceStyle`] of the order.
     /// * `target_advance_amount`: Target advance amount.
     #[allow(clippy::too_many_arguments)]
@@ -319,7 +319,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     /// * `market_id`: Market ID for corresponding market.
     /// * `integrator`: Integrator's [`AccountAddress`].
     /// * `side`: Order [`Side`].
-    /// * `size`: Size of the order.
+    /// * `size`: Size of the order in lots.
     /// * `advance_style`: The [`AdvanceStyle`] of the order.
     /// * `target_advance_amount`: Target advance amount.
     #[allow(clippy::too_many_arguments)]
@@ -561,7 +561,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     /// Arguments:
     /// * `coin`: Aptos [`TypeTag`] for deposit coin.
     /// * `market_id`: Market ID for corresponding market.
-    /// * `custodian_id`: Id of market custodian.
+    /// * `custodian_id`: ID of market custodian.
     /// * `amount`: Amount of coin to deposit.
     pub fn deposit_from_coinstore(
         mut self,
@@ -597,7 +597,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     /// * `base`: Aptos [`TypeTag`] for base coin.
     /// * `quote`: Aptos [`TypeTag`] for quote coin.
     /// * `market_id`: Market ID for corresponding market.
-    /// * `custodian_id`: Id of market custodian.
+    /// * `custodian_id`: ID of market custodian.
     pub fn register_market_account(
         mut self,
         base: &TypeTag,
@@ -627,7 +627,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     /// Arguments:
     /// * `quote`: Aptos [`TypeTag`] for quote coin.
     /// * `market_id`: Market ID for corresponding market.
-    /// * `custodian_id`: Id of market custodian.
+    /// * `custodian_id`: ID of market custodian.
     pub fn register_market_account_generic_base(
         mut self,
         quote: &TypeTag,

@@ -305,7 +305,19 @@ mod tests {
     use tower::ServiceExt;
 
     use super::*;
-    use crate::{get_market_ids, load_config, routes::router, start_redis_channels};
+    use crate::{
+        get_market_ids, load_config, routes::router, start_redis_channels, tests::make_test_server,
+    };
+
+    /// The `TestOnlyOrderbookResponse` struct is defined in the test module,
+    /// since the struct used as the response type in the API does not need
+    /// the `Deserialize` trait.
+    #[allow(dead_code)]
+    #[derive(Deserialize)]
+    struct TestOnlyOrderbookResponse {
+        bids: Vec<PriceLevel>,
+        asks: Vec<PriceLevel>,
+    }
 
     /// Test that the market history endpoint returns market data with a
     /// resolution of 1 minute.
@@ -546,6 +558,129 @@ mod tests {
                         "/market/{}/history?resolution={}&from={}&to={}",
                         market_id, resolution, from, to
                     ))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    }
+
+    /// Test that the orderbook endpoint returns L1 market data when a request
+    /// with depth set to 1 is sent. Only the best bid and ask prices and the
+    /// size available at those prices should be returned.
+    ///
+    /// This test sends a GET request to the `/market/{market_id}/orderbook`
+    /// endpoint with the `depth` parameter set to `1`. The response is
+    /// then checked to ensure that it has a `200 OK` status code, and the
+    /// response body is checked to ensure that it is a JSON response in the
+    /// correct format.
+    #[tokio::test]
+    async fn test_get_l1_orderbook() {
+        let market_id = 0;
+        let depth = 1;
+
+        let config = load_config();
+        let app = make_test_server(config).await;
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri(format!("/market/{}/orderbook?depth={}", market_id, depth))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
+        let res = serde_json::from_slice::<TestOnlyOrderbookResponse>(&body);
+        assert!(res.is_ok());
+
+        let book_data = res.unwrap();
+        assert_eq!(book_data.bids.len(), 1);
+        assert_eq!(book_data.asks.len(), 1);
+    }
+
+    /// Test that the orderbook endpoint returns L2 market data when a request
+    /// with depth set to 10 is sent.
+    ///
+    /// This test sends a GET request to the `/market/{market_id}/orderbook`
+    /// endpoint with the `depth` parameter set to `10`. The response is
+    /// then checked to ensure that it has a `200 OK` status code, and the
+    /// response body is checked to ensure that it is a JSON response in the
+    /// correct format.
+    #[tokio::test]
+    async fn test_get_l2_orderbook() {
+        let market_id = 0;
+        let depth = 10;
+
+        let config = load_config();
+        let app = make_test_server(config).await;
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri(format!("/market/{}/orderbook?depth={}", market_id, depth))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
+        let res = serde_json::from_slice::<TestOnlyOrderbookResponse>(&body);
+        assert!(res.is_ok());
+    }
+
+    /// Test that the orderbook endpoint returns a `400 Bad Request` error
+    /// when the depth parameter is not set.
+    ///
+    /// This test sends a GET request to the `/market/{market_id}/orderbook`
+    /// endpoint without the `depth` parameter. The response is then checked to
+    /// ensure that it has a `400 Bad Request` status code.
+    #[tokio::test]
+    async fn test_get_orderbook_no_depth_param() {
+        let market_id = 0;
+        let config = load_config();
+        let app = make_test_server(config).await;
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri(format!("/market/{}/orderbook", market_id))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    }
+
+    /// Test that the orderbook endpoint returns a `400 Bad Request` error
+    /// when the depth parameter is set to a negative number.
+    ///
+    /// This test sends a GET request to the `/market/{market_id}/orderbook`
+    /// endpoint with the `depth` parameter of `-1`. The response is then
+    /// checked to ensure that it has a `400 Bad Request` status code.
+    #[tokio::test]
+    async fn test_get_orderbook_negative_depth_param() {
+        let market_id = 0;
+        let depth = -1;
+
+        let config = load_config();
+        let app = make_test_server(config).await;
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri(format!("/market/{}/orderbook?depth={}", market_id, depth))
                     .body(Body::empty())
                     .unwrap(),
             )

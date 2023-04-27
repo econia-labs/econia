@@ -75,8 +75,8 @@ impl EconiaClient {
     /// # Arguments:
     ///
     /// * `node_url` - Url of aptos node.
-    /// * `econia_address` - Aptos [AccountAddress].
-    /// * `account` - [LocalAccount] representing Aptos user account.
+    /// * `econia_address` - Aptos [`AccountAddress`].
+    /// * `account` - [`LocalAccount`] representing Aptos user account.
     pub async fn connect(
         node_url: Url,
         econia: AccountAddress,
@@ -184,7 +184,7 @@ impl EconiaClient {
     ///
     /// # Arguments:
     ///
-    /// * `coin` - Aptos [TypeTag] for the given coin.
+    /// * `coin` - Aptos [`TypeTag`] for the given coin.
     pub async fn does_coin_exist(&self, coin: &TypeTag) -> EconiaResult<bool> {
         let coin_info = format!("0x1::coin::CoinInfo<{}>", coin);
         let TypeTag::Struct(tag) = coin else {
@@ -200,7 +200,7 @@ impl EconiaClient {
     ///
     /// # Arguments:
     ///
-    /// * `coin` - Aptos [TypeTag] for the given coin.
+    /// * `coin` - Aptos [`TypeTag`] for the given coin.
     pub async fn is_registered_for_coin(&self, coin: &TypeTag) -> EconiaResult<bool> {
         let coin_store = format!("0x1::coin::CoinStore<{}>", coin);
         self.fetch_resource(self.user_account.address(), &coin_store)
@@ -212,7 +212,7 @@ impl EconiaClient {
     ///
     /// # Arguments:
     ///
-    /// * `coin` - Aptos [TypeTag] for the given coin.
+    /// * `coin` - Aptos [`TypeTag`] for the given coin.
     pub async fn get_coin_balance(&self, coin: &TypeTag) -> EconiaResult<U64> {
         let coin_store = format!("0x1::coin::CoinStore<{}>", coin);
         self.fetch_resource(self.user_account.address(), &coin_store)
@@ -222,7 +222,7 @@ impl EconiaClient {
             .map(|b| b.coin.value)
     }
 
-    /// Returns a new [EconiaTransactionBuilder]
+    /// Returns a new [`EconiaTransactionBuilder`]
     pub fn create_tx(&mut self) -> EconiaTransactionBuilder<'_> {
         EconiaTransactionBuilder::new(self)
     }

@@ -24,10 +24,10 @@ pub struct EconiaTransactionBuilder<'a> {
 }
 
 impl<'a> EconiaTransactionBuilder<'a> {
-    /// Create a new [EconiaTransactionBuilder].
+    /// Create a new [`EconiaTransactionBuilder`].
     ///
     /// Arguments:
-    /// * `client`: a mutable reference to the underlying [EconiaClient].
+    /// * `client`: a mutable reference to the underlying [`EconiaClient`].
     pub fn new(client: &'a mut EconiaClient) -> Self {
         Self {
             client,
@@ -45,7 +45,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
         self
     }
 
-    /// Set the internal [EntryFunction] as register_for_coin
+    /// Set the internal [`EntryFunction`] as register_for_coin
     ///
     /// Arguments:
     /// * `amount`: the amount of times to retry the transaction.
@@ -69,10 +69,10 @@ impl<'a> EconiaTransactionBuilder<'a> {
 
     // Incentives entry functions
 
-    /// Set the internal [EntryFunction] as [update_incentives](https://github.com/econia-labs/econia/blob/dev/src/move/econia/doc/incentives.md#0xc0deb00c_incentives_update_incentives)
+    /// Set the internal [`EntryFunction`] as [update_incentives](https://github.com/econia-labs/econia/blob/dev/src/move/econia/doc/incentives.md#0xc0deb00c_incentives_update_incentives)
     ///
     /// Arguments:
-    /// * `utility_coin`: [TypeTag] of the utility coin to use.
+    /// * `utility_coin`: [`TypeTag`] of the utility coin to use.
     /// * `market_registration_fee`: Market registration fee to set.
     /// * `underwriter_registration_fee`: Underwriter registration fee
     ///   to set.
@@ -115,11 +115,11 @@ impl<'a> EconiaTransactionBuilder<'a> {
         self
     }
 
-    /// Set the internal [EntryFunction] as [upgrade_integrator_fee_store_via_coinstore](https://github.com/econia-labs/econia/blob/dev/src/move/econia/doc/incentives.md#0xc0deb00c_incentives_upgrade_integrator_fee_store_via_coinstore)
+    /// Set the internal [`EntryFunction`] as [upgrade_integrator_fee_store_via_coinstore](https://github.com/econia-labs/econia/blob/dev/src/move/econia/doc/incentives.md#0xc0deb00c_incentives_upgrade_integrator_fee_store_via_coinstore)
     ///
     /// Arguments:
-    /// * `quote_coin`: [TypeTag] of the quote coin to use.
-    /// * `utility_coin`: [TypeTag] of the utility coin to use.
+    /// * `quote_coin`: [`TypeTag`] of the quote coin to use.
+    /// * `utility_coin`: [`TypeTag`] of the utility coin to use.
     /// * `market_id`: Market ID for corresponding market.
     /// * `new_tier`: Tier to upgrade to.
     pub fn upgrade_integrator_fee_store_via_coinstore(
@@ -146,11 +146,11 @@ impl<'a> EconiaTransactionBuilder<'a> {
         self
     }
 
-    /// Set the internal [EntryFunction] as [withdraw_integrator_fees_via_coinstores](https://github.com/econia-labs/econia/blob/dev/src/move/econia/doc/incentives.md#0xc0deb00c_incentives_withdraw_integrator_fees_via_coinstores)
+    /// Set the internal [`EntryFunction`] as [withdraw_integrator_fees_via_coinstores](https://github.com/econia-labs/econia/blob/dev/src/move/econia/doc/incentives.md#0xc0deb00c_incentives_withdraw_integrator_fees_via_coinstores)
     ///
     /// Arguments:
-    /// * `quote_coin`: [TypeTag] of the quote coin to use.
-    /// * `utility_coin`: [TypeTag] of the utility coin to use.
+    /// * `quote_coin`: [`TypeTag`] of the quote coin to use.
+    /// * `utility_coin`: [`TypeTag`] of the utility coin to use.
     /// * `market_id`: Market ID for corresponding market.
     pub fn withdraw_integrator_fees_via_coinstores(
         mut self,
@@ -177,11 +177,11 @@ impl<'a> EconiaTransactionBuilder<'a> {
 
     // Market entry functions
 
-    /// Set the internal [EntryFunction] as [cancel_all_orders_user](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#0xc0deb00c_market_cancel_all_orders_user)
+    /// Set the internal [`EntryFunction`] as [cancel_all_orders_user](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#0xc0deb00c_market_cancel_all_orders_user)
     ///
     /// Arguments:
     /// * `market_id`: Market ID for corresponding market.
-    /// * `side`: Order [Side].
+    /// * `side`: Order [`Side`].
     pub fn cancel_all_orders_user(mut self, market_id: u64, side: Side) -> Self {
         let entry: EconiaResult<EntryFunction> = (|| {
             let module = ModuleId::from(
@@ -200,11 +200,11 @@ impl<'a> EconiaTransactionBuilder<'a> {
         self
     }
 
-    /// Set the internal [EntryFunction] as [cancel_order_user](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#0xc0deb00c_market_cancel_order_user)
+    /// Set the internal [`EntryFunction`] as [cancel_order_user](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#0xc0deb00c_market_cancel_order_user)
     ///
     /// Arguments:
     /// * `market_id`: Market ID for corresponding market.
-    /// * `side`: Order [Side].
+    /// * `side`: Order [`Side`].
     /// * `market_order_id`: Id of the order to caancel.
     pub fn cancel_order_user(mut self, market_id: u64, side: Side, market_order_id: u128) -> Self {
         let entry: EconiaResult<EntryFunction> = (|| {
@@ -228,11 +228,11 @@ impl<'a> EconiaTransactionBuilder<'a> {
         self
     }
 
-    /// Set the internal [EntryFunction] as [change_order_size_user](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#0xc0deb00c_market_change_order_size_user)
+    /// Set the internal [`EntryFunction`] as [change_order_size_user](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#0xc0deb00c_market_change_order_size_user)
     ///
     /// Arguments:
     /// * `market_id`: Market ID for corresponding market.
-    /// * `side`: Order [Side].
+    /// * `side`: Order [`Side`].
     /// * `market_order_id`: Id of the order to caancel.
     /// * `new_size`: New size of the order.
     pub fn change_order_size_user(
@@ -264,16 +264,16 @@ impl<'a> EconiaTransactionBuilder<'a> {
         self
     }
 
-    /// Set the internal [EntryFunction] as [place_limit_order_passive_advance_user_entry](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#0xc0deb00c_market_place_limit_order_passive_advance_user_entry)
+    /// Set the internal [`EntryFunction`] as [place_limit_order_passive_advance_user_entry](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#0xc0deb00c_market_place_limit_order_passive_advance_user_entry)
     ///
     /// Arguments:
-    /// * `base`: Aptos [TypeTag] for base coin.
-    /// * `quote`: Aptos [TypeTag] for quote coin.
+    /// * `base`: Aptos [`TypeTag`] for base coin.
+    /// * `quote`: Aptos [`TypeTag`] for quote coin.
     /// * `market_id`: Market ID for corresponding market.
-    /// * `integrator`: Integrator's [AccountAddress].
-    /// * `side`: Order [Side].
+    /// * `integrator`: Integrator's [`AccountAddress`].
+    /// * `side`: Order [`Side`].
     /// * `size`: Size of the order.
-    /// * `advance_style`: The [AdvanceStyle] of the order.
+    /// * `advance_style`: The [`AdvanceStyle`] of the order.
     /// * `target_advance_amount`: Target advance amount.
     #[allow(clippy::too_many_arguments)]
     pub fn place_limit_order_passive_advance_user_entry(
@@ -311,16 +311,16 @@ impl<'a> EconiaTransactionBuilder<'a> {
         self
     }
 
-    /// Set the internal [EntryFunction] as [place_limit_order_user_entry](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#0xc0deb00c_market_place_limit_order_user_entry)
+    /// Set the internal [`EntryFunction`] as [place_limit_order_user_entry](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#0xc0deb00c_market_place_limit_order_user_entry)
     ///
     /// Arguments:
-    /// * `base`: Aptos [TypeTag] for base coin.
-    /// * `quote`: Aptos [TypeTag] for quote coin.
+    /// * `base`: Aptos [`TypeTag`] for base coin.
+    /// * `quote`: Aptos [`TypeTag`] for quote coin.
     /// * `market_id`: Market ID for corresponding market.
-    /// * `integrator`: Integrator's [AccountAddress].
-    /// * `side`: Order [Side].
+    /// * `integrator`: Integrator's [`AccountAddress`].
+    /// * `side`: Order [`Side`].
     /// * `size`: Size of the order.
-    /// * `advance_style`: The [AdvanceStyle] of the order.
+    /// * `advance_style`: The [`AdvanceStyle`] of the order.
     /// * `target_advance_amount`: Target advance amount.
     #[allow(clippy::too_many_arguments)]
     pub fn place_limit_order_user_entry(
@@ -360,12 +360,12 @@ impl<'a> EconiaTransactionBuilder<'a> {
         self
     }
 
-    /// Set the internal [EntryFunction] as [register_market_base_coin_from_coinstore](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#0xc0deb00c_market_register_market_base_coin_from_coinstore)
+    /// Set the internal [`EntryFunction`] as [register_market_base_coin_from_coinstore](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#0xc0deb00c_market_register_market_base_coin_from_coinstore)
     ///
     /// Arguments:
-    /// * `base`: Aptos [TypeTag] for base coin.
-    /// * `quote`: Aptos [TypeTag] for quote coin.
-    /// * `utility_coin`: Aptos [TypeTag] for utility coin.
+    /// * `base`: Aptos [`TypeTag`] for base coin.
+    /// * `quote`: Aptos [`TypeTag`] for quote coin.
+    /// * `utility_coin`: Aptos [`TypeTag`] for utility coin.
     /// * `lot_size`: Lot size for this market.
     /// * `tick_size`: Tick size for this market.
     /// * `min_size`: Minimum order size for this market.
@@ -399,12 +399,12 @@ impl<'a> EconiaTransactionBuilder<'a> {
         self
     }
 
-    /// Set the internal [EntryFunction] as [swap_between_coinstores_entry](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#0xc0deb00c_market_swap_between_coinstores_entry)
+    /// Set the internal [`EntryFunction`] as [swap_between_coinstores_entry](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#0xc0deb00c_market_swap_between_coinstores_entry)
     ///
     /// Arguments:
-    /// * `base`: Aptos [TypeTag] for base coin.
-    /// * `quote`: Aptos [TypeTag] for quote coin.
-    /// * `utility_coin`: Aptos [TypeTag] for utility coin.
+    /// * `base`: Aptos [`TypeTag`] for base coin.
+    /// * `quote`: Aptos [`TypeTag`] for quote coin.
+    /// * `utility_coin`: Aptos [`TypeTag`] for utility coin.
     /// * `lot_size`: Lot size for this market.
     /// * `tick_size`: Tick size for this market.
     /// * `min_size`: Minimum order size for this market.
@@ -450,11 +450,11 @@ impl<'a> EconiaTransactionBuilder<'a> {
 
     // Registry functions
 
-    /// Set the internal [EntryFunction] as [register_integrator_fee_store_base_tier](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_register_integrator_fee_store_base_tier)
+    /// Set the internal [`EntryFunction`] as [register_integrator_fee_store_base_tier](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_register_integrator_fee_store_base_tier)
     ///
     /// Arguments:
-    /// * `quote`: Aptos [TypeTag] for quote coin.
-    /// * `utility_coin`: Aptos [TypeTag] for utility coin.
+    /// * `quote`: Aptos [`TypeTag`] for quote coin.
+    /// * `utility_coin`: Aptos [`TypeTag`] for utility coin.
     /// * `market_id`: Market ID for corresponding market.
     pub fn register_integrator_fee_store_base_tier(
         mut self,
@@ -479,11 +479,11 @@ impl<'a> EconiaTransactionBuilder<'a> {
         self
     }
 
-    /// Set the internal [EntryFunction] as [register_integrator_fee_store_from_coinstore](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_register_integrator_fee_store_from_coinstore)
+    /// Set the internal [`EntryFunction`] as [register_integrator_fee_store_from_coinstore](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_register_integrator_fee_store_from_coinstore)
     ///
     /// Arguments:
-    /// * `quote`: Aptos [TypeTag] for quote coin.
-    /// * `utility_coin`: Aptos [TypeTag] for utility coin.
+    /// * `quote`: Aptos [`TypeTag`] for quote coin.
+    /// * `utility_coin`: Aptos [`TypeTag`] for utility coin.
     /// * `market_id`: Market ID for corresponding market.
     /// * `tier`: Fee tier.
     pub fn register_integrator_fee_store_from_coinstore(
@@ -510,7 +510,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
         self
     }
 
-    /// Set the internal [EntryFunction] as [remove_recognized_markets](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_remove_recognized_markets)
+    /// Set the internal [`EntryFunction`] as [remove_recognized_markets](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_remove_recognized_markets)
     ///
     /// Arguments:
     /// * `market_ids`: Vector of market IDs to remove.
@@ -532,7 +532,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
         self
     }
 
-    /// Set the internal [EntryFunction] as [set_recognized_market](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_set_recognized_market)
+    /// Set the internal [`EntryFunction`] as [set_recognized_market](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_set_recognized_market)
     ///
     /// Arguments:
     /// * `market_id`: Market ID to recognize.
@@ -556,10 +556,10 @@ impl<'a> EconiaTransactionBuilder<'a> {
 
     // User functions
 
-    /// Set the internal [EntryFunction] as [deposit_from_coinstore](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/user.md#0xc0deb00c_user_deposit_from_coinstore)
+    /// Set the internal [`EntryFunction`] as [deposit_from_coinstore](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/user.md#0xc0deb00c_user_deposit_from_coinstore)
     ///
     /// Arguments:
-    /// * `coin`: Aptos [TypeTag] for deposit coin.
+    /// * `coin`: Aptos [`TypeTag`] for deposit coin.
     /// * `market_id`: Market ID for corresponding market.
     /// * `custodian_id`: Id of market custodian.
     /// * `amount`: Amount of coin to deposit.
@@ -591,11 +591,11 @@ impl<'a> EconiaTransactionBuilder<'a> {
         self
     }
 
-    /// Set the internal [EntryFunction] as [register_market_account](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/user.md#0xc0deb00c_user_register_market_account)
+    /// Set the internal [`EntryFunction`] as [register_market_account](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/user.md#0xc0deb00c_user_register_market_account)
     ///
     /// Arguments:
-    /// * `base`: Aptos [TypeTag] for base coin.
-    /// * `quote`: Aptos [TypeTag] for quote coin.
+    /// * `base`: Aptos [`TypeTag`] for base coin.
+    /// * `quote`: Aptos [`TypeTag`] for quote coin.
     /// * `market_id`: Market ID for corresponding market.
     /// * `custodian_id`: Id of market custodian.
     pub fn register_market_account(
@@ -622,10 +622,10 @@ impl<'a> EconiaTransactionBuilder<'a> {
         self
     }
 
-    /// Set the internal [EntryFunction] as [register_market_account_generic_base](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/user.md#0xc0deb00c_user_register_market_account_generic_base)
+    /// Set the internal [`EntryFunction`] as [register_market_account_generic_base](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/user.md#0xc0deb00c_user_register_market_account_generic_base)
     ///
     /// Arguments:
-    /// * `quote`: Aptos [TypeTag] for quote coin.
+    /// * `quote`: Aptos [`TypeTag`] for quote coin.
     /// * `market_id`: Market ID for corresponding market.
     /// * `custodian_id`: Id of market custodian.
     pub fn register_market_account_generic_base(
@@ -651,10 +651,10 @@ impl<'a> EconiaTransactionBuilder<'a> {
         self
     }
 
-    /// Set the internal [EntryFunction] as [withdraw_to_coinstore](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/user.md#0xc0deb00c_user_withdraw_to_coinstore)
+    /// Set the internal [`EntryFunction`] as [withdraw_to_coinstore](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/user.md#0xc0deb00c_user_withdraw_to_coinstore)
     ///
     /// Arguments:
-    /// * `coin`: Aptos [TypeTag] for withdrawal coin.
+    /// * `coin`: Aptos [`TypeTag`] for withdrawal coin.
     /// * `market_id`: Market ID for corresponding market.
     /// * `amount`: Amount of coin to withdraw.
     pub fn withdraw_to_coinstore(mut self, coin: &TypeTag, market_id: u64, amount: u64) -> Self {
@@ -732,8 +732,8 @@ impl<'a> EconiaTransactionBuilder<'a> {
         })
     }
 
-    /// Consume this [EconiaTransactionBuilder] and submit the transaction to the blockchain
-    /// returning the an [EconiaResult<EconiaTransaction>].
+    /// Consume this [`EconiaTransactionBuilder`] and submit the transaction to the blockchain
+    /// returning the an [`EconiaResult<EconiaTransaction>`].
     pub async fn submit_tx(mut self) -> EconiaResult<EconiaTransaction> {
         let Some(entry) = std::mem::take(&mut self.entry) else {
             return Err(EconiaError::TransactionMissingEntryFunction)

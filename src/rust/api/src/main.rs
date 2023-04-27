@@ -51,10 +51,13 @@ async fn main() {
     let econia_db = EconiaDbClient::connect(db::Config {
         database_url: config.database_url.clone(),
     })
-    .await;
+    .await
+    .expect("could not connect to database");
+
     let market_ids = econia_db
         .get_market_ids()
         .await
+        .expect("failed getting market ids from database")
         .into_iter()
         .map(|b| b.to_u64().unwrap())
         .collect::<Vec<u64>>();
@@ -155,11 +158,13 @@ pub mod tests {
         let econia_db = EconiaDbClient::connect(db::Config {
             database_url: config.database_url,
         })
-        .await;
+        .await
+        .unwrap();
 
         let market_ids = econia_db
             .get_market_ids()
             .await
+            .unwrap()
             .into_iter()
             .map(|b| b.to_u64().unwrap())
             .collect::<Vec<u64>>();

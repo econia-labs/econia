@@ -53,7 +53,12 @@ async fn index() -> String {
 }
 
 async fn markets(State(state): State<AppState>) -> Result<Json<Vec<types::Market>>, ApiError> {
-    let mut conn = state.econia_db.get().await?;
+    let mut conn = state
+        .econia_db
+        .get()
+        .await
+        .map_err(db::error::DbError::PoolError)?;
+
     let quote_markets = {
         use db::schema::markets::dsl::*;
         use diesel::prelude::*;
@@ -167,7 +172,8 @@ mod tests {
         let econia_db = EconiaDbClient::connect(db::Config {
             database_url: config.database_url,
         })
-        .await;
+        .await
+        .unwrap();
 
         let (tx, _) = broadcast::channel(16);
 

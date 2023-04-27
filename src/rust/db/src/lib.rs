@@ -15,6 +15,7 @@ use models::{
 use serde::Deserialize;
 use types::bar::Resolution;
 
+use crate::error::DbError;
 use crate::models::{
     coin::{Coin, NewCoin},
     events::{MakerEvent, NewMakerEvent, NewTakerEvent, TakerEvent},
@@ -23,6 +24,8 @@ use crate::models::{
 pub mod error;
 pub mod models;
 pub mod schema;
+
+pub type Result<T> = std::result::Result<T, DbError>;
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Config {
@@ -56,28 +59,26 @@ impl Deref for EconiaDbClient {
 
 // TODO make these return Result<...>
 impl EconiaDbClient {
-    pub async fn connect(Config { database_url }: Config) -> Self {
+    pub async fn connect(Config { database_url }: Config) -> Result<Self> {
         let manager = AsyncDieselConnectionManager::<AsyncPgConnection>::new(database_url);
-        let pool = Pool::builder(manager)
-            .build()
-            .expect("Failed to create database pool.");
-        Self(pool)
+        let pool = Pool::builder(manager).build()?;
+        Ok(Self(pool))
     }
 
-    pub async fn create_coin(&self, coin: &NewCoin<'_>) -> Coin {
+    pub async fn create_coin(&self, coin: &NewCoin<'_>) -> Result<Coin> {
         let mut conn = self.get().await.unwrap();
         use crate::schema::coins;
         insert_into(coins::table)
             .values(coin)
             .get_result(&mut conn)
             .await
-            .expect("Error adding coin.")
+            .map_err(DbError::QueryError)
     }
 
     pub async fn register_market(
         &self,
         event: &NewMarketRegistrationEvent<'_>,
-    ) -> MarketRegistrationEvent {
+    ) -> Result<MarketRegistrationEvent> {
         if event.base_name_generic.is_some() {
             assert!(event.base_account_address.is_none());
             assert!(event.base_module_name.is_none());
@@ -90,40 +91,40 @@ impl EconiaDbClient {
             .values(event)
             .get_result(&mut conn)
             .await
-            .expect("Error adding market registration event.")
+            .map_err(DbError::QueryError)
     }
 
-    pub async fn add_maker_event(&self, event: &NewMakerEvent<'_>) -> MakerEvent {
+    pub async fn add_maker_event(&self, event: &NewMakerEvent<'_>) -> Result<MakerEvent> {
         let mut conn = self.get().await.unwrap();
         use crate::schema::maker_events;
         insert_into(maker_events::table)
             .values(event)
             .get_result(&mut conn)
             .await
-            .expect("Error adding maker event.")
+            .map_err(DbError::QueryError)
     }
 
-    pub async fn add_taker_event(&self, event: &NewTakerEvent<'_>) -> TakerEvent {
+    pub async fn add_taker_event(&self, event: &NewTakerEvent<'_>) -> Result<TakerEvent> {
         let mut conn = self.get().await.unwrap();
         use crate::schema::taker_events;
         insert_into(taker_events::table)
             .values(event)
             .get_result(&mut conn)
             .await
-            .expect("Error adding taker event.")
+            .map_err(DbError::QueryError)
     }
 
-    pub async fn add_bar(&self, bar: &NewBar) -> Bar {
+    pub async fn add_bar(&self, bar: &NewBar) -> Result<Bar> {
         let mut conn = self.get().await.unwrap();
         use crate::schema::bars_1m;
         insert_into(bars_1m::table)
             .values(bar)
             .get_result(&mut conn)
             .await
-            .expect("Error adding bar.")
+            .map_err(DbError::QueryError)
     }
 
-    pub async fn get_market_ids(&self) -> Vec<BigDecimal> {
+    pub async fn get_market_ids(&self) -> Result<Vec<BigDecimal>> {
         let mut conn = self.get().await.unwrap();
         use crate::schema::markets::dsl::*;
         markets
@@ -131,26 +132,26 @@ impl EconiaDbClient {
             .distinct()
             .load(&mut conn)
             .await
-            .expect("Error loading market ids.")
+            .map_err(DbError::QueryError)
     }
 
     pub async fn get_order_history_by_account(
         &self,
         account_address: &str,
-    ) -> Vec<models::order::Order> {
+    ) -> Result<Vec<models::order::Order>> {
         let mut conn = self.get().await.unwrap();
         use crate::schema::orders::dsl::*;
         orders
             .filter(user_address.eq(account_address))
             .load(&mut conn)
             .await
-            .expect("Error loading order history.")
+            .map_err(DbError::QueryError)
     }
 
     pub async fn get_open_orders_by_account(
         &self,
         account_address: &str,
-    ) -> Vec<models::order::Order> {
+    ) -> Result<Vec<models::order::Order>> {
         let mut conn = self.get().await.unwrap();
         use crate::schema::orders::dsl::*;
         orders
@@ -158,7 +159,7 @@ impl EconiaDbClient {
             .filter(order_state.eq(models::order::OrderState::Open))
             .load(&mut conn)
             .await
-            .expect("Error loading open orders.")
+            .map_err(DbError::QueryError)
     }
 
     pub async fn get_market_history(
@@ -167,7 +168,7 @@ impl EconiaDbClient {
         market_id_param: &BigDecimal,
         from: DateTime<Utc>,
         to: DateTime<Utc>,
-    ) -> Vec<models::bar::Bar> {
+    ) -> Result<Vec<models::bar::Bar>> {
         let mut conn = self.get().await.unwrap();
         match resolution {
             Resolution::R1m => {
@@ -178,7 +179,7 @@ impl EconiaDbClient {
                     .filter(start_time.lt(to))
                     .load(&mut conn)
                     .await
-                    .expect("Error loading market history.")
+                    .map_err(DbError::QueryError)
             }
             Resolution::R5m => {
                 use crate::schema::bars_5m::dsl::*;
@@ -188,7 +189,7 @@ impl EconiaDbClient {
                     .filter(start_time.lt(to))
                     .load(&mut conn)
                     .await
-                    .expect("Error loading market history.")
+                    .map_err(DbError::QueryError)
             }
             Resolution::R15m => {
                 use crate::schema::bars_15m::dsl::*;
@@ -198,7 +199,7 @@ impl EconiaDbClient {
                     .filter(start_time.lt(to))
                     .load(&mut conn)
                     .await
-                    .expect("Error loading market history.")
+                    .map_err(DbError::QueryError)
             }
             Resolution::R30m => {
                 use crate::schema::bars_30m::dsl::*;
@@ -208,7 +209,7 @@ impl EconiaDbClient {
                     .filter(start_time.lt(to))
                     .load(&mut conn)
                     .await
-                    .expect("Error loading market history.")
+                    .map_err(DbError::QueryError)
             }
             Resolution::R1h => {
                 use crate::schema::bars_1h::dsl::*;
@@ -218,7 +219,7 @@ impl EconiaDbClient {
                     .filter(start_time.lt(to))
                     .load(&mut conn)
                     .await
-                    .expect("Error loading market history.")
+                    .map_err(DbError::QueryError)
             }
         }
     }
@@ -228,7 +229,7 @@ impl EconiaDbClient {
         market_id_param: &BigDecimal,
         from: DateTime<Utc>,
         to: DateTime<Utc>,
-    ) -> Vec<models::fill::Fill> {
+    ) -> Result<Vec<models::fill::Fill>> {
         let mut conn = self.0.get().await.unwrap();
         use crate::schema::fills::dsl::*;
         fills
@@ -237,7 +238,7 @@ impl EconiaDbClient {
             .filter(time.lt(to))
             .load(&mut conn)
             .await
-            .expect("Error loading market history.")
+            .map_err(DbError::QueryError)
     }
 
     pub async fn get_order_book_price_levels(
@@ -245,7 +246,7 @@ impl EconiaDbClient {
         market_id_param: &BigDecimal,
         book_side: models::order::Side,
         depth: i64,
-    ) -> Vec<models::market::PriceLevel> {
+    ) -> Result<Vec<models::market::PriceLevel>> {
         let mut conn = self.0.get().await.unwrap();
         use crate::schema::orders::dsl::*;
         orders
@@ -257,6 +258,6 @@ impl EconiaDbClient {
             .limit(depth)
             .load::<models::market::PriceLevel>(&mut conn)
             .await
-            .expect("fail")
+            .map_err(DbError::QueryError)
     }
 }

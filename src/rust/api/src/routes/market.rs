@@ -36,7 +36,7 @@ pub async fn get_orderbook(
     let bids = state
         .econia_db
         .get_order_book_price_levels(&market_id, Side::Bid, params.depth)
-        .await
+        .await?
         .into_iter()
         .map(|v| v.try_into())
         .collect::<Result<Vec<PriceLevel>, TypeError>>()?;
@@ -44,7 +44,7 @@ pub async fn get_orderbook(
     let asks = state
         .econia_db
         .get_order_book_price_levels(&market_id, Side::Ask, params.depth)
-        .await
+        .await?
         .into_iter()
         .map(|v| v.try_into())
         .collect::<Result<Vec<PriceLevel>, TypeError>>()?;
@@ -86,7 +86,7 @@ pub async fn get_market_history(
     let market_history = state
         .econia_db
         .get_market_history(params.resolution, &market_id, from, to)
-        .await
+        .await?
         .into_iter()
         .map(|v| v.try_into())
         .collect::<Result<Vec<types::bar::Bar>, TypeError>>()?;
@@ -126,7 +126,7 @@ pub async fn get_fills(
     let fills = state
         .econia_db
         .get_fills(&market_id, from, to)
-        .await
+        .await?
         .into_iter()
         .map(|v| v.try_into())
         .collect::<Result<Vec<types::order::Fill>, TypeError>>()?;

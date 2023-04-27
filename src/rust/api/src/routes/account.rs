@@ -13,7 +13,7 @@ pub async fn order_history_by_account(
     let order_history = state
         .econia_db
         .get_order_history_by_account(&account_address)
-        .await
+        .await?
         .into_iter()
         .map(|v| v.try_into())
         .collect::<Result<Vec<types::order::Order>, TypeError>>()?;
@@ -32,7 +32,7 @@ pub async fn open_orders_by_account(
     let open_orders = state
         .econia_db
         .get_open_orders_by_account(&account_address)
-        .await
+        .await?
         .into_iter()
         .map(|v| v.try_into())
         .collect::<Result<Vec<types::order::Order>, TypeError>>()?;

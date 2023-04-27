@@ -205,7 +205,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     /// Arguments:
     /// * `market_id`: Market ID for corresponding market.
     /// * `side`: Order [`Side`].
-    /// * `market_order_id`: ID of the order to caancel.
+    /// * `market_order_id`: ID of the order to cancel.
     pub fn cancel_order_user(mut self, market_id: u64, side: Side, market_order_id: u128) -> Self {
         let entry: EconiaResult<EntryFunction> = (|| {
             let module = ModuleId::from(
@@ -233,7 +233,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     /// Arguments:
     /// * `market_id`: Market ID for corresponding market.
     /// * `side`: Order [`Side`].
-    /// * `market_order_id`: ID of the order to caancel.
+    /// * `market_order_id`: ID of the order to cancel.
     /// * `new_size`: New size of the order.
     pub fn change_order_size_user(
         mut self,

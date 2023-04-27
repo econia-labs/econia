@@ -1,5 +1,32 @@
 {
   "db": "PostgreSQL",
+  "2015247b0c3cae8f90715a5fa1f9d682f8ddc3dc67097599a7c0ddccf73eb75c": {
+    "describe": {
+      "columns": [
+        {
+          "name": "price",
+          "ordinal": 0,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "size!",
+          "ordinal": 1,
+          "type_info": "Numeric"
+        }
+      ],
+      "nullable": [
+        false,
+        null
+      ],
+      "parameters": {
+        "Left": [
+          "Numeric",
+          "Int8"
+        ]
+      }
+    },
+    "query": "\n        select\n            price,\n            sum(size) as \"size!\"\n        from orders where\n            market_id = $1 and\n            order_state = 'open' and\n            side = 'bid'\n        group by price order by price desc limit $2;\n        "
+  },
   "2dbdefb8d899d757e1df1e5c9bff7004395f69e8c70af2c3d95ca73e526f0e32": {
     "describe": {
       "columns": [
@@ -299,6 +326,33 @@
       }
     },
     "query": "\n                select\n                    market_id,\n                    start_time,\n                    open,\n                    high,\n                    low,\n                    close,\n                    volume\n                from bars_1h where market_id = $1 and start_time >= $2 and start_time < $3;\n                "
+  },
+  "8b13d24afeefc62bea2992669ef596a81a4e955b8d6f2b0f3e6fff9b34dc7d02": {
+    "describe": {
+      "columns": [
+        {
+          "name": "price",
+          "ordinal": 0,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "size!",
+          "ordinal": 1,
+          "type_info": "Numeric"
+        }
+      ],
+      "nullable": [
+        false,
+        null
+      ],
+      "parameters": {
+        "Left": [
+          "Numeric",
+          "Int8"
+        ]
+      }
+    },
+    "query": "\n        select\n            price,\n            sum(size) as \"size!\"\n        from orders where\n            market_id = $1 and\n            order_state = 'open' and\n            side = 'ask'\n        group by price order by price limit $2;\n        "
   },
   "9b6957a0c7fbf019627926acde84f5dbe9715dfe47984b1dc0cff46778220ee1": {
     "describe": {

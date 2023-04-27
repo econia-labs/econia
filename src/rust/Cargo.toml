@@ -5,26 +5,12 @@ exclude = ["dependencies", "sdk"]
 [workspace.dependencies]
 bigdecimal = { version = "0.3.0", features = ["serde"] }
 chrono = { version = "0.4.24", features = ["serde"] }
-diesel = { version = "2.0.2", features = [
-    "chrono",
-    "numeric",
-    "postgres",
-    "r2d2",
-    "serde_json",
-] }
+diesel = "2.0.2"
 dotenvy = "0.15.6"
 envy = "0.4.2"
 futures-util = "0.3.26"
 serde = { version = "1.0.152", features = ["derive"] }
 serde_json = "1.0.93"
-sqlx = { version = "0.6.2", features = [
-    "bigdecimal",
-    "chrono",
-    "macros",
-    "offline",
-    "postgres",
-    "runtime-tokio-rustls",
-    "time",
-] }
+sqlx = "0.6.2"
 thiserror = "1.0.38"
 tokio = { version = "1.25.0", features = ["full"] }

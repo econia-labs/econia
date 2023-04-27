@@ -1,4 +1,9 @@
-use diesel::{prelude::*, Connection, PgConnection};
+use std::ops::Deref;
+
+use diesel::insert_into;
+use diesel_async::pooled_connection::deadpool::Pool;
+use diesel_async::pooled_connection::AsyncDieselConnectionManager;
+use diesel_async::{AsyncPgConnection, RunQueryDsl};
 use models::{
     bar::{Bar, NewBar},
     market::{MarketRegistrationEvent, NewMarketRegistrationEvent},
@@ -27,57 +32,81 @@ pub fn load_config() -> Config {
     }
 }
 
-pub fn establish_connection(url: String) -> PgConnection {
-    PgConnection::establish(&url)
-        .unwrap_or_else(|_| panic!("Could not connect to database {}", url))
+pub struct EconiaDbClient(Pool<AsyncPgConnection>);
+
+impl Deref for EconiaDbClient {
+    type Target = Pool<AsyncPgConnection>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
 }
 
-pub fn create_coin(conn: &mut PgConnection, coin: &NewCoin) -> Coin {
-    use crate::schema::coins;
-    diesel::insert_into(coins::table)
-        .values(coin)
-        .get_result(conn)
-        .expect("Error adding new asset.")
-}
-
-pub fn register_market(
-    conn: &mut PgConnection,
-    event: &NewMarketRegistrationEvent,
-) -> MarketRegistrationEvent {
-    use crate::schema::market_registration_events;
-
-    if event.base_name_generic.is_some() {
-        assert!(event.base_account_address.is_none());
-        assert!(event.base_module_name.is_none());
-        assert!(event.base_struct_name.is_none());
+impl EconiaDbClient {
+    pub async fn connect(Config { database_url }: Config) -> Self {
+        let manager = AsyncDieselConnectionManager::<AsyncPgConnection>::new(database_url);
+        let pool = Pool::builder(manager)
+            .build()
+            .expect("Failed to create database pool.");
+        Self(pool)
     }
 
-    diesel::insert_into(market_registration_events::table)
-        .values(event)
-        .get_result(conn)
-        .expect("Error adding market registration event.")
-}
+    pub async fn create_coin(&self, coin: &NewCoin<'_>) -> Coin {
+        let mut conn = self.get().await.unwrap();
+        use crate::schema::coins;
+        insert_into(coins::table)
+            .values(coin)
+            .get_result(&mut conn)
+            .await
+            .expect("Error adding coin.")
+    }
 
-pub fn add_maker_event(conn: &mut PgConnection, event: &NewMakerEvent) -> MakerEvent {
-    use crate::schema::maker_events;
-    diesel::insert_into(maker_events::table)
-        .values(event)
-        .get_result(conn)
-        .expect("Error adding maker event.")
-}
+    pub async fn register_market(
+        &self,
+        event: &NewMarketRegistrationEvent<'_>,
+    ) -> MarketRegistrationEvent {
+        if event.base_name_generic.is_some() {
+            assert!(event.base_account_address.is_none());
+            assert!(event.base_module_name.is_none());
+            assert!(event.base_struct_name.is_none());
+        }
 
-pub fn add_taker_event(conn: &mut PgConnection, event: &NewTakerEvent) -> TakerEvent {
-    use crate::schema::taker_events;
-    diesel::insert_into(taker_events::table)
-        .values(event)
-        .get_result(conn)
-        .expect("Error adding taker event.")
-}
+        let mut conn = self.get().await.unwrap();
+        use crate::schema::market_registration_events;
+        insert_into(market_registration_events::table)
+            .values(event)
+            .get_result(&mut conn)
+            .await
+            .expect("Error adding market registration event.")
+    }
 
-pub fn add_bar(conn: &mut PgConnection, bar: &NewBar) -> Bar {
-    use crate::schema::bars_1m;
-    diesel::insert_into(bars_1m::table)
-        .values(bar)
-        .get_result(conn)
-        .expect("Error adding bar.")
+    pub async fn add_maker_event(&self, event: &NewMakerEvent<'_>) -> MakerEvent {
+        let mut conn = self.get().await.unwrap();
+        use crate::schema::maker_events;
+        insert_into(maker_events::table)
+            .values(event)
+            .get_result(&mut conn)
+            .await
+            .expect("Error adding maker event.")
+    }
+
+    pub async fn add_taker_event(&self, event: &NewTakerEvent<'_>) -> TakerEvent {
+        let mut conn = self.get().await.unwrap();
+        use crate::schema::taker_events;
+        insert_into(taker_events::table)
+            .values(event)
+            .get_result(&mut conn)
+            .await
+            .expect("Error adding taker event.")
+    }
+
+    pub async fn add_bar(&self, bar: &NewBar) -> Bar {
+        let mut conn = self.get().await.unwrap();
+        use crate::schema::bars_1m;
+        insert_into(bars_1m::table)
+            .values(bar)
+            .get_result(&mut conn)
+            .await
+            .expect("Error adding bar.")
+    }
 }

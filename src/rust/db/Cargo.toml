@@ -9,11 +9,15 @@ edition = "2021"
 bigdecimal = { workspace = true }
 chrono = { workspace = true }
 diesel = { workspace = true, features = ["chrono", "numeric", "postgres"] }
+diesel-async = { version = "0.2.2", features = ["postgres", "deadpool"] }
 diesel-derive-enum = { version = "2.0.1", features = ["postgres"] }
 dotenvy = { workspace = true }
 envy = { workspace = true }
 field_count = "0.1.1"
 serde = { workspace = true, features = ["derive"] }
-sqlx = { workspace = true, features = ["macros"] }
+sqlx = { workspace = true, features = [
+    "macros",
+    "runtime-tokio-rustls"
+] }
 thiserror = { workspace = true }
 types = { path = "../types" }

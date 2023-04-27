@@ -66,7 +66,7 @@ impl EconiaDbClient {
     }
 
     pub async fn create_coin(&self, coin: &NewCoin<'_>) -> Result<Coin> {
-        let mut conn = self.get().await.unwrap();
+        let mut conn = self.get().await?;
         use crate::schema::coins;
         insert_into(coins::table)
             .values(coin)
@@ -85,7 +85,7 @@ impl EconiaDbClient {
             assert!(event.base_struct_name.is_none());
         }
 
-        let mut conn = self.get().await.unwrap();
+        let mut conn = self.get().await?;
         use crate::schema::market_registration_events;
         insert_into(market_registration_events::table)
             .values(event)
@@ -95,7 +95,7 @@ impl EconiaDbClient {
     }
 
     pub async fn add_maker_event(&self, event: &NewMakerEvent<'_>) -> Result<MakerEvent> {
-        let mut conn = self.get().await.unwrap();
+        let mut conn = self.get().await?;
         use crate::schema::maker_events;
         insert_into(maker_events::table)
             .values(event)
@@ -105,7 +105,7 @@ impl EconiaDbClient {
     }
 
     pub async fn add_taker_event(&self, event: &NewTakerEvent<'_>) -> Result<TakerEvent> {
-        let mut conn = self.get().await.unwrap();
+        let mut conn = self.get().await?;
         use crate::schema::taker_events;
         insert_into(taker_events::table)
             .values(event)
@@ -115,7 +115,7 @@ impl EconiaDbClient {
     }
 
     pub async fn add_bar(&self, bar: &NewBar) -> Result<Bar> {
-        let mut conn = self.get().await.unwrap();
+        let mut conn = self.get().await?;
         use crate::schema::bars_1m;
         insert_into(bars_1m::table)
             .values(bar)
@@ -125,7 +125,7 @@ impl EconiaDbClient {
     }
 
     pub async fn get_market_ids(&self) -> Result<Vec<BigDecimal>> {
-        let mut conn = self.get().await.unwrap();
+        let mut conn = self.get().await?;
         use crate::schema::markets::dsl::*;
         markets
             .select(market_id)
@@ -139,7 +139,7 @@ impl EconiaDbClient {
         &self,
         account_address: &str,
     ) -> Result<Vec<models::order::Order>> {
-        let mut conn = self.get().await.unwrap();
+        let mut conn = self.get().await?;
         use crate::schema::orders::dsl::*;
         orders
             .filter(user_address.eq(account_address))
@@ -152,7 +152,7 @@ impl EconiaDbClient {
         &self,
         account_address: &str,
     ) -> Result<Vec<models::order::Order>> {
-        let mut conn = self.get().await.unwrap();
+        let mut conn = self.get().await?;
         use crate::schema::orders::dsl::*;
         orders
             .filter(user_address.eq(account_address))
@@ -169,7 +169,7 @@ impl EconiaDbClient {
         from: DateTime<Utc>,
         to: DateTime<Utc>,
     ) -> Result<Vec<models::bar::Bar>> {
-        let mut conn = self.get().await.unwrap();
+        let mut conn = self.get().await?;
         match resolution {
             Resolution::R1m => {
                 use crate::schema::bars_1m::dsl::*;
@@ -230,7 +230,7 @@ impl EconiaDbClient {
         from: DateTime<Utc>,
         to: DateTime<Utc>,
     ) -> Result<Vec<models::fill::Fill>> {
-        let mut conn = self.0.get().await.unwrap();
+        let mut conn = self.0.get().await?;
         use crate::schema::fills::dsl::*;
         fills
             .filter(market_id.eq(market_id_param))
@@ -247,7 +247,7 @@ impl EconiaDbClient {
         book_side: models::order::Side,
         depth: i64,
     ) -> Result<Vec<models::market::PriceLevel>> {
-        let mut conn = self.0.get().await.unwrap();
+        let mut conn = self.0.get().await?;
         use crate::schema::orders::dsl::*;
         orders
             .filter(market_id.eq(market_id_param))

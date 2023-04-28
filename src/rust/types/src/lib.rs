@@ -1,4 +1,5 @@
 use chrono::{DateTime, Utc};
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 pub mod bar;
@@ -10,7 +11,8 @@ pub mod message;
 pub mod order;
 pub mod query;
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Coin {
     pub account_address: String,
     pub module_name: String,
@@ -20,7 +22,8 @@ pub struct Coin {
     pub decimals: i16,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Market {
     pub market_id: u64,
     pub name: String,

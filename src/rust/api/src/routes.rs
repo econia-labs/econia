@@ -55,6 +55,7 @@ async fn markets(State(state): State<AppState>) -> Result<Json<Vec<types::Market
         r#"
         select
             market_id,
+            markets.name as name,
             base.name as "base_name?",
             base.symbol as "base_symbol?",
             base.decimals as "base_decimals?",
@@ -79,7 +80,8 @@ async fn markets(State(state): State<AppState>) -> Result<Json<Vec<types::Market
                                 and markets.base_struct_name = base.struct_name
             join coins quote on markets.quote_account_address = quote.account_address
                                 and markets.quote_module_name = quote.module_name
-                                and markets.quote_struct_name = quote.struct_name;
+                                and markets.quote_struct_name = quote.struct_name
+            order by market_id;
         "#
     )
     .fetch_all(&state.pool)

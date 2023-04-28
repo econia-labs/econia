@@ -21,8 +21,7 @@ module.exports = {
             type: 'category',
             label: 'Move APIs',
             link: {
-                type: 'doc',
-                id: 'apis/index'
+                type: 'generated-index'
             },
             items: [
                 'apis/registration',

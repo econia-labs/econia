@@ -18,7 +18,7 @@ mod helpers;
 #[test]
 fn test_place_order() {
     let config = load_config();
-    let conn = &mut establish_connection(config.database_url);
+    let conn = &mut establish_connection(config.database_url).unwrap();
 
     // Delete all entries in the tables used before running tests.
     reset_tables(conn);
@@ -40,7 +40,8 @@ fn test_place_order() {
             price: &1000.into(),
             time: Utc::now(),
         },
-    );
+    )
+    .unwrap();
 
     // Check that the maker events table has one entry.
     let db_maker_events = db::schema::maker_events::dsl::maker_events
@@ -71,7 +72,7 @@ fn test_place_order() {
 #[test]
 fn test_change_order_price() {
     let config = load_config();
-    let conn = &mut establish_connection(config.database_url);
+    let conn = &mut establish_connection(config.database_url).unwrap();
 
     // Delete all entries in the tables used before running tests.
     reset_tables(conn);
@@ -93,7 +94,8 @@ fn test_change_order_price() {
             price: &1000.into(),
             time: Utc::now(),
         },
-    );
+    )
+    .unwrap();
 
     // Change the price to 1500.
     add_maker_event(
@@ -109,7 +111,8 @@ fn test_change_order_price() {
             price: &1500.into(),
             time: Utc::now(),
         },
-    );
+    )
+    .unwrap();
 
     // Check that the maker events table has two entries.
     let db_maker_events = db::schema::maker_events::dsl::maker_events
@@ -139,7 +142,7 @@ fn test_change_order_price() {
 #[test]
 fn test_change_order_size() {
     let config = load_config();
-    let conn = &mut establish_connection(config.database_url);
+    let conn = &mut establish_connection(config.database_url).unwrap();
 
     // Delete all entries in the tables used before running tests.
     reset_tables(conn);
@@ -161,7 +164,8 @@ fn test_change_order_size() {
             price: &1000.into(),
             time: Utc::now(),
         },
-    );
+    )
+    .unwrap();
 
     // Change the size of the order to 2000.
     add_maker_event(
@@ -177,7 +181,8 @@ fn test_change_order_size() {
             price: &1000.into(),
             time: Utc::now(),
         },
-    );
+    )
+    .unwrap();
 
     // Check that the maker events table has two entries.
     let db_maker_events = db::schema::maker_events::dsl::maker_events
@@ -207,7 +212,7 @@ fn test_change_order_size() {
 #[test]
 fn test_cancel_order() {
     let config = load_config();
-    let conn = &mut establish_connection(config.database_url);
+    let conn = &mut establish_connection(config.database_url).unwrap();
 
     // Delete all entries in the tables used before running tests.
     reset_tables(conn);
@@ -229,7 +234,8 @@ fn test_cancel_order() {
             price: &1000.into(),
             time: Utc::now(),
         },
-    );
+    )
+    .unwrap();
 
     // Cancel the order.
     add_maker_event(
@@ -245,7 +251,8 @@ fn test_cancel_order() {
             price: &place_event.price,
             time: Utc::now(),
         },
-    );
+    )
+    .unwrap();
 
     // Check that the maker events table has two entries.
     let db_maker_events = db::schema::maker_events::dsl::maker_events
@@ -273,7 +280,7 @@ fn test_cancel_order() {
 #[test]
 fn test_evict_order() {
     let config = load_config();
-    let conn = &mut establish_connection(config.database_url);
+    let conn = &mut establish_connection(config.database_url).unwrap();
 
     // Delete all entries in the tables used before running tests.
     reset_tables(conn);
@@ -295,7 +302,8 @@ fn test_evict_order() {
             price: &1000.into(),
             time: Utc::now(),
         },
-    );
+    )
+    .unwrap();
 
     // Cancel the order.
     add_maker_event(
@@ -311,7 +319,8 @@ fn test_evict_order() {
             price: &place_event.price,
             time: Utc::now(),
         },
-    );
+    )
+    .unwrap();
 
     // Check that the maker events table has two entries.
     let db_maker_events = db::schema::maker_events::dsl::maker_events
@@ -339,7 +348,7 @@ fn test_evict_order() {
 #[test]
 fn test_fill_order() {
     let config = load_config();
-    let conn = &mut establish_connection(config.database_url);
+    let conn = &mut establish_connection(config.database_url).unwrap();
 
     // Delete all entries in the tables used before running tests.
     reset_tables(conn);
@@ -361,7 +370,8 @@ fn test_fill_order() {
             price: &1000.into(),
             time: Utc::now(),
         },
-    );
+    )
+    .unwrap();
 
     // Place another order to fill the first order.
     add_maker_event(
@@ -377,7 +387,8 @@ fn test_fill_order() {
             price: &1000.into(),
             time: Utc::now(),
         },
-    );
+    )
+    .unwrap();
 
     // Fill the order.
     add_taker_event(
@@ -392,7 +403,8 @@ fn test_fill_order() {
             price: &1000.into(),
             time: Utc::now(),
         },
-    );
+    )
+    .unwrap();
 
     // Check that the maker events table has two entries.
     let db_maker_events = db::schema::maker_events::dsl::maker_events
@@ -446,7 +458,7 @@ fn test_fill_order() {
 #[test]
 fn test_fully_fill_order() {
     let config = load_config();
-    let conn = &mut establish_connection(config.database_url);
+    let conn = &mut establish_connection(config.database_url).unwrap();
 
     // Delete all entries in the tables used before running tests.
     reset_tables(conn);
@@ -468,7 +480,8 @@ fn test_fully_fill_order() {
             price: &1000.into(),
             time: Utc::now(),
         },
-    );
+    )
+    .unwrap();
 
     // Place another order to fully fill the first order.
     add_maker_event(
@@ -484,7 +497,8 @@ fn test_fully_fill_order() {
             price: &1000.into(),
             time: Utc::now(),
         },
-    );
+    )
+    .unwrap();
 
     // Fully fill the order.
     add_taker_event(
@@ -499,7 +513,8 @@ fn test_fully_fill_order() {
             price: &1000.into(),
             time: Utc::now(),
         },
-    );
+    )
+    .unwrap();
 
     // Check that the maker events table has two entries.
     let db_maker_events = db::schema::maker_events::dsl::maker_events

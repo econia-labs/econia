@@ -17,7 +17,7 @@ mod helpers;
 #[test]
 fn test_register_coin_market() {
     let config = load_config();
-    let conn = &mut establish_connection(config.database_url);
+    let conn = &mut establish_connection(config.database_url).unwrap();
 
     // Delete all entries in the tables used before running tests.
     reset_tables(conn);
@@ -33,7 +33,8 @@ fn test_register_coin_market() {
             name: "Aptos Coin",
             decimals: 8,
         },
-    );
+    )
+    .unwrap();
 
     let tusdc_coin = create_coin(
         conn,
@@ -45,7 +46,8 @@ fn test_register_coin_market() {
             name: "Test USDC",
             decimals: 6,
         },
-    );
+    )
+    .unwrap();
 
     // Register the market. Adding a new market registration event should create a new entry
     // in the markets table as well.
@@ -66,7 +68,8 @@ fn test_register_coin_market() {
             min_size: &1000.into(),
             underwriter_id: &0.into(),
         },
-    );
+    )
+    .unwrap();
 
     // Check that the market registration events table has one entry.
     let db_market_registration_events =
@@ -90,7 +93,7 @@ fn test_register_coin_market() {
 #[test]
 fn test_register_generic_market() {
     let config = load_config();
-    let conn = &mut establish_connection(config.database_url);
+    let conn = &mut establish_connection(config.database_url).unwrap();
 
     // Delete all entries in the tables used before running tests.
     reset_tables(conn);
@@ -106,7 +109,8 @@ fn test_register_generic_market() {
             name: "Test USDC",
             decimals: 6,
         },
-    );
+    )
+    .unwrap();
 
     // Register the market. Adding a new market registration event should create a new entry
     // in the markets table as well.
@@ -127,7 +131,8 @@ fn test_register_generic_market() {
             min_size: &1000.into(),
             underwriter_id: &0.into(),
         },
-    );
+    )
+    .unwrap();
 
     // Check that the market registration events table has one entry.
     let db_market_registration_events =
@@ -151,7 +156,7 @@ fn test_register_generic_market() {
 #[test]
 fn test_register_multiple_markets() {
     let config = load_config();
-    let conn = &mut establish_connection(config.database_url);
+    let conn = &mut establish_connection(config.database_url).unwrap();
 
     // Delete all entries in the tables used before running tests.
     reset_tables(conn);
@@ -166,7 +171,8 @@ fn test_register_multiple_markets() {
             name: "Aptos Coin",
             decimals: 8,
         },
-    );
+    )
+    .unwrap();
 
     let tusdc_coin = create_coin(
         conn,
@@ -178,7 +184,8 @@ fn test_register_multiple_markets() {
             name: "Test USDC",
             decimals: 6,
         },
-    );
+    )
+    .unwrap();
 
     let teth_coin = create_coin(
         conn,
@@ -190,7 +197,8 @@ fn test_register_multiple_markets() {
             name: "Test ETH",
             decimals: 6,
         },
-    );
+    )
+    .unwrap();
 
     // APT-tUSDC market
     register_market(
@@ -210,7 +218,8 @@ fn test_register_multiple_markets() {
             min_size: &1000.into(),
             underwriter_id: &0.into(),
         },
-    );
+    )
+    .unwrap();
 
     // tETH-tUSDC market
     register_market(
@@ -230,7 +239,8 @@ fn test_register_multiple_markets() {
             min_size: &1000.into(),
             underwriter_id: &0.into(),
         },
-    );
+    )
+    .unwrap();
 
     // APT-tETH market
     register_market(
@@ -250,7 +260,8 @@ fn test_register_multiple_markets() {
             min_size: &1000.into(),
             underwriter_id: &0.into(),
         },
-    );
+    )
+    .unwrap();
 
     // Check that the market registration events table has three entries.
     let db_market_registration_events =
@@ -274,7 +285,7 @@ fn test_register_multiple_markets() {
 #[test]
 fn test_register_coin_and_generic_market() {
     let config = load_config();
-    let conn = &mut establish_connection(config.database_url);
+    let conn = &mut establish_connection(config.database_url).unwrap();
 
     // Delete all entries in the tables used before running tests.
     reset_tables(conn);
@@ -290,7 +301,8 @@ fn test_register_coin_and_generic_market() {
             name: "Aptos Coin",
             decimals: 8,
         },
-    );
+    )
+    .unwrap();
 
     let tusdc_coin = create_coin(
         conn,
@@ -302,7 +314,8 @@ fn test_register_coin_and_generic_market() {
             name: "Test USDC",
             decimals: 6,
         },
-    );
+    )
+    .unwrap();
 
     // Register a new coin market.
     register_market(
@@ -322,7 +335,8 @@ fn test_register_coin_and_generic_market() {
             min_size: &1000.into(),
             underwriter_id: &0.into(),
         },
-    );
+    )
+    .unwrap();
 
     // Register a new generic market.
     register_market(
@@ -342,7 +356,8 @@ fn test_register_coin_and_generic_market() {
             min_size: &1000.into(),
             underwriter_id: &0.into(),
         },
-    );
+    )
+    .unwrap();
 
     // Check that the market registration events table has one entry.
     let db_market_registration_events =
@@ -367,7 +382,7 @@ fn test_register_coin_and_generic_market() {
 #[should_panic]
 fn test_register_generic_market_with_base_coin_fails() {
     let config = load_config();
-    let conn = &mut establish_connection(config.database_url);
+    let conn = &mut establish_connection(config.database_url).unwrap();
 
     // Delete all entries in the tables used before running tests.
     reset_tables(conn);
@@ -383,7 +398,8 @@ fn test_register_generic_market_with_base_coin_fails() {
             name: "Aptos Coin",
             decimals: 8,
         },
-    );
+    )
+    .unwrap();
 
     let tusdc_coin = create_coin(
         conn,
@@ -395,7 +411,8 @@ fn test_register_generic_market_with_base_coin_fails() {
             name: "Test USDC",
             decimals: 6,
         },
-    );
+    )
+    .unwrap();
 
     // Attempt to register the market.
     // Any market with a base_name_generic should not include a reference to
@@ -417,5 +434,6 @@ fn test_register_generic_market_with_base_coin_fails() {
             min_size: &1000.into(),
             underwriter_id: &0.into(),
         },
-    );
+    )
+    .unwrap();
 }

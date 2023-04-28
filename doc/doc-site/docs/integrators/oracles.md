@@ -1,3 +1,97 @@
 # Oracles
 
-Stay tuned for more resources about oracles to integrate with Econia!
+## Pyth Network
+
+### Consume Pyth Network prices in applications on Aptos
+
+Aptos contracts can update and fetch the Pyth prices using the Pyth Aptos Contract, which has been deployed on Mainnet. The documented source code can be found [here](https://github.com/pyth-network/pyth-crosschain/blob/main/target_chains/aptos/contracts/sources/pyth.move).
+
+### Use cases for using Pyth with Econia
+
+The core variable which is utilized by decentralized derivative exchanges, traditionally perpetual futures, is the oracle index price — powering the function of the exchange’s funding mechanism and liquidation engine.
+Without a reliable and secure oracle provider, innovative on-chain platforms of this nature cannot be achieved.
+
+Developers can leverage Pyth’s data feeds to build these exchange components, utilize Econia’s hyper-parallized order book to match and settle trades, and build a high performance perpetual derivatives trading platform.
+
+### Updating Price Feeds
+The mechanism by which price feeds are updated on Aptos is explained [here](https://docs.pyth.network/pythnet-price-feeds). The [pyth-aptos-js](https://github.com/pyth-network/pyth-crosschain/tree/main/target_chains/aptos/sdk/js) package can be used to fetch price feed update data which can be passed to the `pyth::update_price` on-chain function.
+
+### Examples
+
+ - [Minimal on-chain contract](https://github.com/pyth-network/pyth-crosschain/blob/main/target_chains/aptos/examples/fetch_btc_price/sources/example.move) which updates and returns the Pyth BC/USD price.
+ - [Full-stack React app and on-chain contract](https://github.com/pyth-network/pyth-crosschain/tree/main/target_chains/aptos/examples/mint_nft) which uses the pyth-aptos-js package to update the price used by the contract.
+ - [In-depth explanation](https://youtu.be/0b0RXi41pN0) of how Pyth works on Aptos and how to integrate Pyth data in your application from one of our contributor.
+
+### Networks
+
+Pyth is currently deployed on Aptos Mainnet and Testnet.
+
+### Addresses
+
+When deploying contracts using Pyth, the [named addresses](https://diem.github.io/move/address.html#named-addresses) `pyth`, `wormhole` and `deployer` need to be defined at compile time. These addresses are the same across both Testnet and Mainnet.
+
+| Named Address | Value                                                                |
+| ------------- | -------------------------------------------------------------------- |
+| `pyth`        | `0x7e783b349d3e89cf5931af376ebeadbfab855b3fa239b7ada8f5a92fbea6b387` |
+| `wormhole`    | `0x5bc11445584a763c1fa7ed39081f1920954da14e0432440cba863d03e19625`   |
+| `deployer`    | `Oxb31e71226fd295357355f684577c888298636609e93c9b05f0f604049f434`    |
+
+`deployer` and `wormhole` are implementation details of the Pyth contract: you will not need to interact with these.
+
+### Price Feeds
+
+| Network       | Available Price Feeds                                                                                                        |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Aptos Testnet | [https://pyth.network/developers/price-feed-ids#aptos-testnet](https://pyth.network/developers/price-feed-ids#aptos-testnet) |
+| Aptos Mainnet | [https://pyth.network/developers/price-feed](https://pyth.network/developers/price-feed)                                     |
+
+### Notable Price Feeds
+
+| Pair       | Price Feed Id                                                       |
+| ---------- | ------------------------------------------------------------------- |
+| BTC / USD  | `Oxf9c0172ba10dfa4d19088d94f5f61d3b54d5bd7483a322a9821373ee8ea31b`  |
+| ETH / USD  | `Oxca80ba6dc3208d06f1a886011eedid77c77be9eb761cc10d72b7d0a2fd57a6`  |
+| USDC / USD | `0x41f3625971ca2ed2263e78573fe5ce23e13d2558ed3f247ab0f84fb9e7ae722` |
+| USDT / USD | `Oxtfc18861232290221461220bd42acdidcdfbc89c84092c93c18bdc7756c1588` |
+
+### Links to Pyth Docs
+
+<!-- <div style={{backgroundColor: "#020202"}}> -->
+<div className="link-card-container">
+    <a
+        className="link-card"
+        href="https://docs.pyth.network/design-overview"
+        target="_blank"
+        rel="noopener noreferrer"
+    >
+        <span className="link-card-title">How Pyth works</span>
+        <span className="link-card-description">Pyth is a protocol that allows market participan..</span>
+    </a>
+    <a
+        className="link-card"
+        href="https://docs.pyth.network/pythnet-price-feeds/aptos"
+        target="_blank"
+        rel="noopener noreferrer"
+    >
+        <span className="link-card-title">Pyth on Aptos</span>
+        <span className="link-card-description">Consume Pyth Network prices in applications on A..</span>
+    </a>
+    <a
+        className="link-card"
+        href="https://docs.pyth.network/benchmarks"
+        target="_blank"
+        rel="noopener noreferrer"
+    >
+        <span className="link-card-title">Benchmarks on Pyth</span>
+        <span className="link-card-description">Use historical Pyth price data in your applicati..</span>
+    </a>
+    <a
+        className="link-card"
+        href="https://docs.pyth.network/tradingview-integration"
+        target="_blank"
+        rel="noopener noreferrer"
+    >
+        <span className="link-card-title">TradingView Integration</span>
+        <span className="link-card-description">Integrate Pyth price feeds on your applicati...</span>
+    </a>
+</div>

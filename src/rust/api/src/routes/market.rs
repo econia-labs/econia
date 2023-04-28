@@ -130,7 +130,8 @@ pub async fn get_market_history(
                     low,
                     close,
                     volume
-                from bars_1m where market_id = $1 and start_time >= $2 and start_time < $3;
+                from bars_1m where market_id = $1 and start_time >= $2 and start_time < $3
+                order by start_time;
                 "#,
                 market_id,
                 from,
@@ -151,7 +152,8 @@ pub async fn get_market_history(
                     low,
                     close,
                     volume
-                from bars_5m where market_id = $1 and start_time >= $2 and start_time < $3;
+                from bars_5m where market_id = $1 and start_time >= $2 and start_time < $3
+                order by start_time;;
                 "#,
                 market_id,
                 from,
@@ -172,7 +174,8 @@ pub async fn get_market_history(
                     low,
                     close,
                     volume
-                from bars_15m where market_id = $1 and start_time >= $2 and start_time < $3;
+                from bars_15m where market_id = $1 and start_time >= $2 and start_time < $3
+                order by start_time;;
                 "#,
                 market_id,
                 from,
@@ -193,7 +196,8 @@ pub async fn get_market_history(
                     low,
                     close,
                     volume
-                from bars_30m where market_id = $1 and start_time >= $2 and start_time < $3;
+                from bars_30m where market_id = $1 and start_time >= $2 and start_time < $3
+                order by start_time;
                 "#,
                 market_id,
                 from,
@@ -214,7 +218,8 @@ pub async fn get_market_history(
                     low,
                     close,
                     volume
-                from bars_1h where market_id = $1 and start_time >= $2 and start_time < $3;
+                from bars_1h where market_id = $1 and start_time >= $2 and start_time < $3
+                order by start_time;
                 "#,
                 market_id,
                 from,
@@ -274,7 +279,7 @@ pub async fn get_fills(
             size,
             price,
             time
-        from fills where market_id = $1 and time >= $2 and time < $3;
+        from fills where market_id = $1 and time >= $2 and time < $3 order by time;
         "#,
         market_id,
         from,

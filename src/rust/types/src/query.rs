@@ -7,6 +7,7 @@ use crate::{error::TypeError, Coin, Market};
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct QueryMarket {
     pub market_id: BigDecimal,
+    pub name: String,
     pub base_symbol: Option<String>,
     pub base_name: Option<String>,
     pub base_decimals: Option<i16>,
@@ -96,6 +97,7 @@ impl TryFrom<QueryMarket> for Market {
 
             let market = Market {
                 market_id,
+                name: value.name,
                 base: Some(base),
                 base_name_generic: value.base_name_generic,
                 quote,
@@ -127,6 +129,7 @@ impl TryFrom<QueryMarket> for Market {
             };
             let market = Market {
                 market_id,
+                name: value.name,
                 base: None,
                 base_name_generic: value.base_name_generic,
                 quote,

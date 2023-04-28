@@ -23,6 +23,7 @@ pub struct Coin {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Market {
     pub market_id: u64,
+    pub name: String,
     pub base: Option<Coin>,
     pub base_name_generic: Option<String>,
     pub quote: Coin,

@@ -3,6 +3,7 @@ use models::{
     bar::{Bar, NewBar},
     market::{MarketRegistrationEvent, NewMarketRegistrationEvent},
 };
+#[cfg(feature = "config-loader")]
 use serde::Deserialize;
 
 use crate::models::{
@@ -14,11 +15,13 @@ pub mod error;
 pub mod models;
 pub mod schema;
 
-#[derive(Deserialize, Debug)]
+#[derive(Debug)]
+#[cfg_attr(feature = "config-loader", derive(Deserialize))]
 pub struct Config {
     pub database_url: String,
 }
 
+#[cfg(feature = "config-loader")]
 pub fn load_config() -> Config {
     dotenvy::dotenv().ok();
     match envy::from_env::<Config>() {

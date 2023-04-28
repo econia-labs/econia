@@ -1,3 +1,5 @@
+#![cfg(feature = "config-loader")]
+
 use db::{
     create_coin, establish_connection, load_config,
     models::coin::{Coin, NewCoin},

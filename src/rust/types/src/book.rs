@@ -1,10 +1,12 @@
 use std::collections::{BTreeMap, HashMap};
 
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 use crate::order::{Order, Side};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct OrderBook {
     asks: BTreeMap<u64, Vec<Order>>,
     bids: BTreeMap<u64, Vec<Order>>,
@@ -103,14 +105,16 @@ impl OrderBook {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct PriceLevelWithId {
     pub market_id: u64,
     pub price: u64,
     pub size: u64,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct PriceLevel {
     pub price: u64,
     pub size: u64,

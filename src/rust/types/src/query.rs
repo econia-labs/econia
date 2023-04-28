@@ -1,10 +1,12 @@
 use bigdecimal::{BigDecimal, ToPrimitive};
 use chrono::{DateTime, Utc};
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 use crate::{error::TypeError, Coin, Market};
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct QueryMarket {
     pub market_id: BigDecimal,
     pub base_symbol: Option<String>,
@@ -142,7 +144,8 @@ impl TryFrom<QueryMarket> for Market {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct MarketIdQuery {
     pub market_id: BigDecimal,
 }

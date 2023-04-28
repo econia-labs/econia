@@ -1,3 +1,5 @@
+#![cfg(feature = "config-loader")]
+
 use bigdecimal::{BigDecimal, FromPrimitive};
 use chrono::Utc;
 use db::{

@@ -41,10 +41,10 @@ module.exports = {
             },
             items: [
                 'integrators/econia-labs',
-                'integrators/bridges',
-                'integrators/notifications',
                 'integrators/oracles',
                 'integrators/audits',
+                'integrators/bridges',
+                'integrators/notifications',
             ]
         },
         'security',

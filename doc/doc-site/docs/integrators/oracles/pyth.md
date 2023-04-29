@@ -1,32 +1,30 @@
-# Oracles
+# Pyth Network
 
-## Pyth Network
-
-### Consume Pyth Network prices in applications on Aptos
+## Consume Pyth Network prices in applications on Aptos
 
 Aptos contracts can update and fetch the Pyth prices using the Pyth Aptos Contract, which has been deployed on Mainnet. The documented source code can be found [here](https://github.com/pyth-network/pyth-crosschain/blob/main/target_chains/aptos/contracts/sources/pyth.move).
 
-### Use cases for using Pyth with Econia
+## Use cases for using Pyth with Econia
 
 The core variable which is utilized by decentralized derivative exchanges, traditionally perpetual futures, is the oracle index price — powering the function of the exchange’s funding mechanism and liquidation engine.
 Without a reliable and secure oracle provider, innovative on-chain platforms of this nature cannot be achieved.
 
 Developers can leverage Pyth’s data feeds to build these exchange components, utilize Econia’s hyper-parallized order book to match and settle trades, and build a high performance perpetual derivatives trading platform.
 
-### Updating Price Feeds
+## Updating Price Feeds
 The mechanism by which price feeds are updated on Aptos is explained [here](https://docs.pyth.network/pythnet-price-feeds). The [pyth-aptos-js](https://github.com/pyth-network/pyth-crosschain/tree/main/target_chains/aptos/sdk/js) package can be used to fetch price feed update data which can be passed to the `pyth::update_price` on-chain function.
 
-### Examples
+## Examples
 
  - [Minimal on-chain contract](https://github.com/pyth-network/pyth-crosschain/blob/main/target_chains/aptos/examples/fetch_btc_price/sources/example.move) which updates and returns the Pyth BC/USD price.
  - [Full-stack React app and on-chain contract](https://github.com/pyth-network/pyth-crosschain/tree/main/target_chains/aptos/examples/mint_nft) which uses the pyth-aptos-js package to update the price used by the contract.
  - [In-depth explanation](https://youtu.be/0b0RXi41pN0) of how Pyth works on Aptos and how to integrate Pyth data in your application from one of our contributor.
 
-### Networks
+## Networks
 
 Pyth is currently deployed on Aptos Mainnet and Testnet.
 
-### Addresses
+## Addresses
 
 When deploying contracts using Pyth, the [named addresses](https://diem.github.io/move/address.html#named-addresses) `pyth`, `wormhole` and `deployer` need to be defined at compile time. These addresses are the same across both Testnet and Mainnet.
 
@@ -38,14 +36,14 @@ When deploying contracts using Pyth, the [named addresses](https://diem.github.i
 
 `deployer` and `wormhole` are implementation details of the Pyth contract: you will not need to interact with these.
 
-### Price Feeds
+## Price Feeds
 
 | Network       | Available Price Feeds                                                                                                        |
 | ------------- | ---------------------------------------------------------------------------------------------------------------------------- |
 | Aptos Testnet | [https://pyth.network/developers/price-feed-ids#aptos-testnet](https://pyth.network/developers/price-feed-ids#aptos-testnet) |
 | Aptos Mainnet | [https://pyth.network/developers/price-feed](https://pyth.network/developers/price-feed)                                     |
 
-### Notable Price Feeds
+## Notable Price Feeds
 
 | Pair       | Price Feed Id                                                       |
 | ---------- | ------------------------------------------------------------------- |
@@ -54,7 +52,7 @@ When deploying contracts using Pyth, the [named addresses](https://diem.github.i
 | USDC / USD | `0x41f3625971ca2ed2263e78573fe5ce23e13d2558ed3f247ab0f84fb9e7ae722` |
 | USDT / USD | `Oxtfc18861232290221461220bd42acdidcdfbc89c84092c93c18bdc7756c1588` |
 
-### Links to Pyth Docs
+## Links to Pyth Docs
 
 <!-- <div style={{backgroundColor: "#020202"}}> -->
 <div className="link-card-container">

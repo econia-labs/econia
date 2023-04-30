@@ -3,6 +3,7 @@ import Head from "next/head";
 import { Header } from "@/components/Header";
 import { StatsBar } from "@/components/StatsBar";
 import { type ApiMarket } from "@/types/api";
+import { API_URL } from "@/env";
 
 export default function Home({ marketData }: { marketData: ApiMarket[] }) {
   const marketNames: string[] = marketData
@@ -34,12 +35,7 @@ export default function Home({ marketData }: { marketData: ApiMarket[] }) {
 }
 
 export async function getStaticProps() {
-  if (process.env.NEXT_PUBLIC_API_URL == null) {
-    throw new Error("NEXT_PUBLIC_API_URL not set");
-  }
-  const res = await fetch(
-    new URL("markets", process.env.NEXT_PUBLIC_API_URL).href
-  );
+  const res = await fetch(new URL("markets", API_URL).href);
   const marketData: ApiMarket[] = await res.json();
 
   return {

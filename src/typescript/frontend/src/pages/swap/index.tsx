@@ -8,7 +8,7 @@ export default function Swap() {
     <Page>
       <div className="flex flex-col items-center">
         <div className="mt-8 w-1/4">
-          <div className="border p-3 text-center text-xs text-gray-300">
+          <div className="border p-3 text-center font-roboto-mono text-xs text-gray-300">
             This is a testnet interface. All coins are used for testing purposes
             and have no real value. If you are connecting a wallet, make sure it
             is connected to Aptos testnet.
@@ -19,7 +19,7 @@ export default function Swap() {
               <SyncIcon className="fill-current" />
             </div>
             <Input placeholder="0.0000" />
-            <div className="mt-4 flex w-full flex-col gap-2">
+            <div className="mt-4 flex w-full flex-col gap-1 font-roboto-mono">
               <div className="flex w-full justify-between">
                 <p>Balance</p>
                 <p>0.0 tUSDC</p>
@@ -33,7 +33,7 @@ export default function Swap() {
                 <p>- tETH</p>
               </div>
             </div>
-            <Button>Enter an amount</Button>
+            <Button className="mt-4">Enter an amount</Button>
           </div>
         </div>
       </div>

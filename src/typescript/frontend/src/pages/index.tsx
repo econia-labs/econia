@@ -3,7 +3,6 @@ import Head from "next/head";
 import { Header } from "@/components/Header";
 import { StatsBar } from "@/components/StatsBar";
 import { type ApiMarket } from "@/types/api";
-import { API_URL } from "@/env";
 
 export default function Home({ marketData }: { marketData: ApiMarket[] }) {
   const marketNames: string[] = marketData
@@ -35,8 +34,9 @@ export default function Home({ marketData }: { marketData: ApiMarket[] }) {
 }
 
 export async function getStaticProps() {
-  const res = await fetch(new URL("markets", API_URL).href);
-  const marketData: ApiMarket[] = await res.json();
+  // const res = await fetch(new URL("markets", API_URL).href);
+  // const marketData: ApiMarket[] = await res.json();
+  const marketData: ApiMarket[] = [];
 
   return {
     props: {

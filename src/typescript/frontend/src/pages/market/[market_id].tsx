@@ -1,7 +1,9 @@
 import { API_URL } from "@/env";
-import { ApiMarket } from "@/types/api";
+import type { ApiMarket } from "@/types/api";
 
-export default function Market({ marketData }: { marketData: ApiMarket }) {}
+export default function Market({ marketData }: { marketData: ApiMarket }) {
+  return <div>Market {marketData.market_id}</div>;
+}
 
 type PathParams = {
   params: {

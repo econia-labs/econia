@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 export function Header() {
   return (
@@ -15,9 +16,11 @@ export function Header() {
           />
         </div>
         <div className="flex space-x-3">
-          <p className="font-lg font-roboto-mono font-light uppercase tracking-wide text-white hover:text-neutral-400">
-            Swap
-          </p>
+          <Link href="/swap">
+            <p className="font-lg font-roboto-mono font-light uppercase tracking-wide text-white hover:text-neutral-400">
+              Swap
+            </p>
+          </Link>
           <p className="font-lg font-roboto-mono font-light uppercase tracking-wide text-neutral-600">
             /
           </p>

@@ -8,9 +8,13 @@ use crate::schema::orders;
 
 use super::IntoInsertable;
 
-#[derive(Debug, DbEnum, Clone, PartialEq, Eq, Copy, sqlx::Type)]
+#[derive(Debug, DbEnum, Clone, PartialEq, Eq, Copy)]
 #[ExistingTypePath = "crate::schema::sql_types::Side"]
-#[sqlx(type_name = "side", rename_all = "snake_case")]
+#[cfg_attr(
+    feature = "sqlx",
+    derive(sqlx::Type),
+    sqlx(type_name = "side", rename_all = "snake_case")
+)]
 pub enum Side {
     Bid,
     Ask,
@@ -57,9 +61,13 @@ impl TryFrom<u8> for Side {
     }
 }
 
-#[derive(Debug, DbEnum, Clone, Copy, PartialEq, Eq, sqlx::Type)]
+#[derive(Debug, DbEnum, Clone, Copy, PartialEq, Eq)]
 #[ExistingTypePath = "crate::schema::sql_types::OrderState"]
-#[sqlx(type_name = "order_state", rename_all = "snake_case")]
+#[cfg_attr(
+    feature = "sqlx",
+    derive(sqlx::Type),
+    sqlx(type_name = "order_state", rename_all = "snake_case")
+)]
 pub enum OrderState {
     Open,
     Filled,

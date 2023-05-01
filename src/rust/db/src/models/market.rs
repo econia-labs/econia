@@ -12,6 +12,7 @@ use super::IntoInsertable;
 #[derive(Clone, Debug, Queryable)]
 pub struct Market {
     pub market_id: BigDecimal,
+    pub name: String,
     pub base_account_address: Option<String>,
     pub base_module_name: Option<String>,
     pub base_struct_name: Option<String>,

@@ -1,3 +1,4 @@
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -5,12 +6,16 @@ use crate::{
     order::{Fill, Order},
 };
 
-#[derive(Debug, Deserialize, Serialize, Clone, Hash, PartialEq, Eq)]
-#[serde(
-    deny_unknown_fields,
-    tag = "channel",
-    content = "params",
-    rename_all = "snake_case"
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+#[cfg_attr(
+    feature = "serde",
+    derive(Serialize, Deserialize),
+    serde(
+        deny_unknown_fields,
+        tag = "channel",
+        content = "params",
+        rename_all = "snake_case"
+    )
 )]
 pub enum Channel {
     Orders {
@@ -32,12 +37,16 @@ pub enum Channel {
     }, // TODO add more channels
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(
-    deny_unknown_fields,
-    tag = "channel",
-    content = "data",
-    rename_all = "snake_case"
+#[derive(Debug, Clone)]
+#[cfg_attr(
+    feature = "serde",
+    derive(Deserialize, Serialize),
+    serde(
+        deny_unknown_fields,
+        tag = "channel",
+        content = "data",
+        rename_all = "snake_case"
+    )
 )]
 pub enum Update {
     Orders(Order),
@@ -45,27 +54,35 @@ pub enum Update {
     PriceLevels(PriceLevelWithId), // TODO add more update types
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
-#[serde(deny_unknown_fields, tag = "method", rename_all = "snake_case")]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(
+    feature = "serde",
+    derive(Deserialize, Serialize),
+    serde(deny_unknown_fields, tag = "method", rename_all = "snake_case")
+)]
 pub enum InboundMessage {
     Ping,
     Subscribe(Channel),
     Unsubscribe(Channel),
 }
 
-#[derive(Debug, Serialize, Clone)]
-#[serde(rename_all = "snake_case")]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize), serde(rename_all = "snake_case"))]
 pub enum ConfirmMethod {
     Subscribe,
     Unsubscribe,
 }
 
-#[derive(Debug, Serialize, Clone)]
-#[serde(deny_unknown_fields, tag = "event", rename_all = "snake_case")]
+#[derive(Debug, Clone)]
+#[cfg_attr(
+    feature = "serde",
+    derive(Serialize),
+    serde(deny_unknown_fields, tag = "event", rename_all = "snake_case")
+)]
 pub enum OutboundMessage {
     Pong,
     Confirm {
-        #[serde(flatten)]
+        #[cfg_attr(feature = "serde", serde(flatten))]
         channel: Channel,
         method: ConfirmMethod,
     },
@@ -76,6 +93,7 @@ pub enum OutboundMessage {
     Close,
 }
 
+#[cfg(feature = "serde")]
 #[cfg(test)]
 mod tests {
     use serde_json;

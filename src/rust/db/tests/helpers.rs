@@ -75,7 +75,8 @@ pub fn setup_market(conn: &mut PgConnection) -> MarketRegistrationEvent {
             name: "Aptos Coin",
             decimals: 8,
         },
-    );
+    )
+    .unwrap();
 
     let tusdc_coin = create_coin(
         conn,
@@ -87,7 +88,8 @@ pub fn setup_market(conn: &mut PgConnection) -> MarketRegistrationEvent {
             name: "Test USDC",
             decimals: 6,
         },
-    );
+    )
+    .unwrap();
 
     register_market(
         conn,
@@ -107,4 +109,5 @@ pub fn setup_market(conn: &mut PgConnection) -> MarketRegistrationEvent {
             underwriter_id: &0.into(),
         },
     )
+    .unwrap()
 }

@@ -6,11 +6,15 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bigdecimal = { workspace = true, features = ["serde"] }
-chrono = { workspace = true, features = ["serde"] }
-serde = { workspace = true, features = ["derive"] }
-sqlx = { workspace = true, features = ["postgres"] }
+bigdecimal = { workspace = true }
+chrono = { workspace = true }
+serde = { workspace = true, optional = true }
+sqlx = { workspace = true, optional = true }
 thiserror = { workspace = true }
+
+[features]
+serde = ["dep:serde", "bigdecimal/serde", "chrono/serde"]
+sqlx = ["dep:sqlx"]
 
 [dev-dependencies]
 serde_json = { workspace = true }

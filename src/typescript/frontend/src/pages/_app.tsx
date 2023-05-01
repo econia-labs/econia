@@ -1,7 +1,17 @@
 import "@/styles/globals.css";
 
-import type { AppProps } from "next/app";
+import {
+  AptosWalletAdapter,
+  PontemWalletAdapter,
+  WalletProvider,
+} from "@manahippo/aptos-wallet-adapter";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { type AppProps } from "next/app";
 import { Jost, Roboto_Mono } from "next/font/google";
+import { useMemo } from "react";
+
+import { AptosContextProvider } from "@/contexts/AptosContext";
 
 const jost = Jost({
   subsets: ["latin"],
@@ -13,10 +23,23 @@ const robotoMono = Roboto_Mono({
   variable: "--font-roboto-mono",
 });
 
+const queryClient = new QueryClient();
+
 export default function App({ Component, pageProps }: AppProps) {
+  const wallets = useMemo(
+    () => [new AptosWalletAdapter(), new PontemWalletAdapter()],
+    []
+  );
   return (
-    <div className={`${jost.variable} ${robotoMono.variable}`}>
-      <Component {...pageProps} />
-    </div>
+    <QueryClientProvider client={queryClient}>
+      <WalletProvider wallets={wallets}>
+        <AptosContextProvider>
+          <div className={`${jost.variable} ${robotoMono.variable}`}>
+            <Component {...pageProps} />
+          </div>
+        </AptosContextProvider>
+      </WalletProvider>
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
   );
 }

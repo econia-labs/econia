@@ -2,6 +2,8 @@ import { Listbox } from "@headlessui/react";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import { useState } from "react";
 
+import { WalletSelector } from "./WalletSelector";
+
 type Props = {
   marketNames: string[];
 };
@@ -19,9 +21,9 @@ export function StatsBar({ marketNames }: Props) {
               <ChevronDownIcon className="my-auto ml-1 h-5 w-5 text-neutral-500" />
             </Listbox.Button>
             <Listbox.Options className="absolute mt-2 w-full bg-black shadow ring-1 ring-neutral-500">
-              {marketNames.map((marketName) => (
+              {marketNames.map((marketName, i) => (
                 <Listbox.Option
-                  key={marketName}
+                  key={i}
                   value={marketName}
                   className="px-4 py-1 font-roboto-mono text-neutral-300 hover:bg-neutral-800"
                 >
@@ -42,9 +44,7 @@ export function StatsBar({ marketNames }: Props) {
         </div>
       </div>
       <div className="my-auto">
-        <button className="bg-white px-4 py-1 font-roboto-mono text-sm font-semibold uppercase tracking-tight hover:bg-neutral-300">
-          Connect Wallet
-        </button>
+        <WalletSelector />
       </div>
     </div>
   );

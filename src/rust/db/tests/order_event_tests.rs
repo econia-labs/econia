@@ -1,9 +1,7 @@
-#![cfg(feature = "config-loader")]
-
 use bigdecimal::{BigDecimal, FromPrimitive};
 use chrono::Utc;
 use db::{
-    add_maker_event, add_taker_event, establish_connection, load_config,
+    add_maker_event, add_taker_event, establish_connection,
     models::{
         events::{MakerEvent, MakerEventType, NewMakerEvent, NewTakerEvent, TakerEvent},
         fill::Fill,
@@ -11,7 +9,7 @@ use db::{
     },
 };
 use diesel::prelude::*;
-use helpers::{reset_tables, setup_market};
+use helpers::{load_config, reset_tables, setup_market};
 
 mod helpers;
 

@@ -32,9 +32,11 @@ export function Header() {
           <p className="font-lg font-roboto-mono font-light uppercase tracking-wide text-neutral-600">
             /
           </p>
-          <p className="font-lg font-roboto-mono font-light uppercase tracking-wide text-white hover:text-neutral-400">
-            Faucet
-          </p>
+          <Link href="/faucet">
+            <p className="font-lg font-roboto-mono font-light uppercase tracking-wide text-white hover:text-neutral-400">
+              Faucet
+            </p>
+          </Link>
           <p className="font-lg font-roboto-mono font-light uppercase tracking-wide text-neutral-600">
             /
           </p>

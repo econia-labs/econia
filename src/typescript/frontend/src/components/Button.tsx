@@ -4,7 +4,11 @@ export const Button: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>> = (
   return (
     <button
       {...props}
-      className="w-full bg-white p-3 text-left text-center text-lg font-semibold uppercase text-black"
+      className={
+        "w-full bg-white p-3 text-left text-center text-lg font-semibold uppercase text-black" +
+        " " +
+        props.className
+      }
     />
   );
 };

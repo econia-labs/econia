@@ -8,7 +8,7 @@ import { type ApiMarket } from "@/types/api";
 export default function Home({ marketData }: { marketData: ApiMarket[] }) {
   const marketNames: string[] = marketData
     .sort((a, b) => a.market_id - b.market_id)
-    .map((market) => `${market.base.symbol}-${market.quote.symbol}`);
+    .map((market) => market.name);
 
   return (
     <>

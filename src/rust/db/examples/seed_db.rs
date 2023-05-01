@@ -117,4 +117,25 @@ fn main() {
         },
     )
     .unwrap();
+
+    // APT-PERP market
+    register_market(
+        conn,
+        &NewMarketRegistrationEvent {
+            market_id: &1.into(),
+            time: Utc::now(),
+            base_account_address: None,
+            base_module_name: None,
+            base_struct_name: None,
+            base_name_generic: Some("APT-PERP"),
+            quote_account_address: &tusdc_coin.account_address,
+            quote_module_name: &tusdc_coin.module_name,
+            quote_struct_name: &tusdc_coin.struct_name,
+            lot_size: &1000.into(),
+            tick_size: &1000.into(),
+            min_size: &1000.into(),
+            underwriter_id: &0.into(),
+        },
+    )
+    .unwrap();
 }

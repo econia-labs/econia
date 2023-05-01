@@ -18,11 +18,9 @@ const FaucetCard: React.FC<{ symbol: string }> = ({ symbol }) => {
 export default function Faucet({ marketData }: { marketData: ApiMarket[] }) {
   return (
     <Page>
-      <main className="flex min-h-screen flex-col items-center justify-center">
-        <div className="flex gap-8">
-          <FaucetCard symbol="tETH" />
-          <FaucetCard symbol="tUSDC" />
-        </div>
+      <main className="mt-96 flex items-center justify-center gap-8">
+        <FaucetCard symbol="tETH" />
+        <FaucetCard symbol="tUSDC" />
       </main>
     </Page>
   );

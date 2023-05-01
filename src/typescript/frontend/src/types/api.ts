@@ -9,6 +9,7 @@ export type ApiCoin = {
 
 export type ApiMarket = {
   market_id: number;
+  name: string;
   base: ApiCoin;
   base_name_generic: string | null;
   quote: ApiCoin;

@@ -2,10 +2,11 @@
 mod helpers;
 
 use bigdecimal::{BigDecimal, FromPrimitive};
-use chrono::Utc;
+use chrono::{DateTime, Duration, TimeZone, Utc};
 use db::{
-    add_maker_event, create_coin, establish_connection,
+    add_bar, add_maker_event, create_coin, establish_connection,
     models::{
+        bar::NewBar,
         coin::NewCoin,
         events::{MakerEventType, NewMakerEvent},
         market::NewMarketRegistrationEvent,
@@ -25,7 +26,9 @@ fn place_random_orders(
     num_orders: u64,
     rng: &mut ThreadRng,
 ) {
+    let market_id_bd = &BigDecimal::from_u64(market_id).unwrap();
     let mut price = init_price;
+
     for i in 0..num_orders {
         let id = if side == Side::Bid {
             market_id * 1000 + i
@@ -42,7 +45,7 @@ fn place_random_orders(
         add_maker_event(
             conn,
             &NewMakerEvent {
-                market_id: &BigDecimal::from_u64(market_id).unwrap(),
+                market_id: market_id_bd,
                 side,
                 market_order_id: &id.into(),
                 user_address: "0x123",
@@ -51,6 +54,43 @@ fn place_random_orders(
                 size: &BigDecimal::from_u64(size).unwrap(),
                 price: &BigDecimal::from_u64(price).unwrap(),
                 time: Utc::now(),
+            },
+        )
+        .unwrap();
+    }
+}
+
+fn add_random_bars(
+    conn: &mut PgConnection,
+    market_id: u64,
+    end_date: DateTime<Utc>,
+    num_bars: u64,
+) {
+    let market_id_bd = BigDecimal::from_u64(market_id).unwrap();
+
+    let end_date = Utc
+        .timestamp_opt((end_date.timestamp() / 60) * 60, 0)
+        .unwrap();
+
+    println!(
+        "start time: {}",
+        (end_date - Duration::minutes(num_bars as i64)).timestamp()
+    );
+    println!("end time: {}", end_date.timestamp());
+
+    for i in 0..num_bars {
+        let start_time = end_date - Duration::minutes((num_bars - i) as i64);
+
+        add_bar(
+            conn,
+            &NewBar {
+                market_id: market_id_bd.clone(),
+                start_time,
+                open: BigDecimal::from((i + 2) * 1000),
+                high: BigDecimal::from((i + 4) * 1000),
+                low: BigDecimal::from((i + 1) * 1000),
+                close: BigDecimal::from((i + 3) * 1000),
+                volume: BigDecimal::from(1000),
             },
         )
         .unwrap();
@@ -189,8 +229,11 @@ fn main() {
     )
     .unwrap();
 
+    let now = Utc::now();
     for market_id in 0..4 {
         place_random_orders(conn, market_id, Side::Bid, 100_000, 20, &mut rng);
         place_random_orders(conn, market_id, Side::Ask, 100_000, 20, &mut rng);
+
+        add_random_bars(conn, market_id, now, 100);
     }
 }

@@ -1,17 +1,67 @@
 #[path = "../tests/helpers.rs"]
 mod helpers;
 
+use bigdecimal::{BigDecimal, FromPrimitive};
 use chrono::Utc;
 use db::{
-    create_coin, establish_connection,
-    models::{coin::NewCoin, market::NewMarketRegistrationEvent},
+    add_maker_event, create_coin, establish_connection,
+    models::{
+        coin::NewCoin,
+        events::{MakerEventType, NewMakerEvent},
+        market::NewMarketRegistrationEvent,
+        order::Side,
+    },
     register_market,
 };
+use diesel::PgConnection;
 use helpers::{load_config, reset_tables};
+use rand::{rngs::ThreadRng, Rng};
+
+fn place_random_orders(
+    conn: &mut PgConnection,
+    market_id: u64,
+    side: Side,
+    init_price: u64,
+    num_orders: u64,
+    rng: &mut ThreadRng,
+) {
+    let mut price = init_price;
+    for i in 0..num_orders {
+        let id = if side == Side::Bid {
+            market_id * 1000 + i
+        } else {
+            market_id * 1000 + 100 + i
+        };
+        price = if side == Side::Bid {
+            price - rng.gen_range(0..1000)
+        } else {
+            price + rng.gen_range(0..1000)
+        };
+        let size = rng.gen_range(10000..100000);
+
+        add_maker_event(
+            conn,
+            &NewMakerEvent {
+                market_id: &BigDecimal::from_u64(market_id).unwrap(),
+                side,
+                market_order_id: &id.into(),
+                user_address: "0x123",
+                custodian_id: None,
+                event_type: MakerEventType::Place,
+                size: &BigDecimal::from_u64(size).unwrap(),
+                price: &BigDecimal::from_u64(price).unwrap(),
+                time: Utc::now(),
+            },
+        )
+        .unwrap();
+    }
+}
 
 fn main() {
     let config = load_config();
     let conn = &mut establish_connection(config.database_url).unwrap();
+
+    let mut rng = rand::thread_rng();
 
     // Delete all entries in the tables used before running tests.
     reset_tables(conn);
@@ -122,7 +172,7 @@ fn main() {
     register_market(
         conn,
         &NewMarketRegistrationEvent {
-            market_id: &1.into(),
+            market_id: &3.into(),
             time: Utc::now(),
             base_account_address: None,
             base_module_name: None,
@@ -138,4 +188,9 @@ fn main() {
         },
     )
     .unwrap();
+
+    for market_id in 0..4 {
+        place_random_orders(conn, market_id, Side::Bid, 100_000, 20, &mut rng);
+        place_random_orders(conn, market_id, Side::Ask, 100_000, 20, &mut rng);
+    }
 }

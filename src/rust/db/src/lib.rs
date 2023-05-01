@@ -3,8 +3,6 @@ use models::{
     bar::{Bar, NewBar},
     market::{MarketRegistrationEvent, NewMarketRegistrationEvent},
 };
-#[cfg(feature = "config-loader")]
-use serde::Deserialize;
 
 use crate::{
     error::DbError,
@@ -19,21 +17,6 @@ pub mod models;
 pub mod schema;
 
 pub type Result<T> = std::result::Result<T, DbError>;
-
-#[derive(Debug)]
-#[cfg_attr(feature = "config-loader", derive(Deserialize))]
-pub struct Config {
-    pub database_url: String,
-}
-
-#[cfg(feature = "config-loader")]
-pub fn load_config() -> Config {
-    dotenvy::dotenv().ok();
-    match envy::from_env::<Config>() {
-        Ok(cfg) => cfg,
-        Err(err) => panic!("{:?}", err),
-    }
-}
 
 pub fn establish_connection(url: String) -> Result<PgConnection> {
     PgConnection::establish(&url).map_err(DbError::ConnectionError)

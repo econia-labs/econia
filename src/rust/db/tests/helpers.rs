@@ -8,6 +8,20 @@ use db::{
     register_market,
 };
 use diesel::prelude::*;
+use serde::Deserialize;
+
+#[derive(Debug, Deserialize)]
+pub struct Config {
+    pub database_url: String,
+}
+
+pub fn load_config() -> Config {
+    dotenvy::dotenv().ok();
+    match envy::from_env::<Config>() {
+        Ok(cfg) => cfg,
+        Err(err) => panic!("{:?}", err),
+    }
+}
 
 fn reset_bar_tables(conn: &mut PgConnection) {
     diesel::delete(db::schema::bars_1h::table)

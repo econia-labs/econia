@@ -68,7 +68,7 @@ begin
         with bars as (
             select * from bars_1m
             where start_time > new.start_time - '4 minutes'::interval - '1 second'::interval
-            and start_time <= new.start_time
+            and start_time <= new.start_time and market_id = new.market_id
         ),
         first as (
             select start_time, first_value(open) over (order by start_time) as open
@@ -117,7 +117,7 @@ begin
         with bars as (
             select * from bars_5m
             where start_time > new.start_time - '10 minutes'::interval - '1 second'::interval
-            and start_time <= new.start_time
+            and start_time <= new.start_time and market_id = new.market_id
         ),
         first as (
             select start_time, first_value(open) over (order by start_time) as open
@@ -165,7 +165,7 @@ begin
         with bars as (
             select * from bars_15m
             where start_time > new.start_time - '15 minutes'::interval - '1 second'::interval
-            and start_time <= new.start_time
+            and start_time <= new.start_time and market_id = new.market_id
         ),
         first as (
             select start_time, first_value(open) over (order by start_time) as open
@@ -213,7 +213,7 @@ begin
         with bars as (
             select * from bars_30m
             where start_time > new.start_time - '30 minutes'::interval - '1 second'::interval
-            and start_time <= new.start_time
+            and start_time <= new.start_time and market_id = new.market_id
         ),
         first as (
             select start_time, first_value(open) over (order by start_time) as open

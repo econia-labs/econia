@@ -420,6 +420,7 @@ dependencies = [
  "dotenvy",
  "envy",
  "field_count",
+ "rand",
  "serde",
  "sqlx",
  "thiserror",

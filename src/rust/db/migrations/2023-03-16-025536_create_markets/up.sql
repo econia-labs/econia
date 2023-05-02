@@ -69,7 +69,7 @@ if new.base_name_generic is null then
 
 	insert into markets
 	values (
-       NEW.market_id,
+        NEW.market_id,
         base_symbol || '-' || quote_symbol,
         NEW.base_account_address,
         NEW.base_module_name,
@@ -88,7 +88,7 @@ if new.base_name_generic is null then
 else
     insert into markets
 	values (
-       NEW.market_id,
+        NEW.market_id,
         NEW.base_name_generic,
         NEW.base_account_address,
         NEW.base_module_name,

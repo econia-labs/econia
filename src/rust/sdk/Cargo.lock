@@ -1107,6 +1107,7 @@ dependencies = [
  "num-bigint",
  "num-integer",
  "num-traits 0.2.15",
+ "serde 1.0.160",
 ]
 
 [[package]]
@@ -5742,6 +5743,7 @@ version = "0.1.0"
 dependencies = [
  "bigdecimal",
  "chrono",
+ "serde 1.0.160",
  "thiserror",
 ]
 

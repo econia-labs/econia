@@ -1,24 +1,29 @@
-use aptos_api_types::{TransactionInfo, UserTransactionRequest, U64};
+use aptos_api_types::{
+    AptosErrorCode, MoveType, Transaction, TransactionInfo, UserTransactionRequest, U64,
+};
 use aptos_sdk::crypto::ed25519::Ed25519PrivateKey;
 use aptos_sdk::crypto::ValidCryptoMaterialStringExt;
 use aptos_sdk::move_types::language_storage::TypeTag;
 use aptos_sdk::rest_client::aptos::Balance;
+use aptos_sdk::rest_client::error::RestError;
 use aptos_sdk::rest_client::{Client, Resource};
+use aptos_sdk::transaction_builder::TransactionFactory;
 use aptos_sdk::types::account_address::AccountAddress;
 use aptos_sdk::types::chain_id::ChainId;
+use aptos_sdk::types::transaction::EntryFunction;
 use aptos_sdk::types::{AccountKey, LocalAccount};
 use econia_types::events::EconiaEvent;
 use errors::EconiaError;
 use reqwest::Url;
 use serde::Deserialize;
+use std::cmp::max;
 use std::collections::HashMap;
+use std::default;
 use std::fmt::Debug;
 use std::fs::File;
 
-use tx_builder::EconiaTransactionBuilder;
-
+pub mod entry;
 pub mod errors;
-pub mod tx_builder;
 
 pub const SUBMIT_ATTEMPTS: u8 = 10;
 
@@ -47,6 +52,7 @@ impl AptosConfig {
 
 pub type EconiaResult<T> = std::result::Result<T, EconiaError>;
 
+#[derive(Debug, Clone)]
 pub struct EconiaTransaction {
     /// Aptos `TransactionInfo`
     pub info: TransactionInfo,
@@ -58,6 +64,21 @@ pub struct EconiaTransaction {
     pub timestamp: U64,
 }
 
+#[derive(Debug)]
+pub struct EconiaClientConfig {
+    /// Amount of times to attempt submitting a transaction.
+    pub retry_count: u8,
+}
+
+impl default::Default for EconiaClientConfig {
+    fn default() -> Self {
+        Self {
+            retry_count: SUBMIT_ATTEMPTS,
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct EconiaClient {
     /// Aptos `AccountAddress` of the account that holds the econia modules.
     pub econia_address: AccountAddress,
@@ -67,6 +88,8 @@ pub struct EconiaClient {
     pub chain_id: ChainId,
     /// Aptos `LocalAccount` representing the user account of this client.
     pub user_account: LocalAccount,
+    /// `EconiaClientConfig`
+    pub config: EconiaClientConfig,
 }
 
 impl EconiaClient {
@@ -77,10 +100,12 @@ impl EconiaClient {
     /// * `node_url` - Url of aptos node.
     /// * `econia_address` - Aptos `AccountAddress`.
     /// * `account` - `LocalAccount` representing Aptos user account.
+    /// * `config` - `EconiaClientConfig` to configure the Econia client, if `None` default values will be used.
     pub async fn connect(
         node_url: Url,
         econia: AccountAddress,
         mut account: LocalAccount,
+        config: Option<EconiaClientConfig>,
     ) -> EconiaResult<Self> {
         let aptos = Client::new(node_url);
         let index = aptos.get_index().await?.into_inner();
@@ -92,10 +117,10 @@ impl EconiaClient {
 
         Ok(Self {
             econia_address: econia,
-            // econia_module,
             aptos_client: aptos,
             chain_id,
             user_account: account,
+            config: config.unwrap_or_default(),
         })
     }
 
@@ -108,11 +133,13 @@ impl EconiaClient {
     /// * `econia_address` - hex encoded address string of account that holds the econia modules.
     /// * `account_address` - hex encoded address string of user using this client.
     /// * `account_private_key` - hex encoded private key string of user using this client.
+    /// * `config` - `EconiaClientConfig` to configure the Econia client, if `None` default values will be used.
     pub async fn connect_with_strings(
         node_url: &str,
         econia_address: &str,
         account_address: &str,
         account_private_key: &str,
+        config: Option<EconiaClientConfig>,
     ) -> EconiaResult<Self> {
         let node_url = Url::parse(node_url).expect("node url is not valid");
         let econia = AccountAddress::from_hex_literal(econia_address)?;
@@ -120,7 +147,7 @@ impl EconiaClient {
         let private_key = Ed25519PrivateKey::from_encoded_string(account_private_key)?;
         let account_key = AccountKey::from(private_key);
         let account = LocalAccount::new(account_address, account_key, 0);
-        Self::connect(node_url, econia, account).await
+        Self::connect(node_url, econia, account, config).await
     }
 
     /// Connect to an Aptos node and initialize the econia client using a config file.
@@ -132,18 +159,21 @@ impl EconiaClient {
     /// * `econia_address` - Hex encoded address string of account that holds the econia modules.
     /// * `config_path` - Path to config file.
     /// * `config_profile_name` - Name of profile to use in the config file.
+    /// * `config` - `EconiaClientConfig` to configure the Econia client, if `None` default values will be used.
     pub async fn connect_with_config(
         node_url: &str,
         econia_address: &str,
-        config_path: &str,
-        config_profile_name: &str,
+        aptos_config_path: &str,
+        aptos_config_profile_name: &str,
+        config: Option<EconiaClientConfig>,
     ) -> EconiaResult<Self> {
-        let config = AptosConfig::from_config(config_path, config_profile_name);
+        let aptos_config = AptosConfig::from_config(aptos_config_path, aptos_config_profile_name);
         Self::connect_with_strings(
             node_url,
             econia_address,
-            &config.account,
-            &config.private_key,
+            &aptos_config.account,
+            &aptos_config.private_key,
+            config,
         )
         .await
     }
@@ -222,9 +252,76 @@ impl EconiaClient {
             .map(|b| b.coin.value)
     }
 
-    /// Returns a new [`EconiaTransactionBuilder`]
-    pub fn create_tx(&mut self) -> EconiaTransactionBuilder<'_> {
-        EconiaTransactionBuilder::new(self)
+    async fn submit_tx_internal(
+        &mut self,
+        payload: &EntryFunction,
+    ) -> EconiaResult<EconiaTransaction> {
+        let addr = self.user_account.address();
+        let tx = TransactionFactory::new(self.chain_id)
+            .entry_function(payload.clone())
+            .sender(addr)
+            .sequence_number(self.user_account.sequence_number())
+            .max_gas_amount(1_000_000)
+            .build();
+
+        let signed_tx = self.user_account.sign_transaction(tx);
+        let pending = match self.aptos_client.submit(&signed_tx).await {
+            Ok(res) => res.into_inner(),
+            Err(RestError::Api(a)) => {
+                return match a.error.error_code {
+                    AptosErrorCode::InvalidTransactionUpdate
+                    | AptosErrorCode::SequenceNumberTooOld
+                    | AptosErrorCode::VmError => {
+                        let seq_num = self.get_sequence_number().await?;
+                        let acc_seq_num = self.user_account.sequence_number_mut();
+                        *acc_seq_num = max(seq_num, *acc_seq_num + 1);
+                        Err(EconiaError::AptosError(RestError::Api(a)))
+                    }
+                    _ => Err(EconiaError::AptosError(RestError::Api(a))),
+                }
+            }
+            Err(e) => return Err(EconiaError::AptosError(e)),
+        };
+
+        let tx = self
+            .aptos_client
+            .wait_for_transaction(&pending)
+            .await?
+            .into_inner();
+
+        let Transaction::UserTransaction(ut) = tx else {
+            return Err(EconiaError::InvalidTransaction)
+        };
+
+        let events = ut
+            .events
+            .iter()
+            .filter(|e| matches!(&e.typ, MoveType::Struct(s) if s.address.inner() == &self.econia_address))
+            .map(|e| serde_json::from_value(e.data.clone()))
+            .collect::<Result<Vec<EconiaEvent>, serde_json::Error>>()?;
+
+        Ok(EconiaTransaction {
+            info: ut.info.clone(),
+            request: ut.request.clone(),
+            events,
+            timestamp: ut.timestamp,
+        })
+    }
+
+    /// Create and submit a transaction to the blockchain returning the an [`EconiaResult<EconiaTransaction>`].
+    ///
+    /// # Arguments:
+    ///
+    /// * `entry` - `EntryFunction` to be submitted as part of the transaction to the blockchain.
+    pub async fn submit_tx(&mut self, entry: EntryFunction) -> EconiaResult<EconiaTransaction> {
+        for i in 0..(self.config.retry_count) {
+            match self.submit_tx_internal(&entry).await {
+                Ok(lt) => return Ok(lt),
+                Err(e) if i == SUBMIT_ATTEMPTS - 1 => return Err(e),
+                _ => continue,
+            }
+        }
+        Err(EconiaError::FailedSubmittingTransaction)
     }
 }
 

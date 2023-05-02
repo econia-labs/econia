@@ -43,4 +43,7 @@ pub enum EconiaError {
 
     #[error("failed submitting aptos transaction")]
     FailedSubmittingTransaction,
+
+    #[error("Custom error: {0}")]
+    Custom(Box<dyn std::error::Error>),
 }

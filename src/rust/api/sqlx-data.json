@@ -14,15 +14,9 @@
           "type_info": "Numeric"
         }
       ],
-      "nullable": [
-        false,
-        null
-      ],
+      "nullable": [false, null],
       "parameters": {
-        "Left": [
-          "Numeric",
-          "Int8"
-        ]
+        "Left": ["Numeric", "Int8"]
       }
     },
     "query": "\n        select\n            price,\n            sum(size) as \"size!\"\n        from orders where\n            market_id = $1 and\n            order_state = 'open' and\n            side = 'bid'\n        group by price order by price desc limit $2;\n        "
@@ -66,21 +60,9 @@
           "type_info": "Numeric"
         }
       ],
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        false
-      ],
+      "nullable": [false, false, false, false, false, false, false],
       "parameters": {
-        "Left": [
-          "Numeric",
-          "Timestamptz",
-          "Timestamptz"
-        ]
+        "Left": ["Numeric", "Timestamptz", "Timestamptz"]
       }
     },
     "query": "\n                select\n                    market_id,\n                    start_time,\n                    open,\n                    high,\n                    low,\n                    close,\n                    volume\n                from bars_30m where market_id = $1 and start_time >= $2 and start_time < $3\n                order by start_time;\n                "
@@ -104,10 +86,7 @@
           "type_info": {
             "Custom": {
               "kind": {
-                "Enum": [
-                  "bid",
-                  "ask"
-                ]
+                "Enum": ["bid", "ask"]
               },
               "name": "side"
             }
@@ -139,12 +118,7 @@
           "type_info": {
             "Custom": {
               "kind": {
-                "Enum": [
-                  "open",
-                  "filled",
-                  "cancelled",
-                  "evicted"
-                ]
+                "Enum": ["open", "filled", "cancelled", "evicted"]
               },
               "name": "order_state"
             }
@@ -168,9 +142,7 @@
         false
       ],
       "parameters": {
-        "Left": [
-          "Text"
-        ]
+        "Left": ["Text"]
       }
     },
     "query": "\n        select\n            market_order_id,\n            market_id,\n            side as \"side: db::models::order::Side\",\n            size,\n            price,\n            user_address,\n            custodian_id,\n            order_state as \"order_state: db::models::order::OrderState\",\n            created_at\n        from orders where user_address = $1 and order_state = 'open'\n        order by created_at;\n        "
@@ -214,21 +186,9 @@
           "type_info": "Numeric"
         }
       ],
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        false
-      ],
+      "nullable": [false, false, false, false, false, false, false],
       "parameters": {
-        "Left": [
-          "Numeric",
-          "Timestamptz",
-          "Timestamptz"
-        ]
+        "Left": ["Numeric", "Timestamptz", "Timestamptz"]
       }
     },
     "query": "\n                select\n                    market_id,\n                    start_time,\n                    open,\n                    high,\n                    low,\n                    close,\n                    volume\n                from bars_1m where market_id = $1 and start_time >= $2 and start_time < $3\n                order by start_time;\n                "
@@ -247,15 +207,9 @@
           "type_info": "Numeric"
         }
       ],
-      "nullable": [
-        false,
-        null
-      ],
+      "nullable": [false, null],
       "parameters": {
-        "Left": [
-          "Numeric",
-          "Int8"
-        ]
+        "Left": ["Numeric", "Int8"]
       }
     },
     "query": "\n        select\n            price,\n            sum(size) as \"size!\"\n        from orders where\n            market_id = $1 and\n            order_state = 'open' and\n            side = 'ask'\n        group by price order by price limit $2;\n        "
@@ -269,9 +223,7 @@
           "type_info": "Numeric"
         }
       ],
-      "nullable": [
-        false
-      ],
+      "nullable": [false],
       "parameters": {
         "Left": []
       }
@@ -317,21 +269,9 @@
           "type_info": "Numeric"
         }
       ],
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        false
-      ],
+      "nullable": [false, false, false, false, false, false, false],
       "parameters": {
-        "Left": [
-          "Numeric",
-          "Timestamptz",
-          "Timestamptz"
-        ]
+        "Left": ["Numeric", "Timestamptz", "Timestamptz"]
       }
     },
     "query": "\n                select\n                    market_id,\n                    start_time,\n                    open,\n                    high,\n                    low,\n                    close,\n                    volume\n                from bars_1h where market_id = $1 and start_time >= $2 and start_time < $3\n                order by start_time;\n                "
@@ -375,21 +315,9 @@
           "type_info": "Numeric"
         }
       ],
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        false
-      ],
+      "nullable": [false, false, false, false, false, false, false],
       "parameters": {
-        "Left": [
-          "Numeric",
-          "Timestamptz",
-          "Timestamptz"
-        ]
+        "Left": ["Numeric", "Timestamptz", "Timestamptz"]
       }
     },
     "query": "\n                select\n                    market_id,\n                    start_time,\n                    open,\n                    high,\n                    low,\n                    close,\n                    volume\n                from bars_5m where market_id = $1 and start_time >= $2 and start_time < $3\n                order by start_time;;\n                "
@@ -413,10 +341,7 @@
           "type_info": {
             "Custom": {
               "kind": {
-                "Enum": [
-                  "bid",
-                  "ask"
-                ]
+                "Enum": ["bid", "ask"]
               },
               "name": "side"
             }
@@ -448,12 +373,7 @@
           "type_info": {
             "Custom": {
               "kind": {
-                "Enum": [
-                  "open",
-                  "filled",
-                  "cancelled",
-                  "evicted"
-                ]
+                "Enum": ["open", "filled", "cancelled", "evicted"]
               },
               "name": "order_state"
             }
@@ -477,9 +397,7 @@
         false
       ],
       "parameters": {
-        "Left": [
-          "Text"
-        ]
+        "Left": ["Text"]
       }
     },
     "query": "\n        select\n            market_order_id,\n            market_id,\n            side as \"side: db::models::order::Side\",\n            size,\n            price,\n            user_address,\n            custodian_id,\n            order_state as \"order_state: db::models::order::OrderState\",\n            created_at\n        from orders where user_address = $1 order by created_at;\n        "
@@ -523,21 +441,9 @@
           "type_info": "Numeric"
         }
       ],
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        false
-      ],
+      "nullable": [false, false, false, false, false, false, false],
       "parameters": {
-        "Left": [
-          "Numeric",
-          "Timestamptz",
-          "Timestamptz"
-        ]
+        "Left": ["Numeric", "Timestamptz", "Timestamptz"]
       }
     },
     "query": "\n                select\n                    market_id,\n                    start_time,\n                    open,\n                    high,\n                    low,\n                    close,\n                    volume\n                from bars_15m where market_id = $1 and start_time >= $2 and start_time < $3\n                order by start_time;;\n                "
@@ -566,10 +472,7 @@
           "type_info": {
             "Custom": {
               "kind": {
-                "Enum": [
-                  "bid",
-                  "ask"
-                ]
+                "Enum": ["bid", "ask"]
               },
               "name": "side"
             }
@@ -596,22 +499,9 @@
           "type_info": "Timestamptz"
         }
       ],
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        true,
-        false,
-        false,
-        false
-      ],
+      "nullable": [false, false, false, false, true, false, false, false],
       "parameters": {
-        "Left": [
-          "Numeric",
-          "Timestamptz",
-          "Timestamptz"
-        ]
+        "Left": ["Numeric", "Timestamptz", "Timestamptz"]
       }
     },
     "query": "\n        select\n            market_id,\n            maker_order_id,\n            maker,\n            maker_side as \"maker_side: db::models::order::Side\",\n            custodian_id,\n            size,\n            price,\n            time\n        from fills where market_id = $1 and time >= $2 and time < $3 order by time;\n        "

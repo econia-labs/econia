@@ -4,7 +4,6 @@ version = "0.1.0"
 description = ""
 authors = []
 readme = "README.md"
-packages = [{include = "econia_sdk"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"

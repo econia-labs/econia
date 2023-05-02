@@ -91,6 +91,6 @@
     "rust-analyzer.linkedProjects": [
         "./src/rust/Cargo.toml",
         "./src/rust/sdk/Cargo.toml"
-    ]
+    ],
+    "python.formatting.provider": "black"
 }
-

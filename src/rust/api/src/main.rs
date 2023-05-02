@@ -50,7 +50,12 @@ async fn main() {
 
     let pool = PgPool::connect(&config.database_url)
         .await
-        .expect("Could not connect to DATABASE_URL");
+        .unwrap_or_else(|_| {
+            panic!(
+                "Could not connect to DATABASE_URL `{}`",
+                &config.database_url
+            )
+        });
 
     let market_ids = get_market_ids(pool.clone()).await;
     if market_ids.is_empty() {
@@ -97,11 +102,11 @@ async fn start_redis_channels(
     market_ids: Vec<u64>,
     tx: broadcast::Sender<Update>,
 ) -> redis::aio::MultiplexedConnection {
-    let client = redis::Client::open(redis_url).expect("could not start redis client");
+    let client = redis::Client::open(redis_url.clone()).expect("could not start redis client");
     let conn = client
         .get_multiplexed_tokio_connection()
         .await
-        .expect("could not connect to redis");
+        .unwrap_or_else(|_| panic!("Could not connect to REDIS_URL `{}`", &redis_url));
 
     let pubsub_conn = client.get_async_connection().await.unwrap();
 

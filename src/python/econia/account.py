@@ -24,12 +24,10 @@ def print_auth_key(args):
     secret_file = next(dir.iterdir())  # Get secrets file.
     # Get account from secrets file.
     account = Account.load_key(secret_file.read_text())
-    # Get authentication key without hex prefix.
-    auth_key = account.account_address.address.hex()
     # Print notice of secret file path.
     print(f"Secret file:\n{os.path.abspath(secret_file)}")
     # Print notice of authentication key.
-    print(f"Authentication key:\n{auth_key}")
+    print(f"Authentication key:\n{account.auth_key()}")
 
 
 # Authentication key subcommand parser.

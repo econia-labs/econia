@@ -92,5 +92,9 @@
         "./src/rust/Cargo.toml",
         "./src/rust/sdk/Cargo.toml"
     ],
-    "python.formatting.provider": "black"
+    "python.formatting.provider": "black",
+    "python.analysis.typeCheckingMode": "basic",
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter"
+    }
 }

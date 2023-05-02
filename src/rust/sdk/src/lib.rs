@@ -75,8 +75,8 @@ impl EconiaClient {
     /// # Arguments:
     ///
     /// * `node_url` - Url of aptos node.
-    /// * `econia_address` - Aptos [`AccountAddress`].
-    /// * `account` - [`LocalAccount`] representing Aptos user account.
+    /// * `econia_address` - Aptos AccountAddress.
+    /// * `account` - LocalAccount representing Aptos user account.
     pub async fn connect(
         node_url: Url,
         econia: AccountAddress,
@@ -200,7 +200,7 @@ impl EconiaClient {
     ///
     /// # Arguments:
     ///
-    /// * `coin` - Aptos [`TypeTag`] for the given coin.
+    /// * `coin` - Aptos [`TypeTag`](https://docs.rs/move-core-types/0.0.3/move_core_types/language_storage/enum.TypeTag.html) for the given coin.
     pub async fn is_registered_for_coin(&self, coin: &TypeTag) -> EconiaResult<bool> {
         let coin_store = format!("0x1::coin::CoinStore<{}>", coin);
         self.fetch_resource(self.user_account.address(), &coin_store)
@@ -212,7 +212,7 @@ impl EconiaClient {
     ///
     /// # Arguments:
     ///
-    /// * `coin` - Aptos [`TypeTag`] for the given coin.
+    /// * `coin` - Aptos [`TypeTag`](https://docs.rs/move-core-types/0.0.3/move_core_types/language_storage/enum.TypeTag.html) for the given coin.
     pub async fn get_coin_balance(&self, coin: &TypeTag) -> EconiaResult<U64> {
         let coin_store = format!("0x1::coin::CoinStore<{}>", coin);
         self.fetch_resource(self.user_account.address(), &coin_store)

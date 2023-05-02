@@ -270,7 +270,7 @@ impl<'a> EconiaTransactionBuilder<'a> {
     /// * `base`: Aptos [`TypeTag`](https://docs.rs/move-core-types/0.0.3/move_core_types/language_storage/enum.TypeTag.html) for base coin.
     /// * `quote`: Aptos [`TypeTag`](https://docs.rs/move-core-types/0.0.3/move_core_types/language_storage/enum.TypeTag.html) for quote coin.
     /// * `market_id`: Market ID for corresponding market.
-    /// * `integrator`: Integrator's [`AccountAddress`].
+    /// * `integrator`: Integrator's AccountAddress.
     /// * `side`: Order [`Side`].
     /// * `size`: Size of the order in lots.
     /// * `advance_style`: The [`AdvanceStyle`] of the order.

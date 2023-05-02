@@ -184,7 +184,7 @@ impl EconiaClient {
     ///
     /// # Arguments:
     ///
-    /// * `coin` - Aptos [`TypeTag`] for the given coin.
+    /// * `coin` - Aptos [`TypeTag`](https://docs.rs/move-core-types/0.0.3/move_core_types/language_storage/enum.TypeTag.html) for the given coin.
     pub async fn does_coin_exist(&self, coin: &TypeTag) -> EconiaResult<bool> {
         let coin_info = format!("0x1::coin::CoinInfo<{}>", coin);
         let TypeTag::Struct(tag) = coin else {

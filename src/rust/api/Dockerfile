@@ -1,4 +1,4 @@
-FROM rust:1.68-bookworm as builder
+FROM rust:1.69-bookworm as builder
 RUN apt-get update
 RUN apt-get install mold -y
 WORKDIR /app

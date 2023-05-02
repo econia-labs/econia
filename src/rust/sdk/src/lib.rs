@@ -26,6 +26,7 @@ pub mod entry;
 pub mod errors;
 
 pub const SUBMIT_ATTEMPTS: u8 = 10;
+pub const MAX_GAS_AMOUNT: u64 = 1_000_000;
 
 #[derive(Deserialize, Debug, Clone)]
 struct AptosConfig {
@@ -68,12 +69,15 @@ pub struct EconiaTransaction {
 pub struct EconiaClientConfig {
     /// Amount of times to attempt submitting a transaction.
     pub retry_count: u8,
+    /// Max gas to use in an Aptos transaction.
+    pub max_gas_amount: u64,
 }
 
 impl default::Default for EconiaClientConfig {
     fn default() -> Self {
         Self {
             retry_count: SUBMIT_ATTEMPTS,
+            max_gas_amount: MAX_GAS_AMOUNT,
         }
     }
 }
@@ -261,7 +265,7 @@ impl EconiaClient {
             .entry_function(payload.clone())
             .sender(addr)
             .sequence_number(self.user_account.sequence_number())
-            .max_gas_amount(1_000_000)
+            .max_gas_amount(self.config.max_gas_amount)
             .build();
 
         let signed_tx = self.user_account.sign_transaction(tx);

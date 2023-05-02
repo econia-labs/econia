@@ -1,11 +1,9 @@
-#![cfg(feature = "config-loader")]
-
 use db::{
-    create_coin, establish_connection, load_config,
+    create_coin, establish_connection,
     models::coin::{Coin, NewCoin},
 };
 use diesel::prelude::*;
-use helpers::reset_tables;
+use helpers::{load_config, reset_tables};
 
 mod helpers;
 

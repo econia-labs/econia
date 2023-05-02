@@ -1,13 +1,11 @@
-#![cfg(feature = "config-loader")]
-
 use bigdecimal::BigDecimal;
 use chrono::{TimeZone, Utc};
 use db::{
-    add_bar, establish_connection, load_config,
+    add_bar, establish_connection,
     models::bar::{Bar, NewBar},
 };
 use diesel::prelude::*;
-use helpers::{reset_tables, setup_market};
+use helpers::{load_config, reset_tables, setup_market};
 
 mod helpers;
 

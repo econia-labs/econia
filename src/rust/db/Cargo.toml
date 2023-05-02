@@ -10,14 +10,15 @@ bigdecimal = { workspace = true }
 chrono = { workspace = true }
 diesel = { version = "2.0.4", features = ["chrono", "numeric", "postgres"] }
 diesel-derive-enum = { version = "2.0.1", features = ["postgres"] }
-dotenvy = { workspace = true, optional = true }
-envy = { workspace = true, optional = true }
 field_count = "0.1.1"
-serde = { workspace = true, optional = true }
 sqlx = { workspace = true, optional = true }
 thiserror = { workspace = true }
 types = { path = "../types" }
 
+[dev-dependencies]
+dotenvy = { workspace = true }
+envy = { workspace = true }
+serde = { workspace = true }
+
 [features]
-config-loader = ["dep:serde", "dotenvy", "envy"]
 sqlx = ["dep:sqlx"]

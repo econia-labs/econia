@@ -1,8 +1,6 @@
-#![cfg(feature = "config-loader")]
-
 use chrono::Utc;
 use db::{
-    create_coin, establish_connection, load_config,
+    create_coin, establish_connection,
     models::{
         coin::NewCoin,
         market::{Market, MarketRegistrationEvent, NewMarketRegistrationEvent},
@@ -10,7 +8,7 @@ use db::{
     register_market,
 };
 use diesel::prelude::*;
-use helpers::reset_tables;
+use helpers::{load_config, reset_tables};
 
 mod helpers;
 

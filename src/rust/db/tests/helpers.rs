@@ -8,6 +8,20 @@ use db::{
     register_market,
 };
 use diesel::prelude::*;
+use serde::Deserialize;
+
+#[derive(Debug, Deserialize)]
+pub struct Config {
+    pub database_url: String,
+}
+
+pub fn load_config() -> Config {
+    dotenvy::dotenv().ok();
+    match envy::from_env::<Config>() {
+        Ok(cfg) => cfg,
+        Err(err) => panic!("{:?}", err),
+    }
+}
 
 fn reset_bar_tables(conn: &mut PgConnection) {
     diesel::delete(db::schema::bars_1h::table)
@@ -75,7 +89,8 @@ pub fn setup_market(conn: &mut PgConnection) -> MarketRegistrationEvent {
             name: "Aptos Coin",
             decimals: 8,
         },
-    );
+    )
+    .unwrap();
 
     let tusdc_coin = create_coin(
         conn,
@@ -87,7 +102,8 @@ pub fn setup_market(conn: &mut PgConnection) -> MarketRegistrationEvent {
             name: "Test USDC",
             decimals: 6,
         },
-    );
+    )
+    .unwrap();
 
     register_market(
         conn,
@@ -107,4 +123,5 @@ pub fn setup_market(conn: &mut PgConnection) -> MarketRegistrationEvent {
             underwriter_id: &0.into(),
         },
     )
+    .unwrap()
 }

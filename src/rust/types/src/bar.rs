@@ -1,9 +1,11 @@
 use std::fmt;
 
 use chrono::{DateTime, Utc};
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Bar {
     pub start_time: DateTime<Utc>,
     pub open: u64,
@@ -13,17 +15,18 @@ pub struct Bar {
     pub volume: u64,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum Resolution {
-    #[serde(rename = "1m")]
+    #[cfg_attr(feature = "serde", serde(rename = "1m"))]
     R1m,
-    #[serde(rename = "5m")]
+    #[cfg_attr(feature = "serde", serde(rename = "5m"))]
     R5m,
-    #[serde(rename = "15m")]
+    #[cfg_attr(feature = "serde", serde(rename = "15m"))]
     R15m,
-    #[serde(rename = "30m")]
+    #[cfg_attr(feature = "serde", serde(rename = "30m"))]
     R30m,
-    #[serde(rename = "1h")]
+    #[cfg_attr(feature = "serde", serde(rename = "1h"))]
     R1h,
 }
 

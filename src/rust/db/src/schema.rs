@@ -144,6 +144,7 @@ diesel::table! {
 diesel::table! {
     markets (market_id) {
         market_id -> Numeric,
+        name -> Text,
         base_account_address -> Nullable<Varchar>,
         base_module_name -> Nullable<Text>,
         base_struct_name -> Nullable<Text>,

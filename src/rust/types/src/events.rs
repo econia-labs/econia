@@ -1,9 +1,11 @@
 use chrono::{DateTime, Utc};
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 use crate::{error::TypeError, order::Side};
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum EconiaEvent {
     Maker(Box<MakerEvent>),
     Taker(Box<TakerEvent>),
@@ -11,8 +13,12 @@ pub enum EconiaEvent {
     RecognizedMarket(Box<RecognizedMarketEvent>),
 }
 
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Clone, Copy, Debug)]
+#[cfg_attr(
+    feature = "serde",
+    derive(Serialize, Deserialize),
+    serde(rename_all = "snake_case")
+)]
 pub enum MakerEventType {
     Cancel,
     Change,
@@ -36,7 +42,8 @@ impl TryFrom<u8> for MakerEventType {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct MakerEvent {
     pub market_id: u64,
     pub side: Side,
@@ -49,7 +56,8 @@ pub struct MakerEvent {
     pub time: DateTime<Utc>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct TakerEvent {
     pub market_id: u64,
     pub side: Side,
@@ -61,7 +69,8 @@ pub struct TakerEvent {
     pub time: DateTime<Utc>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct MarketRegistrationEvent {
     pub market_id: u64,
     pub base_account_address: Option<String>,
@@ -78,7 +87,8 @@ pub struct MarketRegistrationEvent {
     pub time: DateTime<Utc>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct RecognizedMarketInfo {
     pub market_id: u64,
     pub lot_size: u64,
@@ -87,7 +97,8 @@ pub struct RecognizedMarketInfo {
     pub underwriter_id: u64,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct RecognizedMarketEvent {
     pub base_account_address: Option<String>,
     pub base_module_name: Option<String>,

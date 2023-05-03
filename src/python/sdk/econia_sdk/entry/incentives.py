@@ -5,7 +5,6 @@ from aptos_sdk.type_tag import TypeTag
 from aptos_sdk.transactions import EntryFunction, ModuleId
 from aptos_sdk.account_address import AccountAddress
 from aptos_sdk.bcs import encoder, Serializer
-from econia_sdk.types import Side
 
 
 def get_module_id(econia_address: AccountAddress) -> ModuleId:

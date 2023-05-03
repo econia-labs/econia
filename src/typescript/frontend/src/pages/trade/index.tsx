@@ -1,9 +1,9 @@
 import { type GetStaticProps } from "next";
 
 import { Header } from "@/components/Header";
+import { Page } from "@/components/Page";
 import { StatsBar } from "@/components/StatsBar";
 import { type ApiMarket } from "@/types/api";
-import { Page } from "@/components/Page";
 
 export default function Trade({ marketData }: { marketData: ApiMarket[] }) {
   const marketNames: string[] = marketData

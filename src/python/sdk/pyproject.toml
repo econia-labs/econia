@@ -2,8 +2,9 @@
 name = "econia-sdk"
 version = "0.1.0"
 description = ""
-authors = []
+authors = ["qdrs <qdrs@proton.me>"]
 readme = "README.md"
+packages = [{include = "econia_sdk"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"

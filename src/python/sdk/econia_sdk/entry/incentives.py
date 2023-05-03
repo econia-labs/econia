@@ -1,3 +1,5 @@
+# Incentives entry functions
+
 from typing import List
 from aptos_sdk.type_tag import TypeTag
 from aptos_sdk.transactions import EntryFunction, ModuleId
@@ -6,20 +8,8 @@ from aptos_sdk.bcs import encoder, Serializer
 from econia_sdk.types import Side
 
 
-"""
-Create the `EntryFunction` for register_for_coin
-
-Arguments:
-* `amount`: the amount of times to retry the transaction.
-"""
-
-
-def register_for_coin(coin: TypeTag) -> EntryFunction:
-    managed_coin = "0x1::managed_coin"
-    return EntryFunction(ModuleId.from_str(managed_coin), "register", [coin], [])
-
-
-# Incentives entry functions
+def get_module_id(econia_address: AccountAddress) -> ModuleId:
+    return ModuleId.from_str("{}::incentives".format(econia_address))
 
 
 """
@@ -50,14 +40,13 @@ def update_incentives(
     taker_fee_divisor: int,
     integrator_fee_store_tiers: List[List[int]],
 ) -> EntryFunction:
-    module = ModuleId.from_str("{}::incentives".format(econia_address))
     serializer = Serializer()
-    seq_ser = Serializer.sequence_serializer(Serializer.u64)
+    seq_ser = Serializer.sequence_serializer(Serializer.u64)  # type: ignore
     seq_ser(serializer, integrator_fee_store_tiers)
     integrator_fee_store_tiers_bytes = serializer.output()
 
     return EntryFunction(
-        module,
+        get_module_id(econia_address),
         "update_incentives",
         [utility_coin],
         [
@@ -89,9 +78,8 @@ def upgrade_integrator_fee_store_via_coinstore(
     market_id: int,
     new_tier: int,
 ) -> EntryFunction:
-    module = ModuleId.from_str("{}::incentives".format(econia_address))
     return EntryFunction(
-        module,
+        get_module_id(econia_address),
         "upgrade_integrator_fee_store_via_coinstore",
         [quote_coin, utility_coin],
         [
@@ -118,19 +106,11 @@ def withdraw_integrator_fees_via_coinstores(
     utility_coin: TypeTag,
     market_id: int,
 ) -> EntryFunction:
-    module = ModuleId.from_str("{}::incentives".format(econia_address))
     return EntryFunction(
-        module,
+        get_module_id(econia_address),
         "withdraw_integrator_fees_via_coinstores",
         [quote_coin, utility_coin],
         [
             encoder(market_id, Serializer.u64),
         ],
     )
-
-
-# Market entry functions
-def cancel_all_orders_user(
-    econia_address: AccountAddress, market_id: int, side: Side
-) -> EntryFunction:
-    return

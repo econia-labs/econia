@@ -57,6 +57,58 @@ pub async fn get_markets(
     Ok(Json(markets))
 }
 
+pub async fn get_market_by_id(
+    Path(market_id): Path<u64>,
+    State(state): State<AppState>,
+) -> Result<Json<types::Market>, ApiError> {
+    let market_id = BigDecimal::from(market_id);
+
+    let query_markets = sqlx::query_as!(
+        types::query::QueryMarket,
+        r#"
+        select
+            market_id,
+            markets.name as name,
+            base.name as "base_name?",
+            base.symbol as "base_symbol?",
+            base.decimals as "base_decimals?",
+            base_account_address,
+            base_module_name,
+            base_struct_name,
+            base_name_generic,
+            quote.name as quote_name,
+            quote.symbol as quote_symbol,
+            quote.decimals as quote_decimals,
+            quote_account_address,
+            quote_module_name,
+            quote_struct_name,
+            lot_size,
+            tick_size,
+            min_size,
+            underwriter_id,
+            created_at
+        from markets
+            left join coins base on markets.base_account_address = base.account_address
+                                and markets.base_module_name = base.module_name
+                                and markets.base_struct_name = base.struct_name
+            join coins quote on markets.quote_account_address = quote.account_address
+                                and markets.quote_module_name = quote.module_name
+                                and markets.quote_struct_name = quote.struct_name
+            where market_id = $1;
+        "#,
+        market_id
+    )
+    .fetch_all(&state.pool)
+    .await?;
+
+    if let Some(query_market) = query_markets.into_iter().next() {
+        let market: types::Market = query_market.try_into()?;
+        Ok(Json(market))
+    } else {
+        Err(ApiError::NotFound)
+    }
+}
+
 /// Query parameters for the orderbook endpoint.
 #[derive(Debug, Deserialize)]
 pub struct OrderbookParams {

@@ -9,6 +9,54 @@ use types::{bar::Resolution, book::PriceLevel, error::TypeError};
 
 use crate::{error::ApiError, AppState};
 
+pub async fn get_markets(
+    State(state): State<AppState>,
+) -> Result<Json<Vec<types::Market>>, ApiError> {
+    let query_markets = sqlx::query_as!(
+        types::query::QueryMarket,
+        r#"
+        select
+            market_id,
+            markets.name as name,
+            base.name as "base_name?",
+            base.symbol as "base_symbol?",
+            base.decimals as "base_decimals?",
+            base_account_address,
+            base_module_name,
+            base_struct_name,
+            base_name_generic,
+            quote.name as quote_name,
+            quote.symbol as quote_symbol,
+            quote.decimals as quote_decimals,
+            quote_account_address,
+            quote_module_name,
+            quote_struct_name,
+            lot_size,
+            tick_size,
+            min_size,
+            underwriter_id,
+            created_at
+        from markets
+            left join coins base on markets.base_account_address = base.account_address
+                                and markets.base_module_name = base.module_name
+                                and markets.base_struct_name = base.struct_name
+            join coins quote on markets.quote_account_address = quote.account_address
+                                and markets.quote_module_name = quote.module_name
+                                and markets.quote_struct_name = quote.struct_name
+            order by market_id;
+        "#
+    )
+    .fetch_all(&state.pool)
+    .await?;
+
+    let markets = query_markets
+        .into_iter()
+        .map(|v| v.try_into())
+        .collect::<Result<Vec<types::Market>, TypeError>>()?;
+
+    Ok(Json(markets))
+}
+
 /// Query parameters for the orderbook endpoint.
 #[derive(Debug, Deserialize)]
 pub struct OrderbookParams {
@@ -303,6 +351,8 @@ mod tests {
     use axum::{
         body::Body,
         http::{Request, StatusCode},
+        routing::get,
+        Router,
     };
     use chrono::TimeZone;
     use sqlx::PgPool;
@@ -313,6 +363,46 @@ mod tests {
     use crate::{
         get_market_ids, load_config, routes::router, start_redis_channels, tests::make_test_server,
     };
+
+    #[tokio::test]
+    async fn test_markets() {
+        let config = load_config();
+
+        let pool = PgPool::connect(&config.database_url)
+            .await
+            .expect("Could not connect to DATABASE_URL");
+
+        let (tx, _) = broadcast::channel(16);
+
+        let state = AppState {
+            pool,
+            sender: tx,
+            market_ids: HashSet::new(),
+        };
+
+        let app = Router::new()
+            .route("/markets", get(get_markets))
+            .with_state(state);
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/markets")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
+        let s = String::from_utf8(body.to_vec()).unwrap();
+        let result: Result<Vec<types::Market>, serde_json::Error> =
+            serde_json::from_str(s.as_str());
+
+        assert!(result.is_ok());
+    }
 
     /// The `TestOnlyOrderbookResponse` struct is defined in the test module,
     /// since the struct used as the response type in the API does not need

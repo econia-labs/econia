@@ -141,9 +141,7 @@ def generate_constants_block(
         const WITHDRAWAL_FEE_1: u64 =            950000;
     """
     # Get USD per subunit of utility coin.
-    usd_per_subunit = utility_coin_usd_value / Decimal(1).shift(
-        utility_coin_decimals
-    )
+    usd_per_subunit = utility_coin_usd_value / Decimal(1).shift(utility_coin_decimals)
     # Index tier parameters.
     divisors, activation_fees, withdrawal_fees = (
         [percent_to_divisor(tier[0]) for tier in tiers],
@@ -173,14 +171,14 @@ def generate_constants_block(
                 ),
                 format_constant_definition(
                     "TAKER_FEE_DIVISOR",
-                    percent_to_divisor(taker_fee_percentage),
+                    Decimal(percent_to_divisor(taker_fee_percentage)),
                     is_genesis_block,
                 ),
                 "\n".join(
                     [
                         format_constant_definition(
                             f"FEE_SHARE_DIVISOR_{i}",
-                            divisor,
+                            Decimal(divisor),
                             is_genesis_block,
                         )
                         for i, divisor in enumerate(divisors)
@@ -269,6 +267,8 @@ def update_incentive_parameters(args):
     """Update incentive parameters in indicated Move file."""
     lines = args.path.read_text().splitlines()  # Get file lines.
     found_block = False  # Flag that scan is not yet in block.
+    block_start_line = 0
+    line_after_block = 0
     # Get constants block delimiter.
     delimiter = DOC_COMMENT if args.genesis_parameters else BLOCK_COMMENT
     for i, line in enumerate(lines):  # Scan over lines in file:
@@ -280,6 +280,7 @@ def update_incentive_parameters(args):
         if found_block and line == "":
             line_after_block = i  # Mark line after block.
             break  # Stop scan.
+
     # Substitute in generated constants block.
     lines[block_start_line:line_after_block] = generate_constants_block(
         utility_coin_usd_value=args.utility_coin_usd_value,

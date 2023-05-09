@@ -24,7 +24,6 @@ export default function Trade({ marketData }: Props) {
 }
 
 export const getStaticProps: GetStaticProps<Props> = async () => {
-  console.log(API_URL);
   const res = await fetch(new URL("markets", API_URL).href);
   const marketData: ApiMarket[] = await res.json();
   return {

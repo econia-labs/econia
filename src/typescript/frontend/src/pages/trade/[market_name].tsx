@@ -44,7 +44,6 @@ export const getStaticPaths: GetStaticPaths<PathParams> = async () => {
   const paths = allMarketData.map((market) => ({
     params: { market_name: market.name },
   }));
-  console.log(paths.map((path) => path.params.market_name));
   return { paths, fallback: false };
 };
 

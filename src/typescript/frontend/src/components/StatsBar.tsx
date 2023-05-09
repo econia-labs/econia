@@ -1,17 +1,6 @@
-import { css } from "@emotion/react";
 import { Listbox } from "@headlessui/react";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
-import { useWallet } from "@manahippo/aptos-wallet-adapter";
-import { HexString } from "aptos";
 import { useState } from "react";
-
-import { useOnClickawayRef } from "@/hooks/useOnClickawayRef";
-import { shortenAddress } from "@/utils/address";
-
-import { Button } from "./Button";
-import { ConnectWalletButton } from "./ConnectWalletButton";
-import { DropdownMenu } from "./DropdownMenu";
-import { FlexRow } from "./FlexRow";
 
 type Props = {
   marketNames: string[];
@@ -19,11 +8,6 @@ type Props = {
 
 export function StatsBar({ marketNames }: Props) {
   const [selectedMarket, setSelectedMarket] = useState<string>(marketNames[0]);
-  const { connected, account, disconnect } = useWallet();
-  const [showDisconnectMenu, setShowDisconnectMenu] = useState(false);
-  const disconnectMenuClickawayRef = useOnClickawayRef(() =>
-    setShowDisconnectMenu(false)
-  );
 
   return (
     <div className="flex border-b border-neutral-600 bg-black px-4 py-2">
@@ -58,52 +42,9 @@ export function StatsBar({ marketNames }: Props) {
         </div>
       </div>
       <div className="my-auto">
-        <FlexRow
-          css={css`
-            flex: 1;
-            justify-content: end;
-          `}
-        >
-          {connected ? (
-            <div ref={disconnectMenuClickawayRef}>
-              <Button
-                css={(theme) => css`
-                  width: 156px;
-                  :hover {
-                    transform: none;
-                    color: ${theme.colors.purple.primary};
-                  }
-                  font-size: 14px;
-                `}
-                size="sm"
-                variant="outline"
-                onClick={() => setShowDisconnectMenu(!showDisconnectMenu)}
-              >
-                {account?.address &&
-                  shortenAddress(HexString.ensure(account.address))}
-              </Button>
-              <DropdownMenu show={showDisconnectMenu}>
-                <div
-                  className="menu-item"
-                  css={(theme) => css`
-                    text-align: center;
-                    padding: 12px 0;
-                    width: 156px;
-                    outline: 1px solid ${theme.colors.grey[600]};
-                    font-size: 14px;
-                  `}
-                  onClick={() =>
-                    disconnect().then(() => setShowDisconnectMenu(false))
-                  }
-                >
-                  Disconnect
-                </div>
-              </DropdownMenu>
-            </div>
-          ) : (
-            <ConnectWalletButton size="sm" variant="primary" />
-          )}
-        </FlexRow>
+        <button className="bg-white px-4 py-1 font-roboto-mono text-sm font-semibold uppercase tracking-tight hover:bg-neutral-300">
+          Connect Wallet
+        </button>
       </div>
     </div>
   );

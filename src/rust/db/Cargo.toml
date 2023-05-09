@@ -8,12 +8,18 @@ edition = "2021"
 [dependencies]
 bigdecimal = { workspace = true }
 chrono = { workspace = true }
-diesel = { workspace = true, features = ["chrono", "numeric", "postgres"] }
+diesel = { version = "2.0.4", features = ["chrono", "numeric", "postgres"] }
 diesel-derive-enum = { version = "2.0.1", features = ["postgres"] }
-dotenvy = { workspace = true }
-envy = { workspace = true }
 field_count = "0.1.1"
-serde = { workspace = true, features = ["derive"] }
-sqlx = { workspace = true, features = ["macros"] }
+sqlx = { workspace = true, optional = true }
 thiserror = { workspace = true }
 types = { path = "../types" }
+
+[dev-dependencies]
+dotenvy = { workspace = true }
+envy = { workspace = true }
+rand = { version = "0.8.5", features = ["std_rng"] }
+serde = { workspace = true }
+
+[features]
+sqlx = ["dep:sqlx"]

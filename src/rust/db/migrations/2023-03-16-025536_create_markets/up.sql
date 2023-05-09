@@ -14,6 +14,7 @@ create table coins (
 -- Only recognized markets should be stored in the api database.
 create table markets (
     market_id numeric (20) not null primary key,
+    name text not null unique,
     base_account_address varchar (70),
     base_module_name text,
     base_struct_name text,
@@ -52,10 +53,24 @@ create table market_registration_events (
     foreign key (market_id) references markets (market_id)
 );
 
-create function register_market() returns trigger as $register_market$ begin
-insert into markets
-values (
+create function register_market() returns trigger as $register_market$
+declare
+    base_symbol varchar (8);
+    quote_symbol varchar (8);
+begin
+if new.base_name_generic is null then
+	select symbol from coins where account_address = NEW.base_account_address
+		and module_name = NEW.base_module_name and struct_name = NEW.base_struct_name
+		into base_symbol;
+
+	select symbol from coins where account_address = NEW.quote_account_address
+		and module_name = NEW.quote_module_name and struct_name = NEW.quote_struct_name
+		into quote_symbol;
+
+	insert into markets
+	values (
         NEW.market_id,
+        base_symbol || '-' || quote_symbol,
         NEW.base_account_address,
         NEW.base_module_name,
         NEW.base_struct_name,
@@ -70,6 +85,25 @@ values (
         NEW.time
     );
 
+else
+    insert into markets
+	values (
+        NEW.market_id,
+        NEW.base_name_generic,
+        NEW.base_account_address,
+        NEW.base_module_name,
+        NEW.base_struct_name,
+        NEW.base_name_generic,
+        NEW.quote_account_address,
+        NEW.quote_module_name,
+        NEW.quote_struct_name,
+        NEW.lot_size,
+        NEW.tick_size,
+        NEW.min_size,
+        NEW.underwriter_id,
+        NEW.time
+    );
+end if;
 return NEW;
 
 end;

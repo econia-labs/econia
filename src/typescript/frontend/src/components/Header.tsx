@@ -1,5 +1,4 @@
 import Image from "next/image";
-import Link from "next/link";
 
 export function Header() {
   return (
@@ -16,27 +15,21 @@ export function Header() {
           />
         </div>
         <div className="flex space-x-3">
-          <Link href="/swap">
-            <p className="font-lg font-roboto-mono font-light uppercase tracking-wide text-white hover:text-neutral-400">
-              Swap
-            </p>
-          </Link>
+          <p className="font-lg font-roboto-mono font-light uppercase tracking-wide text-white hover:text-neutral-400">
+            Swap
+          </p>
           <p className="font-lg font-roboto-mono font-light uppercase tracking-wide text-neutral-600">
             /
           </p>
-          <Link href="/trade">
-            <p className="font-lg font-roboto-mono font-light uppercase tracking-wide text-white hover:text-neutral-400">
-              Trade
-            </p>
-          </Link>
+          <p className="font-lg font-roboto-mono font-light uppercase tracking-wide text-white hover:text-neutral-400">
+            Trade
+          </p>
           <p className="font-lg font-roboto-mono font-light uppercase tracking-wide text-neutral-600">
             /
           </p>
-          <Link href="/faucet">
-            <p className="font-lg font-roboto-mono font-light uppercase tracking-wide text-white hover:text-neutral-400">
-              Faucet
-            </p>
-          </Link>
+          <p className="font-lg font-roboto-mono font-light uppercase tracking-wide text-white hover:text-neutral-400">
+            Faucet
+          </p>
           <p className="font-lg font-roboto-mono font-light uppercase tracking-wide text-neutral-600">
             /
           </p>

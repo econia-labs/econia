@@ -23,7 +23,7 @@ pub async fn order_history_by_account(
             custodian_id,
             order_state as "order_state: db::models::order::OrderState",
             created_at
-        from orders where user_address = $1;
+        from orders where user_address = $1 order by created_at;
         "#,
         account_address
     )
@@ -59,7 +59,8 @@ pub async fn open_orders_by_account(
             custodian_id,
             order_state as "order_state: db::models::order::OrderState",
             created_at
-        from orders where user_address = $1 and order_state = 'open';
+        from orders where user_address = $1 and order_state = 'open'
+        order by created_at;
         "#,
         account_address
     )

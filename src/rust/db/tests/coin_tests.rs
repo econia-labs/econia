@@ -1,16 +1,16 @@
 use db::{
-    create_coin, establish_connection, load_config,
+    create_coin, establish_connection,
     models::coin::{Coin, NewCoin},
 };
 use diesel::prelude::*;
-use helpers::reset_tables;
+use helpers::{load_config, reset_tables};
 
 mod helpers;
 
 #[test]
 fn test_create_coin() {
     let config = load_config();
-    let conn = &mut establish_connection(config.database_url);
+    let conn = &mut establish_connection(config.database_url).unwrap();
 
     // Delete all entries in the assets table before running tests.
     reset_tables(conn);
@@ -24,7 +24,7 @@ fn test_create_coin() {
         decimals: 8,
     };
 
-    create_coin(conn, &coin);
+    create_coin(conn, &coin).unwrap();
 
     // Query the assets table in the database.
     let db_coins = db::schema::coins::dsl::coins

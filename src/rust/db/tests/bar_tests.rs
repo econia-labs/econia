@@ -1,18 +1,18 @@
 use bigdecimal::BigDecimal;
 use chrono::{TimeZone, Utc};
 use db::{
-    add_bar, establish_connection, load_config,
+    add_bar, establish_connection,
     models::bar::{Bar, NewBar},
 };
 use diesel::prelude::*;
-use helpers::{reset_tables, setup_market};
+use helpers::{load_config, reset_tables, setup_market};
 
 mod helpers;
 
 #[test]
 fn test_add_1m_bars() {
     let config = load_config();
-    let conn = &mut establish_connection(config.database_url);
+    let conn = &mut establish_connection(config.database_url).unwrap();
 
     // Delete all entries in the tables used before running tests.
     reset_tables(conn);
@@ -31,7 +31,7 @@ fn test_add_1m_bars() {
             close: BigDecimal::from((i + 3) * 100),
             volume: BigDecimal::from(100),
         };
-        add_bar(conn, &bar);
+        add_bar(conn, &bar).unwrap();
     }
 
     let db_1m_bars = db::schema::bars_1m::dsl::bars_1m
@@ -47,7 +47,7 @@ fn test_add_1m_bars() {
 #[test]
 fn test_add_5m_bars() {
     let config = load_config();
-    let conn = &mut establish_connection(config.database_url);
+    let conn = &mut establish_connection(config.database_url).unwrap();
 
     // Delete all entries in the tables used before running tests.
     reset_tables(conn);
@@ -66,7 +66,7 @@ fn test_add_5m_bars() {
             close: BigDecimal::from((i + 3) * 100),
             volume: BigDecimal::from(100),
         };
-        add_bar(conn, &bar);
+        add_bar(conn, &bar).unwrap();
     }
 
     let db_1m_bars = db::schema::bars_1m::dsl::bars_1m
@@ -88,7 +88,7 @@ fn test_add_5m_bars() {
 #[test]
 fn test_add_15m_bars() {
     let config = load_config();
-    let conn = &mut establish_connection(config.database_url);
+    let conn = &mut establish_connection(config.database_url).unwrap();
 
     // Delete all entries in the tables used before running tests.
     reset_tables(conn);
@@ -107,7 +107,7 @@ fn test_add_15m_bars() {
             close: BigDecimal::from((i + 3) * 100),
             volume: BigDecimal::from(100),
         };
-        add_bar(conn, &bar);
+        add_bar(conn, &bar).unwrap();
     }
 
     let db_1m_bars = db::schema::bars_1m::dsl::bars_1m
@@ -135,7 +135,7 @@ fn test_add_15m_bars() {
 #[test]
 fn test_add_30m_bars() {
     let config = load_config();
-    let conn = &mut establish_connection(config.database_url);
+    let conn = &mut establish_connection(config.database_url).unwrap();
 
     // Delete all entries in the tables used before running tests.
     reset_tables(conn);
@@ -154,7 +154,7 @@ fn test_add_30m_bars() {
             close: BigDecimal::from((i + 3) * 100),
             volume: BigDecimal::from(100),
         };
-        add_bar(conn, &bar);
+        add_bar(conn, &bar).unwrap();
     }
 
     let db_1m_bars = db::schema::bars_1m::dsl::bars_1m
@@ -188,7 +188,7 @@ fn test_add_30m_bars() {
 #[test]
 fn test_add_1h_bars() {
     let config = load_config();
-    let conn = &mut establish_connection(config.database_url);
+    let conn = &mut establish_connection(config.database_url).unwrap();
 
     // Delete all entries in the tables used before running tests.
     reset_tables(conn);
@@ -207,7 +207,7 @@ fn test_add_1h_bars() {
             close: BigDecimal::from((i + 3) * 100),
             volume: BigDecimal::from(100),
         };
-        add_bar(conn, &bar);
+        add_bar(conn, &bar).unwrap();
     }
 
     let db_1m_bars = db::schema::bars_1m::dsl::bars_1m

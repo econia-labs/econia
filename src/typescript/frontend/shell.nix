@@ -7,7 +7,7 @@ pkgs.mkShell {
   ];
 
   shellHook = ''
-    alias pd='pnpm dev'
-    alias pb='pnpm build'
+    alias pd='pnpm run dev'
+    alias pb='pnpm run build'
   '';
 }

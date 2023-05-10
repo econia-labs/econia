@@ -4,11 +4,22 @@ import { useState } from "react";
 
 import { WalletSelector } from "./WalletSelector";
 
-type Props = {
+type MarketStats = {
   marketNames: string[];
+  // selected market pair data
+  lastPrice: number;
+  change: number;
+  high: number;
+  low: number;
+  pairData: {
+    base: string;
+    quote: string;
+    baseVolume: number;
+    quoteVolume: number;
+  };
 };
 
-export function StatsBar({ marketNames }: Props) {
+export function StatsBar({ marketNames }: MarketStats) {
   const [selectedMarket, setSelectedMarket] = useState<string>(marketNames[0]);
 
   return (
@@ -97,3 +108,17 @@ export function StatsBar({ marketNames }: Props) {
     </div>
   );
 }
+
+const STATS_BAR_MOCK_DATA: MarketStats = {
+  marketNames: ["APT-tUSDC", "tETH-tUSDC", "APT-tETH", "APT-PERP"],
+  lastPrice: 10.17,
+  change: 10.173,
+  high: 11.1681,
+  low: 9.85,
+  pairData: {
+    base: "APT",
+    quote: "USDC",
+    baseVolume: 1000000,
+    quoteVolume: 1000000,
+  },
+};

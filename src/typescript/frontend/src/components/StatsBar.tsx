@@ -8,18 +8,29 @@ type MarketStats = {
   marketNames: string[];
   // selected market pair data
   lastPrice: number;
-  change: number;
-  high: number;
-  low: number;
+  lastPriceChange: number;
+  change24h: number;
+  change24hPercent: number;
+  high24h: number;
+  low24h: number;
   pairData: {
-    base: string;
-    quote: string;
+    baseAsset: string;
+    quoteAsset: string;
     baseVolume: number;
     quoteVolume: number;
   };
 };
 
-export function StatsBar({ marketNames }: MarketStats) {
+export function StatsBar({
+  marketNames,
+  lastPrice,
+  lastPriceChange,
+  change24h,
+  change24hPercent,
+  high24h,
+  low24h,
+  pairData,
+}: MarketStats) {
   const [selectedMarket, setSelectedMarket] = useState<string>(marketNames[0]);
 
   return (
@@ -50,8 +61,8 @@ export function StatsBar({ marketNames }: MarketStats) {
             Last price
           </span>
           <p className="font-roboto-mono font-light">
-            <span className="text-white">$0.00</span>
-            <span className="ml-8 text-green-500">+0.00</span>
+            <span className="text-white">${lastPrice}</span>
+            <span className="ml-8 text-green-500">{lastPriceChange}</span>
           </p>
         </div>
         {/* 24 hr */}
@@ -60,8 +71,8 @@ export function StatsBar({ marketNames }: MarketStats) {
             24h change
           </span>
           <p className="font-roboto-mono font-light">
-            <span className="text-white">$0.00</span>
-            <span className="ml-8 text-green-500">+0.00</span>
+            <span className="text-white">${change24h}</span>
+            <span className="ml-8 text-green-500">{change24hPercent}%</span>
           </p>
         </div>
         {/* 24 hr high */}
@@ -70,7 +81,7 @@ export function StatsBar({ marketNames }: MarketStats) {
             24h high
           </span>
           <p className="font-roboto-mono font-light">
-            <span className="text-white">$0.00</span>
+            <span className="text-white">${high24h}</span>
           </p>
         </div>
         {/* 24 hr low */}
@@ -79,25 +90,25 @@ export function StatsBar({ marketNames }: MarketStats) {
             24h low
           </span>
           <p className="font-roboto-mono font-light">
-            <span className="text-white">$0.00</span>
+            <span className="text-white">${low24h}</span>
           </p>
         </div>
         {/* 24 hr main */}
         <div className="mb-1 ml-8">
           <span className="font-roboto-mono text-xs font-light uppercase text-neutral-400">
-            24h volume (APT)
+            24h volume ({pairData.baseAsset})
           </span>
           <p className="font-roboto-mono font-light">
-            <span className="text-white">$0.00</span>
+            <span className="text-white">${pairData.baseVolume}</span>
           </p>
         </div>
         {/* 24 hr pair */}
         <div className="mb-1 ml-8">
           <span className="font-roboto-mono text-xs font-light uppercase text-neutral-400">
-            24h volume (USDC)
+            24h volume ({pairData.quoteAsset})
           </span>
           <p className="font-roboto-mono font-light">
-            <span className="text-white">$0.00</span>
+            <span className="text-white">${pairData.quoteVolume}</span>
           </p>
         </div>
         {/* end stats */}
@@ -112,13 +123,15 @@ export function StatsBar({ marketNames }: MarketStats) {
 const STATS_BAR_MOCK_DATA: MarketStats = {
   marketNames: ["APT-tUSDC", "tETH-tUSDC", "APT-tETH", "APT-PERP"],
   lastPrice: 10.17,
-  change: 10.173,
-  high: 11.1681,
-  low: 9.85,
+  change24h: 10.173,
+  high24h: 11.1681,
+  low24h: 9.85,
   pairData: {
-    base: "APT",
-    quote: "USDC",
+    baseAsset: "APT",
+    quoteAsset: "USDC",
     baseVolume: 1000000,
     quoteVolume: 1000000,
   },
+  lastPriceChange: 0,
+  change24hPercent: 0,
 };

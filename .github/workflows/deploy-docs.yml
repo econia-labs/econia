@@ -8,7 +8,7 @@ on:
       - dev
     paths:
       - doc/api-docs/**
-      - .github/workflows/deploy-docs.yaml
+      - .github/workflows/deploy-docs.yml
 
 jobs:
   build:
@@ -26,7 +26,7 @@ jobs:
         uses: "google-github-actions/auth@v1"
         with:
           workload_identity_provider: "projects/153655225733/locations/global/workloadIdentityPools/api-docs-identity-pool/providers/api-docs-oidc-provider"
-          service_account: "api-docs-service-account@$econia-0.iam.gserviceaccount.com"
+          service_account: "api-docs-service-account@econia-0.iam.gserviceaccount.com"
 
       - uses: ruby/setup-ruby@v1
         with:

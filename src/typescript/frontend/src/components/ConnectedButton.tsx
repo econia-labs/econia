@@ -32,6 +32,7 @@ export const ConnectedButton: React.FC<
       ) : (
         children
       )}
+      {/* TODO: Consider moving to useWallet context */}
       <Transition appear show={isOpen} as={Fragment}>
         <Dialog
           as="div"

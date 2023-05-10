@@ -1,4 +1,5 @@
 import { Button } from "@/components/Button";
+import { ConnectedButton } from "@/components/ConnectedButton";
 import { SyncIcon } from "@/components/icons/SyncIcon";
 import { Input } from "@/components/Input";
 import { Page } from "@/components/Page";
@@ -33,9 +34,11 @@ export default function Swap() {
                 <p>- tETH</p>
               </div>
             </div>
-            <Button variant="primary" className="mt-4">
-              Enter an amount
-            </Button>
+            <ConnectedButton className="mt-4 w-full">
+              <Button variant="primary" className="mt-4 w-full">
+                Enter an amount
+              </Button>
+            </ConnectedButton>
           </div>
         </div>
       </div>

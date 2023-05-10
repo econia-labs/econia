@@ -2,8 +2,6 @@ import { Listbox } from "@headlessui/react";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import { useState } from "react";
 
-import { WalletSelector } from "./WalletSelector";
-
 type Props = {
   marketNames: string[];
 };
@@ -44,7 +42,9 @@ export function StatsBar({ marketNames }: Props) {
         </div>
       </div>
       <div className="my-auto">
-        <WalletSelector />
+        <div className="flex flex-1 justify-end">
+          <p className="font-roboto-mono text-white">Socials</p>
+        </div>
       </div>
     </div>
   );

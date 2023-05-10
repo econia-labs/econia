@@ -13,6 +13,7 @@ on:
       - src/rust/Cargo.toml
       - src/rust/Cargo.lock
       - src/rust/.dockerignore
+      - .github/workflows/deploy-api.yml
 
 jobs:
   build:

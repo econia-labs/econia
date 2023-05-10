@@ -1,11 +1,11 @@
 import { Listbox } from "@headlessui/react";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
+import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { WalletSelector } from "./WalletSelector";
 
 type MarketStats = {
-  marketNames: string[];
   // selected market pair data
   lastPrice: number;
   lastPriceChange: number;
@@ -20,18 +20,16 @@ type MarketStats = {
     quoteVolume: number;
   };
 };
+// marketNames: ["APT-tUSDC", "tETH-tUSDC", "APT-tETH", "APT-PERP"],
+const LoadingText = "-";
 
-export function StatsBar({
-  marketNames,
-  lastPrice,
-  lastPriceChange,
-  change24h,
-  change24hPercent,
-  high24h,
-  low24h,
-  pairData,
-}: MarketStats) {
+type Props = {
+  marketNames: string[];
+};
+
+export function StatsBar({ marketNames }: Props) {
   const [selectedMarket, setSelectedMarket] = useState<string>(marketNames[0]);
+  const marketData = useMarketData(selectedMarket);
 
   return (
     <div className="flex border-b border-neutral-600 bg-black px-4 py-2">
@@ -61,8 +59,8 @@ export function StatsBar({
             Last price
           </span>
           <p className="font-roboto-mono font-light">
-            <span className="text-white">${lastPrice}</span>
-            <span className="ml-8 text-green-500">{lastPriceChange}</span>
+            <span className="text-white">${data.lastPrice}</span>
+            <span className="ml-8 text-green-500">{data.lastPriceChange}</span>
           </p>
         </div>
         {/* 24 hr */}
@@ -71,8 +69,10 @@ export function StatsBar({
             24h change
           </span>
           <p className="font-roboto-mono font-light">
-            <span className="text-white">${change24h}</span>
-            <span className="ml-8 text-green-500">{change24hPercent}%</span>
+            <span className="text-white">${data.change24h}</span>
+            <span className="ml-8 text-green-500">
+              {data.change24hPercent}%
+            </span>
           </p>
         </div>
         {/* 24 hr high */}
@@ -81,7 +81,7 @@ export function StatsBar({
             24h high
           </span>
           <p className="font-roboto-mono font-light">
-            <span className="text-white">${high24h}</span>
+            <span className="text-white">${data.high24h}</span>
           </p>
         </div>
         {/* 24 hr low */}
@@ -90,25 +90,25 @@ export function StatsBar({
             24h low
           </span>
           <p className="font-roboto-mono font-light">
-            <span className="text-white">${low24h}</span>
+            <span className="text-white">${data.low24h}</span>
           </p>
         </div>
         {/* 24 hr main */}
         <div className="mb-1 ml-8">
           <span className="font-roboto-mono text-xs font-light uppercase text-neutral-400">
-            24h volume ({pairData.baseAsset})
+            24h volume ({data.pairData.baseAsset})
           </span>
           <p className="font-roboto-mono font-light">
-            <span className="text-white">${pairData.baseVolume}</span>
+            <span className="text-white">${data.pairData.baseVolume}</span>
           </p>
         </div>
         {/* 24 hr pair */}
         <div className="mb-1 ml-8">
           <span className="font-roboto-mono text-xs font-light uppercase text-neutral-400">
-            24h volume ({pairData.quoteAsset})
+            24h volume ({data.pairData.quoteAsset})
           </span>
           <p className="font-roboto-mono font-light">
-            <span className="text-white">${pairData.quoteVolume}</span>
+            <span className="text-white">${data.pairData.quoteVolume}</span>
           </p>
         </div>
         {/* end stats */}
@@ -120,8 +120,20 @@ export function StatsBar({
   );
 }
 
+// MOCK FUNCTIONS + DATA
+export const useMarketData = (market: string): UseQueryResult<MarketStats> => {
+  // we use react query to use async code in hooks
+  // i understand now !!
+  return useQuery(
+    ["marketStats", market],
+    async () => {
+      return STATS_BAR_MOCK_DATA;
+    },
+    { keepPreviousData: true, refetchOnWindowFocus: false }
+  );
+};
+
 const STATS_BAR_MOCK_DATA: MarketStats = {
-  marketNames: ["APT-tUSDC", "tETH-tUSDC", "APT-tETH", "APT-PERP"],
   lastPrice: 10.17,
   change24h: 10.173,
   high24h: 11.1681,

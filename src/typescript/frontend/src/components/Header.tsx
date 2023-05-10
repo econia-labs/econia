@@ -1,6 +1,40 @@
+import { ArrowRightIcon } from "@heroicons/react/20/solid";
 import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/router";
+import React, { PropsWithChildren } from "react";
+
+const NavItem: React.FC<
+  PropsWithChildren<{ href: string; active?: boolean; external?: boolean }>
+> = ({ href, active, external, children }) => {
+  const extraLinkProps = external
+    ? { target: "_blank", rel: "noopener noreferrer" }
+    : {};
+
+  return (
+    <Link
+      href={href}
+      {...extraLinkProps}
+      className={`cursor-pointer font-roboto-mono text-lg font-medium uppercase tracking-wide text-neutral-500 transition-all hover:text-purple ${
+        active ? "text-neutral-100" : ``
+      }`}
+    >
+      {children}
+    </Link>
+  );
+};
+
+const NavItemDivider: React.FC = () => {
+  return (
+    <p className="interact cursor-default font-roboto-mono text-xl font-medium uppercase tracking-wide text-neutral-600">
+      /
+    </p>
+  );
+};
 
 export function Header() {
+  const router = useRouter();
+
   return (
     <header className="flex flex-col border-b border-neutral-600 bg-black">
       <nav className="flex items-center justify-between px-8 py-6">
@@ -14,28 +48,26 @@ export function Header() {
             priority
           />
         </div>
-        <div className="flex space-x-3">
-          <p className="font-lg font-roboto-mono font-light uppercase tracking-wide text-white hover:text-neutral-400">
+        <div className="flex items-center gap-5">
+          <NavItem href="/swap" active={router.pathname.startsWith("/swap")}>
             Swap
-          </p>
-          <p className="font-lg font-roboto-mono font-light uppercase tracking-wide text-neutral-600">
-            /
-          </p>
-          <p className="font-lg font-roboto-mono font-light uppercase tracking-wide text-white hover:text-neutral-400">
+          </NavItem>
+          <NavItemDivider />
+          <NavItem href="/trade" active={router.pathname.startsWith("/trade")}>
             Trade
-          </p>
-          <p className="font-lg font-roboto-mono font-light uppercase tracking-wide text-neutral-600">
-            /
-          </p>
-          <p className="font-lg font-roboto-mono font-light uppercase tracking-wide text-white hover:text-neutral-400">
+          </NavItem>
+          <NavItemDivider />
+          <NavItem
+            href="/faucet"
+            active={router.pathname.startsWith("/faucet")}
+          >
             Faucet
-          </p>
-          <p className="font-lg font-roboto-mono font-light uppercase tracking-wide text-neutral-600">
-            /
-          </p>
-          <p className="font-lg font-roboto-mono font-light uppercase tracking-wide text-white hover:text-neutral-400">
+          </NavItem>
+          <NavItemDivider />
+          <NavItem href="https://econia.dev" external>
             Docs
-          </p>
+            <ArrowRightIcon className="ml-1 inline-block h-3 w-3 -rotate-45" />
+          </NavItem>
         </div>
         <div className="flex flex-1 justify-end">
           <p className="font-roboto-mono text-white">Socials</p>

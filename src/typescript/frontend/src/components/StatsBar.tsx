@@ -33,6 +33,7 @@ export function StatsBar({ marketNames }: Props) {
             </Listbox.Options>
           </div>
         </Listbox>
+        {/* price */}
         <div className="mb-1 ml-8">
           <span className="font-roboto-mono text-xs font-light uppercase text-neutral-400">
             Last price
@@ -42,6 +43,53 @@ export function StatsBar({ marketNames }: Props) {
             <span className="ml-8 text-green-500">+0.00</span>
           </p>
         </div>
+        {/* 24 hr */}
+        <div className="mb-1 ml-8">
+          <span className="font-roboto-mono text-xs font-light uppercase text-neutral-400">
+            24h change
+          </span>
+          <p className="font-roboto-mono font-light">
+            <span className="text-white">$0.00</span>
+            <span className="ml-8 text-green-500">+0.00</span>
+          </p>
+        </div>
+        {/* 24 hr high */}
+        <div className="mb-1 ml-8">
+          <span className="font-roboto-mono text-xs font-light uppercase text-neutral-400">
+            24h high
+          </span>
+          <p className="font-roboto-mono font-light">
+            <span className="text-white">$0.00</span>
+          </p>
+        </div>
+        {/* 24 hr low */}
+        <div className="mb-1 ml-8">
+          <span className="font-roboto-mono text-xs font-light uppercase text-neutral-400">
+            24h low
+          </span>
+          <p className="font-roboto-mono font-light">
+            <span className="text-white">$0.00</span>
+          </p>
+        </div>
+        {/* 24 hr main */}
+        <div className="mb-1 ml-8">
+          <span className="font-roboto-mono text-xs font-light uppercase text-neutral-400">
+            24h volume (APT)
+          </span>
+          <p className="font-roboto-mono font-light">
+            <span className="text-white">$0.00</span>
+          </p>
+        </div>
+        {/* 24 hr pair */}
+        <div className="mb-1 ml-8">
+          <span className="font-roboto-mono text-xs font-light uppercase text-neutral-400">
+            24h volume (USDC)
+          </span>
+          <p className="font-roboto-mono font-light">
+            <span className="text-white">$0.00</span>
+          </p>
+        </div>
+        {/* end stats */}
       </div>
       <div className="my-auto">
         <WalletSelector />

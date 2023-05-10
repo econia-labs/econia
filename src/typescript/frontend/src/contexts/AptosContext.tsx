@@ -1,5 +1,6 @@
 import { AptosClient } from "aptos";
 import { createContext, type PropsWithChildren, useContext } from "react";
+
 import { RPC_NODE_URL } from "@/env";
 
 export type AptosContextState = {

@@ -1,8 +1,9 @@
+import type { GetStaticPaths, GetStaticProps } from "next";
+
 import { Page } from "@/components/Page";
 import { StatsBar } from "@/components/StatsBar";
 import { API_URL } from "@/env";
 import type { ApiMarket } from "@/types/api";
-import { GetStaticPaths, GetStaticProps } from "next";
 
 type Props = {
   marketData: ApiMarket | undefined;

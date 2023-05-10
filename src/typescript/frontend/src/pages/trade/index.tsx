@@ -1,9 +1,9 @@
 import { type GetStaticProps } from "next";
-
-import { type ApiMarket } from "@/types/api";
-import { API_URL } from "@/env";
 import { useRouter } from "next/router";
+
 import { Page } from "@/components/Page";
+import { API_URL } from "@/env";
+import { type ApiMarket } from "@/types/api";
 
 type Props = {
   marketData: ApiMarket[];

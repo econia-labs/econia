@@ -1,9 +1,9 @@
 import { type GetStaticProps } from "next";
-
-import { type ApiMarket } from "@/types/api";
-import { Page } from "@/components/Page";
-import { Button } from "@/components/Button";
 import React from "react";
+
+import { Button } from "@/components/Button";
+import { Page } from "@/components/Page";
+import { type ApiMarket } from "@/types/api";
 
 const FaucetCard: React.FC<{ symbol: string }> = ({ symbol }) => {
   return (
@@ -15,7 +15,7 @@ const FaucetCard: React.FC<{ symbol: string }> = ({ symbol }) => {
   );
 };
 
-export default function Faucet({ marketData }: { marketData: ApiMarket[] }) {
+export default function Faucet({ marketData: _ }: { marketData: ApiMarket[] }) {
   return (
     <Page>
       <main className="mt-96 flex items-center justify-center gap-8">

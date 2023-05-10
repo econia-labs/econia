@@ -12,7 +12,7 @@ use crate::{error::ApiError, AppState};
 /// Query parameters for the orderbook endpoint.
 #[derive(Debug, Deserialize)]
 pub struct OrderbookParams {
-    depth: i64,
+    depth: u32,
 }
 
 #[derive(Debug, Serialize)]
@@ -31,6 +31,7 @@ pub async fn get_orderbook(
     }
 
     let market_id = BigDecimal::from(market_id);
+    let depth = i64::from(params.depth);
 
     // TODO: why does sqlx need a non-null assertion here to consider this of
     // type BigDecimal rather than Option<Decimal>?
@@ -47,7 +48,7 @@ pub async fn get_orderbook(
         group by price order by price desc limit $2;
         "#,
         market_id,
-        params.depth
+        depth
     )
     .fetch_all(&state.pool)
     .await?;
@@ -66,7 +67,7 @@ pub async fn get_orderbook(
         group by price order by price limit $2;
         "#,
         market_id,
-        params.depth
+        depth
     )
     .fetch_all(&state.pool)
     .await?;

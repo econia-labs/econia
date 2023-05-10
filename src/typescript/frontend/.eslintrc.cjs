@@ -28,7 +28,7 @@ const config = {
       { argsIgnorePattern: "^_", destructuredArrayIgnorePattern: "^_" },
     ],
     "@typescript-eslint/consistent-type-imports": [
-      "error",
+      "warn",
       { prefer: "type-imports", fixStyle: "inline-type-imports" },
     ],
     "simple-import-sort/imports": "warn",

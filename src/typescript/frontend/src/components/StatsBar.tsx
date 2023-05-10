@@ -147,3 +147,19 @@ const STATS_BAR_MOCK_DATA: MarketStats = {
   lastPriceChange: 0,
   change24hPercent: 0,
 };
+
+// UTIL FUNCTIONS
+
+// format number to dollar
+const formatDollar = (num: number, digits = 2): string => {
+  const roundedNum = num.toFixed(digits);
+  const parts = roundedNum.split(".");
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return parts.join(".");
+};
+
+// formatDollar but with + or - sign
+const formatDollarWithPlusMinus = (num: number, digits = 2): string => {
+  const formattedNum = formatDollar(num, digits);
+  return num >= 0 ? `+\${formattedNum}` : formattedNum;
+};

@@ -39,14 +39,16 @@ export function Header() {
     <header className="flex flex-col border-b border-neutral-600 bg-black">
       <nav className="flex items-center justify-between px-8 py-6">
         <div className="my-auto flex-1 items-center">
-          <Image
-            className=""
-            alt="Econia Logo"
-            src="/econia.svg"
-            width={120}
-            height={20}
-            priority
-          />
+          <Link href="/">
+            <Image
+              className=""
+              alt="Econia Logo"
+              src="/econia.svg"
+              width={120}
+              height={20}
+              priority
+            />
+          </Link>
         </div>
         <div className="flex items-center gap-5">
           <NavItem href="/swap" active={router.pathname.startsWith("/swap")}>

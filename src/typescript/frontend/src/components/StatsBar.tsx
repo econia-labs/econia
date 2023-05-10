@@ -64,7 +64,11 @@ export function StatsBar({ marketNames }: Props) {
                   render right if left is undefined */}
               ${marketData.data?.lastPrice || "-"}
             </span>
-            <span className="ml-8 text-green-500">
+            <span
+              className={`ml-8 ${colorBasedOnNumber(
+                marketData.data?.lastPriceChange
+              )}`}
+            >
               {marketData.data?.lastPriceChange || "-"}
             </span>
           </p>
@@ -78,7 +82,11 @@ export function StatsBar({ marketNames }: Props) {
             <span className="text-white">
               {marketData.data?.change24h || "-"}
             </span>
-            <span className="ml-8 text-green-500">
+            <span
+              className={`ml-8 ${colorBasedOnNumber(
+                marketData.data?.change24hPercent
+              )}`}
+            >
               {marketData.data?.change24hPercent || "-"}%
             </span>
           </p>
@@ -196,6 +204,14 @@ const formatDecimal = (num: string, digits = 2): string => {
 // formatDecimal but with + or - sign
 const formatDecimalWithPlusMinus = (num: string, digits = 2): string => {
   const formattedNum = formatDecimal(num, digits);
-  console.log(formattedNum);
   return Number(num) >= 0 ? `+${formattedNum}` : formattedNum;
+};
+
+const colorBasedOnNumber = (num: string | undefined): string => {
+  if (!num) return "text-green-500";
+
+  if (num[0] === "+") return "text-green-500";
+  if (num[0] === "-") return "text-red-500";
+
+  return Number(num) < 0 ? "text-red-500" : "text-green-500";
 };

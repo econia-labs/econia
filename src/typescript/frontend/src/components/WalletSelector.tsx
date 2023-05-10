@@ -1,6 +1,7 @@
 import { Dialog, Transition } from "@headlessui/react";
 import { useWallet, WalletReadyState } from "@manahippo/aptos-wallet-adapter";
 import { Fragment, useEffect, useState } from "react";
+import { Button } from "./Button";
 
 export function WalletSelector() {
   const { account, connect, disconnect, select, wallet, wallets, connected } =
@@ -20,19 +21,13 @@ export function WalletSelector() {
   return (
     <>
       {!connected ? (
-        <button
-          className="border bg-white px-4 py-1 font-roboto-mono text-sm font-semibold uppercase tracking-tight hover:bg-neutral-300"
-          onClick={() => setIsOpen(true)}
-        >
+        <Button variant="primary" onClick={() => setIsOpen(true)}>
           Connect Wallet
-        </button>
+        </Button>
       ) : (
-        <button
-          className="border border-neutral-400 bg-black px-4 py-1 font-roboto-mono text-sm font-semibold uppercase tracking-tight text-neutral-400 hover:bg-neutral-800"
-          onClick={() => disconnect()}
-        >
+        <Button variant="outlined" onClick={() => disconnect()}>
           Disconnect
-        </button>
+        </Button>
       )}
       <Transition appear show={isOpen} as={Fragment}>
         <Dialog

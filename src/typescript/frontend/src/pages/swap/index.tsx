@@ -33,7 +33,9 @@ export default function Swap() {
                 <p>- tETH</p>
               </div>
             </div>
-            <Button className="mt-4">Enter an amount</Button>
+            <Button variant="primary" className="mt-4">
+              Enter an amount
+            </Button>
           </div>
         </div>
       </div>

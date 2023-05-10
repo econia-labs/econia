@@ -9,5 +9,6 @@ pkgs.mkShell {
   shellHook = ''
     alias pd='pnpm run dev'
     alias pb='pnpm run build'
+    alias pl='pnpm run lint'
   '';
 }

@@ -12,8 +12,8 @@ export function OrderEntry() {
           onClick={() => setSelectedSide("buy")}
           className={`mx-1 w-full border py-1 font-jost ${
             selectedSide == "buy"
-              ? "border-green-400 border-opacity-80 text-green-400"
-              : "border-neutral-500 bg-neutral-900 text-neutral-500"
+              ? "border-green-400 text-green-400 border-opacity-80"
+              : "bg-neutral-900 border-neutral-500 text-neutral-500"
           }`}
         >
           Buy
@@ -23,7 +23,7 @@ export function OrderEntry() {
           className={`mx-1 w-full border font-jost ${
             selectedSide == "sell"
               ? "border-red-400 border-opacity-80 text-red-400"
-              : "border-neutral-500 bg-neutral-900 text-neutral-500"
+              : "bg-neutral-900 border-neutral-500 text-neutral-500"
           }`}
         >
           Sell

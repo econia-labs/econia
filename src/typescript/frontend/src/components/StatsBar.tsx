@@ -34,8 +34,8 @@ export function StatsBar({ marketNames }: Props) {
   const isLoaded = marketData.isFetched;
 
   return (
-    <div className="flex border-b border-neutral-600 bg-black px-9 py-4">
-      <div className="flex flex-1 items-center [&>.stat]:mx-7 [&>.stat]:mb-1">
+    <div className="flex overflow-hidden border-b border-neutral-600 bg-black px-9 py-4">
+      <div className="flex flex-1 items-center whitespace-nowrap  [&>.mobile-stat]:block md:[&>.mobile-stat]:hidden [&>.stat]:mx-7 [&>.stat]:mb-1 [&>.stat]:hidden md:[&>.stat]:block ">
         <>
           <MarketIconPair
             baseAssetIcon={marketData.data?.pairData.baseAssetIcon}
@@ -43,7 +43,7 @@ export function StatsBar({ marketNames }: Props) {
           />
           <Listbox value={selectedMarket} onChange={setSelectedMarket}>
             <div className="relative ml-10 mr-7 min-w-[170px]">
-              <Listbox.Button className="flex  font-roboto-mono text-2xl text-neutral-300">
+              <Listbox.Button className="flex font-roboto-mono text-xl text-neutral-300 md:text-2xl">
                 {/* BANDAGE FIX,  */}
                 {/* TODO: FIGURE OUT WHAT API PASSES MARKET AS */}
                 {/* {selectedMarket} */}
@@ -64,19 +64,35 @@ export function StatsBar({ marketNames }: Props) {
             </div>
           </Listbox>
         </>
+        {/* mobile price */}
+
+        <div className="mobile-stat block">
+          <p className="font-roboto-mono font-light">
+            <span className="inline-block min-w-[4em] text-xl text-white">
+              ${marketData.data?.lastPrice || "-"}
+            </span>
+            <span
+              className={`ml-1 inline-block min-w-[6em] text-base ${colorBasedOnNumber(
+                marketData.data?.lastPriceChange
+              )}`}
+            >
+              {marketData.data?.lastPriceChange || "-"}
+            </span>
+          </p>
+        </div>
         {/* price */}
         <div className="stat">
           <span className="font-roboto-mono text-base font-light uppercase text-neutral-400">
             Last price
           </span>
           <p className="font-roboto-mono font-light">
-            <span className="inline-block w-[6em] text-white">
+            <span className="inline-block min-w-[6em] text-white">
               {/* render left if it is defined
                   render right if left is undefined */}
               ${marketData.data?.lastPrice || "-"}
             </span>
             <span
-              className={`inline-block w-[6em] ${colorBasedOnNumber(
+              className={`ml-1 inline-block min-w-[6em] ${colorBasedOnNumber(
                 marketData.data?.lastPriceChange
               )}`}
             >
@@ -90,11 +106,11 @@ export function StatsBar({ marketNames }: Props) {
             24h change
           </span>
           <p className="font-roboto-mono font-light">
-            <span className="inline-block w-[6em] text-white">
+            <span className="inline-block min-w-[6em] text-white">
               {marketData.data?.change24h || "-"}
             </span>
             <span
-              className={`inline-block w-[4em] ${colorBasedOnNumber(
+              className={`ml-1 inline-block min-w-[4em] ${colorBasedOnNumber(
                 marketData.data?.change24hPercent
               )}`}
             >
@@ -145,7 +161,7 @@ export function StatsBar({ marketNames }: Props) {
           </p>
         </div>
       </div>
-      <div className="my-auto">
+      <div className="my-auto hidden md:block">
         <SocialMediaIcons />
       </div>
     </div>
@@ -257,14 +273,14 @@ const MarketIconPair = ({
         alt="market-icon-pair"
         width={40}
         height={40}
-        className="z-[2] aspect-square"
+        className="z-[2] aspect-square  w-[30px] min-w-[30px] md:min-w-[40px]"
       ></Image>
       <Image
         src={quoteAssetIcon}
         alt="market-icon-pair"
         width={40}
         height={40}
-        className="absolute z-[1] aspect-square translate-x-1/2"
+        className="absolute z-[1] aspect-square w-[30px] min-w-[30px] translate-x-1/2 md:min-w-[40px]"
       ></Image>
     </div>
   );
@@ -280,7 +296,7 @@ const SocialMediaIcons = () => {
           alt="twitter-icon"
           width={28}
           height={28}
-          className="mx-3 aspect-square cursor-pointer"
+          className="mx-3 aspect-square h-[28px] min-w-[28px] cursor-pointer"
         ></Image>
       </a>
 
@@ -290,7 +306,7 @@ const SocialMediaIcons = () => {
           alt="discord-icon"
           width={28}
           height={28}
-          className="mx-3 aspect-square cursor-pointer"
+          className="mx-3 aspect-square h-[28px] min-w-[28px] cursor-pointer"
         ></Image>
       </a>
 
@@ -300,7 +316,7 @@ const SocialMediaIcons = () => {
           alt="medium-icon"
           width={28}
           height={28}
-          className="mx-3 aspect-square cursor-pointer"
+          className="mx-3 aspect-square h-[28px] min-w-[28px] cursor-pointer"
         ></Image>
       </a>
     </div>

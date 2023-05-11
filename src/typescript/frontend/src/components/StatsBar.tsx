@@ -2,6 +2,10 @@ import { Listbox } from "@headlessui/react";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import { useState } from "react";
 
+import { DiscordIcon } from "./icons/DiscordIcon";
+import { MediumIcon } from "./icons/MediumIcon";
+import { TwitterIcon } from "./icons/TwitterIcon";
+
 type Props = {
   marketNames: string[];
 };
@@ -42,8 +46,16 @@ export function StatsBar({ marketNames }: Props) {
         </div>
       </div>
       <div className="my-auto">
-        <div className="flex flex-1 justify-end">
-          <p className="font-roboto-mono text-white">Socials</p>
+        <div className="flex flex-1 justify-end space-x-6 pr-6">
+          <span className="h-6 w-6 text-white hover:text-purple">
+            <TwitterIcon />
+          </span>
+          <span className="h-6 w-6 text-white hover:text-purple">
+            <DiscordIcon />
+          </span>
+          <span className="h-6 w-6 text-white hover:text-purple">
+            <MediumIcon />
+          </span>
         </div>
       </div>
     </div>

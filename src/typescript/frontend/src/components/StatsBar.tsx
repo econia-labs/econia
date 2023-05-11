@@ -39,7 +39,7 @@ export function StatsBar({ marketNames }: Props) {
           </span>
           <p className="font-roboto-mono font-light">
             <span className="text-white">$0.00</span>
-            <span className="ml-8 text-green-500">+0.00</span>
+            <span className="text-green-500 ml-8">+0.00</span>
           </p>
         </div>
       </div>

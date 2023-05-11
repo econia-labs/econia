@@ -15,7 +15,7 @@ export default function Swap() {
           </div>
           <div className="mt-8 flex flex-col items-center gap-4 border p-8 text-center text-sm text-white">
             <Input placeholder="0.0000" />
-            <div className="cursor-pointer [&>svg>path]:hover:fill-purple-700">
+            <div className="[&>svg>path]:hover:fill-purple-700 cursor-pointer">
               <SyncIcon className="fill-current" />
             </div>
             <Input placeholder="0.0000" />

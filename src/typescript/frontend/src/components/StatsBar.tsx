@@ -273,14 +273,14 @@ const MarketIconPair = ({
         alt="market-icon-pair"
         width={40}
         height={40}
-        className="z-[2] aspect-square  w-[30px] min-w-[30px] md:min-w-[40px]"
+        className="z-20 aspect-square  w-[30px] min-w-[30px] md:min-w-[40px]"
       ></Image>
       <Image
         src={quoteAssetIcon}
         alt="market-icon-pair"
         width={40}
         height={40}
-        className="absolute z-[1] aspect-square w-[30px] min-w-[30px] translate-x-1/2 md:min-w-[40px]"
+        className="absolute z-10 aspect-square w-[30px] min-w-[30px] translate-x-1/2 md:min-w-[40px]"
       ></Image>
     </div>
   );

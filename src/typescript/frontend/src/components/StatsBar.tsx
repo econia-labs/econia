@@ -2,8 +2,11 @@ import { Listbox } from "@headlessui/react";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { useState } from "react";
+import Image from "next/image";
 
 import { WalletSelector } from "./WalletSelector";
+
+const DEFAULT_TOKEN_ICON = "/tokenImages/default.png";
 
 type MarketStats = {
   // selected market pair data
@@ -16,11 +19,12 @@ type MarketStats = {
   pairData: {
     baseAsset: string;
     quoteAsset: string;
+    baseAssetIcon: string;
+    quoteAssetIcon: string;
     baseVolume: string;
     quoteVolume: string;
   };
 };
-// marketNames: ["APT-tUSDC", "tETH-tUSDC", "APT-tETH", "APT-PERP"],
 
 type Props = {
   marketNames: string[];
@@ -34,25 +38,31 @@ export function StatsBar({ marketNames }: Props) {
   return (
     <div className="flex border-b border-neutral-600 bg-black px-4 py-2">
       <div className="flex flex-1 items-center">
-        <Listbox value={selectedMarket} onChange={setSelectedMarket}>
-          <div className="relative w-[160px]">
-            <Listbox.Button className="flex px-4 font-roboto-mono text-neutral-300">
-              {selectedMarket}
-              <ChevronDownIcon className="my-auto ml-1 h-5 w-5 text-neutral-500" />
-            </Listbox.Button>
-            <Listbox.Options className="absolute mt-2 w-full bg-black shadow ring-1 ring-neutral-500">
-              {marketNames.map((marketName, i) => (
-                <Listbox.Option
-                  key={i}
-                  value={marketName}
-                  className="px-4 py-1 font-roboto-mono text-neutral-300 hover:bg-neutral-800"
-                >
-                  {marketName}
-                </Listbox.Option>
-              ))}
-            </Listbox.Options>
-          </div>
-        </Listbox>
+        <>
+          <MarketIconPair
+            baseAssetIcon={marketData.data?.pairData.baseAssetIcon}
+            quoteAssetIcon={marketData.data?.pairData.quoteAssetIcon}
+          />
+          <Listbox value={selectedMarket} onChange={setSelectedMarket}>
+            <div className="relative w-[160px]">
+              <Listbox.Button className="flex px-4 font-roboto-mono text-neutral-300">
+                {selectedMarket}
+                <ChevronDownIcon className="my-auto ml-1 h-5 w-5 text-neutral-500" />
+              </Listbox.Button>
+              <Listbox.Options className="absolute mt-2 w-full bg-black shadow ring-1 ring-neutral-500">
+                {marketNames.map((marketName, i) => (
+                  <Listbox.Option
+                    key={i}
+                    value={marketName}
+                    className="px-4 py-1 font-roboto-mono text-neutral-300 hover:bg-neutral-800"
+                  >
+                    {marketName}
+                  </Listbox.Option>
+                ))}
+              </Listbox.Options>
+            </div>
+          </Listbox>
+        </>
         {/* price */}
         <div className="mb-1 ml-8">
           <span className="font-roboto-mono text-xs font-light uppercase text-neutral-400">
@@ -148,6 +158,13 @@ export const useMarketData = (market: string): UseQueryResult<MarketStats> => {
   return useQuery(
     ["marketStats", market],
     async () => {
+      // MOCK API CALL
+      const baseAsset = market.split("-")[0];
+      const quoteAsset = market.split("-")[1];
+      function timeout(ms: number | undefined) {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+      }
+      await timeout(1000);
       const {
         lastPrice,
         change24h,
@@ -157,6 +174,7 @@ export const useMarketData = (market: string): UseQueryResult<MarketStats> => {
         lastPriceChange,
         change24hPercent,
       } = STATS_BAR_MOCK_DATA;
+      // END MOCK API CALL
       return {
         lastPrice: formatDecimal(lastPrice),
         lastPriceChange: formatDecimalWithPlusMinus(lastPriceChange, 4),
@@ -165,8 +183,10 @@ export const useMarketData = (market: string): UseQueryResult<MarketStats> => {
         high24h: formatDecimal(high24h, 4),
         low24h: formatDecimal(low24h, 4),
         pairData: {
-          baseAsset: pairData.baseAsset,
-          quoteAsset: pairData.quoteAsset,
+          baseAsset: baseAsset,
+          quoteAsset: quoteAsset,
+          baseAssetIcon: pairData.baseAssetIcon,
+          quoteAssetIcon: pairData.quoteAssetIcon,
           baseVolume: formatDecimal(pairData.baseVolume),
           quoteVolume: formatDecimal(pairData.quoteVolume),
         },
@@ -179,13 +199,16 @@ export const useMarketData = (market: string): UseQueryResult<MarketStats> => {
 const STATS_BAR_MOCK_DATA: MarketStats = {
   lastPrice: "10.17",
   lastPriceChange: "10.1738",
-  change24h: "10.173",
+  change24h: "-.9305",
   change24hPercent: "-8.38",
   high24h: "11.1681",
   low24h: "9.85",
   pairData: {
-    baseAsset: "APT",
-    quoteAsset: "USDC",
+    // asset names here don't matter for testing purposes
+    baseAsset: "doesn't",
+    quoteAsset: "matter",
+    baseAssetIcon: "/tokenImages/APT.png",
+    quoteAssetIcon: "/tokenImages/USD.png",
     baseVolume: "6531688.77",
     quoteVolume: "68026950.84",
   },
@@ -214,4 +237,34 @@ const colorBasedOnNumber = (num: string | undefined): string => {
   if (num[0] === "-") return "text-red-500";
 
   return Number(num) < 0 ? "text-red-500" : "text-green-500";
+};
+
+type MarketIconPairProps = {
+  baseAssetIcon?: string;
+  quoteAssetIcon?: string;
+};
+const MarketIconPair = ({
+  baseAssetIcon = DEFAULT_TOKEN_ICON,
+  quoteAssetIcon = DEFAULT_TOKEN_ICON,
+}: MarketIconPairProps) => {
+  console.log(baseAssetIcon, quoteAssetIcon);
+  return (
+    <div className="relative flex">
+      {/* height width props required */}
+      <Image
+        src={baseAssetIcon}
+        alt="market-icon-pair"
+        width={40}
+        height={40}
+        className="z-[2] aspect-square"
+      ></Image>
+      <Image
+        src={quoteAssetIcon}
+        alt="market-icon-pair"
+        width={40}
+        height={40}
+        className="absolute z-[1] aspect-square translate-x-1/2"
+      ></Image>
+    </div>
+  );
 };

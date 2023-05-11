@@ -1,8 +1,12 @@
 import { ArrowRightIcon } from "@heroicons/react/20/solid";
+import { useWallet } from "@manahippo/aptos-wallet-adapter";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import React, { type PropsWithChildren } from "react";
+
+import { Button } from "./Button";
+import { ConnectedButton } from "./ConnectedButton";
 
 const NavItem: React.FC<
   PropsWithChildren<{ href: string; active?: boolean; external?: boolean }>
@@ -43,6 +47,7 @@ const NavItemDivider: React.FC = () => {
 };
 
 export function Header() {
+  const { disconnect } = useWallet();
   const router = useRouter();
 
   return (
@@ -60,7 +65,7 @@ export function Header() {
             />
           </Link>
         </div>
-        <div className="flex items-center gap-5">
+        <div className="flex flex-1 items-center justify-center gap-5">
           <NavItem href="/swap" active={router.pathname.startsWith("/swap")}>
             Swap
           </NavItem>
@@ -82,7 +87,11 @@ export function Header() {
           </NavItem>
         </div>
         <div className="flex flex-1 justify-end">
-          <p className="font-roboto-mono text-white">Socials</p>
+          <ConnectedButton>
+            <Button variant="outlined" onClick={() => disconnect()}>
+              Disconnect
+            </Button>
+          </ConnectedButton>
         </div>
       </nav>
     </header>

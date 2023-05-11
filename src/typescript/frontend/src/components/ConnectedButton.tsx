@@ -1,12 +1,18 @@
 import { Dialog, Transition } from "@headlessui/react";
 import { useWallet, WalletReadyState } from "@manahippo/aptos-wallet-adapter";
-import { Fragment, useEffect, useState } from "react";
+import React, {
+  Fragment,
+  type PropsWithChildren,
+  useEffect,
+  useState,
+} from "react";
 
 import { Button } from "./Button";
 
-export function WalletSelector() {
-  const { account, connect, disconnect, select, wallet, wallets, connected } =
-    useWallet();
+export const ConnectedButton: React.FC<
+  PropsWithChildren<{ className?: string }>
+> = ({ className, children }) => {
+  const { account, connect, select, wallet, wallets, connected } = useWallet();
   const [isOpen, setIsOpen] = useState<boolean>(false);
 
   useEffect(() => {
@@ -22,14 +28,17 @@ export function WalletSelector() {
   return (
     <>
       {!connected ? (
-        <Button variant="primary" onClick={() => setIsOpen(true)}>
+        <Button
+          className={className}
+          variant="primary"
+          onClick={() => setIsOpen(true)}
+        >
           Connect Wallet
         </Button>
       ) : (
-        <Button variant="outlined" onClick={() => disconnect()}>
-          Disconnect
-        </Button>
+        children
       )}
+      {/* TODO: Consider moving to useWallet context */}
       <Transition appear show={isOpen} as={Fragment}>
         <Dialog
           as="div"
@@ -114,4 +123,4 @@ export function WalletSelector() {
       </Transition>
     </>
   );
-}
+};

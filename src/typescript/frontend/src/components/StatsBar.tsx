@@ -34,8 +34,8 @@ export function StatsBar({ marketNames }: Props) {
   const isLoaded = marketData.isFetched;
 
   return (
-    <div className="flex border-b border-neutral-600 bg-black px-4 py-2">
-      <div className="flex flex-1 items-center">
+    <div className="flex border-b border-neutral-600 bg-black px-4 py-4">
+      <div className="flex flex-1 items-center [&>.stat]:mx-7 [&>.stat]:mb-1">
         <>
           <MarketIconPair
             baseAssetIcon={marketData.data?.pairData.baseAssetIcon}
@@ -62,18 +62,18 @@ export function StatsBar({ marketNames }: Props) {
           </Listbox>
         </>
         {/* price */}
-        <div className="mb-1 ml-8">
-          <span className="font-roboto-mono text-xs font-light uppercase text-neutral-400">
+        <div className="stat">
+          <span className="font-roboto-mono text-base font-light uppercase text-neutral-400">
             Last price
           </span>
           <p className="font-roboto-mono font-light">
-            <span className="text-white">
+            <span className="inline-block w-[6em] text-white">
               {/* render left if it is defined
                   render right if left is undefined */}
               ${marketData.data?.lastPrice || "-"}
             </span>
             <span
-              className={`ml-8 ${colorBasedOnNumber(
+              className={`inline-block w-[6em] ${colorBasedOnNumber(
                 marketData.data?.lastPriceChange
               )}`}
             >
@@ -82,16 +82,16 @@ export function StatsBar({ marketNames }: Props) {
           </p>
         </div>
         {/* 24 hr */}
-        <div className="mb-1 ml-8">
-          <span className="font-roboto-mono text-xs font-light uppercase text-neutral-400">
+        <div className="stat">
+          <span className="font-roboto-mono text-base font-light uppercase text-neutral-400">
             24h change
           </span>
           <p className="font-roboto-mono font-light">
-            <span className="text-white">
+            <span className="inline-block w-[6em] text-white">
               {marketData.data?.change24h || "-"}
             </span>
             <span
-              className={`ml-8 ${colorBasedOnNumber(
+              className={`inline-block w-[4em] ${colorBasedOnNumber(
                 marketData.data?.change24hPercent
               )}`}
             >
@@ -100,46 +100,44 @@ export function StatsBar({ marketNames }: Props) {
           </p>
         </div>
         {/* 24 hr high */}
-        <div className="mb-1 ml-8">
-          <span className="font-roboto-mono text-xs font-light uppercase text-neutral-400">
+        <div className="stat">
+          <span className="font-roboto-mono text-base font-light uppercase text-neutral-400">
             24h high
           </span>
           <p className="font-roboto-mono font-light">
             <span className="text-white">
-              ${marketData.data?.high24h || "-"}
+              {marketData.data?.high24h || "-"}
             </span>
           </p>
         </div>
         {/* 24 hr low */}
-        <div className="mb-1 ml-8">
-          <span className="font-roboto-mono text-xs font-light uppercase text-neutral-400">
+        <div className="stat">
+          <span className="font-roboto-mono text-base font-light uppercase text-neutral-400">
             24h low
           </span>
           <p className="font-roboto-mono font-light">
-            <span className="text-white">
-              ${marketData.data?.low24h || "-"}
-            </span>
+            <span className="text-white">{marketData.data?.low24h || "-"}</span>
           </p>
         </div>
         {/* 24 hr main */}
-        <div className="mb-1 ml-8">
-          <span className="font-roboto-mono text-xs font-light uppercase text-neutral-400">
+        <div className="stat">
+          <span className="font-roboto-mono text-base font-light uppercase text-neutral-400">
             24h volume ({marketData.data?.pairData.baseAsset || "-"})
           </span>
           <p className="font-roboto-mono font-light">
             <span className="text-white">
-              ${marketData.data?.pairData.baseVolume || "-"}
+              {marketData.data?.pairData.baseVolume || "-"}
             </span>
           </p>
         </div>
         {/* 24 hr pair */}
-        <div className="mb-1 ml-8">
-          <span className="font-roboto-mono text-xs font-light uppercase text-neutral-400">
+        <div className="stat">
+          <span className="font-roboto-mono text-base font-light uppercase text-neutral-400">
             24h volume ({marketData.data?.pairData.quoteAsset || "-"})
           </span>
           <p className="font-roboto-mono font-light">
             <span className="text-white">
-              ${marketData.data?.pairData.quoteVolume || "-"}
+              {marketData.data?.pairData.quoteVolume || "-"}
             </span>
           </p>
         </div>

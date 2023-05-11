@@ -34,7 +34,7 @@ export function StatsBar({ marketNames }: Props) {
   const isLoaded = marketData.isFetched;
 
   return (
-    <div className="flex border-b border-neutral-600 bg-black px-4 py-4">
+    <div className="flex border-b border-neutral-600 bg-black px-9 py-4">
       <div className="flex flex-1 items-center [&>.stat]:mx-7 [&>.stat]:mb-1">
         <>
           <MarketIconPair
@@ -42,9 +42,12 @@ export function StatsBar({ marketNames }: Props) {
             quoteAssetIcon={marketData.data?.pairData.quoteAssetIcon}
           />
           <Listbox value={selectedMarket} onChange={setSelectedMarket}>
-            <div className="relative w-[160px]">
-              <Listbox.Button className="flex px-4 font-roboto-mono text-neutral-300">
-                {selectedMarket}
+            <div className="relative ml-10 mr-7 min-w-[170px]">
+              <Listbox.Button className="flex  font-roboto-mono text-2xl text-neutral-300">
+                {/* BANDAGE FIX,  */}
+                {/* TODO: FIGURE OUT WHAT API PASSES MARKET AS */}
+                {/* {selectedMarket} */}
+                {selectedMarket.split("-")[0]} - {selectedMarket.split("-")[1]}
                 <ChevronDownIcon className="my-auto ml-1 h-5 w-5 text-neutral-500" />
               </Listbox.Button>
               <Listbox.Options className="absolute mt-2 w-full bg-black shadow ring-1 ring-neutral-500">

@@ -46,16 +46,31 @@ export function StatsBar({ marketNames }: Props) {
         </div>
       </div>
       <div className="my-auto">
-        <div className="flex flex-1 justify-end space-x-6 pr-6">
-          <span className="h-6 w-6 text-white hover:text-purple">
+        <div className="mr-8 flex flex-1 justify-end space-x-6">
+          <a
+            href="https://twitter.com/EconiaLabs"
+            target="_blank"
+            rel="noreferrer"
+            className="h-6 w-6 text-white hover:text-purple"
+          >
             <TwitterIcon />
-          </span>
-          <span className="h-6 w-6 text-white hover:text-purple">
+          </a>
+          <a
+            href="https://discord.com/invite/Z7gXcMgX8A"
+            target="_blank"
+            rel="noreferrer"
+            className="h-6 w-6 text-white hover:text-purple"
+          >
             <DiscordIcon />
-          </span>
-          <span className="h-6 w-6 text-white hover:text-purple">
+          </a>
+          <a
+            href="https://medium.com/econialabs"
+            target="_blank"
+            rel="noreferrer"
+            className="h-6 w-6 text-white hover:text-purple"
+          >
             <MediumIcon />
-          </span>
+          </a>
         </div>
       </div>
     </div>

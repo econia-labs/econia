@@ -12,7 +12,7 @@ const NavItem: React.FC<
       <a
         href={href}
         target="_blank"
-        rel="noopener noreferrer"
+        rel="noreferrer"
         className={`cursor-pointer font-roboto-mono text-lg font-medium uppercase tracking-wide transition-all ${
           active ? "text-neutral-100" : "text-neutral-500 hover:text-purple"
         }`}

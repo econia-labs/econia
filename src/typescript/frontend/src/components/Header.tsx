@@ -2,21 +2,31 @@ import { ArrowRightIcon } from "@heroicons/react/20/solid";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import React, { PropsWithChildren } from "react";
+import React, { type PropsWithChildren } from "react";
 
 const NavItem: React.FC<
   PropsWithChildren<{ href: string; active?: boolean; external?: boolean }>
 > = ({ href, active, external, children }) => {
-  const extraLinkProps = external
-    ? { target: "_blank", rel: "noopener noreferrer" }
-    : {};
+  if (external) {
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noreferrer"
+        className={`cursor-pointer font-roboto-mono text-lg font-medium uppercase tracking-wide transition-all ${
+          active ? "text-neutral-100" : "text-neutral-500 hover:text-purple"
+        }`}
+      >
+        {children}
+      </a>
+    );
+  }
 
   return (
     <Link
       href={href}
-      {...extraLinkProps}
-      className={`cursor-pointer font-roboto-mono text-lg font-medium uppercase tracking-wide text-neutral-500 transition-all hover:text-purple ${
-        active ? "text-neutral-100" : ``
+      className={`cursor-pointer font-roboto-mono text-lg font-medium uppercase tracking-wide transition-all ${
+        active ? "text-neutral-100" : "text-neutral-500 hover:text-purple"
       }`}
     >
       {children}

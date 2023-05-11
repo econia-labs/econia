@@ -2,9 +2,9 @@ import { type GetStaticProps } from "next";
 import React from "react";
 
 import { Button } from "@/components/Button";
+import { ConnectedButton } from "@/components/ConnectedButton";
 import { Page } from "@/components/Page";
 import { type ApiMarket } from "@/types/api";
-import { ConnectedButton } from "@/components/ConnectedButton";
 
 const FaucetCard: React.FC<{ symbol: string }> = ({ symbol }) => {
   return (

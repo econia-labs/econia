@@ -1,6 +1,12 @@
 import { Dialog, Transition } from "@headlessui/react";
 import { useWallet, WalletReadyState } from "@manahippo/aptos-wallet-adapter";
-import React, { Fragment, PropsWithChildren, useEffect, useState } from "react";
+import React, {
+  Fragment,
+  type PropsWithChildren,
+  useEffect,
+  useState,
+} from "react";
+
 import { Button } from "./Button";
 
 export const ConnectedButton: React.FC<

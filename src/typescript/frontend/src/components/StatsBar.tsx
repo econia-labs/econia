@@ -48,7 +48,7 @@ export function StatsBar({ marketNames }: Props) {
                 {/* TODO: FIGURE OUT WHAT API PASSES MARKET AS */}
                 {/* {selectedMarket} */}
                 {selectedMarket.split("-")[0]} - {selectedMarket.split("-")[1]}
-                <ChevronDownIcon className="my-auto ml-1 h-5 w-5 text-neutral-500" />
+                <ChevronDownIcon className="my-auto ml-1 h-5 w-5 text-white" />
               </Listbox.Button>
               <Listbox.Options className="absolute mt-2 w-full bg-black shadow ring-1 ring-neutral-500">
                 {marketNames.map((marketName, i) => (
@@ -289,7 +289,7 @@ const MarketIconPair = ({
 // icons hardcoded for now
 const SocialMediaIcons = () => {
   return (
-    <div className="flex">
+    <div className="flex [&>a]:hover:text-blue-400">
       <a href="https://twitter.com" target="_blank">
         <Image
           src={"/socialIcons/Twitter.png"}

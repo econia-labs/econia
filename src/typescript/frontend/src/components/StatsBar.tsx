@@ -147,7 +147,7 @@ export function StatsBar({ marketNames }: Props) {
         </div>
       </div>
       <div className="my-auto">
-        <WalletSelector />
+        <SocialMediaIcons />
       </div>
     </div>
   );
@@ -247,7 +247,6 @@ const MarketIconPair = ({
   baseAssetIcon = DEFAULT_TOKEN_ICON,
   quoteAssetIcon = DEFAULT_TOKEN_ICON,
 }: MarketIconPairProps) => {
-  console.log(baseAssetIcon, quoteAssetIcon);
   return (
     <div className="relative flex">
       {/* height width props required */}
@@ -265,6 +264,43 @@ const MarketIconPair = ({
         height={40}
         className="absolute z-[1] aspect-square translate-x-1/2"
       ></Image>
+    </div>
+  );
+};
+
+// icons hardcoded for now
+const SocialMediaIcons = () => {
+  return (
+    <div className="flex">
+      <a href="https://twitter.com" target="_blank">
+        <Image
+          src={"/socialIcons/Twitter.png"}
+          alt="twitter-icon"
+          width={28}
+          height={28}
+          className="mx-3 aspect-square cursor-pointer"
+        ></Image>
+      </a>
+
+      <a href="https://discord.com" target="_blank">
+        <Image
+          src={"/socialIcons/Discord.png"}
+          alt="discord-icon"
+          width={28}
+          height={28}
+          className="mx-3 aspect-square cursor-pointer"
+        ></Image>
+      </a>
+
+      <a href="https://medium.com" target="_blank">
+        <Image
+          src={"/socialIcons/Medium.png"}
+          alt="medium-icon"
+          width={28}
+          height={28}
+          className="mx-3 aspect-square cursor-pointer"
+        ></Image>
+      </a>
     </div>
   );
 };

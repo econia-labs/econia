@@ -1,10 +1,8 @@
 import { Listbox } from "@headlessui/react";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
-import { useState } from "react";
 import Image from "next/image";
-
-import { WalletSelector } from "./WalletSelector";
+import { useState } from "react";
 
 const DEFAULT_TOKEN_ICON = "/tokenImages/default.png";
 
@@ -230,6 +228,7 @@ const formatDecimalWithPlusMinus = (num: string, digits = 2): string => {
   return Number(num) >= 0 ? `+${formattedNum}` : formattedNum;
 };
 
+// color based on number, green if positive, red if negative
 const colorBasedOnNumber = (num: string | undefined): string => {
   if (!num) return "text-green-500";
 
@@ -239,6 +238,8 @@ const colorBasedOnNumber = (num: string | undefined): string => {
   return Number(num) < 0 ? "text-red-500" : "text-green-500";
 };
 
+// COMPONENTS
+// leaving here until i learn more about how this project is structured
 type MarketIconPairProps = {
   baseAssetIcon?: string;
   quoteAssetIcon?: string;

@@ -3010,11 +3010,12 @@ module econia::market {
         let max_base = if (direction == BUY)
             (HI_64 - base_ceiling) else base_available;
         // Get max lots that can be traded by user.
-        let max_lots = max_base / order_book_ref_mut.lot_size;
+        let max_lots_user_can_trade = max_base / order_book_ref_mut.lot_size;
         // If market order size is less than number of lots user can
         // trade based on account limits, adjust the max base trade
         // amount to correspond with the market order size.
-        if (size < max_lots) max_base = size * order_book_ref_mut.lot_size;
+        if (size < max_lots_user_can_trade)
+            max_base = size * order_book_ref_mut.lot_size;
         // Calculate max quote that can be traded: if a buy, quote
         // available in market account. If a sell, max quote that can
         // fit in market account.

@@ -61,7 +61,7 @@ export const OrdersTable: React.FC<{
               </td>
             </tr>
           ) : (
-            data.map((order, index) => {
+            data.map((order) => {
               const market = marketById.get(order.market_id);
               return (
                 <tr

@@ -25,9 +25,6 @@ export default function Home({ marketData }: { marketData: ApiMarket[] }) {
           <div className="w-[320px] flex-initial border-r border-neutral-600 px-4 py-2">
             <p className="font-jost text-white">Orderbook</p>
           </div>
-          <div className="w-[320px] flex-initial px-2 py-2">
-            <OrderEntry />
-          </div>
         </main>
       </div>
     </>

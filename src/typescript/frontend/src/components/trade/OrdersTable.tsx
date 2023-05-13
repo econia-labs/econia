@@ -85,7 +85,7 @@ export const OrdersTable: React.FC<{
                     {order.price} {market?.quote.symbol}
                   </td>
                   <td>
-                    {order.size} {market?.base.symbol}
+                    {order.size} {market?.base?.symbol}
                   </td>
                   <td>
                     {order.size * order.price} {market?.quote.symbol}

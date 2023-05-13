@@ -19,7 +19,8 @@ export const TradeHistoryTable: React.FC<{
             <th className="pl-4 text-left">
               Price ({marketData.quote.symbol})
             </th>
-            <th className="text-center">Amount ({marketData.base.symbol})</th>
+            {/* TODO: Handle cases like APT-PERP */}
+            <th className="text-center">Amount ({marketData.base?.symbol})</th>
             <th className="pr-4 text-right">Time</th>
           </tr>
         </thead>

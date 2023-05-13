@@ -5,6 +5,7 @@ import { StatsBar } from "@/components/StatsBar";
 import { API_URL } from "@/env";
 import type { ApiMarket } from "@/types/api";
 import React, { PropsWithChildren } from "react";
+import { OrdersTable } from "@/components/trade/OrdersTable";
 
 type Props = {
   marketData: ApiMarket | undefined;
@@ -26,8 +27,17 @@ const ChartCard: React.FC<PropsWithChildren<{ className?: string }>> = ({
   </div>
 );
 
-const ChartName: React.FC<PropsWithChildren> = ({ children }) => (
-  <p className="ml-4 mt-2 font-jost text-white">{children}</p>
+const ChartName: React.FC<PropsWithChildren<{ className?: string }>> = ({
+  className,
+  children,
+}) => (
+  <p
+    className={
+      "ml-4 mt-2 font-jost text-white" + (className ? ` ${className}` : "")
+    }
+  >
+    {children}
+  </p>
 );
 
 export default function Market({ allMarketData, marketData }: Props) {
@@ -45,7 +55,8 @@ export default function Market({ allMarketData, marketData }: Props) {
             <ChartName>Price Chart</ChartName>
           </ChartCard>
           <ChartCard>
-            <ChartName>Orders</ChartName>
+            <ChartName className="mb-4">Orders</ChartName>
+            <OrdersTable allMarketData={allMarketData} />
           </ChartCard>
         </div>
         <div className="flex w-[320px] flex-initial flex-col gap-4 border-neutral-600">

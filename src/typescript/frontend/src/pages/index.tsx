@@ -1,7 +1,7 @@
 import Head from "next/head";
 
 import { Header } from "@/components/Header";
-import { OrderEntry } from "@/components/OrderEntry";
+import { OrderEntry } from "@/components/trade/OrderEntry";
 import { StatsBar } from "@/components/StatsBar";
 import { type ApiMarket } from "@/types/api";
 

@@ -3,10 +3,8 @@ import React, { useState } from "react";
 
 import { type Side } from "@/types/global";
 import { ApiMarket } from "@/types/api";
-import { ConnectedButton } from "@/components/ConnectedButton";
-import { Button } from "@/components/Button";
-import { OrderEntryInput } from "@/components/trade/OrderEntry/OrderEntryInput";
 import { LimitOrderEntry } from "./LimitOrderEntry";
+import { MarketOrderEntry } from "./MarketOrderEntry";
 
 export const OrderEntry: React.FC<{ marketData: ApiMarket }> = ({
   marketData,
@@ -53,7 +51,7 @@ export const OrderEntry: React.FC<{ marketData: ApiMarket }> = ({
             <LimitOrderEntry marketData={marketData} side={side} />
           </Tab.Panel>
           <Tab.Panel className="px-2 font-jost text-white">
-            Market Order Entry
+            <MarketOrderEntry marketData={marketData} side={side} />
           </Tab.Panel>
           {/* <Tab.Panel className="px-2 font-jost text-white">
             Stop Limit Order Entry

@@ -5,14 +5,26 @@ import { Button } from "@/components/Button";
 import { ConnectedButton } from "@/components/ConnectedButton";
 import { useState } from "react";
 import { OrderEntryInfo } from "./OrderEntryInfo";
+import { useCoinBalance } from "@/hooks/useCoinBalance";
+import { TypeTag } from "@/types/move";
+import { useWallet } from "@manahippo/aptos-wallet-adapter";
 
 export const MarketOrderEntry: React.FC<{
   marketData: ApiMarket;
   side: Side;
 }> = ({ marketData, side }) => {
+  const { account } = useWallet();
   // TODO: Replace with real market price
   const [price, setPrice] = useState<string>("12.42");
   const [amount, setAmount] = useState<string>("");
+  const baseBalance = useCoinBalance(
+    marketData.base ? TypeTag.fromApiCoin(marketData.base) : null,
+    account?.address
+  );
+  const quoteBalance = useCoinBalance(
+    TypeTag.fromApiCoin(marketData.quote),
+    account?.address
+  );
 
   return (
     <>
@@ -59,15 +71,15 @@ export const MarketOrderEntry: React.FC<{
           >
             {side === "buy" ? "Buy" : "Sell"} {marketData.base?.symbol}
           </Button>
-          <OrderEntryInfo
-            label={`${marketData.base?.symbol} AVAIABLE`}
-            value={`-- ${marketData.base?.symbol}`}
-          />
-          <OrderEntryInfo
-            label={`${marketData.quote?.symbol} AVAIABLE`}
-            value={`-- ${marketData.quote?.symbol}`}
-          />
         </ConnectedButton>
+        <OrderEntryInfo
+          label={`${marketData.base?.symbol} AVAIABLE`}
+          value={`${baseBalance.data ?? "--"} ${marketData.base?.symbol}`}
+        />
+        <OrderEntryInfo
+          label={`${marketData.quote?.symbol} AVAIABLE`}
+          value={`${quoteBalance.data ?? "--"} ${marketData.quote?.symbol}`}
+        />
       </div>
     </>
   );

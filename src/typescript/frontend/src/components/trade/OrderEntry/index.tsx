@@ -50,7 +50,7 @@ export const OrderEntry: React.FC<{ marketData: ApiMarket }> = ({
           <Tab.Panel>
             <LimitOrderEntry marketData={marketData} side={side} />
           </Tab.Panel>
-          <Tab.Panel className="px-2 font-jost text-white">
+          <Tab.Panel>
             <MarketOrderEntry marketData={marketData} side={side} />
           </Tab.Panel>
           {/* <Tab.Panel className="px-2 font-jost text-white">

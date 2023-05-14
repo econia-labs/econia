@@ -16,7 +16,6 @@ export const useCoinInfo = (coinTypeTag: TypeTag) => {
       coinTypeTag.addr,
       `0x1::coin::CoinInfo<${coinTypeTag.toString()}>`
     );
-    console.log(coinInfo);
     return coinInfo.data as CoinInfo;
   });
 };

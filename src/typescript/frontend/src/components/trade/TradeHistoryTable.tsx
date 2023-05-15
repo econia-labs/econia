@@ -1,8 +1,10 @@
 import { useWallet } from "@manahippo/aptos-wallet-adapter";
 import React from "react";
-import { ConnectedButton } from "../ConnectedButton";
-import { ApiMarket } from "@/types/api";
+
 import { useUserOrderHistory } from "@/hooks/useUserOrderHistory";
+import { type ApiMarket } from "@/types/api";
+
+import { ConnectedButton } from "../ConnectedButton";
 
 export const TradeHistoryTable: React.FC<{
   className?: string;

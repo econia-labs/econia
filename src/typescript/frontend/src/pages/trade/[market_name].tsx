@@ -1,13 +1,13 @@
 import type { GetStaticPaths, GetStaticProps } from "next";
 import React, { type PropsWithChildren } from "react";
 
+import { OrderBook } from "@/components/OrderBook";
 import { Page } from "@/components/Page";
 import { StatsBar } from "@/components/StatsBar";
 import { OrdersTable } from "@/components/trade/OrdersTable";
 import { TradeHistoryTable } from "@/components/trade/TradeHistoryTable";
 import { API_URL } from "@/env";
 import type { ApiMarket } from "@/types/api";
-import { OrderBook } from "@/components/OrderBook";
 
 type Props = {
   marketData: ApiMarket | undefined;

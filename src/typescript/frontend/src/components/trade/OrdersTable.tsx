@@ -1,8 +1,10 @@
-import { useUserOrders } from "@/hooks/useUserOrders";
 import { useWallet } from "@manahippo/aptos-wallet-adapter";
 import React from "react";
+
+import { useUserOrders } from "@/hooks/useUserOrders";
+import { type ApiMarket } from "@/types/api";
+
 import { ConnectedButton } from "../ConnectedButton";
-import { ApiMarket } from "@/types/api";
 
 export const OrdersTable: React.FC<{
   className?: string;

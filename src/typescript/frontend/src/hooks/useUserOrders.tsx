@@ -1,7 +1,8 @@
-import { API_URL } from "@/env";
-import { ApiOrder } from "@/types/api";
-import { Address } from "@manahippo/aptos-wallet-adapter";
+import { type Address } from "@manahippo/aptos-wallet-adapter";
 import { useQuery } from "@tanstack/react-query";
+
+import { API_URL } from "@/env";
+import { type ApiOrder } from "@/types/api";
 
 export const useUserOrders = (accountId?: Address | null) => {
   return useQuery<ApiOrder[]>(["useUserOrders", accountId], async () => {

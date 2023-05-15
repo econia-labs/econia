@@ -19,3 +19,15 @@ export type ApiMarket = {
   underwriter_id: number;
   created_at: string;
 };
+
+export type ApiOrder = {
+  market_order_id: number;
+  market_id: number;
+  side: "bid" | "ask";
+  size: number;
+  price: number;
+  user_address: string;
+  custodian_id: number | null;
+  order_state: "open" | "filled" | "cancelled" | "evicted";
+  created_at: string;
+};

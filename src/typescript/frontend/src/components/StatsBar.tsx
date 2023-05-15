@@ -11,19 +11,19 @@ const DEFAULT_TOKEN_ICON = "/tokenImages/default.png";
 
 type MarketStats = {
   // selected market pair data
-  lastPrice: string;
-  lastPriceChange: string;
-  change24h: string;
-  change24hPercent: string;
-  high24h: string;
-  low24h: string;
+  lastPrice: number;
+  lastPriceChange: number;
+  change24h: number;
+  change24hPercent: number;
+  high24h: number;
+  low24h: number;
   pairData: {
     baseAsset: string;
     quoteAsset: string;
     baseAssetIcon: string;
     quoteAssetIcon: string;
-    baseVolume: string;
-    quoteVolume: string;
+    baseVolume: number;
+    quoteVolume: number;
   };
 };
 
@@ -35,6 +35,8 @@ export function StatsBar({ marketNames }: Props) {
   const [selectedMarket, setSelectedMarket] = useState<string>(marketNames[0]);
   const marketData = useMarketData(selectedMarket);
   const isLoaded = marketData.isFetched;
+
+  console.log(getLang());
 
   return (
     <div className="flex overflow-hidden border-b border-neutral-600 bg-black px-9 py-4">
@@ -68,18 +70,20 @@ export function StatsBar({ marketNames }: Props) {
           </Listbox>
         </>
         {/* mobile price */}
-
         <div className="mobile-stat block">
           <p className="font-roboto-mono font-light">
             <span className="inline-block min-w-[4em] text-xl text-white">
-              ${marketData.data ? marketData.data.lastPrice : "-"}
+              {formatNumber(marketData.data?.lastPrice, 2)}
             </span>
             <span
-              className={`ml-1 inline-block min-w-[6em] text-base ${colorBasedOnNumber(
-                marketData.data?.lastPriceChange
-              )}`}
+              className={`ml-1 inline-block min-w-[6em] text-base ${
+                (marketData.data?.lastPriceChange || 0) < 0
+                  ? "text-red-500"
+                  : "text-green-500"
+              }`}
             >
-              {marketData.data?.lastPriceChange || "-"}
+              {plusMinus(marketData.data?.lastPriceChange)}
+              {formatNumber(marketData.data?.lastPriceChange, 4)}
             </span>
           </p>
         </div>
@@ -92,14 +96,17 @@ export function StatsBar({ marketNames }: Props) {
             <span className="inline-block min-w-[6em] text-white">
               {/* render left if it is defined
                   render right if left is undefined */}
-              ${marketData.data?.lastPrice || "-"}
+              ${formatNumber(marketData.data?.lastPrice, 2)}
             </span>
             <span
-              className={`ml-1 inline-block min-w-[6em] ${colorBasedOnNumber(
-                marketData.data?.lastPriceChange
-              )}`}
+              className={`ml-1 inline-block min-w-[6em] ${
+                (marketData.data?.lastPriceChange || 0) < 0
+                  ? "text-red-500"
+                  : "text-green-500"
+              }`}
             >
-              {marketData.data?.lastPriceChange || "-"}
+              {plusMinus(marketData.data?.lastPriceChange)}
+              {formatNumber(marketData.data?.lastPriceChange, 4)}
             </span>
           </p>
         </div>
@@ -110,14 +117,19 @@ export function StatsBar({ marketNames }: Props) {
           </span>
           <p className="font-roboto-mono font-light">
             <span className="inline-block min-w-[6em] text-white">
-              {marketData.data?.change24h || "-"}
+              {plusMinus(marketData.data?.change24h)}
+
+              {formatNumber(marketData.data?.change24h, 4)}
             </span>
             <span
-              className={`ml-1 inline-block min-w-[4em] ${colorBasedOnNumber(
-                marketData.data?.change24hPercent
-              )}`}
+              className={`ml-1 inline-block min-w-[6em] ${
+                (marketData.data?.change24hPercent || 0) < 0
+                  ? "text-red-500"
+                  : "text-green-500"
+              }`}
             >
-              {marketData.data?.change24hPercent || "-"}%
+              {plusMinus(marketData.data?.change24hPercent)}
+              {formatNumber(marketData.data?.change24hPercent, 4)}%
             </span>
           </p>
         </div>
@@ -128,7 +140,7 @@ export function StatsBar({ marketNames }: Props) {
           </span>
           <p className="font-roboto-mono font-light">
             <span className="text-white">
-              {marketData.data?.high24h || "-"}
+              {formatNumber(marketData.data?.high24h, 4)}
             </span>
           </p>
         </div>
@@ -138,7 +150,9 @@ export function StatsBar({ marketNames }: Props) {
             24h low
           </span>
           <p className="font-roboto-mono font-light">
-            <span className="text-white">{marketData.data?.low24h || "-"}</span>
+            <span className="text-white">
+              {formatNumber(marketData.data?.low24h, 4)}
+            </span>
           </p>
         </div>
         {/* 24 hr main */}
@@ -148,7 +162,7 @@ export function StatsBar({ marketNames }: Props) {
           </span>
           <p className="font-roboto-mono font-light">
             <span className="text-white">
-              {marketData.data?.pairData.baseVolume || "-"}
+              {formatNumber(marketData.data?.pairData.baseVolume, 4)}
             </span>
           </p>
         </div>
@@ -159,7 +173,7 @@ export function StatsBar({ marketNames }: Props) {
           </span>
           <p className="font-roboto-mono font-light">
             <span className="text-white">
-              {marketData.data?.pairData.quoteVolume || "-"}
+              {formatNumber(marketData.data?.pairData.quoteVolume, 4)}
             </span>
           </p>
         </div>
@@ -194,19 +208,19 @@ export const useMarketData = (market: string): UseQueryResult<MarketStats> => {
       } = STATS_BAR_MOCK_DATA;
       // END MOCK API CALL
       return {
-        lastPrice: formatDecimal(lastPrice),
-        lastPriceChange: formatDecimalWithPlusMinus(lastPriceChange, 4),
-        change24h: formatDecimalWithPlusMinus(change24h, 4),
-        change24hPercent: formatDecimalWithPlusMinus(change24hPercent),
-        high24h: formatDecimal(high24h, 4),
-        low24h: formatDecimal(low24h, 4),
+        lastPrice: lastPrice,
+        lastPriceChange: lastPriceChange, //
+        change24h: change24h, //
+        change24hPercent: change24hPercent, //
+        high24h: high24h,
+        low24h: low24h,
         pairData: {
           baseAsset: baseAsset,
           quoteAsset: quoteAsset,
           baseAssetIcon: pairData.baseAssetIcon,
           quoteAssetIcon: pairData.quoteAssetIcon,
-          baseVolume: formatDecimal(pairData.baseVolume),
-          quoteVolume: formatDecimal(pairData.quoteVolume),
+          baseVolume: pairData.baseVolume,
+          quoteVolume: pairData.quoteVolume,
         },
       } as MarketStats;
     },
@@ -215,51 +229,42 @@ export const useMarketData = (market: string): UseQueryResult<MarketStats> => {
 };
 
 const STATS_BAR_MOCK_DATA: MarketStats = {
-  lastPrice: "10.17",
-  lastPriceChange: "10.1738",
-  change24h: "-.9305",
-  change24hPercent: "-8.38",
-  high24h: "11.1681",
-  low24h: "9.85",
+  lastPrice: 10.17,
+  lastPriceChange: 10.1738,
+  change24h: -0.9305,
+  change24hPercent: -8.38,
+  high24h: 11.1681,
+  low24h: 9.85,
   pairData: {
     // asset names here don't matter for testing purposes
     baseAsset: "doesn't",
     quoteAsset: "matter",
     baseAssetIcon: "/tokenImages/APT.png",
     quoteAssetIcon: "/tokenImages/USD.png",
-    baseVolume: "6531688.77",
-    quoteVolume: "68026950.84",
+    baseVolume: 6531688.77,
+    quoteVolume: 68026950.84,
   },
 };
 
 // UTIL FUNCTIONS
-
-// format number to dollar
-const formatDecimal = (num: string, digits = 2): string => {
-  const roundedNum = Number(num).toFixed(digits);
-  const parts = roundedNum.split(".");
-  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  return parts.join(".");
-};
-
-// formatDecimal but with + or - sign
-const formatDecimalWithPlusMinus = (num: string, digits = 2): string => {
-  const formattedNum = formatDecimal(num, digits);
-  return Number(num) >= 0 ? `+${formattedNum}` : formattedNum;
-};
-
-// color based on number, green if positive, red if negative
-const colorBasedOnNumber = (num: string | undefined): string => {
-  if (!num) return "text-green-500";
-
-  if (num[0] === "+") return "text-green-500";
-  if (num[0] === "-") return "text-red-500";
-
-  return Number(num) < 0 ? "text-red-500" : "text-green-500";
-};
-
 const getLang = () => {
-  return navigator.language || navigator.languages[0];
+  return typeof window === "undefined"
+    ? "en"
+    : navigator.language || navigator.languages[0];
+};
+
+const formatNumber = (num: number | undefined, digits: number): string => {
+  if (!num) return "-";
+  return num.toLocaleString(getLang(), {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  });
+};
+
+const plusMinus = (num: number | undefined): string => {
+  if (!num) return "";
+  // no need to return - as numbers will already have that
+  return num >= 0 ? `+` : ``;
 };
 
 // COMPONENTS

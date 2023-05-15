@@ -258,6 +258,10 @@ const colorBasedOnNumber = (num: string | undefined): string => {
   return Number(num) < 0 ? "text-red-500" : "text-green-500";
 };
 
+const getLang = () => {
+  return navigator.language || navigator.languages[0];
+};
+
 // COMPONENTS
 // leaving here until i learn more about how this project is structured
 type MarketIconPairProps = {

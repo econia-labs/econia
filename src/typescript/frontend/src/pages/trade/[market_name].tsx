@@ -4,6 +4,7 @@ import { Page } from "@/components/Page";
 import { StatsBar } from "@/components/StatsBar";
 import { API_URL } from "@/env";
 import type { ApiMarket } from "@/types/api";
+import React, { PropsWithChildren } from "react";
 
 type Props = {
   marketData: ApiMarket | undefined;
@@ -14,6 +15,21 @@ type PathParams = {
   market_name: string;
 };
 
+const ChartCard: React.FC<PropsWithChildren<{ className?: string }>> = ({
+  className,
+  children,
+}) => (
+  <div
+    className={"border border-neutral-600" + (className ? ` ${className}` : "")}
+  >
+    {children}
+  </div>
+);
+
+const ChartName: React.FC<PropsWithChildren> = ({ children }) => (
+  <p className="ml-4 mt-2 font-jost text-white">{children}</p>
+);
+
 export default function Market({ allMarketData, marketData }: Props) {
   if (!marketData) return <Page>Market not found.</Page>;
 
@@ -23,16 +39,29 @@ export default function Market({ allMarketData, marketData }: Props) {
   return (
     <Page>
       <StatsBar marketNames={marketNames} />
-      <main className="flex flex-1">
-        <div>Market {marketData.name}</div>
-        <div className="flex-1 border-r border-neutral-600 px-4 py-2">
-          <p className="font-jost text-white">Price Chart</p>
+      <main className="flex flex-1 gap-4 px-4 py-2">
+        <div className="flex flex-1 flex-col gap-4">
+          <ChartCard className="flex-1">
+            <ChartName>Price Chart</ChartName>
+          </ChartCard>
+          <ChartCard>
+            <ChartName>Orders</ChartName>
+          </ChartCard>
         </div>
-        <div className="w-[320px] flex-initial border-r border-neutral-600 px-4 py-2">
-          <p className="font-jost text-white">Orderbook</p>
+        <div className="flex w-[320px] flex-initial flex-col gap-4 border-neutral-600">
+          <ChartCard className="flex-1">
+            <ChartName>Orderbook</ChartName>
+          </ChartCard>
         </div>
-        <div className="w-[320px] flex-initial px-4 py-2">
-          <p className="font-jost text-white">Order Entry</p>
+        <div className="flex w-[320px] flex-initial flex-col gap-4 border-neutral-600">
+          <div className="flex flex-1 flex-col gap-4">
+            <ChartCard className="flex-1">
+              <ChartName>Order Entry</ChartName>
+            </ChartCard>
+            <ChartCard>
+              <ChartName>Trade History</ChartName>
+            </ChartCard>
+          </div>
         </div>
       </main>
     </Page>

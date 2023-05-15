@@ -7,6 +7,7 @@ import { OrdersTable } from "@/components/trade/OrdersTable";
 import { TradeHistoryTable } from "@/components/trade/TradeHistoryTable";
 import { API_URL } from "@/env";
 import type { ApiMarket } from "@/types/api";
+import { OrderBook } from "@/components/OrderBook";
 
 type Props = {
   marketData: ApiMarket | undefined;
@@ -62,7 +63,7 @@ export default function Market({ allMarketData, marketData }: Props) {
         </div>
         <div className="flex w-[360px] flex-initial flex-col gap-4 border-neutral-600">
           <ChartCard className="flex-1">
-            <ChartName>Orderbook</ChartName>
+            <OrderBook marketData={marketData} />
           </ChartCard>
         </div>
         <div className="flex w-[360px] flex-initial flex-col gap-4 border-neutral-600">

@@ -3,6 +3,9 @@ import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import Image from "next/image";
 import { useState } from "react";
+import { DiscordIcon } from "./icons/DiscordIcon";
+import { TwitterIcon } from "./icons/TwitterIcon";
+import { MediumIcon } from "./icons/MediumIcon";
 
 const DEFAULT_TOKEN_ICON = "/tokenImages/default.png";
 
@@ -69,7 +72,7 @@ export function StatsBar({ marketNames }: Props) {
         <div className="mobile-stat block">
           <p className="font-roboto-mono font-light">
             <span className="inline-block min-w-[4em] text-xl text-white">
-              ${marketData.data?.lastPrice || "-"}
+              ${marketData.data ? marketData.data.lastPrice : "-"}
             </span>
             <span
               className={`ml-1 inline-block min-w-[6em] text-base ${colorBasedOnNumber(
@@ -289,35 +292,30 @@ const MarketIconPair = ({
 // icons hardcoded for now
 const SocialMediaIcons = () => {
   return (
-    <div className="flex [&>a]:hover:text-blue-400">
-      <a href="https://twitter.com" target="_blank">
-        <Image
-          src={"/socialIcons/Twitter.png"}
-          alt="twitter-icon"
-          width={28}
-          height={28}
-          className="mx-3 aspect-square h-[28px] min-w-[28px] cursor-pointer"
-        ></Image>
+    <div className="flex ">
+      <a
+        href="https://twitter.com/EconiaLabs"
+        target="_blank"
+        rel="noreferrer"
+        className="mx-3 aspect-square h-[28px]  min-w-[28px]  cursor-pointer text-white hover:text-blue-400"
+      >
+        <TwitterIcon />
       </a>
-
-      <a href="https://discord.com" target="_blank">
-        <Image
-          src={"/socialIcons/Discord.png"}
-          alt="discord-icon"
-          width={28}
-          height={28}
-          className="mx-3 aspect-square h-[28px] min-w-[28px] cursor-pointer"
-        ></Image>
+      <a
+        href="https://discord.com/invite/Z7gXcMgX8A"
+        target="_blank"
+        rel="noreferrer"
+        className="mx-3 aspect-square h-[28px]  min-w-[28px]  cursor-pointer text-white hover:text-blue-400"
+      >
+        <DiscordIcon />
       </a>
-
-      <a href="https://medium.com" target="_blank">
-        <Image
-          src={"/socialIcons/Medium.png"}
-          alt="medium-icon"
-          width={28}
-          height={28}
-          className="mx-3 aspect-square h-[28px] min-w-[28px] cursor-pointer"
-        ></Image>
+      <a
+        href="https://medium.com/econialabs"
+        target="_blank"
+        rel="noreferrer"
+        className="mx-3 aspect-square h-[28px]  min-w-[28px]  cursor-pointer text-white hover:text-blue-400"
+      >
+        <MediumIcon />
       </a>
     </div>
   );

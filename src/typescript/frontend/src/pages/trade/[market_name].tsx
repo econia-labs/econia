@@ -1,11 +1,11 @@
 import type { GetStaticPaths, GetStaticProps } from "next";
+import React, { type PropsWithChildren } from "react";
 
 import { Page } from "@/components/Page";
 import { StatsBar } from "@/components/StatsBar";
+import { OrdersTable } from "@/components/trade/OrdersTable";
 import { API_URL } from "@/env";
 import type { ApiMarket } from "@/types/api";
-import React, { PropsWithChildren } from "react";
-import { OrdersTable } from "@/components/trade/OrdersTable";
 import { TradeHistoryTable } from "@/components/trade/TradeHistoryTable";
 import { OrderEntry } from "@/components/trade/OrderEntry";
 

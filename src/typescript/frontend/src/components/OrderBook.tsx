@@ -25,7 +25,7 @@ const Row: React.FC<{
   <div className="relative my-[1px] flex min-h-[25px] min-w-full items-center justify-between text-xs">
     <div
       className={`z-10 ml-4 text-right ${
-        type === "sell" ? "text-red-400" : "text-green"
+        type === "ask" ? "text-red-400" : "text-green"
       }`}
     >
       {order.price}
@@ -33,7 +33,7 @@ const Row: React.FC<{
     <div className="z-10 mr-4 text-white">{order.size}</div>
     <div
       className={`absolute right-0 z-0 h-full opacity-30 ${
-        type === "sell" ? "bg-red-400" : "bg-green"
+        type === "ask" ? "bg-red-400" : "bg-green"
       }`}
       // dynamic taillwind?
       style={{ width: `${(100 * order.size) / highestSize}%` }}
@@ -125,20 +125,20 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
         </div>
       </div>
       {/* bids ask spread scrollable container */}
-      <div className="scrollbar-none relative grow overflow-y-auto">
-        <div className="absolute w-full">
+      <div className="scrollbar-none relative grow overflow-y-auto ">
+        <div className="absolute w-full ">
           {/* ASK */}
           {data?.asks.map((order, index) => (
             <Row
               order={order}
-              type={"sell"}
+              type={"ask"}
               key={"ask" + index}
               highestSize={highestSize}
             />
           ))}
           {/* SPREAD */}
           <div
-            className="flex min-h-[40px] items-center justify-between text-xs"
+            className="flex min-h-[40px] items-center justify-between border border-neutral-600 text-xs"
             ref={centerRef}
           >
             <div className={`z-10 ml-4 text-right text-white`}>
@@ -150,8 +150,8 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
           {data?.bids.map((order, index) => (
             <Row
               order={order}
-              type={"buy"}
-              key={"buy" + index}
+              type={"bid"}
+              key={"bid" + index}
               highestSize={highestSize}
             />
           ))}
@@ -160,6 +160,3 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
     </div>
   );
 }
-
-// refetch
-// pause

@@ -30,12 +30,14 @@ const generateMockData = (): { asks: OrderPrice[]; bids: OrderPrice[] } => {
   return { asks, bids };
 };
 
+const PrecisionOptions = ["0.01", "0.05", "0.1", "0.5", "1", "2.5", "5", "10"];
+
 export function OrderBook({ marketData }: { marketData: ApiMarket }) {
   const [asks, setAsks] = useState<OrderPrice[]>([]);
   const [bids, setBids] = useState<OrderPrice[]>([]);
   const [spread, setSpread] = useState<OrderPrice>();
 
-  const [selectedMarket, setSelectedMarket] = useState<string>("0.01");
+  const [precision, setPrecision] = useState<string>(PrecisionOptions[0]);
 
   useEffect(() => {
     // use mock data if no market data is provided
@@ -81,20 +83,20 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
         <div className={"flex justify-between"}>
           <p className={"font-jost text-white"}>Order Book</p>
           {/* select */}
-          <Listbox value={selectedMarket} onChange={setSelectedMarket}>
-            <div className="relative min-h-[30px]  border border-neutral-600 py-[8px] pl-[11px] pr-[8px]">
-              <Listbox.Button className=" flex font-roboto-mono text-neutral-300">
-                {selectedMarket}
+          <Listbox value={precision} onChange={setPrecision}>
+            <div className="relative z-30  min-h-[30px] border border-neutral-600 py-[8px] pl-[11px] pr-[8px]">
+              <Listbox.Button className=" flex min-w-[4em] justify-between font-roboto-mono text-neutral-300">
+                {precision}
                 <ChevronDownIcon className="my-auto ml-1 h-5 w-5 text-neutral-500" />
               </Listbox.Button>
               <Listbox.Options className="absolute mt-2 w-full bg-black shadow ring-1 ring-neutral-500">
-                {[].map((marketName, i) => (
+                {PrecisionOptions.map((precision, i) => (
                   <Listbox.Option
                     key={i}
-                    value={marketName}
-                    className="weight-300 px-4 py-1 font-roboto-mono text-xs text-neutral-300 hover:bg-neutral-800"
+                    value={precision}
+                    className="weight-300 cursor-pointer px-4 py-1 font-roboto-mono text-xs text-neutral-300 hover:bg-neutral-800"
                   >
-                    {marketName}
+                    {precision}
                   </Listbox.Option>
                 ))}
               </Listbox.Options>
@@ -109,7 +111,7 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
         </div>
       </div>
       {/* bids ask spread scrollable container */}
-      <div className={`grow overflow-y-scroll`}>
+      <div className={`scrollbar grow overflow-y-auto`}>
         {/* i don't understand why this suddenly solved my problem but it did lol */}
         {/* the problem i was having was that the rows were making a flex parent increase in size,
         which is not expected. the goal was to have the rows scrollable with a dynamically sized parent

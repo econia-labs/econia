@@ -1,9 +1,9 @@
 import { Listbox } from "@headlessui/react";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
+import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { ApiMarket } from "@/types/api";
-import { set } from "react-hook-form";
-import { UseQueryResult, useQuery } from "@tanstack/react-query";
+
+import { type ApiMarket } from "@/types/api";
 
 type OrderPrice = {
   price: number;
@@ -34,9 +34,7 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
       ...bids.map((order) => order.size)
     );
     setHighestSize(highestSize);
-    console.log(centerRef.current);
     centerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-    console.log("scroll?");
   }, [asks, bids]);
 
   useEffect(() => {

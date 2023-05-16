@@ -1,6 +1,6 @@
 import { Listbox } from "@headlessui/react";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ApiMarket } from "@/types/api";
 import { set } from "react-hook-form";
 
@@ -35,6 +35,9 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
   const [bids, setBids] = useState<OrderPrice[]>([]);
   const [spread, setSpread] = useState<OrderPrice>();
 
+  const ref = useRef<HTMLDivElement>(null);
+  const [dimensions, setDimensions] = useState(false);
+
   const [selectedMarket, setSelectedMarket] = useState<string>("0.01");
 
   useEffect(() => {
@@ -50,6 +53,33 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
       });
     }
   }, []);
+
+  useEffect(() => {
+    console.log("hey");
+    if (ref.current) {
+      const height = ref.current.offsetHeight;
+      // ref.current.style.minHeight = `${height}px`;
+      ref.current.style.maxHeight = `0px`;
+    }
+  }, [dimensions]);
+
+  // useEffect(() => {
+  //   if (typeof window === "undefined") return;
+  //   const handleResize = () => {
+  //     if (ref.current) {
+  //       console.log("hey");
+  //       ref.current.style.maxHeight = `none`;
+  //       ref.current.style.minHeight = `none`;
+  //       const height = ref.current.offsetHeight;
+  //       console.log(height);
+  //       ref.current.style.minHeight = `${height}px`;
+  //       ref.current.style.maxHeight = `${height}px`;
+  //     }
+  //   };
+  //   window.addEventListener("resize", handleResize);
+
+  //   return () => window.removeEventListener("resize", handleResize);
+  // }, []);
 
   const Row = ({ order, type }: { order: OrderPrice; type: string }) => (
     <div
@@ -75,14 +105,15 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
   );
 
   return (
-    <div className="divider-solid divide-y divide-neutral-600">
+    <div className="divider-solid flex grow flex-col divide-y divide-neutral-600">
       {/* title row */}
       <div className={"mx-4 my-[12px]"}>
         <div className={"flex justify-between"}>
           <p className={"font-jost text-white"}>Order Book</p>
+          {/* select */}
           <Listbox value={selectedMarket} onChange={setSelectedMarket}>
-            <div className="relative min-h-[30px]  border border-neutral-600 px-[11px] py-[8px]">
-              <Listbox.Button className="flex  font-roboto-mono text-neutral-300">
+            <div className="relative min-h-[30px]  border border-neutral-600 py-[8px] pl-[11px] pr-[8px]">
+              <Listbox.Button className=" flex font-roboto-mono text-neutral-300">
                 {selectedMarket}
                 <ChevronDownIcon className="my-auto ml-1 h-5 w-5 text-neutral-500" />
               </Listbox.Button>
@@ -107,24 +138,37 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
           <div>AMOUNT (APT)</div>
         </div>
       </div>
-      {/* ASK */}
-      <div>
-        {asks.map((order, index) => (
-          <Row order={order} type={"sell"} key={"ask" + index} />
-        ))}
-      </div>
-      {/* SPREAD */}
-      <div className="flex min-h-[40px] items-center justify-between text-xs ">
-        <div className={`z-10 ml-4 text-right text-white`}>
-          {spread?.price || "-"}
+      {/* bids ask spread scrollable container */}
+      <div className={`grow overflow-y-scroll`}>
+        {/* i don't understand why this suddenly solved my problem but it did lol */}
+        {/* the problem i was having was that the rows were making a flex parent increase in size,
+        which is not expected. the goal was to have the rows scrollable with a dynamically sized parent
+        according to window size but not have the parent increase in size when the rows were added.
+        */}
+        {/* basically my understanding of what's going on is:
+        since the rows are already overflowing the child they aren't affecting the size of this 'new' parent?
+         */}
+        <div ref={ref}>
+          {/* ASK */}
+          <div>
+            {asks.map((order, index) => (
+              <Row order={order} type={"sell"} key={"ask" + index} />
+            ))}
+          </div>
+          {/* SPREAD */}
+          <div className="flex min-h-[40px] items-center justify-between text-xs ">
+            <div className={`z-10 ml-4 text-right text-white`}>
+              {spread?.price || "-"}
+            </div>
+            <div className="z-10 mr-4 text-white">{spread?.amount || "-"}</div>
+          </div>
+          {/* BID */}
+          <div>
+            {bids.map((order, index) => (
+              <Row order={order} type={"buy"} key={"buy" + index} />
+            ))}
+          </div>
         </div>
-        <div className="z-10 mr-4 text-white">{spread?.amount || "-"}</div>
-      </div>
-      {/* BID */}
-      <div>
-        {bids.map((order, index) => (
-          <Row order={order} type={"buy"} key={"buy" + index} />
-        ))}
       </div>
     </div>
   );

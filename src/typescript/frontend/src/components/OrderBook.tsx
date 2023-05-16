@@ -21,11 +21,23 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
   const [asks, setAsks] = useState<OrderPrice[]>([]);
   const [bids, setBids] = useState<OrderPrice[]>([]);
   const [spread, setSpread] = useState<OrderPrice>();
-  const [highestSize, setHighestSize] = useState<number>(1);
+  const [highestSize, setHighestSize] = useState<number>(0);
   const [precision, setPrecision] = useState<string>(PrecisionOptions[0]);
+  const [initialRender, setInitialRender] = useState<boolean>(false);
   const data = useOrderBook("", precision);
 
   const centerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!initialRender && highestSize > 0) {
+      centerRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+      setInitialRender(true);
+      return;
+    }
+  }, [highestSize, initialRender]);
 
   useEffect(() => {
     // find highest size
@@ -34,13 +46,11 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
       ...bids.map((order) => order.size)
     );
     setHighestSize(highestSize);
-    centerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   }, [asks, bids]);
 
   useEffect(() => {
     if (!data.isFetched) return;
     if (data.data) {
-      console.log(data.data);
       const { asks, bids } = data.data;
       setAsks(asks);
       setBids(bids);
@@ -105,7 +115,7 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
           className={`mt-[11px] flex justify-between text-xs text-neutral-500`}
         >
           <div className={``}>PRICE (USD)</div>
-          <div>size (APT)</div>
+          <div>AMOUNT (APT)</div>
         </div>
       </div>
       {/* bids ask spread scrollable container */}
@@ -163,6 +173,3 @@ const useOrderBook = (
     { keepPreviousData: true, refetchOnWindowFocus: false }
   );
 };
-
-// refetch
-// pause

@@ -57,7 +57,12 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
 
   const centerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    centerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (data != null) {
+      centerRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
   }, [data]);
 
   const spread: PriceLevel | undefined = useMemo(() => {

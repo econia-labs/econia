@@ -1,33 +1,18 @@
 import { Listbox } from "@headlessui/react";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { ApiMarket } from "@/types/api";
 import { set } from "react-hook-form";
+import { UseQueryResult, useQuery } from "@tanstack/react-query";
 
 type OrderPrice = {
   price: number;
-  amount: number;
-  depth: number;
+  size: number;
 };
 
-const generateMockData = (): { asks: OrderPrice[]; bids: OrderPrice[] } => {
-  const asks: OrderPrice[] = [];
-  const bids: OrderPrice[] = [];
-
-  for (let i = 0; i < 30; i++) {
-    const price = Math.floor(Math.random() * 100);
-    const amount = Math.floor(Math.random() * 10);
-    const depth = Math.floor(Math.random() * 100);
-    const order = { price, amount, depth };
-
-    if (i % 2 === 0) {
-      asks.push(order);
-    } else {
-      bids.push(order);
-    }
-  }
-
-  return { asks, bids };
+type OrderBook = {
+  bids: OrderPrice[];
+  asks: OrderPrice[];
 };
 
 const PrecisionOptions = ["0.01", "0.05", "0.1", "0.5", "1", "2.5", "5", "10"];
@@ -37,21 +22,33 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
   const [bids, setBids] = useState<OrderPrice[]>([]);
   const [spread, setSpread] = useState<OrderPrice>();
 
+  const [highestSize, setHighestSize] = useState<number>(1);
+
   const [precision, setPrecision] = useState<string>(PrecisionOptions[0]);
+  const data = useOrderBook("", precision);
 
   useEffect(() => {
-    // use mock data if no market data is provided
-    if (!asks.length && !bids.length) {
-      const mockData = generateMockData();
-      setAsks(mockData.asks);
-      setBids(mockData.bids);
+    // find highest size
+    const highestSize = Math.max(
+      ...asks.map((order) => order.size),
+      ...bids.map((order) => order.size)
+    );
+    setHighestSize(highestSize);
+  }, [asks, bids]);
+
+  useEffect(() => {
+    if (!data.isFetched) return;
+    if (data.data) {
+      console.log(data.data);
+      const { asks, bids } = data.data;
+      setAsks(asks);
+      setBids(bids);
       setSpread({
-        price: mockData.asks[0].price - mockData.bids[0].price,
-        amount: 10,
-        depth: 0,
+        price: asks[0].price - bids[0].price,
+        size: 10,
       });
     }
-  }, []);
+  }, [data.data, data.isFetched]);
 
   const Row = ({ order, type }: { order: OrderPrice; type: string }) => (
     <div
@@ -65,13 +62,13 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
       >
         {order.price}
       </div>
-      <div className="z-10 mr-4 text-white">{order.amount}</div>
+      <div className="z-10 mr-4 text-white">{order.size}</div>
       <div
         className={`absolute right-0 z-0 h-full opacity-30 ${
           type === "sell" ? "bg-red-400" : "bg-green"
         }`}
         // dynamic taillwind?
-        style={{ width: `${order.depth}%` }}
+        style={{ width: `${(100 * order.size) / highestSize}%` }}
       ></div>
     </div>
   );
@@ -107,7 +104,7 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
           className={`mt-[11px] flex justify-between text-xs text-neutral-500`}
         >
           <div className={``}>PRICE (USD)</div>
-          <div>AMOUNT (APT)</div>
+          <div>size (APT)</div>
         </div>
       </div>
       {/* bids ask spread scrollable container */}
@@ -132,7 +129,7 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
             <div className={`z-10 ml-4 text-right text-white`}>
               {spread?.price || "-"}
             </div>
-            <div className="z-10 mr-4 text-white">{spread?.amount || "-"}</div>
+            <div className="z-10 mr-4 text-white">{spread?.size || "-"}</div>
           </div>
           {/* BID */}
           <div>
@@ -145,3 +142,23 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
     </div>
   );
 }
+
+const useOrderBook = (
+  market: string,
+  precision: string
+): UseQueryResult<OrderBook> => {
+  return useQuery(
+    ["orderBook", market, precision],
+    async () => {
+      const response = await fetch(
+        "https://dev.api.econia.exchange/market/0/orderbook?depth=60"
+      );
+      const data = await response.json();
+      return data as OrderBook;
+    },
+    { keepPreviousData: true, refetchOnWindowFocus: false }
+  );
+};
+
+// refetch
+// pause

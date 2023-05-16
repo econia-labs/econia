@@ -16,6 +16,7 @@ use db::{
 };
 use diesel::PgConnection;
 use helpers::{load_config, reset_tables};
+use indicatif::ProgressBar;
 use rand::{rngs::ThreadRng, Rng};
 
 fn place_random_orders(
@@ -65,6 +66,7 @@ fn add_random_bars(
     market_id: u64,
     end_date: DateTime<Utc>,
     num_bars: u64,
+    rng: &mut ThreadRng,
 ) {
     let market_id_bd = BigDecimal::from_u64(market_id).unwrap();
 
@@ -77,23 +79,41 @@ fn add_random_bars(
         (end_date - Duration::minutes(num_bars as i64)).timestamp()
     );
     println!("end time: {}", end_date.timestamp());
+    let mut price = 10000;
 
+    let pb = ProgressBar::new(num_bars);
     for i in 0..num_bars {
         let start_time = end_date - Duration::minutes((num_bars - i) as i64);
+        let mut fill_prices = vec![];
+
+        for _ in 0..10 {
+            price = price - rng.gen_range(-100..100);
+            if price < 0 {
+                price = 0
+            }
+            fill_prices.push(price);
+        }
+
+        let open = *fill_prices.first().unwrap();
+        let close = *fill_prices.last().unwrap();
+        let low = *fill_prices.iter().min().unwrap();
+        let high = *fill_prices.iter().max().unwrap();
 
         add_bar(
             conn,
             &NewBar {
                 market_id: market_id_bd.clone(),
                 start_time,
-                open: BigDecimal::from((i + 2) * 1000),
-                high: BigDecimal::from((i + 4) * 1000),
-                low: BigDecimal::from((i + 1) * 1000),
-                close: BigDecimal::from((i + 3) * 1000),
-                volume: BigDecimal::from(1000),
+                open: BigDecimal::from(open),
+                high: BigDecimal::from(high),
+                low: BigDecimal::from(low),
+                close: BigDecimal::from(close),
+                volume: BigDecimal::from(rng.gen_range(1..10000)),
             },
         )
         .unwrap();
+
+        pb.inc(1);
     }
 }
 
@@ -229,11 +249,11 @@ fn main() {
     )
     .unwrap();
 
-    let now = Utc::now();
+    let now = Utc::now() + Duration::days(30);
     for market_id in 0..4 {
         place_random_orders(conn, market_id, Side::Bid, 100_000, 20, &mut rng);
         place_random_orders(conn, market_id, Side::Ask, 100_000, 20, &mut rng);
 
-        add_random_bars(conn, market_id, now, 100);
+        add_random_bars(conn, market_id, now, 31 * 24 * 60, &mut rng);
     }
 }

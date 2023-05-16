@@ -35,9 +35,6 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
   const [bids, setBids] = useState<OrderPrice[]>([]);
   const [spread, setSpread] = useState<OrderPrice>();
 
-  const ref = useRef<HTMLDivElement>(null);
-  const [dimensions, setDimensions] = useState(false);
-
   const [selectedMarket, setSelectedMarket] = useState<string>("0.01");
 
   useEffect(() => {
@@ -53,33 +50,6 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
       });
     }
   }, []);
-
-  useEffect(() => {
-    console.log("hey");
-    if (ref.current) {
-      const height = ref.current.offsetHeight;
-      // ref.current.style.minHeight = `${height}px`;
-      ref.current.style.maxHeight = `0px`;
-    }
-  }, [dimensions]);
-
-  // useEffect(() => {
-  //   if (typeof window === "undefined") return;
-  //   const handleResize = () => {
-  //     if (ref.current) {
-  //       console.log("hey");
-  //       ref.current.style.maxHeight = `none`;
-  //       ref.current.style.minHeight = `none`;
-  //       const height = ref.current.offsetHeight;
-  //       console.log(height);
-  //       ref.current.style.minHeight = `${height}px`;
-  //       ref.current.style.maxHeight = `${height}px`;
-  //     }
-  //   };
-  //   window.addEventListener("resize", handleResize);
-
-  //   return () => window.removeEventListener("resize", handleResize);
-  // }, []);
 
   const Row = ({ order, type }: { order: OrderPrice; type: string }) => (
     <div
@@ -148,7 +118,7 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
         {/* basically my understanding of what's going on is:
         since the rows are already overflowing the child they aren't affecting the size of this 'new' parent?
          */}
-        <div ref={ref}>
+        <div className="max-h-0">
           {/* ASK */}
           <div>
             {asks.map((order, index) => (

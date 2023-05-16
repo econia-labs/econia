@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 @layer utilities {
-  .scrollbar::-webkit-scrollbar {
+  .scrollbar-none::-webkit-scrollbar {
     width: 0px;
   }
 }

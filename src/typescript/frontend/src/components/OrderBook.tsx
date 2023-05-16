@@ -1,6 +1,6 @@
 import { Listbox } from "@headlessui/react";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ApiMarket } from "@/types/api";
 import { set } from "react-hook-form";
 import { UseQueryResult, useQuery } from "@tanstack/react-query";
@@ -21,11 +21,11 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
   const [asks, setAsks] = useState<OrderPrice[]>([]);
   const [bids, setBids] = useState<OrderPrice[]>([]);
   const [spread, setSpread] = useState<OrderPrice>();
-
   const [highestSize, setHighestSize] = useState<number>(1);
-
   const [precision, setPrecision] = useState<string>(PrecisionOptions[0]);
   const data = useOrderBook("", precision);
+
+  const centerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // find highest size
@@ -34,6 +34,9 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
       ...bids.map((order) => order.size)
     );
     setHighestSize(highestSize);
+    console.log(centerRef.current);
+    centerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    console.log("scroll?");
   }, [asks, bids]);
 
   useEffect(() => {
@@ -44,8 +47,8 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
       setAsks(asks);
       setBids(bids);
       setSpread({
-        price: asks[0].price - bids[0].price,
-        size: 10,
+        price: (asks[0].price + bids[0].price) / 2,
+        size: 1,
       });
     }
   }, [data.data, data.isFetched]);
@@ -125,7 +128,10 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
             ))}
           </div>
           {/* SPREAD */}
-          <div className="flex min-h-[40px] items-center justify-between text-xs ">
+          <div
+            className="flex min-h-[40px] items-center justify-between text-xs "
+            ref={centerRef}
+          >
             <div className={`z-10 ml-4 text-right text-white`}>
               {spread?.price || "-"}
             </div>

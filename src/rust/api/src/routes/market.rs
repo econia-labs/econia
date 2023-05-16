@@ -3,9 +3,10 @@ use axum::{
     Json,
 };
 use bigdecimal::BigDecimal;
-use chrono::{DateTime, NaiveDateTime, Utc};
+use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
-use types::{bar::Resolution, book::PriceLevel, error::TypeError};
+use sqlx::postgres::types::PgInterval;
+use types::{bar::Resolution, book::PriceLevel, error::TypeError, stats::Stats, Market};
 
 use crate::{error::ApiError, AppState};
 
@@ -60,7 +61,7 @@ pub async fn get_markets(
 pub async fn get_market_by_id(
     Path(market_id): Path<u64>,
     State(state): State<AppState>,
-) -> Result<Json<types::Market>, ApiError> {
+) -> Result<Json<Market>, ApiError> {
     let market_id = BigDecimal::from(market_id);
 
     let query_markets = sqlx::query_as!(
@@ -107,6 +108,66 @@ pub async fn get_market_by_id(
     } else {
         Err(ApiError::NotFound)
     }
+}
+
+/// Query parameters for the tickers endpoint.
+#[derive(Debug, Deserialize)]
+pub struct TickerParams {
+    /// The resolution of the requested historical data.
+    resolution: Resolution,
+}
+
+pub async fn get_stats(
+    Query(params): Query<TickerParams>,
+    State(state): State<AppState>,
+) -> Result<Json<Vec<Stats>>, ApiError> {
+    let resolution: Duration = params.resolution.into();
+    let interval: PgInterval = resolution
+        .try_into()
+        .expect("never fails because Duration resolution can only be member of enum Resolution");
+
+    let query_tickers = sqlx::query_as!(
+        types::query::QueryStats,
+        r#"
+        with bars as (
+            select * from bars_1m
+            where start_time >= now() - $1::interval and start_time < now()
+        ),
+        first as (
+            select start_time, first_value(open) over (order by start_time) as open
+            from bars
+        ),
+        last as (
+            select start_time, first_value(close) over (order by start_time desc) as close
+            from bars
+        )
+        select
+            bars.market_id,
+            min(first.open) as "open!",
+            max(high) as "high!",
+            min(low) as "low!",
+            min(last.close) as "close!",
+            round(min(last.close) / min(first.open) - 1, 8) as "change!",
+            sum(volume) as "volume!"
+        from
+            bars
+            inner join first on bars.start_time = first.start_time
+            inner join last on bars.start_time = last.start_time
+        group by
+            bars.market_id;
+        "#,
+        interval
+    )
+    .fetch_all(&state.pool)
+    .await?;
+
+    let tickers: Vec<Stats> = query_tickers
+        .into_iter()
+        .map(|v| v.try_into())
+        .collect::<Result<Vec<Stats>, TypeError>>()
+        .unwrap();
+
+    Ok(Json(tickers))
 }
 
 /// Query parameters for the orderbook endpoint.
@@ -328,6 +389,9 @@ pub async fn get_market_history(
             )
             .fetch_all(&state.pool)
             .await?
+        }
+        _ => {
+            todo!("TODO not implemented yet")
         }
     };
 

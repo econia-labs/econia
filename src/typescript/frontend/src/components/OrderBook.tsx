@@ -24,9 +24,7 @@ const Row = ({
   type: string;
   highestSize: number;
 }) => (
-  <div
-    className={`relative my-[1px] flex min-h-[25px] min-w-full items-center justify-between text-xs `}
-  >
+  <div className="relative my-[1px] flex min-h-[25px] min-w-full items-center justify-between text-xs">
     <div
       className={`z-10 ml-4 text-right ${
         type === "sell" ? "text-red-400" : "text-green"
@@ -93,14 +91,14 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
   }
 
   return (
-    <div className="divider-solid flex grow flex-col divide-y divide-neutral-600">
+    <div className="flex grow flex-col divide-y divide-solid divide-neutral-600">
       {/* title row */}
       <div className={"mx-4 my-[12px]"}>
         <div className={"flex justify-between"}>
           <p className={"font-jost text-white"}>Order Book</p>
           {/* select */}
           <Listbox value={precision} onChange={setPrecision}>
-            <div className="relative z-30  min-h-[30px] border border-neutral-600 py-[8px] pl-[11px] pr-[8px]">
+            <div className="relative z-30 min-h-[30px] border border-neutral-600 py-[8px] pl-[11px] pr-[8px]">
               <Listbox.Button className=" flex min-w-[4em] justify-between font-roboto-mono text-neutral-300">
                 {precision}
                 <ChevronDownIcon className="my-auto ml-1 h-5 w-5 text-neutral-500" />
@@ -127,7 +125,7 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
         </div>
       </div>
       {/* bids ask spread scrollable container */}
-      <div className={`scrollbar grow overflow-y-auto`}>
+      <div className="scrollbar-none overflow-y-auto">
         {/* i don't understand why this suddenly solved my problem but it did lol */}
         {/* the problem i was having was that the rows were making a flex parent increase in size,
         which is not expected. the goal was to have the rows scrollable with a dynamically sized parent

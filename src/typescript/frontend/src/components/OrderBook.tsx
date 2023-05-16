@@ -1,6 +1,6 @@
 import { Listbox } from "@headlessui/react";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
-import { useQuery, type UseQueryResult } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { type ApiMarket } from "@/types/api";
@@ -15,15 +15,13 @@ type OrderBook = {
   asks: PriceLevel[];
 };
 
-const Row = ({
-  order,
-  type,
-  highestSize,
-}: {
+const precisionOptions = ["0.01", "0.05", "0.1", "0.5", "1", "2.5", "5", "10"];
+
+const Row: React.FC<{
   order: PriceLevel;
   type: string;
   highestSize: number;
-}) => (
+}> = ({ order, type, highestSize }) => (
   <div className="relative my-[1px] flex min-h-[25px] min-w-full items-center justify-between text-xs">
     <div
       className={`z-10 ml-4 text-right ${
@@ -43,8 +41,6 @@ const Row = ({
   </div>
 );
 
-const precisionOptions = ["0.01", "0.05", "0.1", "0.5", "1", "2.5", "5", "10"];
-
 export function OrderBook({ marketData }: { marketData: ApiMarket }) {
   const [precision, setPrecision] = useState<string>(precisionOptions[0]);
   const { data, isLoading } = useQuery(
@@ -60,12 +56,11 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
   );
 
   const centerRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     centerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   }, [data]);
 
-  const spread = useMemo(() => {
+  const spread: PriceLevel | undefined = useMemo(() => {
     if (data == null) {
       return undefined;
     }
@@ -125,30 +120,20 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
         </div>
       </div>
       {/* bids ask spread scrollable container */}
-      <div className="scrollbar-none overflow-y-auto">
-        {/* i don't understand why this suddenly solved my problem but it did lol */}
-        {/* the problem i was having was that the rows were making a flex parent increase in size,
-        which is not expected. the goal was to have the rows scrollable with a dynamically sized parent
-        according to window size but not have the parent increase in size when the rows were added.
-        */}
-        {/* basically my understanding of what's going on is:
-        since the rows are already overflowing the child they aren't affecting the size of this 'new' parent?
-         */}
-        <div className="max-h-0">
+      <div className="scrollbar-none relative grow overflow-y-auto">
+        <div className="absolute w-full">
           {/* ASK */}
-          <div>
-            {data?.asks.map((order, index) => (
-              <Row
-                order={order}
-                type={"sell"}
-                key={"ask" + index}
-                highestSize={highestSize}
-              />
-            ))}
-          </div>
+          {data?.asks.map((order, index) => (
+            <Row
+              order={order}
+              type={"sell"}
+              key={"ask" + index}
+              highestSize={highestSize}
+            />
+          ))}
           {/* SPREAD */}
           <div
-            className="flex min-h-[40px] items-center justify-between text-xs "
+            className="flex min-h-[40px] items-center justify-between text-xs"
             ref={centerRef}
           >
             <div className={`z-10 ml-4 text-right text-white`}>
@@ -157,16 +142,14 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
             <div className="z-10 mr-4 text-white">{spread?.size || "-"}</div>
           </div>
           {/* BID */}
-          <div>
-            {data?.bids.map((order, index) => (
-              <Row
-                order={order}
-                type={"buy"}
-                key={"buy" + index}
-                highestSize={highestSize}
-              />
-            ))}
-          </div>
+          {data?.bids.map((order, index) => (
+            <Row
+              order={order}
+              type={"buy"}
+              key={"buy" + index}
+              highestSize={highestSize}
+            />
+          ))}
         </div>
       </div>
     </div>

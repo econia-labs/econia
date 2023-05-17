@@ -37,7 +37,7 @@ export function StatsBar({ marketNames }: Props) {
   const isLoaded = marketData.isFetched;
 
   return (
-    <div className="flex overflow-hidden border-b border-neutral-600 bg-black px-9 py-4">
+    <div className="flex overflow-x-clip border-b border-neutral-600 bg-black px-9 py-4">
       <div className="flex flex-1 items-center whitespace-nowrap  [&>.mobile-stat]:block md:[&>.mobile-stat]:hidden [&>.stat]:mx-7 [&>.stat]:mb-1 [&>.stat]:hidden md:[&>.stat]:block ">
         <>
           <MarketIconPair

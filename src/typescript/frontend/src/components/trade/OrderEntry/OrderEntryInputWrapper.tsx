@@ -4,14 +4,18 @@ export const OrderEntryInputWrapper: React.FC<
   PropsWithChildren<{
     startAdornment?: string;
     endAdornment?: string;
+    labelFor?: string;
   }>
-> = ({ startAdornment, endAdornment, children }) => {
+> = ({ startAdornment, endAdornment, labelFor, children }) => {
   return (
     <div className="flex h-12 w-full items-baseline gap-2 border border-neutral-600 p-4">
       {/* start adornment */}
-      <span className="flex h-full items-center whitespace-nowrap font-roboto-mono text-white">
+      <label
+        htmlFor={labelFor}
+        className="flex h-full items-center whitespace-nowrap font-roboto-mono text-white"
+      >
         {startAdornment}
-      </span>
+      </label>
       {children}
       {/* end adornment */}
       <span className="flex h-full items-center font-roboto-mono font-light text-neutral-400">

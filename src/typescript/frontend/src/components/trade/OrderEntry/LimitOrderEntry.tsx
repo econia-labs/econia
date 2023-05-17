@@ -1,9 +1,10 @@
+import { placeLimitOrderUserEntry } from "@econia-labs/sdk";
 import { useWallet } from "@manahippo/aptos-wallet-adapter";
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/Button";
 import { ConnectedButton } from "@/components/ConnectedButton";
+import { useAptos } from "@/contexts/AptosContext";
 import { useCoinBalance } from "@/hooks/useCoinBalance";
 import { type ApiMarket } from "@/types/api";
 import { type Side } from "@/types/global";
@@ -13,16 +14,17 @@ import { OrderEntryInfo } from "./OrderEntryInfo";
 import { OrderEntryInputWrapper } from "./OrderEntryInputWrapper";
 
 type LimitFormValues = {
-  price: number;
-  size: number;
-  totalSize: number;
+  price: string;
+  size: string;
+  totalSize: string;
 };
 
 export const LimitOrderEntry: React.FC<{
   marketData: ApiMarket;
   side: Side;
 }> = ({ marketData, side }) => {
-  const { account } = useWallet();
+  const { aptosClient } = useAptos();
+  const { account, signAndSubmitTransaction } = useWallet();
   const {
     handleSubmit,
     register,
@@ -30,8 +32,6 @@ export const LimitOrderEntry: React.FC<{
     getValues,
     setValue,
   } = useForm<LimitFormValues>();
-  const [price, setPrice] = useState<string>("");
-  const [amount, setAmount] = useState<string>("");
   const baseBalance = useCoinBalance(
     marketData.base ? TypeTag.fromApiCoin(marketData.base) : null,
     account?.address
@@ -41,9 +41,28 @@ export const LimitOrderEntry: React.FC<{
     account?.address
   );
 
-  function onSubmit(values: LimitFormValues) {
+  const onSubmit = async (values: LimitFormValues) => {
     console.log(values);
-  }
+    if (marketData.base == null) {
+      // TODO: handle generic markets
+    } else {
+      const tx = placeLimitOrderUserEntry(
+        "0xeconia", // TODO pass in econia address as environment variable
+        `${marketData.base.account_address}::${marketData.base.module_name}::${marketData.base.struct_name}`,
+        `${marketData.quote.account_address}::${marketData.quote.module_name}::${marketData.quote.struct_name}`,
+        BigInt(marketData.market_id), // market id
+        "0x1", // TODO get integrator ID
+        side,
+        BigInt(values.price),
+        BigInt(values.size),
+        "ImmediateOrCancel", // TODO don't hardcode
+        "Abort" // don't hardcode this either
+      );
+
+      const { hash } = await signAndSubmitTransaction(tx);
+      await aptosClient.waitForTransaction(hash, { checkSuccess: true });
+    }
+  };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
@@ -61,13 +80,12 @@ export const LimitOrderEntry: React.FC<{
               // TODO: check that amount * size does not exceed quote currency
               // balance for bids
               onChange: (e) => {
-                const size = getValues("size");
+                const size = Number(getValues("size"));
                 if (!isNaN(size) && !isNaN(e.target.value)) {
-                  const totalSize =
-                    Math.round(size * e.target.value * 1e4) / 1e4;
+                  const totalSize = (size * e.target.value).toFixed(4);
                   setValue("totalSize", totalSize);
                 } else {
-                  setValue("totalSize", 0);
+                  setValue("totalSize", "");
                 }
               },
             })}
@@ -92,13 +110,12 @@ export const LimitOrderEntry: React.FC<{
               min: 0,
               // TODO: check that size does not exceed base currency balance for asks
               onChange: (e) => {
-                const price = getValues("price");
+                const price = Number(getValues("price"));
                 if (!isNaN(price) && !isNaN(e.target.value)) {
-                  const totalSize =
-                    Math.round(price * e.target.value * 1e4) / 1e4;
+                  const totalSize = (price * e.target.value).toFixed(4);
                   setValue("totalSize", totalSize);
                 } else {
-                  setValue("totalSize", 0);
+                  setValue("totalSize", "");
                 }
               },
             })}
@@ -123,6 +140,7 @@ export const LimitOrderEntry: React.FC<{
         <OrderEntryInfo label="EST. FEE" value="--" />
         <ConnectedButton className="w-full">
           <Button
+            type="submit"
             variant={side === "buy" ? "green" : "red"}
             className={`w-full`}
           >

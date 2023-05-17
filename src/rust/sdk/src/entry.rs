@@ -349,7 +349,7 @@ pub fn swap_between_coinstores_entry(
     quote: &TypeTag,
     market_id: u64,
     integrator: &AccountAddress,
-    direction: bool,
+    side: Side,
     min_base: u64,
     max_base: u64,
     min_quote: u64,
@@ -367,7 +367,7 @@ pub fn swap_between_coinstores_entry(
         vec![
             bcs::to_bytes(&market_id)?,
             bcs::to_bytes(&integrator)?,
-            bcs::to_bytes(&direction)?,
+            bcs::to_bytes(&side)?,
             bcs::to_bytes(&min_base)?,
             bcs::to_bytes(&max_base)?,
             bcs::to_bytes(&min_quote)?,

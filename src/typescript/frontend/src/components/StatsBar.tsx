@@ -304,7 +304,7 @@ const SocialMediaIcons = () => {
         href="https://twitter.com/EconiaLabs"
         target="_blank"
         rel="noreferrer"
-        className="mx-3 aspect-square h-[28px]  min-w-[28px]  cursor-pointer text-white hover:text-blue-400"
+        className="hover:text-blue-400 mx-3 aspect-square  h-[28px]  min-w-[28px] cursor-pointer text-white"
       >
         <TwitterIcon />
       </a>
@@ -312,7 +312,7 @@ const SocialMediaIcons = () => {
         href="https://discord.com/invite/Z7gXcMgX8A"
         target="_blank"
         rel="noreferrer"
-        className="mx-3 aspect-square h-[28px]  min-w-[28px]  cursor-pointer text-white hover:text-blue-400"
+        className="hover:text-blue-400 mx-3 aspect-square  h-[28px]  min-w-[28px] cursor-pointer text-white"
       >
         <DiscordIcon />
       </a>
@@ -320,7 +320,7 @@ const SocialMediaIcons = () => {
         href="https://medium.com/econialabs"
         target="_blank"
         rel="noreferrer"
-        className="mx-3 aspect-square h-[28px]  min-w-[28px]  cursor-pointer text-white hover:text-blue-400"
+        className="hover:text-blue-400 mx-3 aspect-square  h-[28px]  min-w-[28px] cursor-pointer text-white"
       >
         <MediumIcon />
       </a>

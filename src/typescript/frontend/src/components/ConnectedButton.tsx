@@ -1,10 +1,18 @@
 import { Dialog, Transition } from "@headlessui/react";
 import { useWallet, WalletReadyState } from "@manahippo/aptos-wallet-adapter";
-import { Fragment, useEffect, useState } from "react";
+import React, {
+  Fragment,
+  type PropsWithChildren,
+  useEffect,
+  useState,
+} from "react";
 
-export function WalletSelector() {
-  const { account, connect, disconnect, select, wallet, wallets, connected } =
-    useWallet();
+import { Button } from "./Button";
+
+export const ConnectedButton: React.FC<
+  PropsWithChildren<{ className?: string }>
+> = ({ className, children }) => {
+  const { account, connect, select, wallet, wallets, connected } = useWallet();
   const [isOpen, setIsOpen] = useState<boolean>(false);
 
   useEffect(() => {
@@ -20,20 +28,17 @@ export function WalletSelector() {
   return (
     <>
       {!connected ? (
-        <button
-          className="border bg-white px-4 py-1 font-roboto-mono text-sm font-semibold uppercase tracking-tight hover:bg-neutral-300"
+        <Button
+          className={className}
+          variant="primary"
           onClick={() => setIsOpen(true)}
         >
           Connect Wallet
-        </button>
+        </Button>
       ) : (
-        <button
-          className="border border-neutral-400 bg-black px-4 py-1 font-roboto-mono text-sm font-semibold uppercase tracking-tight text-neutral-400 hover:bg-neutral-800"
-          onClick={() => disconnect()}
-        >
-          Disconnect
-        </button>
+        children
       )}
+      {/* TODO: Consider moving to useWallet context */}
       <Transition appear show={isOpen} as={Fragment}>
         <Dialog
           as="div"
@@ -118,4 +123,4 @@ export function WalletSelector() {
       </Transition>
     </>
   );
-}
+};

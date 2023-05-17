@@ -9,9 +9,10 @@ type CoinInfo = {
   symbol: string;
 };
 
-export const useCoinInfo = (coinTypeTag: TypeTag) => {
+export const useCoinInfo = (coinTypeTag?: TypeTag | null) => {
   const { aptosClient } = useAptos();
-  return useQuery(["useCoinInfo", coinTypeTag.toString()], async () => {
+  return useQuery(["useCoinInfo", coinTypeTag?.toString()], async () => {
+    if (!coinTypeTag) return null;
     const coinInfo = await aptosClient.getAccountResource(
       coinTypeTag.addr,
       `0x1::coin::CoinInfo<${coinTypeTag.toString()}>`

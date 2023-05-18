@@ -153,8 +153,7 @@ pub async fn get_stats(
             bars
             inner join first on bars.start_time = first.start_time
             inner join last on bars.start_time = last.start_time
-        group by
-            bars.market_id;
+        group by bars.market_id order by market_id;
         "#,
         interval
     )

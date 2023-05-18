@@ -170,30 +170,30 @@ main();
 
 ```json
 {
-    "market_id": 0,
-    "name": "APT-tUSDC",
-    "base": {
-        "account_address": "0x1",
-        "module_name": "aptos_coin",
-        "struct_name": "AptosCoin",
-        "symbol": "APT",
-        "name": "Aptos Coin",
-        "decimals": 8
-    },
-    "base_name_generic": null,
-    "quote": {
-        "account_address": "0x7c36a610d1cde8853a692c057e7bd2479ba9d5eeaeceafa24f125c23d2abf942",
-        "module_name": "test_usdc",
-        "struct_name": "TestUSDCoin",
-        "symbol": "tUSDC",
-        "name": "Test USDC",
-        "decimals": 6
-    },
-    "lot_size": 1000,
-    "tick_size": 1000,
-    "min_size": 1000,
-    "underwriter_id": 0,
-    "created_at": "2023-05-01T12:34:56.789012Z"
+  "market_id": 0,
+  "name": "APT-tUSDC",
+  "base": {
+    "account_address": "0x1",
+    "module_name": "aptos_coin",
+    "struct_name": "AptosCoin",
+    "symbol": "APT",
+    "name": "Aptos Coin",
+    "decimals": 8
+  },
+  "base_name_generic": null,
+  "quote": {
+    "account_address": "0x7c36a610d1cde8853a692c057e7bd2479ba9d5eeaeceafa24f125c23d2abf942",
+    "module_name": "test_usdc",
+    "struct_name": "TestUSDCoin",
+    "symbol": "tUSDC",
+    "name": "Test USDC",
+    "decimals": 6
+  },
+  "lot_size": 1000,
+  "tick_size": 1000,
+  "min_size": 1000,
+  "underwriter_id": 0,
+  "created_at": "2023-05-01T12:34:56.789012Z"
 }
 ```
 
@@ -480,6 +480,177 @@ Error Code | Description
 The `to` and `from` timestamps must be valid Unix timestamps denoted in seconds,
 and the `from` timestamp must come before the `to` timestamp.
 
+## Get stats
+
+Get stats for all available markets. The stats returned are the open, high, low,
+and close prices and volume for the time range specified, and the price change
+percentage between the start of the time range and the current time.
+
+```shell
+curl "https://dev.api.econia.exchange/stats?resolution=1d"
+```
+
+```python
+import requests
+
+params = {
+    "resolution": "1d",
+}
+
+res = requests.get(
+    "https://dev.api.econia.exchange/stats", params=params)
+data = res.json()
+
+print(data)
+```
+
+```javascript
+async function main() {
+  const params = new URLSearchParams({
+    resolution: "1d",
+  });
+  const res = await fetch(
+    `https://dev.api.econia.exchange/stats?${params}`
+  );
+  const data = await res.json();
+  console.log(data);
+}
+main();
+```
+
+> The above request returns JSON structured like this:
+
+```json
+[
+  {
+    "market_id": 0,
+    "open": 30891,
+    "high": 39427,
+    "low": 30380,
+    "close": 34009,
+    "change": 0.10093555,
+    "volume": 116906256
+  },
+  {
+    "market_id": 1,
+    "open": 30891,
+    "high": 36681,
+    "low": 28596,
+    "close": 34009,
+    "change": 0.10093555,
+    "volume": 112806240
+  }
+]
+```
+
+### HTTP Request
+
+`GET /stats`
+
+### Query Parameters
+
+Parameter  | Type | Description
+---------  | ---- | -----------
+resolution | enum | The resolution of the requested stats. Accepted values are 1m, 5m, 15m, 30m, and 1h.
+
+### Errors
+
+Error Code | Description
+---------- | -------
+400        | Bad Request: invalid parameters
+
+### Notes
+
+The time range used by this endpoint will differ from the ones used by the market
+history endpoint. The market history endpoint bars will always be mapped to
+predetermined start and end timestamps, but this endpoint will return data up to
+the current time, and the start time is calculated using the provided resolution.
+
+For example, if the resolution given is `1h`, all intervals given by the market
+history endpoint will start on the hour, but the stats parameter will simply
+use the current time as the end time.
+
+The volume is given in amounts of the base currency for the market, and corresponds
+to the total volume given by the size field in the fill events of the smart contract.
+
+The change field is given in decimals, so a value of `1.2345` would indicate a
+123.45% price increase.
+
+## Get stats by id
+
+Get stats for a specific market.
+
+```shell
+curl "https://dev.api.econia.exchange/market/0/stats?resolution=1d"
+```
+
+```python
+import requests
+
+market_id = 0
+params = {
+    "resolution": "1d",
+}
+
+res = requests.get(
+    f"https://dev.api.econia.exchange/market/{market_id}/stats", params=params)
+data = res.json()
+
+print(data)
+```
+
+```javascript
+async function main() {
+  const marketId = 0;
+  const params = new URLSearchParams({
+    resolution: "1d",
+  });
+  const res = await fetch(
+    `https://dev.api.econia.exchange/market/${marketId}/stats?${params}`
+  );
+  const data = await res.json();
+  console.log(data);
+}
+main();
+```
+
+> The above request returns JSON structured like this:
+
+```json
+{
+  "market_id": 0,
+  "open": 30891,
+  "high": 39427,
+  "low": 30380,
+  "close": 34009,
+  "change": 0.10093555,
+  "volume": 116906256
+}
+```
+
+### HTTP Request
+
+`GET /market/:market_id/stats`
+
+### Path Parameters
+
+Parameter | Type | Description
+--------- | ---- | -----------
+market_id | u64  |  The ID of the market to retrieve
+
+### Query Parameters
+
+Parameter  | Type | Description
+---------  | ---- | -----------
+resolution | enum | The resolution of the requested stats. Accepted values are 1m, 5m, 15m, 30m, and 1h.
+
+### Errors
+
+Error Code | Description
+---------- | -------
+400        | Bad Request: invalid parameters
+404        | Not Found: no market with the specified ID was found
+
 ## Get open orders
 
 Get open orders for a particular account.
@@ -517,28 +688,29 @@ main();
 
 ```json
 [
-    {
-        "market_order_id": 0,
-        "market_id": 0,
-        "side": "bid",
-        "size": 1000,
-        "price": 1000,
-        "user_address": "0x1",
-        "custodian_id": null,
-        "order_state": "open",
-        "created_at": "2023-05-01T12:34:56.789012Z"
-    },
-    {
-        "market_order_id": 1,
-        "market_id": 0,
-        "side": "ask",
-        "size": 1000,
-        "price": 2000,
-        "user_address": "0x1",
-        "custodian_id": null,
-        "order_state": "open",
-        "created_at": "2023-05-01T12:34:56.789012Z"
-    },
+  {
+    "market_order_id": 0,
+    "market_id": 0,
+    "side": "bid",
+    "size": 1000,
+    "price": 1000,
+    "user_address": "0x1",
+    "custodian_id": null,
+    "order_state": "open",
+    "created_at": "2023-05-01T12:34:56.789012Z"
+  },
+  {
+    "market_order_id": 1,
+    "market_id": 0,
+    "side": "ask",
+    "size": 1000,
+    "price": 2000,
+    "user_address": "0x1",
+    "custodian_id": null,
+    "order_state": "open",
+    "created_at": "2023-05-01T12:34:56.789012Z"
+  }
+]
 ```
 
 ### HTTP Request
@@ -594,28 +766,29 @@ main();
 
 ```json
 [
-    {
-        "market_order_id": 0,
-        "market_id": 0,
-        "side": "bid",
-        "size": 1000,
-        "price": 1000,
-        "user_address": "0x1",
-        "custodian_id": null,
-        "order_state": "filled",
-        "created_at": "2023-04-30T12:34:56.789012Z"
-    },
-    {
-        "market_order_id": 1,
-        "market_id": 0,
-        "side": "ask",
-        "size": 1000,
-        "price": 2000,
-        "user_address": "0x1",
-        "custodian_id": null,
-        "order_state": "open",
-        "created_at": "2023-05-01T12:34:56.789012Z"
-    },
+  {
+    "market_order_id": 0,
+    "market_id": 0,
+    "side": "bid",
+    "size": 1000,
+    "price": 1000,
+    "user_address": "0x1",
+    "custodian_id": null,
+    "order_state": "filled",
+    "created_at": "2023-04-30T12:34:56.789012Z"
+  },
+  {
+    "market_order_id": 1,
+    "market_id": 0,
+    "side": "ask",
+    "size": 1000,
+    "price": 2000,
+    "user_address": "0x1",
+    "custodian_id": null,
+    "order_state": "open",
+    "created_at": "2023-05-01T12:34:56.789012Z"
+  }
+]
 ```
 
 ### HTTP Request

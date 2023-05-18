@@ -1,4 +1,4 @@
-import { placeLimitOrderUserEntry } from "@econia-labs/sdk";
+import { entryFunctions } from "@econia-labs/sdk";
 import { useWallet } from "@manahippo/aptos-wallet-adapter";
 import { useForm } from "react-hook-form";
 
@@ -46,7 +46,7 @@ export const LimitOrderEntry: React.FC<{
     if (marketData.base == null) {
       // TODO: handle generic markets
     } else {
-      const tx = placeLimitOrderUserEntry(
+      const tx = entryFunctions.placeLimitOrderUserEntry(
         "0xeconia", // TODO pass in econia address as environment variable
         `${marketData.base.account_address}::${marketData.base.module_name}::${marketData.base.struct_name}`,
         `${marketData.quote.account_address}::${marketData.quote.module_name}::${marketData.quote.struct_name}`,

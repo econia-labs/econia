@@ -10,7 +10,7 @@
     "format": "prettier --ignore-path .gitignore --write \"src/**/*.+(js|jsx|ts|tsx|json)\" --ignore-unknown --no-error-on-unmatched-pattern"
   },
   "dependencies": {
-    "@econia-labs/sdk": "link:../sdk",
+    "@econia-labs/sdk": "file:../sdk",
     "@headlessui/react": "^1.7.14",
     "@headlessui/tailwindcss": "^0.1.3",
     "@heroicons/react": "^2.0.18",

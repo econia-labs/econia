@@ -2,7 +2,11 @@
   "name": "@econia-labs/sdk",
   "version": "0.0.1",
   "description": "TypeScript SDK for Econia",
-  "main": "index.ts",
+  "main": "dist/src/index.js",
+  "typings": "dist/src/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "check": "tsc --noEmit",

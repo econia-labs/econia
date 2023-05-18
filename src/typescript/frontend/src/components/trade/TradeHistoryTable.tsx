@@ -1,4 +1,3 @@
-import { useWallet } from "@manahippo/aptos-wallet-adapter";
 import React from "react";
 
 import { ApiOrder, type ApiMarket } from "@/types/api";
@@ -10,7 +9,6 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { API_URL } from "@/env";
 
 const columnHelper = createColumnHelper<ApiOrder>();
 
@@ -46,9 +44,14 @@ export const TradeHistoryTable: React.FC<{
     columns: [
       columnHelper.accessor("price", {
         cell: (info) => info.getValue(),
+        header: () => `PRICE (${marketData.quote.symbol})`,
       }),
       columnHelper.accessor("size", {
         cell: (info) => info.getValue(),
+        header: () =>
+          `AMOUNT ${
+            marketData.base?.symbol ? `(${marketData.base.symbol})` : ""
+          }`,
       }),
       columnHelper.accessor("created_at", {
         cell: (info) =>
@@ -58,6 +61,7 @@ export const TradeHistoryTable: React.FC<{
             second: "numeric",
             hour12: true,
           }),
+        header: () => "TIME",
       }),
     ],
     data: data || [],
@@ -70,7 +74,7 @@ export const TradeHistoryTable: React.FC<{
         <thead>
           {table.getHeaderGroups().map((headerGroup) => (
             <tr
-              className="text-left font-roboto-mono text-sm uppercase text-neutral-500 [&>th]:font-light"
+              className="text-left font-roboto-mono text-sm text-neutral-500 [&>th]:font-light"
               key={headerGroup.id}
             >
               {headerGroup.headers.map((header, i) => (

@@ -36,6 +36,53 @@ export function StatsBar({ marketNames }: Props) {
   const marketData = useMarketData(selectedMarket);
   const isLoaded = marketData.isFetched;
 
+  const { data, isLoading, isFetching } = useQuery(
+    ["marketStasts", selectedMarket],
+    async () => {
+      // MOCK API CALL
+      console.log("hi");
+      const response = await fetch(
+        `https://dev.api.econia.exchange/market/${selectedMarket}/stats`
+      );
+      const data = await response.json();
+      console.log(data, "stats bar");
+      // /market/:market_id/stats
+      const baseAsset = selectedMarket.split("-")[0];
+      const quoteAsset = selectedMarket.split("-")[1];
+      function timeout(ms: number | undefined) {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+      }
+      await timeout(1000);
+      const {
+        lastPrice,
+        change24h,
+        high24h,
+        low24h,
+        pairData,
+        lastPriceChange,
+        change24hPercent,
+      } = STATS_BAR_MOCK_DATA;
+      // END MOCK API CALL
+      return {
+        lastPrice: lastPrice,
+        lastPriceChange: lastPriceChange, //
+        change24h: change24h, //
+        change24hPercent: change24hPercent, //
+        high24h: high24h,
+        low24h: low24h,
+        pairData: {
+          baseAsset: baseAsset,
+          quoteAsset: quoteAsset,
+          baseAssetIcon: pairData.baseAssetIcon,
+          quoteAssetIcon: pairData.quoteAssetIcon,
+          baseVolume: pairData.baseVolume,
+          quoteVolume: pairData.quoteVolume,
+        },
+      } as MarketStats;
+    },
+    { keepPreviousData: true, refetchOnWindowFocus: false }
+  );
+
   return (
     <div className="flex overflow-x-clip border-b border-neutral-600 bg-black px-9 py-4">
       <div className="flex flex-1 items-center whitespace-nowrap  [&>.mobile-stat]:block md:[&>.mobile-stat]:hidden [&>.stat]:mx-7 [&>.stat]:mb-1 [&>.stat]:hidden md:[&>.stat]:block ">
@@ -53,7 +100,7 @@ export function StatsBar({ marketNames }: Props) {
                 {selectedMarket.split("-")[0]} - {selectedMarket.split("-")[1]}
                 <ChevronDownIcon className="my-auto ml-1 h-5 w-5 text-white" />
               </Listbox.Button>
-              <Listbox.Options className="absolute mt-2 w-full bg-black shadow ring-1 ring-neutral-500">
+              <Listbox.Options className="absolute z-30 mt-2 w-full bg-black shadow ring-1 ring-neutral-500">
                 {marketNames.map((marketName, i) => (
                   <Listbox.Option
                     key={i}
@@ -189,6 +236,8 @@ export const useMarketData = (market: string): UseQueryResult<MarketStats> => {
     ["marketStats", market],
     async () => {
       // MOCK API CALL
+
+      // /market/:market_id/stats
       const baseAsset = market.split("-")[0];
       const quoteAsset = market.split("-")[1];
       function timeout(ms: number | undefined) {

@@ -182,6 +182,9 @@ impl TryFrom<QueryStats> for Stats {
         let change = value.change.to_f64().ok_or(TypeError::ConversionError {
             name: "change".into(),
         })?;
+        // There can be floating point precision issues with the PostgreSQL
+        // round function.
+        let change = (change * 1e9).round() / 1e9;
         let volume = value.volume.to_u64().ok_or(TypeError::ConversionError {
             name: "volume".into(),
         })?;

@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "preinstall": "cd ../sdk; pnpm i; pnpm build",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",

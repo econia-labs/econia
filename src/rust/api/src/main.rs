@@ -15,7 +15,15 @@ mod routes;
 mod ws;
 
 #[derive(Deserialize, Debug)]
+#[serde(rename_all(deserialize = "snake_case"))]
+pub enum Env {
+    Development,
+    Production,
+}
+
+#[derive(Deserialize, Debug)]
 pub struct Config {
+    env: Env,
     port: u16,
     database_url: String,
     redis_url: String,
@@ -40,13 +48,7 @@ pub fn load_config() -> Config {
 async fn main() {
     let config = load_config();
 
-    tracing_subscriber::registry()
-        .with(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "api=debug,sqlx=debug,tower_http=debug".into()),
-        )
-        .with(tracing_subscriber::fmt::layer())
-        .init();
+    init_tracing(config.env);
 
     let pool = PgPool::connect(&config.database_url)
         .await
@@ -82,6 +84,39 @@ async fn main() {
         .serve(app.into_make_service_with_connect_info::<SocketAddr>())
         .await
         .unwrap();
+}
+
+fn init_tracing(env: Env) {
+    match env {
+        Env::Development => {
+            let fmt_layer = tracing_subscriber::fmt::layer()
+                .with_target(true)
+                .with_ansi(true);
+
+            tracing_subscriber::registry()
+                .with(
+                    tracing_subscriber::EnvFilter::try_from_default_env()
+                        .unwrap_or_else(|_| "api=debug,sqlx=debug,tower_http=debug".into()),
+                )
+                .with(fmt_layer)
+                .init();
+        }
+
+        Env::Production => {
+            let fmt_layer = tracing_subscriber::fmt::layer()
+                .with_target(true)
+                .with_ansi(false)
+                .without_time();
+
+            tracing_subscriber::registry()
+                .with(
+                    tracing_subscriber::EnvFilter::try_from_default_env()
+                        .unwrap_or_else(|_| "api=debug,sqlx=debug,tower_http=debug".into()),
+                )
+                .with(fmt_layer)
+                .init();
+        }
+    };
 }
 
 async fn get_market_ids(pool: Pool<Postgres>) -> Vec<u64> {

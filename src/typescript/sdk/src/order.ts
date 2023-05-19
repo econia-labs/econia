@@ -1,23 +1,23 @@
 import { type BCS } from "aptos";
 
 // Order Side
-export type Side = "Bid" | "Ask";
+export type Side = "bid" | "ask";
 
 // Advance Style
-export type AdvanceStyle = "Ticks" | "Percent";
+export type AdvanceStyle = "ticks" | "percent";
 
 // Self Match Behavior
 export type SelfMatchBehavior =
-  | "Abort"
-  | "CancelBoth"
-  | "CancelMaker"
-  | "CancelTaker";
+  | "abort"
+  | "cancelBoth"
+  | "cancelMaker"
+  | "cancelTaker";
 
 // Restriction
-export type Restriction = "NoRestriction" | "FillOrAbort" | "ImmediateOrCancel";
+export type Restriction = "noRestriction" | "fillOrAbort" | "immediateOrCancel";
 
 // Order State
-export type OrderState = "Open" | "Filled" | "Cancelled" | "Evicted";
+export type OrderState = "open" | "filled" | "cancelled" | "evicted";
 
 // Order
 export type Order = {

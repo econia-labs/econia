@@ -1,4 +1,4 @@
-import { entryFunctions } from "@econia-labs/sdk";
+import { entryFunctions, type order } from "@econia-labs/sdk";
 import { useWallet } from "@manahippo/aptos-wallet-adapter";
 import { useForm } from "react-hook-form";
 
@@ -43,23 +43,33 @@ export const LimitOrderEntry: React.FC<{
 
   const onSubmit = async (values: LimitFormValues) => {
     console.log(values);
+
+    const orderSideMap: Record<Side, order.Side> = {
+      buy: "bid",
+      sell: "ask",
+    };
+    const orderSide = orderSideMap[side];
+
     if (marketData.base == null) {
       // TODO: handle generic markets
     } else {
-      const tx = entryFunctions.placeLimitOrderUserEntry(
+      const payload = entryFunctions.placeLimitOrderUserEntry(
         "0xeconia", // TODO pass in econia address as environment variable
         `${marketData.base.account_address}::${marketData.base.module_name}::${marketData.base.struct_name}`,
         `${marketData.quote.account_address}::${marketData.quote.module_name}::${marketData.quote.struct_name}`,
         BigInt(marketData.market_id), // market id
         "0x1", // TODO get integrator ID
-        side,
+        orderSide,
         BigInt(values.price),
         BigInt(values.size),
-        "ImmediateOrCancel", // TODO don't hardcode
-        "Abort" // don't hardcode this either
+        "immediateOrCancel", // TODO don't hardcode
+        "abort" // don't hardcode this either
       );
 
-      const { hash } = await signAndSubmitTransaction(tx);
+      const { hash } = await signAndSubmitTransaction({
+        type: "entry_function_payload",
+        ...payload,
+      });
       await aptosClient.waitForTransaction(hash, { checkSuccess: true });
     }
   };

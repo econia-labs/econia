@@ -8,6 +8,7 @@ import { API_URL } from "@/env";
 import type { ApiMarket } from "@/types/api";
 import { TradeHistoryTable } from "@/components/trade/TradeHistoryTable";
 import { OrderEntry } from "@/components/trade/OrderEntry";
+import { DepthChart } from "@/components/DepthChart";
 
 type Props = {
   marketData: ApiMarket | undefined;
@@ -55,6 +56,12 @@ export default function Market({ allMarketData, marketData }: Props) {
         <div className="flex flex-1 flex-col gap-4">
           <ChartCard className="flex-1">
             <ChartName>Price Chart</ChartName>
+            <ChartName>Depth Chart</ChartName>
+            <DepthChart
+              market={undefined}
+              baseCoinInfo={undefined}
+              quoteCoinInfo={undefined}
+            />
           </ChartCard>
           <ChartCard>
             <ChartName className="mb-4">Orders</ChartName>

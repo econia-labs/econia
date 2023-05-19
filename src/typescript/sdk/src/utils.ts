@@ -1,11 +1,11 @@
-import { type MakerEventType } from "../types/events";
+import { type MakerEventType } from "./events";
 import {
   type AdvanceStyle,
   type OrderState,
   type Restriction,
   type SelfMatchBehavior,
   type Side,
-} from "../types/order";
+} from "./order";
 
 export const makerEventTypeToNumber = (
   makerEventType: MakerEventType

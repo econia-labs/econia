@@ -1,36 +1,137 @@
 import { useWallet } from "@manahippo/aptos-wallet-adapter";
 import React from "react";
 
-import { useUserOrders } from "@/hooks/useUserOrders";
-import { type ApiMarket } from "@/types/api";
+import { ApiOrder, type ApiMarket } from "@/types/api";
 
 import { ConnectedButton } from "../ConnectedButton";
+import { useQuery } from "@tanstack/react-query";
+import {
+  createColumnHelper,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
+
+const columnHelper = createColumnHelper<ApiOrder>();
 
 export const OrdersTable: React.FC<{
   className?: string;
   allMarketData: ApiMarket[];
 }> = ({ className, allMarketData }) => {
   const { connected, account } = useWallet();
-  const { data, isLoading } = useUserOrders(account?.address);
+  const { data, isLoading } = useQuery<ApiOrder[]>(
+    ["useUserOrders", account?.address],
+    async () => {
+      if (!account) return [];
+      return [
+        {
+          market_order_id: 0,
+          market_id: 0,
+          side: "bid",
+          size: 1000,
+          price: 1000,
+          user_address: "0x1",
+          custodian_id: null,
+          order_state: "open",
+          created_at: "2023-05-01T12:34:56.789012Z",
+        },
+        {
+          market_order_id: 1,
+          market_id: 0,
+          side: "ask",
+          size: 1000,
+          price: 2000,
+          user_address: "0x1",
+          custodian_id: null,
+          order_state: "open",
+          created_at: "2023-05-01T12:34:56.789012Z",
+        },
+      ] as ApiOrder[];
+      // TODO: Need working API
+      // return await fetch(
+      //   `${API_URL}/account/${account.address.toString()}/open-orders`
+      // ).then((res) => res.json());
+    }
+  );
   const marketById = React.useMemo(() => {
     const map = new Map<number, ApiMarket>();
     for (const market of allMarketData) map.set(market.market_id, market);
     return map;
   }, [allMarketData]);
+  const table = useReactTable({
+    columns: [
+      columnHelper.accessor("created_at", {
+        cell: (info) =>
+          new Date(info.getValue()).toLocaleString("en-US", {
+            month: "numeric",
+            day: "2-digit",
+            year: "2-digit",
+            hour: "numeric",
+            minute: "numeric",
+            second: "numeric",
+            hour12: true,
+          }),
+        header: "TIME PLACED",
+      }),
+      columnHelper.display({
+        cell: () => "LIMIT",
+        header: "TYPE",
+      }),
+      columnHelper.accessor("side", {
+        cell: (info) => info.getValue().toUpperCase(),
+        header: "SIDE",
+      }),
+      columnHelper.accessor("price", {
+        cell: (info) =>
+          `${info.getValue()} ${
+            marketById.get(info.row.original.market_id)?.quote.symbol
+          }`,
+        header: "PRICE",
+      }),
+      columnHelper.accessor("size", {
+        cell: (info) => {
+          const marketId = info.row.original.market_id;
+          return `${info.getValue()} ${marketById.get(marketId)?.base?.symbol}`;
+        },
+        header: "AMOUNT",
+      }),
+      columnHelper.display({
+        cell: (info) => {
+          const { price, size, market_id } = info.row.original;
+          return `${price * size} ${marketById.get(market_id)?.quote?.symbol}`;
+        },
+        header: "TOTAL",
+      }),
+      columnHelper.accessor("order_state", {
+        cell: (info) => info.getValue().toUpperCase(),
+        header: "STATUS",
+      }),
+    ],
+    data: data || [],
+    getCoreRowModel: getCoreRowModel(),
+  });
 
   return (
     <div className="h-[200px]">
       <table className={"w-full" + (className ? ` ${className}` : "")}>
         <thead>
-          <tr className="text-left font-roboto-mono text-sm uppercase text-neutral-500 [&>th]:font-light">
-            <th className="pl-4">Time Placed</th>
-            <th>Type</th>
-            <th>Side</th>
-            <th>Price</th>
-            <th>Amount</th>
-            <th>Total</th>
-            <th>Status</th>
-          </tr>
+          {table.getHeaderGroups().map((headerGroup) => (
+            <tr
+              className="text-left font-roboto-mono text-sm text-neutral-500 [&>th]:font-light"
+              key={headerGroup.id}
+            >
+              {headerGroup.headers.map((header, i) => (
+                <th className={i === 0 ? "pl-4 text-left" : ""} key={header.id}>
+                  {header.isPlaceholder
+                    ? null
+                    : flexRender(
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
+                </th>
+              ))}
+            </tr>
+          ))}
         </thead>
         <tbody>
           <tr>
@@ -63,47 +164,27 @@ export const OrdersTable: React.FC<{
               </td>
             </tr>
           ) : (
-            data.map((order) => {
-              const market = marketById.get(order.market_id);
-              return (
-                <tr
-                  key={`${order.market_id}-${order.market_order_id}`}
-                  className="text-left font-roboto-mono text-sm uppercase text-white [&>th]:font-light"
-                >
-                  <td className="pl-4 text-neutral-500">
-                    {new Date(order.created_at).toLocaleString("en-US", {
-                      month: "numeric",
-                      day: "2-digit",
-                      year: "2-digit",
-                      hour: "numeric",
-                      minute: "numeric",
-                      second: "numeric",
-                      hour12: true,
-                    })}
-                  </td>
-                  <td>LIMIT</td>
-                  <td>{order.side.toUpperCase()}</td>
-                  <td>
-                    {order.price} {market?.quote.symbol}
-                  </td>
-                  <td>
-                    {order.size} {market?.base?.symbol}
-                  </td>
-                  <td>
-                    {order.size * order.price} {market?.quote.symbol}
-                  </td>
+            table.getRowModel().rows.map((row) => (
+              <tr
+                className="text-left font-roboto-mono text-sm uppercase text-white [&>th]:font-light"
+                key={row.id}
+              >
+                {row.getVisibleCells().map((cell, i) => (
                   <td
-                    className={`${
-                      order.order_state === "open"
-                        ? "text-green"
-                        : "text-neutral-500"
-                    }`}
+                    className={
+                      i === 0
+                        ? "pl-4 text-left text-neutral-500"
+                        : i === 6
+                        ? `${cell.getValue() === "open" ? "text-green" : ""}`
+                        : ""
+                    }
+                    key={cell.id}
                   >
-                    {order.order_state}
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
-                </tr>
-              );
-            })
+                ))}
+              </tr>
+            ))
           )}
         </tbody>
       </table>

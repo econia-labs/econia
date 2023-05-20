@@ -1,13 +1,15 @@
 import { Transition, Dialog } from "@headlessui/react";
 import React, { Fragment, PropsWithChildren } from "react";
 import { XIcon } from "./icons/XIcon";
+import { ChevronLeftIcon } from "@heroicons/react/20/solid";
 
 export const BaseModal: React.FC<
   PropsWithChildren<{
     open: boolean;
     onClose: () => void;
+    onBack?: () => void;
   }>
-> = ({ open, onClose, children }) => {
+> = ({ open, onClose, onBack, children }) => {
   return (
     <Transition appear show={open} as={Fragment}>
       <Dialog as="div" className="relative z-10" open={open} onClose={onClose}>
@@ -27,6 +29,15 @@ export const BaseModal: React.FC<
           <div className="flex min-h-full items-center justify-center p-4 text-center">
             <Dialog.Panel className="w-full max-w-lg transform border border-neutral-500 bg-black p-6 align-middle shadow-xl transition-all">
               <Dialog.Title className="" as="div">
+                {onBack && (
+                  <div
+                    className="absolute left-[24px] top-[24px] flex cursor-pointer items-center justify-center text-neutral-500 transition-all hover:text-white"
+                    onClick={onBack}
+                  >
+                    <ChevronLeftIcon width={24} height={24} />
+                    Back
+                  </div>
+                )}
                 <div className="absolute right-0 top-0 flex h-[72px] w-[72px] cursor-pointer items-center justify-center border-b border-l border-b-neutral-600 border-l-neutral-600 transition-all [&>svg>path]:stroke-neutral-500 [&>svg>path]:transition-all [&>svg>path]:hover:stroke-neutral-100">
                   <XIcon />
                 </div>

@@ -58,9 +58,9 @@ export default function Market({ allMarketData, marketData }: Props) {
             <ChartName>Price Chart</ChartName>
             <ChartName>Depth Chart</ChartName>
             <DepthChart
-              market={undefined}
-              baseCoinInfo={undefined}
-              quoteCoinInfo={undefined}
+            // market={undefined}
+            // baseCoinInfo={undefined}
+            // quoteCoinInfo={undefined}
             />
           </ChartCard>
           <ChartCard>

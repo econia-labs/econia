@@ -17,11 +17,13 @@
     "@solana/web3.js": "^1.76.0",
     "@tanstack/react-query": "^4.29.5",
     "@tanstack/react-table": "^8.8.5",
+    "@visx/visx": "2.18.0",
     "aptos": "^1.8.4",
     "next": "13.3.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-hook-form": "^7.43.9",
+    "react-spring": "^9.7.1",
     "react-toastify": "^9.1.2",
     "tailwindcss": "3.3.1",
     "typescript": "5.0.4"

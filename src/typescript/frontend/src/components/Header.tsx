@@ -7,7 +7,7 @@ import React, { useState, type PropsWithChildren } from "react";
 
 import { Button } from "./Button";
 import { ConnectedButton } from "./ConnectedButton";
-import { DepositWithdrawModal } from "./trade/DepositWIthdrawModal";
+import { DepositWithdrawModal } from "./trade/DepositWithdrawModal";
 
 const NavItem: React.FC<
   PropsWithChildren<{ href: string; active?: boolean; external?: boolean }>

@@ -28,10 +28,10 @@ export const BaseModal: React.FC<
         <div className="fixed inset-0 overflow-y-auto">
           <div className="flex min-h-full items-center justify-center p-4 text-center">
             <Dialog.Panel className="w-full max-w-lg transform border border-neutral-500 bg-black p-6 align-middle shadow-xl transition-all">
-              <Dialog.Title className="" as="div">
+              <Dialog.Title as="div">
                 {onBack && (
                   <div
-                    className="absolute left-[24px] top-[24px] flex cursor-pointer items-center justify-center text-neutral-500 transition-all hover:text-white"
+                    className="absolute left-[24px] top-[24px] flex cursor-pointer items-center justify-center font-roboto-mono text-neutral-500 transition-all hover:text-white"
                     onClick={onBack}
                   >
                     <ChevronLeftIcon width={24} height={24} />

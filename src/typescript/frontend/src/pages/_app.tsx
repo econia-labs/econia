@@ -34,7 +34,13 @@ export default function App({ Component, pageProps }: AppProps) {
     <QueryClientProvider client={queryClient}>
       <WalletProvider wallets={wallets}>
         <AptosContextProvider>
-          <div className={`${jost.variable} ${robotoMono.variable}`}>
+          <style jsx global>{`
+            :root {
+              --font-jost: ${jost.style.fontFamily};
+              --font-roboto-mono: ${robotoMono.style.fontFamily};
+            }
+          `}</style>
+          <div>
             <Component {...pageProps} />
           </div>
         </AptosContextProvider>

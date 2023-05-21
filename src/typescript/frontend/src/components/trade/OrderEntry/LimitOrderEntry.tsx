@@ -1,5 +1,5 @@
 import { ApiMarket } from "@/types/api";
-import { OrderEntryInput } from "@/components/trade/OrderEntry/OrderEntryInput";
+import { Input } from "@/components/Input";
 import { type Side } from "@/types/global";
 import { Button } from "@/components/Button";
 import { ConnectedButton } from "@/components/ConnectedButton";
@@ -28,7 +28,7 @@ export const LimitOrderEntry: React.FC<{
   return (
     <>
       <div className="mx-4">
-        <OrderEntryInput
+        <Input
           value={price}
           onChange={setPrice}
           startAdornment="LIMIT PRICE"
@@ -39,7 +39,7 @@ export const LimitOrderEntry: React.FC<{
       </div>
       <hr className="my-4 border-neutral-600" />
       <div className="mx-4 flex flex-col gap-4">
-        <OrderEntryInput
+        <Input
           value={amount}
           onChange={setAmount}
           startAdornment="AMOUNT"
@@ -47,7 +47,7 @@ export const LimitOrderEntry: React.FC<{
           type="number"
           placeholder="0.00"
         />
-        <OrderEntryInput
+        <Input
           value={(
             parseFloat(price === "" ? "0" : price) *
             parseFloat(amount === "" ? "0" : amount)

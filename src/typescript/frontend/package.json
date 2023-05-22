@@ -19,6 +19,7 @@
     "@tanstack/react-table": "^8.8.5",
     "aptos": "^1.8.4",
     "bignumber.js": "^9.1.1",
+    "chart.js": "^4.3.0",
     "next": "13.3.1",
     "react": "18.2.0",
     "react-chartjs-2": "^5.2.0",

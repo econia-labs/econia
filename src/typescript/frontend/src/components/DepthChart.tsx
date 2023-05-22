@@ -1,9 +1,34 @@
-import { ApiMarket } from "@/types/api";
+import { useQuery } from "@tanstack/react-query";
 import BigNumber from "bignumber.js";
+import {
+  CategoryScale,
+  Chart,
+  Filler,
+  Legend,
+  LinearScale,
+  LineController,
+  LineElement,
+  PointElement,
+  Title,
+  Tooltip,
+} from "chart.js";
 import { useMemo } from "react";
 import { Line } from "react-chartjs-2";
 
+import { type ApiMarket } from "@/types/api";
+
 export const ZERO_BIGNUMBER = new BigNumber(0);
+
+Chart.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Filler,
+  Legend
+);
 
 type PriceLevel = {
   price: number;
@@ -21,7 +46,7 @@ export const DepthChart: React.FC<{
   const baseCoinInfo = marketData?.base;
   const quoteCoinInfo = marketData?.quote;
 
-  const { data, isLoading } = useQuery(
+  const { data, isFetching } = useQuery(
     ["orderBook", marketData.market_id],
     async () => {
       const response = await fetch(
@@ -33,59 +58,49 @@ export const DepthChart: React.FC<{
     { keepPreviousData: true, refetchOnWindowFocus: false }
   );
   const { labels, bidData, askData, minPrice, maxPrice } = useMemo(() => {
+    console.log("inf loop?");
     const labels: number[] = [];
     const bidData: (number | undefined)[] = [];
     const askData: (number | undefined)[] = [];
     let minPrice = Infinity;
     let maxPrice = -Infinity;
-    if (orderBook.data) {
+    if (!isFetching && data) {
       // Get min and max price to set a range
-      for (const order of orderBook.data.bids.concat(orderBook.data.asks)) {
-        if (order.price.toJsNumber() < minPrice) {
-          minPrice = order.price.toJsNumber();
+      for (const order of data.bids.concat(data.asks)) {
+        if (order.price < minPrice) {
+          minPrice = order.price;
         }
-        if (order.price.toJsNumber() > maxPrice) {
-          maxPrice = order.price.toJsNumber();
+        if (order.price > maxPrice) {
+          maxPrice = order.price;
         }
       }
 
       // Append prices in ascending order to `labels`
-      orderBook.data.bids
+      data.bids
         .slice()
-        .concat(orderBook.data.asks.slice())
-        .sort(
-          (
-            a: { price: { toJsNumber: () => number } },
-            b: { price: { toJsNumber: () => number } }
-          ) => a.price.toJsNumber() - b.price.toJsNumber()
-        )
-        .forEach((o: { price: { toJsNumber: () => number } }) => {
-          labels.push(o.price.toJsNumber());
+        .concat(data.asks.slice())
+        .sort((a, b) => a.price - b.price)
+        .forEach((o) => {
+          labels.push(o.price);
           bidData.push(undefined);
           askData.push(undefined);
         });
 
       const bidPriceToSize = new Map<number, number>();
       const askPriceToSize = new Map<number, number>();
-      for (const { price, size } of orderBook.data.bids) {
-        const priceKey = price.toJsNumber();
+      for (const { price, size } of data.bids) {
+        const priceKey = price;
         if (!bidPriceToSize.has(priceKey)) {
           bidPriceToSize.set(priceKey, 0);
         }
-        bidPriceToSize.set(
-          priceKey,
-          bidPriceToSize.get(priceKey)! + size.toJsNumber()
-        );
+        bidPriceToSize.set(priceKey, bidPriceToSize.get(priceKey)! + size);
       }
-      for (const { price, size } of orderBook.data.asks) {
-        const priceKey = price.toJsNumber();
+      for (const { price, size } of data.asks) {
+        const priceKey = price;
         if (!askPriceToSize.has(priceKey)) {
           askPriceToSize.set(priceKey, 0);
         }
-        askPriceToSize.set(
-          priceKey,
-          askPriceToSize.get(priceKey)! + size.toJsNumber()
-        );
+        askPriceToSize.set(priceKey, askPriceToSize.get(priceKey)! + size);
       }
 
       let askAcc = ZERO_BIGNUMBER;
@@ -96,7 +111,7 @@ export const DepthChart: React.FC<{
         if (askAcc.gt(0))
           askData[i] = toDecimalSize({
             size: askAcc,
-            lotSize: market.lotSize,
+            lotSize: BigNumber(marketData.lot_size),
             baseCoinDecimals: BigNumber(baseCoinInfo?.decimals || 0),
           }).toNumber();
       }
@@ -110,7 +125,7 @@ export const DepthChart: React.FC<{
         if (bidAcc.gt(0))
           bidData[i] = toDecimalSize({
             size: bidAcc,
-            lotSize: market.lotSize,
+            lotSize: BigNumber(marketData.lot_size),
             baseCoinDecimals: BigNumber(baseCoinInfo?.decimals || 0),
           }).toNumber();
       }
@@ -118,8 +133,8 @@ export const DepthChart: React.FC<{
       labels.forEach((price, i) => {
         labels[i] = toDecimalPrice({
           price: new BigNumber(price),
-          lotSize: market.lotSize,
-          tickSize: market.tickSize,
+          lotSize: BigNumber(marketData.lot_size),
+          tickSize: BigNumber(marketData.tick_size),
           baseCoinDecimals: BigNumber(baseCoinInfo?.decimals || 0),
           quoteCoinDecimals: BigNumber(quoteCoinInfo?.decimals || 0),
         }).toNumber();
@@ -131,92 +146,94 @@ export const DepthChart: React.FC<{
       askData,
       minPrice: toDecimalPrice({
         price: new BigNumber(minPrice),
-        lotSize: market.lotSize,
-        tickSize: market.tickSize,
+        lotSize: BigNumber(marketData.lot_size),
+        tickSize: BigNumber(marketData.tick_size),
         baseCoinDecimals: BigNumber(baseCoinInfo?.decimals || 0),
         quoteCoinDecimals: BigNumber(quoteCoinInfo?.decimals || 0),
       }),
       maxPrice: toDecimalPrice({
         price: new BigNumber(maxPrice),
-        lotSize: market.lotSize,
-        tickSize: market.tickSize,
+        lotSize: BigNumber(marketData.lot_size),
+        tickSize: BigNumber(marketData.tick_size),
         baseCoinDecimals: BigNumber(baseCoinInfo?.decimals || 0),
         quoteCoinDecimals: BigNumber(quoteCoinInfo?.decimals || 0),
       }),
     };
-  }, [market, baseCoinInfo, quoteCoinInfo, orderBook.data]);
+  }, [marketData, baseCoinInfo, quoteCoinInfo, data, isFetching]);
 
   return (
-    <Line
-      options={{
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: {
-          intersect: false,
-        },
-        plugins: {
-          legend: {
-            display: false,
+    <div>
+      <Line
+        options={{
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            intersect: false,
           },
-          tooltip: {
-            // style tooltip to match the theme
-            callbacks: {
-              label: (item: { label: any; raw: any }) => {
-                return [
-                  `Price: ${item.label} ${quoteCoinInfo?.symbol}`,
-                  `Total Size: ${item.raw} ${baseCoinInfo?.symbol}`,
-                ];
+          plugins: {
+            legend: {
+              display: false,
+            },
+            tooltip: {
+              // style tooltip to match the theme
+              callbacks: {
+                label: (item: { label: any; raw: any }) => {
+                  return [
+                    `Price: ${item.label} ${quoteCoinInfo?.symbol}`,
+                    `Total Size: ${item.raw} ${baseCoinInfo?.symbol}`,
+                  ];
+                },
+                title: () => "",
               },
-              title: () => "",
+              displayColors: false,
+              bodyAlign: "right",
             },
-            displayColors: false,
-            bodyAlign: "right",
           },
-        },
-        scales: {
-          x: {
-            grid: {
-              display: true,
-              color: "gray",
-              // color: theme.colors.grey[700],
+          scales: {
+            x: {
+              grid: {
+                display: true,
+                color: "gray",
+                // color: theme.colors.grey[700],
+              },
+              // We don't use linear for now because it doesn't ensure that the graph fits nicely in tick sizes
+              // type: "linear",
+              // ticks: {
+              //   stepSize,
+              // },
             },
-            // We don't use linear for now because it doesn't ensure that the graph fits nicely in tick sizes
-            // type: "linear",
-            // ticks: {
-            //   stepSize,
-            // },
-          },
-          y: {
-            grid: {
-              display: true,
-              color: "gray",
+            y: {
+              grid: {
+                display: true,
+                color: "gray",
+              },
+              beginAtZero: true,
             },
-            beginAtZero: true,
           },
-        },
-      }}
-      data={{
-        labels,
-        datasets: [
-          {
-            fill: true,
-            label: "Size",
-            data: bidData,
-            borderColor: "green",
-            backgroundColor: "green" + "44",
-            stepped: true,
-          },
-          {
-            fill: true,
-            label: "Size",
-            data: askData,
-            borderColor: "red",
-            backgroundColor: "red" + "44",
-            stepped: true,
-          },
-        ],
-      }}
-    />
+        }}
+        data={{
+          labels,
+          datasets: [
+            {
+              fill: true,
+              label: "Size",
+              data: bidData,
+              borderColor: "green",
+              backgroundColor: "green" + "44",
+              stepped: true,
+            },
+            {
+              fill: true,
+              label: "Size",
+              data: askData,
+              borderColor: "red",
+              backgroundColor: "red" + "44",
+              stepped: true,
+            },
+          ],
+        }}
+      />
+    </div>
   );
 };
 
@@ -252,10 +269,3 @@ export const toDecimalSize = ({
 }) => {
   return size.multipliedBy(lotSize).div(TEN.exponentiatedBy(baseCoinDecimals));
 };
-function useQuery(
-  arg0: (string | number)[],
-  arg1: () => Promise<OrderBook>,
-  arg2: { keepPreviousData: boolean; refetchOnWindowFocus: boolean }
-): { data: any; isLoading: any } {
-  throw new Error("Function not implemented.");
-}

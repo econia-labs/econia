@@ -38,7 +38,10 @@ export const BaseModal: React.FC<
                     Back
                   </div>
                 )}
-                <div className="absolute right-0 top-0 flex h-[72px] w-[72px] cursor-pointer items-center justify-center border-b border-l border-b-neutral-600 border-l-neutral-600 transition-all [&>svg>path]:stroke-neutral-500 [&>svg>path]:transition-all [&>svg>path]:hover:stroke-neutral-100">
+                <div
+                  className="absolute right-0 top-0 flex h-[72px] w-[72px] cursor-pointer items-center justify-center border-b border-l border-b-neutral-600 border-l-neutral-600 transition-all [&>svg>path]:stroke-neutral-500 [&>svg>path]:transition-all [&>svg>path]:hover:stroke-neutral-100"
+                  onClick={onClose}
+                >
                   <XIcon />
                 </div>
               </Dialog.Title>

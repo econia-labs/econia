@@ -1,13 +1,15 @@
-import { ApiMarket } from "@/types/api";
-import { Input } from "@/components/Input";
-import { type Side } from "@/types/global";
+import { useWallet } from "@manahippo/aptos-wallet-adapter";
+import { useState } from "react";
+
 import { Button } from "@/components/Button";
 import { ConnectedButton } from "@/components/ConnectedButton";
-import { useState } from "react";
-import { OrderEntryInfo } from "./OrderEntryInfo";
+import { Input } from "@/components/Input";
 import { useCoinBalance } from "@/hooks/useCoinBalance";
+import { type ApiMarket } from "@/types/api";
+import { type Side } from "@/types/global";
 import { TypeTag } from "@/types/move";
-import { useWallet } from "@manahippo/aptos-wallet-adapter";
+
+import { OrderEntryInfo } from "./OrderEntryInfo";
 
 export const MarketOrderEntry: React.FC<{
   marketData: ApiMarket;

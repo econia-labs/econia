@@ -2,7 +2,7 @@ import { type BCS } from "aptos";
 
 import { type Side } from "./order";
 
-export type MakerEventType = "Cancel" | "Change" | "Evict" | "Place";
+export type MakerEventType = "cancel" | "change" | "evict" | "place";
 
 export type MakerEvent = {
   market_id: BCS.Uint64;

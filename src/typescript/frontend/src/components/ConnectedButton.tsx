@@ -1,11 +1,5 @@
-import { Dialog, Transition } from "@headlessui/react";
-import { useWallet, WalletReadyState } from "@manahippo/aptos-wallet-adapter";
-import React, {
-  Fragment,
-  type PropsWithChildren,
-  useEffect,
-  useState,
-} from "react";
+import { useWallet } from "@manahippo/aptos-wallet-adapter";
+import React, { type PropsWithChildren } from "react";
 
 import { Button } from "./Button";
 import { useConnectWallet } from "@/contexts/ConnectWalletContext";

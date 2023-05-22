@@ -9,6 +9,7 @@ import {
 import { RPC_NODE_URL } from "@/env";
 import { Transition, Dialog } from "@headlessui/react";
 import { WalletReadyState, useWallet } from "@manahippo/aptos-wallet-adapter";
+import { BaseModal } from "@/components/BaseModal";
 
 export type ConnectWalletContextState = {
   connectWallet: () => void;
@@ -20,96 +21,50 @@ export const ConnectWalletContext = createContext<
 
 export function ConnectWalletContextProvider({ children }: PropsWithChildren) {
   const { select, wallets } = useWallet();
-  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [open, setOpen] = useState<boolean>(false);
   const value: ConnectWalletContextState = {
-    connectWallet: () => setIsOpen(true),
+    connectWallet: () => setOpen(true),
   };
 
   return (
     <ConnectWalletContext.Provider value={value}>
       {children}
-      <Transition appear show={isOpen} as={Fragment}>
-        <Dialog
-          as="div"
-          className="relative z-10"
-          open={isOpen}
-          onClose={() => setIsOpen(false)}
-        >
-          <Transition.Child
-            as={Fragment}
-            enter="ease-out duration-300"
-            enterFrom="opacity-0"
-            enterTo="opacity-100"
-            leave="ease-in duration-200"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
-            <div className="fixed inset-0 bg-black bg-opacity-60" />
-          </Transition.Child>
-
-          <div className="fixed inset-0 overflow-y-auto">
-            <div className="flex min-h-full items-center justify-center p-4 text-center">
-              <Transition.Child
-                as={Fragment}
-                enter="ease-out duration-300"
-                enterFrom="opacity-0 scale-95"
-                enterTo="opacity-100 scale-100"
-                leave="ease-in duration-200"
-                leaveFrom="opacity-100 scale-100"
-                leaveTo="opacity-0 scale-95"
-              >
-                <Dialog.Panel className="w-full max-w-sm transform border border-neutral-500 bg-black p-6 align-middle shadow-xl transition-all">
-                  <Dialog.Title className="" as="div">
-                    <p className="text-neutral-400">Connect a Wallet</p>
-                  </Dialog.Title>
-
-                  <Dialog.Description
-                    className="mx-auto mt-4 w-[180px]"
-                    as="ul"
-                  >
-                    {wallets.map((wallet, i) => (
-                      <li key={i} className="mt-2">
-                        {wallet.readyState === WalletReadyState.NotDetected ? (
-                          <a
-                            href={wallet.adapter.url}
-                            target="_blank"
-                            rel="noreferrer noopener"
-                            className="inline-flex w-full border border-neutral-400 px-2 py-1 text-neutral-400 outline-none hover:border-neutral-500 hover:text-neutral-500"
-                          >
-                            <span className="mx-auto">
-                              {wallet.adapter.name}
-                            </span>
-                          </a>
-                        ) : (
-                          <button
-                            className="w-full border border-neutral-400 px-2 py-1 text-neutral-400 outline-none hover:border-neutral-500 hover:text-neutral-500"
-                            onClick={() => {
-                              select(wallet.adapter.name);
-                              setIsOpen(false);
-                            }}
-                          >
-                            {wallet.adapter.name}
-                          </button>
-                        )}
-                      </li>
-                    ))}
-                  </Dialog.Description>
-
-                  <div className="mt-6">
-                    <button
-                      type="button"
-                      className="border border-neutral-400 px-3 py-1 text-sm uppercase text-neutral-400 outline-none"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      Close
-                    </button>
-                  </div>
-                </Dialog.Panel>
-              </Transition.Child>
+      <BaseModal
+        open={open}
+        onClose={() => setOpen(false)}
+        onBack={() => setOpen(false)}
+      >
+        <h2 className="mt-4 text-center font-jost text-3xl font-bold text-white">
+          Connect a Wallet
+        </h2>
+        <p className="mt-4 text-center font-roboto-mono text-sm font-light text-white">
+          In order to use this site you must connect a wallet and allow the site
+          to access your account.
+        </p>
+        <div className="mt-8 flex flex-col gap-4">
+          {wallets.map((wallet, i) => (
+            <div
+              className="flex w-full cursor-pointer items-center gap-2 border border-neutral-600 p-4 font-jost text-lg font-medium text-neutral-500 hover:border-white hover:text-white"
+              onClick={() => {
+                select(wallet.adapter.name);
+                setOpen(false);
+              }}
+            >
+              <img
+                src={wallet.adapter.icon}
+                height={36}
+                width={36}
+                className=""
+              />
+              <p>
+                {wallet.readyState === WalletReadyState.NotDetected
+                  ? `Install ${wallet.adapter.name} Wallet`
+                  : `${wallet.adapter.name} Wallet`}
+              </p>
             </div>
-          </div>
-        </Dialog>
-      </Transition>
+          ))}
+        </div>
+      </BaseModal>
     </ConnectWalletContext.Provider>
   );
 }

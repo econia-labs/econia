@@ -129,6 +129,25 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_order_history_for_invalid_address() {
+        let account_id = "hello";
+        let config = load_config();
+        let app = make_test_server(config).await;
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri(format!("/account/{}/order-history", account_id))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    }
+
+    #[tokio::test]
     async fn test_open_orders_by_account() {
         let account_id = "0x123";
         let config = load_config();
@@ -149,5 +168,24 @@ mod tests {
         let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
         let res = serde_json::from_slice::<Vec<types::order::Order>>(&body);
         assert!(res.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_open_orders_for_invalid_address() {
+        let account_id = "hello";
+        let config = load_config();
+        let app = make_test_server(config).await;
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri(format!("/account/{}/open-orders", account_id))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
     }
 }

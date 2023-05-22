@@ -4,13 +4,34 @@ import { useMemo } from "react";
 import { Line } from "react-chartjs-2";
 
 export const ZERO_BIGNUMBER = new BigNumber(0);
+
+type PriceLevel = {
+  price: number;
+  size: number;
+};
+
+type OrderBook = {
+  bids: PriceLevel[];
+  asks: PriceLevel[];
+};
+
 export const DepthChart: React.FC<{
-  market: RegisteredMarket;
-  marketData: ApiMarket | undefined;
-}> = ({ market, marketData }) => {
+  marketData: ApiMarket;
+}> = ({ marketData }) => {
   const baseCoinInfo = marketData?.base;
   const quoteCoinInfo = marketData?.quote;
-  const orderBook = useOrderBook(market.marketId);
+
+  const { data, isLoading } = useQuery(
+    ["orderBook", marketData.market_id],
+    async () => {
+      const response = await fetch(
+        `https://dev.api.econia.exchange/market/${marketData.market_id}/orderbook?depth=60`
+      );
+      const data = await response.json();
+      return data as OrderBook;
+    },
+    { keepPreviousData: true, refetchOnWindowFocus: false }
+  );
   const { labels, bidData, askData, minPrice, maxPrice } = useMemo(() => {
     const labels: number[] = [];
     const bidData: (number | undefined)[] = [];
@@ -231,3 +252,10 @@ export const toDecimalSize = ({
 }) => {
   return size.multipliedBy(lotSize).div(TEN.exponentiatedBy(baseCoinDecimals));
 };
+function useQuery(
+  arg0: (string | number)[],
+  arg1: () => Promise<OrderBook>,
+  arg2: { keepPreviousData: boolean; refetchOnWindowFocus: boolean }
+): { data: any; isLoading: any } {
+  throw new Error("Function not implemented.");
+}

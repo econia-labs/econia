@@ -21,10 +21,10 @@
     "aptos": "^1.8.4"
   },
   "devDependencies": {
-    "@types/node": "^18.15.11",
+    "@types/node": "^20.2.3",
     "@typescript-eslint/eslint-plugin": "^5.58.0",
     "@typescript-eslint/parser": "^5.58.0",
-    "eslint": "^8.38.0",
+    "eslint": "^8.41.0",
     "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-simple-import-sort": "^10.0.0",

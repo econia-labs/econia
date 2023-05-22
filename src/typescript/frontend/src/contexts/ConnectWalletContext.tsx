@@ -42,9 +42,10 @@ export function ConnectWalletContextProvider({ children }: PropsWithChildren) {
           to access your account.
         </p>
         <div className="mt-8 flex flex-col gap-4">
-          {wallets.map((wallet, i) => (
+          {wallets.map((wallet) => (
             <div
-              className="flex w-full cursor-pointer items-center gap-2 border border-neutral-600 p-4 font-jost text-lg font-medium text-neutral-500 hover:border-white hover:text-white"
+              key={wallet.adapter.name}
+              className="flex w-full cursor-pointer items-center gap-2 border border-neutral-600 p-4 font-jost text-lg font-medium text-neutral-500 hover:text-white"
               onClick={() => {
                 select(wallet.adapter.name);
                 setOpen(false);

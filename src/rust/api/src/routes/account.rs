@@ -4,12 +4,16 @@ use axum::{
 };
 use types::error::TypeError;
 
-use crate::{error::ApiError, AppState};
+use crate::{error::ApiError, util::ADDR_REGEX, AppState};
 
 pub async fn order_history_by_account(
     Path(account_address): Path<String>,
     State(state): State<AppState>,
 ) -> Result<Json<Vec<types::order::Order>>, ApiError> {
+    if !ADDR_REGEX.is_match(&account_address) {
+        return Err(ApiError::InvalidAddress(account_address));
+    }
+
     let order_history_query = sqlx::query_as!(
         db::models::order::Order,
         r#"
@@ -46,6 +50,10 @@ pub async fn open_orders_by_account(
     Path(account_address): Path<String>,
     State(state): State<AppState>,
 ) -> Result<Json<Vec<types::order::Order>>, ApiError> {
+    if !ADDR_REGEX.is_match(&account_address) {
+        return Err(ApiError::InvalidAddress(account_address));
+    }
+
     let open_orders_query = sqlx::query_as!(
         db::models::order::Order,
         r#"

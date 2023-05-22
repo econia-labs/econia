@@ -3,10 +3,11 @@ import { useWallet } from "@manahippo/aptos-wallet-adapter";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import React, { type PropsWithChildren } from "react";
+import React, { useState, type PropsWithChildren } from "react";
 
 import { Button } from "./Button";
 import { ConnectedButton } from "./ConnectedButton";
+import { DepositWithdrawModal } from "./trade/DepositWithdrawModal";
 
 const NavItem: React.FC<
   PropsWithChildren<{ href: string; active?: boolean; external?: boolean }>
@@ -49,6 +50,7 @@ const NavItemDivider: React.FC = () => {
 export function Header() {
   const { disconnect } = useWallet();
   const router = useRouter();
+  const [depositWithdrawOpen, setDepositWithdrawOpen] = useState(false);
 
   return (
     <header className="flex flex-col border-b border-neutral-600 bg-black">
@@ -88,12 +90,24 @@ export function Header() {
         </div>
         <div className="flex flex-1 justify-end">
           <ConnectedButton>
-            <Button variant="outlined" onClick={() => disconnect()}>
-              Disconnect
-            </Button>
+            <div className="flex items-center gap-4">
+              <Button
+                variant="secondary"
+                onClick={() => setDepositWithdrawOpen(true)}
+              >
+                Deposit / Withdraw
+              </Button>
+              <Button variant="outlined" onClick={() => disconnect()}>
+                Disconnect
+              </Button>
+            </div>
           </ConnectedButton>
         </div>
       </nav>
+      <DepositWithdrawModal
+        open={depositWithdrawOpen}
+        onClose={() => setDepositWithdrawOpen(false)}
+      />
     </header>
   );
 }

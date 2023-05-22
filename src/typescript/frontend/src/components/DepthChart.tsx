@@ -3,6 +3,7 @@ import BigNumber from "bignumber.js";
 import {
   CategoryScale,
   Chart,
+  ChartType,
   Filler,
   Legend,
   LinearScale,
@@ -12,10 +13,13 @@ import {
   Title,
   Tooltip,
 } from "chart.js";
+import { ChartConfiguration, ChartDataset } from "chart.js";
 import { useMemo } from "react";
 import { Line } from "react-chartjs-2";
 
 import { type ApiMarket } from "@/types/api";
+import { unique } from "next/dist/build/utils";
+import { Yellowtail } from "next/font/google";
 
 export const ZERO_BIGNUMBER = new BigNumber(0);
 
@@ -29,6 +33,7 @@ Chart.register(
   Filler,
   Legend
 );
+// Chart.pluginService.register(corsairPlugin);
 
 type PriceLevel = {
   price: number;
@@ -58,13 +63,13 @@ export const DepthChart: React.FC<{
     { keepPreviousData: true, refetchOnWindowFocus: false }
   );
   const { labels, bidData, askData, minPrice, maxPrice } = useMemo(() => {
-    console.log("inf loop?");
     const labels: number[] = [];
     const bidData: (number | undefined)[] = [];
     const askData: (number | undefined)[] = [];
     let minPrice = Infinity;
     let maxPrice = -Infinity;
     if (!isFetching && data) {
+      console.log(data);
       // Get min and max price to set a range
       for (const order of data.bids.concat(data.asks)) {
         if (order.price < minPrice) {
@@ -166,11 +171,25 @@ export const DepthChart: React.FC<{
       <Line
         options={{
           responsive: true,
+          elements: {
+            line: { stepped: true },
+            point: {
+              hoverRadius: 3,
+              radius: 0,
+              hoverBorderColor: "white",
+              hoverBackgroundColor: "none",
+              borderWidth: 5,
+            },
+          },
           maintainAspectRatio: false,
           interaction: {
             intersect: false,
           },
           plugins: {
+            // @ts-ignore
+            crosshair: {
+              color: "white",
+            },
             legend: {
               display: false,
             },
@@ -218,16 +237,16 @@ export const DepthChart: React.FC<{
               fill: true,
               label: "Size",
               data: bidData,
-              borderColor: "green",
-              backgroundColor: "green" + "44",
+              borderColor: "rgba(110, 213, 163, 1)",
+              backgroundColor: "rgba(110, 213, 163, 0.3)",
               stepped: true,
             },
             {
               fill: true,
               label: "Size",
               data: askData,
-              borderColor: "red",
-              backgroundColor: "red" + "44",
+              borderColor: "rgba(213, 110, 110, 1)",
+              backgroundColor: "rgba(213, 110, 110, 0.3)",
               stepped: true,
             },
           ],
@@ -269,3 +288,118 @@ export const toDecimalSize = ({
 }) => {
   return size.multipliedBy(lotSize).div(TEN.exponentiatedBy(baseCoinDecimals));
 };
+
+interface CorsairPluginOptions {
+  width: number;
+  color: string;
+  dash: number[];
+}
+
+const plugin = {
+  id: "crosshair",
+  defaults: {
+    width: 1,
+    color: "#FF4949",
+    dash: [3, 3],
+  },
+  afterInit: (
+    chart: { corsair: { x: number; y: number } },
+    args: any,
+    opts: any
+  ) => {
+    chart.corsair = {
+      x: 0,
+      y: 0,
+    };
+  },
+  afterEvent: (
+    chart: { corsair: { x: any; y: any; draw: any }; draw: () => void },
+    args: { event?: any; inChartArea?: any }
+  ) => {
+    const { inChartArea } = args;
+    const { type, x, y } = args.event;
+
+    chart.corsair = { x, y, draw: inChartArea };
+    chart.draw();
+  },
+  beforeDatasetsDraw: (
+    chart: {
+      _active: any;
+      chartArea?: any;
+      corsair?: any;
+      ctx?: any;
+    },
+    args: any,
+    opts: { width: any; color: any; dash: any }
+  ) => {
+    console.log(chart, "chart");
+    const { ctx } = chart;
+    const { top, bottom, left, right } = chart.chartArea;
+    let { x, y } = chart.corsair;
+    const { draw } = chart.corsair;
+
+    if (chart._active.length) {
+      x = chart._active[0].element.x;
+      y = chart._active[0].element.y;
+    }
+    if (!draw) return;
+
+    ctx.save();
+
+    ctx.beginPath();
+    ctx.lineWidth = opts.width;
+    ctx.strokeStyle = opts.color;
+    ctx.setLineDash(opts.dash);
+    ctx.moveTo(x, bottom);
+    ctx.lineTo(x, top);
+    ctx.moveTo(left, y);
+    ctx.lineTo(right, y);
+    ctx.stroke();
+
+    ctx.restore();
+  },
+};
+Chart.register(plugin);
+
+// const corsairPlugin: Chart.PluginServiceRegistrationOptions<CorsairPluginOptions> =
+//   {
+//     id: "corsair",
+//     defaults: {
+//       width: 1,
+//       color: "#FF4949",
+//       dash: [3, 3],
+//     },
+//     afterInit: (chart, args, opts) => {
+//       chart.corsair = {
+//         x: 0,
+//         y: 0,
+//       };
+//     },
+//     afterEvent: (chart, args) => {
+//       const { inRange } = args;
+//       const { type, x, y } = args.event;
+
+//       chart.corsair = { x, y, draw: inRange };
+//       chart.update();
+//     },
+//     beforeDatasetsDraw: (chart, args, opts) => {
+//       const { ctx } = chart;
+//       const { top, bottom, left, right } = chart.chartArea;
+//       const { x, y, draw } = chart.corsair;
+//       if (!draw) return;
+
+//       ctx.save();
+
+//       ctx.beginPath();
+//       ctx.lineWidth = opts.width;
+//       ctx.strokeStyle = opts.color;
+//       ctx.setLineDash(opts.dash);
+//       ctx.moveTo(x, bottom);
+//       ctx.lineTo(x, top);
+//       ctx.moveTo(left, y);
+//       ctx.lineTo(right, y);
+//       ctx.stroke();
+
+//       ctx.restore();
+//     },
+//   };

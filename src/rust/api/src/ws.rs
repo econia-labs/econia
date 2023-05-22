@@ -21,7 +21,7 @@ use regex::Regex;
 use tokio::sync::{broadcast, mpsc};
 use types::message::{Channel, ConfirmMethod, InboundMessage, OutboundMessage, Update};
 
-use crate::{error::WebSocketError, AppState};
+use crate::{error::WebSocketError, util::ADDR_REGEX, AppState};
 
 /// The maximum time allowed since the last ping message is set to 1 hour.
 /// If it has been over an hour since the last ping message was received, the
@@ -141,8 +141,13 @@ fn get_response_message(
                 match channel {
                     Channel::Orders {
                         ref market_id,
-                        user_address: _,
+                        ref user_address,
                     } => {
+                        if !ADDR_REGEX.is_match(user_address) {
+                            return Ok(OutboundMessage::Error {
+                                message: format!("user address `{}` is not valid", user_address),
+                            });
+                        }
                         if !market_ids.contains(market_id) {
                             return Ok(OutboundMessage::Error {
                                 message: format!("market with id `{}` not found", market_id),
@@ -151,8 +156,13 @@ fn get_response_message(
                     }
                     Channel::Fills {
                         ref market_id,
-                        user_address: _,
+                        ref user_address,
                     } => {
+                        if !ADDR_REGEX.is_match(user_address) {
+                            return Ok(OutboundMessage::Error {
+                                message: format!("user address `{}` is not valid", user_address),
+                            });
+                        }
                         if !market_ids.contains(market_id) {
                             return Ok(OutboundMessage::Error {
                                 message: format!("market with id `{}` not found", market_id),

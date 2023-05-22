@@ -1,6 +1,6 @@
 export const Button: React.FC<
   React.ButtonHTMLAttributes<HTMLButtonElement> & {
-    variant: "primary" | "outlined" | "green" | "red";
+    variant: "primary" | "outlined" | "secondary" | "green" | "red";
   }
 > = ({ variant, ...props }) => {
   const variantStyle =
@@ -10,7 +10,9 @@ export const Button: React.FC<
       ? "bg-green text-neutral-800"
       : variant === "red"
       ? "bg-red text-neutral-800"
-      : "bg-neutral-800 text-neutral-100 border border-neutral-100";
+      : variant === "outlined"
+      ? "bg-neutral-800 text-neutral-100 border border-neutral-100"
+      : "bg-neutral-700 text-neutral-100"; // secondary
   return (
     <button
       {...props}

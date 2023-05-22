@@ -1,8 +1,9 @@
 import { Tab } from "@headlessui/react";
 import React, { useState } from "react";
 
+import { type ApiMarket } from "@/types/api";
 import { type Side } from "@/types/global";
-import { ApiMarket } from "@/types/api";
+
 import { LimitOrderEntry } from "./LimitOrderEntry";
 import { MarketOrderEntry } from "./MarketOrderEntry";
 

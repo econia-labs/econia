@@ -3,8 +3,11 @@ import { ConnectedButton } from "@/components/ConnectedButton";
 import { SyncIcon } from "@/components/icons/SyncIcon";
 import { Input } from "@/components/Input";
 import { Page } from "@/components/Page";
+import { useState } from "react";
 
 export default function Swap() {
+  const [inputAmount, setInputAmount] = useState<string>("");
+  const [outputAmount, setOutputAmount] = useState<string>("");
   return (
     <Page>
       <div className="flex flex-col items-center">
@@ -15,11 +18,23 @@ export default function Swap() {
             is connected to Aptos testnet.
           </div>
           <div className="mt-8 flex flex-col items-center gap-4 border p-8 text-center text-sm text-white">
-            <Input placeholder="0.0000" />
+            <Input
+              startAdornment="INPUT"
+              value={inputAmount}
+              onChange={setInputAmount}
+              placeholder="0.0000"
+              type="number"
+            />
             <div className="[&>svg>path]:hover:fill-purple-700 cursor-pointer">
               <SyncIcon className="fill-current" />
             </div>
-            <Input placeholder="0.0000" />
+            <Input
+              startAdornment="OUTPUT"
+              value={outputAmount}
+              onChange={setOutputAmount}
+              placeholder="0.0000"
+              type="number"
+            />
             <div className="mt-4 flex w-full flex-col gap-1 font-roboto-mono">
               <div className="flex w-full justify-between">
                 <p>Balance</p>

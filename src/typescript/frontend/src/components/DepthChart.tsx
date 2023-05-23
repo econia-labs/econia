@@ -33,6 +33,9 @@ Chart.register(
   Filler,
   Legend
 );
+Chart.defaults.font.family = "Courier";
+Chart.defaults.animation = false;
+// Chart.defaults.global.defaultFontFamily = "Jost";
 // Chart.pluginService.register(corsairPlugin);
 
 type PriceLevel = {
@@ -171,6 +174,7 @@ export const DepthChart: React.FC<{
       <Line
         options={{
           responsive: true,
+
           elements: {
             line: { stepped: true },
             point: {
@@ -190,11 +194,23 @@ export const DepthChart: React.FC<{
             crosshair: {
               color: "white",
             },
+            title: {
+              display: true,
+              text: `MID MARKET $${labels[labels.length / 2]}`,
+              color: "white",
+            },
+            animation: {
+              duration: 0,
+            },
+            responsiveAnimationDuration: 0,
+            showLine: false,
             legend: {
               display: false,
             },
             tooltip: {
               // style tooltip to match the theme
+              // enabled: false,
+
               callbacks: {
                 label: (item: { label: any; raw: any }) => {
                   return [
@@ -210,22 +226,35 @@ export const DepthChart: React.FC<{
           },
           scales: {
             x: {
-              grid: {
-                display: true,
-                color: "gray",
-                // color: theme.colors.grey[700],
+              ticks: {
+                maxRotation: 0,
+                autoSkip: false,
+                minRotation: 0,
+                callback: function (value, index, values) {
+                  // show 1/3 and 2/3 of the way through
+                  if (
+                    index === Math.floor(values.length / 4) ||
+                    index === Math.floor((3 * values.length) / 4)
+                  ) {
+                    console.log("label", index, labels[index]);
+                    return labels[index];
+                  } else {
+                    return "";
+                  }
+                },
               },
-              // We don't use linear for now because it doesn't ensure that the graph fits nicely in tick sizes
-              // type: "linear",
-              // ticks: {
-              //   stepSize,
-              // },
             },
             y: {
-              grid: {
-                display: true,
-                color: "gray",
+              position: "right",
+              max: Math.max(bidData[0] || 0, askData[askData.length - 1] || 0),
+              // grid: {
+              //   display: true,
+              //   color: "gray",
+              // },
+              ticks: {
+                maxTicksLimit: 2,
               },
+
               beginAtZero: true,
             },
           },
@@ -300,7 +329,7 @@ const plugin = {
   defaults: {
     width: 1,
     color: "#FF4949",
-    dash: [3, 3],
+    dash: [2, 2],
   },
   afterInit: (
     chart: { corsair: { x: number; y: number } },
@@ -332,7 +361,6 @@ const plugin = {
     args: any,
     opts: { width: any; color: any; dash: any }
   ) => {
-    console.log(chart, "chart");
     const { ctx } = chart;
     const { top, bottom, left, right } = chart.chartArea;
     let { x, y } = chart.corsair;

@@ -812,3 +812,239 @@ Error Code | Description
 ## Overview
 
 The dev version of the API is available at `wss://dev.api.econia.exchange/ws`.
+
+## Ping
+
+```json
+{
+  "method": "ping"
+}
+```
+
+> The above request returns JSON structured like this:
+
+```json
+{
+  "event": "pong"
+}
+```
+
+When the client sends a ping message, the server will respond with a pong message.
+
+The client must send a ping message to the WebSocket API server at least once an
+hour. When more than an hour elapses without a ping message, the server will close
+the connection.
+
+## Orders
+
+```json
+{
+  "method": "subscribe",
+  "channel": "orders",
+  "params": {
+    "market_id": 0,
+    "user_address": "0x1"
+  }
+}
+```
+
+> The above request returns JSON structured like this:
+
+```json
+{
+  "event": "confirm",
+  "channel": "orders",
+  "method": "subscribe",
+  "params": {
+    "market_id": 0,
+    "user_address": "0x1"
+  }
+}
+```
+
+> After a subscription is successfully initiated, the server returns JSON
+> structured like this for every update.
+
+```json
+{
+  "event": "update",
+  "channel": "orders",
+  "data": {
+    "market_order_id": 1,
+    "market_id": 0,
+    "side": "bid",
+    "size": 1000,
+    "price": 1000,
+    "user_address": "0x1",
+    "custodian_id": null,
+    "order_state": "open",
+    "created_at": "2023-05-01T12:34:56.789012Z"
+  }
+}
+```
+
+> If the parameters provided are invalid, the request returns JSON structured
+> like this:
+
+```json
+{
+  "event": "error",
+  "message": "market with id `100` not found"
+}
+```
+
+> To unsubscribe, the user may send JSON structured like this:
+
+```json
+{
+  "method": "subscribe",
+  "channel": "orders",
+  "params": {
+    "market_id": 0,
+    "user_address": "0x1"
+  }
+}
+```
+
+The client can subscribe to the orders channel to receive updates on orders for
+a specific market and user address. Once a subscription has been confirmed, the
+client will receive updates when orders are placed, closed, cancelled, or evicted.
+
+Note that this channel will not provide updates for every fill made to an order.
+To receive those updates, the client must subscribe to the fills channel.
+
+The client may subscribe to any number of market ID / user address combinations.
+If the client attempts to subscribe to a market ID / user address combination they
+are already subscribed to, the WebSocket API will send an error message notifying
+them that this is the case.
+
+## Fills
+
+```json
+{
+  "method": "subscribe",
+  "channel": "fills",
+  "params": {
+    "market_id": 0,
+    "user_address": "0x1"
+  }
+}
+```
+
+> The above request returns JSON structured like this:
+
+```json
+{
+  "event": "confirm",
+  "channel": "fills",
+  "method": "subscribe",
+  "params": {
+    "market_id": 0,
+    "user_address": "0x1"
+  }
+}
+```
+
+> After a subscription is successfully initiated, the server returns JSON
+> structured like this for every update.
+
+```json
+{
+  "event": "update",
+  "channel": "fills",
+  "data": {
+    "market_order_id": 1,
+    "market_id": 0,
+    "side": "bid",
+    "size": 500,
+    "price": 1000,
+    "user_address": "0x1",
+    "custodian_id": null,
+    "order_state": "open",
+    "created_at": "2023-05-01T12:34:56.789012Z"
+  }
+}
+```
+
+> To unsubscribe, the user may send JSON structured like this:
+
+```json
+{
+  "method": "subscribe",
+  "channel": "fills",
+  "params": {
+    "market_id": 0,
+    "user_address": "0x1"
+  }
+}
+```
+
+The client can subscribe to the fills channel to receive updates on orders for
+a specific market and user address. Once a subscription has been successfully
+initiated, the client will receive updates whenever a fill occurs for an order
+on the specified market placed by the specified account.
+
+The client may subscribe to any number of market ID / user address combinations.
+If the client attempts to subscribe to a market ID / user address combination they
+are already subscribed to, the WebSocket API will send an error message notifying
+them that this is the case.
+
+## Price Levels
+
+```json
+{
+  "method": "subscribe",
+  "channel": "price_levels",
+  "params": {
+    "market_id": 0,
+  }
+}
+```
+
+> The above request returns JSON structured like this:
+
+```json
+{
+  "event": "confirm",
+  "channel": "price_levels",
+  "method": "subscribe",
+  "params": {
+    "market_id": 0,
+  }
+}
+```
+
+> After a subscription is successfully initiated, the server returns JSON
+> structured like this for every update.
+
+```json
+{
+  "event": "update",
+  "channel": "price_levels",
+  "data": {
+    "market_id": 0,
+    "size": 1000,
+    "price": 1000
+  }
+}
+```
+
+> To unsubscribe, the user may send JSON structured like this:
+
+```json
+{
+  "method": "subscribe",
+  "channel": "price_levels",
+  "params": {
+    "market_id": 0
+  }
+}
+```
+
+The client can subscribe to the price levels channel to receive updates on
+price levels on the orderbook for a specific market. Once a subscription has been
+successfully initiated, the client will receive updates whenever the amount
+available to fill at a price changes, or orders become available at a new price.
+
+The client can use the updates available from this channel along with the results
+of the GET orderbook endpoint to keep track of the current state of the orderbook.

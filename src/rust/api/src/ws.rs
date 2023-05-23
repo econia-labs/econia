@@ -393,21 +393,25 @@ async fn handle_socket(
     // if one of these tasks end, abort the others
     tokio::select! {
         _ = &mut send_task => {
+            tracing::debug!("send task terminated for client {}", who);
             fwd_task.abort();
             recv_task.abort();
             ping_check_task.abort();
         }
         _ = &mut recv_task => {
+            tracing::debug!("receive task terminated for client {}", who);
             fwd_task.abort();
             send_task.abort();
             ping_check_task.abort();
         }
         _ = &mut fwd_task => {
+            tracing::debug!("forward task terminated for client {}", who);
             recv_task.abort();
             send_task.abort();
             ping_check_task.abort();
         }
         _ = &mut ping_check_task => {
+            tracing::debug!("ping check task terminated for client {}", who);
             fwd_task.abort();
             recv_task.abort();
             send_task.abort();

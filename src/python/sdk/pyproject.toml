@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "econia-sdk"
+version = "0.1.0"
+description = ""
+authors = ["qdrs <qdrs@proton.me>"]
+readme = "README.md"
+packages = [{include = "econia_sdk"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+aptos-sdk = "^0.5.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

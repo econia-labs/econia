@@ -14,9 +14,15 @@
           "type_info": "Numeric"
         }
       ],
-      "nullable": [false, null],
+      "nullable": [
+        false,
+        null
+      ],
       "parameters": {
-        "Left": ["Numeric", "Int8"]
+        "Left": [
+          "Numeric",
+          "Int8"
+        ]
       }
     },
     "query": "\n        select\n            price,\n            sum(size) as \"size!\"\n        from orders where\n            market_id = $1 and\n            order_state = 'open' and\n            side = 'bid'\n        group by price order by price desc limit $2;\n        "
@@ -60,9 +66,21 @@
           "type_info": "Numeric"
         }
       ],
-      "nullable": [false, false, false, false, false, false, false],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
       "parameters": {
-        "Left": ["Numeric", "Timestamptz", "Timestamptz"]
+        "Left": [
+          "Numeric",
+          "Timestamptz",
+          "Timestamptz"
+        ]
       }
     },
     "query": "\n                select\n                    market_id,\n                    start_time,\n                    open,\n                    high,\n                    low,\n                    close,\n                    volume\n                from bars_30m where market_id = $1 and start_time >= $2 and start_time < $3\n                order by start_time;\n                "
@@ -86,7 +104,10 @@
           "type_info": {
             "Custom": {
               "kind": {
-                "Enum": ["bid", "ask"]
+                "Enum": [
+                  "bid",
+                  "ask"
+                ]
               },
               "name": "side"
             }
@@ -118,7 +139,12 @@
           "type_info": {
             "Custom": {
               "kind": {
-                "Enum": ["open", "filled", "cancelled", "evicted"]
+                "Enum": [
+                  "open",
+                  "filled",
+                  "cancelled",
+                  "evicted"
+                ]
               },
               "name": "order_state"
             }
@@ -142,10 +168,203 @@
         false
       ],
       "parameters": {
-        "Left": ["Text"]
+        "Left": [
+          "Text"
+        ]
       }
     },
     "query": "\n        select\n            market_order_id,\n            market_id,\n            side as \"side: db::models::order::Side\",\n            size,\n            price,\n            user_address,\n            custodian_id,\n            order_state as \"order_state: db::models::order::OrderState\",\n            created_at\n        from orders where user_address = $1 and order_state = 'open'\n        order by created_at;\n        "
+  },
+  "5119c4623801ae6ef9e2c0ff01d77882bb44cb883f12bc9bb0c00f296df3a773": {
+    "describe": {
+      "columns": [
+        {
+          "name": "market_id",
+          "ordinal": 0,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "base_name?",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "base_symbol?",
+          "ordinal": 3,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "base_decimals?",
+          "ordinal": 4,
+          "type_info": "Int2"
+        },
+        {
+          "name": "base_account_address",
+          "ordinal": 5,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "base_module_name",
+          "ordinal": 6,
+          "type_info": "Text"
+        },
+        {
+          "name": "base_struct_name",
+          "ordinal": 7,
+          "type_info": "Text"
+        },
+        {
+          "name": "base_name_generic",
+          "ordinal": 8,
+          "type_info": "Text"
+        },
+        {
+          "name": "quote_name",
+          "ordinal": 9,
+          "type_info": "Text"
+        },
+        {
+          "name": "quote_symbol",
+          "ordinal": 10,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "quote_decimals",
+          "ordinal": 11,
+          "type_info": "Int2"
+        },
+        {
+          "name": "quote_account_address",
+          "ordinal": 12,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "quote_module_name",
+          "ordinal": 13,
+          "type_info": "Text"
+        },
+        {
+          "name": "quote_struct_name",
+          "ordinal": 14,
+          "type_info": "Text"
+        },
+        {
+          "name": "lot_size",
+          "ordinal": 15,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "tick_size",
+          "ordinal": 16,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "min_size",
+          "ordinal": 17,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "underwriter_id",
+          "ordinal": 18,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "created_at",
+          "ordinal": 19,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Numeric"
+        ]
+      }
+    },
+    "query": "\n        select\n            market_id,\n            markets.name as name,\n            base.name as \"base_name?\",\n            base.symbol as \"base_symbol?\",\n            base.decimals as \"base_decimals?\",\n            base_account_address,\n            base_module_name,\n            base_struct_name,\n            base_name_generic,\n            quote.name as quote_name,\n            quote.symbol as quote_symbol,\n            quote.decimals as quote_decimals,\n            quote_account_address,\n            quote_module_name,\n            quote_struct_name,\n            lot_size,\n            tick_size,\n            min_size,\n            underwriter_id,\n            created_at\n        from markets\n            left join coins base on markets.base_account_address = base.account_address\n                                and markets.base_module_name = base.module_name\n                                and markets.base_struct_name = base.struct_name\n            join coins quote on markets.quote_account_address = quote.account_address\n                                and markets.quote_module_name = quote.module_name\n                                and markets.quote_struct_name = quote.struct_name\n            where market_id = $1;\n        "
+  },
+  "53720b72dccd07092982e57fbf2522c3098b9e6df8f35760c2f06343e1827237": {
+    "describe": {
+      "columns": [
+        {
+          "name": "market_id",
+          "ordinal": 0,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "open!",
+          "ordinal": 1,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "high!",
+          "ordinal": 2,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "low!",
+          "ordinal": 3,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "close!",
+          "ordinal": 4,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "change!",
+          "ordinal": 5,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "volume!",
+          "ordinal": 6,
+          "type_info": "Numeric"
+        }
+      ],
+      "nullable": [
+        false,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "parameters": {
+        "Left": [
+          "Interval",
+          "Numeric"
+        ]
+      }
+    },
+    "query": "\n        with bars as (\n            select * from bars_1m\n            where start_time >= now() - $1::interval and start_time < now()\n            and market_id = $2\n        ),\n        first as (\n            select start_time, first_value(open) over (order by start_time) as open\n            from bars\n        ),\n        last as (\n            select start_time, first_value(close) over (order by start_time desc) as close\n            from bars\n        )\n        select\n            bars.market_id,\n            min(first.open) as \"open!\",\n            max(high) as \"high!\",\n            min(low) as \"low!\",\n            min(last.close) as \"close!\",\n            round(min(last.close) / min(first.open) - 1, 8) as \"change!\",\n            sum(volume) as \"volume!\"\n        from\n            bars\n            inner join first on bars.start_time = first.start_time\n            inner join last on bars.start_time = last.start_time\n        group by\n            bars.market_id;\n        "
   },
   "5b29eac9a1e308e5e4e9045118d5bba91469bf47ae8d716016d1931bf33bde6e": {
     "describe": {
@@ -186,9 +405,21 @@
           "type_info": "Numeric"
         }
       ],
-      "nullable": [false, false, false, false, false, false, false],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
       "parameters": {
-        "Left": ["Numeric", "Timestamptz", "Timestamptz"]
+        "Left": [
+          "Numeric",
+          "Timestamptz",
+          "Timestamptz"
+        ]
       }
     },
     "query": "\n                select\n                    market_id,\n                    start_time,\n                    open,\n                    high,\n                    low,\n                    close,\n                    volume\n                from bars_1m where market_id = $1 and start_time >= $2 and start_time < $3\n                order by start_time;\n                "
@@ -207,9 +438,15 @@
           "type_info": "Numeric"
         }
       ],
-      "nullable": [false, null],
+      "nullable": [
+        false,
+        null
+      ],
       "parameters": {
-        "Left": ["Numeric", "Int8"]
+        "Left": [
+          "Numeric",
+          "Int8"
+        ]
       }
     },
     "query": "\n        select\n            price,\n            sum(size) as \"size!\"\n        from orders where\n            market_id = $1 and\n            order_state = 'open' and\n            side = 'ask'\n        group by price order by price limit $2;\n        "
@@ -223,7 +460,9 @@
           "type_info": "Numeric"
         }
       ],
-      "nullable": [false],
+      "nullable": [
+        false
+      ],
       "parameters": {
         "Left": []
       }
@@ -269,9 +508,21 @@
           "type_info": "Numeric"
         }
       ],
-      "nullable": [false, false, false, false, false, false, false],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
       "parameters": {
-        "Left": ["Numeric", "Timestamptz", "Timestamptz"]
+        "Left": [
+          "Numeric",
+          "Timestamptz",
+          "Timestamptz"
+        ]
       }
     },
     "query": "\n                select\n                    market_id,\n                    start_time,\n                    open,\n                    high,\n                    low,\n                    close,\n                    volume\n                from bars_1h where market_id = $1 and start_time >= $2 and start_time < $3\n                order by start_time;\n                "
@@ -315,9 +566,21 @@
           "type_info": "Numeric"
         }
       ],
-      "nullable": [false, false, false, false, false, false, false],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
       "parameters": {
-        "Left": ["Numeric", "Timestamptz", "Timestamptz"]
+        "Left": [
+          "Numeric",
+          "Timestamptz",
+          "Timestamptz"
+        ]
       }
     },
     "query": "\n                select\n                    market_id,\n                    start_time,\n                    open,\n                    high,\n                    low,\n                    close,\n                    volume\n                from bars_5m where market_id = $1 and start_time >= $2 and start_time < $3\n                order by start_time;;\n                "
@@ -341,7 +604,10 @@
           "type_info": {
             "Custom": {
               "kind": {
-                "Enum": ["bid", "ask"]
+                "Enum": [
+                  "bid",
+                  "ask"
+                ]
               },
               "name": "side"
             }
@@ -373,7 +639,12 @@
           "type_info": {
             "Custom": {
               "kind": {
-                "Enum": ["open", "filled", "cancelled", "evicted"]
+                "Enum": [
+                  "open",
+                  "filled",
+                  "cancelled",
+                  "evicted"
+                ]
               },
               "name": "order_state"
             }
@@ -397,7 +668,9 @@
         false
       ],
       "parameters": {
-        "Left": ["Text"]
+        "Left": [
+          "Text"
+        ]
       }
     },
     "query": "\n        select\n            market_order_id,\n            market_id,\n            side as \"side: db::models::order::Side\",\n            size,\n            price,\n            user_address,\n            custodian_id,\n            order_state as \"order_state: db::models::order::OrderState\",\n            created_at\n        from orders where user_address = $1 order by created_at;\n        "
@@ -441,9 +714,21 @@
           "type_info": "Numeric"
         }
       ],
-      "nullable": [false, false, false, false, false, false, false],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
       "parameters": {
-        "Left": ["Numeric", "Timestamptz", "Timestamptz"]
+        "Left": [
+          "Numeric",
+          "Timestamptz",
+          "Timestamptz"
+        ]
       }
     },
     "query": "\n                select\n                    market_id,\n                    start_time,\n                    open,\n                    high,\n                    low,\n                    close,\n                    volume\n                from bars_15m where market_id = $1 and start_time >= $2 and start_time < $3\n                order by start_time;;\n                "
@@ -472,7 +757,10 @@
           "type_info": {
             "Custom": {
               "kind": {
-                "Enum": ["bid", "ask"]
+                "Enum": [
+                  "bid",
+                  "ask"
+                ]
               },
               "name": "side"
             }
@@ -499,9 +787,22 @@
           "type_info": "Timestamptz"
         }
       ],
-      "nullable": [false, false, false, false, true, false, false, false],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        true,
+        false,
+        false,
+        false
+      ],
       "parameters": {
-        "Left": ["Numeric", "Timestamptz", "Timestamptz"]
+        "Left": [
+          "Numeric",
+          "Timestamptz",
+          "Timestamptz"
+        ]
       }
     },
     "query": "\n        select\n            market_id,\n            maker_order_id,\n            maker,\n            maker_side as \"maker_side: db::models::order::Side\",\n            custodian_id,\n            size,\n            price,\n            time\n        from fills where market_id = $1 and time >= $2 and time < $3 order by time;\n        "
@@ -637,5 +938,61 @@
       }
     },
     "query": "\n        select\n            market_id,\n            markets.name as name,\n            base.name as \"base_name?\",\n            base.symbol as \"base_symbol?\",\n            base.decimals as \"base_decimals?\",\n            base_account_address,\n            base_module_name,\n            base_struct_name,\n            base_name_generic,\n            quote.name as quote_name,\n            quote.symbol as quote_symbol,\n            quote.decimals as quote_decimals,\n            quote_account_address,\n            quote_module_name,\n            quote_struct_name,\n            lot_size,\n            tick_size,\n            min_size,\n            underwriter_id,\n            created_at\n        from markets\n            left join coins base on markets.base_account_address = base.account_address\n                                and markets.base_module_name = base.module_name\n                                and markets.base_struct_name = base.struct_name\n            join coins quote on markets.quote_account_address = quote.account_address\n                                and markets.quote_module_name = quote.module_name\n                                and markets.quote_struct_name = quote.struct_name\n            order by market_id;\n        "
+  },
+  "fbcfb25f4fbc59bc518920043b77fd897d7356556d1e5658763fd8f04568d20d": {
+    "describe": {
+      "columns": [
+        {
+          "name": "market_id",
+          "ordinal": 0,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "open!",
+          "ordinal": 1,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "high!",
+          "ordinal": 2,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "low!",
+          "ordinal": 3,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "close!",
+          "ordinal": 4,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "change!",
+          "ordinal": 5,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "volume!",
+          "ordinal": 6,
+          "type_info": "Numeric"
+        }
+      ],
+      "nullable": [
+        false,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "parameters": {
+        "Left": [
+          "Interval"
+        ]
+      }
+    },
+    "query": "\n        with bars as (\n            select * from bars_1m\n            where start_time >= now() - $1::interval and start_time < now()\n        ),\n        first as (\n            select start_time, first_value(open) over (order by start_time) as open\n            from bars\n        ),\n        last as (\n            select start_time, first_value(close) over (order by start_time desc) as close\n            from bars\n        )\n        select\n            bars.market_id,\n            min(first.open) as \"open!\",\n            max(high) as \"high!\",\n            min(low) as \"low!\",\n            min(last.close) as \"close!\",\n            round(min(last.close) / min(first.open) - 1, 8) as \"change!\",\n            sum(volume) as \"volume!\"\n        from\n            bars\n            inner join first on bars.start_time = first.start_time\n            inner join last on bars.start_time = last.start_time\n        group by bars.market_id order by market_id;\n        "
   }
 }

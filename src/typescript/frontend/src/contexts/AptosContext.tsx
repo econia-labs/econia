@@ -1,6 +1,8 @@
 import { AptosClient } from "aptos";
 import { createContext, type PropsWithChildren, useContext } from "react";
 
+import { RPC_NODE_URL } from "@/env";
+
 export type AptosContextState = {
   aptosClient: AptosClient;
 };
@@ -10,11 +12,7 @@ export const AptosContext = createContext<AptosContextState | undefined>(
 );
 
 export function AptosContextProvider({ children }: PropsWithChildren) {
-  if (process.env.NEXT_PUBLIC_RPC_NODE_URL == null) {
-    throw new Error("NEXT_PUBLIC_RPC_NODE_URL not set.");
-  }
-
-  const aptosClient = new AptosClient(process.env.NEXT_PUBLIC_RPC_NODE_URL);
+  const aptosClient = new AptosClient(RPC_NODE_URL);
   const value: AptosContextState = { aptosClient };
 
   return (

@@ -3,16 +3,233 @@ use axum::{
     Json,
 };
 use bigdecimal::BigDecimal;
-use chrono::{DateTime, NaiveDateTime, Utc};
+use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
-use types::{bar::Resolution, book::PriceLevel, error::TypeError};
+use sqlx::postgres::types::PgInterval;
+use types::{bar::Resolution, book::PriceLevel, error::TypeError, stats::Stats, Market};
 
 use crate::{error::ApiError, AppState};
+
+pub async fn get_markets(
+    State(state): State<AppState>,
+) -> Result<Json<Vec<types::Market>>, ApiError> {
+    let query_markets = sqlx::query_as!(
+        types::query::QueryMarket,
+        r#"
+        select
+            market_id,
+            markets.name as name,
+            base.name as "base_name?",
+            base.symbol as "base_symbol?",
+            base.decimals as "base_decimals?",
+            base_account_address,
+            base_module_name,
+            base_struct_name,
+            base_name_generic,
+            quote.name as quote_name,
+            quote.symbol as quote_symbol,
+            quote.decimals as quote_decimals,
+            quote_account_address,
+            quote_module_name,
+            quote_struct_name,
+            lot_size,
+            tick_size,
+            min_size,
+            underwriter_id,
+            created_at
+        from markets
+            left join coins base on markets.base_account_address = base.account_address
+                                and markets.base_module_name = base.module_name
+                                and markets.base_struct_name = base.struct_name
+            join coins quote on markets.quote_account_address = quote.account_address
+                                and markets.quote_module_name = quote.module_name
+                                and markets.quote_struct_name = quote.struct_name
+            order by market_id;
+        "#
+    )
+    .fetch_all(&state.pool)
+    .await?;
+
+    let markets = query_markets
+        .into_iter()
+        .map(|v| v.try_into())
+        .collect::<Result<Vec<types::Market>, TypeError>>()?;
+
+    Ok(Json(markets))
+}
+
+pub async fn get_market_by_id(
+    Path(market_id): Path<u64>,
+    State(state): State<AppState>,
+) -> Result<Json<Market>, ApiError> {
+    let market_id = BigDecimal::from(market_id);
+
+    let query_markets = sqlx::query_as!(
+        types::query::QueryMarket,
+        r#"
+        select
+            market_id,
+            markets.name as name,
+            base.name as "base_name?",
+            base.symbol as "base_symbol?",
+            base.decimals as "base_decimals?",
+            base_account_address,
+            base_module_name,
+            base_struct_name,
+            base_name_generic,
+            quote.name as quote_name,
+            quote.symbol as quote_symbol,
+            quote.decimals as quote_decimals,
+            quote_account_address,
+            quote_module_name,
+            quote_struct_name,
+            lot_size,
+            tick_size,
+            min_size,
+            underwriter_id,
+            created_at
+        from markets
+            left join coins base on markets.base_account_address = base.account_address
+                                and markets.base_module_name = base.module_name
+                                and markets.base_struct_name = base.struct_name
+            join coins quote on markets.quote_account_address = quote.account_address
+                                and markets.quote_module_name = quote.module_name
+                                and markets.quote_struct_name = quote.struct_name
+            where market_id = $1;
+        "#,
+        market_id
+    )
+    .fetch_all(&state.pool)
+    .await?;
+
+    if let Some(query_market) = query_markets.into_iter().next() {
+        let market: types::Market = query_market.try_into()?;
+        Ok(Json(market))
+    } else {
+        Err(ApiError::NotFound)
+    }
+}
+
+/// Query parameters for the tickers endpoint.
+#[derive(Debug, Deserialize)]
+pub struct TickerParams {
+    /// The resolution of the requested historical data.
+    resolution: Resolution,
+}
+
+pub async fn get_stats(
+    Query(params): Query<TickerParams>,
+    State(state): State<AppState>,
+) -> Result<Json<Vec<Stats>>, ApiError> {
+    let resolution: Duration = params.resolution.into();
+    let interval: PgInterval = resolution
+        .try_into()
+        .expect("never fails because Duration resolution can only be member of enum Resolution");
+
+    let query_tickers = sqlx::query_as!(
+        types::query::QueryStats,
+        r#"
+        with bars as (
+            select * from bars_1m
+            where start_time >= now() - $1::interval and start_time < now()
+        ),
+        first as (
+            select start_time, first_value(open) over (order by start_time) as open
+            from bars
+        ),
+        last as (
+            select start_time, first_value(close) over (order by start_time desc) as close
+            from bars
+        )
+        select
+            bars.market_id,
+            min(first.open) as "open!",
+            max(high) as "high!",
+            min(low) as "low!",
+            min(last.close) as "close!",
+            round(min(last.close) / min(first.open) - 1, 8) as "change!",
+            sum(volume) as "volume!"
+        from
+            bars
+            inner join first on bars.start_time = first.start_time
+            inner join last on bars.start_time = last.start_time
+        group by bars.market_id order by market_id;
+        "#,
+        interval
+    )
+    .fetch_all(&state.pool)
+    .await?;
+
+    let tickers: Vec<Stats> = query_tickers
+        .into_iter()
+        .map(|v| v.try_into())
+        .collect::<Result<Vec<Stats>, TypeError>>()
+        .unwrap();
+
+    Ok(Json(tickers))
+}
+
+pub async fn get_stats_by_id(
+    Query(params): Query<TickerParams>,
+    Path(market_id): Path<u64>,
+    State(state): State<AppState>,
+) -> Result<Json<Stats>, ApiError> {
+    let resolution: Duration = params.resolution.into();
+    let interval: PgInterval = resolution
+        .try_into()
+        .expect("never fails because Duration resolution can only be member of enum Resolution");
+
+    let market_id = BigDecimal::from(market_id);
+
+    let query_tickers = sqlx::query_as!(
+        types::query::QueryStats,
+        r#"
+        with bars as (
+            select * from bars_1m
+            where start_time >= now() - $1::interval and start_time < now()
+            and market_id = $2
+        ),
+        first as (
+            select start_time, first_value(open) over (order by start_time) as open
+            from bars
+        ),
+        last as (
+            select start_time, first_value(close) over (order by start_time desc) as close
+            from bars
+        )
+        select
+            bars.market_id,
+            min(first.open) as "open!",
+            max(high) as "high!",
+            min(low) as "low!",
+            min(last.close) as "close!",
+            round(min(last.close) / min(first.open) - 1, 8) as "change!",
+            sum(volume) as "volume!"
+        from
+            bars
+            inner join first on bars.start_time = first.start_time
+            inner join last on bars.start_time = last.start_time
+        group by
+            bars.market_id;
+        "#,
+        interval,
+        market_id
+    )
+    .fetch_all(&state.pool)
+    .await?;
+
+    if let Some(query_stats) = query_tickers.into_iter().next() {
+        let stats: Stats = query_stats.try_into()?;
+        Ok(Json(stats))
+    } else {
+        Err(ApiError::NotFound)
+    }
+}
 
 /// Query parameters for the orderbook endpoint.
 #[derive(Debug, Deserialize)]
 pub struct OrderbookParams {
-    depth: i64,
+    depth: u32,
 }
 
 #[derive(Debug, Serialize)]
@@ -31,6 +248,7 @@ pub async fn get_orderbook(
     }
 
     let market_id = BigDecimal::from(market_id);
+    let depth = i64::from(params.depth);
 
     // TODO: why does sqlx need a non-null assertion here to consider this of
     // type BigDecimal rather than Option<Decimal>?
@@ -47,7 +265,7 @@ pub async fn get_orderbook(
         group by price order by price desc limit $2;
         "#,
         market_id,
-        params.depth
+        depth
     )
     .fetch_all(&state.pool)
     .await?;
@@ -66,7 +284,7 @@ pub async fn get_orderbook(
         group by price order by price limit $2;
         "#,
         market_id,
-        params.depth
+        depth
     )
     .fetch_all(&state.pool)
     .await?;
@@ -228,6 +446,9 @@ pub async fn get_market_history(
             .fetch_all(&state.pool)
             .await?
         }
+        _ => {
+            todo!("TODO not implemented yet")
+        }
     };
 
     let market_history = market_history_query
@@ -303,6 +524,8 @@ mod tests {
     use axum::{
         body::Body,
         http::{Request, StatusCode},
+        routing::get,
+        Router,
     };
     use chrono::TimeZone;
     use sqlx::PgPool;
@@ -313,6 +536,46 @@ mod tests {
     use crate::{
         get_market_ids, load_config, routes::router, start_redis_channels, tests::make_test_server,
     };
+
+    #[tokio::test]
+    async fn test_markets() {
+        let config = load_config();
+
+        let pool = PgPool::connect(&config.database_url)
+            .await
+            .expect("Could not connect to DATABASE_URL");
+
+        let (tx, _) = broadcast::channel(16);
+
+        let state = AppState {
+            pool,
+            sender: tx,
+            market_ids: HashSet::new(),
+        };
+
+        let app = Router::new()
+            .route("/markets", get(get_markets))
+            .with_state(state);
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/markets")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
+        let s = String::from_utf8(body.to_vec()).unwrap();
+        let result: Result<Vec<types::Market>, serde_json::Error> =
+            serde_json::from_str(s.as_str());
+
+        assert!(result.is_ok());
+    }
 
     /// The `TestOnlyOrderbookResponse` struct is defined in the test module,
     /// since the struct used as the response type in the API does not need

@@ -1,9 +1,12 @@
 import { type BCS, type Types } from "aptos";
 import { type MaybeHexString } from "aptos";
 
-import { type AdvanceStyle, type Side } from "../types/order";
-import { type Restriction } from "../types/order";
-import { type SelfMatchBehavior } from "../types/order";
+import {
+  type AdvanceStyle,
+  type Restriction,
+  type SelfMatchBehavior,
+  type Side,
+} from "./order";
 import {
   advanceStyleToNumber,
   restrictionToNumber,

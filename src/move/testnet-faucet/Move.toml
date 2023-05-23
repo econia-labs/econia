@@ -1,0 +1,17 @@
+[package]
+name = 'Aptos Faucet'
+version = '0.0.0' # Per SemVer
+upgrade_policy = 'compatible'
+
+[addresses]
+aptos_faucet = '0x7c36a610d1cde8853a692c057e7bd2479ba9d5eeaeceafa24f125c23d2abf942'
+
+[dependencies.AptosFramework]
+git = 'https://github.com/aptos-labs/aptos-core'
+subdir = 'aptos-move/framework/aptos-framework'
+rev = 'c4f5fb69fb848bf593f31b6adbca33b5a0e41cb0'
+
+[dependencies.Econia]
+git = 'https://github.com/econia-labs/econia'
+subdir = 'src/move/econia'
+rev = '26ba65e754dc42b4f341a08f29180dd58d4939dc'

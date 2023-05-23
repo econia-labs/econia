@@ -1,13 +1,12 @@
-use axum::{extract::State, routing::get, Json, Router};
+use axum::{routing::get, Router};
 use tower::ServiceBuilder;
 use tower_http::{
     compression::CompressionLayer,
     cors::{Any, CorsLayer},
     trace::TraceLayer,
 };
-use types::error::TypeError;
 
-use crate::{error::ApiError, ws::ws_handler, AppState};
+use crate::{ws::ws_handler, AppState};
 
 mod account;
 mod market;
@@ -25,7 +24,10 @@ pub fn router(state: AppState) -> Router {
 
     Router::new()
         .route("/", get(index))
-        .route("/markets", get(markets))
+        .route("/markets", get(market::get_markets))
+        .route("/market/:market_id", get(market::get_market_by_id))
+        .route("/stats", get(market::get_stats))
+        .route("/market/:market_id/stats", get(market::get_stats_by_id))
         .route(
             "/account/:account_address/order-history",
             get(account::order_history_by_account),
@@ -49,68 +51,17 @@ async fn index() -> String {
     String::from("Econia backend API")
 }
 
-async fn markets(State(state): State<AppState>) -> Result<Json<Vec<types::Market>>, ApiError> {
-    let query_markets = sqlx::query_as!(
-        types::query::QueryMarket,
-        r#"
-        select
-            market_id,
-            markets.name as name,
-            base.name as "base_name?",
-            base.symbol as "base_symbol?",
-            base.decimals as "base_decimals?",
-            base_account_address,
-            base_module_name,
-            base_struct_name,
-            base_name_generic,
-            quote.name as quote_name,
-            quote.symbol as quote_symbol,
-            quote.decimals as quote_decimals,
-            quote_account_address,
-            quote_module_name,
-            quote_struct_name,
-            lot_size,
-            tick_size,
-            min_size,
-            underwriter_id,
-            created_at
-        from markets
-            left join coins base on markets.base_account_address = base.account_address
-                                and markets.base_module_name = base.module_name
-                                and markets.base_struct_name = base.struct_name
-            join coins quote on markets.quote_account_address = quote.account_address
-                                and markets.quote_module_name = quote.module_name
-                                and markets.quote_struct_name = quote.struct_name
-            order by market_id;
-        "#
-    )
-    .fetch_all(&state.pool)
-    .await?;
-
-    let markets = query_markets
-        .into_iter()
-        .map(|v| v.try_into())
-        .collect::<Result<Vec<types::Market>, TypeError>>()?;
-
-    Ok(Json(markets))
-}
-
 #[cfg(test)]
 mod tests {
-    use std::collections::HashSet;
-
     use axum::{
         body::Body,
         http::{Request, StatusCode},
         routing::get,
         Router,
     };
-    use sqlx::PgPool;
-    use tokio::sync::broadcast;
     use tower::ServiceExt;
 
     use super::*;
-    use crate::load_config;
 
     #[tokio::test]
     async fn test_index() {
@@ -125,45 +76,5 @@ mod tests {
 
         let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
         assert_eq!(&body[..], b"Econia backend API");
-    }
-
-    #[tokio::test]
-    async fn test_markets() {
-        let config = load_config();
-
-        let pool = PgPool::connect(&config.database_url)
-            .await
-            .expect("Could not connect to DATABASE_URL");
-
-        let (tx, _) = broadcast::channel(16);
-
-        let state = AppState {
-            pool,
-            sender: tx,
-            market_ids: HashSet::new(),
-        };
-
-        let app = Router::new()
-            .route("/markets", get(markets))
-            .with_state(state);
-
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/markets")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-
-        assert_eq!(response.status(), StatusCode::OK);
-
-        let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
-        let s = String::from_utf8(body.to_vec()).unwrap();
-        let result: Result<Vec<types::Market>, serde_json::Error> =
-            serde_json::from_str(s.as_str());
-
-        assert!(result.is_ok());
     }
 }

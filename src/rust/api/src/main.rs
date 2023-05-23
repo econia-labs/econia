@@ -15,7 +15,15 @@ mod routes;
 mod ws;
 
 #[derive(Deserialize, Debug)]
+#[serde(rename_all(deserialize = "snake_case"))]
+pub enum Env {
+    Development,
+    Production,
+}
+
+#[derive(Deserialize, Debug)]
 pub struct Config {
+    env: Env,
     port: u16,
     database_url: String,
     redis_url: String,
@@ -40,17 +48,16 @@ pub fn load_config() -> Config {
 async fn main() {
     let config = load_config();
 
-    tracing_subscriber::registry()
-        .with(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "api=debug,sqlx=debug,tower_http=debug".into()),
-        )
-        .with(tracing_subscriber::fmt::layer())
-        .init();
+    init_tracing(config.env);
 
     let pool = PgPool::connect(&config.database_url)
         .await
-        .expect("Could not connect to DATABASE_URL");
+        .unwrap_or_else(|_| {
+            panic!(
+                "Could not connect to DATABASE_URL `{}`",
+                &config.database_url
+            )
+        });
 
     let market_ids = get_market_ids(pool.clone()).await;
     if market_ids.is_empty() {
@@ -79,6 +86,39 @@ async fn main() {
         .unwrap();
 }
 
+fn init_tracing(env: Env) {
+    match env {
+        Env::Development => {
+            let fmt_layer = tracing_subscriber::fmt::layer()
+                .with_target(true)
+                .with_ansi(true);
+
+            tracing_subscriber::registry()
+                .with(
+                    tracing_subscriber::EnvFilter::try_from_default_env()
+                        .unwrap_or_else(|_| "api=debug,sqlx=debug,tower_http=debug".into()),
+                )
+                .with(fmt_layer)
+                .init();
+        }
+
+        Env::Production => {
+            let fmt_layer = tracing_subscriber::fmt::layer()
+                .with_target(true)
+                .with_ansi(false)
+                .without_time();
+
+            tracing_subscriber::registry()
+                .with(
+                    tracing_subscriber::EnvFilter::try_from_default_env()
+                        .unwrap_or_else(|_| "api=debug,sqlx=debug,tower_http=debug".into()),
+                )
+                .with(fmt_layer)
+                .init();
+        }
+    };
+}
+
 async fn get_market_ids(pool: Pool<Postgres>) -> Vec<u64> {
     sqlx::query_as!(
         types::query::MarketIdQuery,
@@ -97,11 +137,11 @@ async fn start_redis_channels(
     market_ids: Vec<u64>,
     tx: broadcast::Sender<Update>,
 ) -> redis::aio::MultiplexedConnection {
-    let client = redis::Client::open(redis_url).expect("could not start redis client");
+    let client = redis::Client::open(redis_url.clone()).expect("could not start redis client");
     let conn = client
         .get_multiplexed_tokio_connection()
         .await
-        .expect("could not connect to redis");
+        .unwrap_or_else(|_| panic!("Could not connect to REDIS_URL `{}`", &redis_url));
 
     let pubsub_conn = client.get_async_connection().await.unwrap();
 

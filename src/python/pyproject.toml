@@ -1,9 +1,0 @@
-[tool.poetry]
-name = "econia-build-scripts"
-version = "1.0.0"
-description = "Econia build scripts"
-authors = ["Econia Labs"]
-
-[tool.poetry.dependencies]
-aptos-sdk = "^0.5.1"
-python = "^3.9"

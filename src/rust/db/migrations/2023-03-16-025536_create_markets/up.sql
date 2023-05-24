@@ -32,7 +32,8 @@ create table markets (
     ) references coins (account_address, module_name, struct_name),
     foreign key (
         quote_account_address, quote_module_name, quote_struct_name
-    ) references coins (account_address, module_name, struct_name)
+    ) references coins (account_address, module_name, struct_name),
+    foreign key (market_id) references market_registration_events (market_id)
 );
 
 -- Corresponds to econia::registry::MarketRegistrationEvent
@@ -50,7 +51,6 @@ create table market_registration_events (
     tick_size numeric (20) not null,
     min_size numeric (20) not null,
     underwriter_id numeric (20) not null,
-    foreign key (market_id) references markets (market_id)
 );
 
 create function register_market() returns trigger as $register_market$

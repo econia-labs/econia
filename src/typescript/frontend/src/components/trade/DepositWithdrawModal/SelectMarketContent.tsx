@@ -6,7 +6,6 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { data } from "tailwindcss/defaultTheme";
 
 const columnHelper = createColumnHelper<ApiMarket>();
 

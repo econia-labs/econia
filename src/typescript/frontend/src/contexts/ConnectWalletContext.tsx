@@ -1,14 +1,11 @@
+import { useWallet, WalletReadyState } from "@manahippo/aptos-wallet-adapter";
 import {
   createContext,
   type PropsWithChildren,
   useContext,
-  Fragment,
   useState,
 } from "react";
 
-import { RPC_NODE_URL } from "@/env";
-import { Transition, Dialog } from "@headlessui/react";
-import { WalletReadyState, useWallet } from "@manahippo/aptos-wallet-adapter";
 import { BaseModal } from "@/components/BaseModal";
 
 export type ConnectWalletContextState = {

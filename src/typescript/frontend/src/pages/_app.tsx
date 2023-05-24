@@ -12,6 +12,7 @@ import { Jost, Roboto_Mono } from "next/font/google";
 import { useMemo } from "react";
 
 import { AptosContextProvider } from "@/contexts/AptosContext";
+import { ConnectWalletContextProvider } from "@/contexts/ConnectWalletContext";
 
 const jost = Jost({
   subsets: ["latin"],
@@ -32,17 +33,19 @@ export default function App({ Component, pageProps }: AppProps) {
   );
   return (
     <QueryClientProvider client={queryClient}>
-      <WalletProvider wallets={wallets}>
+      <WalletProvider wallets={wallets} autoConnect>
         <AptosContextProvider>
-          <style jsx global>{`
-            :root {
-              --font-jost: ${jost.style.fontFamily};
-              --font-roboto-mono: ${robotoMono.style.fontFamily};
-            }
-          `}</style>
-          <div>
-            <Component {...pageProps} />
-          </div>
+          <ConnectWalletContextProvider>
+            <style jsx global>{`
+              :root {
+                --font-jost: ${jost.style.fontFamily};
+                --font-roboto-mono: ${robotoMono.style.fontFamily};
+              }
+            `}</style>
+            <div>
+              <Component {...pageProps} />
+            </div>
+          </ConnectWalletContextProvider>
         </AptosContextProvider>
       </WalletProvider>
       <ReactQueryDevtools initialIsOpen={false} />

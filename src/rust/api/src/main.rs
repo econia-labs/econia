@@ -12,6 +12,7 @@ use crate::routes::router;
 
 mod error;
 mod routes;
+mod util;
 mod ws;
 
 #[derive(Deserialize, Debug)]

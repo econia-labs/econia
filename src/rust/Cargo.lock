@@ -69,6 +69,7 @@ dependencies = [
  "envy",
  "futures-util",
  "hyper",
+ "once_cell",
  "rand",
  "redis",
  "regex",

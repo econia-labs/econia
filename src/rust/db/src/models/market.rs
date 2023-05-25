@@ -7,7 +7,7 @@ use types::{error::TypeError, events};
 
 use crate::schema::{market_registration_events, recognized_market_events};
 
-use super::IntoInsertable;
+use super::ToInsertable;
 
 #[derive(Clone, Debug, Queryable)]
 pub struct Market {
@@ -108,11 +108,11 @@ pub struct NewMarketRegistrationEvent<'a> {
     pub underwriter_id: &'a BigDecimal,
 }
 
-impl<'a> IntoInsertable for &'a MarketRegistrationEvent {
-    type Insertable = NewMarketRegistrationEvent<'a>;
+impl ToInsertable for MarketRegistrationEvent {
+    type Insertable<'a> = NewMarketRegistrationEvent<'a>;
 
-    fn into_insertable(self) -> Self::Insertable {
-        NewMarketRegistrationEvent::<'a> {
+    fn to_insertable(&self) -> Self::Insertable<'_> {
+        NewMarketRegistrationEvent {
             market_id: &self.market_id,
             time: self.time,
             base_account_address: self.base_account_address.as_deref(),
@@ -160,11 +160,11 @@ pub struct NewRecognizedMarketEvent<'a> {
     pub min_size: Option<&'a BigDecimal>,
 }
 
-impl<'a> IntoInsertable for &'a RecognizedMarketEvent {
-    type Insertable = NewRecognizedMarketEvent<'a>;
+impl ToInsertable for RecognizedMarketEvent {
+    type Insertable<'a> = NewRecognizedMarketEvent<'a>;
 
-    fn into_insertable(self) -> Self::Insertable {
-        NewRecognizedMarketEvent::<'a> {
+    fn to_insertable(&self) -> Self::Insertable<'_> {
+        NewRecognizedMarketEvent {
             market_id: &self.market_id,
             time: self.time,
             event_type: self.event_type,

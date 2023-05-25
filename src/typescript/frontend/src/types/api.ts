@@ -31,3 +31,22 @@ export type ApiOrder = {
   order_state: "open" | "filled" | "cancelled" | "evicted";
   created_at: string;
 };
+
+export type ApiBar = {
+  start_time: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+};
+
+export type ApiResolution =
+  | "1m"
+  | "5m"
+  | "15m"
+  | "30m"
+  | "1h"
+  | "4h"
+  | "12h"
+  | "1d";

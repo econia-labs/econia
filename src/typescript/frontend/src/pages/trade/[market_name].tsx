@@ -13,7 +13,9 @@ import type { ApiMarket } from "@/types/api";
 
 const TVChartContainer = dynamic(
   () =>
-    import("@/components/TVChartContainer").then((mod) => mod.TVChartContainer),
+    import("@/components/trade/TVChartContainer").then(
+      (mod) => mod.TVChartContainer
+    ),
   { ssr: false }
 );
 
@@ -57,14 +59,17 @@ export default function Market({ allMarketData, marketData }: Props) {
 
   const marketNames: string[] = allMarketData
     .sort((a, b) => a.name.localeCompare(b.name))
-    .map((market) => `${market.name}`);
+    .map(({ name }) => name);
+
   return (
     <Page>
       <StatsBar marketNames={marketNames} />
       <main className="flex flex-1 gap-4 px-4 py-2">
         <div className="flex flex-1 flex-col gap-4">
           <ChartCard className="flex-1">
-            <TVChartContainer />
+            {isScriptReady && (
+              <TVChartContainer allMarketData={allMarketData} />
+            )}
           </ChartCard>
           <ChartCard>
             <ChartName className="mb-4">Orders</ChartName>
@@ -95,7 +100,6 @@ export default function Market({ allMarketData, marketData }: Props) {
           setIsScriptReady(true);
         }}
       />
-      {isScriptReady && <TVChartContainer />}
     </Page>
   );
 }

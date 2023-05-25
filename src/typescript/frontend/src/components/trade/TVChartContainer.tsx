@@ -15,6 +15,7 @@ import {
   type Timezone,
   widget,
 } from "../../../public/static/charting_library";
+import { TypeTag } from "@/types/move";
 
 export interface ChartContainerProps {
   symbol: ChartingLibraryWidgetOptions["symbol"];
@@ -117,17 +118,8 @@ const getSearchItem = ({
   base_name_generic,
 }: ApiMarket): SearchSymbolResultItem => {
   if (base != null) {
-    const fullBase = [
-      base.account_address,
-      base.module_name,
-      base.struct_name,
-    ].join("::");
-
-    const fullQuote = [
-      quote.account_address,
-      quote.module_name,
-      quote.struct_name,
-    ].join("::");
+    const fullBase = TypeTag.fromApiCoin(base).toString();
+    const fullQuote = TypeTag.fromApiCoin(quote).toString();
 
     return {
       symbol: name,

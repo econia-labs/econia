@@ -1,13 +1,21 @@
 import type { GetStaticPaths, GetStaticProps } from "next";
-import React, { type PropsWithChildren } from "react";
+import dynamic from "next/dynamic";
+import Script from "next/script";
+import { type PropsWithChildren, useState } from "react";
 
 import { Page } from "@/components/Page";
 import { StatsBar } from "@/components/StatsBar";
+import { OrderEntry } from "@/components/trade/OrderEntry";
 import { OrdersTable } from "@/components/trade/OrdersTable";
+import { TradeHistoryTable } from "@/components/trade/TradeHistoryTable";
 import { API_URL } from "@/env";
 import type { ApiMarket } from "@/types/api";
-import { TradeHistoryTable } from "@/components/trade/TradeHistoryTable";
-import { OrderEntry } from "@/components/trade/OrderEntry";
+
+const TVChartContainer = dynamic(
+  () =>
+    import("@/components/TVChartContainer").then((mod) => mod.TVChartContainer),
+  { ssr: false }
+);
 
 type Props = {
   marketData: ApiMarket | undefined;
@@ -43,6 +51,8 @@ const ChartName: React.FC<PropsWithChildren<{ className?: string }>> = ({
 );
 
 export default function Market({ allMarketData, marketData }: Props) {
+  const [isScriptReady, setIsScriptReady] = useState(false);
+
   if (!marketData) return <Page>Market not found.</Page>;
 
   const marketNames: string[] = allMarketData
@@ -54,7 +64,7 @@ export default function Market({ allMarketData, marketData }: Props) {
       <main className="flex flex-1 gap-4 px-4 py-2">
         <div className="flex flex-1 flex-col gap-4">
           <ChartCard className="flex-1">
-            <ChartName>Price Chart</ChartName>
+            <TVChartContainer />
           </ChartCard>
           <ChartCard>
             <ChartName className="mb-4">Orders</ChartName>
@@ -78,6 +88,14 @@ export default function Market({ allMarketData, marketData }: Props) {
           </div>
         </div>
       </main>
+      <Script
+        src="/static/datafeeds/udf/dist/bundle.js"
+        strategy="lazyOnload"
+        onReady={() => {
+          setIsScriptReady(true);
+        }}
+      />
+      {isScriptReady && <TVChartContainer />}
     </Page>
   );
 }

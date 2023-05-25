@@ -10,9 +10,10 @@ import { OrdersTable } from "@/components/trade/OrdersTable";
 import { TradeHistoryTable } from "@/components/trade/TradeHistoryTable";
 import { API_URL } from "@/env";
 import type { ApiMarket } from "@/types/api";
+
 import {
-  ResolutionString,
-  ThemeName,
+  type ResolutionString,
+  type ThemeName,
 } from "../../../public/static/charting_library";
 
 const TVChartContainer = dynamic(

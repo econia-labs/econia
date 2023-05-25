@@ -14,7 +14,7 @@ create table coins (
 -- Only recognized markets should be stored in the api database.
 create table markets (
     market_id numeric (20) not null primary key,
-    name text not null unique,
+    name text not null,
     base_account_address varchar (70),
     base_module_name text,
     base_struct_name text,

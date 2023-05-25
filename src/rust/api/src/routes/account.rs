@@ -1,16 +1,27 @@
 use axum::{
-    extract::{Path, State},
+    extract::{Path, Query, State},
     Json,
 };
+use serde::Deserialize;
 use types::error::TypeError;
 
 use crate::{error::ApiError, util::check_addr, AppState};
 
+#[derive(Debug, Deserialize)]
+pub struct AccountOrderParams {
+    limit: Option<u32>,
+    offset: Option<u32>,
+}
+
 pub async fn order_history_by_account(
+    Query(params): Query<AccountOrderParams>,
     Path(account_address): Path<String>,
     State(state): State<AppState>,
 ) -> Result<Json<Vec<types::order::Order>>, ApiError> {
     check_addr(&account_address)?;
+
+    let limit = params.limit.map(|v| i64::from(v));
+    let offset = params.offset.map(|v| i64::from(v));
 
     let order_history_query = sqlx::query_as!(
         db::models::order::Order,
@@ -25,9 +36,11 @@ pub async fn order_history_by_account(
             custodian_id,
             order_state as "order_state: db::models::order::OrderState",
             created_at
-        from orders where user_address = $1 order by created_at;
+        from orders where user_address = $1 order by created_at limit $2 offset $3;
         "#,
-        account_address
+        account_address,
+        limit,
+        offset
     )
     .fetch_all(&state.pool)
     .await?;
@@ -45,10 +58,14 @@ pub async fn order_history_by_account(
 }
 
 pub async fn open_orders_by_account(
+    Query(params): Query<AccountOrderParams>,
     Path(account_address): Path<String>,
     State(state): State<AppState>,
 ) -> Result<Json<Vec<types::order::Order>>, ApiError> {
     check_addr(&account_address)?;
+
+    let limit = params.limit.map(|v| i64::from(v));
+    let offset = params.offset.map(|v| i64::from(v));
 
     let open_orders_query = sqlx::query_as!(
         db::models::order::Order,
@@ -64,9 +81,11 @@ pub async fn open_orders_by_account(
             order_state as "order_state: db::models::order::OrderState",
             created_at
         from orders where user_address = $1 and order_state = 'open'
-        order by created_at;
+        order by created_at limit $2 offset $3;
         "#,
-        account_address
+        account_address,
+        limit,
+        offset
     )
     .fetch_all(&state.pool)
     .await?;

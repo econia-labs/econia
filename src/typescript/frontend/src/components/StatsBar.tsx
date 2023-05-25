@@ -2,29 +2,31 @@ import { Listbox } from "@headlessui/react";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import Link from "next/link";
 
+import { type ApiMarket } from "@/types/api";
+
 type Props = {
-  marketNames: string[];
-  selectedMarket: string;
+  allMarketData: ApiMarket[];
+  selectedMarket: ApiMarket;
 };
 
-export function StatsBar({ marketNames, selectedMarket }: Props) {
+export function StatsBar({ allMarketData, selectedMarket }: Props) {
   return (
     <div className="flex border-b border-neutral-600 bg-black px-4 py-2">
       <div className="flex flex-1 items-center">
         <Listbox value={selectedMarket}>
           <div className="relative w-[160px]">
             <Listbox.Button className="flex px-4 font-roboto-mono text-neutral-300">
-              {selectedMarket}
+              {selectedMarket.name}
               <ChevronDownIcon className="my-auto ml-1 h-5 w-5 text-neutral-500" />
             </Listbox.Button>
             <Listbox.Options className="absolute mt-2 w-full bg-black shadow ring-1 ring-neutral-500">
-              {marketNames.map((marketName, i) => (
-                <Link href={`/trade/${marketName}`} key={i}>
+              {allMarketData.map((market) => (
+                <Link href={`/trade/${market.name}`} key={market.market_id}>
                   <Listbox.Option
-                    value={marketName}
+                    value={market.name}
                     className="px-4 py-1 font-roboto-mono text-neutral-300 hover:bg-neutral-800"
                   >
-                    {marketName}
+                    {market.name}
                   </Listbox.Option>
                 </Link>
               ))}

@@ -17,7 +17,37 @@ enum Step {
 
 export const useAllMarketData = () => {
   return useQuery<ApiMarket[]>(["allMarketData"], async () => {
-    return fetch(new URL("markets", API_URL).href).then((res) => res.json());
+    // return fetch(new URL("markets", API_URL).href).then((res) => res.json());
+    return [
+      {
+        market_id: 1,
+        name: "tETH-tUSDC",
+        base: {
+          account_address:
+            "0x7c36a610d1cde8853a692c057e7bd2479ba9d5eeaeceafa24f125c23d2abf942",
+          module_name: "test_eth",
+          struct_name: "TestETHCoin",
+          symbol: "tETH",
+          name: "TestETHCoin",
+          decimals: 8,
+        },
+        base_name_generic: "",
+        quote: {
+          account_address:
+            "0x7c36a610d1cde8853a692c057e7bd2479ba9d5eeaeceafa24f125c23d2abf942",
+          module_name: "test_usdc",
+          struct_name: "TestUSDCoin",
+          symbol: "tUSDC",
+          name: "TestUSDCoin",
+          decimals: 6,
+        },
+        lot_size: 1,
+        tick_size: 1,
+        min_size: 1,
+        underwriter_id: 0,
+        created_at: "2023-05-18T17:22:48.971737Z",
+      },
+    ];
   });
 };
 

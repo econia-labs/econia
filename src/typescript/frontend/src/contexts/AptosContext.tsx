@@ -39,7 +39,8 @@ export function AptosContextProvider({ children }: PropsWithChildren) {
     async (
       ...args: Parameters<WalletContextState["signAndSubmitTransaction"]>
     ) => {
-      let [transaction, options] = args;
+      let transaction = args[0];
+      const options = args[1];
       if (isEntryFunctionPayload(transaction)) {
         transaction = {
           ...transaction,

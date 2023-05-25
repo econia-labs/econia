@@ -28,6 +28,11 @@ export type MoveEventHandle = {
 export type MoveTableHandle = {
   handle: string;
 };
+export type MoveTypeInfo = {
+  account_address: string;
+  module_name: string;
+  struct_name: string;
+};
 
 export type MoveTableWithLength = {
   handle: string;

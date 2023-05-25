@@ -41,8 +41,6 @@ export const LimitOrderEntry: React.FC<{
   );
 
   const onSubmit = async (values: LimitFormValues) => {
-    console.log(values);
-
     const orderSideMap: Record<Side, order.Side> = {
       buy: "bid",
       sell: "ask",

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 
 import { API_URL } from "@/env";
 import { type ApiBar, type ApiMarket, type ApiResolution } from "@/types/api";
+import { TypeTag } from "@/types/move";
 
 import {
   type Bar,
@@ -15,7 +16,6 @@ import {
   type Timezone,
   widget,
 } from "../../../public/static/charting_library";
-import { TypeTag } from "@/types/move";
 
 export interface ChartContainerProps {
   symbol: ChartingLibraryWidgetOptions["symbol"];
@@ -157,7 +157,6 @@ export const TVChartContainer: React.FC<
   const datafeed: IBasicDataFeed = useMemo(
     () => ({
       onReady: (callback) => {
-        console.log("[onReady]: Method call");
         setTimeout(() => {
           callback(configurationData);
         }, 0);
@@ -227,7 +226,6 @@ export const TVChartContainer: React.FC<
             ).href
           );
           const data = await res.json();
-          console.log(data);
 
           const bars = data.map(
             (bar: ApiBar): Bar => ({

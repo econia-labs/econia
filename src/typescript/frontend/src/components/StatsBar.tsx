@@ -1,18 +1,17 @@
 import { Listbox } from "@headlessui/react";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
-import { useState } from "react";
+import Link from "next/link";
 
 type Props = {
   marketNames: string[];
+  selectedMarket: string;
 };
 
-export function StatsBar({ marketNames }: Props) {
-  const [selectedMarket, setSelectedMarket] = useState<string>(marketNames[0]);
-
+export function StatsBar({ marketNames, selectedMarket }: Props) {
   return (
     <div className="flex border-b border-neutral-600 bg-black px-4 py-2">
       <div className="flex flex-1 items-center">
-        <Listbox value={selectedMarket} onChange={setSelectedMarket}>
+        <Listbox value={selectedMarket}>
           <div className="relative w-[160px]">
             <Listbox.Button className="flex px-4 font-roboto-mono text-neutral-300">
               {selectedMarket}
@@ -20,13 +19,14 @@ export function StatsBar({ marketNames }: Props) {
             </Listbox.Button>
             <Listbox.Options className="absolute mt-2 w-full bg-black shadow ring-1 ring-neutral-500">
               {marketNames.map((marketName, i) => (
-                <Listbox.Option
-                  key={i}
-                  value={marketName}
-                  className="px-4 py-1 font-roboto-mono text-neutral-300 hover:bg-neutral-800"
-                >
-                  {marketName}
-                </Listbox.Option>
+                <Link href={`/trade/${marketName}`} key={i}>
+                  <Listbox.Option
+                    value={marketName}
+                    className="px-4 py-1 font-roboto-mono text-neutral-300 hover:bg-neutral-800"
+                  >
+                    {marketName}
+                  </Listbox.Option>
+                </Link>
               ))}
             </Listbox.Options>
           </div>

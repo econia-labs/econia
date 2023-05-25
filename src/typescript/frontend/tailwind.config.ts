@@ -21,6 +21,7 @@ const config = {
       blue: "#62c6f8",
       green: "#6ed5a3",
       yellow: "#eef081",
+      red: "#d56e6e",
       neutral: {
         100: "#FFFFFF",
         200: "#F9F9F9",

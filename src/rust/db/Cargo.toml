@@ -2,7 +2,6 @@
 name = "db"
 version = "0.1.0"
 edition = "2021"
-
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
@@ -18,6 +17,7 @@ types = { path = "../types" }
 [dev-dependencies]
 dotenvy = { workspace = true }
 envy = { workspace = true }
+indicatif = "0.17.3"
 rand = { version = "0.8.5", features = ["std_rng"] }
 serde = { workspace = true }
 

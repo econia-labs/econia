@@ -1,23 +1,23 @@
-import { type MakerEventType } from "../types/events";
+import { type MakerEventType } from "./events";
 import {
   type AdvanceStyle,
   type OrderState,
   type Restriction,
   type SelfMatchBehavior,
   type Side,
-} from "../types/order";
+} from "./order";
 
 export const makerEventTypeToNumber = (
   makerEventType: MakerEventType
 ): number => {
   switch (makerEventType) {
-    case "Cancel":
+    case "cancel":
       return 0;
-    case "Change":
+    case "change":
       return 1;
-    case "Evict":
+    case "evict":
       return 2;
-    case "Place":
+    case "place":
       return 3;
     default:
       throw new Error(`Unknown maker event type: ${makerEventType}`);
@@ -26,9 +26,9 @@ export const makerEventTypeToNumber = (
 
 export const sideToNumber = (side: Side): number => {
   switch (side) {
-    case "Bid":
+    case "bid":
       return 0;
-    case "Ask":
+    case "ask":
       return 1;
     default:
       throw new Error(`Unknown side: ${side}`);
@@ -37,9 +37,9 @@ export const sideToNumber = (side: Side): number => {
 
 export const sideToBoolean = (side: Side): boolean => {
   switch (side) {
-    case "Bid":
+    case "bid":
       return false;
-    case "Ask":
+    case "ask":
       return true;
     default:
       throw new Error(`Unknown side: ${side}`);
@@ -48,9 +48,9 @@ export const sideToBoolean = (side: Side): boolean => {
 
 export const advanceStyleToNumber = (advanceStyle: AdvanceStyle): number => {
   switch (advanceStyle) {
-    case "Ticks":
+    case "ticks":
       return 0;
-    case "Percent":
+    case "percent":
       return 1;
     default:
       throw new Error(`Unknown advance style: ${advanceStyle}`);
@@ -61,13 +61,13 @@ export const selfMatchBehaviorToNumber = (
   selfMatchBehavior: SelfMatchBehavior
 ): number => {
   switch (selfMatchBehavior) {
-    case "Abort":
+    case "abort":
       return 0;
-    case "CancelBoth":
+    case "cancelBoth":
       return 1;
-    case "CancelMaker":
+    case "cancelMaker":
       return 2;
-    case "CancelTaker":
+    case "cancelTaker":
       return 3;
     default:
       throw new Error(`Unknown self match behavior: ${selfMatchBehavior}`);
@@ -76,11 +76,11 @@ export const selfMatchBehaviorToNumber = (
 
 export const restrictionToNumber = (restriction: Restriction): number => {
   switch (restriction) {
-    case "NoRestriction":
+    case "noRestriction":
       return 0;
-    case "FillOrAbort":
+    case "fillOrAbort":
       return 1;
-    case "ImmediateOrCancel":
+    case "immediateOrCancel":
       return 2;
     default:
       throw new Error(`Unknown restriction: ${restriction}`);
@@ -89,13 +89,13 @@ export const restrictionToNumber = (restriction: Restriction): number => {
 
 export const orderStateToNumber = (orderState: OrderState): number => {
   switch (orderState) {
-    case "Open":
+    case "open":
       return 0;
-    case "Filled":
+    case "filled":
       return 1;
-    case "Cancelled":
+    case "cancelled":
       return 2;
-    case "Evicted":
+    case "evicted":
       return 3;
     default:
       throw new Error(`Unknown order state: ${orderState}`);

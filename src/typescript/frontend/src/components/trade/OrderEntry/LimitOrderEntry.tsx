@@ -24,8 +24,7 @@ export const LimitOrderEntry: React.FC<{
   marketData: ApiMarket;
   side: Side;
 }> = ({ marketData, side }) => {
-  const { aptosClient } = useAptos();
-  const { account, signAndSubmitTransaction } = useWallet();
+  const { aptosClient, signAndSubmitTransaction, account } = useAptos();
   const {
     handleSubmit,
     register,
@@ -67,11 +66,10 @@ export const LimitOrderEntry: React.FC<{
         "abort" // don't hardcode this either
       );
 
-      const { hash } = await signAndSubmitTransaction({
+      await signAndSubmitTransaction({
         type: "entry_function_payload",
         ...payload,
       });
-      await aptosClient.waitForTransaction(hash, { checkSuccess: true });
     }
   };
 

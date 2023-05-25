@@ -37,9 +37,9 @@ const resolutions = [
   "15",
   "30",
   "60",
-  "4H",
-  "12H",
-  "1D",
+  // "4H", // TODO: enable on backend
+  // "12H",
+  // "1D",
 ] as ResolutionString[];
 
 const resolutionMap: Record<string, ApiResolution> = {
@@ -152,6 +152,7 @@ const getSearchItem = ({
 };
 
 type TVChartContainerProps = {
+  selectedMarket: ApiMarket;
   allMarketData: ApiMarket[];
 };
 
@@ -195,8 +196,6 @@ export const TVChartContainer: React.FC<
         onSymbolResolvedCallback,
         onResolveErrorCallback
       ) => {
-        console.log("[resolveSymbol]: Method call", symbolName);
-
         const marketInfo: ApiMarket | undefined = props.allMarketData.find(
           ({ name }) => name === symbolName
         );
@@ -245,7 +244,7 @@ export const TVChartContainer: React.FC<
             })
           );
 
-          onHistoryCallback(bars);
+          onHistoryCallback(bars, { noData: bars.length === 0 });
         } catch (e) {
           if (e instanceof Error) {
             onErrorCallback(e.message);
@@ -326,18 +325,4 @@ export const TVChartContainer: React.FC<
   ]);
 
   return <div ref={ref} className="h-full" />;
-};
-
-TVChartContainer.defaultProps = {
-  symbol: "APT-tUSDC",
-  interval: "60" as ResolutionString,
-  datafeedUrl: "https://dev.api.econia.exchange",
-  libraryPath: "/static/charting_library/",
-  clientId: "econia.exchange",
-  userId: "public_user_id",
-  fullscreen: false,
-  autosize: true,
-  studiesOverrides: {},
-  theme: "Dark",
-  allMarketData: [],
 };

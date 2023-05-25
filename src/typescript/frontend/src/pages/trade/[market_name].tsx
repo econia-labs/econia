@@ -10,6 +10,10 @@ import { OrdersTable } from "@/components/trade/OrdersTable";
 import { TradeHistoryTable } from "@/components/trade/TradeHistoryTable";
 import { API_URL } from "@/env";
 import type { ApiMarket } from "@/types/api";
+import {
+  ResolutionString,
+  ThemeName,
+} from "../../../public/static/charting_library";
 
 const TVChartContainer = dynamic(
   () =>
@@ -57,19 +61,30 @@ export default function Market({ allMarketData, marketData }: Props) {
 
   if (!marketData) return <Page>Market not found.</Page>;
 
-  const marketNames: string[] = allMarketData
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .map(({ name }) => name);
+  const marketNames: string[] = allMarketData.map(({ name }) => name);
+
+  const defaultTVChartProps = {
+    symbol: marketData.name,
+    interval: "1" as ResolutionString,
+    datafeedUrl: "https://dev.api.econia.exchange",
+    libraryPath: "/static/charting_library/",
+    clientId: "econia.exchange",
+    userId: "public_user_id",
+    fullscreen: false,
+    autosize: true,
+    studiesOverrides: {},
+    theme: "Dark" as ThemeName,
+    selectedMarket: marketData,
+    allMarketData,
+  };
 
   return (
     <Page>
-      <StatsBar marketNames={marketNames} />
+      <StatsBar marketNames={marketNames} selectedMarket={marketData.name} />
       <main className="flex flex-1 gap-4 px-4 py-2">
         <div className="flex flex-1 flex-col gap-4">
           <ChartCard className="flex-1">
-            {isScriptReady && (
-              <TVChartContainer allMarketData={allMarketData} />
-            )}
+            {isScriptReady && <TVChartContainer {...defaultTVChartProps} />}
           </ChartCard>
           <ChartCard>
             <ChartName className="mb-4">Orders</ChartName>

@@ -50,7 +50,7 @@ create table market_registration_events (
     tick_size numeric (20) not null,
     min_size numeric (20) not null,
     underwriter_id numeric (20) not null,
-    foreign key (market_id) references markets (market_id)
+    foreign key (market_id) references markets (market_id) deferrable
 );
 
 create function register_market() returns trigger as $register_market$

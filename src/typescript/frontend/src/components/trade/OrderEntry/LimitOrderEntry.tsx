@@ -12,6 +12,7 @@ import { TypeTag } from "@/types/move";
 
 import { OrderEntryInfo } from "./OrderEntryInfo";
 import { OrderEntryInputWrapper } from "./OrderEntryInputWrapper";
+import { ECONIA_ADDR } from "@/env";
 
 type LimitFormValues = {
   price: string;
@@ -23,8 +24,7 @@ export const LimitOrderEntry: React.FC<{
   marketData: ApiMarket;
   side: Side;
 }> = ({ marketData, side }) => {
-  const { aptosClient } = useAptos();
-  const { account, signAndSubmitTransaction } = useWallet();
+  const { aptosClient, signAndSubmitTransaction, account } = useAptos();
   const {
     handleSubmit,
     register,
@@ -54,9 +54,9 @@ export const LimitOrderEntry: React.FC<{
       // TODO: handle generic markets
     } else {
       const payload = entryFunctions.placeLimitOrderUserEntry(
-        "0xeconia", // TODO pass in econia address as environment variable
-        `${marketData.base.account_address}::${marketData.base.module_name}::${marketData.base.struct_name}`,
-        `${marketData.quote.account_address}::${marketData.quote.module_name}::${marketData.quote.struct_name}`,
+        ECONIA_ADDR,
+        TypeTag.fromApiCoin(marketData.base).toString(),
+        TypeTag.fromApiCoin(marketData.quote).toString(),
         BigInt(marketData.market_id), // market id
         "0x1", // TODO get integrator ID
         orderSide,
@@ -66,11 +66,10 @@ export const LimitOrderEntry: React.FC<{
         "abort" // don't hardcode this either
       );
 
-      const { hash } = await signAndSubmitTransaction({
+      await signAndSubmitTransaction({
         type: "entry_function_payload",
         ...payload,
       });
-      await aptosClient.waitForTransaction(hash, { checkSuccess: true });
     }
   };
 

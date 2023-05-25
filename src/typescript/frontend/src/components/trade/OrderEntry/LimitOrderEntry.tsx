@@ -1,10 +1,10 @@
 import { entryFunctions, type order } from "@econia-labs/sdk";
-import { useWallet } from "@manahippo/aptos-wallet-adapter";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/Button";
 import { ConnectedButton } from "@/components/ConnectedButton";
 import { useAptos } from "@/contexts/AptosContext";
+import { ECONIA_ADDR } from "@/env";
 import { useCoinBalance } from "@/hooks/useCoinBalance";
 import { type ApiMarket } from "@/types/api";
 import { type Side } from "@/types/global";
@@ -12,7 +12,6 @@ import { TypeTag } from "@/types/move";
 
 import { OrderEntryInfo } from "./OrderEntryInfo";
 import { OrderEntryInputWrapper } from "./OrderEntryInputWrapper";
-import { ECONIA_ADDR } from "@/env";
 
 type LimitFormValues = {
   price: string;
@@ -24,7 +23,7 @@ export const LimitOrderEntry: React.FC<{
   marketData: ApiMarket;
   side: Side;
 }> = ({ marketData, side }) => {
-  const { aptosClient, signAndSubmitTransaction, account } = useAptos();
+  const { signAndSubmitTransaction, account } = useAptos();
   const {
     handleSubmit,
     register,

@@ -1,15 +1,18 @@
+import {
+  useWallet,
+  type WalletContextState,
+} from "@manahippo/aptos-wallet-adapter";
 import { AptosClient } from "aptos";
 import {
   createContext,
   type PropsWithChildren,
+  useCallback,
   useContext,
   useMemo,
-  useCallback,
 } from "react";
+import { toast } from "react-toastify";
 
 import { RPC_NODE_URL } from "@/env";
-import { WalletContextState, useWallet } from "@manahippo/aptos-wallet-adapter";
-import { toast } from "react-toastify";
 
 export type AptosContextState = {
   aptosClient: AptosClient;

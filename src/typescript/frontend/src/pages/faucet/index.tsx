@@ -1,15 +1,15 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { type GetStaticProps } from "next";
 import React, { useCallback, useState } from "react";
 
 import { Button } from "@/components/Button";
 import { ConnectedButton } from "@/components/ConnectedButton";
 import { Page } from "@/components/Page";
-import { type ApiMarket } from "@/types/api";
-import { CoinBalanceQueryKey, useCoinBalance } from "@/hooks/useCoinBalance";
-import { TypeTag } from "@/types/move";
-import { useQueryClient } from "@tanstack/react-query";
-import { useCoinInfo } from "@/hooks/useCoinInfo";
 import { useAptos } from "@/contexts/AptosContext";
+import { CoinBalanceQueryKey, useCoinBalance } from "@/hooks/useCoinBalance";
+import { useCoinInfo } from "@/hooks/useCoinInfo";
+import { type ApiMarket } from "@/types/api";
+import { TypeTag } from "@/types/move";
 
 const FAUCET_ADDR =
   "0x7c36a610d1cde8853a692c057e7bd2479ba9d5eeaeceafa24f125c23d2abf942";

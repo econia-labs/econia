@@ -1,7 +1,9 @@
-import { API_URL } from "@/env";
-import { ApiMarket } from "@/types/api";
 import { useQuery } from "@tanstack/react-query";
 import React, { useEffect } from "react";
+
+import { API_URL } from "@/env";
+import { type ApiMarket } from "@/types/api";
+
 import { BaseModal } from "../../BaseModal";
 import { DepositWithdrawContent } from "./DepositWithdrawContent";
 import { InitialContent } from "./InitialContent";
@@ -34,7 +36,7 @@ export const DepositWithdrawModal: React.FC<{
     ) {
       setSelectedMarket(allMarketData.data?.[0]);
     }
-  }, [allMarketData.data]);
+  }, [allMarketData.data, selectedMarket]);
   return (
     <BaseModal
       open={open}

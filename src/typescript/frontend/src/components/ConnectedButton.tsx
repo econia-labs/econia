@@ -1,8 +1,9 @@
 import { useWallet } from "@manahippo/aptos-wallet-adapter";
 import React, { type PropsWithChildren } from "react";
 
-import { Button } from "./Button";
 import { useConnectWallet } from "@/contexts/ConnectWalletContext";
+
+import { Button } from "./Button";
 
 export const ConnectedButton: React.FC<
   PropsWithChildren<{ className?: string }>

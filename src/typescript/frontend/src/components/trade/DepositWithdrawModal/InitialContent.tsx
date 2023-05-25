@@ -1,6 +1,7 @@
-import { Button } from "@/components/Button";
-import { ApiMarket } from "@/types/api";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
+
+import { Button } from "@/components/Button";
+import { type ApiMarket } from "@/types/api";
 
 export const InitialContent: React.FC<{
   selectedMarket?: ApiMarket;

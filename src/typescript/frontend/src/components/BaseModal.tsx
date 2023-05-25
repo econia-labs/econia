@@ -1,7 +1,8 @@
-import { Transition, Dialog } from "@headlessui/react";
-import React, { Fragment, PropsWithChildren } from "react";
-import { XIcon } from "./icons/XIcon";
+import { Dialog, Transition } from "@headlessui/react";
 import { ChevronLeftIcon } from "@heroicons/react/20/solid";
+import React, { Fragment, type PropsWithChildren } from "react";
+
+import { XIcon } from "./icons/XIcon";
 
 export const BaseModal: React.FC<
   PropsWithChildren<{

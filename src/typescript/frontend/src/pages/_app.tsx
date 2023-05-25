@@ -1,4 +1,5 @@
 import "@/styles/globals.css";
+import "react-toastify/dist/ReactToastify.css";
 
 import {
   AptosWalletAdapter,
@@ -10,11 +11,10 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { type AppProps } from "next/app";
 import { Jost, Roboto_Mono } from "next/font/google";
 import { useMemo } from "react";
+import { ToastContainer } from "react-toastify";
 
 import { AptosContextProvider } from "@/contexts/AptosContext";
 import { ConnectWalletContextProvider } from "@/contexts/ConnectWalletContext";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 
 const jost = Jost({
   subsets: ["latin"],

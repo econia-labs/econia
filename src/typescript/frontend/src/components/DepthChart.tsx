@@ -58,7 +58,7 @@ export const DepthChart: React.FC<{
     ["orderBook", marketData.market_id],
     async () => {
       const response = await fetch(
-        `https://dev.api.econia.exchange/market/${marketData.market_id}/orderbook?depth=60`
+        `https://dev.api.econia.exchange/market/${marketData.market_id}/orderbook?depth=1`
       );
       const data = await response.json();
       return data as OrderBook;
@@ -72,7 +72,15 @@ export const DepthChart: React.FC<{
     let minPrice = Infinity;
     let maxPrice = -Infinity;
     if (!isFetching && data) {
-      console.log(data);
+      // doing this to make the line go to zero to be consistent with the design
+      const bidMax =
+        data.bids.reduce((a, b) => Math.max(a, b.price), -Infinity) + 1;
+      const askMin =
+        data.asks.reduce((a, b) => Math.min(a, b.price), Infinity) - 1;
+      data.bids.push({ price: bidMax, size: 0 });
+      data.asks.push({ price: askMin, size: 0 });
+      console.log(data, "");
+      // console.log(bidMax, askMin);
       // Get min and max price to set a range
       for (const order of data.bids.concat(data.asks)) {
         if (order.price < minPrice) {
@@ -148,6 +156,7 @@ export const DepthChart: React.FC<{
         }).toNumber();
       });
     }
+    console.log(bidData, askData, "'");
     return {
       labels,
       bidData,
@@ -176,7 +185,7 @@ export const DepthChart: React.FC<{
           responsive: true,
 
           elements: {
-            line: { stepped: true },
+            line: { stepped: true, borderWidth: 1 },
             point: {
               hoverRadius: 3,
               radius: 0,
@@ -190,6 +199,8 @@ export const DepthChart: React.FC<{
             intersect: false,
           },
           plugins: {
+            // needed to add this because crosshair is not a native plugin
+            // one way to fix this is to extend the chart.js types
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
             crosshair: {
@@ -211,7 +222,6 @@ export const DepthChart: React.FC<{
             tooltip: {
               // style tooltip to match the theme
               // enabled: false,
-
               callbacks: {
                 label: (item: { label: any; raw: any }) => {
                   return [

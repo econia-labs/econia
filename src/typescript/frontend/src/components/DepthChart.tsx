@@ -224,6 +224,7 @@ export const DepthChart: React.FC<{
             x: {
               ticks: {
                 maxRotation: 0,
+                color: "white",
                 autoSkip: false,
                 minRotation: 0,
                 callback: function (value, index, values) {
@@ -244,6 +245,7 @@ export const DepthChart: React.FC<{
               position: "right",
               max: Math.max(bidData[0] || 0, askData[askData.length - 1] || 0),
               ticks: {
+                color: "white",
                 maxTicksLimit: 2,
               },
 

@@ -56,7 +56,7 @@ export default function Market({ allMarketData, marketData }: Props) {
         <div className="flex flex-1 flex-col gap-4">
           <ChartCard className="flex-1">
             <ChartName>Price Chart</ChartName>
-            <ChartName>Depth Chart</ChartName>
+            <ChartName>Depth</ChartName>
             <DepthChart
               marketData={marketData}
               // baseCoinInfo={undefined}

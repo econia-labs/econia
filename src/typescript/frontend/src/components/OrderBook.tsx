@@ -1,5 +1,5 @@
 import { Listbox } from "@headlessui/react";
-import { ChevronDownIcon } from "@heroicons/react/20/solid";
+import { ChevronDownIcon, CheckIcon } from "@heroicons/react/20/solid";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -111,22 +111,25 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
       {/* title row */}
       <div className={"mx-4 my-[12px]"}>
         <div className={"flex justify-between"}>
-          <p className={"font-jost text-white"}>Order Book</p>
+          <p className={"font-jost font-bold text-white"}>Order Book</p>
           {/* select */}
           <Listbox value={precision} onChange={setPrecision}>
             <div className="relative z-30 min-h-[30px] border border-neutral-600 py-[8px] pl-[11px] pr-[8px]">
-              <Listbox.Button className=" flex min-w-[4em] justify-between font-roboto-mono text-neutral-300">
+              <Listbox.Button className="flex min-w-[4em] justify-between font-roboto-mono text-neutral-300">
                 {precision}
                 <ChevronDownIcon className="my-auto ml-1 h-5 w-5 text-neutral-500" />
               </Listbox.Button>
-              <Listbox.Options className="absolute mt-2 w-full bg-black shadow ring-1 ring-neutral-500">
-                {precisionOptions.map((precision, i) => (
+              <Listbox.Options className="absolute left-0 top-11 mt-2 w-full bg-black shadow ring-1 ring-neutral-600">
+                {precisionOptions.map((precisionOption, i) => (
                   <Listbox.Option
-                    key={i}
-                    value={precision}
-                    className="weight-300 cursor-pointer px-4 py-1 font-roboto-mono text-xs text-neutral-300 hover:bg-neutral-800"
+                    key={precisionOption}
+                    value={precisionOption}
+                    className={`weight-300  box-border flex min-h-[30px] cursor-pointer justify-between py-2 pl-[11px] font-roboto-mono text-neutral-300 hover:bg-neutral-800  hover:outline hover:outline-1 hover:outline-neutral-600`}
                   >
-                    {precision}
+                    {precisionOption}
+                    {precision === precisionOption && (
+                      <CheckIcon className="my-auto ml-1 mr-2 h-4 w-4 text-white" />
+                    )}
                   </Listbox.Option>
                 ))}
               </Listbox.Options>

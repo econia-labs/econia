@@ -5,9 +5,9 @@ import {
   type Types,
 } from "aptos";
 
-export * as events from "../types/events";
-export * as order from "../types/order";
 export * as entryFunctions from "./entry_functions";
+export * as events from "./events";
+export * as order from "./order";
 export * as utils from "./utils";
 
 export class EconiaClient {

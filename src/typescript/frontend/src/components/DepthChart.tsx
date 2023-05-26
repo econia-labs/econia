@@ -3,23 +3,18 @@ import BigNumber from "bignumber.js";
 import {
   CategoryScale,
   Chart,
-  ChartType,
   Filler,
   Legend,
   LinearScale,
-  LineController,
   LineElement,
   PointElement,
   Title,
   Tooltip,
 } from "chart.js";
-import { ChartConfiguration, ChartDataset } from "chart.js";
 import { useMemo } from "react";
 import { Line } from "react-chartjs-2";
 
 import { type ApiMarket } from "@/types/api";
-import { unique } from "next/dist/build/utils";
-import { Yellowtail } from "next/font/google";
 
 export const ZERO_BIGNUMBER = new BigNumber(0);
 
@@ -33,10 +28,9 @@ Chart.register(
   Filler,
   Legend
 );
-Chart.defaults.font.family = "Courier";
+
+Chart.defaults.font.family = "Roboto Mono";
 Chart.defaults.animation = false;
-// Chart.defaults.global.defaultFontFamily = "Jost";
-// Chart.pluginService.register(corsairPlugin);
 
 type PriceLevel = {
   price: number;

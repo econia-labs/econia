@@ -118,7 +118,7 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
                 <ChevronDownIcon className="my-auto ml-1 h-5 w-5 text-neutral-500" />
               </Listbox.Button>
               <Listbox.Options className="absolute left-0 top-11 mt-2 w-full bg-black shadow ring-1 ring-neutral-600">
-                {precisionOptions.map((precisionOption, i) => (
+                {precisionOptions.map((precisionOption) => (
                   <Listbox.Option
                     key={precisionOption}
                     value={precisionOption}

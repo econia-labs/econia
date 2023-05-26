@@ -19,7 +19,7 @@ const precisionOptions = ["0.01", "0.05", "0.1", "0.5", "1", "2.5", "5", "10"];
 
 const Row: React.FC<{
   order: PriceLevel;
-  type: string;
+  type: "bid" | "ask";
   highestSize: number;
 }> = ({ order, type, highestSize }) => (
   <div className="relative my-[1px] flex min-h-[25px] min-w-full items-center justify-between text-xs">
@@ -36,6 +36,7 @@ const Row: React.FC<{
         type === "ask" ? "bg-red" : "bg-green"
       }`}
       // dynamic taillwind?
+
       style={{ width: `${(100 * order.size) / highestSize}%` }}
     ></div>
   </div>
@@ -43,14 +44,14 @@ const Row: React.FC<{
 
 export function OrderBook({ marketData }: { marketData: ApiMarket }) {
   const [precision, setPrecision] = useState<string>(precisionOptions[0]);
-  const { data, isLoading } = useQuery(
+  const { data, isLoading } = useQuery<OrderBook>(
     ["orderBook", marketData.market_id, precision],
     async () => {
       const response = await fetch(
         `https://dev.api.econia.exchange/market/${marketData.market_id}/orderbook?depth=60`
       );
       const data = await response.json();
-      return data as OrderBook;
+      return data;
     },
     { keepPreviousData: true, refetchOnWindowFocus: false }
   );
@@ -65,10 +66,25 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
     }
   }, [data]);
 
-  const spread: PriceLevel | undefined = useMemo(() => {
+  const midPrice: PriceLevel | undefined = useMemo(() => {
     if (data == null) {
       return undefined;
     }
+    // if there are bids but no asks
+    if ((!data.asks || data.asks.length === 0) && data.bids.length > 0) {
+      return {
+        price: data.bids[0].price,
+        size: data.bids[0].size,
+      };
+    }
+    // if there are asks but no bids
+    if ((!data.bids || data.bids.length === 0) && data.asks.length > 0) {
+      return {
+        price: data.asks[0].price,
+        size: data.asks[0].size,
+      };
+    }
+    // what should the mid size be?
     return {
       price: (data.asks[0].price + data.bids[0].price) / 2,
       size: 1,
@@ -128,11 +144,11 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
       <div className="scrollbar-none relative grow overflow-y-auto ">
         <div className="absolute w-full ">
           {/* ASK */}
-          {data?.asks.map((order, index) => (
+          {data?.asks.map((order) => (
             <Row
               order={order}
               type={"ask"}
-              key={"ask" + index}
+              key={`ask-${order.price}-${order.size}`}
               highestSize={highestSize}
             />
           ))}
@@ -142,16 +158,16 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
             ref={centerRef}
           >
             <div className={`z-10 ml-4 text-right text-white`}>
-              {spread?.price || "-"}
+              {midPrice?.price || "-"}
             </div>
-            <div className="z-10 mr-4 text-white">{spread?.size || "-"}</div>
+            <div className="z-10 mr-4 text-white">{midPrice?.size || "-"}</div>
           </div>
           {/* BID */}
-          {data?.bids.map((order, index) => (
+          {data?.bids.map((order) => (
             <Row
               order={order}
               type={"bid"}
-              key={"bid" + index}
+              key={`bid-${order.price}-${order.size}`}
               highestSize={highestSize}
             />
           ))}

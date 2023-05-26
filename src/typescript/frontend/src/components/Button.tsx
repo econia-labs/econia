@@ -30,6 +30,7 @@ export const Button: React.FC<
         setLoading(true);
         try {
           await onClick?.(e);
+          // eslint-disable-next-line no-useless-catch
         } catch (e) {
           throw e;
         } finally {

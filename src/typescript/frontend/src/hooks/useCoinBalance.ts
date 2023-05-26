@@ -1,8 +1,10 @@
-import { useAptos } from "@/contexts/AptosContext";
-import { Address } from "@manahippo/aptos-wallet-adapter";
+import { type Address } from "@manahippo/aptos-wallet-adapter";
 import { useQuery } from "@tanstack/react-query";
+
+import { useAptos } from "@/contexts/AptosContext";
+import { type TypeTag } from "@/types/move";
+
 import { useCoinInfo } from "./useCoinInfo";
-import { TypeTag } from "@/types/move";
 
 type CoinStore = {
   coin: {
@@ -11,12 +13,12 @@ type CoinStore = {
 };
 
 export const CoinBalanceQueryKey = (
-  coinTypeTag: TypeTag,
+  coinTypeTag?: TypeTag | null,
   userAddr?: Address | null
-) => ["useCoinBalance", coinTypeTag.toString(), userAddr];
+) => ["useCoinBalance", coinTypeTag?.toString(), userAddr];
 
 export const useCoinBalance = (
-  coinTypeTag: TypeTag,
+  coinTypeTag?: TypeTag | null,
   userAddr?: Address | null
 ) => {
   const { aptosClient } = useAptos();
@@ -24,7 +26,7 @@ export const useCoinBalance = (
   return useQuery(
     CoinBalanceQueryKey(coinTypeTag, userAddr),
     async () => {
-      if (!userAddr) return 0;
+      if (!userAddr || !coinTypeTag) return null;
       const coinStore = await aptosClient.getAccountResource(
         userAddr,
         `0x1::coin::CoinStore<${coinTypeTag.toString()}>`

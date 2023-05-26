@@ -79,6 +79,7 @@ export default function Market({ allMarketData, marketData }: Props) {
 
   return (
     <Page>
+      {/* <StatsBar marketNames={allMarketData.map((m) => m.name)} /> */}
       <StatsBar allMarketData={allMarketData} selectedMarket={marketData} />
       <main className="flex flex-1 gap-4 px-4 py-2">
         <div className="flex flex-1 flex-col gap-4">

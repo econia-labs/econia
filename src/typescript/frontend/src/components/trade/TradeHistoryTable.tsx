@@ -1,7 +1,3 @@
-import React from "react";
-
-import { ApiOrder, type ApiMarket } from "@/types/api";
-
 import { useQuery } from "@tanstack/react-query";
 import {
   createColumnHelper,
@@ -9,6 +5,9 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+import React from "react";
+
+import { type ApiMarket, type ApiOrder } from "@/types/api";
 
 const columnHelper = createColumnHelper<ApiOrder>();
 

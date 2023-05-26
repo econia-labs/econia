@@ -1,10 +1,10 @@
 import { entryFunctions, type order } from "@econia-labs/sdk";
-import { useWallet } from "@manahippo/aptos-wallet-adapter";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/Button";
 import { ConnectedButton } from "@/components/ConnectedButton";
 import { useAptos } from "@/contexts/AptosContext";
+import { ECONIA_ADDR } from "@/env";
 import { useCoinBalance } from "@/hooks/useCoinBalance";
 import { type ApiMarket } from "@/types/api";
 import { type Side } from "@/types/global";
@@ -12,7 +12,6 @@ import { TypeTag } from "@/types/move";
 
 import { OrderEntryInfo } from "./OrderEntryInfo";
 import { OrderEntryInputWrapper } from "./OrderEntryInputWrapper";
-import { ECONIA_ADDR } from "@/env";
 
 type LimitFormValues = {
   price: string;
@@ -24,8 +23,7 @@ export const LimitOrderEntry: React.FC<{
   marketData: ApiMarket;
   side: Side;
 }> = ({ marketData, side }) => {
-  const { aptosClient } = useAptos();
-  const { account, signAndSubmitTransaction } = useWallet();
+  const { signAndSubmitTransaction, account } = useAptos();
   const {
     handleSubmit,
     register,
@@ -43,8 +41,6 @@ export const LimitOrderEntry: React.FC<{
   );
 
   const onSubmit = async (values: LimitFormValues) => {
-    console.log(values);
-
     const orderSideMap: Record<Side, order.Side> = {
       buy: "bid",
       sell: "ask",
@@ -67,11 +63,10 @@ export const LimitOrderEntry: React.FC<{
         "abort" // don't hardcode this either
       );
 
-      const { hash } = await signAndSubmitTransaction({
+      await signAndSubmitTransaction({
         type: "entry_function_payload",
         ...payload,
       });
-      await aptosClient.waitForTransaction(hash, { checkSuccess: true });
     }
   };
 

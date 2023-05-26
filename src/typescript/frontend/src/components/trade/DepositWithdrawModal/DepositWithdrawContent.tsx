@@ -1,12 +1,13 @@
-import { Button } from "@/components/Button";
-import { Input } from "@/components/Input";
-import { useCoinBalance } from "@/hooks/useCoinBalance";
-import { ApiCoin, ApiMarket } from "@/types/api";
-import { TypeTag } from "@/types/move";
 import { Menu, Tab } from "@headlessui/react";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import { useWallet } from "@manahippo/aptos-wallet-adapter";
 import React from "react";
+
+import { Button } from "@/components/Button";
+import { Input } from "@/components/Input";
+import { useCoinBalance } from "@/hooks/useCoinBalance";
+import { type ApiCoin, type ApiMarket } from "@/types/api";
+import { TypeTag } from "@/types/move";
 
 const SelectCoinInput: React.FC<{
   coins: ApiCoin[];

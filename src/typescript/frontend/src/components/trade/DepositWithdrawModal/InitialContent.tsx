@@ -80,7 +80,6 @@ export const InitialContent: React.FC<{
               BigInt(selectedMarket.market_id),
               BigInt(NO_CUSTODIAN)
             );
-            console.log({ type: "entry_function_payload", ...payload });
             await signAndSubmitTransaction({
               ...payload,
               type: "entry_function_payload",

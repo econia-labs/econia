@@ -5,6 +5,7 @@ import { useAptos } from "@/contexts/AptosContext";
 import { type TypeTag } from "@/utils/TypeTag";
 
 import { useCoinInfo } from "./useCoinInfo";
+import { fromRawCoinAmount } from "@/utils/coin";
 
 type CoinStore = {
   coin: {
@@ -27,13 +28,13 @@ export const useCoinBalance = (
     CoinBalanceQueryKey(coinTypeTag, userAddr),
     async () => {
       if (!userAddr || !coinTypeTag) return null;
-      const coinStore = await aptosClient.getAccountResource(
-        userAddr,
-        `0x1::coin::CoinStore<${coinTypeTag.toString()}>`
-      );
-      return (
-        (coinStore.data as CoinStore).coin.value / 10 ** coinInfo.data!.decimals
-      );
+      const coinStore = await aptosClient
+        .getAccountResource(
+          userAddr,
+          `0x1::coin::CoinStore<${coinTypeTag.toString()}>`
+        )
+        .then(({ data }) => data as CoinStore);
+      return fromRawCoinAmount(coinStore.coin.value, coinInfo.data!.decimals);
     },
     {
       enabled: !!coinInfo.data,

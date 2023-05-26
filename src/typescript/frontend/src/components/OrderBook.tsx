@@ -44,7 +44,7 @@ const Row: React.FC<{
 
 export function OrderBook({ marketData }: { marketData: ApiMarket }) {
   const [precision, setPrecision] = useState<string>(precisionOptions[0]);
-  const { data, isLoading } = useQuery<OrderBook>(
+  const { data, isLoading, isFetching } = useQuery<OrderBook>(
     ["orderBook", marketData.market_id, precision],
     async () => {
       const response = await fetch(
@@ -58,13 +58,11 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
 
   const centerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (data != null) {
-      centerRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
-    }
-  }, [data]);
+    centerRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  }, [isFetching]);
 
   const midPrice: PriceLevel | undefined = useMemo(() => {
     if (data == null) {

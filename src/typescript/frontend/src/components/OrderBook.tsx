@@ -25,7 +25,7 @@ const Row: React.FC<{
   <div className="relative my-[1px] flex min-h-[25px] min-w-full items-center justify-between text-xs">
     <div
       className={`z-10 ml-4 text-right ${
-        type === "ask" ? "text-red-400" : "text-green"
+        type === "ask" ? "text-red" : "text-green"
       }`}
     >
       {order.price}
@@ -33,7 +33,7 @@ const Row: React.FC<{
     <div className="z-10 mr-4 text-white">{order.size}</div>
     <div
       className={`absolute right-0 z-0 h-full opacity-30 ${
-        type === "ask" ? "bg-red-400" : "bg-green"
+        type === "ask" ? "bg-red" : "bg-green"
       }`}
       // dynamic taillwind?
       style={{ width: `${(100 * order.size) / highestSize}%` }}

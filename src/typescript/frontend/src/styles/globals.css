@@ -5,10 +5,12 @@
 @layer utilities {
   .scrollbar-none::-webkit-scrollbar {
     width: 0px;
+  }
+}
 @layer base {
-  input[type='number']::-webkit-outer-spin-button,
-  input[type='number']::-webkit-inner-spin-button,
-  input[type='number'] {
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"] {
     -webkit-appearance: none;
     margin: 0;
     -moz-appearance: textfield !important;

@@ -85,11 +85,7 @@ export default function Market({ allMarketData, marketData }: Props) {
         <div className="flex flex-1 flex-col gap-4">
           <ChartCard className="flex flex-1 flex-col">
             {isScriptReady && <TVChartContainer {...defaultTVChartProps} />}
-            <DepthChart
-              marketData={marketData}
-              // baseCoinInfo={undefined}
-              // quoteCoinInfo={undefined}
-            />
+            <DepthChart marketData={marketData} />
           </ChartCard>
           <ChartCard>
             <ChartName className="mb-4">Orders</ChartName>

@@ -1,8 +1,10 @@
-import { useAptos } from "@/contexts/AptosContext";
-import { Address } from "@manahippo/aptos-wallet-adapter";
+import { type Address } from "@manahippo/aptos-wallet-adapter";
 import { useQuery } from "@tanstack/react-query";
+
+import { useAptos } from "@/contexts/AptosContext";
+import { type TypeTag } from "@/types/move";
+
 import { useCoinInfo } from "./useCoinInfo";
-import { TypeTag } from "@/types/move";
 
 type CoinStore = {
   coin: {

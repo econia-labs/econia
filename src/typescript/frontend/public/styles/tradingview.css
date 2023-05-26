@@ -1,0 +1,13 @@
+.theme-dark:root {
+  --tv-color-platform-background: #000000;
+  --tv-color-pane-background: #000000;
+  --tv-color-toolbar-button-background-hover: #000000;
+  --tv-color-toolbar-button-background-expanded: #000000;
+  --tv-color-toolbar-button-background-active: #000000;
+  --tv-color-toolbar-button-text: #ffffff;
+  --tv-color-toolbar-divider-background: #565656;
+
+  --tv-color-popup-background: #000000;
+  --tv-color-popup-element-text: #ffffff;
+  --tv-color-popup-element-secondary-text: #565656;
+}

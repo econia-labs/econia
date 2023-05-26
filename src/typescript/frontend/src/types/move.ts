@@ -1,4 +1,4 @@
-import { ApiCoin } from "./api";
+import { type ApiCoin } from "./api";
 
 export class TypeTag {
   constructor(

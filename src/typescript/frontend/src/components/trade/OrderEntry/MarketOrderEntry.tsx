@@ -1,13 +1,15 @@
-import { ApiMarket } from "@/types/api";
-import { OrderEntryInput } from "@/components/trade/OrderEntry/OrderEntryInput";
-import { type Side } from "@/types/global";
+import { useWallet } from "@manahippo/aptos-wallet-adapter";
+import { useState } from "react";
+
 import { Button } from "@/components/Button";
 import { ConnectedButton } from "@/components/ConnectedButton";
-import { useState } from "react";
-import { OrderEntryInfo } from "./OrderEntryInfo";
+import { Input } from "@/components/Input";
 import { useCoinBalance } from "@/hooks/useCoinBalance";
+import { type ApiMarket } from "@/types/api";
+import { type Side } from "@/types/global";
 import { TypeTag } from "@/types/move";
-import { useWallet } from "@manahippo/aptos-wallet-adapter";
+
+import { OrderEntryInfo } from "./OrderEntryInfo";
 
 export const MarketOrderEntry: React.FC<{
   marketData: ApiMarket;
@@ -15,7 +17,6 @@ export const MarketOrderEntry: React.FC<{
 }> = ({ marketData, side }) => {
   const { account } = useWallet();
   // TODO: Replace with real market price
-  const [price, setPrice] = useState<string>("12.42");
   const [amount, setAmount] = useState<string>("");
   const baseBalance = useCoinBalance(
     marketData.base ? TypeTag.fromApiCoin(marketData.base) : null,
@@ -28,37 +29,14 @@ export const MarketOrderEntry: React.FC<{
 
   return (
     <>
-      <div className="mx-4">
-        <OrderEntryInput
-          value={price}
-          onChange={setPrice}
-          startAdornment="MARKET PRICE"
-          endAdornment={marketData.quote.symbol}
-          type="number"
-          placeholder="0.00"
-          disabled
-        />
-      </div>
-      <hr className="my-4 border-neutral-600" />
       <div className="mx-4 flex flex-col gap-4">
-        <OrderEntryInput
+        <Input
           value={amount}
           onChange={setAmount}
           startAdornment="AMOUNT"
           endAdornment={marketData.base?.symbol}
           type="number"
           placeholder="0.00"
-        />
-        <OrderEntryInput
-          value={(
-            parseFloat(price === "" ? "0" : price) *
-            parseFloat(amount === "" ? "0" : amount)
-          ).toFixed(4)}
-          startAdornment="TOTAL"
-          endAdornment={marketData.quote?.symbol}
-          type="number"
-          placeholder="0.00"
-          disabled
         />
       </div>
       <hr className="my-4 border-neutral-600" />

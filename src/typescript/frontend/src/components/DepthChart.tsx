@@ -141,7 +141,7 @@ export const DepthChart: React.FC<{
         }).toNumber();
       });
     }
-    console.log(bidData, askData, "'");
+    console.log(labels, data);
     return {
       labels,
       bidData,
@@ -234,7 +234,6 @@ export const DepthChart: React.FC<{
                     index === Math.floor(values.length / 4) ||
                     index === Math.floor((3 * values.length) / 4)
                   ) {
-                    console.log("label", index, labels[index]);
                     return labels[index];
                   } else {
                     return "";

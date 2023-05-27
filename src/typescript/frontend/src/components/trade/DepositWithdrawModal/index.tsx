@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import React, { useEffect } from "react";
 
 import { API_URL } from "@/env";
-import { ApiStats, type ApiMarket } from "@/types/api";
+import { type ApiMarket, type ApiStats } from "@/types/api";
 
 import { BaseModal } from "../../BaseModal";
 import { DepositWithdrawContent } from "./DepositWithdrawContent";

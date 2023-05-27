@@ -115,6 +115,75 @@ export const SelectMarketContent: React.FC<{
   );
 };
 
+// row components
+const MarketNameCell = ({ name }: { name: string }) => {
+  return (
+    <div className={`flex items-center`}>
+      <MarketIconPair
+        quoteAssetIcon={`/tokenImages/${name.split("-")[1]}.png`}
+        baseAssetIcon={`/tokenImages/${name.split("-")[0]}.png`}
+      />
+      <div className={`min-w-[10em]`}>{name}</div>
+    </div>
+  );
+};
+
+const PriceCell = ({ price }: { price: number }) => {
+  return (
+    <span className={`ml-1 inline-block min-w-[6em] text-base`}>{price}</span>
+  );
+};
+
+const VolumeCell = ({
+  volume,
+  baseAsset,
+}: {
+  volume: number;
+  baseAsset: string;
+}) => {
+  // is this ok? https://caniuse.com/mdn-javascript_builtins_intl_numberformat_numberformat_options_compactdisplay_parameter
+  // reference: https://stackoverflow.com/a/60988355
+  // also, people tend to use lower case 'k' but the formatter uses upper case 'K'
+  const formatter = Intl.NumberFormat("en", {
+    notation: "compact",
+    compactDisplay: "short",
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
+  return (
+    <div>
+      <div className={`inline-block min-w-[10em] text-sm`}>
+        {formatter.format(volume).replace("K", "k")} {baseAsset}
+      </div>
+      <div className={`inline-block min-w-[6em] text-neutral-500`}>$1.5M</div>
+    </div>
+  );
+};
+
+const TwentyFourHourChangeCell = ({ change = 0 }: { change: number }) => {
+  return (
+    <span
+      className={`ml-1 inline-block min-w-[6em] ${
+        change < 0 ? "text-red" : "text-green"
+      }`}
+    >
+      {plusMinus(change)}
+      {formatNumber(change, 2)}
+    </span>
+  );
+};
+
+const RecognizedCell = ({ isRecognized }: { isRecognized: boolean }) => {
+  return (
+    <div className={`flex justify-center`}>
+      <StarIcon
+        className={`my-auto ml-1 h-5 w-5 ${
+          isRecognized ? "text-blue" : "text-neutral-600"
+        }`}
+      />
+    </div>
+  );
+};
 // copy paste from statsbar, think about making a unified component later
 const DEFAULT_TOKEN_ICON = "/tokenImages/default.png";
 type MarketIconPairProps = {

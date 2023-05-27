@@ -24,20 +24,50 @@ export const SelectMarketContent: React.FC<{
   const table = useReactTable({
     columns: [
       columnHelper.accessor("name", {
-        cell: (info) => info.getValue(),
+        cell: (info) => <MarketNameCell name={info.getValue()} />,
         header: "NAME",
       }),
-      columnHelper.accessor("lot_size", {
-        cell: (info) => info.getValue(),
-        header: "LOT SIZE",
+      columnHelper.accessor("market_id", {
+        cell: (info) => (
+          <TwentyFourHourChangeCell
+            change={
+              getStatsByMarketId(info.getValue(), marketStats)?.change || 0
+            }
+          />
+        ),
+        header: "PRICE",
+        id: "price",
       }),
-      columnHelper.accessor("tick_size", {
-        cell: (info) => info.getValue(),
-        header: "TICK SIZE",
+      columnHelper.accessor("market_id", {
+        cell: (info) => (
+          <VolumeCell
+            volume={
+              getStatsByMarketId(info.getValue(), marketStats)?.volume || 0
+            }
+            baseAsset={
+              getMarketByMarketId(info.getValue(), data)?.name.split("-")[0] ||
+              "?"
+            }
+          />
+        ),
+        header: "VOLUME",
+        id: "volume",
       }),
-      columnHelper.accessor("min_size", {
-        cell: (info) => info.getValue(),
-        header: "MIN SIZE",
+      columnHelper.accessor("market_id", {
+        cell: (info) => (
+          <TwentyFourHourChangeCell
+            change={
+              getStatsByMarketId(info.getValue(), marketStats)?.change || 0
+            }
+          />
+        ),
+        header: "24H CHANGE",
+        id: "24h_change",
+      }),
+      columnHelper.accessor("market_id", {
+        cell: (info) => <RecognizedCell isRecognized={info.getValue()} />,
+        header: "RECOGNIZED",
+        id: "recognized",
       }),
     ],
     data: data || [],

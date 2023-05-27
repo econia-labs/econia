@@ -15,6 +15,20 @@ enum Step {
   DepositWithdraw,
 }
 
+export const useAllMarketPrices = (allMarketData: ApiMarket[]) => {
+  return useQuery<ApiStats[]>(["allMarketPrices", allMarketData], async () => {
+    allMarketData.forEach((market) => {
+      fetch(new URL(`stats/${market.name}?resolution=1d`, API_URL).href).then(
+        (res) => {
+          return res.json();
+        }
+      );
+    });
+    return fetch(new URL("stats?resolution=1d", API_URL).href).then((res) => {
+      return res.json();
+    });
+  });
+};
 export const useAllMarketStats = () => {
   return useQuery<ApiStats[]>(["allMarketStats"], async () => {
     return fetch(new URL("stats?resolution=1d", API_URL).href).then((res) => {

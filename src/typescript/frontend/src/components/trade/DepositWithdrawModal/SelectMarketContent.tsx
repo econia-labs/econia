@@ -1,13 +1,14 @@
 import { Tab } from "@headlessui/react";
-import { StarIcon } from "@heroicons/react/20/solid";
+import { MagnifyingGlassIcon, StarIcon } from "@heroicons/react/20/solid";
 import {
   createColumnHelper,
+  type FilterFn,
   flexRender,
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { type ApiMarket, type ApiStats } from "@/types/api";
 
@@ -27,12 +28,26 @@ export const SelectMarketContent: React.FC<{
   const { data, isLoading } = useAllMarketData();
   const { data: marketStats } = useAllMarketStats();
   const { data: marketPrices } = useAllMarketPrices(data || []);
+  const [filter, setFilter] = useState("");
+  const testFilter: FilterFn<any> = (
+    row,
+    columnId: string,
+    filterValue: unknown
+  ) => {
+    console.log(columnId, filterValue);
+    return true;
+  };
 
-  const table = useReactTable({
-    columns: [
+  const columns = useMemo(() => {
+    return [
       columnHelper.accessor("name", {
         cell: (info) => <MarketNameCell name={info.getValue()} />,
         header: "NAME",
+        filterFn: (row, columnId, filterValue) => {
+          console.log("filtering!!!");
+        },
+        enableColumnFilter: true,
+        id: "name",
       }),
       columnHelper.accessor("market_id", {
         cell: (info) => (
@@ -76,102 +91,175 @@ export const SelectMarketContent: React.FC<{
         header: "RECOGNIZED",
         id: "recognized",
       }),
-    ],
+    ];
+  }, [data, marketStats, marketPrices]);
+
+  const table = useReactTable({
+    columns,
     data: data || [],
+    filterFns: {
+      testFilter,
+    },
+    globalFilterFn: (row, columnId, filterValue) => {
+      const safeValue = (() => {
+        const value = row.getValue(columnId);
+        return typeof value === "number" ? String(value) : value;
+      })();
+      console.log("pls");
+      return true;
+    },
+    enableFilters: true,
+    enableColumnFilters: true,
     getCoreRowModel: getCoreRowModel(),
   });
   return (
     <div className="flex w-full flex-col items-center gap-6 ">
-      <h4 className="font-jost text-3xl font-bold text-white"></h4>
-      <DepositWithdrawContent />
-      {/* very hacky, setting padding also doesn't work here so i've created TABLE_SPACING */}
-      <div
-        className={`${TABLE_SPACING.margin} scrollbar-none w-[calc(100%+3em)] overflow-x-auto`}
-      >
-        <table className={``}>
-          <thead>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <tr
-                className="text-left font-roboto-mono text-sm text-neutral-500 [&>th]:font-light"
-                key={headerGroup.id}
-              >
-                {headerGroup.headers.map((header, i) => (
-                  <th
-                    className={`${i === 0 ? "text-left" : ""} ${
-                      header.id === "recognized" ||
-                      (header.id === "24h_change" && "text-center")
-                    }
+      <Tab.Group>
+        <h4 className="font-jost text-3xl font-bold text-white"></h4>
+        <div className="relative w-full">
+          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+            <MagnifyingGlassIcon className={` h-5 w-5 text-neutral-500 `} />
+          </div>
+          <input
+            type="text"
+            id="voice-search"
+            className=" block w-full border border-neutral-600  bg-transparent p-2.5  pl-10 font-roboto-mono text-sm text-neutral-500"
+            placeholder="Search markets"
+            required
+            onChange={(e) => {
+              setFilter(e.target.value);
+            }}
+            value={filter}
+          />
+        </div>
+        <Tab.List className="mb-9 w-full">
+          <Tab className="w-1/2 border-b border-b-neutral-600 py-4 text-center font-jost font-bold text-neutral-600 ui-selected:border-b-white ui-selected:text-white">
+            Recognized
+          </Tab>
+          <Tab className="w-1/2 border-b border-b-neutral-600 py-4 text-center font-jost font-bold text-neutral-600 ui-selected:border-b-white ui-selected:text-white">
+            All Markets
+          </Tab>
+        </Tab.List>
+        <Tab.Panels className="w-full">
+          <Tab.Panel>
+            {/* very hacky, setting padding also doesn't work here so i've created TABLE_SPACING */}
+            <div
+              className={`${TABLE_SPACING.margin} scrollbar-none w-[calc(100%+3em)] overflow-x-auto`}
+            >
+              <table className={``}>
+                <thead>
+                  {table.getHeaderGroups().map((headerGroup) => (
+                    <tr
+                      className="text-left font-roboto-mono text-sm text-neutral-500 [&>th]:font-light"
+                      key={headerGroup.id}
+                    >
+                      {headerGroup.headers.map((header, i) => {
+                        if (
+                          header.id === "name" &&
+                          header.column.getFilterValue() != filter &&
+                          filter != ""
+                        ) {
+                          console.log(
+                            "asdf",
+                            header.id,
+                            header.column,
+                            header.column.getCanFilter()
+                          );
+                          header.column.setFilterValue(filter);
+                        }
+                        return (
+                          <th
+                            className={`${i === 0 ? "text-left" : ""} ${
+                              header.id === "recognized" ||
+                              (header.id === "24h_change" && "text-center")
+                            }
                     ${i === 0 ? TABLE_SPACING.paddingLeft : ""}
                     ${
                       i === headerGroup.headers.length - 1
                         ? TABLE_SPACING.paddingRight
                         : ""
                     }`}
-                    key={header.id}
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
-          <tbody>
-            <tr>
-              <td colSpan={7} className="">
-                <div className="h-4"></div>
-              </td>
-            </tr>
-            {isLoading || !data ? (
-              <tr>
-                <td colSpan={7}>
-                  <div className="flex h-[150px] flex-col items-center justify-center text-sm font-light uppercase text-neutral-500">
-                    Loading...
-                  </div>
-                </td>
-              </tr>
-            ) : data.length === 0 ? (
-              <tr>
-                <td colSpan={7}>
-                  <div className="flex h-[150px] flex-col items-center justify-center text-sm font-light uppercase text-neutral-500">
-                    No markets to show
-                  </div>
-                </td>
-              </tr>
-            ) : (
-              table.getRowModel().rows.map((row) => (
-                <tr
-                  className="h-24 min-w-[780px] cursor-pointer px-6 text-left font-roboto-mono text-sm text-white hover:outline hover:outline-1 hover:outline-neutral-600 [&>th]:font-light"
-                  onClick={() => onSelectMarket(row.original)}
-                  key={row.id}
-                >
-                  {row.getVisibleCells().map((cell, i) => (
-                    <td
-                      className={
-                        i === 0
-                          ? "text-left text-white"
-                          : i === 6
-                          ? `${cell.getValue() === "open" ? "text-green" : ""}`
-                          : ""
-                      }
-                      key={cell.id}
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </td>
+                            key={header.id}
+                          >
+                            {header.isPlaceholder
+                              ? null
+                              : flexRender(
+                                  header.column.columnDef.header,
+                                  header.getContext()
+                                )}
+                          </th>
+                        );
+                      })}
+                    </tr>
                   ))}
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td colSpan={7} className="">
+                      <div className="h-4"></div>
+                    </td>
+                  </tr>
+                  {isLoading || !data ? (
+                    <tr>
+                      <td colSpan={7}>
+                        <div className="flex h-[150px] flex-col items-center justify-center text-sm font-light uppercase text-neutral-500">
+                          Loading...
+                        </div>
+                      </td>
+                    </tr>
+                  ) : data.length === 0 ? (
+                    <tr>
+                      <td colSpan={7}>
+                        <div className="flex h-[150px] flex-col items-center justify-center text-sm font-light uppercase text-neutral-500">
+                          No markets to show
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    table.getRowModel().rows.map((row) => (
+                      <tr
+                        className="h-24 min-w-[780px] cursor-pointer px-6 text-left font-roboto-mono text-sm text-white hover:outline hover:outline-1 hover:outline-neutral-600 [&>th]:font-light"
+                        onClick={() => onSelectMarket(row.original)}
+                        key={row.id}
+                      >
+                        {row.getVisibleCells().map((cell, i) => (
+                          <td
+                            className={
+                              i === 0
+                                ? "text-left text-white"
+                                : i === 6
+                                ? `${
+                                    cell.getValue() === "open"
+                                      ? "text-green"
+                                      : ""
+                                  }`
+                                : ""
+                            }
+                            key={cell.id}
+                          >
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext()
+                            )}
+                          </td>
+                        ))}
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </Tab.Panel>
+          <Tab.Panel>
+            {" "}
+            <div className="flex h-[150px] flex-col items-center justify-center text-sm font-light uppercase text-neutral-500">
+              Loading...
+              <br />
+              psst. nothings here yet
+            </div>
+          </Tab.Panel>
+        </Tab.Panels>
+      </Tab.Group>
     </div>
   );
 };
@@ -389,3 +477,8 @@ export const DepositWithdrawContent: React.FC = () => {
     </div>
   );
 };
+function getGlobalAutoFilterFn():
+  | Record<string, import("@tanstack/react-table").FilterFn<any>>
+  | undefined {
+  throw new Error("Function not implemented.");
+}

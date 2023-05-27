@@ -7,6 +7,7 @@ import {
   getCoreRowModel,
   useReactTable,
   getFilteredRowModel,
+  Table,
 } from "@tanstack/react-table";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
@@ -30,6 +31,8 @@ export const SelectMarketContent: React.FC<{
   const { data: marketStats } = useAllMarketStats();
   const { data: marketPrices } = useAllMarketPrices(data || []);
   const [filter, setFilter] = useState("");
+
+  const [selectedTab, setSelectedTab] = useState(0);
 
   const columns = useMemo(() => {
     return [
@@ -75,9 +78,11 @@ export const SelectMarketContent: React.FC<{
         header: "24H CHANGE",
         id: "24h_change",
       }),
-      columnHelper.accessor("market_id", {
+      columnHelper.accessor("recognized", {
         // TODO: add recognized cell
-        cell: (info) => <RecognizedCell isRecognized={true} />,
+        cell: (info) => (
+          <RecognizedCell isRecognized={info.getValue() || false} />
+        ),
         header: "RECOGNIZED",
         id: "recognized",
       }),
@@ -92,7 +97,11 @@ export const SelectMarketContent: React.FC<{
   });
   return (
     <div className="flex w-full flex-col items-center gap-6 ">
-      <Tab.Group>
+      <Tab.Group
+        onChange={(index) => {
+          setSelectedTab(index);
+        }}
+      >
         <h4 className="font-jost text-3xl font-bold text-white"></h4>
         <div className="relative w-full">
           <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
@@ -119,128 +128,278 @@ export const SelectMarketContent: React.FC<{
           </Tab>
         </Tab.List>
         <Tab.Panels className="w-full">
-          <Tab.Panel>
-            {/* very hacky, setting padding also doesn't work here so i've created TABLE_SPACING */}
-            <div
-              className={`${TABLE_SPACING.margin} scrollbar-none w-[calc(100%+3em)] overflow-x-auto`}
-            >
-              <table className={``}>
-                <thead>
-                  {table.getHeaderGroups().map((headerGroup) => (
-                    <tr
-                      className="text-left font-roboto-mono text-sm text-neutral-500 [&>th]:font-light"
-                      key={headerGroup.id}
-                    >
-                      {headerGroup.headers.map((header, i) => {
-                        //  clearing filter
+          <div
+            className={`${TABLE_SPACING.margin} scrollbar-none w-[calc(100%+3em)] overflow-x-auto`}
+          >
+            <table className={``}>
+              <thead>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <tr
+                    className="text-left font-roboto-mono text-sm text-neutral-500 [&>th]:font-light"
+                    key={headerGroup.id}
+                  >
+                    {headerGroup.headers.map((header, i) => {
+                      //  clearing filter
+                      if (
+                        header.id === "name" &&
+                        // need these checks to prevent infinite loop
+                        // table sets empty string as undefined so we need to check for both
+                        filter == "" &&
+                        header.column.getFilterValue() != undefined
+                      ) {
+                        header.column.setFilterValue(undefined);
+                      }
+
+                      // setting filter
+                      if (
+                        header.id === "name" &&
+                        // need these checks to prevent infinite loop
+                        // table sets empty string as undefined so we need to check for both
+                        header.column.getFilterValue() != filter &&
+                        filter != ""
+                      ) {
+                        header.column.setFilterValue(filter);
+                      }
+                      if (header.id === "name") {
                         if (
-                          header.id === "name" &&
                           filter == "" &&
                           header.column.getFilterValue() != undefined
                         ) {
                           header.column.setFilterValue(undefined);
                         }
-                        // setting filter
                         if (
-                          header.id === "name" &&
-                          header.column.getFilterValue() != filter &&
-                          filter != ""
+                          filter != "" &&
+                          header.column.getFilterValue() != filter
                         ) {
                           header.column.setFilterValue(filter);
                         }
-                        return (
-                          <th
-                            className={`${i === 0 ? "text-left" : ""} ${
-                              header.id === "recognized" ||
-                              (header.id === "24h_change" && "text-center")
-                            }
-                    ${i === 0 ? TABLE_SPACING.paddingLeft : ""}
-                    ${
-                      i === headerGroup.headers.length - 1
-                        ? TABLE_SPACING.paddingRight
-                        : ""
-                    }`}
-                            key={header.id}
-                          >
-                            {header.isPlaceholder
-                              ? null
-                              : flexRender(
-                                  header.column.columnDef.header,
-                                  header.getContext()
-                                )}
-                          </th>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </thead>
-                <tbody>
+                      }
+
+                      // recognized
+                      if (header.id === "recognized") {
+                        if (
+                          selectedTab === 0 &&
+                          header.column.getFilterValue() == undefined
+                        ) {
+                          header.column.setFilterValue(true);
+                        }
+                        if (
+                          selectedTab === 1 &&
+                          header.column.getFilterValue() == true
+                        ) {
+                          header.column.setFilterValue(undefined);
+                        }
+                      }
+                      return (
+                        <th
+                          className={`${i === 0 ? "text-left" : ""} ${
+                            header.id === "recognized" ||
+                            (header.id === "24h_change" && "text-center")
+                          }
+          ${i === 0 ? TABLE_SPACING.paddingLeft : ""}
+          ${
+            i === headerGroup.headers.length - 1
+              ? TABLE_SPACING.paddingRight
+              : ""
+          }`}
+                          key={header.id}
+                        >
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                                header.column.columnDef.header,
+                                header.getContext()
+                              )}
+                        </th>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </thead>
+              <tbody>
+                <tr>
+                  <td colSpan={7} className="">
+                    <div className="h-4"></div>
+                  </td>
+                </tr>
+                {isLoading || !data ? (
                   <tr>
-                    <td colSpan={7} className="">
-                      <div className="h-4"></div>
+                    <td colSpan={7}>
+                      <div className="flex h-[150px] flex-col items-center justify-center text-sm font-light uppercase text-neutral-500">
+                        Loading...
+                      </div>
                     </td>
                   </tr>
-                  {isLoading || !data ? (
-                    <tr>
-                      <td colSpan={7}>
-                        <div className="flex h-[150px] flex-col items-center justify-center text-sm font-light uppercase text-neutral-500">
-                          Loading...
-                        </div>
-                      </td>
+                ) : data.length === 0 ? (
+                  <tr>
+                    <td colSpan={7}>
+                      <div className="flex h-[150px] flex-col items-center justify-center text-sm font-light uppercase text-neutral-500">
+                        No markets to show
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  table.getRowModel().rows.map((row) => (
+                    <tr
+                      className="h-24 min-w-[780px] cursor-pointer px-6 text-left font-roboto-mono text-sm text-white hover:outline hover:outline-1 hover:outline-neutral-600 [&>th]:font-light"
+                      onClick={() => onSelectMarket(row.original)}
+                      key={row.id}
+                    >
+                      {row.getVisibleCells().map((cell, i) => (
+                        <td
+                          className={
+                            i === 0
+                              ? "text-left text-white"
+                              : i === 6
+                              ? `${
+                                  cell.getValue() === "open" ? "text-green" : ""
+                                }`
+                              : ""
+                          }
+                          key={cell.id}
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </td>
+                      ))}
                     </tr>
-                  ) : data.length === 0 ? (
-                    <tr>
-                      <td colSpan={7}>
-                        <div className="flex h-[150px] flex-col items-center justify-center text-sm font-light uppercase text-neutral-500">
-                          No markets to show
-                        </div>
-                      </td>
-                    </tr>
-                  ) : (
-                    table.getRowModel().rows.map((row) => (
-                      <tr
-                        className="h-24 min-w-[780px] cursor-pointer px-6 text-left font-roboto-mono text-sm text-white hover:outline hover:outline-1 hover:outline-neutral-600 [&>th]:font-light"
-                        onClick={() => onSelectMarket(row.original)}
-                        key={row.id}
-                      >
-                        {row.getVisibleCells().map((cell, i) => (
-                          <td
-                            className={
-                              i === 0
-                                ? "text-left text-white"
-                                : i === 6
-                                ? `${
-                                    cell.getValue() === "open"
-                                      ? "text-green"
-                                      : ""
-                                  }`
-                                : ""
-                            }
-                            key={cell.id}
-                          >
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext()
-                            )}
-                          </td>
-                        ))}
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </Tab.Panel>
-          <Tab.Panel>
-            {" "}
-            <div className="flex h-[150px] flex-col items-center justify-center text-sm font-light uppercase text-neutral-500">
-              Loading...
-              <br />
-              psst. nothings here yet
-            </div>
-          </Tab.Panel>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+          {/* <TableComponent table={table} /> */}
         </Tab.Panels>
       </Tab.Group>
+    </div>
+  );
+};
+
+// table component
+const TableComponent = ({
+  table,
+  filter,
+  isLoading,
+  data,
+}: {
+  table: Table<ApiMarket>;
+  filter: string;
+  isLoading: boolean;
+  data: ApiMarket[] | undefined;
+}) => {
+  /* very hacky, setting padding also doesn't work here so i've created TABLE_SPACING */
+  return (
+    <div
+      className={`${TABLE_SPACING.margin} scrollbar-none w-[calc(100%+3em)] overflow-x-auto`}
+    >
+      <table className={``}>
+        <thead>
+          {table.getHeaderGroups().map((headerGroup) => (
+            <tr
+              className="text-left font-roboto-mono text-sm text-neutral-500 [&>th]:font-light"
+              key={headerGroup.id}
+            >
+              {headerGroup.headers.map((header, i) => {
+                //  clearing filter
+                if (
+                  header.id === "name" &&
+                  filter == "" &&
+                  header.column.getFilterValue() != undefined
+                ) {
+                  header.column.setFilterValue(undefined);
+                }
+                // setting filter
+                if (
+                  header.id === "name" &&
+                  header.column.getFilterValue() != filter &&
+                  filter != ""
+                ) {
+                  header.column.setFilterValue(filter);
+                }
+
+                // recognized
+                if (
+                  header.id === "recognized" &&
+                  header.column.getFilterValue() == undefined
+                ) {
+                  header.column.setFilterValue(true);
+                }
+                return (
+                  <th
+                    className={`${i === 0 ? "text-left" : ""} ${
+                      header.id === "recognized" ||
+                      (header.id === "24h_change" && "text-center")
+                    }
+          ${i === 0 ? TABLE_SPACING.paddingLeft : ""}
+          ${
+            i === headerGroup.headers.length - 1
+              ? TABLE_SPACING.paddingRight
+              : ""
+          }`}
+                    key={header.id}
+                  >
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                  </th>
+                );
+              })}
+            </tr>
+          ))}
+        </thead>
+        <tbody>
+          <tr>
+            <td colSpan={7} className="">
+              <div className="h-4"></div>
+            </td>
+          </tr>
+          {isLoading || !data ? (
+            <tr>
+              <td colSpan={7}>
+                <div className="flex h-[150px] flex-col items-center justify-center text-sm font-light uppercase text-neutral-500">
+                  Loading...
+                </div>
+              </td>
+            </tr>
+          ) : data.length === 0 ? (
+            <tr>
+              <td colSpan={7}>
+                <div className="flex h-[150px] flex-col items-center justify-center text-sm font-light uppercase text-neutral-500">
+                  No markets to show
+                </div>
+              </td>
+            </tr>
+          ) : (
+            table.getRowModel().rows.map((row) => (
+              <tr
+                className="h-24 min-w-[780px] cursor-pointer px-6 text-left font-roboto-mono text-sm text-white hover:outline hover:outline-1 hover:outline-neutral-600 [&>th]:font-light"
+                onClick={() => onSelectMarket(row.original)}
+                key={row.id}
+              >
+                {row.getVisibleCells().map((cell, i) => (
+                  <td
+                    className={
+                      i === 0
+                        ? "text-left text-white"
+                        : i === 6
+                        ? `${cell.getValue() === "open" ? "text-green" : ""}`
+                        : ""
+                    }
+                    key={cell.id}
+                  >
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </td>
+                ))}
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
     </div>
   );
 };

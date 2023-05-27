@@ -1,3 +1,5 @@
+import { Tab } from "@headlessui/react";
+import { StarIcon } from "@heroicons/react/20/solid";
 import {
   createColumnHelper,
   flexRender,
@@ -5,26 +7,20 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import Image from "next/image";
-
-import { StarIcon } from "@heroicons/react/20/solid";
+import { useEffect, useState } from "react";
 
 import { type ApiMarket, type ApiStats } from "@/types/api";
 
-import { useAllMarketData, useAllMarketStats } from ".";
-import { neutral } from "tailwindcss/colors";
-import { useEffect, useState } from "react";
-import { Tab } from "@headlessui/react";
+import { useAllMarketData, useAllMarketPrices, useAllMarketStats } from ".";
 
 const columnHelper = createColumnHelper<ApiMarket>();
-type MarketFilter = "recognized" | "all markets";
 
 export const SelectMarketContent: React.FC<{
   onSelectMarket: (market: ApiMarket) => void;
 }> = ({ onSelectMarket }) => {
   const { data, isLoading } = useAllMarketData();
   const { data: marketStats } = useAllMarketStats();
-
-  const [marketFilter, setMarketFilter] = useState<MarketFilter>("recognized");
+  const { data: marketPrices } = useAllMarketPrices(data || []);
 
   const table = useReactTable({
     columns: [
@@ -34,9 +30,9 @@ export const SelectMarketContent: React.FC<{
       }),
       columnHelper.accessor("market_id", {
         cell: (info) => (
-          <TwentyFourHourChangeCell
-            change={
-              getStatsByMarketId(info.getValue(), marketStats)?.change || 0
+          <PriceCell
+            price={
+              getPriceByMarketId(info.getValue(), marketPrices)?.price || 0
             }
           />
         ),
@@ -169,8 +165,24 @@ const MarketNameCell = ({ name }: { name: string }) => {
 };
 
 const PriceCell = ({ price }: { price: number }) => {
+  const formatter = Intl.NumberFormat("en", {
+    notation: "compact",
+    compactDisplay: "short",
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
   return (
-    <span className={`ml-1 inline-block min-w-[6em] text-base`}>{price}</span>
+    <div>
+      <div className={`inline-block min-w-[10em] text-sm`}>
+        ${price >= 10_000 && formatter.format(price).replace("K", "k")}{" "}
+        {price < 10_000 &&
+          price.toLocaleString("en", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}
+      </div>
+      <div className={`inline-block min-w-[6em] text-neutral-500`}>$1.5M</div>
+    </div>
   );
 };
 
@@ -240,6 +252,15 @@ const getMarketByMarketId = (
 ) => {
   if (!markets) return undefined;
   return markets.find((market) => market.market_id === marketId);
+};
+
+// very hacky type definition, need to think about where to put it
+const getPriceByMarketId = (
+  marketId: number,
+  prices: { market_id: number; price: number }[] | undefined
+) => {
+  if (!prices) return undefined;
+  return prices.find((price) => price.market_id === marketId);
 };
 
 // copy paste from statsbar, think about making a unified component later

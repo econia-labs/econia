@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import React, { useEffect } from "react";
 
 import { API_URL } from "@/env";
+import { OrderBook } from "@/hooks/useOrderbook";
 import { type ApiMarket, type ApiStats } from "@/types/api";
 
 import { BaseModal } from "../../BaseModal";
@@ -19,11 +20,12 @@ export const useAllMarketPrices = (allMarketData: ApiMarket[]) => {
   return useQuery<{ market_id: number; price: number }[]>(
     ["allMarketPrices", allMarketData],
     async () => {
-      const data: Promise<Response>[] = [];
+      const data: Promise<OrderBook>[] = [];
       allMarketData.forEach((market) => {
         data.push(
           fetch(
-            new URL(`market/${market.name}/orderbook?depth=1`, API_URL).href
+            new URL(`market/${market.market_id}/orderbook?depth=1`, API_URL)
+              .href
           ).then((res) => {
             return res.json();
           })

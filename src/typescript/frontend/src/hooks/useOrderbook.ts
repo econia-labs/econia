@@ -19,12 +19,12 @@ export const useOrderBook = (
   );
 };
 
-type PriceLevel = {
+export type PriceLevel = {
   price: number;
   size: number;
 };
 
-type OrderBook = {
+export type OrderBook = {
   bids: PriceLevel[];
   asks: PriceLevel[];
 };

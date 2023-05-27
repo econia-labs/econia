@@ -4,10 +4,16 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+import Image from "next/image";
 
-import { type ApiMarket } from "@/types/api";
+import { StarIcon } from "@heroicons/react/20/solid";
 
-import { useAllMarketData } from ".";
+import { type ApiMarket, type ApiStats } from "@/types/api";
+
+import { useAllMarketData, useAllMarketStats } from ".";
+import { neutral } from "tailwindcss/colors";
+import { useEffect, useState } from "react";
+import { Tab } from "@headlessui/react";
 
 const columnHelper = createColumnHelper<ApiMarket>();
 

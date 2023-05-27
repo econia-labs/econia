@@ -177,7 +177,7 @@ const MarketNameCell = ({ name }: { name: string }) => {
         quoteAssetIcon={`/tokenImages/${name.split("-")[1]}.png`}
         baseAssetIcon={`/tokenImages/${name.split("-")[0]}.png`}
       />
-      <div className={`ml-7 min-w-[10em]`}>{name}</div>
+      <div className={`ml-7 min-w-[12em]`}>{name}</div>
     </div>
   );
 };
@@ -191,7 +191,7 @@ const PriceCell = ({ price }: { price: number }) => {
   });
   return (
     <div>
-      <div className={`inline-block min-w-[10em] text-sm `}>
+      <div className={`inline-block min-w-[8em] text-sm `}>
         ${price >= 10_000 && formatter.format(price).replace("K", "k")}{" "}
         {price < 10_000 &&
           price.toLocaleString("en", {
@@ -222,7 +222,7 @@ const VolumeCell = ({
   });
   return (
     <div>
-      <div className={`inline-block min-w-[10em] text-sm`}>
+      <div className={`inline-block min-w-[8em] text-sm`}>
         {formatter.format(volume).replace("K", "k")} {baseAsset}
       </div>
       <div className={`inline-block min-w-[6em] text-neutral-500`}>$1.5M</div>
@@ -233,7 +233,7 @@ const VolumeCell = ({
 const TwentyFourHourChangeCell = ({ change = 0 }: { change: number }) => {
   return (
     <span
-      className={`ml-1 inline-block min-w-[6em] text-center ${
+      className={`ml-1 inline-block min-w-[10em] text-center ${
         change < 0 ? "text-red" : "text-green"
       }`}
     >

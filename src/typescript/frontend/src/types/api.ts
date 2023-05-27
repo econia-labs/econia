@@ -50,3 +50,13 @@ export type ApiResolution =
   | "4h"
   | "12h"
   | "1d";
+
+export type ApiStats = {
+  market_id: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  change: number;
+  volume: number;
+};

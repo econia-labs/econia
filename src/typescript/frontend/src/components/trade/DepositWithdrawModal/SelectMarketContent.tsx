@@ -114,3 +114,33 @@ export const SelectMarketContent: React.FC<{
     </div>
   );
 };
+
+  // TODO: add this so statsbar can use it too
+  interface ImageWithFallbackProps {
+    fallback?: string;
+    alt: string;
+    src: string;
+    [key: string]: any; // allow any other props
+  }
+
+  const ImageWithFallback: React.FC<ImageWithFallbackProps> = ({
+    fallback = "/tokenImages/default.png",
+    alt,
+    src,
+    ...props
+  }) => {
+    const [error, setError] = useState<Error | null>(null);
+
+    useEffect(() => {
+      setError(null);
+    }, [src]);
+
+    return (
+      <Image
+        alt={alt}
+        onError={() => setError(new Error("Failed to load image"))}
+        src={error ? fallback : src}
+        {...props}
+      />
+    );
+  };

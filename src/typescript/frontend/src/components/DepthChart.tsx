@@ -14,6 +14,7 @@ import {
 import { useMemo } from "react";
 import { Line } from "react-chartjs-2";
 
+import { useOrderBook } from "@/hooks/useOrderbook";
 import { type ApiMarket } from "@/types/api";
 
 export const ZERO_BIGNUMBER = new BigNumber(0);
@@ -48,17 +49,8 @@ export const DepthChart: React.FC<{
   const baseCoinInfo = marketData?.base;
   const quoteCoinInfo = marketData?.quote;
 
-  const { data, isFetching } = useQuery(
-    ["orderBook", marketData.market_id],
-    async () => {
-      const response = await fetch(
-        `https://dev.api.econia.exchange/market/${marketData.market_id}/orderbook?depth=60`
-      );
-      const data = await response.json();
-      return data as OrderBook;
-    },
-    { keepPreviousData: true, refetchOnWindowFocus: false }
-  );
+  const { data, isFetching } = useOrderBook(marketData.market_id);
+
   const { labels, bidData, askData, minPrice, maxPrice } = useMemo(() => {
     const labels: number[] = [];
     const bidData: (number | undefined)[] = [];
@@ -141,7 +133,6 @@ export const DepthChart: React.FC<{
         }).toNumber();
       });
     }
-    console.log(labels, data);
     return {
       labels,
       bidData,
@@ -169,6 +160,9 @@ export const DepthChart: React.FC<{
       <Line
         options={{
           responsive: true,
+          layout: {
+            padding: 0,
+          },
 
           elements: {
             line: { stepped: true, borderWidth: 1 },
@@ -194,7 +188,7 @@ export const DepthChart: React.FC<{
             },
             title: {
               display: true,
-              text: `MID MARKET $${labels[labels.length / 2]}`,
+              text: `MID MARKET $${formatNumber(labels[labels.length / 2], 2)}`,
               color: "white",
             },
             animation: {
@@ -227,6 +221,7 @@ export const DepthChart: React.FC<{
                 maxRotation: 0,
                 color: "white",
                 autoSkip: false,
+                padding: 8,
                 minRotation: 0,
                 callback: function (value, index, values) {
                   // show 1/3 and 2/3 of the way through
@@ -234,7 +229,7 @@ export const DepthChart: React.FC<{
                     index === Math.floor(values.length / 4) ||
                     index === Math.floor((3 * values.length) / 4)
                   ) {
-                    return labels[index];
+                    return formatNumber(labels[index], 2);
                   } else {
                     return "";
                   }
@@ -245,8 +240,19 @@ export const DepthChart: React.FC<{
               position: "right",
               max: Math.max(bidData[0] || 0, askData[askData.length - 1] || 0),
               ticks: {
+                padding: 5,
                 color: "white",
                 maxTicksLimit: 2,
+                callback: function (value, index, values) {
+                  const formatter = Intl.NumberFormat("en", {
+                    notation: "compact",
+                    compactDisplay: "short",
+                    minimumFractionDigits: 1,
+                    maximumFractionDigits: 1,
+                  });
+                  // show 1/3 and 2/3 of the way through
+                  return value == "0" ? "0" : formatter.format(Number(value));
+                },
               },
 
               beginAtZero: true,
@@ -382,3 +388,12 @@ const plugin = {
   },
 };
 Chart.register(plugin);
+
+// taken from statsbar
+const formatNumber = (num: number | undefined, digits: number): string => {
+  if (!num) return "-";
+  return num.toLocaleString("en", {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  });
+};

@@ -15,6 +15,13 @@ enum Step {
   DepositWithdraw,
 }
 
+export const useAllMarketStats = () => {
+  return useQuery<ApiStats[]>(["allMarketStats"], async () => {
+    return fetch(new URL("stats?resolution=1d", API_URL).href).then((res) => {
+      return res.json();
+    });
+  });
+};
 export const useAllMarketData = () => {
   return useQuery<ApiMarket[]>(["allMarketData"], async () => {
     // return fetch(new URL("markets", API_URL).href).then((res) => res.json());

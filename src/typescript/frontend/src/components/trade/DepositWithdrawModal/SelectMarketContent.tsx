@@ -15,6 +15,12 @@ import { useAllMarketData, useAllMarketPrices, useAllMarketStats } from ".";
 
 const columnHelper = createColumnHelper<ApiMarket>();
 
+const TABLE_SPACING = {
+  margin: "-mx-6 -mb-6",
+  paddingLeft: "pl-6",
+  paddingRight: "pr-6",
+};
+
 export const SelectMarketContent: React.FC<{
   onSelectMarket: (market: ApiMarket) => void;
 }> = ({ onSelectMarket }) => {
@@ -78,8 +84,8 @@ export const SelectMarketContent: React.FC<{
     <div className="flex w-full flex-col items-center gap-6 ">
       <h4 className="font-jost text-3xl font-bold text-white"></h4>
       <DepositWithdrawContent />
-
-      <table className={"w-full"}>
+      {/* very hacky, setting padding also doesn't work here so i've created TABLE_SPACING */}
+      <table className={`${TABLE_SPACING.margin}`}>
         <thead>
           {table.getHeaderGroups().map((headerGroup) => (
             <tr
@@ -89,7 +95,14 @@ export const SelectMarketContent: React.FC<{
               {headerGroup.headers.map((header, i) => (
                 <th
                   className={`${i === 0 ? "text-left" : ""} ${
-                    header.id === "recognized" && "text-center"
+                    header.id === "recognized" ||
+                    (header.id === "24h_change" && "text-center")
+                  } 
+                  ${i === 0 ? TABLE_SPACING.paddingLeft : ""}
+                  ${
+                    i === headerGroup.headers.length - 1
+                      ? TABLE_SPACING.paddingRight
+                      : ""
                   }`}
                   key={header.id}
                 >
@@ -105,6 +118,11 @@ export const SelectMarketContent: React.FC<{
           ))}
         </thead>
         <tbody>
+          <tr>
+            <td colSpan={7} className="">
+              <div className="h-4"></div>
+            </td>
+          </tr>
           {isLoading || !data ? (
             <tr>
               <td colSpan={7}>
@@ -124,7 +142,7 @@ export const SelectMarketContent: React.FC<{
           ) : (
             table.getRowModel().rows.map((row) => (
               <tr
-                className="cursor-pointer text-left font-roboto-mono text-sm text-white hover:outline hover:outline-1 hover:outline-neutral-600 [&>th]:font-light"
+                className="h-24 min-w-[780px] cursor-pointer px-6 text-left font-roboto-mono text-sm text-white hover:outline hover:outline-1 hover:outline-neutral-600 [&>th]:font-light"
                 onClick={() => onSelectMarket(row.original)}
                 key={row.id}
               >
@@ -154,12 +172,12 @@ export const SelectMarketContent: React.FC<{
 // row components
 const MarketNameCell = ({ name }: { name: string }) => {
   return (
-    <div className={`flex items-center`}>
+    <div className={`flex items-center text-base ${TABLE_SPACING.paddingLeft}`}>
       <MarketIconPair
         quoteAssetIcon={`/tokenImages/${name.split("-")[1]}.png`}
         baseAssetIcon={`/tokenImages/${name.split("-")[0]}.png`}
       />
-      <div className={`min-w-[10em]`}>{name}</div>
+      <div className={`ml-7 min-w-[10em]`}>{name}</div>
     </div>
   );
 };
@@ -173,7 +191,7 @@ const PriceCell = ({ price }: { price: number }) => {
   });
   return (
     <div>
-      <div className={`inline-block min-w-[10em] text-sm`}>
+      <div className={`inline-block min-w-[10em] text-sm `}>
         ${price >= 10_000 && formatter.format(price).replace("K", "k")}{" "}
         {price < 10_000 &&
           price.toLocaleString("en", {
@@ -215,7 +233,7 @@ const VolumeCell = ({
 const TwentyFourHourChangeCell = ({ change = 0 }: { change: number }) => {
   return (
     <span
-      className={`ml-1 inline-block min-w-[6em] ${
+      className={`ml-1 inline-block min-w-[6em] text-center ${
         change < 0 ? "text-red" : "text-green"
       }`}
     >
@@ -227,7 +245,7 @@ const TwentyFourHourChangeCell = ({ change = 0 }: { change: number }) => {
 
 const RecognizedCell = ({ isRecognized }: { isRecognized: boolean }) => {
   return (
-    <div className={`flex justify-center`}>
+    <div className={`flex justify-center  ${TABLE_SPACING.paddingRight}`}>
       <StarIcon
         className={`my-auto ml-1 h-5 w-5 ${
           isRecognized ? "text-blue" : "text-neutral-600"

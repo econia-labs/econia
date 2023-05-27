@@ -238,7 +238,7 @@ const TwentyFourHourChangeCell = ({ change = 0 }: { change: number }) => {
       }`}
     >
       {plusMinus(change)}
-      {formatNumber(change, 2)}
+      {formatNumber(change * 100, 2)}%
     </span>
   );
 };

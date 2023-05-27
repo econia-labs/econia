@@ -52,7 +52,13 @@ export const useAllMarketStats = () => {
 // TODO: remove before PR
 export const useAllMarketData = () => {
   return useQuery<ApiMarket[]>(["allMarketData"], async () => {
-    return fetch(new URL("markets", API_URL).href).then((res) => res.json());
+    return fetch(new URL("markets", API_URL).href).then(async (res) => {
+      const d = await res.json();
+      return d.map((m: ApiMarket) => {
+        m.recognized = true;
+        return m;
+      });
+    });
     // return [
     //   {
     //     market_id: 1,

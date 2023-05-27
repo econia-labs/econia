@@ -18,6 +18,7 @@ export type ApiMarket = {
   min_size: number;
   underwriter_id: number;
   created_at: string;
+  recognized?: boolean;
 };
 
 export type ApiOrder = {

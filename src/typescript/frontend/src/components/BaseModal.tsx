@@ -9,8 +9,9 @@ export const BaseModal: React.FC<
     open: boolean;
     onClose: () => void;
     onBack?: () => void;
+    showCloseButton?: boolean;
   }>
-> = ({ open, onClose, onBack, children }) => {
+> = ({ open, onClose, onBack, showCloseButton = true, children }) => {
   return (
     <Transition appear show={open} as={Fragment}>
       <Dialog as="div" className="relative z-10" open={open} onClose={onClose}>
@@ -39,12 +40,14 @@ export const BaseModal: React.FC<
                     Back
                   </div>
                 )}
-                <div
-                  className="absolute right-0 top-0 flex h-[72px] w-[72px] cursor-pointer items-center justify-center border-b border-l border-b-neutral-600 border-l-neutral-600 transition-all [&>svg>path]:stroke-neutral-500 [&>svg>path]:transition-all [&>svg>path]:hover:stroke-neutral-100"
-                  onClick={onClose}
-                >
-                  <XIcon />
-                </div>
+                {showCloseButton && (
+                  <div
+                    className="absolute right-0 top-0 flex h-[72px] w-[72px] cursor-pointer items-center justify-center border-b border-l border-b-neutral-600 border-l-neutral-600 transition-all [&>svg>path]:stroke-neutral-500 [&>svg>path]:transition-all [&>svg>path]:hover:stroke-neutral-100"
+                    onClick={onClose}
+                  >
+                    <XIcon />
+                  </div>
+                )}
               </Dialog.Title>
               {children}
             </Dialog.Panel>

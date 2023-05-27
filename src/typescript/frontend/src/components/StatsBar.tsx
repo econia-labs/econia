@@ -1,15 +1,17 @@
-import { Listbox } from "@headlessui/react";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
-import { useQuery, type UseQueryResult } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
-import Link from "next/link";
+import { useRouter } from "next/router";
+import { useState } from "react";
 
 import { API_URL } from "@/env";
 import { type ApiMarket } from "@/types/api";
 
+import { BaseModal } from "./BaseModal";
 import { DiscordIcon } from "./icons/DiscordIcon";
 import { MediumIcon } from "./icons/MediumIcon";
 import { TwitterIcon } from "./icons/TwitterIcon";
+import { SelectMarketContent } from "./trade/DepositWithdrawModal/SelectMarketContent";
 
 const DEFAULT_TOKEN_ICON = "/tokenImages/default.png";
 
@@ -32,15 +34,14 @@ type MarketStats = {
 };
 
 type Props = {
-  allMarketData: ApiMarket[];
   selectedMarket: ApiMarket;
 };
 
-export function StatsBar({ allMarketData, selectedMarket }: Props) {
-  const marketData = useMarketData(selectedMarket.name);
-  const isLoaded = marketData.isFetched;
+export function StatsBar({ selectedMarket }: Props) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const router = useRouter();
 
-  const { data, isLoading, isFetching } = useQuery(
+  const { data } = useQuery(
     ["marketStasts", selectedMarket],
     async () => {
       // MOCK API CALL
@@ -48,27 +49,23 @@ export function StatsBar({ allMarketData, selectedMarket }: Props) {
         `${API_URL}/market/${selectedMarket.market_id}/stats?resolution=1d`
       );
       const res = await response.json();
-      console.log(res, "apiasdfasdf data");
+
+      const priceResponse = await fetch(
+        `${API_URL}/market/${selectedMarket.market_id}/orderbook?depth=1`
+      );
+      const priceRes = await priceResponse.json();
 
       const tokens = selectedMarket.name.split("-"); // split the string at the hyphen
       const baseIcon = `/tokenImages/${tokens[0]}.png`; // concatenate the first token with ".png"
       const quoteIcon = `/tokenImages/${tokens[1]}.png`;
 
-      const {
-        lastPrice,
-        change24h,
-        high24h,
-        low24h,
-        pairData,
-        lastPriceChange,
-        change24hPercent,
-      } = STATS_BAR_MOCK_DATA;
+      const { pairData, lastPriceChange } = STATS_BAR_MOCK_DATA;
       // END MOCK API CALL
       return {
-        lastPrice: lastPrice,
+        lastPrice: (priceRes.asks[0].price + priceRes.bids[0].price) / 2,
         lastPriceChange: lastPriceChange, //
         change24h: res.close, //
-        change24hPercent: res.change, //
+        change24hPercent: res.change * 100, //
         high24h: res.high,
         low24h: res.low,
         pairData: {
@@ -85,192 +82,151 @@ export function StatsBar({ allMarketData, selectedMarket }: Props) {
   );
 
   return (
-    <div className="flex overflow-x-clip border-b border-neutral-600 bg-black px-9 py-4">
-      <div className="flex flex-1 items-center whitespace-nowrap  [&>.mobile-stat]:block md:[&>.mobile-stat]:hidden [&>.stat]:mx-7 [&>.stat]:mb-1 [&>.stat]:hidden md:[&>.stat]:block ">
-        <>
-          <MarketIconPair
-            baseAssetIcon={data?.pairData.baseAssetIcon}
-            quoteAssetIcon={data?.pairData.quoteAssetIcon}
-          />
-          <Listbox value={selectedMarket.name}>
-            <div className="relative ml-10 mr-7 min-w-[170px]">
-              <Listbox.Button className="flex font-roboto-mono text-xl text-neutral-300 md:text-2xl">
-                {/* BANDAGE FIX,  */}
-                {/* TODO: FIGURE OUT WHAT API PASSES MARKET AS */}
-                {/* {selectedMarket} */}
-                {selectedMarket.name.split("-")[0]} -{" "}
-                {selectedMarket.name.split("-")[1]}
-                <ChevronDownIcon className="my-auto ml-1 h-5 w-5 text-white" />
-              </Listbox.Button>
-              <Listbox.Options className="absolute z-30 mt-2 w-full bg-black shadow ring-1 ring-neutral-500">
-                {allMarketData.map((marketName, i) => (
-                  <Link
-                    href={`/trade/${marketName.name}`}
-                    key={marketName.market_id}
-                  >
-                    <Listbox.Option
-                      key={i}
-                      value={marketName.name}
-                      className="px-4 py-1 font-roboto-mono text-neutral-300 hover:bg-neutral-800"
-                    >
-                      {marketName.name}
-                    </Listbox.Option>
-                  </Link>
-                ))}
-              </Listbox.Options>
+    <>
+      <BaseModal
+        open={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+        }}
+        onBack={() => {
+          setIsModalOpen(false);
+        }}
+      >
+        <SelectMarketContent
+          onSelectMarket={(market) => {
+            router.push(`/trade/${market.name}`);
+            setIsModalOpen(false);
+          }}
+        />
+      </BaseModal>
+      <div className="flex overflow-x-clip border-b border-neutral-600 bg-black px-9 py-4">
+        <div className="flex flex-1 items-center whitespace-nowrap  [&>.mobile-stat]:block md:[&>.mobile-stat]:hidden [&>.stat]:mx-7 [&>.stat]:mb-1 [&>.stat]:hidden md:[&>.stat]:block ">
+          <>
+            <MarketIconPair
+              baseAssetIcon={data?.pairData.baseAssetIcon}
+              quoteAssetIcon={data?.pairData.quoteAssetIcon}
+            />
+            <div>
+              <div className="relative ml-10 mr-7 min-w-[170px]">
+                <button
+                  className="flex font-roboto-mono text-xl text-neutral-300 md:text-2xl"
+                  onClick={() => {
+                    setIsModalOpen(true);
+                  }}
+                >
+                  {selectedMarket.name.split("-")[0]} -{" "}
+                  {selectedMarket.name.split("-")[1]}
+                  <ChevronDownIcon className="my-auto ml-1 h-5 w-5 text-white" />
+                </button>
+              </div>
             </div>
-          </Listbox>
-        </>
-        {/* mobile price */}
-        <div className="mobile-stat block">
-          <p className="font-roboto-mono font-light">
-            <span className="inline-block min-w-[4em] text-xl text-white">
-              {formatNumber(data?.lastPrice, 2)}
+          </>
+          {/* mobile price */}
+          <div className="mobile-stat block">
+            <p className="font-roboto-mono font-light">
+              <span className="inline-block min-w-[4em] text-xl text-white">
+                ${formatNumber(data?.lastPrice, 2)}
+              </span>
+              <span
+                className={`ml-1 inline-block min-w-[6em] text-base ${
+                  (data?.lastPriceChange || 0) < 0 ? "text-red" : "text-green"
+                }`}
+              >
+                {plusMinus(data?.lastPriceChange)}
+                {formatNumber(data?.lastPriceChange, 4)}
+              </span>
+            </p>
+          </div>
+          {/* price */}
+          <div className="stat">
+            <span className="font-roboto-mono text-base font-light uppercase text-neutral-400">
+              Last price
             </span>
-            <span
-              className={`ml-1 inline-block min-w-[6em] text-base ${
-                (data?.lastPriceChange || 0) < 0 ? "text-red" : "text-green"
-              }`}
-            >
-              {plusMinus(data?.lastPriceChange)}
-              {formatNumber(data?.lastPriceChange, 4)}
+            <p className="font-roboto-mono font-light">
+              <span className="inline-block min-w-[6em] text-white">
+                ${formatNumber(data?.lastPrice, 2)}
+              </span>
+              <span
+                className={`ml-1 inline-block min-w-[6em] ${
+                  (data?.lastPriceChange || 0) < 0 ? "text-red" : "text-green"
+                }`}
+              >
+                {plusMinus(data?.lastPriceChange)}
+                {formatNumber(data?.lastPriceChange, 4)}
+              </span>
+            </p>
+          </div>
+          {/* 24 hr */}
+          <div className="stat">
+            <span className="font-roboto-mono text-base font-light uppercase text-neutral-400">
+              24h change
             </span>
-          </p>
+            <p className="font-roboto-mono font-light">
+              <span className="inline-block min-w-[6em] text-white">
+                {formatNumber(data?.change24h, 4)}
+              </span>
+              <span
+                className={`ml-1 inline-block min-w-[6em] ${
+                  (data?.change24hPercent || 0) < 0 ? "text-red" : "text-green"
+                }`}
+              >
+                {plusMinus(data?.change24hPercent)}
+                {formatNumber(data?.change24hPercent, 4)}%
+              </span>
+            </p>
+          </div>
+          {/* 24 hr high */}
+          <div className="stat">
+            <span className="font-roboto-mono text-base font-light uppercase text-neutral-400">
+              24h high
+            </span>
+            <p className="font-roboto-mono font-light">
+              <span className="text-white">
+                {formatNumber(data?.high24h, 4)}
+              </span>
+            </p>
+          </div>
+          {/* 24 hr low */}
+          <div className="stat">
+            <span className="font-roboto-mono text-base font-light uppercase text-neutral-400">
+              24h low
+            </span>
+            <p className="font-roboto-mono font-light">
+              <span className="text-white">
+                {formatNumber(data?.low24h, 4)}
+              </span>
+            </p>
+          </div>
+          {/* 24 hr main */}
+          <div className="stat">
+            <span className="font-roboto-mono text-base font-light uppercase text-neutral-400">
+              24h volume ({data?.pairData.baseAsset || "-"})
+            </span>
+            <p className="font-roboto-mono font-light">
+              <span className="text-white">
+                {formatNumber(data?.pairData.baseVolume, 4)}
+              </span>
+            </p>
+          </div>
+          {/* 24 hr pair */}
+          <div className="stat">
+            <span className="font-roboto-mono text-base font-light uppercase text-neutral-400">
+              24h volume ({data?.pairData.quoteAsset || "-"})
+            </span>
+            <p className="font-roboto-mono font-light">
+              <span className="text-white">
+                {formatNumber(data?.pairData.quoteVolume, 4)}
+              </span>
+            </p>
+          </div>
         </div>
-        {/* price */}
-        <div className="stat">
-          <span className="font-roboto-mono text-base font-light uppercase text-neutral-400">
-            Last price
-          </span>
-          <p className="font-roboto-mono font-light">
-            <span className="inline-block min-w-[6em] text-white">
-              {/* render left if it is defined
-                  render right if left is undefined */}
-              ${formatNumber(data?.lastPrice, 2)}
-            </span>
-            <span
-              className={`ml-1 inline-block min-w-[6em] ${
-                (data?.lastPriceChange || 0) < 0 ? "text-red" : "text-green"
-              }`}
-            >
-              {plusMinus(data?.lastPriceChange)}
-              {formatNumber(data?.lastPriceChange, 4)}
-            </span>
-          </p>
-        </div>
-        {/* 24 hr */}
-        <div className="stat">
-          <span className="font-roboto-mono text-base font-light uppercase text-neutral-400">
-            24h change
-          </span>
-          <p className="font-roboto-mono font-light">
-            <span className="inline-block min-w-[6em] text-white">
-              {plusMinus(data?.change24h)}
-
-              {formatNumber(data?.change24h, 4)}
-            </span>
-            <span
-              className={`ml-1 inline-block min-w-[6em] ${
-                (data?.change24hPercent || 0) < 0 ? "text-red" : "text-green"
-              }`}
-            >
-              {plusMinus(data?.change24hPercent)}
-              {formatNumber(data?.change24hPercent, 4)}%
-            </span>
-          </p>
-        </div>
-        {/* 24 hr high */}
-        <div className="stat">
-          <span className="font-roboto-mono text-base font-light uppercase text-neutral-400">
-            24h high
-          </span>
-          <p className="font-roboto-mono font-light">
-            <span className="text-white">{formatNumber(data?.high24h, 4)}</span>
-          </p>
-        </div>
-        {/* 24 hr low */}
-        <div className="stat">
-          <span className="font-roboto-mono text-base font-light uppercase text-neutral-400">
-            24h low
-          </span>
-          <p className="font-roboto-mono font-light">
-            <span className="text-white">{formatNumber(data?.low24h, 4)}</span>
-          </p>
-        </div>
-        {/* 24 hr main */}
-        <div className="stat">
-          <span className="font-roboto-mono text-base font-light uppercase text-neutral-400">
-            24h volume ({data?.pairData.baseAsset || "-"})
-          </span>
-          <p className="font-roboto-mono font-light">
-            <span className="text-white">
-              {formatNumber(data?.pairData.baseVolume, 4)}
-            </span>
-          </p>
-        </div>
-        {/* 24 hr pair */}
-        <div className="stat">
-          <span className="font-roboto-mono text-base font-light uppercase text-neutral-400">
-            24h volume ({data?.pairData.quoteAsset || "-"})
-          </span>
-          <p className="font-roboto-mono font-light">
-            <span className="text-white">
-              {formatNumber(data?.pairData.quoteVolume, 4)}
-            </span>
-          </p>
+        <div className="my-auto hidden md:block">
+          <SocialMediaIcons />
         </div>
       </div>
-      <div className="my-auto hidden md:block">
-        <SocialMediaIcons />
-      </div>
-    </div>
+    </>
   );
 }
-
-// MOCK FUNCTIONS + DATA
-export const useMarketData = (market: string): UseQueryResult<MarketStats> => {
-  return useQuery(
-    ["marketStats", market],
-    async () => {
-      // MOCK API CALL
-
-      // /market/:market_id/stats
-      const baseAsset = market.split("-")[0];
-      const quoteAsset = market.split("-")[1];
-      function timeout(ms: number | undefined) {
-        return new Promise((resolve) => setTimeout(resolve, ms));
-      }
-      await timeout(1000);
-      const {
-        lastPrice,
-        change24h,
-        high24h,
-        low24h,
-        pairData,
-        lastPriceChange,
-        change24hPercent,
-      } = STATS_BAR_MOCK_DATA;
-      // END MOCK API CALL
-      return {
-        lastPrice: lastPrice,
-        lastPriceChange: lastPriceChange, //
-        change24h: change24h, //
-        change24hPercent: change24hPercent, //
-        high24h: high24h,
-        low24h: low24h,
-        pairData: {
-          baseAsset: baseAsset,
-          quoteAsset: quoteAsset,
-          baseAssetIcon: pairData.baseAssetIcon,
-          quoteAssetIcon: pairData.quoteAssetIcon,
-          baseVolume: pairData.baseVolume,
-          quoteVolume: pairData.quoteVolume,
-        },
-      } as MarketStats;
-    },
-    { keepPreviousData: true, refetchOnWindowFocus: false }
-  );
-};
 
 const STATS_BAR_MOCK_DATA: MarketStats = {
   lastPrice: 10.17,

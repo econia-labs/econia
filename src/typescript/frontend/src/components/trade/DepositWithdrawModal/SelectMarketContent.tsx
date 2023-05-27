@@ -43,10 +43,10 @@ export const SelectMarketContent: React.FC<{
       columnHelper.accessor("name", {
         cell: (info) => <MarketNameCell name={info.getValue()} />,
         header: "NAME",
-        filterFn: (row, columnId, filterValue) => {
-          console.log("filtering!!!");
-        },
-        enableColumnFilter: true,
+        // filterFn: (row, columnId, filterValue) => {
+        //   console.log("filtering!!!");
+        //   return true;
+        // },
         id: "name",
       }),
       columnHelper.accessor("market_id", {
@@ -87,7 +87,7 @@ export const SelectMarketContent: React.FC<{
         id: "24h_change",
       }),
       columnHelper.accessor("market_id", {
-        cell: (info) => <RecognizedCell isRecognized={info.getValue()} />,
+        cell: (info) => <RecognizedCell isRecognized={true} />,
         header: "RECOGNIZED",
         id: "recognized",
       }),
@@ -97,19 +97,6 @@ export const SelectMarketContent: React.FC<{
   const table = useReactTable({
     columns,
     data: data || [],
-    filterFns: {
-      testFilter,
-    },
-    globalFilterFn: (row, columnId, filterValue) => {
-      const safeValue = (() => {
-        const value = row.getValue(columnId);
-        return typeof value === "number" ? String(value) : value;
-      })();
-      console.log("pls");
-      return true;
-    },
-    enableFilters: true,
-    enableColumnFilters: true,
     getCoreRowModel: getCoreRowModel(),
   });
   return (
@@ -159,12 +146,6 @@ export const SelectMarketContent: React.FC<{
                           header.column.getFilterValue() != filter &&
                           filter != ""
                         ) {
-                          console.log(
-                            "asdf",
-                            header.id,
-                            header.column,
-                            header.column.getCanFilter()
-                          );
                           header.column.setFilterValue(filter);
                         }
                         return (

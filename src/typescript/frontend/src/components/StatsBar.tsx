@@ -23,6 +23,7 @@ export function StatsBar({ allMarketData, selectedMarket }: Props) {
         onClose={() => {
           setOpen(false);
         }}
+        showCloseButton={false}
       >
         <SelectMarketContent
           onSelectMarket={(market) => {

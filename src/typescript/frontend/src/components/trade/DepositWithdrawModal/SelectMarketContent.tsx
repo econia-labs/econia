@@ -2,12 +2,10 @@ import { Tab } from "@headlessui/react";
 import { MagnifyingGlassIcon, StarIcon } from "@heroicons/react/20/solid";
 import {
   createColumnHelper,
-  type FilterFn,
   flexRender,
   getCoreRowModel,
-  useReactTable,
   getFilteredRowModel,
-  Table,
+  useReactTable,
 } from "@tanstack/react-table";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
@@ -277,133 +275,6 @@ export const SelectMarketContent: React.FC<{
   );
 };
 
-// table component
-const TableComponent = ({
-  table,
-  filter,
-  isLoading,
-  data,
-}: {
-  table: Table<ApiMarket>;
-  filter: string;
-  isLoading: boolean;
-  data: ApiMarket[] | undefined;
-}) => {
-  /* very hacky, setting padding also doesn't work here so i've created TABLE_SPACING */
-  return (
-    <div
-      className={`${TABLE_SPACING.margin} scrollbar-none w-[calc(100%+3em)] overflow-x-auto`}
-    >
-      <table className={``}>
-        <thead>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <tr
-              className="text-left font-roboto-mono text-sm text-neutral-500 [&>th]:font-light"
-              key={headerGroup.id}
-            >
-              {headerGroup.headers.map((header, i) => {
-                //  clearing filter
-                if (
-                  header.id === "name" &&
-                  filter == "" &&
-                  header.column.getFilterValue() != undefined
-                ) {
-                  header.column.setFilterValue(undefined);
-                }
-                // setting filter
-                if (
-                  header.id === "name" &&
-                  header.column.getFilterValue() != filter &&
-                  filter != ""
-                ) {
-                  header.column.setFilterValue(filter);
-                }
-
-                // recognized
-                if (
-                  header.id === "recognized" &&
-                  header.column.getFilterValue() == undefined
-                ) {
-                  header.column.setFilterValue(true);
-                }
-                return (
-                  <th
-                    className={`${i === 0 ? "text-left" : ""} ${
-                      header.id === "recognized" ||
-                      (header.id === "24h_change" && "text-center")
-                    }
-          ${i === 0 ? TABLE_SPACING.paddingLeft : ""}
-          ${
-            i === headerGroup.headers.length - 1
-              ? TABLE_SPACING.paddingRight
-              : ""
-          }`}
-                    key={header.id}
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </th>
-                );
-              })}
-            </tr>
-          ))}
-        </thead>
-        <tbody>
-          <tr>
-            <td colSpan={7} className="">
-              <div className="h-4"></div>
-            </td>
-          </tr>
-          {isLoading || !data ? (
-            <tr>
-              <td colSpan={7}>
-                <div className="flex h-[150px] flex-col items-center justify-center text-sm font-light uppercase text-neutral-500">
-                  Loading...
-                </div>
-              </td>
-            </tr>
-          ) : data.length === 0 ? (
-            <tr>
-              <td colSpan={7}>
-                <div className="flex h-[150px] flex-col items-center justify-center text-sm font-light uppercase text-neutral-500">
-                  No markets to show
-                </div>
-              </td>
-            </tr>
-          ) : (
-            table.getRowModel().rows.map((row) => (
-              <tr
-                className="h-24 min-w-[780px] cursor-pointer px-6 text-left font-roboto-mono text-sm text-white hover:outline hover:outline-1 hover:outline-neutral-600 [&>th]:font-light"
-                onClick={() => onSelectMarket(row.original)}
-                key={row.id}
-              >
-                {row.getVisibleCells().map((cell, i) => (
-                  <td
-                    className={
-                      i === 0
-                        ? "text-left text-white"
-                        : i === 6
-                        ? `${cell.getValue() === "open" ? "text-green" : ""}`
-                        : ""
-                    }
-                    key={cell.id}
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-    </div>
-  );
-};
-
 // row components
 const MarketNameCell = ({ name }: { name: string }) => {
   return (
@@ -617,8 +488,3 @@ export const DepositWithdrawContent: React.FC = () => {
     </div>
   );
 };
-function getGlobalAutoFilterFn():
-  | Record<string, import("@tanstack/react-table").FilterFn<any>>
-  | undefined {
-  throw new Error("Function not implemented.");
-}

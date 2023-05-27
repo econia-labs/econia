@@ -184,6 +184,23 @@ const RecognizedCell = ({ isRecognized }: { isRecognized: boolean }) => {
     </div>
   );
 };
+// util
+const getStatsByMarketId = (
+  marketId: number,
+  marketStats: ApiStats[] | undefined
+) => {
+  if (!marketStats) return undefined;
+  return marketStats.find((stats) => stats.market_id === marketId);
+};
+
+const getMarketByMarketId = (
+  marketId: number,
+  markets: ApiMarket[] | undefined
+) => {
+  if (!markets) return undefined;
+  return markets.find((market) => market.market_id === marketId);
+};
+
 // copy paste from statsbar, think about making a unified component later
 const DEFAULT_TOKEN_ICON = "/tokenImages/default.png";
 type MarketIconPairProps = {

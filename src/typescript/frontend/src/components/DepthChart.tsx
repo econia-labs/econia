@@ -243,7 +243,7 @@ export const DepthChart: React.FC<{
                 padding: 5,
                 color: "white",
                 maxTicksLimit: 2,
-                callback: function (value, index, values) {
+                callback: function (value) {
                   const formatter = Intl.NumberFormat("en", {
                     notation: "compact",
                     compactDisplay: "short",

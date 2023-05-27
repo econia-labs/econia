@@ -16,18 +16,28 @@ enum Step {
 }
 
 export const useAllMarketPrices = (allMarketData: ApiMarket[]) => {
-  return useQuery<ApiStats[]>(["allMarketPrices", allMarketData], async () => {
-    allMarketData.forEach((market) => {
-      fetch(new URL(`stats/${market.name}?resolution=1d`, API_URL).href).then(
-        (res) => {
-          return res.json();
-        }
-      );
-    });
-    return fetch(new URL("stats?resolution=1d", API_URL).href).then((res) => {
-      return res.json();
-    });
-  });
+  return useQuery<{ market_id: number; price: number }[]>(
+    ["allMarketPrices", allMarketData],
+    async () => {
+      const data: Promise<Response>[] = [];
+      allMarketData.forEach((market) => {
+        data.push(
+          fetch(
+            new URL(`market/${market.name}/orderbook?depth=1`, API_URL).href
+          ).then((res) => {
+            return res.json();
+          })
+        );
+      });
+      const orderBooks = await Promise.all(data);
+      return orderBooks.map((orderBook, i) => {
+        return {
+          market_id: allMarketData[i].market_id,
+          price: (orderBook.asks[0].price + orderBook.bids[0].price) / 2,
+        };
+      });
+    }
+  );
 };
 
 export const useAllMarketStats = () => {

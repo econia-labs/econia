@@ -6,6 +6,7 @@ import {
   flexRender,
   getCoreRowModel,
   useReactTable,
+  getFilteredRowModel,
 } from "@tanstack/react-table";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
@@ -29,24 +30,12 @@ export const SelectMarketContent: React.FC<{
   const { data: marketStats } = useAllMarketStats();
   const { data: marketPrices } = useAllMarketPrices(data || []);
   const [filter, setFilter] = useState("");
-  const testFilter: FilterFn<any> = (
-    row,
-    columnId: string,
-    filterValue: unknown
-  ) => {
-    console.log(columnId, filterValue);
-    return true;
-  };
 
   const columns = useMemo(() => {
     return [
       columnHelper.accessor("name", {
         cell: (info) => <MarketNameCell name={info.getValue()} />,
         header: "NAME",
-        // filterFn: (row, columnId, filterValue) => {
-        //   console.log("filtering!!!");
-        //   return true;
-        // },
         id: "name",
       }),
       columnHelper.accessor("market_id", {
@@ -87,6 +76,7 @@ export const SelectMarketContent: React.FC<{
         id: "24h_change",
       }),
       columnHelper.accessor("market_id", {
+        // TODO: add recognized cell
         cell: (info) => <RecognizedCell isRecognized={true} />,
         header: "RECOGNIZED",
         id: "recognized",
@@ -97,6 +87,7 @@ export const SelectMarketContent: React.FC<{
   const table = useReactTable({
     columns,
     data: data || [],
+    getFilteredRowModel: getFilteredRowModel(),
     getCoreRowModel: getCoreRowModel(),
   });
   return (
@@ -141,6 +132,15 @@ export const SelectMarketContent: React.FC<{
                       key={headerGroup.id}
                     >
                       {headerGroup.headers.map((header, i) => {
+                        //  clearing filter
+                        if (
+                          header.id === "name" &&
+                          filter == "" &&
+                          header.column.getFilterValue() != undefined
+                        ) {
+                          header.column.setFilterValue(undefined);
+                        }
+                        // setting filter
                         if (
                           header.id === "name" &&
                           header.column.getFilterValue() != filter &&

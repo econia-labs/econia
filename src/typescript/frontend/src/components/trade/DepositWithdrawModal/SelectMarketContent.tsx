@@ -129,7 +129,7 @@ export const SelectMarketContent: React.FC<{
           <div
             className={`${TABLE_SPACING.margin} scrollbar-none w-[calc(100%+3em)] overflow-x-auto`}
           >
-            <table className={``}>
+            <table className={`w-full`}>
               <thead>
                 {table.getHeaderGroups().map((headerGroup) => (
                   <tr
@@ -199,7 +199,7 @@ export const SelectMarketContent: React.FC<{
             i === headerGroup.headers.length - 1
               ? TABLE_SPACING.paddingRight
               : ""
-          }`}
+          } `}
                           key={header.id}
                         >
                           {header.isPlaceholder

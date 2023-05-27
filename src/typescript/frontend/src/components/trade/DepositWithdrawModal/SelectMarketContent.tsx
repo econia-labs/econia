@@ -16,11 +16,16 @@ import { useEffect, useState } from "react";
 import { Tab } from "@headlessui/react";
 
 const columnHelper = createColumnHelper<ApiMarket>();
+type MarketFilter = "recognized" | "all markets";
 
 export const SelectMarketContent: React.FC<{
   onSelectMarket: (market: ApiMarket) => void;
 }> = ({ onSelectMarket }) => {
   const { data, isLoading } = useAllMarketData();
+  const { data: marketStats } = useAllMarketStats();
+
+  const [marketFilter, setMarketFilter] = useState<MarketFilter>("recognized");
+
   const table = useReactTable({
     columns: [
       columnHelper.accessor("name", {
@@ -74,10 +79,9 @@ export const SelectMarketContent: React.FC<{
     getCoreRowModel: getCoreRowModel(),
   });
   return (
-    <div className="flex w-full flex-col items-center gap-6">
-      <h4 className="font-jost text-3xl font-bold text-white">
-        Select a Market
-      </h4>
+    <div className="flex w-full flex-col items-center gap-6 ">
+      <h4 className="font-jost text-3xl font-bold text-white"></h4>
+      <DepositWithdrawContent />
 
       <table className={"w-full"}>
         <thead>
@@ -87,7 +91,12 @@ export const SelectMarketContent: React.FC<{
               key={headerGroup.id}
             >
               {headerGroup.headers.map((header, i) => (
-                <th className={i === 0 ? "text-left" : ""} key={header.id}>
+                <th
+                  className={`${i === 0 ? "text-left" : ""} ${
+                    header.id === "recognized" && "text-center"
+                  }`}
+                  key={header.id}
+                >
                   {header.isPlaceholder
                     ? null
                     : flexRender(
@@ -100,11 +109,6 @@ export const SelectMarketContent: React.FC<{
           ))}
         </thead>
         <tbody>
-          <tr>
-            <td colSpan={7} className="py-2">
-              <div className="h-[1px] bg-neutral-600"></div>
-            </td>
-          </tr>
           {isLoading || !data ? (
             <tr>
               <td colSpan={7}>
@@ -124,7 +128,7 @@ export const SelectMarketContent: React.FC<{
           ) : (
             table.getRowModel().rows.map((row) => (
               <tr
-                className="cursor-pointer text-left font-roboto-mono text-sm text-white hover:bg-neutral-600 [&>th]:font-light"
+                className="cursor-pointer text-left font-roboto-mono text-sm text-white hover:outline hover:outline-1 hover:outline-neutral-600 [&>th]:font-light"
                 onClick={() => onSelectMarket(row.original)}
                 key={row.id}
               >
@@ -220,6 +224,7 @@ const RecognizedCell = ({ isRecognized }: { isRecognized: boolean }) => {
     </div>
   );
 };
+
 // util
 const getStatsByMarketId = (
   marketId: number,
@@ -316,4 +321,25 @@ const plusMinus = (num: number | undefined): string => {
   if (!num) return "";
   // no need to return - as numbers will already have that
   return num >= 0 ? `+` : ``;
+};
+//
+export const DepositWithdrawContent: React.FC = () => {
+  return (
+    <div className="mt-12 flex w-full flex-col items-center gap-6">
+      <Tab.Group>
+        <Tab.List className="w-full">
+          <Tab className="w-1/2 border-b border-b-neutral-600 py-4 text-center font-jost font-bold text-neutral-600 ui-selected:border-b-white ui-selected:text-white">
+            Recognized
+          </Tab>
+          <Tab className="w-1/2 border-b border-b-neutral-600 py-4 text-center font-jost font-bold text-neutral-600 ui-selected:border-b-white ui-selected:text-white">
+            All Markets
+          </Tab>
+        </Tab.List>
+        <Tab.Panels className="w-full">
+          <Tab.Panel>1</Tab.Panel>
+          <Tab.Panel>2</Tab.Panel>
+        </Tab.Panels>
+      </Tab.Group>
+    </div>
+  );
 };

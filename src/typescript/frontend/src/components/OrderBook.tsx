@@ -1,8 +1,8 @@
 import { Listbox } from "@headlessui/react";
-import { ChevronDownIcon, CheckIcon } from "@heroicons/react/20/solid";
-import { useQuery } from "@tanstack/react-query";
+import { CheckIcon, ChevronDownIcon } from "@heroicons/react/20/solid";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { useOrderBook } from "@/hooks/useOrderbook";
 import { type ApiMarket } from "@/types/api";
 
 type PriceLevel = {
@@ -44,16 +44,9 @@ const Row: React.FC<{
 
 export function OrderBook({ marketData }: { marketData: ApiMarket }) {
   const [precision, setPrecision] = useState<string>(precisionOptions[0]);
-  const { data, isLoading, isFetching } = useQuery<OrderBook>(
-    ["orderBook", marketData.market_id, precision],
-    async () => {
-      const response = await fetch(
-        `https://dev.api.econia.exchange/market/${marketData.market_id}/orderbook?depth=60`
-      );
-      const data = await response.json();
-      return data;
-    },
-    { keepPreviousData: true, refetchOnWindowFocus: false }
+  const { data, isFetching, isLoading } = useOrderBook(
+    marketData.market_id,
+    precision
   );
 
   const centerRef = useRef<HTMLDivElement>(null);
@@ -100,8 +93,11 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
   }, [data]);
 
   if (isLoading) {
-    // TODO loading UI
-    return null;
+    return (
+      <div className="flex h-full flex-col items-center justify-center text-sm font-light uppercase text-neutral-500">
+        Loading...
+      </div>
+    );
   }
 
   return (

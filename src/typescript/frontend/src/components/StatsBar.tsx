@@ -199,8 +199,8 @@ export function StatsBar({ selectedMarket }: Props) {
           </div>
           {/* 24 hr main */}
           <div className="stat">
-            <span className="font-roboto-mono text-base font-light uppercase text-neutral-400">
-              24h volume ({data?.pairData.baseAsset || "-"})
+            <span className="font-roboto-mono text-base font-light  text-neutral-400">
+              24H VOLUME ({data?.pairData.baseAsset || "-"})
             </span>
             <p className="font-roboto-mono font-light">
               <span className="text-white">
@@ -210,8 +210,8 @@ export function StatsBar({ selectedMarket }: Props) {
           </div>
           {/* 24 hr pair */}
           <div className="stat">
-            <span className="font-roboto-mono text-base font-light uppercase text-neutral-400">
-              24h volume ({data?.pairData.quoteAsset || "-"})
+            <span className="font-roboto-mono text-base font-light  text-neutral-400">
+              24H VOLUME ({data?.pairData.quoteAsset || "-"})
             </span>
             <p className="font-roboto-mono font-light">
               <span className="text-white">

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useOrderBook } from "@/hooks/useOrderbook";
 import { type ApiMarket } from "@/types/api";
+import { type Precision } from "@/types/global";
 
 type PriceLevel = {
   price: number;
@@ -15,7 +16,16 @@ type OrderBook = {
   asks: PriceLevel[];
 };
 
-const precisionOptions = ["0.01", "0.05", "0.1", "0.5", "1", "2.5", "5", "10"];
+const precisionOptions: Precision[] = [
+  "0.01",
+  "0.05",
+  "0.1",
+  "0.5",
+  "1",
+  "2.5",
+  "5",
+  "10",
+];
 
 const Row: React.FC<{
   order: PriceLevel;

@@ -1,9 +1,11 @@
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
+
 import { API_URL } from "@/env";
+import { Precision } from "@/types/global";
 // TODO: precision not yet implemented in API yet, so does nothing as of now
 export const useOrderBook = (
   market_id: number,
-  precision = "0",
+  precision: Precision = "0.01",
   depth = 60
 ): UseQueryResult<OrderBook> => {
   return useQuery(

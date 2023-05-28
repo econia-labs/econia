@@ -137,27 +137,6 @@ export const SelectMarketContent: React.FC<{
                     key={headerGroup.id}
                   >
                     {headerGroup.headers.map((header, i) => {
-                      //  clearing filter
-                      if (
-                        header.id === "name" &&
-                        // need these checks to prevent infinite loop
-                        // table sets empty string as undefined so we need to check for both
-                        filter == "" &&
-                        header.column.getFilterValue() != undefined
-                      ) {
-                        header.column.setFilterValue(undefined);
-                      }
-
-                      // setting filter
-                      if (
-                        header.id === "name" &&
-                        // need these checks to prevent infinite loop
-                        // table sets empty string as undefined so we need to check for both
-                        header.column.getFilterValue() != filter &&
-                        filter != ""
-                      ) {
-                        header.column.setFilterValue(filter);
-                      }
                       if (header.id === "name") {
                         if (
                           filter == "" &&
@@ -466,25 +445,4 @@ const plusMinus = (num: number | undefined): string => {
   if (!num) return "";
   // no need to return - as numbers will already have that
   return num >= 0 ? `+` : ``;
-};
-//
-export const DepositWithdrawContent: React.FC = () => {
-  return (
-    <div className="mt-12 flex w-full flex-col items-center gap-6">
-      <Tab.Group>
-        <Tab.List className="w-full">
-          <Tab className="w-1/2 border-b border-b-neutral-600 py-4 text-center font-jost font-bold text-neutral-600 ui-selected:border-b-white ui-selected:text-white">
-            Recognized
-          </Tab>
-          <Tab className="w-1/2 border-b border-b-neutral-600 py-4 text-center font-jost font-bold text-neutral-600 ui-selected:border-b-white ui-selected:text-white">
-            All Markets
-          </Tab>
-        </Tab.List>
-        <Tab.Panels className="w-full">
-          <Tab.Panel>1</Tab.Panel>
-          <Tab.Panel>2</Tab.Panel>
-        </Tab.Panels>
-      </Tab.Group>
-    </div>
-  );
 };

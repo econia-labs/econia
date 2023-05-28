@@ -75,10 +75,9 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
         size: data.asks[0].size,
       };
     }
-    // what should the mid size be?
     return {
       price: (data.asks[0].price + data.bids[0].price) / 2,
-      size: 1,
+      size: 0,
     };
   }, [data]);
 

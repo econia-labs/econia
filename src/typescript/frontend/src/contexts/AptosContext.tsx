@@ -1,15 +1,18 @@
-import { AptosClient } from "aptos";
+import {
+  useWallet,
+  type WalletContextState,
+} from "@manahippo/aptos-wallet-adapter";
+import { AptosClient, Types } from "aptos";
 import {
   createContext,
   type PropsWithChildren,
+  useCallback,
   useContext,
   useMemo,
-  useCallback,
 } from "react";
+import { toast } from "react-toastify";
 
 import { RPC_NODE_URL } from "@/env";
-import { WalletContextState, useWallet } from "@manahippo/aptos-wallet-adapter";
-import { toast } from "react-toastify";
 
 export type AptosContextState = {
   aptosClient: AptosClient;
@@ -21,6 +24,13 @@ export const AptosContext = createContext<AptosContextState | undefined>(
   undefined
 );
 
+// Type guard for EntryFunctionPayload
+const isEntryFunctionPayload = (
+  transaction: Types.TransactionPayload
+): transaction is Types.TransactionPayload_EntryFunctionPayload => {
+  return transaction.type === "entry_function_payload";
+};
+
 export function AptosContextProvider({ children }: PropsWithChildren) {
   const { signAndSubmitTransaction: hippoSignAndSubmitTransaction, account } =
     useWallet();
@@ -29,7 +39,20 @@ export function AptosContextProvider({ children }: PropsWithChildren) {
     async (
       ...args: Parameters<WalletContextState["signAndSubmitTransaction"]>
     ) => {
-      const res = await hippoSignAndSubmitTransaction(...args);
+      let transaction = args[0];
+      const options = args[1];
+      if (isEntryFunctionPayload(transaction)) {
+        transaction = {
+          ...transaction,
+          arguments: transaction.arguments.map((arg) => {
+            if (typeof arg === "bigint") {
+              return arg.toString();
+            }
+            return arg;
+          }),
+        };
+      }
+      const res = await hippoSignAndSubmitTransaction(transaction, options);
       await aptosClient.waitForTransaction(res.hash, { checkSuccess: true });
       toast.success("Transaction confirmed");
       return res;

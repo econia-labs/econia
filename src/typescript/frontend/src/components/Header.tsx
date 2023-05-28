@@ -3,7 +3,7 @@ import { useWallet } from "@manahippo/aptos-wallet-adapter";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import React, { useState, type PropsWithChildren } from "react";
+import React, { type PropsWithChildren, useState } from "react";
 
 import { Button } from "./Button";
 import { ConnectedButton } from "./ConnectedButton";

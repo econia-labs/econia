@@ -1,11 +1,13 @@
-import { ApiMarket } from "@/types/api";
-import { useAllMarketData } from ".";
 import {
   createColumnHelper,
   flexRender,
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+
+import { type ApiMarket } from "@/types/api";
+
+import { useAllMarketData } from ".";
 
 const columnHelper = createColumnHelper<ApiMarket>();
 

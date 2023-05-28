@@ -1,16 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import BigNumber from "bignumber.js";
-import {
-  CategoryScale,
-  Chart,
-  Filler,
-  Legend,
-  LinearScale,
-  LineElement,
-  PointElement,
-  Title,
-  Tooltip,
-} from "chart.js";
+import { Chart } from "chart.js";
 import { useMemo } from "react";
 import { Line } from "react-chartjs-2";
 
@@ -18,20 +8,6 @@ import { useOrderBook } from "@/hooks/useOrderbook";
 import { type ApiMarket } from "@/types/api";
 
 export const ZERO_BIGNUMBER = new BigNumber(0);
-
-Chart.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Filler,
-  Legend
-);
-
-Chart.defaults.font.family = "Roboto Mono";
-Chart.defaults.animation = false;
 
 export const DepthChart: React.FC<{
   marketData: ApiMarket;

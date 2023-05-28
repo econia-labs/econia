@@ -4,9 +4,9 @@ mod helpers;
 use bigdecimal::{BigDecimal, FromPrimitive};
 use chrono::{DateTime, Duration, TimeZone, Utc};
 use db::{
-    add_bar, add_maker_event, create_coin, establish_connection,
+    add_maker_event, create_coin, establish_connection,
     models::{
-        bar::NewBar,
+        bar::{Bar, NewBar},
         coin::NewCoin,
         events::{MakerEventType, NewMakerEvent},
         market::NewMarketRegistrationEvent,
@@ -14,7 +14,7 @@ use db::{
     },
     register_market,
 };
-use diesel::PgConnection;
+use diesel::{PgConnection, RunQueryDsl};
 use helpers::{load_config, reset_tables};
 use indicatif::ProgressBar;
 use rand::{rngs::ThreadRng, Rng};
@@ -74,12 +74,8 @@ fn add_random_bars(
         .timestamp_opt((end_date.timestamp() / 60) * 60, 0)
         .unwrap();
 
-    println!(
-        "start time: {}",
-        (end_date - Duration::minutes(num_bars as i64)).timestamp()
-    );
-    println!("end time: {}", end_date.timestamp());
     let mut price = 10000;
+    let mut bars = vec![];
 
     let pb = ProgressBar::new(num_bars);
     for i in 0..num_bars {
@@ -99,20 +95,24 @@ fn add_random_bars(
         let low = *fill_prices.iter().min().unwrap();
         let high = *fill_prices.iter().max().unwrap();
 
-        add_bar(
-            conn,
-            &NewBar {
-                market_id: market_id_bd.clone(),
-                start_time,
-                open: BigDecimal::from(open),
-                high: BigDecimal::from(high),
-                low: BigDecimal::from(low),
-                close: BigDecimal::from(close),
-                volume: BigDecimal::from(rng.gen_range(1..10000)),
-            },
-        )
-        .unwrap();
+        bars.push(NewBar {
+            market_id: market_id_bd.clone(),
+            start_time,
+            open: BigDecimal::from(open),
+            high: BigDecimal::from(high),
+            low: BigDecimal::from(low),
+            close: BigDecimal::from(close),
+            volume: BigDecimal::from(rng.gen_range(1..10000)),
+        });
 
+        if i % 400 == 0 {
+            let _: Vec<Bar> = diesel::insert_into(db::schema::bars_1m::table)
+                .values(bars)
+                .get_results(conn)
+                .unwrap();
+
+            bars = vec![];
+        }
         pb.inc(1);
     }
 }
@@ -169,7 +169,7 @@ fn main() {
     register_market(
         conn,
         &NewMarketRegistrationEvent {
-            market_id: &0.into(),
+            market_id: &1.into(),
             time: Utc::now(),
             base_account_address: Some(&aptos_coin.account_address),
             base_module_name: Some(&aptos_coin.module_name),
@@ -190,7 +190,7 @@ fn main() {
     register_market(
         conn,
         &NewMarketRegistrationEvent {
-            market_id: &1.into(),
+            market_id: &2.into(),
             time: Utc::now(),
             base_account_address: Some(&teth_coin.account_address),
             base_module_name: Some(&teth_coin.module_name),
@@ -211,7 +211,7 @@ fn main() {
     register_market(
         conn,
         &NewMarketRegistrationEvent {
-            market_id: &2.into(),
+            market_id: &3.into(),
             time: Utc::now(),
             base_account_address: Some(&aptos_coin.account_address),
             base_module_name: Some(&aptos_coin.module_name),
@@ -232,7 +232,7 @@ fn main() {
     register_market(
         conn,
         &NewMarketRegistrationEvent {
-            market_id: &3.into(),
+            market_id: &4.into(),
             time: Utc::now(),
             base_account_address: None,
             base_module_name: None,
@@ -250,10 +250,11 @@ fn main() {
     .unwrap();
 
     let now = Utc::now() + Duration::days(30);
-    for market_id in 0..4 {
+    for market_id in 1..5 {
+        println!("adding entries for market_id {}", market_id);
         place_random_orders(conn, market_id, Side::Bid, 100_000, 20, &mut rng);
         place_random_orders(conn, market_id, Side::Ask, 100_000, 20, &mut rng);
 
-        add_random_bars(conn, market_id, now, 31 * 24 * 60, &mut rng);
+        add_random_bars(conn, market_id, now, 60 * 24 * 60, &mut rng);
     }
 }

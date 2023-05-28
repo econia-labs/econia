@@ -33,16 +33,6 @@ Chart.register(
 Chart.defaults.font.family = "Roboto Mono";
 Chart.defaults.animation = false;
 
-type PriceLevel = {
-  price: number;
-  size: number;
-};
-
-type OrderBook = {
-  bids: PriceLevel[];
-  asks: PriceLevel[];
-};
-
 export const DepthChart: React.FC<{
   marketData: ApiMarket;
 }> = ({ marketData }) => {

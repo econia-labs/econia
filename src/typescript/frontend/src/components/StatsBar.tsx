@@ -1,6 +1,5 @@
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import { useQuery } from "@tanstack/react-query";
-import Image from "next/image";
 import { useRouter } from "next/router";
 import React, { useState } from "react";
 
@@ -13,9 +12,10 @@ import { BaseModal } from "./BaseModal";
 import { DiscordIcon } from "./icons/DiscordIcon";
 import { MediumIcon } from "./icons/MediumIcon";
 import { TwitterIcon } from "./icons/TwitterIcon";
+import { MarketIconPair } from "./MarketIconPair";
 import { SelectMarketContent } from "./trade/DepositWithdrawModal/SelectMarketContent";
-
 const DEFAULT_TOKEN_ICON = "/tokenImages/default.png";
+import { averageOrOther, formatNumber } from "@/utils/formatter";
 
 type MarketStats = {
   // selected market pair data
@@ -33,34 +33,6 @@ type MarketStats = {
     baseVolume: number;
     quoteVolume: number;
   };
-};
-
-const MarketIconPair: React.FC<{
-  baseAssetIcon?: string;
-  quoteAssetIcon?: string;
-}> = ({
-  baseAssetIcon = DEFAULT_TOKEN_ICON,
-  quoteAssetIcon = DEFAULT_TOKEN_ICON,
-}) => {
-  return (
-    <div className="relative flex">
-      {/* height width props required */}
-      <Image
-        src={baseAssetIcon}
-        alt="market-icon-pair"
-        width={40}
-        height={40}
-        className="z-20 aspect-square  w-[30px] min-w-[30px] md:min-w-[40px]"
-      ></Image>
-      <Image
-        src={quoteAssetIcon}
-        alt="market-icon-pair"
-        width={40}
-        height={40}
-        className="absolute z-10 aspect-square w-[30px] min-w-[30px] translate-x-1/2 md:min-w-[40px]"
-      ></Image>
-    </div>
-  );
 };
 
 const SocialMediaIcons: React.FC<{ className?: string }> = ({ className }) => {
@@ -296,38 +268,4 @@ export const StatsBar: React.FC<{
       </div>
     </>
   );
-};
-
-const formatNumber = (
-  num: number | undefined,
-  digits: number,
-  signDisplay: Intl.NumberFormatOptions["signDisplay"] = "never"
-): string => {
-  if (!num) return "-";
-  const lang =
-    typeof window === "undefined"
-      ? "en"
-      : navigator.language || navigator.languages[0];
-  return num.toLocaleString(lang, {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits,
-    signDisplay,
-  });
-};
-
-const averageOrOther = (
-  price1: number | undefined,
-  price2: number | undefined
-): number | undefined => {
-  if (price1 !== undefined && price2 !== undefined) {
-    return (price1 + price2) / 2;
-  }
-  if (price2 == undefined) {
-    return price1;
-  }
-  if (price1 == undefined) {
-    return price2;
-  }
-  // no prices (orderbook empty) maybe should get the last sale price then?
-  return 0;
 };

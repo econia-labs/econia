@@ -5,7 +5,7 @@ import { Line } from "react-chartjs-2";
 
 import { useOrderBook } from "@/hooks/useOrderbook";
 import { type ApiMarket } from "@/types/api";
-
+import { formatNumber } from "@/utils/formatter";
 export const ZERO_BIGNUMBER = new BigNumber(0);
 
 export const DepthChart: React.FC<{
@@ -250,6 +250,7 @@ export const DepthChart: React.FC<{
   );
 };
 
+// depth chart related util
 const TEN = new BigNumber(10);
 export const toDecimalPrice = ({
   price,
@@ -283,6 +284,7 @@ export const toDecimalSize = ({
   return size.multipliedBy(lotSize).div(TEN.exponentiatedBy(baseCoinDecimals));
 };
 
+// crosshair plugin
 interface CorsairPluginOptions {
   width: number;
   color: string;
@@ -353,12 +355,3 @@ const plugin = {
   },
 };
 Chart.register(plugin);
-
-// taken from statsbar
-const formatNumber = (num: number | undefined, digits: number): string => {
-  if (!num) return "-";
-  return num.toLocaleString("en", {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits,
-  });
-};

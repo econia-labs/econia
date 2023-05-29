@@ -3,6 +3,7 @@ import dynamic from "next/dynamic";
 import Script from "next/script";
 import { type PropsWithChildren, useState } from "react";
 
+import { DepthChart } from "@/components/DepthChart";
 import { OrderBook } from "@/components/OrderBook";
 import { Page } from "@/components/Page";
 import { StatsBar } from "@/components/StatsBar";
@@ -83,8 +84,9 @@ export default function Market({ allMarketData, marketData }: Props) {
       <StatsBar allMarketData={allMarketData} selectedMarket={marketData} />
       <main className="flex flex-1 gap-4 px-4 py-2">
         <div className="flex flex-1 flex-col gap-4">
-          <ChartCard className="flex-1">
+          <ChartCard className="flex flex-1 flex-col">
             {isScriptReady && <TVChartContainer {...defaultTVChartProps} />}
+            <DepthChart marketData={marketData} />
           </ChartCard>
           <ChartCard>
             <ChartName className="mb-4">Orders</ChartName>

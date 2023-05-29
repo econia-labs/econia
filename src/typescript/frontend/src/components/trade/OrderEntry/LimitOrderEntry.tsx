@@ -8,10 +8,10 @@ import { ECONIA_ADDR } from "@/env";
 import { useCoinBalance } from "@/hooks/useCoinBalance";
 import { type ApiMarket } from "@/types/api";
 import { type Side } from "@/types/global";
-import { TypeTag } from "@/types/move";
 
 import { OrderEntryInfo } from "./OrderEntryInfo";
 import { OrderEntryInputWrapper } from "./OrderEntryInputWrapper";
+import { TypeTag } from "@/utils/TypeTag";
 
 type LimitFormValues = {
   price: string;

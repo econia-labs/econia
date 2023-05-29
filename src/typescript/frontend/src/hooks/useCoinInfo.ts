@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { useAptos } from "@/contexts/AptosContext";
-import { type TypeTag } from "@/types/move";
+import { type TypeTag } from "@/utils/TypeTag";
 
 type CoinInfo = {
   decimals: 6;

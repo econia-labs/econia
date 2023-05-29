@@ -4,10 +4,12 @@ import Image from "next/image";
 import { useRouter } from "next/router";
 import { useState } from "react";
 
+import { useAptos } from "@/contexts/AptosContext";
 import { API_URL } from "@/env";
 import { type ApiMarket } from "@/types/api";
-import { BaseModal } from "./BaseModal";
+import { TypeTag } from "@/utils/TypeTag";
 
+import { BaseModal } from "./BaseModal";
 import { DiscordIcon } from "./icons/DiscordIcon";
 import { MediumIcon } from "./icons/MediumIcon";
 import { TwitterIcon } from "./icons/TwitterIcon";
@@ -40,6 +42,7 @@ type Props = {
 export function StatsBar({ selectedMarket }: Props) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const router = useRouter();
+  const { coinListClient } = useAptos();
 
   const { data } = useQuery(
     ["marketStasts", selectedMarket],
@@ -57,9 +60,14 @@ export function StatsBar({ selectedMarket }: Props) {
       const res = await awaitResponse.json();
       const priceRes = await awaitPrice.json();
 
-      const tokens = selectedMarket.name.split("-"); // split the string at the hyphen
-      const baseIcon = `/tokenImages/${tokens[0]}.png`; // concatenate the first token with ".png"
-      const quoteIcon = `/tokenImages/${tokens[1]}.png`;
+      const baseIcon = selectedMarket.base
+        ? coinListClient.getCoinInfoByFullName(
+            TypeTag.fromApiCoin(selectedMarket.base).toString()
+          )?.logo_url
+        : DEFAULT_TOKEN_ICON;
+      const quoteIcon = coinListClient.getCoinInfoByFullName(
+        TypeTag.fromApiCoin(selectedMarket.quote).toString()
+      )?.logo_url;
 
       const { pairData, lastPriceChange } = STATS_BAR_MOCK_DATA;
       // END MOCK API CALL
@@ -74,8 +82,10 @@ export function StatsBar({ selectedMarket }: Props) {
         high24h: res.high,
         low24h: res.low,
         pairData: {
-          baseAsset: tokens[0],
-          quoteAsset: tokens[1],
+          baseAsset: selectedMarket.base
+            ? selectedMarket.base.symbol
+            : selectedMarket.name.split("-")[0],
+          quoteAsset: selectedMarket.quote.symbol,
           baseAssetIcon: baseIcon,
           quoteAssetIcon: quoteIcon,
           baseVolume: res.volume,

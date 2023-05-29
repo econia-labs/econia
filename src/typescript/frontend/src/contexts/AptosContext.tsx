@@ -2,7 +2,7 @@ import {
   useWallet,
   type WalletContextState,
 } from "@manahippo/aptos-wallet-adapter";
-import { AptosClient, Types } from "aptos";
+import { AptosClient, type Types } from "aptos";
 import {
   createContext,
   type PropsWithChildren,

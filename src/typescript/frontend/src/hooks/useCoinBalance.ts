@@ -2,7 +2,7 @@ import { type Address } from "@manahippo/aptos-wallet-adapter";
 import { useQuery } from "@tanstack/react-query";
 
 import { useAptos } from "@/contexts/AptosContext";
-import { type TypeTag } from "@/types/move";
+import { type TypeTag } from "@/utils/TypeTag";
 
 import { useCoinInfo } from "./useCoinInfo";
 

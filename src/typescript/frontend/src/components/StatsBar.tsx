@@ -115,19 +115,18 @@ export function StatsBar({ selectedMarket }: Props) {
               baseAssetIcon={data?.pairData.baseAssetIcon}
               quoteAssetIcon={data?.pairData.quoteAssetIcon}
             />
-            <div>
-              <div className="relative ml-10 mr-7 min-w-[170px]">
-                <button
-                  className="flex font-roboto-mono text-xl text-neutral-300 md:text-2xl"
-                  onClick={() => {
-                    setIsModalOpen(true);
-                  }}
-                >
-                  {selectedMarket.name.split("-")[0]} -{" "}
-                  {selectedMarket.name.split("-")[1]}
-                  <ChevronDownIcon className="my-auto ml-1 h-5 w-5 text-white" />
-                </button>
-              </div>
+
+            <div className="relative ml-10 mr-7 min-w-[170px]">
+              <button
+                className="flex font-roboto-mono text-xl text-neutral-300 md:text-2xl"
+                onClick={() => {
+                  setIsModalOpen(true);
+                }}
+              >
+                {selectedMarket.name.split("-")[0]} -{" "}
+                {selectedMarket.name.split("-")[1]}
+                <ChevronDownIcon className="my-auto ml-1 h-5 w-5 text-white" />
+              </button>
             </div>
           </>
           {/* mobile price */}

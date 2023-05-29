@@ -2,12 +2,7 @@ import {
   useWallet,
   type WalletContextState,
 } from "@manahippo/aptos-wallet-adapter";
-import {
-  CoinListClient,
-  PERMISSIONED_LIST,
-  type NetworkType,
-  DEFAULT_TESTNET_LIST,
-} from "@manahippo/coin-list";
+import { CoinListClient, type NetworkType } from "@manahippo/coin-list";
 import { AptosClient, type Types } from "aptos";
 import {
   createContext,
@@ -19,10 +14,7 @@ import {
 import { toast } from "react-toastify";
 
 import { NETWORK, RPC_NODE_URL } from "@/env";
-import {
-  ECONIA_MAINNET_TOKEN_LIST,
-  ECONIA_TESTNET_TOKEN_LIST,
-} from "@/constants";
+import { MAINNET_TOKEN_LIST, TESTNET_TOKEN_LIST } from "@/constants";
 
 export type AptosContextState = {
   aptosClient: AptosClient;
@@ -74,9 +66,7 @@ export function AptosContextProvider({ children }: PropsWithChildren) {
     return new CoinListClient(
       true,
       (NETWORK as NetworkType) || "testnet",
-      NETWORK === "mainnet"
-        ? ECONIA_MAINNET_TOKEN_LIST
-        : ECONIA_TESTNET_TOKEN_LIST
+      NETWORK === "mainnet" ? MAINNET_TOKEN_LIST : TESTNET_TOKEN_LIST
     );
   }, []);
 

@@ -2,7 +2,7 @@ import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
 import { useRouter } from "next/router";
-import { useState } from "react";
+import React, { useState } from "react";
 
 import { useAptos } from "@/contexts/AptosContext";
 import { API_URL } from "@/env";
@@ -35,11 +35,70 @@ type MarketStats = {
   };
 };
 
-type Props = {
-  selectedMarket: ApiMarket;
+const MarketIconPair: React.FC<{
+  baseAssetIcon?: string;
+  quoteAssetIcon?: string;
+}> = ({
+  baseAssetIcon = DEFAULT_TOKEN_ICON,
+  quoteAssetIcon = DEFAULT_TOKEN_ICON,
+}) => {
+  return (
+    <div className="relative flex">
+      {/* height width props required */}
+      <Image
+        src={baseAssetIcon}
+        alt="market-icon-pair"
+        width={40}
+        height={40}
+        className="z-20 aspect-square  w-[30px] min-w-[30px] md:min-w-[40px]"
+      ></Image>
+      <Image
+        src={quoteAssetIcon}
+        alt="market-icon-pair"
+        width={40}
+        height={40}
+        className="absolute z-10 aspect-square w-[30px] min-w-[30px] translate-x-1/2 md:min-w-[40px]"
+      ></Image>
+    </div>
+  );
 };
 
-export function StatsBar({ selectedMarket }: Props) {
+const SocialMediaIcons: React.FC<{ className?: string }> = ({ className }) => {
+  return (
+    <div className={className}>
+      <div className="flex">
+        <a
+          href="https://twitter.com/EconiaLabs"
+          target="_blank"
+          rel="noreferrer"
+          className="mx-3 aspect-square h-[28px]  min-w-[28px]  cursor-pointer text-white hover:text-blue"
+        >
+          <TwitterIcon />
+        </a>
+        <a
+          href="https://discord.com/invite/Z7gXcMgX8A"
+          target="_blank"
+          rel="noreferrer"
+          className="mx-3 aspect-square h-[28px]  min-w-[28px]  cursor-pointer text-white hover:text-blue"
+        >
+          <DiscordIcon />
+        </a>
+        <a
+          href="https://medium.com/econialabs"
+          target="_blank"
+          rel="noreferrer"
+          className="mx-3 aspect-square h-[28px]  min-w-[28px]  cursor-pointer text-white hover:text-blue"
+        >
+          <MediumIcon />
+        </a>
+      </div>
+    </div>
+  );
+};
+
+export const StatsBar: React.FC<{
+  selectedMarket: ApiMarket;
+}> = ({ selectedMarket }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const router = useRouter();
   const { coinListClient } = useAptos();
@@ -66,16 +125,15 @@ export function StatsBar({ selectedMarket }: Props) {
         TypeTag.fromApiCoin(selectedMarket.quote).toString()
       )?.logo_url;
 
-      const { pairData, lastPriceChange } = STATS_BAR_MOCK_DATA;
       // END MOCK API CALL
       return {
         lastPrice: averageOrOther(
           priceRes.asks[0].price,
           priceRes.bids[0].price
         ),
-        lastPriceChange: lastPriceChange, //
-        change24h: res.close, //
-        change24hPercent: res.change * 100, //
+        lastPriceChange: 10.1738, // TODO: Mock data
+        change24h: res.close,
+        change24hPercent: res.change * 100,
         high24h: res.high,
         low24h: res.low,
         pairData: {
@@ -86,7 +144,7 @@ export function StatsBar({ selectedMarket }: Props) {
           baseAssetIcon: baseIcon,
           quoteAssetIcon: quoteIcon,
           baseVolume: res.volume,
-          quoteVolume: pairData.quoteVolume,
+          quoteVolume: 68026950.84, // TODO: Mock data
         },
       } as MarketStats;
     },
@@ -147,8 +205,7 @@ export function StatsBar({ selectedMarket }: Props) {
                   (data?.lastPriceChange || 0) < 0 ? "text-red" : "text-green"
                 }`}
               >
-                {plusMinus(data?.lastPriceChange)}
-                {formatNumber(data?.lastPriceChange, 4)}
+                {formatNumber(data?.lastPriceChange, 4, "always")}
               </span>
             </p>
           </div>
@@ -166,8 +223,7 @@ export function StatsBar({ selectedMarket }: Props) {
                   (data?.lastPriceChange || 0) < 0 ? "text-red" : "text-green"
                 }`}
               >
-                {plusMinus(data?.lastPriceChange)}
-                {formatNumber(data?.lastPriceChange, 4)}
+                {formatNumber(data?.lastPriceChange, 4, "always")}
               </span>
             </p>
           </div>
@@ -185,8 +241,7 @@ export function StatsBar({ selectedMarket }: Props) {
                   (data?.change24hPercent || 0) < 0 ? "text-red" : "text-green"
                 }`}
               >
-                {plusMinus(data?.change24hPercent)}
-                {formatNumber(data?.change24hPercent, 4)}%
+                {formatNumber(data?.change24hPercent, 4, "always")}%
               </span>
             </p>
           </div>
@@ -240,45 +295,23 @@ export function StatsBar({ selectedMarket }: Props) {
       </div>
     </>
   );
-}
-
-const STATS_BAR_MOCK_DATA: MarketStats = {
-  lastPrice: 10.17,
-  lastPriceChange: 10.1738,
-  change24h: -0.9305,
-  change24hPercent: -8.38,
-  high24h: 11.1681,
-  low24h: 9.85,
-  pairData: {
-    // asset names here don't matter for testing purposes
-    baseAsset: "doesn't",
-    quoteAsset: "matter",
-    baseAssetIcon: "/tokenImages/APT.png",
-    quoteAssetIcon: "/tokenImages/USD.png",
-    baseVolume: 6531688.77,
-    quoteVolume: 68026950.84,
-  },
 };
 
-// UTIL FUNCTIONS
-const getLang = () => {
-  return typeof window === "undefined"
-    ? "en"
-    : navigator.language || navigator.languages[0];
-};
-
-const formatNumber = (num: number | undefined, digits: number): string => {
+const formatNumber = (
+  num: number | undefined,
+  digits: number,
+  signDisplay: Intl.NumberFormatOptions["signDisplay"] = "never"
+): string => {
   if (!num) return "-";
-  return num.toLocaleString(getLang(), {
+  const lang =
+    typeof window === "undefined"
+      ? "en"
+      : navigator.language || navigator.languages[0];
+  return num.toLocaleString(lang, {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
+    signDisplay,
   });
-};
-
-const plusMinus = (num: number | undefined): string => {
-  if (!num) return "";
-  // no need to return - as numbers will already have that
-  return num >= 0 ? `+` : ``;
 };
 
 const averageOrOther = (
@@ -296,71 +329,4 @@ const averageOrOther = (
   }
   // no prices (orderbook empty) maybe should get the last sale price then?
   return 0;
-};
-
-// COMPONENTS
-// leaving here until i learn more about how this project is structured
-type MarketIconPairProps = {
-  baseAssetIcon?: string;
-  quoteAssetIcon?: string;
-};
-const MarketIconPair = ({
-  baseAssetIcon = DEFAULT_TOKEN_ICON,
-  quoteAssetIcon = DEFAULT_TOKEN_ICON,
-}: MarketIconPairProps) => {
-  return (
-    <div className="relative flex">
-      {/* height width props required */}
-      <Image
-        src={baseAssetIcon}
-        alt="market-icon-pair"
-        width={40}
-        height={40}
-        className="z-20 aspect-square  w-[30px] min-w-[30px] md:min-w-[40px]"
-      ></Image>
-      <Image
-        src={quoteAssetIcon}
-        alt="market-icon-pair"
-        width={40}
-        height={40}
-        className="absolute z-10 aspect-square w-[30px] min-w-[30px] translate-x-1/2 md:min-w-[40px]"
-      ></Image>
-    </div>
-  );
-};
-
-// icons hardcoded for now
-const SocialMediaIcons = ({
-  className,
-}: React.HTMLAttributes<HTMLDivElement>) => {
-  return (
-    <div className={className}>
-      <div className="flex">
-        <a
-          href="https://twitter.com/EconiaLabs"
-          target="_blank"
-          rel="noreferrer"
-          className="mx-3 aspect-square h-[28px]  min-w-[28px]  cursor-pointer text-white hover:text-blue"
-        >
-          <TwitterIcon />
-        </a>
-        <a
-          href="https://discord.com/invite/Z7gXcMgX8A"
-          target="_blank"
-          rel="noreferrer"
-          className="mx-3 aspect-square h-[28px]  min-w-[28px]  cursor-pointer text-white hover:text-blue"
-        >
-          <DiscordIcon />
-        </a>
-        <a
-          href="https://medium.com/econialabs"
-          target="_blank"
-          rel="noreferrer"
-          className="mx-3 aspect-square h-[28px]  min-w-[28px]  cursor-pointer text-white hover:text-blue"
-        >
-          <MediumIcon />
-        </a>
-      </div>
-    </div>
-  );
 };

@@ -33,7 +33,7 @@ export const TESTNET_TOKEN_LIST: RawCoinInfo[] = [
     extensions: {
       data: [],
     },
-    unique_index: DEFAULT_TESTNET_LIST.length,
+    unique_index: DEFAULT_TESTNET_LIST.length + 1,
   },
   {
     name: "Test USDC",
@@ -53,7 +53,7 @@ export const TESTNET_TOKEN_LIST: RawCoinInfo[] = [
     extensions: {
       data: [],
     },
-    unique_index: DEFAULT_TESTNET_LIST.length + 1,
+    unique_index: DEFAULT_TESTNET_LIST.length + 2,
   },
 ];
 
@@ -67,3 +67,5 @@ export const MAINNET_TOKEN_LIST: RawCoinInfo[] = [
   }),
   // Additions
 ];
+
+console.log(TESTNET_TOKEN_LIST);

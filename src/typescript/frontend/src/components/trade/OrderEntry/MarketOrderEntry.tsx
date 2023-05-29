@@ -27,8 +27,6 @@ export const MarketOrderEntry: React.FC<{
     handleSubmit,
     register,
     formState: { errors },
-    getValues,
-    setValue,
   } = useForm<MarketFormValues>();
   const baseBalance = useMarketAccountBalance(
     account?.address,

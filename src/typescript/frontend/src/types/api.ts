@@ -18,6 +18,7 @@ export type ApiMarket = {
   min_size: number;
   underwriter_id: number;
   created_at: string;
+  recognized?: boolean;
 };
 
 export type ApiOrder = {
@@ -50,3 +51,13 @@ export type ApiResolution =
   | "4h"
   | "12h"
   | "1d";
+
+export type ApiStats = {
+  market_id: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  change: number;
+  volume: number;
+};

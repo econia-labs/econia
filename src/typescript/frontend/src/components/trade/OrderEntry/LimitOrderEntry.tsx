@@ -12,6 +12,7 @@ import { type Side } from "@/types/global";
 import { OrderEntryInfo } from "./OrderEntryInfo";
 import { OrderEntryInputWrapper } from "./OrderEntryInputWrapper";
 import { TypeTag } from "@/utils/TypeTag";
+import { useMarketAccountBalance } from "@/hooks/useMarketAccountBalance";
 
 type LimitFormValues = {
   price: string;
@@ -31,13 +32,15 @@ export const LimitOrderEntry: React.FC<{
     getValues,
     setValue,
   } = useForm<LimitFormValues>();
-  const baseBalance = useCoinBalance(
-    marketData.base ? TypeTag.fromApiCoin(marketData.base) : null,
-    account?.address
+  const baseBalance = useMarketAccountBalance(
+    account?.address,
+    marketData.market_id,
+    marketData.base
   );
-  const quoteBalance = useCoinBalance(
-    TypeTag.fromApiCoin(marketData.quote),
-    account?.address
+  const quoteBalance = useMarketAccountBalance(
+    account?.address,
+    marketData.market_id,
+    marketData.quote
   );
 
   const onSubmit = async (values: LimitFormValues) => {
@@ -80,6 +83,7 @@ export const LimitOrderEntry: React.FC<{
           <input
             type="number"
             step="any"
+            placeholder="0.00"
             {...register("price", {
               required: "required",
               min: 0,
@@ -111,6 +115,7 @@ export const LimitOrderEntry: React.FC<{
           <input
             type="number"
             step="any"
+            placeholder="0.00"
             {...register("size", {
               required: "required",
               min: 0,
@@ -136,6 +141,7 @@ export const LimitOrderEntry: React.FC<{
           <input
             type="number"
             step="any"
+            placeholder="0.00"
             {...register("totalSize", { disabled: true })}
             className="h-full w-[100px] flex-1 bg-transparent text-right font-roboto-mono font-light text-neutral-400 outline-none"
           />

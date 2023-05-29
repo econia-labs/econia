@@ -19,7 +19,10 @@ import {
 import { toast } from "react-toastify";
 
 import { NETWORK, RPC_NODE_URL } from "@/env";
-import { ECONIA_MAINNET_TOKEN_LIST } from "@/constants";
+import {
+  ECONIA_MAINNET_TOKEN_LIST,
+  ECONIA_TESTNET_TOKEN_LIST,
+} from "@/constants";
 
 export type AptosContextState = {
   aptosClient: AptosClient;
@@ -68,17 +71,12 @@ export function AptosContextProvider({ children }: PropsWithChildren) {
     [hippoSignAndSubmitTransaction, aptosClient]
   );
   const coinListClient = useMemo(() => {
-    const list =
-      NETWORK === "mainnet" ? PERMISSIONED_LIST : DEFAULT_TESTNET_LIST;
-
     return new CoinListClient(
       true,
       (NETWORK as NetworkType) || "testnet",
-      list.concat(
-        NETWORK === "mainnet"
-          ? ECONIA_MAINNET_TOKEN_LIST
-          : ECONIA_MAINNET_TOKEN_LIST
-      )
+      NETWORK === "mainnet"
+        ? ECONIA_MAINNET_TOKEN_LIST
+        : ECONIA_TESTNET_TOKEN_LIST
     );
   }, []);
 

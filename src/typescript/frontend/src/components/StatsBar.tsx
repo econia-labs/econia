@@ -45,20 +45,17 @@ export function StatsBar({ selectedMarket }: Props) {
   const { coinListClient } = useAptos();
 
   const { data } = useQuery(
-    ["marketStasts", selectedMarket],
+    ["marketStats", selectedMarket],
     async () => {
-      // MOCK API CALL
-      const response = fetch(
+      // TODO: MOCK API CALL
+      const resProm = fetch(
         `${API_URL}/market/${selectedMarket.market_id}/stats?resolution=1d`
-      );
-
-      const priceResponse = fetch(
+      ).then((res) => res.json());
+      const priceProm = fetch(
         `${API_URL}/market/${selectedMarket.market_id}/orderbook?depth=1`
-      );
-      const awaitResponse = await response;
-      const awaitPrice = await priceResponse;
-      const res = await awaitResponse.json();
-      const priceRes = await awaitPrice.json();
+      ).then((res) => res.json());
+      const res = await resProm;
+      const priceRes = await priceProm;
 
       const baseIcon = selectedMarket.base
         ? coinListClient.getCoinInfoByFullName(

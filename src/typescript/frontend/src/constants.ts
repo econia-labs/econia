@@ -6,8 +6,15 @@ import {
 
 export const NO_CUSTODIAN = 0;
 
-export const ECONIA_TESTNET_TOKEN_LIST: RawCoinInfo[] = [
-  ...PERMISSIONED_LIST,
+export const TESTNET_TOKEN_LIST: RawCoinInfo[] = [
+  ...DEFAULT_TESTNET_LIST.map((coin) => {
+    // Overrides
+    if (coin.symbol === "APT") {
+      coin.logo_url = "/tokenImages/APT.png";
+    }
+    return coin;
+  }),
+  // Additions
   {
     name: "Test ETH",
     symbol: "tETH",
@@ -26,7 +33,7 @@ export const ECONIA_TESTNET_TOKEN_LIST: RawCoinInfo[] = [
     extensions: {
       data: [],
     },
-    unique_index: PERMISSIONED_LIST.length,
+    unique_index: DEFAULT_TESTNET_LIST.length,
   },
   {
     name: "Test USDC",
@@ -46,9 +53,17 @@ export const ECONIA_TESTNET_TOKEN_LIST: RawCoinInfo[] = [
     extensions: {
       data: [],
     },
-    unique_index: PERMISSIONED_LIST.length + 1,
+    unique_index: DEFAULT_TESTNET_LIST.length + 1,
   },
 ];
-export const ECONIA_MAINNET_TOKEN_LIST: RawCoinInfo[] = [
-  ...DEFAULT_TESTNET_LIST,
+
+export const MAINNET_TOKEN_LIST: RawCoinInfo[] = [
+  ...PERMISSIONED_LIST.map((coin) => {
+    // Overrides
+    if (coin.symbol === "APT") {
+      coin.logo_url = "/tokenImages/APT.png";
+    }
+    return coin;
+  }),
+  // Additions
 ];

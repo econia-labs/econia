@@ -54,12 +54,13 @@ export const useAllMarketData = () => {
   return useQuery<ApiMarket[]>(["allMarketData"], async () => {
     return fetch(new URL("markets", API_URL).href).then(async (res) => {
       const d = await res.json();
-      // TODO: remove before PR
+      // TODO: Remove once real data exists
       return d.map((m: ApiMarket, i: number) => {
         m.recognized = i % 2 === 0 ? true : false;
         return m;
       });
     });
+    // TODO: Remove mock data
     // return [
     //   {
     //     market_id: 1,

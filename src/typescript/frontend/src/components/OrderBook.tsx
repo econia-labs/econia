@@ -53,7 +53,7 @@ const Row: React.FC<{
 );
 
 export function OrderBook({ marketData }: { marketData: ApiMarket }) {
-  const [precision, setPrecision] = useState<string>(precisionOptions[0]);
+  const [precision, setPrecision] = useState<Precision>(precisionOptions[0]);
   const { data, isFetching, isLoading } = useOrderBook(
     marketData.market_id,
     precision

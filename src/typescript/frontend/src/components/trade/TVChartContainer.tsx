@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 
 import { API_URL } from "@/env";
 import { type ApiBar, type ApiMarket, type ApiResolution } from "@/types/api";
-import { TypeTag } from "@/types/move";
+import { TypeTag } from "@/utils/TypeTag";
 
 import {
   type Bar,

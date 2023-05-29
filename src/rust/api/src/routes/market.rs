@@ -134,12 +134,14 @@ pub async fn get_stats(
             where start_time >= now() - $1::interval and start_time < now()
         ),
         first as (
-            select start_time, first_value(open) over (order by start_time) as open
-            from bars
+            select market_id, start_time, first_value(open) over (
+                partition by market_id order by start_time
+            ) as open from bars
         ),
         last as (
-            select start_time, first_value(close) over (order by start_time desc) as close
-            from bars
+            select market_id, start_time, first_value(close) over (
+                partition by market_id order by start_time desc
+            ) as close from bars
         )
         select
             bars.market_id,
@@ -152,7 +154,9 @@ pub async fn get_stats(
         from
             bars
             inner join first on bars.start_time = first.start_time
+                and bars.market_id = first.market_id
             inner join last on bars.start_time = last.start_time
+                and bars.market_id = last.market_id
         group by bars.market_id order by market_id;
         "#,
         interval

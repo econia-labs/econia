@@ -9,7 +9,7 @@ import { useAptos } from "@/contexts/AptosContext";
 import { CoinBalanceQueryKey, useCoinBalance } from "@/hooks/useCoinBalance";
 import { useCoinInfo } from "@/hooks/useCoinInfo";
 import { type ApiMarket } from "@/types/api";
-import { TypeTag } from "@/types/move";
+import { TypeTag } from "@/utils/TypeTag";
 
 const FAUCET_ADDR =
   "0x7c36a610d1cde8853a692c057e7bd2479ba9d5eeaeceafa24f125c23d2abf942";

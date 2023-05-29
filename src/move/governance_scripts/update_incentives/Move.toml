@@ -1,0 +1,7 @@
+[package]
+name = "UpdateIncentives"
+version = "1.0.0"             # Per SemVer.
+upgrade_policy = "compatible"
+
+[dependencies.Econia]
+local = "../../econia"

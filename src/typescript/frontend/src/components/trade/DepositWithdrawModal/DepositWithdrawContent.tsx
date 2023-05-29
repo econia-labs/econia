@@ -1,21 +1,21 @@
+import { entryFunctions } from "@econia-labs/sdk";
 import { Menu, Tab } from "@headlessui/react";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
-import React, { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 
 import { Button } from "@/components/Button";
 import { Input } from "@/components/Input";
-import { useCoinBalance } from "@/hooks/useCoinBalance";
-import { type ApiCoin, type ApiMarket } from "@/types/api";
-import { MoveCoin, U128 } from "@/types/move";
-import { useQuery } from "@tanstack/react-query";
+import { NO_CUSTODIAN } from "@/constants";
 import { useAptos } from "@/contexts/AptosContext";
 import { ECONIA_ADDR } from "@/env";
-import { NO_CUSTODIAN } from "@/constants";
-import { makeMarketAccountId } from "@/utils/econia";
-import { Collateral, TabListNode } from "@/types/econia";
-import { TypeTag } from "@/utils/TypeTag";
-import { entryFunctions } from "@econia-labs/sdk";
+import { useCoinBalance } from "@/hooks/useCoinBalance";
+import { type ApiCoin, type ApiMarket } from "@/types/api";
+import { type Collateral, type TabListNode } from "@/types/econia";
+import { type MoveCoin, type U128 } from "@/types/move";
 import { fromRawCoinAmount, toRawCoinAmount } from "@/utils/coin";
+import { makeMarketAccountId } from "@/utils/econia";
+import { TypeTag } from "@/utils/TypeTag";
 
 const SelectCoinInput: React.FC<{
   coins: ApiCoin[];
@@ -72,7 +72,7 @@ const DepositWithdrawForm: React.FC<{
   mode: "deposit" | "withdraw";
 }> = ({ selectedMarket, mode }) => {
   const { account, aptosClient, signAndSubmitTransaction } = useAptos();
-  const [selectedCoin, setSelectedCoin] = React.useState<ApiCoin>(
+  const [selectedCoin, setSelectedCoin] = useState<ApiCoin>(
     selectedMarket.base ?? selectedMarket.quote
   );
   const { data: marketAccountBalance } = useQuery(
@@ -106,7 +106,7 @@ const DepositWithdrawForm: React.FC<{
     }
   );
 
-  const [amount, setAmount] = React.useState<string>("");
+  const [amount, setAmount] = useState<string>("");
   const { data: balance } = useCoinBalance(
     TypeTag.fromApiCoin(selectedCoin),
     account?.address

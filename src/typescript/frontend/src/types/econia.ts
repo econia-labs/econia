@@ -1,10 +1,10 @@
 import {
-  MoveOption,
-  MoveTableHandle,
-  MoveTableWithLength,
-  MoveTypeInfo,
-  U128,
-  U64,
+  type MoveOption,
+  type MoveTableHandle,
+  type MoveTableWithLength,
+  type MoveTypeInfo,
+  type U64,
+  type U128,
 } from "@/types/move";
 
 // econia::tablist

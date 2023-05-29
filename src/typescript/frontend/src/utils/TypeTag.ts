@@ -1,6 +1,6 @@
 import { ECONIA_ADDR } from "@/env";
-import { ApiCoin } from "@/types/api";
-import { MovePrimitive } from "@/types/move";
+import { type ApiCoin } from "@/types/api";
+import { type MovePrimitive } from "@/types/move";
 
 export class TypeTag {
   constructor(

@@ -2,7 +2,7 @@ use diesel::prelude::*;
 
 use crate::schema::coins;
 
-use super::IntoInsertable;
+use super::ToInsertable;
 
 #[derive(Clone, Debug, Queryable)]
 pub struct Coin {
@@ -38,11 +38,11 @@ pub struct NewCoin<'a> {
     pub decimals: i16,
 }
 
-impl<'a> IntoInsertable for &'a Coin {
-    type Insertable = NewCoin<'a>;
+impl ToInsertable for Coin {
+    type Insertable<'a> = NewCoin<'a>;
 
-    fn into_insertable(self) -> Self::Insertable {
-        NewCoin::<'a> {
+    fn to_insertable(&self) -> Self::Insertable<'_> {
+        NewCoin {
             account_address: &self.account_address,
             module_name: &self.module_name,
             struct_name: &self.struct_name,

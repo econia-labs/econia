@@ -1,4 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
 import BigNumber from "bignumber.js";
 import { Chart } from "chart.js";
 import { useMemo } from "react";

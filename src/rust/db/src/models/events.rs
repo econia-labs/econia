@@ -5,7 +5,7 @@ use diesel_derive_enum::DbEnum;
 use field_count::FieldCount;
 use types::{error::TypeError, events};
 
-use super::{order::Side, IntoInsertable};
+use super::{order::Side, ToInsertable};
 use crate::schema::{maker_events, taker_events};
 
 #[derive(Debug, DbEnum, Clone, Copy, PartialEq, Eq)]
@@ -142,11 +142,11 @@ pub struct NewMakerEvent<'a> {
     pub time: DateTime<Utc>,
 }
 
-impl<'a> IntoInsertable for &'a MakerEvent {
-    type Insertable = NewMakerEvent<'a>;
+impl ToInsertable for MakerEvent {
+    type Insertable<'a> = NewMakerEvent<'a>;
 
-    fn into_insertable(self) -> Self::Insertable {
-        NewMakerEvent::<'a> {
+    fn to_insertable(&self) -> Self::Insertable<'_> {
+        NewMakerEvent {
             market_id: &self.market_id,
             side: self.side,
             market_order_id: &self.market_order_id,
@@ -243,11 +243,11 @@ pub struct NewTakerEvent<'a> {
     pub time: DateTime<Utc>,
 }
 
-impl<'a> IntoInsertable for &'a TakerEvent {
-    type Insertable = NewTakerEvent<'a>;
+impl ToInsertable for TakerEvent {
+    type Insertable<'a> = NewTakerEvent<'a>;
 
-    fn into_insertable(self) -> Self::Insertable {
-        NewTakerEvent::<'a> {
+    fn to_insertable(&self) -> Self::Insertable<'_> {
+        NewTakerEvent {
             market_id: &self.market_id,
             side: self.side,
             market_order_id: &self.market_order_id,

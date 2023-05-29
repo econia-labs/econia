@@ -6,8 +6,8 @@ import { useState } from "react";
 
 import { API_URL } from "@/env";
 import { type ApiMarket } from "@/types/api";
-
 import { BaseModal } from "./BaseModal";
+
 import { DiscordIcon } from "./icons/DiscordIcon";
 import { MediumIcon } from "./icons/MediumIcon";
 import { TwitterIcon } from "./icons/TwitterIcon";
@@ -96,15 +96,15 @@ export function StatsBar({ selectedMarket }: Props) {
         open={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
+          (false);
         }}
-        onBack={() => {
-          setIsModalOpen(false);
-        }}
+        showCloseButton={false}
       >
         <SelectMarketContent
           onSelectMarket={(market) => {
-            router.push(`/trade/${market.name}`);
             setIsModalOpen(false);
+            (false);
+            router.push(`/trade/${market.name}`);
           }}
         />
       </BaseModal>
@@ -354,6 +354,6 @@ const SocialMediaIcons = ({
           <MediumIcon />
         </a>
       </div>
-    </div>
+    </>
   );
 };

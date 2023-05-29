@@ -5237,11 +5237,12 @@ size for market.
     <b>let</b> max_base = <b>if</b> (direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>)
         (<a href="market.md#0xc0deb00c_market_HI_64">HI_64</a> - base_ceiling) <b>else</b> base_available;
     // Get max lots that can be traded by <a href="user.md#0xc0deb00c_user">user</a>.
-    <b>let</b> max_lots = max_base / order_book_ref_mut.lot_size;
+    <b>let</b> max_lots_user_can_trade = max_base / order_book_ref_mut.lot_size;
     // If <a href="market.md#0xc0deb00c_market">market</a> order size is less than number of lots <a href="user.md#0xc0deb00c_user">user</a> can
     // trade based on <a href="">account</a> limits, adjust the max base trade
     // amount <b>to</b> correspond <b>with</b> the <a href="market.md#0xc0deb00c_market">market</a> order size.
-    <b>if</b> (size &lt; max_lots) max_base = size * order_book_ref_mut.lot_size;
+    <b>if</b> (size &lt; max_lots_user_can_trade)
+        max_base = size * order_book_ref_mut.lot_size;
     // Calculate max quote that can be traded: <b>if</b> a buy, quote
     // available in <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>. If a sell, max quote that can
     // fit in <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.

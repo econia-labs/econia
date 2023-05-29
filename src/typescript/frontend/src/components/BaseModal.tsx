@@ -14,7 +14,7 @@ export const BaseModal: React.FC<
 > = ({ open, onClose, onBack, showCloseButton = true, children }) => {
   return (
     <Transition appear show={open} as={Fragment}>
-      <Dialog as="div" className="relative z-10" open={open} onClose={onClose}>
+      <Dialog as="div" className="relative z-50" open={open} onClose={onClose}>
         <Transition.Child
           as={Fragment}
           enter="ease-out duration-300"

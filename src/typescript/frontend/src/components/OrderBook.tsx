@@ -5,16 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useOrderBook } from "@/hooks/useOrderbook";
 import { type ApiMarket } from "@/types/api";
 import { type Precision } from "@/types/global";
-
-type PriceLevel = {
-  price: number;
-  size: number;
-};
-
-type OrderBook = {
-  bids: PriceLevel[];
-  asks: PriceLevel[];
-};
+import { type OrderBook, type PriceLevel } from "@/types/global";
 
 const precisionOptions: Precision[] = [
   "0.01",

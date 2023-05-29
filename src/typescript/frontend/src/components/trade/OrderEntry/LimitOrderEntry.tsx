@@ -79,7 +79,6 @@ export const LimitOrderEntry: React.FC<{
         "immediateOrCancel", // TODO don't hardcode
         "abort" // don't hardcode this either
       );
-      console.log(payload);
 
       await signAndSubmitTransaction({
         type: "entry_function_payload",

@@ -64,7 +64,10 @@ export function StatsBar({ selectedMarket }: Props) {
       const { pairData, lastPriceChange } = STATS_BAR_MOCK_DATA;
       // END MOCK API CALL
       return {
-        lastPrice: (priceRes.asks[0].price + priceRes.bids[0].price) / 2,
+        lastPrice: averageOrOther(
+          priceRes.asks[0].price,
+          priceRes.bids[0].price
+        ),
         lastPriceChange: lastPriceChange, //
         change24h: res.close, //
         change24hPercent: res.change * 100, //
@@ -271,6 +274,23 @@ const plusMinus = (num: number | undefined): string => {
   if (!num) return "";
   // no need to return - as numbers will already have that
   return num >= 0 ? `+` : ``;
+};
+
+const averageOrOther = (
+  price1: number | undefined,
+  price2: number | undefined
+): number | undefined => {
+  if (price1 !== undefined && price2 !== undefined) {
+    return (price1 + price2) / 2;
+  }
+  if (price2 == undefined) {
+    return price1;
+  }
+  if (price1 == undefined) {
+    return price2;
+  }
+  // no prices (orderbook empty) maybe should get the last sale price then?
+  return 0;
 };
 
 // COMPONENTS

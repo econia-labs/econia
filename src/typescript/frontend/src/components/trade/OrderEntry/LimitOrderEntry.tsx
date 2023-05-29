@@ -14,6 +14,12 @@ import { TypeTag } from "@/utils/TypeTag";
 import { useMarketAccountBalance } from "@/hooks/useMarketAccountBalance";
 import { fromDecimalPrice, fromDecimalSize } from "@/utils/econia";
 
+type LimitFormValues = {
+  price: string;
+  size: string;
+  totalSize: string;
+};
+
 export const LimitOrderEntry: React.FC<{
   marketData: ApiMarket;
   side: Side;

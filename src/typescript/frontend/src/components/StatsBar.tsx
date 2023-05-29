@@ -45,15 +45,17 @@ export function StatsBar({ selectedMarket }: Props) {
     ["marketStasts", selectedMarket],
     async () => {
       // MOCK API CALL
-      const response = await fetch(
+      const response = fetch(
         `${API_URL}/market/${selectedMarket.market_id}/stats?resolution=1d`
       );
-      const res = await response.json();
 
-      const priceResponse = await fetch(
+      const priceResponse = fetch(
         `${API_URL}/market/${selectedMarket.market_id}/orderbook?depth=1`
       );
-      const priceRes = await priceResponse.json();
+      const awaitResponse = await response;
+      const awaitPrice = await priceResponse;
+      const res = await awaitResponse.json();
+      const priceRes = await awaitPrice.json();
 
       const tokens = selectedMarket.name.split("-"); // split the string at the hyphen
       const baseIcon = `/tokenImages/${tokens[0]}.png`; // concatenate the first token with ".png"

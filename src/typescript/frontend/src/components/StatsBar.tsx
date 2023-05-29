@@ -116,14 +116,15 @@ export const StatsBar: React.FC<{
       const res = await resProm;
       const priceRes = await priceProm;
 
-      const baseIcon = selectedMarket.base
+      const baseAssetIcon = selectedMarket.base
         ? coinListClient.getCoinInfoByFullName(
             TypeTag.fromApiCoin(selectedMarket.base).toString()
           )?.logo_url
         : DEFAULT_TOKEN_ICON;
-      const quoteIcon = coinListClient.getCoinInfoByFullName(
-        TypeTag.fromApiCoin(selectedMarket.quote).toString()
-      )?.logo_url;
+      const quoteAssetIcon =
+        coinListClient.getCoinInfoByFullName(
+          TypeTag.fromApiCoin(selectedMarket.quote).toString()
+        )?.logo_url ?? DEFAULT_TOKEN_ICON;
 
       // END MOCK API CALL
       return {
@@ -141,8 +142,8 @@ export const StatsBar: React.FC<{
             ? selectedMarket.base.symbol
             : selectedMarket.name.split("-")[0],
           quoteAsset: selectedMarket.quote.symbol,
-          baseAssetIcon: baseIcon,
-          quoteAssetIcon: quoteIcon,
+          baseAssetIcon,
+          quoteAssetIcon,
           baseVolume: res.volume,
           quoteVolume: 68026950.84, // TODO: Mock data
         },

@@ -141,7 +141,9 @@ def generate_constants_block(
         const WITHDRAWAL_FEE_1: u64 =            950000;
     """
     # Get USD per subunit of utility coin.
-    usd_per_subunit = utility_coin_usd_value / Decimal(1).shift(utility_coin_decimals)
+    usd_per_subunit = utility_coin_usd_value / Decimal(1).shift(
+        utility_coin_decimals
+    )
     # Index tier parameters.
     divisors, activation_fees, withdrawal_fees = (
         [percent_to_divisor(tier[0]) for tier in tiers],

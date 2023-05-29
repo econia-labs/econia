@@ -13,7 +13,7 @@ import {
 } from "react";
 import { toast } from "react-toastify";
 
-import { NETWORK, RPC_NODE_URL } from "@/env";
+import { NETWORK_NAME, RPC_NODE_URL } from "@/env";
 import { MAINNET_TOKEN_LIST, TESTNET_TOKEN_LIST } from "@/constants";
 
 export type AptosContextState = {
@@ -65,8 +65,8 @@ export function AptosContextProvider({ children }: PropsWithChildren) {
   const coinListClient = useMemo(() => {
     return new CoinListClient(
       true,
-      (NETWORK as NetworkType) || "testnet",
-      NETWORK === "mainnet" ? MAINNET_TOKEN_LIST : TESTNET_TOKEN_LIST
+      (NETWORK_NAME as NetworkType) || "testnet",
+      NETWORK_NAME === "mainnet" ? MAINNET_TOKEN_LIST : TESTNET_TOKEN_LIST
     );
   }, []);
 

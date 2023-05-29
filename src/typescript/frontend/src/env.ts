@@ -11,4 +11,4 @@ if (process.env.NEXT_PUBLIC_API_URL == null) {
 export const API_URL = process.env.NEXT_PUBLIC_API_URL;
 export const RPC_NODE_URL = process.env.NEXT_PUBLIC_RPC_NODE_URL;
 export const ECONIA_ADDR = process.env.NEXT_PUBLIC_ECONIA_ADDR;
-export const NETWORK = process.env.NEXT_PUBLIC_NETWORK_NAME;
+export const NETWORK_NAME = process.env.NEXT_PUBLIC_NETWORK_NAME;

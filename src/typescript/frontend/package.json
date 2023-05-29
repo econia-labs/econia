@@ -20,6 +20,7 @@
     "@tanstack/react-query": "^4.29.7",
     "@tanstack/react-table": "^8.9.1",
     "aptos": "^1.9.1",
+    "bignumber.js": "^9.1.1",
     "next": "13.4.3",
     "react": "18.2.0",
     "react-dom": "18.2.0",

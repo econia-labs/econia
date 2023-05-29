@@ -7,7 +7,6 @@
     width: 0px;
   }
 }
-
 @layer base {
   input[type="number"]::-webkit-outer-spin-button,
   input[type="number"]::-webkit-inner-spin-button,

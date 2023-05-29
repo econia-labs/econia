@@ -96,14 +96,14 @@ export function StatsBar({ selectedMarket }: Props) {
         open={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
-          (false);
+          false;
         }}
         showCloseButton={false}
       >
         <SelectMarketContent
           onSelectMarket={(market) => {
             setIsModalOpen(false);
-            (false);
+            false;
             router.push(`/trade/${market.name}`);
           }}
         />
@@ -354,6 +354,6 @@ const SocialMediaIcons = ({
           <MediumIcon />
         </a>
       </div>
-    </>
+    </div>
   );
 };

@@ -2,6 +2,7 @@ import {
   useWallet,
   type WalletContextState,
 } from "@manahippo/aptos-wallet-adapter";
+import { CoinListClient, type NetworkType } from "@manahippo/coin-list";
 import { AptosClient, type Types } from "aptos";
 import {
   createContext,
@@ -12,12 +13,13 @@ import {
 } from "react";
 import { toast } from "react-toastify";
 
-import { RPC_NODE_URL } from "@/env";
+import { NETWORK, RPC_NODE_URL } from "@/env";
 
 export type AptosContextState = {
   aptosClient: AptosClient;
   signAndSubmitTransaction: WalletContextState["signAndSubmitTransaction"];
   account: WalletContextState["account"];
+  coinListClient: CoinListClient;
 };
 
 export const AptosContext = createContext<AptosContextState | undefined>(
@@ -59,10 +61,15 @@ export function AptosContextProvider({ children }: PropsWithChildren) {
     },
     [hippoSignAndSubmitTransaction, aptosClient]
   );
+  const coinListClient = useMemo(
+    () => new CoinListClient(true, (NETWORK as NetworkType) || "testnet"),
+    []
+  );
   const value: AptosContextState = {
     aptosClient,
     account,
     signAndSubmitTransaction,
+    coinListClient,
   };
 
   return (

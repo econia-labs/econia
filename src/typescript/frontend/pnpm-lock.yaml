@@ -16,6 +16,9 @@ dependencies:
   '@manahippo/aptos-wallet-adapter':
     specifier: ^1.0.10
     version: 1.0.10(@solana/web3.js@1.77.1)(aptos@1.9.1)(react-dom@18.2.0)(react@18.2.0)
+  '@manahippo/coin-list':
+    specifier: ^4.1.19
+    version: 4.1.19
   '@solana/web3.js':
     specifier: ^1.77.0
     version: 1.77.1
@@ -648,6 +651,15 @@ packages:
       - bufferutil
       - debug
       - utf-8-validate
+    dev: false
+
+  /@manahippo/coin-list@4.1.19:
+    resolution: {integrity: sha512-217PvrBRZZc9WS3UUg9jFgRoecoKejujth/8Al6VYiaLy72MzOawLjYX9oqmUqT+v7T/prGWMwc+DS4ZPdI9fA==}
+    dependencies:
+      commander: 9.5.0
+      cross-fetch: 3.1.6
+    transitivePeerDependencies:
+      - encoding
     dev: false
 
   /@mysten/bcs@0.7.1:
@@ -1679,6 +1691,11 @@ packages:
     resolution: {integrity: sha512-NOKm8xhkzAjzFx8B2v5OAHT+u5pRQc2UCa2Vq9jYL/31o2wi9mxBA7LIFs3sV5VSC49z6pEhfbMULvShKj26WA==}
     engines: {node: '>= 6'}
 
+  /commander@9.5.0:
+    resolution: {integrity: sha512-KRs7WVDKg86PWiuAqhDrAQnTXZKraVcCc6vFdL14qrZ/DcWwuRo7VoiYXalXO7S5GKpqYiVEwCbgFDfxNHKJBQ==}
+    engines: {node: ^12.20.0 || >=14}
+    dev: false
+
   /concat-map@0.0.1:
     resolution: {integrity: sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg==}
 
@@ -1688,6 +1705,14 @@ packages:
     dependencies:
       is-what: 4.1.9
     dev: true
+
+  /cross-fetch@3.1.6:
+    resolution: {integrity: sha512-riRvo06crlE8HiqOwIpQhxwdOk4fOeR7FVM/wXoxchFEqMNUjvbs3bfo4OTgMEMHzppd4DxFBDbyySj8Cv781g==}
+    dependencies:
+      node-fetch: 2.6.11
+    transitivePeerDependencies:
+      - encoding
+    dev: false
 
   /cross-spawn@7.0.3:
     resolution: {integrity: sha512-iRDPJKUPVEND7dHPO8rkbOnPpyDygcDFtWjpeWNCgy8WP2rXcxXL8TskReQl6OrB2G7+UJrags1q15Fudc7G6w==}

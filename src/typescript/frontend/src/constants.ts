@@ -67,5 +67,3 @@ export const MAINNET_TOKEN_LIST: RawCoinInfo[] = [
   }),
   // Additions
 ];
-
-console.log(TESTNET_TOKEN_LIST);

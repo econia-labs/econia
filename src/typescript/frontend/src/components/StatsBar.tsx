@@ -228,9 +228,8 @@ export function StatsBar({ selectedMarket }: Props) {
             </p>
           </div>
         </div>
-        <div className="my-auto hidden md:block">
-          <SocialMediaIcons />
-        </div>
+
+        <SocialMediaIcons className={"my-auto hidden md:block"} />
       </div>
     </>
   );
@@ -324,33 +323,37 @@ const MarketIconPair = ({
 };
 
 // icons hardcoded for now
-const SocialMediaIcons = () => {
+const SocialMediaIcons = ({
+  className,
+}: React.HTMLAttributes<HTMLDivElement>) => {
   return (
-    <div className="flex ">
-      <a
-        href="https://twitter.com/EconiaLabs"
-        target="_blank"
-        rel="noreferrer"
-        className="mx-3 aspect-square h-[28px]  min-w-[28px]  cursor-pointer text-white hover:text-blue"
-      >
-        <TwitterIcon />
-      </a>
-      <a
-        href="https://discord.com/invite/Z7gXcMgX8A"
-        target="_blank"
-        rel="noreferrer"
-        className="mx-3 aspect-square h-[28px]  min-w-[28px]  cursor-pointer text-white hover:text-blue"
-      >
-        <DiscordIcon />
-      </a>
-      <a
-        href="https://medium.com/econialabs"
-        target="_blank"
-        rel="noreferrer"
-        className="mx-3 aspect-square h-[28px]  min-w-[28px]  cursor-pointer text-white hover:text-blue"
-      >
-        <MediumIcon />
-      </a>
+    <div className={className}>
+      <div className="flex">
+        <a
+          href="https://twitter.com/EconiaLabs"
+          target="_blank"
+          rel="noreferrer"
+          className="mx-3 aspect-square h-[28px]  min-w-[28px]  cursor-pointer text-white hover:text-blue"
+        >
+          <TwitterIcon />
+        </a>
+        <a
+          href="https://discord.com/invite/Z7gXcMgX8A"
+          target="_blank"
+          rel="noreferrer"
+          className="mx-3 aspect-square h-[28px]  min-w-[28px]  cursor-pointer text-white hover:text-blue"
+        >
+          <DiscordIcon />
+        </a>
+        <a
+          href="https://medium.com/econialabs"
+          target="_blank"
+          rel="noreferrer"
+          className="mx-3 aspect-square h-[28px]  min-w-[28px]  cursor-pointer text-white hover:text-blue"
+        >
+          <MediumIcon />
+        </a>
+      </div>
     </div>
   );
 };

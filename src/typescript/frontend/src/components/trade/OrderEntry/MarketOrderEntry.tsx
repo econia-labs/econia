@@ -65,7 +65,6 @@ export const MarketOrderEntry: React.FC<{
         ),
         "abort" // TODO don't hardcode this either
       );
-      console.log(payload);
 
       await signAndSubmitTransaction({
         type: "entry_function_payload",

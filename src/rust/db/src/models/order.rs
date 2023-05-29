@@ -6,7 +6,7 @@ use types::error::TypeError;
 
 use crate::schema::orders;
 
-use super::IntoInsertable;
+use super::ToInsertable;
 
 #[derive(Debug, DbEnum, Clone, PartialEq, Eq, Copy)]
 #[ExistingTypePath = "crate::schema::sql_types::Side"]
@@ -102,10 +102,10 @@ pub struct NewOrder<'a> {
     pub created_at: &'a DateTime<Utc>,
 }
 
-impl<'a> IntoInsertable for &'a Order {
-    type Insertable = NewOrder<'a>;
+impl ToInsertable for Order {
+    type Insertable<'a> = NewOrder<'a>;
 
-    fn into_insertable(self) -> Self::Insertable {
+    fn to_insertable(&self) -> Self::Insertable<'_> {
         NewOrder {
             market_order_id: &self.market_order_id,
             market_id: &self.market_id,

@@ -80,7 +80,11 @@ export function StatsBar({ selectedMarket }: Props) {
         },
       } as MarketStats;
     },
-    { keepPreviousData: true, refetchOnWindowFocus: false }
+    {
+      keepPreviousData: true,
+      refetchOnWindowFocus: false,
+      refetchInterval: 10 * 1000,
+    }
   );
 
   return (

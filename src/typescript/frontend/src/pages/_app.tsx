@@ -26,6 +26,7 @@ import { ToastContainer } from "react-toastify";
 
 import { AptosContextProvider } from "@/contexts/AptosContext";
 import { ConnectWalletContextProvider } from "@/contexts/ConnectWalletContext";
+import bg from "../../public/bg.png";
 
 Chart.register(
   CategoryScale,
@@ -64,6 +65,10 @@ export default function App({ Component, pageProps }: AppProps) {
         <AptosContextProvider>
           <ConnectWalletContextProvider>
             <style jsx global>{`
+              body {
+                background-color: #020202;
+                background-image: url(${bg.src});
+              }
               :root {
                 --font-jost: ${jost.style.fontFamily};
                 --font-roboto-mono: ${robotoMono.style.fontFamily};

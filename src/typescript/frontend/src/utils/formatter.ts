@@ -1,3 +1,5 @@
+import { PriceLevel } from "@/types/global";
+
 export const getLang = () => {
   return typeof window === "undefined"
     ? "en"
@@ -42,4 +44,21 @@ export const averageOrOther = (
   }
   // no prices (orderbook empty) maybe should get the last sale price then?
   return 0;
+};
+
+export const averageOrOtherPriceLevel = (
+  price1: PriceLevel | undefined,
+  price2: PriceLevel | undefined
+): PriceLevel | undefined => {
+  if (price1 !== undefined && price2 !== undefined) {
+    return { price: (price1.price + price2.price) / 2, size: 0 };
+  }
+  if (price2 == undefined) {
+    return price1;
+  }
+  if (price1 == undefined) {
+    return price2;
+  }
+  // no prices (orderbook empty) maybe should get the last sale price then?
+  return { price: 0, size: 0 };
 };

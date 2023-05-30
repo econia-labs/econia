@@ -10,8 +10,10 @@ import {
 import { useMemo, useState } from "react";
 
 import { MarketIconPair } from "@/components/MarketIconPair";
+import { useAptos } from "@/contexts/AptosContext";
 import { type ApiMarket, type ApiStats } from "@/types/api";
 import { formatNumber, plusMinus } from "@/utils/formatter";
+import { TypeTag } from "@/utils/TypeTag";
 
 import { useAllMarketData, useAllMarketPrices, useAllMarketStats } from ".";
 const columnHelper = createColumnHelper<ApiMarket>();
@@ -35,7 +37,9 @@ export const SelectMarketContent: React.FC<{
   const columns = useMemo(() => {
     return [
       columnHelper.accessor("name", {
-        cell: (info) => <MarketNameCell name={info.getValue()} />,
+        cell: (info) => {
+          return <MarketNameCell name={info.row.original} />;
+        },
         header: "NAME",
         id: "name",
       }),
@@ -255,14 +259,26 @@ export const SelectMarketContent: React.FC<{
 };
 
 // row components
-const MarketNameCell = ({ name }: { name: string }) => {
+const MarketNameCell = ({ name }: { name: ApiMarket }) => {
+  const DEFAULT_TOKEN_ICON = "/tokenImages/default.png";
+
+  const { coinListClient } = useAptos();
+  const baseAssetIcon = name.base
+    ? coinListClient.getCoinInfoByFullName(
+        TypeTag.fromApiCoin(name.base).toString()
+      )?.logo_url
+    : DEFAULT_TOKEN_ICON;
+  const quoteAssetIcon =
+    coinListClient.getCoinInfoByFullName(
+      TypeTag.fromApiCoin(name.quote).toString()
+    )?.logo_url ?? DEFAULT_TOKEN_ICON;
   return (
     <div className={`flex items-center text-base ${TABLE_SPACING.paddingLeft}`}>
       <MarketIconPair
-        quoteAssetIcon={`/tokenImages/${name.split("-")[1]}.png`}
-        baseAssetIcon={`/tokenImages/${name.split("-")[0]}.png`}
+        quoteAssetIcon={quoteAssetIcon}
+        baseAssetIcon={baseAssetIcon}
       />
-      <div className={`ml-7 min-w-[12em]`}>{name}</div>
+      <div className={`ml-7 min-w-[12em]`}>{name.name}</div>
     </div>
   );
 };

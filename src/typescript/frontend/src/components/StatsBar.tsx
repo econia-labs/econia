@@ -101,8 +101,8 @@ export const StatsBar: React.FC<{
       // END MOCK API CALL
       return {
         lastPrice: averageOrOther(
-          priceRes.asks[0].price,
-          priceRes.bids[0].price
+          priceRes.asks ? priceRes.asks[0].price : undefined,
+          priceRes.bids ? priceRes.bids[0].price : undefined
         ),
         lastPriceChange: 10.1738, // TODO: Mock data
         change24h: res.close,

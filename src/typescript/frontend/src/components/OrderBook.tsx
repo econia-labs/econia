@@ -6,6 +6,7 @@ import { useOrderBook } from "@/hooks/useOrderbook";
 import { type ApiMarket } from "@/types/api";
 import { type Precision } from "@/types/global";
 import { type OrderBook, type PriceLevel } from "@/types/global";
+import { averageOrOtherPriceLevel } from "@/utils/formatter";
 
 const precisionOptions: Precision[] = [
   "0.01",
@@ -62,24 +63,10 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
     if (data == null) {
       return undefined;
     }
-    // if there are bids but no asks
-    if ((!data.asks || data.asks.length === 0) && data.bids.length > 0) {
-      return {
-        price: data.bids[0].price,
-        size: data.bids[0].size,
-      };
-    }
-    // if there are asks but no bids
-    if ((!data.bids || data.bids.length === 0) && data.asks.length > 0) {
-      return {
-        price: data.asks[0].price,
-        size: data.asks[0].size,
-      };
-    }
-    return {
-      price: (data.asks[0].price + data.bids[0].price) / 2,
-      size: 0,
-    };
+    return averageOrOtherPriceLevel(
+      data.asks ? data.asks[0] : undefined,
+      data.bids ? data.bids[0] : undefined
+    );
   }, [data]);
 
   const highestSize = useMemo(() => {

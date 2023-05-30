@@ -137,7 +137,7 @@ impl TryFrom<Order> for types::order::Order {
     fn try_from(value: Order) -> Result<Self, Self::Error> {
         let market_order_id = value
             .market_order_id
-            .to_u64()
+            .to_u128()
             .ok_or(TypeError::ConversionError {
                 name: "market_order_id".into(),
             })?;

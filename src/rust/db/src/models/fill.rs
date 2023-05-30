@@ -28,7 +28,7 @@ impl TryFrom<Fill> for types::order::Fill {
                 .ok_or_else(|| TypeError::ConversionError {
                     name: "market_id".to_string(),
                 })?,
-            maker_order_id: value.maker_order_id.to_u64().ok_or_else(|| {
+            maker_order_id: value.maker_order_id.to_u128().ok_or_else(|| {
                 TypeError::ConversionError {
                     name: "maker_order_id".to_string(),
                 }

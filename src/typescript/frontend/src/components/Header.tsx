@@ -3,15 +3,20 @@ import { useWallet } from "@manahippo/aptos-wallet-adapter";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import React, { useState, type PropsWithChildren } from "react";
+import React, { type PropsWithChildren, useState } from "react";
 
 import { Button } from "./Button";
 import { ConnectedButton } from "./ConnectedButton";
 import { DepositWithdrawModal } from "./trade/DepositWithdrawModal";
 
 const NavItem: React.FC<
-  PropsWithChildren<{ href: string; active?: boolean; external?: boolean }>
-> = ({ href, active, external, children }) => {
+  PropsWithChildren<{
+    className?: string;
+    href: string;
+    active?: boolean;
+    external?: boolean;
+  }>
+> = ({ className, href, active, external, children }) => {
   if (external) {
     return (
       <a
@@ -20,7 +25,7 @@ const NavItem: React.FC<
         rel="noreferrer"
         className={`cursor-pointer font-roboto-mono text-lg font-medium uppercase tracking-wide transition-all ${
           active ? "text-neutral-100" : "text-neutral-500 hover:text-purple"
-        }`}
+        } ${className ? className : ""}`}
       >
         {children}
       </a>
@@ -68,10 +73,11 @@ export function Header() {
           </Link>
         </div>
         <div className="flex flex-1 items-center justify-center gap-5">
-          <NavItem href="/swap" active={router.pathname.startsWith("/swap")}>
+          {/* TODO: Enable swap */}
+          {/* <NavItem href="/swap" active={router.pathname.startsWith("/swap")}>
             Swap
           </NavItem>
-          <NavItemDivider />
+          <NavItemDivider /> */}
           <NavItem href="/trade" active={router.pathname.startsWith("/trade")}>
             Trade
           </NavItem>
@@ -83,9 +89,13 @@ export function Header() {
             Faucet
           </NavItem>
           <NavItemDivider />
-          <NavItem href="https://econia.dev" external>
-            Docs
-            <ArrowRightIcon className="ml-1 inline-block h-3 w-3 -rotate-45" />
+          <NavItem
+            className="flex items-center gap-1"
+            href="https://econia.dev"
+            external
+          >
+            <p>Docs</p>
+            <ArrowRightIcon className="inline-block h-3 w-3 -rotate-45" />
           </NavItem>
         </div>
         <div className="flex flex-1 justify-end">

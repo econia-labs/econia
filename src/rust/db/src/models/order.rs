@@ -6,7 +6,7 @@ use types::error::TypeError;
 
 use crate::schema::orders;
 
-use super::IntoInsertable;
+use super::{ToInsertable, bigdecimal_to_u128};
 
 #[derive(Debug, DbEnum, Clone, PartialEq, Eq, Copy)]
 #[ExistingTypePath = "crate::schema::sql_types::Side"]
@@ -102,10 +102,10 @@ pub struct NewOrder<'a> {
     pub created_at: &'a DateTime<Utc>,
 }
 
-impl<'a> IntoInsertable for &'a Order {
-    type Insertable = NewOrder<'a>;
+impl ToInsertable for Order {
+    type Insertable<'a> = NewOrder<'a>;
 
-    fn into_insertable(self) -> Self::Insertable {
+    fn to_insertable(&self) -> Self::Insertable<'_> {
         NewOrder {
             market_order_id: &self.market_order_id,
             market_id: &self.market_id,
@@ -135,12 +135,11 @@ impl TryFrom<Order> for types::order::Order {
     type Error = TypeError;
 
     fn try_from(value: Order) -> Result<Self, Self::Error> {
-        let market_order_id = value
-            .market_order_id
-            .to_u64()
-            .ok_or(TypeError::ConversionError {
-                name: "market_order_id".into(),
-            })?;
+        let market_order_id = bigdecimal_to_u128(&value.market_order_id).ok_or_else(|| {
+            TypeError::ConversionError {
+                name: "market_order_id".to_string(),
+            }
+        })?;
         let market_id = value.market_id.to_u64().ok_or(TypeError::ConversionError {
             name: "market_id".into(),
         })?;

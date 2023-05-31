@@ -14,6 +14,7 @@ use crate::{
 
 pub mod error;
 pub mod models;
+pub mod query;
 pub mod schema;
 
 pub type Result<T> = std::result::Result<T, DbError>;
@@ -26,6 +27,7 @@ pub fn create_coin(conn: &mut PgConnection, coin: &NewCoin) -> Result<Coin> {
     use crate::schema::coins;
     diesel::insert_into(coins::table)
         .values(coin)
+        .on_conflict_do_nothing()
         .get_result(conn)
         .map_err(DbError::QueryError)
 }
@@ -44,6 +46,7 @@ pub fn register_market(
 
     diesel::insert_into(market_registration_events::table)
         .values(event)
+        .on_conflict_do_nothing()
         .get_result(conn)
         .map_err(DbError::QueryError)
 }
@@ -52,6 +55,7 @@ pub fn add_maker_event(conn: &mut PgConnection, event: &NewMakerEvent) -> Result
     use crate::schema::maker_events;
     diesel::insert_into(maker_events::table)
         .values(event)
+        .on_conflict_do_nothing()
         .get_result(conn)
         .map_err(DbError::QueryError)
 }
@@ -60,6 +64,7 @@ pub fn add_taker_event(conn: &mut PgConnection, event: &NewTakerEvent) -> Result
     use crate::schema::taker_events;
     diesel::insert_into(taker_events::table)
         .values(event)
+        .on_conflict_do_nothing()
         .get_result(conn)
         .map_err(DbError::QueryError)
 }
@@ -68,6 +73,7 @@ pub fn add_bar(conn: &mut PgConnection, bar: &NewBar) -> Result<Bar> {
     use crate::schema::bars_1m;
     diesel::insert_into(bars_1m::table)
         .values(bar)
+        .on_conflict_do_nothing()
         .get_result(conn)
         .map_err(DbError::QueryError)
 }

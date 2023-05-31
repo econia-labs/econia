@@ -1,17 +1,18 @@
 import { entryFunctions, type order } from "@econia-labs/sdk";
-import { useWallet } from "@manahippo/aptos-wallet-adapter";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/Button";
 import { ConnectedButton } from "@/components/ConnectedButton";
 import { useAptos } from "@/contexts/AptosContext";
-import { useCoinBalance } from "@/hooks/useCoinBalance";
+import { ECONIA_ADDR } from "@/env";
 import { type ApiMarket } from "@/types/api";
 import { type Side } from "@/types/global";
-import { TypeTag } from "@/types/move";
 
 import { OrderEntryInfo } from "./OrderEntryInfo";
 import { OrderEntryInputWrapper } from "./OrderEntryInputWrapper";
+import { TypeTag } from "@/utils/TypeTag";
+import { useMarketAccountBalance } from "@/hooks/useMarketAccountBalance";
+import { fromDecimalPrice, fromDecimalSize } from "@/utils/econia";
 
 type LimitFormValues = {
   price: string;
@@ -23,8 +24,7 @@ export const LimitOrderEntry: React.FC<{
   marketData: ApiMarket;
   side: Side;
 }> = ({ marketData, side }) => {
-  const { aptosClient } = useAptos();
-  const { account, signAndSubmitTransaction } = useWallet();
+  const { signAndSubmitTransaction, account } = useAptos();
   const {
     handleSubmit,
     register,
@@ -32,18 +32,18 @@ export const LimitOrderEntry: React.FC<{
     getValues,
     setValue,
   } = useForm<LimitFormValues>();
-  const baseBalance = useCoinBalance(
-    marketData.base ? TypeTag.fromApiCoin(marketData.base) : null,
-    account?.address
+  const baseBalance = useMarketAccountBalance(
+    account?.address,
+    marketData.market_id,
+    marketData.base
   );
-  const quoteBalance = useCoinBalance(
-    TypeTag.fromApiCoin(marketData.quote),
-    account?.address
+  const quoteBalance = useMarketAccountBalance(
+    account?.address,
+    marketData.market_id,
+    marketData.quote
   );
 
   const onSubmit = async (values: LimitFormValues) => {
-    console.log(values);
-
     const orderSideMap: Record<Side, order.Side> = {
       buy: "bid",
       sell: "ask",
@@ -54,23 +54,36 @@ export const LimitOrderEntry: React.FC<{
       // TODO: handle generic markets
     } else {
       const payload = entryFunctions.placeLimitOrderUserEntry(
-        "0xeconia", // TODO pass in econia address as environment variable
-        `${marketData.base.account_address}::${marketData.base.module_name}::${marketData.base.struct_name}`,
-        `${marketData.quote.account_address}::${marketData.quote.module_name}::${marketData.quote.struct_name}`,
+        ECONIA_ADDR,
+        TypeTag.fromApiCoin(marketData.base).toString(),
+        TypeTag.fromApiCoin(marketData.quote).toString(),
         BigInt(marketData.market_id), // market id
         "0x1", // TODO get integrator ID
         orderSide,
-        BigInt(values.price),
-        BigInt(values.size),
+        BigInt(
+          fromDecimalSize({
+            size: values.size,
+            lotSize: marketData.lot_size,
+            baseCoinDecimals: marketData.base.decimals,
+          }).toString()
+        ),
+        BigInt(
+          fromDecimalPrice({
+            price: values.price,
+            lotSize: marketData.lot_size,
+            tickSize: marketData.tick_size,
+            baseCoinDecimals: marketData.base.decimals,
+            quoteCoinDecimals: marketData.quote.decimals,
+          }).toString()
+        ),
         "immediateOrCancel", // TODO don't hardcode
         "abort" // don't hardcode this either
       );
 
-      const { hash } = await signAndSubmitTransaction({
+      await signAndSubmitTransaction({
         type: "entry_function_payload",
         ...payload,
       });
-      await aptosClient.waitForTransaction(hash, { checkSuccess: true });
     }
   };
 
@@ -84,6 +97,7 @@ export const LimitOrderEntry: React.FC<{
           <input
             type="number"
             step="any"
+            placeholder="0.00"
             {...register("price", {
               required: "required",
               min: 0,
@@ -115,6 +129,7 @@ export const LimitOrderEntry: React.FC<{
           <input
             type="number"
             step="any"
+            placeholder="0.00"
             {...register("size", {
               required: "required",
               min: 0,
@@ -140,6 +155,7 @@ export const LimitOrderEntry: React.FC<{
           <input
             type="number"
             step="any"
+            placeholder="0.00"
             {...register("totalSize", { disabled: true })}
             className="h-full w-[100px] flex-1 bg-transparent text-right font-roboto-mono font-light text-neutral-400 outline-none"
           />

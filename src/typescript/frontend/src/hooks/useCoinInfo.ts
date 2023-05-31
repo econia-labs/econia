@@ -1,7 +1,7 @@
-import { useAptos } from "@/contexts/AptosContext";
-import { TypeTag } from "@/types/move";
-import { Address } from "@manahippo/aptos-wallet-adapter";
 import { useQuery } from "@tanstack/react-query";
+
+import { useAptos } from "@/contexts/AptosContext";
+import { type TypeTag } from "@/utils/TypeTag";
 
 type CoinInfo = {
   decimals: 6;

@@ -1,13 +1,31 @@
 import type { GetStaticPaths, GetStaticProps } from "next";
-import React, { type PropsWithChildren } from "react";
+import dynamic from "next/dynamic";
+import Script from "next/script";
+import { type PropsWithChildren, useState } from "react";
 
+import { DepthChart } from "@/components/DepthChart";
+import { OrderBook } from "@/components/OrderBook";
 import { Page } from "@/components/Page";
 import { StatsBar } from "@/components/StatsBar";
+import { OrderEntry } from "@/components/trade/OrderEntry";
 import { OrdersTable } from "@/components/trade/OrdersTable";
+import { TradeHistoryTable } from "@/components/trade/TradeHistoryTable";
 import { API_URL } from "@/env";
 import type { ApiMarket } from "@/types/api";
-import { TradeHistoryTable } from "@/components/trade/TradeHistoryTable";
-import { OrderEntry } from "@/components/trade/OrderEntry";
+
+import {
+  type ResolutionString,
+  type ThemeName,
+} from "../../../public/static/charting_library";
+import { MOCK_MARKETS } from "@/mockdata/markets";
+
+const TVChartContainer = dynamic(
+  () =>
+    import("@/components/trade/TVChartContainer").then(
+      (mod) => mod.TVChartContainer
+    ),
+  { ssr: false }
+);
 
 type Props = {
   marketData: ApiMarket | undefined;
@@ -43,18 +61,33 @@ const ChartName: React.FC<PropsWithChildren<{ className?: string }>> = ({
 );
 
 export default function Market({ allMarketData, marketData }: Props) {
+  const [isScriptReady, setIsScriptReady] = useState(false);
+
   if (!marketData) return <Page>Market not found.</Page>;
 
-  const marketNames: string[] = allMarketData
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .map((market) => `${market.name}`);
+  const defaultTVChartProps = {
+    symbol: marketData.name,
+    interval: "1" as ResolutionString,
+    datafeedUrl: "https://dev.api.econia.exchange",
+    libraryPath: "/static/charting_library/",
+    clientId: "econia.exchange",
+    userId: "public_user_id",
+    fullscreen: false,
+    autosize: true,
+    studiesOverrides: {},
+    theme: "Dark" as ThemeName,
+    selectedMarket: marketData,
+    allMarketData,
+  };
+
   return (
     <Page>
-      <StatsBar marketNames={marketNames} />
+      <StatsBar selectedMarket={marketData} />
       <main className="flex flex-1 gap-4 px-4 py-2">
         <div className="flex flex-1 flex-col gap-4">
-          <ChartCard className="flex-1">
-            <ChartName>Price Chart</ChartName>
+          <ChartCard className="flex flex-1 flex-col">
+            {isScriptReady && <TVChartContainer {...defaultTVChartProps} />}
+            <DepthChart marketData={marketData} />
           </ChartCard>
           <ChartCard>
             <ChartName className="mb-4">Orders</ChartName>
@@ -62,8 +95,8 @@ export default function Market({ allMarketData, marketData }: Props) {
           </ChartCard>
         </div>
         <div className="flex w-[360px] flex-initial flex-col gap-4 border-neutral-600">
-          <ChartCard className="flex-1">
-            <ChartName>Orderbook</ChartName>
+          <ChartCard className="flex flex-1 flex-col">
+            <OrderBook marketData={marketData} />
           </ChartCard>
         </div>
         <div className="flex w-[360px] flex-initial flex-col gap-4 border-neutral-600">
@@ -78,13 +111,22 @@ export default function Market({ allMarketData, marketData }: Props) {
           </div>
         </div>
       </main>
+      <Script
+        src="/static/datafeeds/udf/dist/bundle.js"
+        strategy="lazyOnload"
+        onReady={() => {
+          setIsScriptReady(true);
+        }}
+      />
     </Page>
   );
 }
 
 export const getStaticPaths: GetStaticPaths<PathParams> = async () => {
   const res = await fetch(new URL("markets", API_URL).href);
-  const allMarketData: ApiMarket[] = await res.json();
+  // const allMarketData: ApiMarket[] = await res.json();
+  // TODO: Working API
+  const allMarketData = MOCK_MARKETS;
   const paths = allMarketData.map((market) => ({
     params: { market_name: market.name },
   }));
@@ -95,9 +137,11 @@ export const getStaticProps: GetStaticProps<Props, PathParams> = async ({
   params,
 }) => {
   if (!params) throw new Error("No params");
-  const allMarketData: ApiMarket[] = await fetch(
-    new URL("markets", API_URL).href
-  ).then((res) => res.json());
+  // const allMarketData: ApiMarket[] = await fetch(
+  //   new URL("markets", API_URL).href
+  // ).then((res) => res.json());
+  // TODO: Working API
+  const allMarketData = MOCK_MARKETS;
   const marketData = allMarketData.find(
     (market) => market.name === params.market_name
   );

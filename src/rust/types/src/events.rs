@@ -47,7 +47,7 @@ impl TryFrom<u8> for MakerEventType {
 pub struct MakerEvent {
     pub market_id: u64,
     pub side: Side,
-    pub market_order_id: u64,
+    pub market_order_id: u128,
     pub user_address: String,
     pub custodian_id: Option<u64>,
     pub event_type: MakerEventType,
@@ -61,7 +61,7 @@ pub struct MakerEvent {
 pub struct TakerEvent {
     pub market_id: u64,
     pub side: Side,
-    pub market_order_id: u64,
+    pub market_order_id: u128,
     pub maker: String,
     pub custodian_id: Option<u64>,
     pub size: u64,

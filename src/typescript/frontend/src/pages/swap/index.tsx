@@ -1,9 +1,10 @@
+import { useState } from "react";
+
 import { Button } from "@/components/Button";
 import { ConnectedButton } from "@/components/ConnectedButton";
 import { SyncIcon } from "@/components/icons/SyncIcon";
 import { Input } from "@/components/Input";
 import { Page } from "@/components/Page";
-import { useState } from "react";
 
 export default function Swap() {
   const [inputAmount, setInputAmount] = useState<string>("");

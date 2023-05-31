@@ -1,18 +1,20 @@
-import { Transition, Dialog } from "@headlessui/react";
-import React, { Fragment, PropsWithChildren } from "react";
-import { XIcon } from "./icons/XIcon";
+import { Dialog, Transition } from "@headlessui/react";
 import { ChevronLeftIcon } from "@heroicons/react/20/solid";
+import React, { Fragment, type PropsWithChildren } from "react";
+
+import { XIcon } from "./icons/XIcon";
 
 export const BaseModal: React.FC<
   PropsWithChildren<{
     open: boolean;
     onClose: () => void;
     onBack?: () => void;
+    showCloseButton?: boolean;
   }>
-> = ({ open, onClose, onBack, children }) => {
+> = ({ open, onClose, onBack, showCloseButton = true, children }) => {
   return (
     <Transition appear show={open} as={Fragment}>
-      <Dialog as="div" className="relative z-10" open={open} onClose={onClose}>
+      <Dialog as="div" className="relative z-50" open={open} onClose={onClose}>
         <Transition.Child
           as={Fragment}
           enter="ease-out duration-300"
@@ -27,7 +29,7 @@ export const BaseModal: React.FC<
 
         <div className="fixed inset-0 overflow-y-auto">
           <div className="flex min-h-full items-center justify-center p-4 text-center">
-            <Dialog.Panel className="w-full max-w-lg transform border border-neutral-500 bg-black p-6 align-middle shadow-xl transition-all">
+            <Dialog.Panel className="w-full max-w-4xl transform border border-neutral-600 bg-black p-6 align-middle shadow-xl transition-all">
               <Dialog.Title as="div">
                 {onBack && (
                   <div
@@ -38,12 +40,14 @@ export const BaseModal: React.FC<
                     Back
                   </div>
                 )}
-                <div
-                  className="absolute right-0 top-0 flex h-[72px] w-[72px] cursor-pointer items-center justify-center border-b border-l border-b-neutral-600 border-l-neutral-600 transition-all [&>svg>path]:stroke-neutral-500 [&>svg>path]:transition-all [&>svg>path]:hover:stroke-neutral-100"
-                  onClick={onClose}
-                >
-                  <XIcon />
-                </div>
+                {showCloseButton && (
+                  <div
+                    className="absolute right-0 top-0 flex h-[72px] w-[72px] cursor-pointer items-center justify-center border-b border-l border-b-neutral-600 border-l-neutral-600 transition-all [&>svg>path]:stroke-neutral-500 [&>svg>path]:transition-all [&>svg>path]:hover:stroke-neutral-100"
+                    onClick={onClose}
+                  >
+                    <XIcon />
+                  </div>
+                )}
               </Dialog.Title>
               {children}
             </Dialog.Panel>

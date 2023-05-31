@@ -1,11 +1,15 @@
-import { API_URL } from "@/env";
-import { ApiMarket } from "@/types/api";
 import { useQuery } from "@tanstack/react-query";
 import React, { useEffect } from "react";
+
+import { API_URL } from "@/env";
+import { type ApiMarket, type ApiStats } from "@/types/api";
+import { type OrderBook } from "@/types/global";
+
 import { BaseModal } from "../../BaseModal";
 import { DepositWithdrawContent } from "./DepositWithdrawContent";
 import { InitialContent } from "./InitialContent";
 import { SelectMarketContent } from "./SelectMarketContent";
+import { MOCK_MARKETS } from "@/mockdata/markets";
 
 enum Step {
   Initial,
@@ -13,9 +17,51 @@ enum Step {
   DepositWithdraw,
 }
 
+export const useAllMarketPrices = (allMarketData: ApiMarket[]) => {
+  return useQuery<{ market_id: number; price: number }[]>(
+    ["allMarketPrices", allMarketData],
+    async () => {
+      const data: Promise<OrderBook>[] = [];
+      allMarketData.forEach((market) => {
+        data.push(
+          fetch(
+            new URL(`market/${market.market_id}/orderbook?depth=1`, API_URL)
+              .href
+          ).then((res) => {
+            return res.json();
+          })
+        );
+      });
+      const orderBooks = await Promise.all(data);
+      return orderBooks.map((orderBook, i) => {
+        return {
+          market_id: allMarketData[i].market_id,
+          price: (orderBook.asks[0].price + orderBook.bids[0].price) / 2,
+        };
+      });
+    }
+  );
+};
+
+export const useAllMarketStats = () => {
+  return useQuery<ApiStats[]>(["allMarketStats"], async () => {
+    return fetch(new URL("stats?resolution=1d", API_URL).href).then((res) => {
+      return res.json();
+    });
+  });
+};
+// TODO: remove before PR
 export const useAllMarketData = () => {
   return useQuery<ApiMarket[]>(["allMarketData"], async () => {
-    return fetch(new URL("markets", API_URL).href).then((res) => res.json());
+    return fetch(new URL("markets", API_URL).href).then(async (res) => {
+      // const d = await res.json();
+      // TODO: Remove once real data exists
+      const d = MOCK_MARKETS;
+      return d.map((m: ApiMarket, i: number) => {
+        m.recognized = i % 2 === 0 ? true : false;
+        return m;
+      });
+    });
   });
 };
 
@@ -34,7 +80,7 @@ export const DepositWithdrawModal: React.FC<{
     ) {
       setSelectedMarket(allMarketData.data?.[0]);
     }
-  }, [allMarketData.data]);
+  }, [allMarketData.data, selectedMarket]);
   return (
     <BaseModal
       open={open}

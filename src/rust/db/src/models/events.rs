@@ -5,7 +5,7 @@ use diesel_derive_enum::DbEnum;
 use field_count::FieldCount;
 use types::{error::TypeError, events};
 
-use super::{order::Side, ToInsertable, bigdecimal_to_u128, bigdecimal_from_u128};
+use super::{bigdecimal_from_u128, bigdecimal_to_u128, order::Side, ToInsertable};
 use crate::schema::{maker_events, taker_events};
 
 #[derive(Debug, DbEnum, Clone, Copy, PartialEq, Eq)]
@@ -271,4 +271,3 @@ impl ToInsertable for TakerEvent {
         }
     }
 }
-

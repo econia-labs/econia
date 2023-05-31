@@ -4,7 +4,7 @@ use axum::{
 };
 use bigdecimal::BigDecimal;
 use chrono::{DateTime, Duration, NaiveDateTime, Utc};
-use db::query::{stats::QueryStats, market::QueryMarket};
+use db::query::{market::QueryMarket, stats::QueryStats};
 use serde::{Deserialize, Serialize};
 use sqlx::postgres::types::PgInterval;
 use types::{bar::Resolution, book::PriceLevel, error::TypeError, stats::Stats, Market};

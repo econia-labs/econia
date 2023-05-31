@@ -26,7 +26,7 @@ export const OrdersTable: React.FC<{
       return [
         {
           market_order_id: 0,
-          market_id: 0,
+          market_id: 1,
           side: "bid",
           size: 1000,
           price: 1000,
@@ -37,7 +37,7 @@ export const OrdersTable: React.FC<{
         },
         {
           market_order_id: 1,
-          market_id: 0,
+          market_id: 1,
           side: "ask",
           size: 1000,
           price: 2000,
@@ -91,14 +91,18 @@ export const OrdersTable: React.FC<{
       columnHelper.accessor("size", {
         cell: (info) => {
           const marketId = info.row.original.market_id;
-          return `${info.getValue()} ${marketById.get(marketId)?.base?.symbol}`;
+          return `${info.getValue()} ${
+            marketById.get(marketId)?.base?.symbol ?? ""
+          }`;
         },
         header: "AMOUNT",
       }),
       columnHelper.display({
         cell: (info) => {
           const { price, size, market_id } = info.row.original;
-          return `${price * size} ${marketById.get(market_id)?.quote?.symbol}`;
+          return `${price * size} ${
+            marketById.get(market_id)?.quote?.symbol ?? ""
+          }`;
         },
         header: "TOTAL",
       }),
@@ -166,7 +170,7 @@ export const OrdersTable: React.FC<{
           ) : (
             table.getRowModel().rows.map((row) => (
               <tr
-                className="text-left font-roboto-mono text-sm uppercase text-white [&>th]:font-light"
+                className="text-left font-roboto-mono text-sm text-white [&>th]:font-light"
                 key={row.id}
               >
                 {row.getVisibleCells().map((cell, i) => (

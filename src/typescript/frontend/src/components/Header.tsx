@@ -73,10 +73,11 @@ export function Header() {
           </Link>
         </div>
         <div className="flex flex-1 items-center justify-center gap-5">
-          <NavItem href="/swap" active={router.pathname.startsWith("/swap")}>
+          {/* TODO: Enable swap */}
+          {/* <NavItem href="/swap" active={router.pathname.startsWith("/swap")}>
             Swap
           </NavItem>
-          <NavItemDivider />
+          <NavItemDivider /> */}
           <NavItem href="/trade" active={router.pathname.startsWith("/trade")}>
             Trade
           </NavItem>

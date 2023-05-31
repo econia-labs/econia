@@ -123,130 +123,140 @@ export const DepthChart: React.FC<{
   return (
     <div className="relative h-1/5 flex-[1_1_0%]">
       <p className={"absolute ml-4 mt-2 font-jost text-white"}>Depth</p>
-      <Line
-        options={{
-          responsive: true,
-          layout: {
-            padding: 0,
-          },
-
-          elements: {
-            line: { stepped: true, borderWidth: 1 },
-            point: {
-              hoverRadius: 3,
-              radius: 0,
-              hoverBorderColor: "white",
-              hoverBackgroundColor: "none",
-              borderWidth: 5,
+      <div
+        className={
+          "relative h-full min-w-0 [&>canvas]:!h-full [&>canvas]:!w-full"
+        }
+      >
+        <Line
+          options={{
+            // responsive: true,
+            maintainAspectRatio: false,
+            layout: {
+              padding: 0,
             },
-          },
-          maintainAspectRatio: false,
-          interaction: {
-            intersect: false,
-          },
-          plugins: {
-            // needed to add this because crosshair is not a native plugin
-            // one way to fix this is to extend the chart.js types
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            crosshair: {
-              color: "white",
-            },
-            title: {
-              display: true,
-              text: `MID MARKET $${formatNumber(labels[labels.length / 2], 2)}`,
-              color: "white",
-            },
-            animation: {
-              duration: 0,
-            },
-            responsiveAnimationDuration: 0,
-            showLine: false,
-            legend: {
-              display: false,
-            },
-            tooltip: {
-              // style tooltip to match the theme
-              // enabled: false,
-              callbacks: {
-                label: (item: { label: any; raw: any }) => {
-                  return [
-                    `Price: ${item.label} ${quoteCoinInfo?.symbol}`,
-                    `Total Size: ${item.raw} ${baseCoinInfo?.symbol}`,
-                  ];
-                },
-                title: () => "",
+            elements: {
+              line: { stepped: true, borderWidth: 1 },
+              point: {
+                hoverRadius: 3,
+                radius: 0,
+                hoverBorderColor: "white",
+                hoverBackgroundColor: "none",
+                borderWidth: 5,
               },
-              displayColors: false,
-              bodyAlign: "right",
             },
-          },
-          scales: {
-            x: {
-              ticks: {
-                maxRotation: 0,
+            interaction: {
+              intersect: false,
+            },
+            plugins: {
+              // needed to add this because crosshair is not a native plugin
+              // one way to fix this is to extend the chart.js types
+              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+              // @ts-ignore
+              crosshair: {
                 color: "white",
-                autoSkip: false,
-                padding: 8,
-                minRotation: 0,
-                callback: function (value, index, values) {
-                  // show 1/3 and 2/3 of the way through
-                  if (
-                    index === Math.floor(values.length / 4) ||
-                    index === Math.floor((3 * values.length) / 4)
-                  ) {
-                    return formatNumber(labels[index], 2);
-                  } else {
-                    return "";
-                  }
-                },
               },
-            },
-            y: {
-              position: "right",
-              max: Math.max(bidData[0] || 0, askData[askData.length - 1] || 0),
-              ticks: {
-                padding: 5,
+              title: {
+                display: true,
+                text: `MID MARKET $${formatNumber(
+                  labels[labels.length / 2],
+                  2
+                )}`,
                 color: "white",
-                maxTicksLimit: 2,
-                callback: function (value) {
-                  const formatter = Intl.NumberFormat("en", {
-                    notation: "compact",
-                    compactDisplay: "short",
-                    minimumFractionDigits: 1,
-                    maximumFractionDigits: 1,
-                  });
-                  // show 1/3 and 2/3 of the way through
-                  return value == "0" ? "0" : formatter.format(Number(value));
+              },
+              animation: {
+                duration: 0,
+              },
+              responsiveAnimationDuration: 0,
+              showLine: false,
+              legend: {
+                display: false,
+              },
+              tooltip: {
+                // style tooltip to match the theme
+                // enabled: false,
+                callbacks: {
+                  label: (item: { label: any; raw: any }) => {
+                    return [
+                      `Price: ${item.label} ${quoteCoinInfo?.symbol}`,
+                      `Total Size: ${item.raw} ${baseCoinInfo?.symbol}`,
+                    ];
+                  },
+                  title: () => "",
+                },
+                displayColors: false,
+                bodyAlign: "right",
+              },
+            },
+            scales: {
+              x: {
+                ticks: {
+                  maxRotation: 0,
+                  color: "white",
+                  autoSkip: false,
+                  padding: 8,
+                  minRotation: 0,
+                  callback: function (value, index, values) {
+                    // show 1/3 and 2/3 of the way through
+                    if (
+                      index === Math.floor(values.length / 4) ||
+                      index === Math.floor((3 * values.length) / 4)
+                    ) {
+                      return formatNumber(labels[index], 2);
+                    } else {
+                      return "";
+                    }
+                  },
                 },
               },
-
-              beginAtZero: true,
+              y: {
+                position: "right",
+                max: Math.max(
+                  bidData[0] || 0,
+                  askData[askData.length - 1] || 0
+                ),
+                ticks: {
+                  padding: 5,
+                  color: "white",
+                  maxTicksLimit: 2,
+                  callback: function (value) {
+                    const formatter = Intl.NumberFormat("en", {
+                      notation: "compact",
+                      compactDisplay: "short",
+                      minimumFractionDigits: 1,
+                      maximumFractionDigits: 1,
+                    });
+                    // show 1/3 and 2/3 of the way through
+                    return value == "0" ? "0" : formatter.format(Number(value));
+                  },
+                },
+                beginAtZero: true,
+              },
             },
-          },
-        }}
-        data={{
-          labels,
-          datasets: [
-            {
-              fill: true,
-              label: "Size",
-              data: bidData,
-              borderColor: "rgba(110, 213, 163, 1)",
-              backgroundColor: "rgba(110, 213, 163, 0.3)",
-              stepped: true,
-            },
-            {
-              fill: true,
-              label: "Size",
-              data: askData,
-              borderColor: "rgba(213, 110, 110, 1)",
-              backgroundColor: "rgba(213, 110, 110, 0.3)",
-              stepped: true,
-            },
-          ],
-        }}
-      />
+          }}
+          data={{
+            labels,
+            datasets: [
+              {
+                fill: true,
+                label: "Size",
+                data: bidData,
+                borderColor: "rgba(110, 213, 163, 1)",
+                backgroundColor: "rgba(110, 213, 163, 0.3)",
+                stepped: true,
+              },
+              {
+                fill: true,
+                label: "Size",
+                data: askData,
+                borderColor: "rgba(213, 110, 110, 1)",
+                backgroundColor: "rgba(213, 110, 110, 0.3)",
+                stepped: true,
+              },
+            ],
+          }}
+        />
+      </div>
     </div>
   );
 };
@@ -329,6 +339,7 @@ const plugin = {
   ) => {
     const { ctx } = chart;
     const { top, bottom, left, right } = chart.chartArea;
+    if (!chart.corsair) return;
     let { x, y } = chart.corsair;
     const { draw } = chart.corsair;
 

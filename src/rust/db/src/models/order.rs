@@ -6,7 +6,7 @@ use types::error::TypeError;
 
 use crate::schema::orders;
 
-use super::{ToInsertable, bigdecimal_to_u128};
+use super::{bigdecimal_to_u128, ToInsertable};
 
 #[derive(Debug, DbEnum, Clone, PartialEq, Eq, Copy)]
 #[ExistingTypePath = "crate::schema::sql_types::Side"]

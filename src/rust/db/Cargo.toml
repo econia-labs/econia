@@ -10,6 +10,7 @@ chrono = { workspace = true }
 diesel = { version = "2.0.4", features = ["chrono", "numeric", "postgres"] }
 diesel-derive-enum = { version = "2.0.1", features = ["postgres"] }
 field_count = "0.1.1"
+serde = { workspace = true, optional = true }
 sqlx = { workspace = true, optional = true }
 thiserror = { workspace = true }
 types = { path = "../types" }

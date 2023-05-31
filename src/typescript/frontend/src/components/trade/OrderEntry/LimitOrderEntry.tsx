@@ -5,7 +5,6 @@ import { Button } from "@/components/Button";
 import { ConnectedButton } from "@/components/ConnectedButton";
 import { useAptos } from "@/contexts/AptosContext";
 import { ECONIA_ADDR } from "@/env";
-import { useCoinBalance } from "@/hooks/useCoinBalance";
 import { type ApiMarket } from "@/types/api";
 import { type Side } from "@/types/global";
 

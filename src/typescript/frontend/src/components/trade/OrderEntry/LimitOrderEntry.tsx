@@ -5,13 +5,14 @@ import { Button } from "@/components/Button";
 import { ConnectedButton } from "@/components/ConnectedButton";
 import { useAptos } from "@/contexts/AptosContext";
 import { ECONIA_ADDR } from "@/env";
-import { useCoinBalance } from "@/hooks/useCoinBalance";
 import { type ApiMarket } from "@/types/api";
 import { type Side } from "@/types/global";
 
 import { OrderEntryInfo } from "./OrderEntryInfo";
 import { OrderEntryInputWrapper } from "./OrderEntryInputWrapper";
 import { TypeTag } from "@/utils/TypeTag";
+import { useMarketAccountBalance } from "@/hooks/useMarketAccountBalance";
+import { fromDecimalPrice, fromDecimalSize } from "@/utils/econia";
 
 type LimitFormValues = {
   price: string;
@@ -31,13 +32,15 @@ export const LimitOrderEntry: React.FC<{
     getValues,
     setValue,
   } = useForm<LimitFormValues>();
-  const baseBalance = useCoinBalance(
-    marketData.base ? TypeTag.fromApiCoin(marketData.base) : null,
-    account?.address
+  const baseBalance = useMarketAccountBalance(
+    account?.address,
+    marketData.market_id,
+    marketData.base
   );
-  const quoteBalance = useCoinBalance(
-    TypeTag.fromApiCoin(marketData.quote),
-    account?.address
+  const quoteBalance = useMarketAccountBalance(
+    account?.address,
+    marketData.market_id,
+    marketData.quote
   );
 
   const onSubmit = async (values: LimitFormValues) => {
@@ -57,8 +60,22 @@ export const LimitOrderEntry: React.FC<{
         BigInt(marketData.market_id), // market id
         "0x1", // TODO get integrator ID
         orderSide,
-        BigInt(values.price),
-        BigInt(values.size),
+        BigInt(
+          fromDecimalSize({
+            size: values.size,
+            lotSize: marketData.lot_size,
+            baseCoinDecimals: marketData.base.decimals,
+          }).toString()
+        ),
+        BigInt(
+          fromDecimalPrice({
+            price: values.price,
+            lotSize: marketData.lot_size,
+            tickSize: marketData.tick_size,
+            baseCoinDecimals: marketData.base.decimals,
+            quoteCoinDecimals: marketData.quote.decimals,
+          }).toString()
+        ),
         "immediateOrCancel", // TODO don't hardcode
         "abort" // don't hardcode this either
       );
@@ -80,6 +97,7 @@ export const LimitOrderEntry: React.FC<{
           <input
             type="number"
             step="any"
+            placeholder="0.00"
             {...register("price", {
               required: "required",
               min: 0,
@@ -111,6 +129,7 @@ export const LimitOrderEntry: React.FC<{
           <input
             type="number"
             step="any"
+            placeholder="0.00"
             {...register("size", {
               required: "required",
               min: 0,
@@ -136,6 +155,7 @@ export const LimitOrderEntry: React.FC<{
           <input
             type="number"
             step="any"
+            placeholder="0.00"
             {...register("totalSize", { disabled: true })}
             className="h-full w-[100px] flex-1 bg-transparent text-right font-roboto-mono font-light text-neutral-400 outline-none"
           />

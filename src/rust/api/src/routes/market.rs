@@ -4,6 +4,7 @@ use axum::{
 };
 use bigdecimal::BigDecimal;
 use chrono::{DateTime, Duration, NaiveDateTime, Utc};
+use db::query::{stats::QueryStats, market::QueryMarket};
 use serde::{Deserialize, Serialize};
 use sqlx::postgres::types::PgInterval;
 use types::{bar::Resolution, book::PriceLevel, error::TypeError, stats::Stats, Market};
@@ -14,7 +15,7 @@ pub async fn get_markets(
     State(state): State<AppState>,
 ) -> Result<Json<Vec<types::Market>>, ApiError> {
     let query_markets = sqlx::query_as!(
-        types::query::QueryMarket,
+        QueryMarket,
         r#"
         select
             market_id,
@@ -65,7 +66,7 @@ pub async fn get_market_by_id(
     let market_id = BigDecimal::from(market_id);
 
     let query_markets = sqlx::query_as!(
-        types::query::QueryMarket,
+        QueryMarket,
         r#"
         select
             market_id,
@@ -127,19 +128,21 @@ pub async fn get_stats(
         .expect("never fails because Duration resolution can only be member of enum Resolution");
 
     let query_tickers = sqlx::query_as!(
-        types::query::QueryStats,
+        QueryStats,
         r#"
         with bars as (
             select * from bars_1m
             where start_time >= now() - $1::interval and start_time < now()
         ),
         first as (
-            select start_time, first_value(open) over (order by start_time) as open
-            from bars
+            select market_id, start_time, first_value(open) over (
+                partition by market_id order by start_time
+            ) as open from bars
         ),
         last as (
-            select start_time, first_value(close) over (order by start_time desc) as close
-            from bars
+            select market_id, start_time, first_value(close) over (
+                partition by market_id order by start_time desc
+            ) as close from bars
         )
         select
             bars.market_id,
@@ -152,7 +155,9 @@ pub async fn get_stats(
         from
             bars
             inner join first on bars.start_time = first.start_time
+                and bars.market_id = first.market_id
             inner join last on bars.start_time = last.start_time
+                and bars.market_id = last.market_id
         group by bars.market_id order by market_id;
         "#,
         interval
@@ -182,7 +187,7 @@ pub async fn get_stats_by_id(
     let market_id = BigDecimal::from(market_id);
 
     let query_tickers = sqlx::query_as!(
-        types::query::QueryStats,
+        QueryStats,
         r#"
         with bars as (
             select * from bars_1m

@@ -1,5 +1,9 @@
 # Off-chain interfaces
 
+## APIs
+
+For REST and Websocket APIs, see the [Econia API reference].
+
 ## Registry events
 
 Econia emits two types of registry events:
@@ -119,6 +123,7 @@ A suggested method for indexing an [`OrderBook`] in real time involves the [`ind
 
 Alternatively, all [`MakerEvent`] and [`TakerEvent`] emissions since the inception of the market can be applied consecutively.
 
+[econia api reference]: https://docs.econia.exchange/#introduction
 [events by creation number api]: https://fullnode.testnet.aptoslabs.com/v1/spec#/operations/get_events_by_creation_number
 [events by event handle api]: https://fullnode.testnet.aptoslabs.com/v1/spec#/operations/get_events_by_event_handle
 [hippo's `move-to-ts` tool]: https://github.com/hippospace/move-to-ts

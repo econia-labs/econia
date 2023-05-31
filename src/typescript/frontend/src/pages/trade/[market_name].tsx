@@ -3,6 +3,8 @@ import dynamic from "next/dynamic";
 import Script from "next/script";
 import { type PropsWithChildren, useState } from "react";
 
+import { DepthChart } from "@/components/DepthChart";
+import { OrderBook } from "@/components/OrderBook";
 import { Page } from "@/components/Page";
 import { StatsBar } from "@/components/StatsBar";
 import { OrderEntry } from "@/components/trade/OrderEntry";
@@ -15,6 +17,7 @@ import {
   type ResolutionString,
   type ThemeName,
 } from "../../../public/static/charting_library";
+import { MOCK_MARKETS } from "@/mockdata/markets";
 
 const TVChartContainer = dynamic(
   () =>
@@ -79,11 +82,12 @@ export default function Market({ allMarketData, marketData }: Props) {
 
   return (
     <Page>
-      <StatsBar allMarketData={allMarketData} selectedMarket={marketData} />
+      <StatsBar selectedMarket={marketData} />
       <main className="flex flex-1 gap-4 px-4 py-2">
         <div className="flex flex-1 flex-col gap-4">
-          <ChartCard className="flex-1">
+          <ChartCard className="flex flex-1 flex-col">
             {isScriptReady && <TVChartContainer {...defaultTVChartProps} />}
+            <DepthChart marketData={marketData} />
           </ChartCard>
           <ChartCard>
             <ChartName className="mb-4">Orders</ChartName>
@@ -91,8 +95,8 @@ export default function Market({ allMarketData, marketData }: Props) {
           </ChartCard>
         </div>
         <div className="flex w-[360px] flex-initial flex-col gap-4 border-neutral-600">
-          <ChartCard className="flex-1">
-            <ChartName>Orderbook</ChartName>
+          <ChartCard className="flex flex-1 flex-col">
+            <OrderBook marketData={marketData} />
           </ChartCard>
         </div>
         <div className="flex w-[360px] flex-initial flex-col gap-4 border-neutral-600">
@@ -120,7 +124,9 @@ export default function Market({ allMarketData, marketData }: Props) {
 
 export const getStaticPaths: GetStaticPaths<PathParams> = async () => {
   const res = await fetch(new URL("markets", API_URL).href);
-  const allMarketData: ApiMarket[] = await res.json();
+  // const allMarketData: ApiMarket[] = await res.json();
+  // TODO: Working API
+  const allMarketData = MOCK_MARKETS;
   const paths = allMarketData.map((market) => ({
     params: { market_name: market.name },
   }));
@@ -131,9 +137,11 @@ export const getStaticProps: GetStaticProps<Props, PathParams> = async ({
   params,
 }) => {
   if (!params) throw new Error("No params");
-  const allMarketData: ApiMarket[] = await fetch(
-    new URL("markets", API_URL).href
-  ).then((res) => res.json());
+  // const allMarketData: ApiMarket[] = await fetch(
+  //   new URL("markets", API_URL).href
+  // ).then((res) => res.json());
+  // TODO: Working API
+  const allMarketData = MOCK_MARKETS;
   const marketData = allMarketData.find(
     (market) => market.name === params.market_name
   );

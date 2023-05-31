@@ -29,10 +29,9 @@ script {
     const WITHDRAWAL_FEE_5: u64 =           1127819;
     const WITHDRAWAL_FEE_6: u64 =           1052631;
 
-    fun govern(
+    fun update_incentives(
         econia: &signer,
     ) {
-        // Update incentives.
         incentives::update_incentives<AptosCoin>(
             econia,
             MARKET_REGISTRATION_FEE,

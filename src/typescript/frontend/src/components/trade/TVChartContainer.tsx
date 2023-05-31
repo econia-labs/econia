@@ -314,5 +314,5 @@ export const TVChartContainer: React.FC<
     props.libraryPath,
   ]);
 
-  return <div ref={ref} className="h-full" />;
+  return <div ref={ref} className="h-4/5 flex-[4_1_0%]" />;
 };

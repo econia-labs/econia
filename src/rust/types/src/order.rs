@@ -157,7 +157,7 @@ pub enum OrderState {
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Order {
-    pub market_order_id: u64,
+    pub market_order_id: u128,
     pub market_id: u64,
     pub side: Side,
     pub size: u64,
@@ -172,7 +172,7 @@ pub struct Order {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Fill {
     pub market_id: u64,
-    pub maker_order_id: u64,
+    pub maker_order_id: u128,
     pub maker: String,
     pub maker_side: Side,
     pub custodian_id: Option<u64>,

@@ -17,6 +17,7 @@ import {
   type ResolutionString,
   type ThemeName,
 } from "../../../public/static/charting_library";
+import { MOCK_MARKETS } from "@/mockdata/markets";
 
 const TVChartContainer = dynamic(
   () =>
@@ -123,7 +124,9 @@ export default function Market({ allMarketData, marketData }: Props) {
 
 export const getStaticPaths: GetStaticPaths<PathParams> = async () => {
   const res = await fetch(new URL("markets", API_URL).href);
-  const allMarketData: ApiMarket[] = await res.json();
+  // const allMarketData: ApiMarket[] = await res.json();
+  // TODO: Working API
+  const allMarketData = MOCK_MARKETS;
   const paths = allMarketData.map((market) => ({
     params: { market_name: market.name },
   }));
@@ -134,9 +137,11 @@ export const getStaticProps: GetStaticProps<Props, PathParams> = async ({
   params,
 }) => {
   if (!params) throw new Error("No params");
-  const allMarketData: ApiMarket[] = await fetch(
-    new URL("markets", API_URL).href
-  ).then((res) => res.json());
+  // const allMarketData: ApiMarket[] = await fetch(
+  //   new URL("markets", API_URL).href
+  // ).then((res) => res.json());
+  // TODO: Working API
+  const allMarketData = MOCK_MARKETS;
   const marketData = allMarketData.find(
     (market) => market.name === params.market_name
   );

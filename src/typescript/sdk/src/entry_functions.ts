@@ -135,7 +135,7 @@ export const placeLimitOrderUserEntry = (
   arguments: [
     marketId,
     integrator,
-    sideToNumber(side),
+    sideToBoolean(side),
     size,
     price,
     restrictionToNumber(restriction),

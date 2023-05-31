@@ -12,6 +12,7 @@ import { OrderEntryInfo } from "./OrderEntryInfo";
 import { OrderEntryInputWrapper } from "./OrderEntryInputWrapper";
 import { TypeTag } from "@/utils/TypeTag";
 import { useMarketAccountBalance } from "@/hooks/useMarketAccountBalance";
+import { fromDecimalPrice, fromDecimalSize } from "@/utils/econia";
 
 type LimitFormValues = {
   price: string;
@@ -59,8 +60,22 @@ export const LimitOrderEntry: React.FC<{
         BigInt(marketData.market_id), // market id
         "0x1", // TODO get integrator ID
         orderSide,
-        BigInt(values.price),
-        BigInt(values.size),
+        BigInt(
+          fromDecimalSize({
+            size: values.size,
+            lotSize: marketData.lot_size,
+            baseCoinDecimals: marketData.base.decimals,
+          }).toString()
+        ),
+        BigInt(
+          fromDecimalPrice({
+            price: values.price,
+            lotSize: marketData.lot_size,
+            tickSize: marketData.tick_size,
+            baseCoinDecimals: marketData.base.decimals,
+            quoteCoinDecimals: marketData.quote.decimals,
+          }).toString()
+        ),
         "immediateOrCancel", // TODO don't hardcode
         "abort" // don't hardcode this either
       );

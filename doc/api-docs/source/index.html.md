@@ -141,7 +141,6 @@ documentation <a href="https://econia.dev/overview/registry/" target="_blank" re
 
 Get information about a specific market.
 
-
 ```shell
 curl "https://dev.api.econia.exchange/market/0"
 ```
@@ -203,16 +202,16 @@ main();
 
 ### Path Parameters
 
-Parameter | Type | Description
---------- | ---- | -----------
-market_id | u64  | The ID of the market to retrieve
+| Parameter | Type | Description                      |
+| --------- | ---- | -------------------------------- |
+| market_id | u64  | The ID of the market to retrieve |
 
 ### Errors
 
-Error Code | Description
----------- | -------
-400        | Bad Request: the provided market ID was not a valid u64
-404        | Not Found: no market with the specified ID was found
+| Error Code | Description                                             |
+| ---------- | ------------------------------------------------------- |
+| 400        | Bad Request: the provided market ID was not a valid u64 |
+| 404        | Not Found: no market with the specified ID was found    |
 
 ## Get orderbook
 
@@ -276,22 +275,22 @@ main();
 
 ### Path Parameters
 
-Parameter | Type | Description
---------- | ---- | -----------
-market_id | u64  |  The ID of the market to retrieve
+| Parameter | Type | Description                      |
+| --------- | ---- | -------------------------------- |
+| market_id | u64  | The ID of the market to retrieve |
 
 ### Query Parameters
 
-Parameter | Type | Description
---------- | ---- | -----------
-depth     | u32  | The number of orderbook levels to retrieve
+| Parameter | Type | Description                                |
+| --------- | ---- | ------------------------------------------ |
+| depth     | u32  | The number of orderbook levels to retrieve |
 
 ### Errors
 
-Error Code | Description
----------- | -------
-400        | Bad Request: invalid parameters
-404        | Not Found: no market with the specified ID was found
+| Error Code | Description                                          |
+| ---------- | ---------------------------------------------------- |
+| 400        | Bad Request: invalid parameters                      |
+| 404        | Not Found: no market with the specified ID was found |
 
 The depth parameter must be a number greater than or equal to 1.
 
@@ -371,24 +370,24 @@ main();
 
 ### Path Parameters
 
-Parameter | Type | Description
---------- | ---- | -----------
-market_id | u64  |  The ID of the market to retrieve
+| Parameter | Type | Description                      |
+| --------- | ---- | -------------------------------- |
+| market_id | u64  | The ID of the market to retrieve |
 
 ### Query Parameters
 
-Parameter  | Type | Description
----------  | ---- | -----------
-resolution | enum | The resolution of the requested historical data. Accepted values are 1m, 5m, 15m, 30m, and 1h.
-from       | i64  | Unix timestamp (in seconds) for the start of the requested time range
-to         | i64  | Unix timestamp (in seconds) for the end of the requested time range
+| Parameter  | Type | Description                                                                                    |
+| ---------- | ---- | ---------------------------------------------------------------------------------------------- |
+| resolution | enum | The resolution of the requested historical data. Accepted values are 1m, 5m, 15m, 30m, and 1h. |
+| from       | i64  | Unix timestamp (in seconds) for the start of the requested time range                          |
+| to         | i64  | Unix timestamp (in seconds) for the end of the requested time range                            |
 
 ### Errors
 
-Error Code | Description
----------- | -------
-400        | Bad Request: invalid parameters
-404        | Not Found: no market with the specified ID was found
+| Error Code | Description                                          |
+| ---------- | ---------------------------------------------------- |
+| 400        | Bad Request: invalid parameters                      |
+| 404        | Not Found: no market with the specified ID was found |
 
 The resolution parameter must be one of the options listed above. Additionally,
 the `to` and `from` timestamps must be valid Unix timestamps denoted in seconds,
@@ -459,23 +458,23 @@ main();
 
 ### Path Parameters
 
-Parameter | Type | Description
---------- | ---- | -----------
-market_id | u64  |  The ID of the market to retrieve
+| Parameter | Type | Description                      |
+| --------- | ---- | -------------------------------- |
+| market_id | u64  | The ID of the market to retrieve |
 
 ### Query Parameters
 
-Parameter  | Type | Description
----------  | ---- | -----------
-from       | i64  | Unix timestamp (in seconds) for the start of the requested time range
-to         | i64  | Unix timestamp (in seconds) for the end of the requested time range
+| Parameter | Type | Description                                                           |
+| --------- | ---- | --------------------------------------------------------------------- |
+| from      | i64  | Unix timestamp (in seconds) for the start of the requested time range |
+| to        | i64  | Unix timestamp (in seconds) for the end of the requested time range   |
 
 ### Errors
 
-Error Code | Description
----------- | -------
-400        | Bad Request: invalid parameters
-404        | Not Found: no market with the specified ID was found
+| Error Code | Description                                          |
+| ---------- | ---------------------------------------------------- |
+| 400        | Bad Request: invalid parameters                      |
+| 404        | Not Found: no market with the specified ID was found |
 
 The `to` and `from` timestamps must be valid Unix timestamps denoted in seconds,
 and the `from` timestamp must come before the `to` timestamp.
@@ -549,15 +548,15 @@ main();
 
 ### Query Parameters
 
-Parameter  | Type | Description
----------  | ---- | -----------
-resolution | enum | The resolution of the requested stats. Accepted values are 1m, 5m, 15m, 30m, and 1h.
+| Parameter  | Type | Description                                                                          |
+| ---------- | ---- | ------------------------------------------------------------------------------------ |
+| resolution | enum | The resolution of the requested stats. Accepted values are 1m, 5m, 15m, 30m, and 1h. |
 
 ### Errors
 
-Error Code | Description
----------- | -------
-400        | Bad Request: invalid parameters
+| Error Code | Description                     |
+| ---------- | ------------------------------- |
+| 400        | Bad Request: invalid parameters |
 
 ### Notes
 
@@ -634,22 +633,22 @@ main();
 
 ### Path Parameters
 
-Parameter | Type | Description
---------- | ---- | -----------
-market_id | u64  |  The ID of the market to retrieve
+| Parameter | Type | Description                      |
+| --------- | ---- | -------------------------------- |
+| market_id | u64  | The ID of the market to retrieve |
 
 ### Query Parameters
 
-Parameter  | Type | Description
----------  | ---- | -----------
-resolution | enum | The resolution of the requested stats. Accepted values are 1m, 5m, 15m, 30m, and 1h.
+| Parameter  | Type | Description                                                                          |
+| ---------- | ---- | ------------------------------------------------------------------------------------ |
+| resolution | enum | The resolution of the requested stats. Accepted values are 1m, 5m, 15m, 30m, and 1h. |
 
 ### Errors
 
-Error Code | Description
----------- | -------
-400        | Bad Request: invalid parameters
-404        | Not Found: no market with the specified ID was found
+| Error Code | Description                                          |
+| ---------- | ---------------------------------------------------- |
+| 400        | Bad Request: invalid parameters                      |
+| 404        | Not Found: no market with the specified ID was found |
 
 ## Get open orders
 
@@ -719,15 +718,15 @@ main();
 
 ### Path Parameters
 
-Parameter  | Type   | Description
----------  | ----   | -----------
-account_id | String | The ID of the account to retrieve open orders for
+| Parameter  | Type   | Description                                       |
+| ---------- | ------ | ------------------------------------------------- |
+| account_id | String | The ID of the account to retrieve open orders for |
 
 ### Errors
 
-Error Code | Description
----------- | -------
-404        | Not Found: no account with the specified ID was found
+| Error Code | Description                                           |
+| ---------- | ----------------------------------------------------- |
+| 404        | Not Found: no account with the specified ID was found |
 
 ## Get order history
 
@@ -797,15 +796,15 @@ main();
 
 ### Path Parameters
 
-Parameter  | Type   | Description
----------  | ----   | -----------
-account_id | String | The ID of the account to retrieve order history for
+| Parameter  | Type   | Description                                         |
+| ---------- | ------ | --------------------------------------------------- |
+| account_id | String | The ID of the account to retrieve order history for |
 
 ### Errors
 
-Error Code | Description
----------- | -------
-404        | Not Found: no account with the specified ID was found
+| Error Code | Description                                           |
+| ---------- | ----------------------------------------------------- |
+| 404        | Not Found: no account with the specified ID was found |
 
 # WebSocket API
 

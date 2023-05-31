@@ -81,11 +81,7 @@ impl OrderBook {
 
     // removes an order if it exists
     pub fn remove_order(&mut self, order_id: u128) -> Option<Order> {
-        self.orders_to_price_level.remove(&order_id)?;
-        let (side, price) = self
-            .get_book_side_price_level(order_id)
-            .expect("invalid state");
-
+        let (side, price) = self.orders_to_price_level.remove(&order_id)?;
         let book_side = self.get_side_mut(side);
         let level = book_side
             .get_mut(&price)

@@ -6,7 +6,7 @@ use types::error::TypeError;
 
 use crate::schema::orders;
 
-use super::ToInsertable;
+use super::{ToInsertable, bigdecimal_to_u128};
 
 #[derive(Debug, DbEnum, Clone, PartialEq, Eq, Copy)]
 #[ExistingTypePath = "crate::schema::sql_types::Side"]
@@ -135,12 +135,11 @@ impl TryFrom<Order> for types::order::Order {
     type Error = TypeError;
 
     fn try_from(value: Order) -> Result<Self, Self::Error> {
-        let market_order_id = value
-            .market_order_id
-            .to_u128()
-            .ok_or(TypeError::ConversionError {
-                name: "market_order_id".into(),
-            })?;
+        let market_order_id = bigdecimal_to_u128(&value.market_order_id).ok_or_else(|| {
+            TypeError::ConversionError {
+                name: "market_order_id".to_string(),
+            }
+        })?;
         let market_id = value.market_id.to_u64().ok_or(TypeError::ConversionError {
             name: "market_id".into(),
         })?;

@@ -3,7 +3,7 @@ use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 use types::error::TypeError;
 
-use super::order::Side;
+use super::{bigdecimal_to_u128, order::Side};
 
 #[derive(Clone, Debug, Queryable)]
 pub struct Fill {
@@ -28,7 +28,7 @@ impl TryFrom<Fill> for types::order::Fill {
                 .ok_or_else(|| TypeError::ConversionError {
                     name: "market_id".to_string(),
                 })?,
-            maker_order_id: value.maker_order_id.to_u128().ok_or_else(|| {
+            maker_order_id: bigdecimal_to_u128(&value.maker_order_id).ok_or_else(|| {
                 TypeError::ConversionError {
                     name: "maker_order_id".to_string(),
                 }

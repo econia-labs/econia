@@ -1,11 +1,11 @@
-use bigdecimal::{BigDecimal, ToPrimitive, FromPrimitive};
+use bigdecimal::{BigDecimal, ToPrimitive};
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 use diesel_derive_enum::DbEnum;
 use field_count::FieldCount;
 use types::{error::TypeError, events};
 
-use super::{order::Side, ToInsertable};
+use super::{order::Side, ToInsertable, bigdecimal_to_u128, bigdecimal_from_u128};
 use crate::schema::{maker_events, taker_events};
 
 #[derive(Debug, DbEnum, Clone, Copy, PartialEq, Eq)]
@@ -75,7 +75,7 @@ impl TryFrom<events::MakerEvent> for MakerEvent {
         Ok(Self {
             market_id: value.market_id.into(),
             side: value.side.into(),
-            market_order_id: BigDecimal::from_u128(value.market_order_id).ok_or_else(|| {
+            market_order_id: bigdecimal_from_u128(value.market_order_id).ok_or_else(|| {
                 TypeError::ConversionError {
                     name: "market_order_id".to_string(),
                 }
@@ -102,7 +102,7 @@ impl TryFrom<MakerEvent> for events::MakerEvent {
                     name: "market_id".to_string(),
                 })?,
             side: value.side.into(),
-            market_order_id: value.market_order_id.to_u128().ok_or_else(|| {
+            market_order_id: bigdecimal_to_u128(&value.market_order_id).ok_or_else(|| {
                 TypeError::ConversionError {
                     name: "market_order_id".to_string(),
                 }
@@ -185,7 +185,7 @@ impl TryFrom<events::TakerEvent> for TakerEvent {
         Ok(Self {
             market_id: value.market_id.into(),
             side: value.side.into(),
-            market_order_id: BigDecimal::from_u128(value.market_order_id).ok_or_else(|| {
+            market_order_id: bigdecimal_from_u128(value.market_order_id).ok_or_else(|| {
                 TypeError::ConversionError {
                     name: "market_order_id".to_string(),
                 }
@@ -211,7 +211,7 @@ impl TryFrom<TakerEvent> for events::TakerEvent {
                     name: "market_id".to_string(),
                 })?,
             side: value.side.into(),
-            market_order_id: value.market_order_id.to_u128().ok_or_else(|| {
+            market_order_id: bigdecimal_to_u128(&value.market_order_id).ok_or_else(|| {
                 TypeError::ConversionError {
                     name: "market_order_id".to_string(),
                 }
@@ -271,3 +271,4 @@ impl ToInsertable for TakerEvent {
         }
     }
 }
+

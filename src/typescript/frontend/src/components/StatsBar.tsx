@@ -174,15 +174,15 @@ export const StatsBar: React.FC<{
           }}
         />
       </BaseModal>
-      <div className="flex items-center justify-between gap-2 overflow-x-clip whitespace-nowrap border-b border-neutral-600 bg-black px-9 py-4 [&>.mobile-stat]:block md:[&>.mobile-stat]:hidden [&>.stat]:hidden [&>.stat]:text-xs/[18px] md:[&>.stat]:block">
+      <div className="flex items-center justify-between gap-2 overflow-x-clip whitespace-nowrap border-b border-neutral-600 bg-black px-9 py-4 [&>.mobile-stat]:block md:[&>.mobile-stat]:hidden [&>.stat>span]:mb-[3px] [&>.stat]:hidden [&>.stat]:text-xs/[18px] md:[&>.stat]:block">
         <div className="flex items-center gap-4">
           <MarketIconPair
             baseAssetIcon={data?.pairData.baseAssetIcon}
             quoteAssetIcon={data?.pairData.quoteAssetIcon}
           />
-          <div className="min-w-[170px]">
+          <div className="min-w-[130px]">
             <button
-              className="flex font-roboto-mono text-base text-neutral-300 md:text-2xl"
+              className="flex font-roboto-mono text-2xl text-neutral-300 md:text-base"
               onClick={() => {
                 setIsModalOpen(true);
               }}

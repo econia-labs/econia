@@ -50,14 +50,14 @@ const MarketIconPair: React.FC<{
         alt="market-icon-pair"
         width={40}
         height={40}
-        className="z-20 aspect-square w-[30px] md:w-[40px]"
+        className="z-20 aspect-square w-[28px] md:w-[40px]"
       />
       <Image
         src={quoteAssetIcon}
         alt="market-icon-pair"
         width={40}
         height={40}
-        className="absolute z-10 ml-[15px] aspect-square w-[30px] md:ml-[20px] md:w-[40px]"
+        className="absolute z-10 ml-[15px] aspect-square w-[28px] md:ml-[20px] md:w-[40px]"
       />
     </div>
   );
@@ -66,12 +66,12 @@ const MarketIconPair: React.FC<{
 const SocialMediaIcons: React.FC<{ className?: string }> = ({ className }) => {
   return (
     <div className={className}>
-      <div className="flex">
+      <div className="flex [&>a]:h-[18px] [&>a]:min-w-[18px] ">
         <a
           href="https://twitter.com/EconiaLabs"
           target="_blank"
           rel="noreferrer"
-          className="mx-3 aspect-square h-[28px]  min-w-[28px]  cursor-pointer text-white hover:text-blue"
+          className="mx-3 aspect-square cursor-pointer text-white hover:text-blue"
         >
           <TwitterIcon />
         </a>
@@ -79,7 +79,7 @@ const SocialMediaIcons: React.FC<{ className?: string }> = ({ className }) => {
           href="https://discord.com/invite/Z7gXcMgX8A"
           target="_blank"
           rel="noreferrer"
-          className="mx-3 aspect-square h-[28px]  min-w-[28px]  cursor-pointer text-white hover:text-blue"
+          className="mx-3 aspect-square cursor-pointer text-white hover:text-blue"
         >
           <DiscordIcon />
         </a>
@@ -87,7 +87,7 @@ const SocialMediaIcons: React.FC<{ className?: string }> = ({ className }) => {
           href="https://medium.com/econialabs"
           target="_blank"
           rel="noreferrer"
-          className="mx-3 aspect-square h-[28px]  min-w-[28px]  cursor-pointer text-white hover:text-blue"
+          className="mx-3 aspect-square cursor-pointer text-white hover:text-blue"
         >
           <MediumIcon />
         </a>
@@ -174,7 +174,7 @@ export const StatsBar: React.FC<{
           }}
         />
       </BaseModal>
-      <div className="flex items-center justify-between gap-2 overflow-x-clip whitespace-nowrap border-b border-neutral-600 bg-black px-9 py-4 [&>.mobile-stat]:block md:[&>.mobile-stat]:hidden [&>.stat]:hidden md:[&>.stat]:block">
+      <div className="flex items-center justify-between gap-2 overflow-x-clip whitespace-nowrap border-b border-neutral-600 bg-black px-9 py-4 [&>.mobile-stat]:block md:[&>.mobile-stat]:hidden [&>.stat]:hidden [&>.stat]:text-xs/[18px] md:[&>.stat]:block">
         <div className="flex items-center gap-4">
           <MarketIconPair
             baseAssetIcon={data?.pairData.baseAssetIcon}
@@ -182,7 +182,7 @@ export const StatsBar: React.FC<{
           />
           <div className="min-w-[170px]">
             <button
-              className="flex font-roboto-mono text-xl text-neutral-300 md:text-2xl"
+              className="flex font-roboto-mono text-base text-neutral-300 md:text-2xl"
               onClick={() => {
                 setIsModalOpen(true);
               }}
@@ -199,7 +199,7 @@ export const StatsBar: React.FC<{
               ${formatNumber(data?.lastPrice, 2)}
             </span>
             <span
-              className={`ml-1 inline-block min-w-[6em] text-base ${
+              className={`ml-1 inline-block min-w-[6em]  ${
                 (data?.lastPriceChange || 0) < 0 ? "text-red" : "text-green"
               }`}
             >
@@ -209,7 +209,7 @@ export const StatsBar: React.FC<{
         </div>
         {/* price */}
         <div className="stat">
-          <span className="font-roboto-mono text-base font-light uppercase text-neutral-500">
+          <span className="font-roboto-mono  font-light uppercase text-neutral-500">
             Last price
           </span>
           <div className="flex gap-2 font-roboto-mono font-light">
@@ -227,7 +227,7 @@ export const StatsBar: React.FC<{
         </div>
         {/* 24 hr */}
         <div className="stat">
-          <span className="font-roboto-mono text-base font-light uppercase text-neutral-500">
+          <span className="font-roboto-mono font-light uppercase text-neutral-500">
             24h change
           </span>
           <p className="flex gap-2 font-roboto-mono font-light">
@@ -245,7 +245,7 @@ export const StatsBar: React.FC<{
         </div>
         {/* 24 hr high */}
         <div className="stat">
-          <span className="font-roboto-mono text-base font-light uppercase text-neutral-500">
+          <span className="font-roboto-mono font-light uppercase text-neutral-500">
             24h high
           </span>
           <p className="font-roboto-mono font-light">
@@ -254,7 +254,7 @@ export const StatsBar: React.FC<{
         </div>
         {/* 24 hr low */}
         <div className="stat">
-          <span className="font-roboto-mono text-base font-light uppercase text-neutral-500">
+          <span className="font-roboto-mono font-light uppercase text-neutral-500">
             24h low
           </span>
           <p className="font-roboto-mono font-light">
@@ -263,7 +263,7 @@ export const StatsBar: React.FC<{
         </div>
         {/* 24 hr main */}
         <div className="stat">
-          <span className="font-roboto-mono text-base font-light  text-neutral-500">
+          <span className="font-roboto-mono font-light text-neutral-500">
             24H VOLUME ({data?.pairData.baseAsset || "-"})
           </span>
           <p className="font-roboto-mono font-light">
@@ -274,7 +274,7 @@ export const StatsBar: React.FC<{
         </div>
         {/* 24 hr pair */}
         <div className="stat">
-          <span className="font-roboto-mono text-base font-light  text-neutral-500">
+          <span className="font-roboto-mono font-light  text-neutral-500">
             24H VOLUME ({data?.pairData.quoteAsset || "-"})
           </span>
           <p className="font-roboto-mono font-light">

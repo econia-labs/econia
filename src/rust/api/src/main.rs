@@ -1,6 +1,7 @@
 use std::{collections::HashSet, net::SocketAddr};
 
 use bigdecimal::ToPrimitive;
+use db::query::market::MarketIdQuery;
 use futures_util::StreamExt;
 use serde::Deserialize;
 use sqlx::{PgPool, Pool, Postgres};
@@ -122,7 +123,7 @@ fn init_tracing(env: Env) {
 
 async fn get_market_ids(pool: Pool<Postgres>) -> Vec<u64> {
     sqlx::query_as!(
-        types::query::MarketIdQuery,
+        MarketIdQuery,
         r#"select market_id from markets;"#
     )
     .fetch_all(&pool)

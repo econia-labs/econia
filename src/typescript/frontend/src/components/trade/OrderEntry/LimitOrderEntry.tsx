@@ -31,11 +31,7 @@ export const LimitOrderEntry: React.FC<{
     formState: { errors },
     getValues,
     setValue,
-  } = useForm<{
-    price: string;
-    size: string;
-    totalSize: string;
-  }>();
+  } = useForm<LimitFormValues>();
   const baseBalance = useMarketAccountBalance(
     account?.address,
     marketData.market_id,

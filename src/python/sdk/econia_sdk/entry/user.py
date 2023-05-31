@@ -1,9 +1,9 @@
 # User entry functions
 
-from aptos_sdk.type_tag import TypeTag
-from aptos_sdk.transactions import EntryFunction, ModuleId
 from aptos_sdk.account_address import AccountAddress
-from aptos_sdk.bcs import encoder, Serializer
+from aptos_sdk.bcs import Serializer, encoder
+from aptos_sdk.transactions import EntryFunction, ModuleId
+from aptos_sdk.type_tag import TypeTag
 
 
 def get_module_id(econia_address: AccountAddress) -> ModuleId:
@@ -60,7 +60,10 @@ def register_market_account(
         get_module_id(econia_address),
         "register_market_account",
         [base, quote],
-        [encoder(market_id, Serializer.u64), encoder(custodian_id, Serializer.u64)],
+        [
+            encoder(market_id, Serializer.u64),
+            encoder(custodian_id, Serializer.u64),
+        ],
     )
 
 
@@ -83,7 +86,10 @@ def register_market_account_generic_base(
         get_module_id(econia_address),
         "register_market_account_generic_base",
         [quote],
-        [encoder(market_id, Serializer.u64), encoder(custodian_id, Serializer.u64)],
+        [
+            encoder(market_id, Serializer.u64),
+            encoder(custodian_id, Serializer.u64),
+        ],
     )
 
 

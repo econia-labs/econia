@@ -39,7 +39,7 @@ type MarketStats = {
 const SocialMediaIcons: React.FC<{ className?: string }> = ({ className }) => {
   return (
     <div className={className}>
-      <div className="flex">
+      <div className="flex [&>a]:h-[18px] [&>a]:min-w-[18px] ">
         <a
           href="https://twitter.com/EconiaLabs"
           target="_blank"

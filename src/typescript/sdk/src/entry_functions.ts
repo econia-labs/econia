@@ -135,10 +135,31 @@ export const placeLimitOrderUserEntry = (
   arguments: [
     marketId,
     integrator,
-    sideToNumber(side),
+    sideToBoolean(side),
     size,
     price,
     restrictionToNumber(restriction),
+    selfMatchBehaviorToNumber(selfMatchBehavior),
+  ],
+});
+
+export const placeMarketOrderUserEntry = (
+  econiaAddress: MaybeHexString,
+  base: Types.MoveType,
+  quote: Types.MoveType,
+  marketId: BCS.Uint64,
+  integrator: MaybeHexString,
+  side: Side,
+  size: BCS.Uint64,
+  selfMatchBehavior: SelfMatchBehavior
+): Types.EntryFunctionPayload => ({
+  function: `${econiaAddress}::market::place_market_order_user_entry`,
+  type_arguments: [base, quote],
+  arguments: [
+    marketId,
+    integrator,
+    sideToBoolean(side),
+    size,
     selfMatchBehaviorToNumber(selfMatchBehavior),
   ],
 });

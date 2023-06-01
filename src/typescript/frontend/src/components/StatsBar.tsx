@@ -1,6 +1,5 @@
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import { useQuery } from "@tanstack/react-query";
-import Image from "next/image";
 import { useRouter } from "next/router";
 import React, { useState } from "react";
 
@@ -13,9 +12,10 @@ import { BaseModal } from "./BaseModal";
 import { DiscordIcon } from "./icons/DiscordIcon";
 import { MediumIcon } from "./icons/MediumIcon";
 import { TwitterIcon } from "./icons/TwitterIcon";
+import { MarketIconPair } from "./MarketIconPair";
 import { SelectMarketContent } from "./trade/DepositWithdrawModal/SelectMarketContent";
-
 const DEFAULT_TOKEN_ICON = "/tokenImages/default.png";
+import { averageOrOther, formatNumber } from "@/utils/formatter";
 
 type MarketStats = {
   // selected market pair data
@@ -33,34 +33,6 @@ type MarketStats = {
     baseVolume: number;
     quoteVolume: number;
   };
-};
-
-const MarketIconPair: React.FC<{
-  baseAssetIcon?: string;
-  quoteAssetIcon?: string;
-}> = ({
-  baseAssetIcon = DEFAULT_TOKEN_ICON,
-  quoteAssetIcon = DEFAULT_TOKEN_ICON,
-}) => {
-  return (
-    <div className="relative flex w-[45px] md:w-[60px]">
-      {/* height width props required */}
-      <Image
-        src={baseAssetIcon}
-        alt="market-icon-pair"
-        width={40}
-        height={40}
-        className="z-20 aspect-square w-[28px] md:w-[40px]"
-      />
-      <Image
-        src={quoteAssetIcon}
-        alt="market-icon-pair"
-        width={40}
-        height={40}
-        className="absolute z-10 ml-[15px] aspect-square w-[28px] md:ml-[20px] md:w-[40px]"
-      />
-    </div>
-  );
 };
 
 const SocialMediaIcons: React.FC<{ className?: string }> = ({ className }) => {
@@ -129,8 +101,8 @@ export const StatsBar: React.FC<{
       // END MOCK API CALL
       return {
         lastPrice: averageOrOther(
-          priceRes.asks[0].price,
-          priceRes.bids[0].price
+          priceRes.asks ? priceRes.asks[0].price : undefined,
+          priceRes.bids ? priceRes.bids[0].price : undefined
         ),
         lastPriceChange: 10.1738, // TODO: Mock data
         change24h: res.close,
@@ -174,7 +146,7 @@ export const StatsBar: React.FC<{
           }}
         />
       </BaseModal>
-      <div className="flex items-center justify-between gap-2 overflow-x-clip whitespace-nowrap border-b border-neutral-600 bg-black px-9 py-4 [&>.mobile-stat]:block md:[&>.mobile-stat]:hidden [&>.stat>span]:mb-[3px] [&>.stat]:hidden [&>.stat]:text-xs/[18px] md:[&>.stat]:block">
+      <div className="flex items-center justify-between gap-2 overflow-x-clip whitespace-nowrap border-b border-neutral-600 px-9 py-4 [&>.mobile-stat]:block md:[&>.mobile-stat]:hidden [&>.stat]:hidden md:[&>.stat]:block">
         <div className="flex items-center gap-4">
           <MarketIconPair
             baseAssetIcon={data?.pairData.baseAssetIcon}
@@ -288,38 +260,4 @@ export const StatsBar: React.FC<{
       </div>
     </>
   );
-};
-
-const formatNumber = (
-  num: number | undefined,
-  digits: number,
-  signDisplay: Intl.NumberFormatOptions["signDisplay"] = "never"
-): string => {
-  if (!num) return "-";
-  const lang =
-    typeof window === "undefined"
-      ? "en"
-      : navigator.language || navigator.languages[0];
-  return num.toLocaleString(lang, {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits,
-    signDisplay,
-  });
-};
-
-const averageOrOther = (
-  price1: number | undefined,
-  price2: number | undefined
-): number | undefined => {
-  if (price1 !== undefined && price2 !== undefined) {
-    return (price1 + price2) / 2;
-  }
-  if (price2 == undefined) {
-    return price1;
-  }
-  if (price1 == undefined) {
-    return price2;
-  }
-  // no prices (orderbook empty) maybe should get the last sale price then?
-  return 0;
 };

@@ -4,14 +4,17 @@ import React, { Fragment, type PropsWithChildren } from "react";
 
 import { XIcon } from "./icons/XIcon";
 
+import bg from "../../public/bg.png";
+
 export const BaseModal: React.FC<
   PropsWithChildren<{
     open: boolean;
     onClose: () => void;
     onBack?: () => void;
     showCloseButton?: boolean;
+    showBackButton?: boolean;
   }>
-> = ({ open, onClose, onBack, showCloseButton = true, children }) => {
+> = ({ open, onClose, onBack, showBackButton, showCloseButton, children }) => {
   return (
     <Transition appear show={open} as={Fragment}>
       <Dialog as="div" className="relative z-50" open={open} onClose={onClose}>
@@ -24,14 +27,19 @@ export const BaseModal: React.FC<
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 bg-black bg-opacity-60" />
+          <div className="fixed inset-0 bg-opacity-60" />
         </Transition.Child>
 
         <div className="fixed inset-0 overflow-y-auto">
           <div className="flex min-h-full items-center justify-center p-4 text-center">
-            <Dialog.Panel className="w-full max-w-4xl transform border border-neutral-600 bg-black p-6 align-middle shadow-xl transition-all">
+            <Dialog.Panel
+              className="w-full max-w-4xl transform border border-neutral-600 bg-black p-6 align-middle shadow-xl transition-all"
+              style={{
+                backgroundImage: `url(${bg.src})`,
+              }}
+            >
               <Dialog.Title as="div">
-                {onBack && (
+                {showBackButton && (
                   <div
                     className="absolute left-[24px] top-[24px] flex cursor-pointer items-center justify-center font-roboto-mono text-neutral-500 transition-all hover:text-white"
                     onClick={onBack}

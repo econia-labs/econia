@@ -92,6 +92,8 @@ export const DepositWithdrawModal: React.FC<{
           ? () => setStep(Step.Initial)
           : undefined
       }
+      showBackButton={step === Step.DepositWithdraw}
+      showCloseButton={step !== Step.SelectMarket}
     >
       {step === Step.Initial && (
         <InitialContent

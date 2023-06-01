@@ -147,4 +147,3 @@ impl TryFrom<QueryMarket> for types::Market {
         }
     }
 }
-

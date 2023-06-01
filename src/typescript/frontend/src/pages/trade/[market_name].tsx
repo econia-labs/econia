@@ -53,7 +53,8 @@ const ChartName: React.FC<PropsWithChildren<{ className?: string }>> = ({
 }) => (
   <p
     className={
-      "ml-4 mt-2 font-jost text-white" + (className ? ` ${className}` : "")
+      "ml-4 mt-2 font-jost font-bold text-white" +
+      (className ? ` ${className}` : "")
     }
   >
     {children}
@@ -87,7 +88,7 @@ export default function Market({ allMarketData, marketData }: Props) {
         <div className="flex flex-1 flex-col gap-4">
           <ChartCard className="flex flex-1 flex-col">
             {isScriptReady && <TVChartContainer {...defaultTVChartProps} />}
-            <DepthChart marketData={marketData} />
+            {/* <DepthChart marketData={marketData} /> */}
           </ChartCard>
           <ChartCard>
             <ChartName className="mb-4">Orders</ChartName>

@@ -4,6 +4,8 @@ import React, { Fragment, type PropsWithChildren } from "react";
 
 import { XIcon } from "./icons/XIcon";
 
+import bg from "../../public/bg.png";
+
 export const BaseModal: React.FC<
   PropsWithChildren<{
     open: boolean;
@@ -25,12 +27,17 @@ export const BaseModal: React.FC<
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 bg-black bg-opacity-60" />
+          <div className="fixed inset-0 bg-opacity-60" />
         </Transition.Child>
 
         <div className="fixed inset-0 overflow-y-auto">
           <div className="flex min-h-full items-center justify-center p-4 text-center">
-            <Dialog.Panel className="w-full max-w-4xl transform border border-neutral-600 bg-black p-6 align-middle shadow-xl transition-all">
+            <Dialog.Panel
+              className="w-full max-w-4xl transform border border-neutral-600 bg-black p-6 align-middle shadow-xl transition-all"
+              style={{
+                backgroundImage: `url(${bg.src})`,
+              }}
+            >
               <Dialog.Title as="div">
                 {showBackButton && (
                   <div

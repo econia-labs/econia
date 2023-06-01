@@ -174,7 +174,7 @@ export const StatsBar: React.FC<{
           }}
         />
       </BaseModal>
-      <div className="flex items-center justify-between gap-2 overflow-x-clip whitespace-nowrap border-b border-neutral-600 bg-black px-9 py-4 [&>.mobile-stat]:block md:[&>.mobile-stat]:hidden [&>.stat]:hidden md:[&>.stat]:block">
+      <div className="flex items-center justify-between gap-2 overflow-x-clip whitespace-nowrap border-b border-neutral-600 px-9 py-4 [&>.mobile-stat]:block md:[&>.mobile-stat]:hidden [&>.stat]:hidden md:[&>.stat]:block">
         <div className="flex items-center gap-4">
           <MarketIconPair
             baseAssetIcon={data?.pairData.baseAssetIcon}

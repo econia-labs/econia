@@ -13,6 +13,7 @@ import { OrderEntryInputWrapper } from "./OrderEntryInputWrapper";
 import { TypeTag } from "@/utils/TypeTag";
 import { useMarketAccountBalance } from "@/hooks/useMarketAccountBalance";
 import { fromDecimalPrice, fromDecimalSize } from "@/utils/econia";
+import { useOrderEntry } from "@/contexts/OrderEntryContext";
 
 type LimitFormValues = {
   price: string;

@@ -1,6 +1,7 @@
 import { Tab } from "@headlessui/react";
 import React, { useState } from "react";
 
+import { useOrderEntry, useSetSide } from "@/contexts/OrderEntryContext";
 import { type ApiMarket } from "@/types/api";
 import { type Side } from "@/types/global";
 
@@ -10,7 +11,12 @@ import { MarketOrderEntry } from "./MarketOrderEntry";
 export const OrderEntry: React.FC<{ marketData: ApiMarket }> = ({
   marketData,
 }) => {
+  const { setType, setPrice, type } = useOrderEntry();
   const [side, setSide] = useState<Side>("buy");
+  // useSetSide(setSide);
+  React.useEffect(() => {
+    setSide(type);
+  }, [type]);
   return (
     <div>
       <div className="m-4 flex gap-2">

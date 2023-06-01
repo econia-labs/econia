@@ -25,20 +25,13 @@ const Row: React.FC<{
   type: "bid" | "ask";
   highestSize: number;
 }> = ({ order, type, highestSize }) => {
-  const { setType, setPrice, setSide, price } = useOrderEntry();
+  const { setType, setPrice } = useOrderEntry();
   return (
     <div
       className="relative my-[1px] flex min-h-[25px] min-w-full cursor-pointer items-center justify-between text-xs"
       onClick={() => {
         setType(type === "ask" ? "buy" : "sell");
         setPrice(order.price.toString());
-        console.log("bruh");
-        console.log(price);
-        console.log(setSide, "orderbook");
-        if (setSide != undefined) {
-          console.log("hi");
-          setSide(type === "ask" ? "buy" : "sell");
-        }
       }}
     >
       <div

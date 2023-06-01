@@ -16,9 +16,6 @@ export type OrderEntryContextState = {
   setType: Dispatch<SetStateAction<"buy" | "sell">>;
   price: string;
   setPrice: Dispatch<SetStateAction<string>>;
-
-  setSide: SetSideType;
-  setSetSide: Dispatch<SetStateAction<SetSideType>>;
 };
 
 export const OrderEntryContext = createContext<
@@ -29,16 +26,11 @@ export function OrderEntryContextProvider({ children }: PropsWithChildren) {
   const [type, setType] = useState<"buy" | "sell">("buy");
   const [price, setPrice] = useState<string>("");
 
-  const [setSide, setSetSide] =
-    useState<React.Dispatch<React.SetStateAction<Side>>>();
-
   const value: OrderEntryContextState = {
     type,
     price,
     setType,
     setPrice,
-    setSide,
-    setSetSide,
   };
   return (
     <OrderEntryContext.Provider value={value}>
@@ -55,16 +47,4 @@ export const useOrderEntry = (): OrderEntryContextState => {
     );
   }
   return context;
-};
-
-export const useSetSide = (
-  setSide: React.Dispatch<React.SetStateAction<Side>>
-) => {
-  const { setSetSide, setPrice } = useOrderEntry();
-  useEffect(() => {
-    console.log("useSetSide", setSide);
-    setPrice("testing");
-    setSetSide(setSide);
-    // setSide("sell");
-  }, [setSide, setSetSide, setPrice]);
 };

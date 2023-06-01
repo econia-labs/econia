@@ -175,11 +175,11 @@ export const LimitOrderEntry: React.FC<{
           </Button>
         </ConnectedButton>
         <OrderEntryInfo
-          label={`${marketData.base?.symbol} AVAIABLE`}
+          label={`${marketData.base?.symbol} AVAILABLE`}
           value={`${baseBalance.data ?? "--"} ${marketData.base?.symbol}`}
         />
         <OrderEntryInfo
-          label={`${marketData.quote?.symbol} AVAIABLE`}
+          label={`${marketData.quote?.symbol} AVAILABLE`}
           value={`${quoteBalance.data ?? "--"} ${marketData.quote?.symbol}`}
         />
       </div>

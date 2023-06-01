@@ -14,8 +14,11 @@ export const OrderEntry: React.FC<{ marketData: ApiMarket }> = ({
   const { type } = useOrderEntry();
   const [side, setSide] = useState<Side>("buy");
 
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
   React.useEffect(() => {
     setSide(type);
+    setSelectedIndex(0);
   }, [type]);
 
   return (
@@ -42,7 +45,7 @@ export const OrderEntry: React.FC<{ marketData: ApiMarket }> = ({
           Sell
         </button>
       </div>
-      <Tab.Group>
+      <Tab.Group selectedIndex={selectedIndex} onChange={setSelectedIndex}>
         <Tab.List className="my-5 flex justify-evenly">
           <Tab className="font-roboto-mono text-sm font-light uppercase outline-none ui-selected:text-white ui-not-selected:text-neutral-500">
             Limit

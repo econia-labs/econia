@@ -14,6 +14,7 @@ import { TypeTag } from "@/utils/TypeTag";
 import { useMarketAccountBalance } from "@/hooks/useMarketAccountBalance";
 import { fromDecimalPrice, fromDecimalSize } from "@/utils/econia";
 import { useOrderEntry } from "@/contexts/OrderEntryContext";
+import { useEffect, useRef } from "react";
 
 type LimitFormValues = {
   price: string;
@@ -25,6 +26,7 @@ export const LimitOrderEntry: React.FC<{
   marketData: ApiMarket;
   side: Side;
 }> = ({ marketData, side }) => {
+  const { price } = useOrderEntry();
   const { signAndSubmitTransaction, account } = useAptos();
   const {
     handleSubmit,
@@ -33,6 +35,11 @@ export const LimitOrderEntry: React.FC<{
     getValues,
     setValue,
   } = useForm<LimitFormValues>();
+
+  useEffect(() => {
+    setValue("price", price);
+  }, [price, setValue]);
+
   const baseBalance = useMarketAccountBalance(
     account?.address,
     marketData.market_id,

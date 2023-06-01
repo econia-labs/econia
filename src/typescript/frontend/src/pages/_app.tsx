@@ -67,7 +67,6 @@ export default function App({ Component, pageProps }: AppProps) {
             <style jsx global>{`
               body {
                 background-color: #020202;
-                // background-image: url(${bg.src});
               }
               :root {
                 --font-jost: ${jost.style.fontFamily};

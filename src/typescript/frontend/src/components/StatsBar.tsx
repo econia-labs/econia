@@ -15,6 +15,7 @@ import { MediumIcon } from "./icons/MediumIcon";
 import { TwitterIcon } from "./icons/TwitterIcon";
 import { SelectMarketContent } from "./trade/DepositWithdrawModal/SelectMarketContent";
 import { MarketIconPair } from "./MarketIconPair";
+import { averageOrOther, formatNumber } from "@/utils/formatter";
 
 const DEFAULT_TOKEN_ICON = "/tokenImages/default.png";
 
@@ -250,38 +251,4 @@ export const StatsBar: React.FC<{
       </div>
     </>
   );
-};
-
-const formatNumber = (
-  num: number | undefined,
-  digits: number,
-  signDisplay: Intl.NumberFormatOptions["signDisplay"] = "never"
-): string => {
-  if (!num) return "-";
-  const lang =
-    typeof window === "undefined"
-      ? "en"
-      : navigator.language || navigator.languages[0];
-  return num.toLocaleString(lang, {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits,
-    signDisplay,
-  });
-};
-
-const averageOrOther = (
-  price1: number | undefined,
-  price2: number | undefined
-): number | undefined => {
-  if (price1 !== undefined && price2 !== undefined) {
-    return (price1 + price2) / 2;
-  }
-  if (price2 == undefined) {
-    return price1;
-  }
-  if (price1 == undefined) {
-    return price2;
-  }
-  // no prices (orderbook empty) maybe should get the last sale price then?
-  return 0;
 };

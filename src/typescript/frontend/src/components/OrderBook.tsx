@@ -28,7 +28,7 @@ const Row: React.FC<{
   const { setType, setPrice } = useOrderEntry();
   return (
     <div
-      className="relative my-[1px] flex min-h-[25px] min-w-full cursor-pointer items-center justify-between text-xs hover:font-bold hover:outline hover:outline-neutral-600"
+      className="relative my-[1px] flex min-h-[16px] min-w-full items-center justify-between hover:font-bold hover:outline hover:outline-neutral-600"
       onClick={() => {
         setType(type === "ask" ? "buy" : "sell");
         setPrice(order.price.toString());
@@ -100,17 +100,18 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
   return (
     <div className="flex grow flex-col divide-y divide-solid divide-neutral-600">
       {/* title row */}
-      <div className={"mx-4 my-[12px]"}>
+      <div className={"mx-4 my-3"}>
         <div className={"flex justify-between"}>
-          <p className={"font-jost font-bold text-white"}>Order Book</p>
+          <p className={"font-jost text-sm font-bold text-white"}>Order Book</p>
           {/* select */}
-          <Listbox value={precision} onChange={setPrecision}>
-            <div className="relative z-30 min-h-[30px] border border-neutral-600 py-[8px] pl-[11px] pr-[8px]">
-              <Listbox.Button className="flex min-w-[4em] justify-between font-roboto-mono text-neutral-300">
+          {/* TODO: SHOW WHEN API IS UP */}
+          {/* <Listbox value={precision} onChange={setPrecision}>
+            <div className="relative z-30 min-h-[30px] border border-neutral-600 py-[4px] pl-[8px] pr-[4px] text-[8px]/[18px]">
+              <Listbox.Button className="flex min-w-[48px] justify-between font-roboto-mono text-neutral-300">
                 {precision}
-                <ChevronDownIcon className="my-auto ml-1 h-5 w-5 text-neutral-500" />
+                <ChevronDownIcon className="my-auto ml-1 h-[10px] w-[10px] text-neutral-500" />
               </Listbox.Button>
-              <Listbox.Options className="absolute left-0 top-11 mt-2 w-full bg-black shadow ring-1 ring-neutral-600">
+              <Listbox.Options className="absolute left-0 top-[20px] mt-2 w-full bg-black shadow ring-1 ring-neutral-600">
                 {precisionOptions.map((precisionOption) => (
                   <Listbox.Option
                     key={precisionOption}
@@ -125,18 +126,16 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
                 ))}
               </Listbox.Options>
             </div>
-          </Listbox>
+          </Listbox> */}
         </div>
-        <div
-          className={`mt-[11px] flex justify-between text-xs text-neutral-500`}
-        >
+        <div className={`mt-3 flex justify-between text-xs text-neutral-500`}>
           <div className={``}>PRICE ({marketData.quote.symbol})</div>
           <div>Size ({marketData.base?.symbol})</div>
         </div>
       </div>
       {/* bids ask spread scrollable container */}
-      <div className="scrollbar-none relative grow overflow-y-auto ">
-        <div className="absolute w-full ">
+      <div className="scrollbar-none relative grow overflow-y-auto text-xs/[22px]">
+        <div className="absolute w-full">
           {/* ASK */}
           {data?.asks.map((order) => (
             <Row
@@ -148,7 +147,7 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
           ))}
           {/* SPREAD */}
           <div
-            className="flex min-h-[40px] items-center justify-between border-y border-neutral-600 text-xs"
+            className="flex min-h-[25px] items-center justify-between border-y border-neutral-600"
             ref={centerRef}
           >
             <div className={`z-10 ml-4 text-right text-white`}>

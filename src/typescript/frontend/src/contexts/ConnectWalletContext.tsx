@@ -1,4 +1,5 @@
-import { useWallet, WalletReadyState } from "@manahippo/aptos-wallet-adapter";
+import { useWallet } from "@manahippo/aptos-wallet-adapter";
+import Image from "next/image";
 import {
   createContext,
   type PropsWithChildren,
@@ -7,6 +8,7 @@ import {
 } from "react";
 
 import { BaseModal } from "@/components/BaseModal";
+import { RightArrowIcon } from "@/components/icons/RightArrowIcon";
 
 export type ConnectWalletContextState = {
   connectWallet: () => void;
@@ -38,28 +40,31 @@ export function ConnectWalletContextProvider({ children }: PropsWithChildren) {
           In order to use this site you must connect a wallet and allow the site
           to access your account.
         </p>
-        <div className="mt-8 flex flex-col gap-4">
+        <div className="mt-4">
           {wallets.map((wallet) => (
-            <div
+            <button
               key={wallet.adapter.name}
-              className="flex w-full cursor-pointer items-center gap-2 border border-neutral-600 p-4 font-jost text-lg font-medium text-neutral-500 hover:text-white"
+              className="relative mt-4 flex w-full items-center border border-neutral-500 p-4 text-neutral-500 hover:border-blue hover:text-blue [&>*>.arrow-icon]:hover:-rotate-45 [&>*>.arrow-icon]:hover:text-white [&>*>.button-text]:hover:text-blue [&>.arrow-wrapper]:hover:border-blue  [&>.arrow-wrapper]:hover:bg-blue"
               onClick={() => {
                 select(wallet.adapter.name);
                 setOpen(false);
               }}
             >
-              <img
-                src={wallet.adapter.icon}
-                height={36}
-                width={36}
-                className=""
-              />
-              <p>
-                {wallet.readyState === WalletReadyState.NotDetected
-                  ? `Install ${wallet.adapter.name} Wallet`
-                  : `${wallet.adapter.name} Wallet`}
-              </p>
-            </div>
+              <div className="flex items-center">
+                <Image
+                  src={wallet.adapter.icon}
+                  alt={`${wallet.adapter.name} Icon`}
+                  height={36}
+                  width={36}
+                />
+                <p className="button-text ml-3 font-jost text-lg font-medium text-white">
+                  {`${wallet.adapter.name} Wallet`}
+                </p>
+              </div>
+              <div className="arrow-wrapper absolute bottom-0 right-0 mb-0 mt-auto flex h-10 w-10 flex-col border-l-2 border-t-2 border-neutral-500 p-0.5">
+                <RightArrowIcon className="arrow-icon m-auto h-7 w-7 text-neutral-500 transition-all duration-150" />
+              </div>
+            </button>
           ))}
         </div>
       </BaseModal>

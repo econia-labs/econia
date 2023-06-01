@@ -146,122 +146,114 @@ export const StatsBar: React.FC<{
           }}
         />
       </BaseModal>
-      <div className="flex overflow-x-clip border-b border-neutral-600 bg-black px-9 py-4">
-        <div className="flex flex-1 items-center whitespace-nowrap  [&>.mobile-stat]:block md:[&>.mobile-stat]:hidden [&>.stat]:mx-7 [&>.stat]:mb-1 [&>.stat]:hidden md:[&>.stat]:block ">
-          <>
-            <MarketIconPair
-              baseAssetIcon={data?.pairData.baseAssetIcon}
-              quoteAssetIcon={data?.pairData.quoteAssetIcon}
-            />
-
-            <div className="relative ml-10 mr-7 min-w-[170px]">
-              <button
-                className="flex font-roboto-mono text-xl text-neutral-300 md:text-2xl"
-                onClick={() => {
-                  setIsModalOpen(true);
-                }}
-              >
-                {selectedMarket.name.split("-")[0]} -{" "}
-                {selectedMarket.name.split("-")[1]}
-                <ChevronDownIcon className="my-auto ml-1 h-5 w-5 text-white" />
-              </button>
-            </div>
-          </>
-          {/* mobile price */}
-          <div className="mobile-stat block">
-            <p className="font-roboto-mono font-light">
-              <span className="inline-block min-w-[4em] text-xl text-white">
-                ${formatNumber(data?.lastPrice, 2)}
-              </span>
-              <span
-                className={`ml-1 inline-block min-w-[6em] text-base ${
-                  (data?.lastPriceChange || 0) < 0 ? "text-red" : "text-green"
-                }`}
-              >
-                {formatNumber(data?.lastPriceChange, 4, "always")}
-              </span>
-            </p>
+      <div className="flex items-center justify-between gap-2 overflow-x-clip whitespace-nowrap border-b border-neutral-600 px-9 py-4 [&>.mobile-stat]:block md:[&>.mobile-stat]:hidden [&>.stat]:hidden md:[&>.stat]:block">
+        <div className="flex items-center gap-4">
+          <MarketIconPair
+            baseAssetIcon={data?.pairData.baseAssetIcon}
+            quoteAssetIcon={data?.pairData.quoteAssetIcon}
+          />
+          <div className="min-w-[170px]">
+            <button
+              className="flex font-roboto-mono text-xl text-neutral-300 md:text-2xl"
+              onClick={() => {
+                setIsModalOpen(true);
+              }}
+            >
+              {selectedMarket.name}
+              <ChevronDownIcon className="my-auto ml-2 h-5 w-5 text-white" />
+            </button>
           </div>
-          {/* price */}
-          <div className="stat">
-            <span className="font-roboto-mono text-base font-light uppercase text-neutral-400">
-              Last price
+        </div>
+        {/* mobile price */}
+        <div className="mobile-stat block">
+          <p className="font-roboto-mono font-light">
+            <span className="inline-block min-w-[4em] text-xl text-white">
+              ${formatNumber(data?.lastPrice, 2)}
             </span>
-            <p className="font-roboto-mono font-light">
-              <span className="inline-block min-w-[6em] text-white">
-                ${formatNumber(data?.lastPrice, 2)}
-              </span>
-              <span
-                className={`ml-1 inline-block min-w-[6em] ${
-                  (data?.lastPriceChange || 0) < 0 ? "text-red" : "text-green"
-                }`}
-              >
-                {formatNumber(data?.lastPriceChange, 4, "always")}
-              </span>
-            </p>
-          </div>
-          {/* 24 hr */}
-          <div className="stat">
-            <span className="font-roboto-mono text-base font-light uppercase text-neutral-400">
-              24h change
+            <span
+              className={`ml-1 inline-block min-w-[6em] text-base ${
+                (data?.lastPriceChange || 0) < 0 ? "text-red" : "text-green"
+              }`}
+            >
+              {formatNumber(data?.lastPriceChange, 4, "always")}
             </span>
-            <p className="font-roboto-mono font-light">
-              <span className="inline-block min-w-[6em] text-white">
-                {formatNumber(data?.change24h, 4)}
-              </span>
-              <span
-                className={`ml-1 inline-block min-w-[6em] ${
-                  (data?.change24hPercent || 0) < 0 ? "text-red" : "text-green"
-                }`}
-              >
-                {formatNumber(data?.change24hPercent, 4, "always")}%
-              </span>
-            </p>
-          </div>
-          {/* 24 hr high */}
-          <div className="stat">
-            <span className="font-roboto-mono text-base font-light uppercase text-neutral-400">
-              24h high
+          </p>
+        </div>
+        {/* price */}
+        <div className="stat">
+          <span className="font-roboto-mono text-base font-light uppercase text-neutral-500">
+            Last price
+          </span>
+          <div className="flex gap-2 font-roboto-mono font-light">
+            <span className="inline-block min-w-[6em] text-white">
+              ${formatNumber(data?.lastPrice, 2)}
             </span>
-            <p className="font-roboto-mono font-light">
-              <span className="text-white">
-                {formatNumber(data?.high24h, 4)}
-              </span>
-            </p>
-          </div>
-          {/* 24 hr low */}
-          <div className="stat">
-            <span className="font-roboto-mono text-base font-light uppercase text-neutral-400">
-              24h low
+            <span
+              className={`ml-1 inline-block min-w-[6em] ${
+                (data?.lastPriceChange || 0) < 0 ? "text-red" : "text-green"
+              }`}
+            >
+              {formatNumber(data?.lastPriceChange, 4, "always")}
             </span>
-            <p className="font-roboto-mono font-light">
-              <span className="text-white">
-                {formatNumber(data?.low24h, 4)}
-              </span>
-            </p>
           </div>
-          {/* 24 hr main */}
-          <div className="stat">
-            <span className="font-roboto-mono text-base font-light  text-neutral-400">
-              24H VOLUME ({data?.pairData.baseAsset || "-"})
+        </div>
+        {/* 24 hr */}
+        <div className="stat">
+          <span className="font-roboto-mono text-base font-light uppercase text-neutral-500">
+            24h change
+          </span>
+          <p className="flex gap-2 font-roboto-mono font-light">
+            <span className="inline-block min-w-[6em] text-white">
+              {formatNumber(data?.change24h, 4)}
             </span>
-            <p className="font-roboto-mono font-light">
-              <span className="text-white">
-                {formatNumber(data?.pairData.baseVolume, 4)}
-              </span>
-            </p>
-          </div>
-          {/* 24 hr pair */}
-          <div className="stat">
-            <span className="font-roboto-mono text-base font-light  text-neutral-400">
-              24H VOLUME ({data?.pairData.quoteAsset || "-"})
+            <span
+              className={`ml-1 inline-block min-w-[6em] ${
+                (data?.change24hPercent || 0) < 0 ? "text-red" : "text-green"
+              }`}
+            >
+              {formatNumber(data?.change24hPercent, 4, "always")}%
             </span>
-            <p className="font-roboto-mono font-light">
-              <span className="text-white">
-                {formatNumber(data?.pairData.quoteVolume, 4)}
-              </span>
-            </p>
-          </div>
+          </p>
+        </div>
+        {/* 24 hr high */}
+        <div className="stat">
+          <span className="font-roboto-mono text-base font-light uppercase text-neutral-500">
+            24h high
+          </span>
+          <p className="font-roboto-mono font-light">
+            <span className="text-white">{formatNumber(data?.high24h, 4)}</span>
+          </p>
+        </div>
+        {/* 24 hr low */}
+        <div className="stat">
+          <span className="font-roboto-mono text-base font-light uppercase text-neutral-500">
+            24h low
+          </span>
+          <p className="font-roboto-mono font-light">
+            <span className="text-white">{formatNumber(data?.low24h, 4)}</span>
+          </p>
+        </div>
+        {/* 24 hr main */}
+        <div className="stat">
+          <span className="font-roboto-mono text-base font-light  text-neutral-500">
+            24H VOLUME ({data?.pairData.baseAsset || "-"})
+          </span>
+          <p className="font-roboto-mono font-light">
+            <span className="text-white">
+              {formatNumber(data?.pairData.baseVolume, 4)}
+            </span>
+          </p>
+        </div>
+        {/* 24 hr pair */}
+        <div className="stat">
+          <span className="font-roboto-mono text-base font-light  text-neutral-500">
+            24H VOLUME ({data?.pairData.quoteAsset || "-"})
+          </span>
+          <p className="font-roboto-mono font-light">
+            <span className="text-white">
+              {formatNumber(data?.pairData.quoteVolume, 4)}
+            </span>
+          </p>
         </div>
 
         <SocialMediaIcons className={"my-auto hidden md:block"} />

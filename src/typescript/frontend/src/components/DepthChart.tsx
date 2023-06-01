@@ -6,6 +6,7 @@ import { Line } from "react-chartjs-2";
 import { useOrderBook } from "@/hooks/useOrderbook";
 import { type ApiMarket } from "@/types/api";
 import { formatNumber } from "@/utils/formatter";
+
 export const ZERO_BIGNUMBER = new BigNumber(0);
 
 export const DepthChart: React.FC<{

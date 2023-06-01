@@ -1,12 +1,13 @@
 use bigdecimal::{BigDecimal, ToPrimitive};
 use chrono::{DateTime, Utc};
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
-use crate::{error::TypeError, stats::Stats, Coin, Market};
+use types::error::TypeError;
 
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct MarketIdQuery {
+    pub market_id: BigDecimal,
+}
+
+#[derive(Debug, Clone)]
 pub struct QueryMarket {
     pub market_id: BigDecimal,
     pub name: String,
@@ -30,7 +31,7 @@ pub struct QueryMarket {
     pub created_at: DateTime<Utc>,
 }
 
-impl TryFrom<QueryMarket> for Market {
+impl TryFrom<QueryMarket> for types::Market {
     type Error = TypeError;
 
     fn try_from(value: QueryMarket) -> Result<Self, Self::Error> {
@@ -55,7 +56,7 @@ impl TryFrom<QueryMarket> for Market {
                 name: "underwriter_id".into(),
             })?;
 
-        let quote = Coin {
+        let quote = types::Coin {
             account_address: value.quote_account_address,
             module_name: value.quote_module_name,
             struct_name: value.quote_struct_name,
@@ -88,7 +89,7 @@ impl TryFrom<QueryMarket> for Market {
                 name: "base_decimals".into(),
             })?;
 
-            let base = Coin {
+            let base = types::Coin {
                 account_address: base_account_address,
                 module_name: base_module_name,
                 struct_name: base_struct_name,
@@ -97,7 +98,7 @@ impl TryFrom<QueryMarket> for Market {
                 decimals: base_decimals,
             };
 
-            let market = Market {
+            let market = types::Market {
                 market_id,
                 name: value.name,
                 base: Some(base),
@@ -129,7 +130,7 @@ impl TryFrom<QueryMarket> for Market {
                     name: "base_decimals".into(),
                 });
             };
-            let market = Market {
+            let market = types::Market {
                 market_id,
                 name: value.name,
                 base: None,
@@ -145,64 +146,4 @@ impl TryFrom<QueryMarket> for Market {
             Ok(market)
         }
     }
-}
-
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct QueryStats {
-    pub market_id: BigDecimal,
-    pub open: BigDecimal,
-    pub high: BigDecimal,
-    pub low: BigDecimal,
-    pub close: BigDecimal,
-    pub change: BigDecimal,
-    pub volume: BigDecimal,
-}
-
-impl TryFrom<QueryStats> for Stats {
-    type Error = TypeError;
-
-    fn try_from(value: QueryStats) -> Result<Self, Self::Error> {
-        let market_id = value.market_id.to_u64().ok_or(TypeError::ConversionError {
-            name: "market_id".into(),
-        })?;
-        let open = value.open.to_u64().ok_or(TypeError::ConversionError {
-            name: "open".into(),
-        })?;
-        let low = value
-            .low
-            .to_u64()
-            .ok_or(TypeError::ConversionError { name: "low".into() })?;
-        let high = value.high.to_u64().ok_or(TypeError::ConversionError {
-            name: "high".into(),
-        })?;
-        let close = value.close.to_u64().ok_or(TypeError::ConversionError {
-            name: "close".into(),
-        })?;
-        let change = value.change.to_f64().ok_or(TypeError::ConversionError {
-            name: "change".into(),
-        })?;
-        // There can be floating point precision issues with the PostgreSQL
-        // round function.
-        let change = (change * 1e9).round() / 1e9;
-        let volume = value.volume.to_u64().ok_or(TypeError::ConversionError {
-            name: "volume".into(),
-        })?;
-
-        Ok(Stats {
-            market_id,
-            open,
-            high,
-            low,
-            close,
-            change,
-            volume,
-        })
-    }
-}
-
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct MarketIdQuery {
-    pub market_id: BigDecimal,
 }

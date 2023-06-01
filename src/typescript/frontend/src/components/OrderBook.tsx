@@ -138,7 +138,7 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
           ))}
           {/* SPREAD */}
           <div
-            className="flex min-h-[40px] items-center justify-between border border-neutral-600 text-xs"
+            className="flex min-h-[40px] items-center justify-between border-y border-neutral-600 text-xs"
             ref={centerRef}
           >
             <div className={`z-10 ml-4 text-right text-white`}>

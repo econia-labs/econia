@@ -8,7 +8,7 @@ on:
       - dev
     paths:
       - doc/api-docs/**
-      - .github/workflows/deploy-docs.yml
+      - .github/workflows/deploy-api-docs.yml
 
 jobs:
   build:

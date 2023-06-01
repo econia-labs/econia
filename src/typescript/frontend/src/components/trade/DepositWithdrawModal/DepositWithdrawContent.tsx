@@ -1,21 +1,18 @@
-import { entryFunctions } from "@econia-labs/sdk";
 import { Menu, Tab } from "@headlessui/react";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
-import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import React, { useState } from "react";
 
 import { Button } from "@/components/Button";
 import { Input } from "@/components/Input";
-import { NO_CUSTODIAN } from "@/constants";
-import { useAptos } from "@/contexts/AptosContext";
-import { ECONIA_ADDR } from "@/env";
 import { useCoinBalance } from "@/hooks/useCoinBalance";
 import { type ApiCoin, type ApiMarket } from "@/types/api";
-import { type Collateral, type TabListNode } from "@/types/econia";
-import { type MoveCoin, type U128 } from "@/types/move";
-import { fromRawCoinAmount, toRawCoinAmount } from "@/utils/coin";
-import { makeMarketAccountId } from "@/utils/econia";
+import { useAptos } from "@/contexts/AptosContext";
+import { ECONIA_ADDR } from "@/env";
+import { NO_CUSTODIAN } from "@/constants";
 import { TypeTag } from "@/utils/TypeTag";
+import { entryFunctions } from "@econia-labs/sdk";
+import { toRawCoinAmount } from "@/utils/coin";
+import { useMarketAccountBalance } from "@/hooks/useMarketAccountBalance";
 
 const SelectCoinInput: React.FC<{
   coins: ApiCoin[];
@@ -75,35 +72,10 @@ const DepositWithdrawForm: React.FC<{
   const [selectedCoin, setSelectedCoin] = useState<ApiCoin>(
     selectedMarket.base ?? selectedMarket.quote
   );
-  const { data: marketAccountBalance } = useQuery(
-    [
-      "useMarketAccountBalance",
-      account?.address,
-      selectedMarket?.market_id,
-      selectedCoin,
-    ],
-    async () => {
-      if (!account?.address || !selectedMarket) return null;
-      const selectedCoinTypeTag = TypeTag.fromApiCoin(selectedCoin).toString();
-      const collateral = await aptosClient
-        .getAccountResource(
-          account.address,
-          `${ECONIA_ADDR}::user::Collateral<${selectedCoinTypeTag}>`
-        )
-        .then(({ data }) => data as Collateral);
-      return await aptosClient
-        .getTableItem(collateral.map.table.inner.handle, {
-          key_type: "u128",
-          value_type: TypeTag.fromTablistNode({
-            key: "u128",
-            value: `0x1::coin::Coin<${selectedCoinTypeTag}>`,
-          }).toString(),
-          key: makeMarketAccountId(selectedMarket.market_id, NO_CUSTODIAN),
-        })
-        .then((node: TabListNode<U128, MoveCoin>) =>
-          fromRawCoinAmount(node.value.value, selectedCoin.decimals)
-        );
-    }
+  const { data: marketAccountBalance } = useMarketAccountBalance(
+    account?.address,
+    selectedMarket.market_id,
+    selectedCoin
   );
 
   const [amount, setAmount] = useState<string>("");

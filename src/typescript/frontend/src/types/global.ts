@@ -1,4 +1,5 @@
 export type Side = "buy" | "sell";
+export type Direction = "buy" | "sell";
 export type PriceLevel = {
   price: number;
   size: number;

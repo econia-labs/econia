@@ -12,8 +12,9 @@ export const BaseModal: React.FC<
     onClose: () => void;
     onBack?: () => void;
     showCloseButton?: boolean;
+    showBackButton?: boolean;
   }>
-> = ({ open, onClose, onBack, showCloseButton = true, children }) => {
+> = ({ open, onClose, onBack, showBackButton, showCloseButton, children }) => {
   return (
     <Transition appear show={open} as={Fragment}>
       <Dialog as="div" className="relative z-50" open={open} onClose={onClose}>
@@ -38,7 +39,7 @@ export const BaseModal: React.FC<
               }}
             >
               <Dialog.Title as="div">
-                {onBack && (
+                {showBackButton && (
                   <div
                     className="absolute left-[24px] top-[24px] flex cursor-pointer items-center justify-center font-roboto-mono text-neutral-500 transition-all hover:text-white"
                     onClick={onBack}

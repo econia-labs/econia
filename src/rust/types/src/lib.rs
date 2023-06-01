@@ -9,7 +9,6 @@ pub mod error;
 pub mod events;
 pub mod message;
 pub mod order;
-pub mod query;
 pub mod stats;
 
 #[derive(Debug, Clone)]

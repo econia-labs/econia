@@ -4,6 +4,7 @@ use axum::{
 };
 use bigdecimal::BigDecimal;
 use chrono::{DateTime, Duration, NaiveDateTime, Utc};
+use db::query::{market::QueryMarket, stats::QueryStats};
 use serde::{Deserialize, Serialize};
 use sqlx::postgres::types::PgInterval;
 use types::{bar::Resolution, book::PriceLevel, error::TypeError, stats::Stats, Market};
@@ -14,7 +15,7 @@ pub async fn get_markets(
     State(state): State<AppState>,
 ) -> Result<Json<Vec<types::Market>>, ApiError> {
     let query_markets = sqlx::query_as!(
-        types::query::QueryMarket,
+        QueryMarket,
         r#"
         select
             market_id,
@@ -65,7 +66,7 @@ pub async fn get_market_by_id(
     let market_id = BigDecimal::from(market_id);
 
     let query_markets = sqlx::query_as!(
-        types::query::QueryMarket,
+        QueryMarket,
         r#"
         select
             market_id,
@@ -127,7 +128,7 @@ pub async fn get_stats(
         .expect("never fails because Duration resolution can only be member of enum Resolution");
 
     let query_tickers = sqlx::query_as!(
-        types::query::QueryStats,
+        QueryStats,
         r#"
         with bars as (
             select * from bars_1m
@@ -186,7 +187,7 @@ pub async fn get_stats_by_id(
     let market_id = BigDecimal::from(market_id);
 
     let query_tickers = sqlx::query_as!(
-        types::query::QueryStats,
+        QueryStats,
         r#"
         with bars as (
             select * from bars_1m

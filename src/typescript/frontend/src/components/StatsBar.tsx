@@ -1,6 +1,5 @@
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import { useQuery } from "@tanstack/react-query";
-import Image from "next/image";
 import { useRouter } from "next/router";
 import React, { useState } from "react";
 
@@ -13,9 +12,10 @@ import { BaseModal } from "./BaseModal";
 import { DiscordIcon } from "./icons/DiscordIcon";
 import { MediumIcon } from "./icons/MediumIcon";
 import { TwitterIcon } from "./icons/TwitterIcon";
+import { MarketIconPair } from "./MarketIconPair";
 import { SelectMarketContent } from "./trade/DepositWithdrawModal/SelectMarketContent";
-
 const DEFAULT_TOKEN_ICON = "/tokenImages/default.png";
+import { averageOrOther, formatNumber } from "@/utils/formatter";
 
 type MarketStats = {
   // selected market pair data
@@ -35,43 +35,15 @@ type MarketStats = {
   };
 };
 
-const MarketIconPair: React.FC<{
-  baseAssetIcon?: string;
-  quoteAssetIcon?: string;
-}> = ({
-  baseAssetIcon = DEFAULT_TOKEN_ICON,
-  quoteAssetIcon = DEFAULT_TOKEN_ICON,
-}) => {
-  return (
-    <div className="relative flex w-[45px] md:w-[60px]">
-      {/* height width props required */}
-      <Image
-        src={baseAssetIcon}
-        alt="market-icon-pair"
-        width={40}
-        height={40}
-        className="z-20 aspect-square w-[30px] md:w-[40px]"
-      />
-      <Image
-        src={quoteAssetIcon}
-        alt="market-icon-pair"
-        width={40}
-        height={40}
-        className="absolute z-10 ml-[15px] aspect-square w-[30px] md:ml-[20px] md:w-[40px]"
-      />
-    </div>
-  );
-};
-
 const SocialMediaIcons: React.FC<{ className?: string }> = ({ className }) => {
   return (
     <div className={className}>
-      <div className="flex">
+      <div className="flex [&>a]:h-[18px] [&>a]:min-w-[18px] ">
         <a
           href="https://twitter.com/EconiaLabs"
           target="_blank"
           rel="noreferrer"
-          className="mx-3 aspect-square h-[28px]  min-w-[28px]  cursor-pointer text-white hover:text-blue"
+          className="mx-3 aspect-square cursor-pointer text-white hover:text-blue"
         >
           <TwitterIcon />
         </a>
@@ -79,7 +51,7 @@ const SocialMediaIcons: React.FC<{ className?: string }> = ({ className }) => {
           href="https://discord.com/invite/Z7gXcMgX8A"
           target="_blank"
           rel="noreferrer"
-          className="mx-3 aspect-square h-[28px]  min-w-[28px]  cursor-pointer text-white hover:text-blue"
+          className="mx-3 aspect-square cursor-pointer text-white hover:text-blue"
         >
           <DiscordIcon />
         </a>
@@ -87,7 +59,7 @@ const SocialMediaIcons: React.FC<{ className?: string }> = ({ className }) => {
           href="https://medium.com/econialabs"
           target="_blank"
           rel="noreferrer"
-          className="mx-3 aspect-square h-[28px]  min-w-[28px]  cursor-pointer text-white hover:text-blue"
+          className="mx-3 aspect-square cursor-pointer text-white hover:text-blue"
         >
           <MediumIcon />
         </a>
@@ -129,8 +101,8 @@ export const StatsBar: React.FC<{
       // END MOCK API CALL
       return {
         lastPrice: averageOrOther(
-          priceRes.asks[0].price,
-          priceRes.bids[0].price
+          priceRes.asks ? priceRes.asks[0].price : undefined,
+          priceRes.bids ? priceRes.bids[0].price : undefined
         ),
         lastPriceChange: 10.1738, // TODO: Mock data
         change24h: res.close,
@@ -174,15 +146,15 @@ export const StatsBar: React.FC<{
           }}
         />
       </BaseModal>
-      <div className="flex items-center justify-between gap-2 overflow-x-clip whitespace-nowrap border-b border-neutral-600 bg-black px-9 py-4 [&>.mobile-stat]:block md:[&>.mobile-stat]:hidden [&>.stat]:hidden md:[&>.stat]:block">
+      <div className="flex items-center justify-between gap-2 overflow-x-clip whitespace-nowrap border-b border-neutral-600 px-9 py-4 [&>.mobile-stat]:block md:[&>.mobile-stat]:hidden [&>.stat]:hidden md:[&>.stat]:block">
         <div className="flex items-center gap-4">
           <MarketIconPair
             baseAssetIcon={data?.pairData.baseAssetIcon}
             quoteAssetIcon={data?.pairData.quoteAssetIcon}
           />
-          <div className="min-w-[170px]">
+          <div className="min-w-[130px]">
             <button
-              className="flex font-roboto-mono text-xl text-neutral-300 md:text-2xl"
+              className="flex font-roboto-mono text-2xl text-neutral-300 md:text-base"
               onClick={() => {
                 setIsModalOpen(true);
               }}
@@ -199,7 +171,7 @@ export const StatsBar: React.FC<{
               ${formatNumber(data?.lastPrice, 2)}
             </span>
             <span
-              className={`ml-1 inline-block min-w-[6em] text-base ${
+              className={`ml-1 inline-block min-w-[6em]  ${
                 (data?.lastPriceChange || 0) < 0 ? "text-red" : "text-green"
               }`}
             >
@@ -209,7 +181,7 @@ export const StatsBar: React.FC<{
         </div>
         {/* price */}
         <div className="stat">
-          <span className="font-roboto-mono text-base font-light uppercase text-neutral-500">
+          <span className="font-roboto-mono  font-light uppercase text-neutral-500">
             Last price
           </span>
           <div className="flex gap-2 font-roboto-mono font-light">
@@ -227,7 +199,7 @@ export const StatsBar: React.FC<{
         </div>
         {/* 24 hr */}
         <div className="stat">
-          <span className="font-roboto-mono text-base font-light uppercase text-neutral-500">
+          <span className="font-roboto-mono font-light uppercase text-neutral-500">
             24h change
           </span>
           <p className="flex gap-2 font-roboto-mono font-light">
@@ -245,7 +217,7 @@ export const StatsBar: React.FC<{
         </div>
         {/* 24 hr high */}
         <div className="stat">
-          <span className="font-roboto-mono text-base font-light uppercase text-neutral-500">
+          <span className="font-roboto-mono font-light uppercase text-neutral-500">
             24h high
           </span>
           <p className="font-roboto-mono font-light">
@@ -254,7 +226,7 @@ export const StatsBar: React.FC<{
         </div>
         {/* 24 hr low */}
         <div className="stat">
-          <span className="font-roboto-mono text-base font-light uppercase text-neutral-500">
+          <span className="font-roboto-mono font-light uppercase text-neutral-500">
             24h low
           </span>
           <p className="font-roboto-mono font-light">
@@ -263,7 +235,7 @@ export const StatsBar: React.FC<{
         </div>
         {/* 24 hr main */}
         <div className="stat">
-          <span className="font-roboto-mono text-base font-light  text-neutral-500">
+          <span className="font-roboto-mono font-light text-neutral-500">
             24H VOLUME ({data?.pairData.baseAsset || "-"})
           </span>
           <p className="font-roboto-mono font-light">
@@ -274,7 +246,7 @@ export const StatsBar: React.FC<{
         </div>
         {/* 24 hr pair */}
         <div className="stat">
-          <span className="font-roboto-mono text-base font-light  text-neutral-500">
+          <span className="font-roboto-mono font-light  text-neutral-500">
             24H VOLUME ({data?.pairData.quoteAsset || "-"})
           </span>
           <p className="font-roboto-mono font-light">
@@ -288,38 +260,4 @@ export const StatsBar: React.FC<{
       </div>
     </>
   );
-};
-
-const formatNumber = (
-  num: number | undefined,
-  digits: number,
-  signDisplay: Intl.NumberFormatOptions["signDisplay"] = "never"
-): string => {
-  if (!num) return "-";
-  const lang =
-    typeof window === "undefined"
-      ? "en"
-      : navigator.language || navigator.languages[0];
-  return num.toLocaleString(lang, {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits,
-    signDisplay,
-  });
-};
-
-const averageOrOther = (
-  price1: number | undefined,
-  price2: number | undefined
-): number | undefined => {
-  if (price1 !== undefined && price2 !== undefined) {
-    return (price1 + price2) / 2;
-  }
-  if (price2 == undefined) {
-    return price1;
-  }
-  if (price1 == undefined) {
-    return price2;
-  }
-  // no prices (orderbook empty) maybe should get the last sale price then?
-  return 0;
 };

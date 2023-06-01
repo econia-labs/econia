@@ -1,4 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
 import BigNumber from "bignumber.js";
 import { Chart } from "chart.js";
 import { useMemo } from "react";
@@ -6,7 +5,7 @@ import { Line } from "react-chartjs-2";
 
 import { useOrderBook } from "@/hooks/useOrderbook";
 import { type ApiMarket } from "@/types/api";
-import { toDecimalSize, toDecimalPrice } from "@/utils/econia";
+import { formatNumber } from "@/utils/formatter";
 
 export const ZERO_BIGNUMBER = new BigNumber(0);
 
@@ -252,6 +251,41 @@ export const DepthChart: React.FC<{
   );
 };
 
+// depth chart related util
+const TEN = new BigNumber(10);
+export const toDecimalPrice = ({
+  price,
+  lotSize,
+  tickSize,
+  baseCoinDecimals,
+  quoteCoinDecimals,
+}: {
+  price: BigNumber;
+  lotSize: BigNumber;
+  tickSize: BigNumber;
+  baseCoinDecimals: BigNumber;
+  quoteCoinDecimals: BigNumber;
+}) => {
+  const lotsPerUnit = TEN.exponentiatedBy(baseCoinDecimals).div(lotSize);
+  const pricePerLot = price
+    .multipliedBy(tickSize)
+    .div(TEN.exponentiatedBy(quoteCoinDecimals));
+  return pricePerLot.multipliedBy(lotsPerUnit);
+};
+
+export const toDecimalSize = ({
+  size,
+  lotSize,
+  baseCoinDecimals,
+}: {
+  size: BigNumber;
+  lotSize: BigNumber;
+  baseCoinDecimals: BigNumber;
+}) => {
+  return size.multipliedBy(lotSize).div(TEN.exponentiatedBy(baseCoinDecimals));
+};
+
+// crosshair plugin
 interface CorsairPluginOptions {
   width: number;
   color: string;
@@ -322,12 +356,3 @@ const plugin = {
   },
 };
 Chart.register(plugin);
-
-// taken from statsbar
-const formatNumber = (num: number | undefined, digits: number): string => {
-  if (!num) return "-";
-  return num.toLocaleString("en", {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits,
-  });
-};

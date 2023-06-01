@@ -8,17 +8,17 @@ export const OrderEntryInputWrapper: React.FC<
   }>
 > = ({ startAdornment, endAdornment, labelFor, children }) => {
   return (
-    <div className="flex h-12 w-full items-baseline gap-2 border border-neutral-600 p-4">
+    <div className="flex h-10 w-full items-baseline gap-2 border border-neutral-600 px-4 py-2">
       {/* start adornment */}
       <label
         htmlFor={labelFor}
-        className="flex h-full items-center whitespace-nowrap font-roboto-mono text-white"
+        className="flex h-full items-center whitespace-nowrap font-roboto-mono text-xs text-white"
       >
         {startAdornment}
       </label>
       {children}
       {/* end adornment */}
-      <span className="flex h-full items-center font-roboto-mono font-light text-neutral-400">
+      <span className="flex h-full items-center font-roboto-mono text-xs font-light text-neutral-400">
         {endAdornment}
       </span>
     </div>

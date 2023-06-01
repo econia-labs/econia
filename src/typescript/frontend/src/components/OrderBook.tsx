@@ -90,11 +90,9 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
   return (
     <div className="flex grow flex-col divide-y divide-solid divide-neutral-600">
       {/* title row */}
-      <div className={"mx-4 my-[12px]"}>
+      <div className={"mx-4 my-3"}>
         <div className={"flex justify-between"}>
-          <p className={"font-jost text-xs/[30px] font-bold text-white"}>
-            Order Book
-          </p>
+          <p className={"font-jost text-sm font-bold text-white"}>Order Book</p>
           {/* select */}
           {/* TODO: SHOW WHEN API IS UP */}
           {/* <Listbox value={precision} onChange={setPrecision}>
@@ -120,16 +118,14 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
             </div>
           </Listbox> */}
         </div>
-        <div
-          className={`mt-[11px] flex justify-between text-[8px]/[18px] text-neutral-500`}
-        >
+        <div className={`mt-3 flex justify-between text-xs text-neutral-500`}>
           <div className={``}>PRICE ({marketData.quote.symbol})</div>
           <div>Size ({marketData.base?.symbol})</div>
         </div>
       </div>
       {/* bids ask spread scrollable container */}
-      <div className="scrollbar-none relative grow overflow-y-auto text-[8px]/[18px] ">
-        <div className="absolute w-full ">
+      <div className="scrollbar-none relative grow overflow-y-auto text-xs/[22px]">
+        <div className="absolute w-full">
           {/* ASK */}
           {data?.asks.map((order) => (
             <Row

@@ -28,7 +28,7 @@ const Row: React.FC<{
   const { setType, setPrice } = useOrderEntry();
   return (
     <div
-      className="relative my-[1px] flex min-h-[25px] min-w-full cursor-pointer items-center justify-between text-xs"
+      className="relative my-[1px] flex min-h-[25px] min-w-full cursor-pointer items-center justify-between text-xs hover:font-bold hover:outline hover:outline-neutral-600"
       onClick={() => {
         setType(type === "ask" ? "buy" : "sell");
         setPrice(order.price.toString());

@@ -84,7 +84,7 @@ export default function Market({ allMarketData, marketData }: Props) {
   return (
     <Page>
       <StatsBar selectedMarket={marketData} />
-      <main className="flex flex-1 space-x-3 px-3 py-3">
+      <main className="flex w-full space-x-3 px-3 py-3">
         <div className="flex flex-1 flex-col space-y-3">
           <ChartCard className="flex flex-1 flex-col">
             {isScriptReady && <TVChartContainer {...defaultTVChartProps} />}
@@ -95,12 +95,12 @@ export default function Market({ allMarketData, marketData }: Props) {
             <OrdersTable allMarketData={allMarketData} />
           </ChartCard>
         </div>
-        <div className="flex w-[360px] flex-initial flex-col border-neutral-600">
+        <div className="flex min-w-[360px] flex-initial flex-col border-neutral-600">
           <ChartCard className="flex flex-1 flex-col">
             <OrderBook marketData={marketData} />
           </ChartCard>
         </div>
-        <div className="flex w-[360px] flex-initial flex-col border-neutral-600">
+        <div className="flex min-w-[360px] flex-initial flex-col border-neutral-600">
           <div className="flex flex-1 flex-col space-y-3">
             <ChartCard className="flex-1">
               <OrderEntry marketData={marketData} />

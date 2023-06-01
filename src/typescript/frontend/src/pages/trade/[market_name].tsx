@@ -99,13 +99,15 @@ export default function Market({ allMarketData, marketData }: Props) {
             <OrderBook marketData={marketData} />
           </ChartCard>
         </div>
-        <div className="flex min-w-[260px] flex-initial flex-col gap-4 border-neutral-600">
+        <div className="flex min-w-[268px] flex-initial flex-col gap-4 border-neutral-600">
           <div className="flex flex-1 flex-col gap-4">
             <ChartCard className="flex-1">
               <OrderEntry marketData={marketData} />
             </ChartCard>
             <ChartCard>
-              <ChartName className="mb-4">Trade History</ChartName>
+              <ChartName className="mb-3 mt-3 font-bold">
+                Trade History
+              </ChartName>
               <TradeHistoryTable marketData={marketData} />
             </ChartCard>
           </div>

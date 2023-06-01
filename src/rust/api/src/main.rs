@@ -122,16 +122,13 @@ fn init_tracing(env: Env) {
 }
 
 async fn get_market_ids(pool: Pool<Postgres>) -> Vec<u64> {
-    sqlx::query_as!(
-        MarketIdQuery,
-        r#"select market_id from markets;"#
-    )
-    .fetch_all(&pool)
-    .await
-    .unwrap()
-    .into_iter()
-    .map(|v| v.market_id.to_u64().unwrap())
-    .collect::<Vec<u64>>()
+    sqlx::query_as!(MarketIdQuery, r#"select market_id from markets;"#)
+        .fetch_all(&pool)
+        .await
+        .unwrap()
+        .into_iter()
+        .map(|v| v.market_id.to_u64().unwrap())
+        .collect::<Vec<u64>>()
 }
 
 async fn start_redis_channels(

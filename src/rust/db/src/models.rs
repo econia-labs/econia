@@ -1,4 +1,7 @@
-use bigdecimal::{BigDecimal, num_bigint::{BigInt, ToBigInt}, FromPrimitive, ToPrimitive};
+use bigdecimal::{
+    num_bigint::{BigInt, ToBigInt},
+    BigDecimal, FromPrimitive, ToPrimitive,
+};
 
 pub mod bar;
 pub mod coin;

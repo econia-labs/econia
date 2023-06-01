@@ -119,7 +119,7 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
           </p>
           {/* select */}
           {/* TODO: SHOW WHEN API IS UP */}
-          <Listbox value={precision} onChange={setPrecision}>
+          {/* <Listbox value={precision} onChange={setPrecision}>
             <div className="relative z-30 min-h-[30px] border border-neutral-600 py-[4px] pl-[8px] pr-[4px] text-[8px]/[18px]">
               <Listbox.Button className="flex min-w-[48px] justify-between font-roboto-mono text-neutral-300">
                 {precision}
@@ -140,7 +140,7 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
                 ))}
               </Listbox.Options>
             </div>
-          </Listbox>
+          </Listbox> */}
         </div>
         <div
           className={`mt-[11px] flex justify-between text-[8px]/[18px] text-neutral-500`}

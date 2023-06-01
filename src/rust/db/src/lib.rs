@@ -14,6 +14,7 @@ use crate::{
 
 pub mod error;
 pub mod models;
+pub mod query;
 pub mod schema;
 
 pub type Result<T> = std::result::Result<T, DbError>;

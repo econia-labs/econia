@@ -89,7 +89,7 @@ export const LimitOrderEntry: React.FC<{
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <div className="mx-4">
+      <div className="mx-4 ">
         <OrderEntryInputWrapper
           startAdornment="LIMIT PRICE"
           endAdornment={marketData.quote.symbol}
@@ -99,7 +99,7 @@ export const LimitOrderEntry: React.FC<{
             step="any"
             placeholder="0.00"
             {...register("price", {
-              required: "required",
+              required: "REQUIRED",
               min: 0,
               // TODO: check that amount * size does not exceed quote currency
               // balance for bids
@@ -116,38 +116,46 @@ export const LimitOrderEntry: React.FC<{
             className="h-full w-[100px] flex-1 bg-transparent text-right font-roboto-mono font-light text-neutral-400 outline-none"
           />
         </OrderEntryInputWrapper>
-        <p className="text-red">
-          {errors.price != null && errors.price.message}
-        </p>
+        <div className="relative mb-4">
+          <p className="absolute text-xs text-red">
+            {errors.price != null && errors.price.message}
+          </p>
+        </div>
       </div>
       <hr className="my-4 border-neutral-600" />
       <div className="mx-4 flex flex-col gap-4">
-        <OrderEntryInputWrapper
-          startAdornment="AMOUNT"
-          endAdornment={marketData.base?.symbol}
-        >
-          <input
-            type="number"
-            step="any"
-            placeholder="0.00"
-            {...register("size", {
-              required: "required",
-              min: 0,
-              // TODO: check that size does not exceed base currency balance for asks
-              onChange: (e) => {
-                const price = Number(getValues("price"));
-                if (!isNaN(price) && !isNaN(e.target.value)) {
-                  const totalSize = (price * e.target.value).toFixed(4);
-                  setValue("totalSize", totalSize);
-                } else {
-                  setValue("totalSize", "");
-                }
-              },
-            })}
-            className="h-full w-[100px] flex-1 bg-transparent text-right font-roboto-mono font-light text-neutral-400 outline-none"
-          />
-        </OrderEntryInputWrapper>
-        <p className="text-red">{errors.size != null && errors.size.message}</p>
+        <div className="mb-1">
+          <OrderEntryInputWrapper
+            startAdornment="AMOUNT"
+            endAdornment={marketData.base?.symbol}
+          >
+            <input
+              type="number"
+              step="any"
+              placeholder="0.00"
+              {...register("size", {
+                required: "REQUIRED",
+                min: 0,
+                // TODO: check that size does not exceed base currency balance for asks
+                onChange: (e) => {
+                  const price = Number(getValues("price"));
+                  if (!isNaN(price) && !isNaN(e.target.value)) {
+                    const totalSize = (price * e.target.value).toFixed(4);
+                    setValue("totalSize", totalSize);
+                  } else {
+                    setValue("totalSize", "");
+                  }
+                },
+              })}
+              className="h-full w-[100px] flex-1 bg-transparent text-right font-roboto-mono font-light text-neutral-400 outline-none"
+            />
+          </OrderEntryInputWrapper>
+          <div className="relative">
+            <p className="absolute text-xs text-red">
+              {errors.size != null && errors.size.message}
+            </p>
+          </div>
+        </div>
         <OrderEntryInputWrapper
           startAdornment="TOTAL"
           endAdornment={marketData.quote?.symbol}

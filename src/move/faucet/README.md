@@ -1,5 +1,5 @@
-# testnet-faucet
+# Econia faucet
 
-These contracts host testnet coins that allow anyone to permissionlessly mint.
+This package allows anyone to permissionless mint test coins.
 
-These are unaudited and are only deployed on testnet. These contracts are not intended for use for anything besides testing purposes.
+The source code is unaudited and intended only for testing purposes.

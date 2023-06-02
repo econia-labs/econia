@@ -98,37 +98,38 @@ export const SelectMarketContent: React.FC<{
     getCoreRowModel: getCoreRowModel(),
   });
   return (
-    <div className="flex w-full flex-col items-center gap-6 ">
+    <div className="flex w-full flex-col items-center">
       <Tab.Group
         onChange={(index) => {
           setSelectedTab(index);
         }}
       >
-        <h4 className="font-jost text-3xl font-bold text-white"></h4>
-        <div className="relative w-full">
-          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-            <MagnifyingGlassIcon className={` h-5 w-5 text-neutral-500 `} />
+        <div className="w-full px-2 pt-2">
+          <div className="relative w-full">
+            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+              <MagnifyingGlassIcon className={` h-5 w-5 text-neutral-500 `} />
+            </div>
+            <input
+              type="text"
+              id="voice-search"
+              className="block w-full border border-neutral-600 bg-transparent p-2.5 pl-10 font-roboto-mono text-sm text-neutral-500 outline-none"
+              placeholder="Search markets"
+              required
+              onChange={(e) => {
+                setFilter(e.target.value);
+              }}
+              value={filter}
+            />
           </div>
-          <input
-            type="text"
-            id="voice-search"
-            className="block w-full border border-neutral-600 bg-transparent p-2.5 pl-10 font-roboto-mono text-sm text-neutral-500 outline-none"
-            placeholder="Search markets"
-            required
-            onChange={(e) => {
-              setFilter(e.target.value);
-            }}
-            value={filter}
-          />
+          <Tab.List className="mb-9 mt-4 w-full">
+            <Tab className="w-1/2 border-b border-b-neutral-600 py-4 text-center font-jost font-bold text-neutral-600 outline-none ui-selected:border-b-white ui-selected:text-white">
+              Recognized
+            </Tab>
+            <Tab className="w-1/2 border-b border-b-neutral-600 py-4 text-center font-jost font-bold text-neutral-600 outline-none ui-selected:border-b-white ui-selected:text-white">
+              All Markets
+            </Tab>
+          </Tab.List>
         </div>
-        <Tab.List className="mb-9 w-full">
-          <Tab className="w-1/2 border-b border-b-neutral-600 py-4 text-center font-jost font-bold text-neutral-600 outline-none ui-selected:border-b-white ui-selected:text-white">
-            Recognized
-          </Tab>
-          <Tab className="w-1/2 border-b border-b-neutral-600 py-4 text-center font-jost font-bold text-neutral-600 outline-none ui-selected:border-b-white ui-selected:text-white">
-            All Markets
-          </Tab>
-        </Tab.List>
         <Tab.Panels className="w-full">
           <div
             className={`${TABLE_SPACING.margin} scrollbar-none w-[calc(100%+3em)] overflow-x-auto`}
@@ -222,7 +223,7 @@ export const SelectMarketContent: React.FC<{
                 ) : (
                   table.getRowModel().rows.map((row) => (
                     <tr
-                      className="h-24 min-w-[780px] cursor-pointer px-6 text-left font-roboto-mono text-sm text-white hover:outline hover:outline-1 hover:outline-neutral-600 [&>th]:font-light"
+                      className="h-24 min-w-[780px] cursor-pointer px-6 text-left font-roboto-mono text-sm text-white hover:bg-neutral-700 [&>th]:font-light"
                       onClick={() => onSelectMarket(row.original)}
                       key={row.id}
                     >

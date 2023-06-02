@@ -113,7 +113,7 @@ export const LimitOrderEntry: React.FC<{
                 }
               },
             })}
-            className="h-full w-[100px] flex-1 bg-transparent text-right font-roboto-mono font-light text-neutral-400 outline-none"
+            className="h-full w-[100px] flex-1 bg-transparent text-right font-roboto-mono text-xs font-light text-neutral-400 outline-none"
           />
         </OrderEntryInputWrapper>
         <p className="text-red">
@@ -144,7 +144,7 @@ export const LimitOrderEntry: React.FC<{
                 }
               },
             })}
-            className="h-full w-[100px] flex-1 bg-transparent text-right font-roboto-mono font-light text-neutral-400 outline-none"
+            className="h-full w-[100px] flex-1 bg-transparent text-right font-roboto-mono text-xs font-light text-neutral-400 outline-none"
           />
         </OrderEntryInputWrapper>
         <p className="text-red">{errors.size != null && errors.size.message}</p>
@@ -157,7 +157,7 @@ export const LimitOrderEntry: React.FC<{
             step="any"
             placeholder="0.00"
             {...register("totalSize", { disabled: true })}
-            className="h-full w-[100px] flex-1 bg-transparent text-right font-roboto-mono font-light text-neutral-400 outline-none"
+            className="h-full w-[100px] flex-1 bg-transparent text-right font-roboto-mono text-xs font-light text-neutral-400 outline-none"
           />
         </OrderEntryInputWrapper>
       </div>

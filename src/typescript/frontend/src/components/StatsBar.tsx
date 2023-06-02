@@ -157,13 +157,13 @@ export const StatsBar: React.FC<{
             />
             <div className="min-w-[160px]">
               <button
-                className="flex font-roboto-mono text-base text-neutral-300"
+                className="flex font-roboto-mono text-base font-medium text-neutral-300"
                 onClick={() => {
                   setIsModalOpen(true);
                 }}
               >
                 {selectedMarket.name}
-                <ChevronDownIcon className="my-auto ml-2 h-4 w-4 text-white" />
+                <ChevronDownIcon className="my-auto ml-1 h-5 w-5 text-white" />
               </button>
             </div>
           </div>
@@ -171,7 +171,7 @@ export const StatsBar: React.FC<{
           <div className="block md:hidden">
             <p className="font-roboto-mono font-light">
               <span className="inline-block min-w-[4em] text-xl text-white">
-                ${formatNumber(data?.lastPrice, 2)}
+                ${formatNumber(data?.lastPrice, 4)}
               </span>
               <span
                 className={`ml-1 inline-block min-w-[6em] text-base ${
@@ -188,7 +188,7 @@ export const StatsBar: React.FC<{
               LAST PRICE
             </span>
             <p className="font-roboto-mono text-xs font-light text-white">
-              ${formatNumber(data?.lastPrice, 2)}
+              ${formatNumber(data?.lastPrice, 4)}
             </p>
           </div>
           {/* 24 hr */}

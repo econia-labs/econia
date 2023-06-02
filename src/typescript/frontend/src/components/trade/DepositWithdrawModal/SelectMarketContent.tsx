@@ -1,5 +1,5 @@
 import { Tab } from "@headlessui/react";
-import { MagnifyingGlassIcon, StarIcon } from "@heroicons/react/20/solid";
+import { MagnifyingGlassIcon } from "@heroicons/react/20/solid";
 import {
   createColumnHelper,
   flexRender,
@@ -9,6 +9,8 @@ import {
 } from "@tanstack/react-table";
 import { useMemo, useState } from "react";
 
+import { NotRecognizedIcon } from "@/components/icons/NotRecognizedIcon";
+import { RecognizedIcon } from "@/components/icons/RecognizedIcon";
 import { MarketIconPair } from "@/components/MarketIconPair";
 import { useAptos } from "@/contexts/AptosContext";
 import { type ApiMarket, type ApiStats } from "@/types/api";
@@ -48,6 +50,10 @@ export const SelectMarketContent: React.FC<{
           <PriceCell
             price={
               getPriceByMarketId(info.getValue(), marketPrices)?.price || 0
+            }
+            quoteAsset={
+              getMarketByMarketId(info.getValue(), data)?.name.split("-")[1] ||
+              "?"
             }
           />
         ),
@@ -107,7 +113,7 @@ export const SelectMarketContent: React.FC<{
         <div className="w-full px-2 pt-2">
           <div className="relative w-full">
             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-              <MagnifyingGlassIcon className={` h-5 w-5 text-neutral-500 `} />
+              <MagnifyingGlassIcon className="h-5 w-5 text-neutral-500" />
             </div>
             <input
               type="text"
@@ -134,7 +140,7 @@ export const SelectMarketContent: React.FC<{
           <div
             className={`${TABLE_SPACING.margin} scrollbar-none w-[calc(100%+3em)] overflow-x-auto`}
           >
-            <table className={`w-full`}>
+            <table className="w-full">
               <thead>
                 {table.getHeaderGroups().map((headerGroup) => (
                   <tr
@@ -178,12 +184,12 @@ export const SelectMarketContent: React.FC<{
                             header.id === "recognized" ||
                             (header.id === "24h_change" && "text-center")
                           }
-          ${i === 0 ? TABLE_SPACING.paddingLeft : ""}
-          ${
-            i === headerGroup.headers.length - 1
-              ? TABLE_SPACING.paddingRight
-              : ""
-          } `}
+                          ${i === 0 ? TABLE_SPACING.paddingLeft : ""}
+                          ${
+                            i === headerGroup.headers.length - 1
+                              ? TABLE_SPACING.paddingRight
+                              : ""
+                          } `}
                           key={header.id}
                         >
                           {header.isPlaceholder
@@ -284,7 +290,13 @@ const MarketNameCell = ({ name }: { name: ApiMarket }) => {
   );
 };
 
-const PriceCell = ({ price }: { price: number }) => {
+const PriceCell = ({
+  price,
+  quoteAsset,
+}: {
+  price: number;
+  quoteAsset: string;
+}) => {
   const formatter = Intl.NumberFormat("en", {
     notation: "compact",
     compactDisplay: "short",
@@ -292,16 +304,14 @@ const PriceCell = ({ price }: { price: number }) => {
     maximumFractionDigits: 1,
   });
   return (
-    <div>
-      <div className={`inline-block min-w-[8em] text-sm `}>
-        ${price >= 10_000 && formatter.format(price).replace("K", "k")}{" "}
-        {price < 10_000 &&
-          price.toLocaleString("en", {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          })}
-      </div>
-      <div className={`inline-block min-w-[6em] text-neutral-500`}>$1.5M</div>
+    <div className="min-w-[8em] text-sm">
+      {price >= 10_000 && formatter.format(price).replace("K", "k")}
+      {price < 10_000 &&
+        price.toLocaleString("en", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })}{" "}
+      {quoteAsset}
     </div>
   );
 };
@@ -323,11 +333,11 @@ const VolumeCell = ({
     maximumFractionDigits: 1,
   });
   return (
-    <div>
-      <div className={`inline-block min-w-[8em] text-sm`}>
+    <div className="block">
+      <div className={`min-w-[8em] text-sm`}>
         {formatter.format(volume).replace("K", "k")} {baseAsset}
       </div>
-      <div className={`inline-block min-w-[6em] text-neutral-500`}>$1.5M</div>
+      <div className={`min-w-[6em] text-neutral-500`}>$1.5M</div>
     </div>
   );
 };
@@ -348,11 +358,11 @@ const TwentyFourHourChangeCell = ({ change = 0 }: { change: number }) => {
 const RecognizedCell = ({ isRecognized }: { isRecognized: boolean }) => {
   return (
     <div className={`flex justify-center  ${TABLE_SPACING.paddingRight}`}>
-      <StarIcon
-        className={`my-auto ml-1 h-5 w-5 ${
-          isRecognized ? "text-blue" : "text-neutral-600"
-        }`}
-      />
+      {isRecognized ? (
+        <RecognizedIcon className="h-5 w-5" />
+      ) : (
+        <NotRecognizedIcon className="h-5 w-5" />
+      )}
     </div>
   );
 };

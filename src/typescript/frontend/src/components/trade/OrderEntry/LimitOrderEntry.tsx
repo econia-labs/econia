@@ -13,6 +13,8 @@ import { OrderEntryInputWrapper } from "./OrderEntryInputWrapper";
 import { TypeTag } from "@/utils/TypeTag";
 import { useMarketAccountBalance } from "@/hooks/useMarketAccountBalance";
 import { fromDecimalPrice, fromDecimalSize } from "@/utils/econia";
+import { useOrderEntry } from "@/contexts/OrderEntryContext";
+import { useEffect, useRef } from "react";
 
 type LimitFormValues = {
   price: string;
@@ -24,6 +26,7 @@ export const LimitOrderEntry: React.FC<{
   marketData: ApiMarket;
   side: Side;
 }> = ({ marketData, side }) => {
+  const { price } = useOrderEntry();
   const { signAndSubmitTransaction, account } = useAptos();
   const {
     handleSubmit,
@@ -32,6 +35,11 @@ export const LimitOrderEntry: React.FC<{
     getValues,
     setValue,
   } = useForm<LimitFormValues>();
+
+  useEffect(() => {
+    setValue("price", price);
+  }, [price, setValue]);
+
   const baseBalance = useMarketAccountBalance(
     account?.address,
     marketData.market_id,
@@ -113,7 +121,7 @@ export const LimitOrderEntry: React.FC<{
                 }
               },
             })}
-            className="h-full w-[100px] flex-1 bg-transparent text-right font-roboto-mono font-light text-neutral-400 outline-none"
+            className="h-full w-[100px] flex-1 bg-transparent text-right font-roboto-mono text-xs font-light text-neutral-400 outline-none"
           />
         </OrderEntryInputWrapper>
         <div className="relative mb-4">
@@ -165,7 +173,7 @@ export const LimitOrderEntry: React.FC<{
             step="any"
             placeholder="0.00"
             {...register("totalSize", { disabled: true })}
-            className="h-full w-[100px] flex-1 bg-transparent text-right font-roboto-mono font-light text-neutral-400 outline-none"
+            className="h-full w-[100px] flex-1 bg-transparent text-right font-roboto-mono text-xs font-light text-neutral-400 outline-none"
           />
         </OrderEntryInputWrapper>
       </div>
@@ -182,11 +190,11 @@ export const LimitOrderEntry: React.FC<{
           </Button>
         </ConnectedButton>
         <OrderEntryInfo
-          label={`${marketData.base?.symbol} AVAIABLE`}
+          label={`${marketData.base?.symbol} AVAILABLE`}
           value={`${baseBalance.data ?? "--"} ${marketData.base?.symbol}`}
         />
         <OrderEntryInfo
-          label={`${marketData.quote?.symbol} AVAIABLE`}
+          label={`${marketData.quote?.symbol} AVAILABLE`}
           value={`${quoteBalance.data ?? "--"} ${marketData.quote?.symbol}`}
         />
       </div>

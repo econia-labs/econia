@@ -7,6 +7,7 @@ import { type ApiMarket } from "@/types/api";
 import { type Precision } from "@/types/global";
 import { type OrderBook, type PriceLevel } from "@/types/global";
 import { averageOrOtherPriceLevel } from "@/utils/formatter";
+import { useOrderEntry } from "@/contexts/OrderEntryContext";
 
 const precisionOptions: Precision[] = [
   "0.01",
@@ -23,26 +24,35 @@ const Row: React.FC<{
   order: PriceLevel;
   type: "bid" | "ask";
   highestSize: number;
-}> = ({ order, type, highestSize }) => (
-  <div className="relative my-[1px] flex min-h-[16px] min-w-full items-center justify-between">
+}> = ({ order, type, highestSize }) => {
+  const { setType, setPrice } = useOrderEntry();
+  return (
     <div
-      className={`z-10 ml-4 text-right ${
-        type === "ask" ? "text-red" : "text-green"
-      }`}
+      className="relative my-[1px] flex min-h-[16px] min-w-full items-center justify-between hover:font-bold hover:outline hover:outline-neutral-600"
+      onClick={() => {
+        setType(type === "ask" ? "buy" : "sell");
+        setPrice(order.price.toString());
+      }}
     >
-      {order.price}
-    </div>
-    <div className="z-10 mr-4 text-white">{order.size}</div>
-    <div
-      className={`absolute right-0 z-0 h-full opacity-30 ${
-        type === "ask" ? "bg-red" : "bg-green"
-      }`}
-      // dynamic taillwind?
+      <div
+        className={`z-10 ml-4 text-right ${
+          type === "ask" ? "text-red" : "text-green"
+        }`}
+      >
+        {order.price}
+      </div>
+      <div className="z-10 mr-4 text-white">{order.size}</div>
+      <div
+        className={`absolute right-0 z-0 h-full opacity-30 ${
+          type === "ask" ? "bg-red" : "bg-green"
+        }`}
+        // dynamic taillwind?
 
-      style={{ width: `${(100 * order.size) / highestSize}%` }}
-    ></div>
-  </div>
-);
+        style={{ width: `${(100 * order.size) / highestSize}%` }}
+      ></div>
+    </div>
+  );
+};
 
 export function OrderBook({ marketData }: { marketData: ApiMarket }) {
   const [precision, setPrecision] = useState<Precision>(precisionOptions[0]);

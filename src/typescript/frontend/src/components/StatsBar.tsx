@@ -157,13 +157,13 @@ export const StatsBar: React.FC<{
             />
             <div className="min-w-[160px]">
               <button
-                className="flex font-roboto-mono text-base text-neutral-300"
+                className="flex font-roboto-mono text-base font-medium text-neutral-300"
                 onClick={() => {
                   setIsModalOpen(true);
                 }}
               >
                 {selectedMarket.name}
-                <ChevronDownIcon className="my-auto ml-2 h-4 w-4 text-white" />
+                <ChevronDownIcon className="my-auto ml-1 h-5 w-5 text-white" />
               </button>
             </div>
           </div>

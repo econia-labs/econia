@@ -1,5 +1,5 @@
 ---
-title: API Reference
+title: Econia API Reference
 
 language_tabs:
   - shell

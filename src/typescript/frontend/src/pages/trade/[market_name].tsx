@@ -18,6 +18,7 @@ import {
   type ThemeName,
 } from "../../../public/static/charting_library";
 import { MOCK_MARKETS } from "@/mockdata/markets";
+import { OrderEntryContextProvider } from "@/contexts/OrderEntryContext";
 
 const TVChartContainer = dynamic(
   () =>
@@ -82,46 +83,48 @@ export default function Market({ allMarketData, marketData }: Props) {
   };
 
   return (
-    <Page>
-      <StatsBar selectedMarket={marketData} />
-      <main className="flex w-full space-x-3 px-3 py-3">
-        <div className="flex flex-1 flex-col space-y-3">
-          <ChartCard className="flex flex-1 flex-col">
-            {isScriptReady && <TVChartContainer {...defaultTVChartProps} />}
-            <DepthChart marketData={marketData} />
-          </ChartCard>
-          <ChartCard>
-            <ChartName className="mb-4">Orders</ChartName>
-            <OrdersTable allMarketData={allMarketData} />
-          </ChartCard>
-        </div>
-        <div className="flex min-w-[360px] flex-initial flex-col border-neutral-600">
-          <ChartCard className="flex flex-1 flex-col">
-            <OrderBook marketData={marketData} />
-          </ChartCard>
-        </div>
-        <div className="flex min-w-[268px] flex-initial flex-col gap-4 border-neutral-600">
+    <OrderEntryContextProvider>
+      <Page>
+        <StatsBar selectedMarket={marketData} />
+        <main className="flex w-full space-x-3 px-3 py-3">
           <div className="flex flex-1 flex-col space-y-3">
-            <ChartCard className="flex-1">
-              <OrderEntry marketData={marketData} />
+            <ChartCard className="flex flex-1 flex-col">
+              {isScriptReady && <TVChartContainer {...defaultTVChartProps} />}
+              <DepthChart marketData={marketData} />
             </ChartCard>
             <ChartCard>
-              <ChartName className="mb-3 mt-3 font-bold">
-                Trade History
-              </ChartName>
-              <TradeHistoryTable marketData={marketData} />
+              <ChartName className="mb-4">Orders</ChartName>
+              <OrdersTable allMarketData={allMarketData} />
             </ChartCard>
           </div>
-        </div>
-      </main>
-      <Script
-        src="/static/datafeeds/udf/dist/bundle.js"
-        strategy="lazyOnload"
-        onReady={() => {
-          setIsScriptReady(true);
-        }}
-      />
-    </Page>
+          <div className="flex min-w-[360px] flex-initial flex-col border-neutral-600">
+            <ChartCard className="flex flex-1 flex-col">
+              <OrderBook marketData={marketData} />
+            </ChartCard>
+          </div>
+          <div className="flex min-w-[268px] flex-initial flex-col gap-4 border-neutral-600">
+            <div className="flex flex-1 flex-col space-y-3">
+              <ChartCard className="flex-1">
+                <OrderEntry marketData={marketData} />
+              </ChartCard>
+              <ChartCard>
+                <ChartName className="mb-3 mt-3 font-bold">
+                  Trade History
+                </ChartName>
+                <TradeHistoryTable marketData={marketData} />
+              </ChartCard>
+            </div>
+          </div>
+        </main>
+        <Script
+          src="/static/datafeeds/udf/dist/bundle.js"
+          strategy="lazyOnload"
+          onReady={() => {
+            setIsScriptReady(true);
+          }}
+        />
+      </Page>
+    </OrderEntryContextProvider>
   );
 }
 

@@ -226,8 +226,14 @@ export const DepthChart: React.FC<{
                       minimumFractionDigits: 1,
                       maximumFractionDigits: 1,
                     });
-                    // show 1/3 and 2/3 of the way through
-                    return value == "0" ? "0" : formatter.format(Number(value));
+                    const formatted = formatter.format(Number(value));
+
+                    // show 0.0 as <0.1
+                    return value === "0"
+                      ? "0"
+                      : formatted === "0.0"
+                      ? "<0.1"
+                      : formatted;
                   },
                 },
                 beginAtZero: true,

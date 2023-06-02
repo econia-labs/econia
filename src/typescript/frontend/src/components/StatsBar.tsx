@@ -171,7 +171,7 @@ export const StatsBar: React.FC<{
           <div className="block md:hidden">
             <p className="font-roboto-mono font-light">
               <span className="inline-block min-w-[4em] text-xl text-white">
-                ${formatNumber(data?.lastPrice, 2)}
+                ${formatNumber(data?.lastPrice, 4)}
               </span>
               <span
                 className={`ml-1 inline-block min-w-[6em] text-base ${
@@ -188,7 +188,7 @@ export const StatsBar: React.FC<{
               LAST PRICE
             </span>
             <p className="font-roboto-mono text-xs font-light text-white">
-              ${formatNumber(data?.lastPrice, 2)}
+              ${formatNumber(data?.lastPrice, 4)}
             </p>
           </div>
           {/* 24 hr */}

@@ -112,7 +112,7 @@ export const SelectMarketContent: React.FC<{
           <input
             type="text"
             id="voice-search"
-            className=" block w-full border border-neutral-600  bg-transparent p-2.5  pl-10 font-roboto-mono text-sm text-neutral-500"
+            className="block w-full border border-neutral-600 bg-transparent p-2.5 pl-10 font-roboto-mono text-sm text-neutral-500 outline-none"
             placeholder="Search markets"
             required
             onChange={(e) => {
@@ -122,10 +122,10 @@ export const SelectMarketContent: React.FC<{
           />
         </div>
         <Tab.List className="mb-9 w-full">
-          <Tab className="w-1/2 border-b border-b-neutral-600 py-4 text-center font-jost font-bold text-neutral-600 ui-selected:border-b-white ui-selected:text-white">
+          <Tab className="w-1/2 border-b border-b-neutral-600 py-4 text-center font-jost font-bold text-neutral-600 outline-none ui-selected:border-b-white ui-selected:text-white">
             Recognized
           </Tab>
-          <Tab className="w-1/2 border-b border-b-neutral-600 py-4 text-center font-jost font-bold text-neutral-600 ui-selected:border-b-white ui-selected:text-white">
+          <Tab className="w-1/2 border-b border-b-neutral-600 py-4 text-center font-jost font-bold text-neutral-600 outline-none ui-selected:border-b-white ui-selected:text-white">
             All Markets
           </Tab>
         </Tab.List>

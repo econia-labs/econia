@@ -37,15 +37,12 @@ export const OrderEntry: React.FC<{ marketData: ApiMarket }> = ({
       </div>
       <Tab.Group>
         <Tab.List className="my-5 flex justify-evenly">
-          <Tab className="font-roboto-mono text-sm font-light uppercase outline-none ui-selected:text-white ui-not-selected:text-neutral-500">
+          <Tab className="font-roboto-mono text-sm uppercase outline-none ui-selected:font-medium ui-selected:text-white ui-not-selected:font-light ui-not-selected:text-neutral-500">
             Limit
           </Tab>
-          <Tab className="font-roboto-mono text-sm font-light uppercase outline-none ui-selected:text-white ui-not-selected:text-neutral-500">
+          <Tab className="font-roboto-mono text-sm uppercase outline-none ui-selected:font-medium ui-selected:text-white ui-not-selected:font-light ui-not-selected:text-neutral-500">
             Market
           </Tab>
-          {/* <Tab className="font-roboto-mono text-sm font-light uppercase outline-none ui-selected:text-white ui-not-selected:text-neutral-500">
-            Stop Limit
-          </Tab> */}
         </Tab.List>
         <Tab.Panels>
           <Tab.Panel>
@@ -54,9 +51,6 @@ export const OrderEntry: React.FC<{ marketData: ApiMarket }> = ({
           <Tab.Panel>
             <MarketOrderEntry marketData={marketData} side={side} />
           </Tab.Panel>
-          {/* <Tab.Panel className="px-2 font-jost text-white">
-            Stop Limit Order Entry
-          </Tab.Panel> */}
         </Tab.Panels>
       </Tab.Group>
     </div>

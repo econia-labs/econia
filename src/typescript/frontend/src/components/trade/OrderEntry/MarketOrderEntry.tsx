@@ -79,18 +79,27 @@ export const MarketOrderEntry: React.FC<{
         <OrderEntryInputWrapper
           startAdornment="AMOUNT"
           endAdornment={marketData.base?.symbol}
-        >
-          <input
-            type="number"
-            step="any"
-            placeholder="0.00"
-            {...register("size", {
+          inputWithRef={(focusRef) => {
+            const { ref, ...rest } = register("size", {
               required: "REQUIRED",
               min: 0,
-            })}
-            className="h-full w-[100px] flex-1 bg-transparent text-right font-roboto-mono font-light text-neutral-400 outline-none"
-          />
-        </OrderEntryInputWrapper>
+            });
+            return (
+              <input
+                ref={(e) => {
+                  ref(e);
+                  focusRef.current = e;
+                  // focusRef.current?.focus();
+                }}
+                type="number"
+                step="any"
+                placeholder="0.00"
+                {...rest}
+                className="h-full w-[100px] flex-1 bg-transparent text-right font-roboto-mono font-light text-neutral-400 outline-none"
+              />
+            );
+          }}
+        ></OrderEntryInputWrapper>
         <div className="relative mb-4">
           <p className="absolute text-xs text-red">
             {errors.size != null && errors.size.message}

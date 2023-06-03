@@ -101,12 +101,8 @@ export const LimitOrderEntry: React.FC<{
         <OrderEntryInputWrapper
           startAdornment="LIMIT PRICE"
           endAdornment={marketData.quote.symbol}
-        >
-          <input
-            type="number"
-            step="any"
-            placeholder="0.00"
-            {...register("price", {
+          inputWithRef={(focusRef) => {
+            const { ref, ...rest } = register("price", {
               required: "REQUIRED",
               min: 0,
               // TODO: check that amount * size does not exceed quote currency
@@ -120,10 +116,23 @@ export const LimitOrderEntry: React.FC<{
                   setValue("totalSize", "");
                 }
               },
-            })}
-            className="h-full w-[100px] flex-1 bg-transparent text-right font-roboto-mono text-xs font-light text-neutral-400 outline-none"
-          />
-        </OrderEntryInputWrapper>
+            });
+            return (
+              <input
+                ref={(e) => {
+                  ref(e);
+                  focusRef.current = e;
+                  // focusRef.current?.focus();
+                }}
+                type="number"
+                step="any"
+                placeholder="0.00"
+                {...rest}
+                className="h-full w-[100px] flex-1 bg-transparent text-right font-roboto-mono font-light text-neutral-400 outline-none"
+              />
+            );
+          }}
+        ></OrderEntryInputWrapper>
         <div className="relative mb-4">
           <p className="absolute text-xs text-red">
             {errors.price != null && errors.price.message}
@@ -136,12 +145,8 @@ export const LimitOrderEntry: React.FC<{
           <OrderEntryInputWrapper
             startAdornment="AMOUNT"
             endAdornment={marketData.base?.symbol}
-          >
-            <input
-              type="number"
-              step="any"
-              placeholder="0.00"
-              {...register("size", {
+            inputWithRef={(focusRef) => {
+              const { ref, ...rest } = register("size", {
                 required: "REQUIRED",
                 min: 0,
                 // TODO: check that size does not exceed base currency balance for asks
@@ -154,10 +159,23 @@ export const LimitOrderEntry: React.FC<{
                     setValue("totalSize", "");
                   }
                 },
-              })}
-              className="h-full w-[100px] flex-1 bg-transparent text-right font-roboto-mono font-light text-neutral-400 outline-none"
-            />
-          </OrderEntryInputWrapper>
+              });
+              return (
+                <input
+                  ref={(e) => {
+                    ref(e);
+                    focusRef.current = e;
+                    // focusRef.current?.focus();
+                  }}
+                  type="number"
+                  step="any"
+                  placeholder="0.00"
+                  {...rest}
+                  className="h-full w-[100px] flex-1 bg-transparent text-right font-roboto-mono font-light text-neutral-400 outline-none"
+                />
+              );
+            }}
+          ></OrderEntryInputWrapper>
           <div className="relative">
             <p className="absolute text-xs text-red">
               {errors.size != null && errors.size.message}
@@ -167,15 +185,24 @@ export const LimitOrderEntry: React.FC<{
         <OrderEntryInputWrapper
           startAdornment="TOTAL"
           endAdornment={marketData.quote?.symbol}
-        >
-          <input
-            type="number"
-            step="any"
-            placeholder="0.00"
-            {...register("totalSize", { disabled: true })}
-            className="h-full w-[100px] flex-1 bg-transparent text-right font-roboto-mono text-xs font-light text-neutral-400 outline-none"
-          />
-        </OrderEntryInputWrapper>
+          inputWithRef={(focusRef) => {
+            const { ref, ...rest } = register("totalSize", { disabled: true });
+            return (
+              <input
+                ref={(e) => {
+                  ref(e);
+                  focusRef.current = e;
+                  // focusRef.current?.focus();
+                }}
+                type="number"
+                step="any"
+                placeholder="0.00"
+                {...rest}
+                className="h-full w-[100px] flex-1 bg-transparent text-right font-roboto-mono font-light text-neutral-400 outline-none"
+              />
+            );
+          }}
+        ></OrderEntryInputWrapper>
       </div>
       <hr className="my-4 border-neutral-600" />
       <div className="mx-4 mb-4 flex flex-col gap-4">

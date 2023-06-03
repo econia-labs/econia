@@ -14,7 +14,11 @@ export const ConnectedButton: React.FC<
   return (
     <>
       {!connected ? (
-        <Button className={className} variant="primary" onClick={connectWallet}>
+        <Button
+          className={`py-1.5 text-[14px] ${className}`}
+          variant="primary"
+          onClick={connectWallet}
+        >
           Connect Wallet
         </Button>
       ) : (

@@ -13,8 +13,8 @@ import {
 } from "react";
 import { toast } from "react-toastify";
 
-import { NETWORK_NAME, RPC_NODE_URL } from "@/env";
 import { MAINNET_TOKEN_LIST, TESTNET_TOKEN_LIST } from "@/constants";
+import { NETWORK_NAME, RPC_NODE_URL } from "@/env";
 
 export type AptosContextState = {
   aptosClient: AptosClient;

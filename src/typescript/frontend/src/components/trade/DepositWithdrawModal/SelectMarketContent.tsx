@@ -1,5 +1,5 @@
 import { Tab } from "@headlessui/react";
-import { MagnifyingGlassIcon, StarIcon } from "@heroicons/react/20/solid";
+import { MagnifyingGlassIcon } from "@heroicons/react/20/solid";
 import {
   createColumnHelper,
   flexRender,
@@ -7,13 +7,17 @@ import {
   getFilteredRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
+import { NotRecognizedIcon } from "@/components/icons/NotRecognizedIcon";
+import { RecognizedIcon } from "@/components/icons/RecognizedIcon";
+import { MarketIconPair } from "@/components/MarketIconPair";
+import { useAptos } from "@/contexts/AptosContext";
 import { type ApiMarket, type ApiStats } from "@/types/api";
+import { formatNumber, plusMinus } from "@/utils/formatter";
+import { TypeTag } from "@/utils/TypeTag";
 
 import { useAllMarketData, useAllMarketPrices, useAllMarketStats } from ".";
-
 const columnHelper = createColumnHelper<ApiMarket>();
 
 const TABLE_SPACING = {
@@ -35,7 +39,9 @@ export const SelectMarketContent: React.FC<{
   const columns = useMemo(() => {
     return [
       columnHelper.accessor("name", {
-        cell: (info) => <MarketNameCell name={info.getValue()} />,
+        cell: (info) => {
+          return <MarketNameCell name={info.row.original} />;
+        },
         header: "NAME",
         id: "name",
       }),
@@ -44,6 +50,10 @@ export const SelectMarketContent: React.FC<{
           <PriceCell
             price={
               getPriceByMarketId(info.getValue(), marketPrices)?.price || 0
+            }
+            quoteAsset={
+              getMarketByMarketId(info.getValue(), data)?.name.split("-")[1] ||
+              "?"
             }
           />
         ),
@@ -94,42 +104,43 @@ export const SelectMarketContent: React.FC<{
     getCoreRowModel: getCoreRowModel(),
   });
   return (
-    <div className="flex w-full flex-col items-center gap-6 ">
+    <div className="flex w-full flex-col items-center">
       <Tab.Group
         onChange={(index) => {
           setSelectedTab(index);
         }}
       >
-        <h4 className="font-jost text-3xl font-bold text-white"></h4>
-        <div className="relative w-full">
-          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-            <MagnifyingGlassIcon className={` h-5 w-5 text-neutral-500 `} />
+        <div className="w-full px-2 pt-2">
+          <div className="relative w-full">
+            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+              <MagnifyingGlassIcon className="h-5 w-5 text-neutral-500" />
+            </div>
+            <input
+              type="text"
+              id="voice-search"
+              className="block w-full border border-neutral-600 bg-transparent p-2.5 pl-10 font-roboto-mono text-sm text-neutral-500 outline-none"
+              placeholder="Search markets"
+              required
+              onChange={(e) => {
+                setFilter(e.target.value);
+              }}
+              value={filter}
+            />
           </div>
-          <input
-            type="text"
-            id="voice-search"
-            className=" block w-full border border-neutral-600  bg-transparent p-2.5  pl-10 font-roboto-mono text-sm text-neutral-500"
-            placeholder="Search markets"
-            required
-            onChange={(e) => {
-              setFilter(e.target.value);
-            }}
-            value={filter}
-          />
+          <Tab.List className="mb-9 mt-4 w-full">
+            <Tab className="w-1/2 border-b border-b-neutral-600 py-4 text-center font-jost font-bold text-neutral-600 outline-none ui-selected:border-b-white ui-selected:text-white">
+              Recognized
+            </Tab>
+            <Tab className="w-1/2 border-b border-b-neutral-600 py-4 text-center font-jost font-bold text-neutral-600 outline-none ui-selected:border-b-white ui-selected:text-white">
+              All Markets
+            </Tab>
+          </Tab.List>
         </div>
-        <Tab.List className="mb-9 w-full">
-          <Tab className="w-1/2 border-b border-b-neutral-600 py-4 text-center font-jost font-bold text-neutral-600 ui-selected:border-b-white ui-selected:text-white">
-            Recognized
-          </Tab>
-          <Tab className="w-1/2 border-b border-b-neutral-600 py-4 text-center font-jost font-bold text-neutral-600 ui-selected:border-b-white ui-selected:text-white">
-            All Markets
-          </Tab>
-        </Tab.List>
         <Tab.Panels className="w-full">
           <div
             className={`${TABLE_SPACING.margin} scrollbar-none w-[calc(100%+3em)] overflow-x-auto`}
           >
-            <table className={`w-full`}>
+            <table className="w-full">
               <thead>
                 {table.getHeaderGroups().map((headerGroup) => (
                   <tr
@@ -173,12 +184,12 @@ export const SelectMarketContent: React.FC<{
                             header.id === "recognized" ||
                             (header.id === "24h_change" && "text-center")
                           }
-          ${i === 0 ? TABLE_SPACING.paddingLeft : ""}
-          ${
-            i === headerGroup.headers.length - 1
-              ? TABLE_SPACING.paddingRight
-              : ""
-          } `}
+                          ${i === 0 ? TABLE_SPACING.paddingLeft : ""}
+                          ${
+                            i === headerGroup.headers.length - 1
+                              ? TABLE_SPACING.paddingRight
+                              : ""
+                          } `}
                           key={header.id}
                         >
                           {header.isPlaceholder
@@ -218,7 +229,7 @@ export const SelectMarketContent: React.FC<{
                 ) : (
                   table.getRowModel().rows.map((row) => (
                     <tr
-                      className="h-24 min-w-[780px] cursor-pointer px-6 text-left font-roboto-mono text-sm text-white hover:outline hover:outline-1 hover:outline-neutral-600 [&>th]:font-light"
+                      className="h-24 min-w-[780px] cursor-pointer px-6 text-left font-roboto-mono text-sm text-white hover:bg-neutral-700 [&>th]:font-light"
                       onClick={() => onSelectMarket(row.original)}
                       key={row.id}
                     >
@@ -255,19 +266,37 @@ export const SelectMarketContent: React.FC<{
 };
 
 // row components
-const MarketNameCell = ({ name }: { name: string }) => {
+const MarketNameCell = ({ name }: { name: ApiMarket }) => {
+  const DEFAULT_TOKEN_ICON = "/tokenImages/default.png";
+
+  const { coinListClient } = useAptos();
+  const baseAssetIcon = name.base
+    ? coinListClient.getCoinInfoByFullName(
+        TypeTag.fromApiCoin(name.base).toString()
+      )?.logo_url
+    : DEFAULT_TOKEN_ICON;
+  const quoteAssetIcon =
+    coinListClient.getCoinInfoByFullName(
+      TypeTag.fromApiCoin(name.quote).toString()
+    )?.logo_url ?? DEFAULT_TOKEN_ICON;
   return (
     <div className={`flex items-center text-base ${TABLE_SPACING.paddingLeft}`}>
       <MarketIconPair
-        quoteAssetIcon={`/tokenImages/${name.split("-")[1]}.png`}
-        baseAssetIcon={`/tokenImages/${name.split("-")[0]}.png`}
+        quoteAssetIcon={quoteAssetIcon}
+        baseAssetIcon={baseAssetIcon}
       />
-      <div className={`ml-7 min-w-[12em]`}>{name}</div>
+      <div className={`ml-7 min-w-[12em]`}>{name.name}</div>
     </div>
   );
 };
 
-const PriceCell = ({ price }: { price: number }) => {
+const PriceCell = ({
+  price,
+  quoteAsset,
+}: {
+  price: number;
+  quoteAsset: string;
+}) => {
   const formatter = Intl.NumberFormat("en", {
     notation: "compact",
     compactDisplay: "short",
@@ -275,16 +304,14 @@ const PriceCell = ({ price }: { price: number }) => {
     maximumFractionDigits: 1,
   });
   return (
-    <div>
-      <div className={`inline-block min-w-[8em] text-sm `}>
-        ${price >= 10_000 && formatter.format(price).replace("K", "k")}{" "}
-        {price < 10_000 &&
-          price.toLocaleString("en", {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          })}
-      </div>
-      <div className={`inline-block min-w-[6em] text-neutral-500`}>$1.5M</div>
+    <div className="min-w-[8em] text-sm">
+      {price >= 10_000 && formatter.format(price).replace("K", "k")}
+      {price < 10_000 &&
+        price.toLocaleString("en", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })}{" "}
+      {quoteAsset}
     </div>
   );
 };
@@ -306,11 +333,11 @@ const VolumeCell = ({
     maximumFractionDigits: 1,
   });
   return (
-    <div>
-      <div className={`inline-block min-w-[8em] text-sm`}>
+    <div className="block">
+      <div className={`min-w-[8em] text-sm`}>
         {formatter.format(volume).replace("K", "k")} {baseAsset}
       </div>
-      <div className={`inline-block min-w-[6em] text-neutral-500`}>$1.5M</div>
+      <div className={`min-w-[6em] text-neutral-500`}>$1.5M</div>
     </div>
   );
 };
@@ -331,11 +358,11 @@ const TwentyFourHourChangeCell = ({ change = 0 }: { change: number }) => {
 const RecognizedCell = ({ isRecognized }: { isRecognized: boolean }) => {
   return (
     <div className={`flex justify-center  ${TABLE_SPACING.paddingRight}`}>
-      <StarIcon
-        className={`my-auto ml-1 h-5 w-5 ${
-          isRecognized ? "text-blue" : "text-neutral-600"
-        }`}
-      />
+      {isRecognized ? (
+        <RecognizedIcon className="h-5 w-5" />
+      ) : (
+        <NotRecognizedIcon className="h-5 w-5" />
+      )}
     </div>
   );
 };
@@ -364,85 +391,4 @@ const getPriceByMarketId = (
 ) => {
   if (!prices) return undefined;
   return prices.find((price) => price.market_id === marketId);
-};
-
-// copy paste from statsbar, think about making a unified component later
-const DEFAULT_TOKEN_ICON = "/tokenImages/default.png";
-type MarketIconPairProps = {
-  baseAssetIcon?: string;
-  quoteAssetIcon?: string;
-};
-const MarketIconPair = ({
-  baseAssetIcon = DEFAULT_TOKEN_ICON,
-  quoteAssetIcon = DEFAULT_TOKEN_ICON,
-}: MarketIconPairProps) => {
-  // TODO: add this so statsbar can use it too
-  interface ImageWithFallbackProps {
-    fallback?: string;
-    alt: string;
-    src: string;
-    [key: string]: any; // allow any other props
-  }
-
-  const ImageWithFallback: React.FC<ImageWithFallbackProps> = ({
-    fallback = "/tokenImages/default.png",
-    alt,
-    src,
-    ...props
-  }) => {
-    const [error, setError] = useState<Error | null>(null);
-
-    useEffect(() => {
-      setError(null);
-    }, [src]);
-
-    return (
-      <Image
-        alt={alt}
-        onError={() => setError(new Error("Failed to load image"))}
-        src={error ? fallback : src}
-        {...props}
-      />
-    );
-  };
-
-  return (
-    <div className="relative flex">
-      {/* height width props required */}
-      <ImageWithFallback
-        src={baseAssetIcon}
-        alt="market-icon-pair"
-        width={40}
-        height={40}
-        className="z-20 aspect-square  w-[30px] min-w-[30px] md:min-w-[40px]"
-      ></ImageWithFallback>
-      <ImageWithFallback
-        src={quoteAssetIcon}
-        alt="market-icon-pair"
-        width={40}
-        height={40}
-        className="absolute z-10 aspect-square w-[30px] min-w-[30px] translate-x-1/2 md:min-w-[40px]"
-      ></ImageWithFallback>
-    </div>
-  );
-};
-
-const getLang = () => {
-  return typeof window === "undefined"
-    ? "en"
-    : navigator.language || navigator.languages[0];
-};
-
-const formatNumber = (num: number | undefined, digits: number): string => {
-  if (!num) return "-";
-  return num.toLocaleString(getLang(), {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits,
-  });
-};
-
-const plusMinus = (num: number | undefined): string => {
-  if (!num) return "";
-  // no need to return - as numbers will already have that
-  return num >= 0 ? `+` : ``;
 };

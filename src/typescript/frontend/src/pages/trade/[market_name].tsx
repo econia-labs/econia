@@ -88,7 +88,7 @@ export default function Market({ allMarketData, marketData }: Props) {
         <StatsBar selectedMarket={marketData} />
         <main className="flex w-full space-x-3 px-3 py-3">
           <div className="flex flex-1 flex-col space-y-3">
-            <ChartCard className="flex flex-1 flex-col">
+            <ChartCard className="flex min-h-[590px] flex-1 flex-col">
               {isScriptReady && <TVChartContainer {...defaultTVChartProps} />}
               <DepthChart marketData={marketData} />
             </ChartCard>
@@ -104,10 +104,10 @@ export default function Market({ allMarketData, marketData }: Props) {
           </div>
           <div className="flex min-w-[268px] flex-initial flex-col gap-4 border-neutral-600">
             <div className="flex flex-1 flex-col space-y-3">
-              <ChartCard className="flex-1">
+              <ChartCard>
                 <OrderEntry marketData={marketData} />
               </ChartCard>
-              <ChartCard>
+              <ChartCard className="flex-1">
                 <ChartName className="mb-3 mt-3 font-bold">
                   Trade History
                 </ChartName>

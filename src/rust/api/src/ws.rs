@@ -35,11 +35,11 @@ static PING_CHECK_INTERVAL: Duration = Duration::from_secs(600);
 /// Handler for WebSocket handshake request.
 pub async fn ws_handler(
     ws: WebSocketUpgrade,
-    State(state): State<AppState>,
+    State(state): State<Arc<AppState>>,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
 ) -> impl IntoResponse {
     tracing::info!("new websocket connection with client {}", addr);
-    ws.on_upgrade(move |ws| handle_socket(ws, state.sender, state.market_ids, addr))
+    ws.on_upgrade(move |ws| handle_socket(ws, state, addr))
 }
 
 /// Checks whether the message received from the broadcast channel belongs to a
@@ -332,14 +332,9 @@ async fn forward_message_handler(
 }
 
 /// WebSocket connection handler.
-async fn handle_socket(
-    ws: WebSocket,
-    btx: broadcast::Sender<Update>,
-    market_ids: HashSet<u64>,
-    who: SocketAddr,
-) {
+async fn handle_socket(ws: WebSocket, State(state): Arc<AppState>, who: SocketAddr) {
     let (sender, receiver) = ws.split();
-    let brx = btx.subscribe();
+    let brx = state.sender.subscribe();
     let (mtx, mrx) = mpsc::channel(16);
     let subs = Arc::new(Mutex::new(HashSet::<Channel>::new()));
     let last_ping = Arc::new(Mutex::new(Utc::now()));
@@ -369,8 +364,15 @@ async fn handle_socket(
     let mtx2 = mtx.clone();
     let last_ping1 = last_ping.clone();
     let mut recv_task = tokio::spawn(async move {
-        if let Err(e) =
-            inbound_message_handler(receiver, mtx2, subs, market_ids, last_ping1, who).await
+        if let Err(e) = inbound_message_handler(
+            receiver,
+            mtx2,
+            subs,
+            state.market_ids.clone(),
+            last_ping1,
+            who,
+        )
+        .await
         {
             tracing::error!(
                 "websocket connection with client {} failed on inbound message handler: {}",

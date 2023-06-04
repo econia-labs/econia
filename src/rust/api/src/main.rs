@@ -1,5 +1,6 @@
-use std::{collections::HashSet, net::SocketAddr};
+use std::{collections::HashSet, net::SocketAddr, sync::Arc};
 
+use axum::Router;
 use bigdecimal::ToPrimitive;
 use db::query::market::MarketIdQuery;
 use futures_util::StreamExt;
@@ -69,12 +70,12 @@ async fn main() {
     let (btx, brx) = broadcast::channel(16);
     let _conn = start_redis_channels(config.redis_url, market_ids.clone(), btx.clone()).await;
 
-    let state = AppState {
+    let state = Arc::new(AppState {
         pool,
         sender: btx,
         market_ids: HashSet::from_iter(market_ids.into_iter()),
-    };
-    let app = router(state);
+    });
+    let app: Router<Arc<AppState>> = router(state);
     let addr = SocketAddr::from(([0, 0, 0, 0], config.port));
 
     tokio::spawn(async move {
@@ -208,11 +209,11 @@ pub mod tests {
         let (btx, mut brx) = broadcast::channel(16);
         let _conn = start_redis_channels(config.redis_url, market_ids.clone(), btx.clone()).await;
 
-        let state = AppState {
+        let state = Arc::new(AppState {
             pool,
             sender: btx,
             market_ids: HashSet::from_iter(market_ids.into_iter()),
-        };
+        });
 
         tokio::spawn(async move {
             // keep broadcast channel alive

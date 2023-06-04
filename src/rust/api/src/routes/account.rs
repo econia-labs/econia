@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use axum::{
     extract::{Path, State},
     Json,
@@ -8,7 +10,7 @@ use crate::{error::ApiError, util::check_addr, AppState};
 
 pub async fn order_history_by_account(
     Path(account_address): Path<String>,
-    State(state): State<AppState>,
+    State(state): State<Arc<AppState>>,
 ) -> Result<Json<Vec<types::order::Order>>, ApiError> {
     check_addr(&account_address)?;
 
@@ -46,7 +48,7 @@ pub async fn order_history_by_account(
 
 pub async fn open_orders_by_account(
     Path(account_address): Path<String>,
-    State(state): State<AppState>,
+    State(state): State<Arc<AppState>>,
 ) -> Result<Json<Vec<types::order::Order>>, ApiError> {
     check_addr(&account_address)?;
 

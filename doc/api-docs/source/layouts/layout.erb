@@ -38,7 +38,8 @@ under the License.
         >
       <% end %>
     <% end %>
-    <title><%= current_page.data.title || "API Documentation" %></title>
+    <%= favicon_tag 'favicon.ico' %>
+    <title><%= current_page.data.title || "Econia API Documentation" %></title>
 
     <style media="screen">
       <%= Rouge::Themes::MonokaiSublimeSlate.render(:scope => '.highlight') %>

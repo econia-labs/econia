@@ -2,9 +2,8 @@ import { Dialog, Transition } from "@headlessui/react";
 import { ChevronLeftIcon } from "@heroicons/react/20/solid";
 import React, { Fragment, type PropsWithChildren } from "react";
 
-import { XIcon } from "./icons/XIcon";
-
 import bg from "../../public/bg.png";
+import { XIcon } from "./icons/XIcon";
 
 export const BaseModal: React.FC<
   PropsWithChildren<{
@@ -20,14 +19,14 @@ export const BaseModal: React.FC<
       <Dialog as="div" className="relative z-50" open={open} onClose={onClose}>
         <Transition.Child
           as={Fragment}
-          enter="ease-out duration-300"
+          enter="ease-out duration-150"
           enterFrom="opacity-0"
           enterTo="opacity-100"
-          leave="ease-in duration-200"
+          leave="ease-in duration-100"
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 bg-opacity-60" />
+          <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm" />
         </Transition.Child>
 
         <div className="fixed inset-0 overflow-y-auto">

@@ -104,13 +104,13 @@ export const SelectMarketContent: React.FC<{
     getCoreRowModel: getCoreRowModel(),
   });
   return (
-    <div className="flex w-full flex-col items-center">
+    <div className="flex max-h-[655px] min-h-[655px] w-full flex-col items-center overflow-y-hidden">
       <Tab.Group
         onChange={(index) => {
           setSelectedTab(index);
         }}
       >
-        <div className="w-full px-2 pt-2">
+        <div className="w-full px-8 pt-8">
           <div className="relative w-full">
             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
               <MagnifyingGlassIcon className="h-5 w-5 text-neutral-500" />
@@ -136,9 +136,9 @@ export const SelectMarketContent: React.FC<{
             </Tab>
           </Tab.List>
         </div>
-        <Tab.Panels className="w-full">
+        <Tab.Panels className="w-full overflow-y-auto">
           <div
-            className={`${TABLE_SPACING.margin} scrollbar-none w-[calc(100%+3em)] overflow-x-auto`}
+            className={`${TABLE_SPACING.margin} scrollbar-none w-[calc(100%+3em)] overflow-x-auto overflow-y-auto px-6`}
           >
             <table className="w-full">
               <thead>

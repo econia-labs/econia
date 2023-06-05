@@ -57,10 +57,32 @@ export const useAllMarketData = () => {
       // const d = await res.json();
       // TODO: Remove once real data exists
       const d = MOCK_MARKETS;
-      return d.map((m: ApiMarket, i: number) => {
-        m.recognized = i % 2 === 0 ? true : false;
-        return m;
-      });
+      return [
+        ...d.map((m: ApiMarket, i: number) => {
+          m.recognized = i % 2 === 0 ? true : false;
+          return m;
+        }),
+        ...d.map((m: ApiMarket, i: number) => {
+          m.recognized = i % 2 === 0 ? true : false;
+          return m;
+        }),
+        ...d.map((m: ApiMarket, i: number) => {
+          m.recognized = i % 2 === 0 ? true : false;
+          return m;
+        }),
+        ...d.map((m: ApiMarket, i: number) => {
+          m.recognized = i % 2 === 0 ? true : false;
+          return m;
+        }),
+        ...d.map((m: ApiMarket, i: number) => {
+          m.recognized = i % 2 === 0 ? true : false;
+          return m;
+        }),
+        ...d.map((m: ApiMarket, i: number) => {
+          m.recognized = i % 2 === 0 ? true : false;
+          return m;
+        }),
+      ];
     });
   });
 };
@@ -94,6 +116,7 @@ export const DepositWithdrawModal: React.FC<{
       }
       showBackButton={step === Step.DepositWithdraw}
       showCloseButton={step !== Step.SelectMarket}
+      disablePadding={step === Step.SelectMarket}
     >
       {step === Step.Initial && (
         <InitialContent

@@ -136,7 +136,7 @@ export const SelectMarketContent: React.FC<{
             </Tab>
           </Tab.List>
         </div>
-        <Tab.Panels className="w-full overflow-y-auto">
+        <Tab.Panels className="w-full flex-1 overflow-y-auto">
           <div
             className={`${TABLE_SPACING.margin} scrollbar-none w-[calc(100%+3em)] overflow-x-auto overflow-y-auto px-6`}
           >

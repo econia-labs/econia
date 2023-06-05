@@ -9,7 +9,7 @@ use tokio::sync::broadcast;
 use tracing_subscriber::prelude::*;
 use types::message::Update;
 
-use crate::routes::router;
+use crate::{routes::router, util::redact_postgres_password};
 
 mod error;
 mod routes;
@@ -57,9 +57,14 @@ async fn main() {
         .unwrap_or_else(|_| {
             panic!(
                 "Could not connect to DATABASE_URL `{}`",
-                &config.database_url
+                redact_postgres_password(&config.database_url)
             )
         });
+
+    tracing::info!(
+        "Connected to DATABASE_URL `{}`",
+        redact_postgres_password(&config.database_url)
+    );
 
     let market_ids = get_market_ids(pool.clone()).await;
     if market_ids.is_empty() {
@@ -122,7 +127,7 @@ fn init_tracing(env: Env) {
 }
 
 async fn get_market_ids(pool: Pool<Postgres>) -> Vec<u64> {
-    sqlx::query_as!(MarketIdQuery, r#"select market_id from markets;"#)
+    sqlx::query_as!(MarketIdQuery, r#"select market_id from markets"#)
         .fetch_all(&pool)
         .await
         .unwrap()

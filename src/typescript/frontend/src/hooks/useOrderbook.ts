@@ -20,3 +20,5 @@ export const useOrderBook = (
     { keepPreviousData: true, refetchOnWindowFocus: false }
   );
 };
+
+const websocket = new WebSocket(`wss://${API_URL}/ws`);

@@ -1,4 +1,4 @@
-use std::{collections::HashSet, net::SocketAddr};
+use std::{collections::HashSet, net::SocketAddr, sync::Arc};
 
 use bigdecimal::ToPrimitive;
 use db::query::market::MarketIdQuery;
@@ -61,11 +61,6 @@ async fn main() {
             )
         });
 
-    tracing::info!(
-        "Connected to DATABASE_URL `{}`",
-        redact_postgres_password(&config.database_url)
-    );
-
     let market_ids = get_market_ids(pool.clone()).await;
     if market_ids.is_empty() {
         tracing::warn!("no markets registered in database");
@@ -74,11 +69,11 @@ async fn main() {
     let (btx, brx) = broadcast::channel(16);
     let _conn = start_redis_channels(config.redis_url, market_ids.clone(), btx.clone()).await;
 
-    let state = AppState {
+    let state = Arc::new(AppState {
         pool,
         sender: btx,
         market_ids: HashSet::from_iter(market_ids.into_iter()),
-    };
+    });
     let app = router(state);
     let addr = SocketAddr::from(([0, 0, 0, 0], config.port));
 
@@ -213,11 +208,11 @@ pub mod tests {
         let (btx, mut brx) = broadcast::channel(16);
         let _conn = start_redis_channels(config.redis_url, market_ids.clone(), btx.clone()).await;
 
-        let state = AppState {
+        let state = Arc::new(AppState {
             pool,
             sender: btx,
             market_ids: HashSet::from_iter(market_ids.into_iter()),
-        };
+        });
 
         tokio::spawn(async move {
             // keep broadcast channel alive

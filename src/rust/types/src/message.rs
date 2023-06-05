@@ -32,7 +32,7 @@ pub enum Channel {
     Ticker3h {
         market_id: u64,
     },
-    PriceLevel {
+    PriceLevels {
         market_id: u64,
     }, // TODO add more channels
 }

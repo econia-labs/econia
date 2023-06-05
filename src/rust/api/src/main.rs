@@ -61,11 +61,6 @@ async fn main() {
             )
         });
 
-    tracing::info!(
-        "Connected to DATABASE_URL `{}`",
-        redact_postgres_password(&config.database_url)
-    );
-
     let market_ids = get_market_ids(pool.clone()).await;
     if market_ids.is_empty() {
         tracing::warn!("no markets registered in database");

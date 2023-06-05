@@ -216,7 +216,7 @@ async fn inbound_message_handler(
     mut receiver: SplitStream<WebSocket>,
     tx: mpsc::Sender<OutboundMessage>,
     subs: Arc<Mutex<HashSet<Channel>>>,
-    market_ids: HashSet<u64>,
+    market_ids: &HashSet<u64>,
     last_ping: Arc<Mutex<DateTime<Utc>>>,
     who: SocketAddr,
 ) -> Result<(), WebSocketError> {
@@ -364,15 +364,8 @@ async fn handle_socket(ws: WebSocket, state: Arc<AppState>, who: SocketAddr) {
     let mtx2 = mtx.clone();
     let last_ping1 = last_ping.clone();
     let mut recv_task = tokio::spawn(async move {
-        if let Err(e) = inbound_message_handler(
-            receiver,
-            mtx2,
-            subs,
-            state.market_ids.clone(),
-            last_ping1,
-            who,
-        )
-        .await
+        if let Err(e) =
+            inbound_message_handler(receiver, mtx2, subs, &state.market_ids, last_ping1, who).await
         {
             tracing::error!(
                 "websocket connection with client {} failed on inbound message handler: {}",

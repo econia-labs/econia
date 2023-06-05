@@ -9,7 +9,7 @@ import { type OrderBook, type PriceLevel } from "@/types/global";
 import { averageOrOtherPriceLevel } from "@/utils/formatter";
 import { useOrderEntry } from "@/contexts/OrderEntryContext";
 import BigNumber from "bignumber.js";
-import { toDecimalPrice } from "@/utils/econia";
+import { toDecimalPrice, toDecimalSize } from "@/utils/econia";
 
 const precisionOptions: Precision[] = [
   "0.01",
@@ -36,6 +36,13 @@ const Row: React.FC<{
     baseCoinDecimals: BigNumber(marketData.base?.decimals || 0),
     quoteCoinDecimals: BigNumber(marketData.quote?.decimals || 0),
   }).toNumber();
+
+  const size = toDecimalSize({
+    size: new BigNumber(order.size),
+    lotSize: BigNumber(marketData.lot_size),
+    baseCoinDecimals: BigNumber(marketData.base?.decimals || 0),
+  });
+
   return (
     <div
       className="relative my-[1px] flex min-h-[16px] min-w-full items-center justify-between hover:font-bold hover:outline hover:outline-neutral-600"
@@ -51,7 +58,7 @@ const Row: React.FC<{
       >
         {price}
       </div>
-      <div className="z-10 mr-4 text-white">{order.size}</div>
+      <div className="z-10 mr-4 text-white">{size.toPrecision(4)}</div>
       <div
         className={`absolute right-0 z-0 h-full opacity-30 ${
           type === "ask" ? "bg-red" : "bg-green"

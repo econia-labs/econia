@@ -480,6 +480,24 @@
     },
     "query": "\n        with bars as (\n            select * from bars_1m\n            where start_time >= now() - $1::interval and start_time < now()\n        ),\n        first as (\n            select market_id, start_time, first_value(open) over (\n                partition by market_id order by start_time\n            ) as open from bars\n        ),\n        last as (\n            select market_id, start_time, first_value(close) over (\n                partition by market_id order by start_time desc\n            ) as close from bars\n        )\n        select\n            bars.market_id,\n            min(first.open) as \"open!\",\n            max(high) as \"high!\",\n            min(low) as \"low!\",\n            min(last.close) as \"close!\",\n            round(min(last.close) / min(first.open) - 1, 8) as \"change!\",\n            sum(volume) as \"volume!\"\n        from\n            bars\n            inner join first on bars.start_time = first.start_time\n                and bars.market_id = first.market_id\n            inner join last on bars.start_time = last.start_time\n                and bars.market_id = last.market_id\n        group by bars.market_id order by market_id;\n        "
   },
+  "7be9568bf12ee1219f6b2470ba677b6bcccabafe1ea9d2663e405f0efec61d8e": {
+    "describe": {
+      "columns": [
+        {
+          "name": "market_id",
+          "ordinal": 0,
+          "type_info": "Numeric"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "select market_id from markets"
+  },
   "8b13d24afeefc62bea2992669ef596a81a4e955b8d6f2b0f3e6fff9b34dc7d02": {
     "describe": {
       "columns": [
@@ -506,24 +524,6 @@
       }
     },
     "query": "\n        select\n            price,\n            sum(size) as \"size!\"\n        from orders where\n            market_id = $1 and\n            order_state = 'open' and\n            side = 'ask'\n        group by price order by price limit $2;\n        "
-  },
-  "a65c6cd1719b1dfdf608c71366e0086b5eaa068f392296a6c98a506570b68a0d": {
-    "describe": {
-      "columns": [
-        {
-          "name": "market_id",
-          "ordinal": 0,
-          "type_info": "Numeric"
-        }
-      ],
-      "nullable": [
-        false
-      ],
-      "parameters": {
-        "Left": []
-      }
-    },
-    "query": "select market_id from markets;"
   },
   "a78bc2aa43f9e0709032bedfe0cc9d4b88832ad7714e546bf1829c32da9d910e": {
     "describe": {

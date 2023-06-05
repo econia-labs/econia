@@ -75,7 +75,7 @@ async fn outbound_message_handler(
                 (*lock).contains(&ch)
             }
             Update::PriceLevels(ref price_level) => {
-                let ch = Channel::PriceLevel {
+                let ch = Channel::PriceLevels {
                     market_id: price_level.market_id,
                 };
                 let lock = subs.lock().unwrap();

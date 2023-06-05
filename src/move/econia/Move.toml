@@ -4,7 +4,7 @@ version = "4.0.3"             # Per SemVer.
 upgrade_policy = "compatible"
 
 [addresses]
-econia = "0x40b119411c6a975fca28f1ba5800a8a418bba1e16a3f13b1de92f731e023d135"
+econia = "_"
 # Mock addresses for testing.
 user = "0x1234"
 user_0 = "0x2345"
@@ -13,5 +13,5 @@ integrator = "0x4567"
 
 [dependencies.AptosFramework]
 git = "https://github.com/aptos-labs/aptos-core.git"
-rev = "mainnet"
+rev = "devnet"
 subdir = "aptos-move/framework/aptos-framework"

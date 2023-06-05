@@ -332,7 +332,7 @@ async fn forward_message_handler(
 }
 
 /// WebSocket connection handler.
-async fn handle_socket(ws: WebSocket, State(state): Arc<AppState>, who: SocketAddr) {
+async fn handle_socket(ws: WebSocket, state: Arc<AppState>, who: SocketAddr) {
     let (sender, receiver) = ws.split();
     let brx = state.sender.subscribe();
     let (mtx, mrx) = mpsc::channel(16);

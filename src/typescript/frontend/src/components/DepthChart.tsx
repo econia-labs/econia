@@ -6,6 +6,7 @@ import { Line } from "react-chartjs-2";
 import { useOrderBook } from "@/hooks/useOrderbook";
 import { type ApiMarket } from "@/types/api";
 import { formatNumber } from "@/utils/formatter";
+import { toDecimalPrice, toDecimalSize } from "@/utils/econia";
 
 export const ZERO_BIGNUMBER = new BigNumber(0);
 
@@ -272,40 +273,6 @@ export const DepthChart: React.FC<{
       </div>
     </div>
   );
-};
-
-// depth chart related util
-const TEN = new BigNumber(10);
-export const toDecimalPrice = ({
-  price,
-  lotSize,
-  tickSize,
-  baseCoinDecimals,
-  quoteCoinDecimals,
-}: {
-  price: BigNumber;
-  lotSize: BigNumber;
-  tickSize: BigNumber;
-  baseCoinDecimals: BigNumber;
-  quoteCoinDecimals: BigNumber;
-}) => {
-  const lotsPerUnit = TEN.exponentiatedBy(baseCoinDecimals).div(lotSize);
-  const pricePerLot = price
-    .multipliedBy(tickSize)
-    .div(TEN.exponentiatedBy(quoteCoinDecimals));
-  return pricePerLot.multipliedBy(lotsPerUnit);
-};
-
-export const toDecimalSize = ({
-  size,
-  lotSize,
-  baseCoinDecimals,
-}: {
-  size: BigNumber;
-  lotSize: BigNumber;
-  baseCoinDecimals: BigNumber;
-}) => {
-  return size.multipliedBy(lotSize).div(TEN.exponentiatedBy(baseCoinDecimals));
 };
 
 // crosshair plugin

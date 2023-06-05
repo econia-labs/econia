@@ -17,7 +17,7 @@ import { SelectMarketContent } from "./trade/DepositWithdrawModal/SelectMarketCo
 import { MarketIconPair } from "./MarketIconPair";
 import { averageOrOther, formatNumber } from "@/utils/formatter";
 import BigNumber from "bignumber.js";
-import { toDecimalPrice } from "./DepthChart";
+import { toDecimalPrice } from "@/utils/econia";
 
 const DEFAULT_TOKEN_ICON = "/tokenImages/default.png";
 

@@ -9,7 +9,7 @@ import { type OrderBook, type PriceLevel } from "@/types/global";
 import { averageOrOtherPriceLevel } from "@/utils/formatter";
 import { useOrderEntry } from "@/contexts/OrderEntryContext";
 import BigNumber from "bignumber.js";
-import { toDecimalPrice } from "./DepthChart";
+import { toDecimalPrice } from "@/utils/econia";
 
 const precisionOptions: Precision[] = [
   "0.01",

@@ -158,10 +158,17 @@ export const DepthChart: React.FC<{
               },
               title: {
                 display: true,
-                text: `MID MARKET $${formatNumber(
-                  labels[labels.length / 2],
-                  2
-                )}`,
+                text: `MID MARKET $${
+                  // labels length should never be odd
+                  labels.length % 2 === 0
+                    ? formatNumber(
+                        (labels[labels.length / 2] +
+                          labels[labels.length / 2 - 1]) /
+                          2,
+                        2
+                      )
+                    : formatNumber(labels[labels.length / 2], 2)
+                }`,
                 color: "white",
               },
               animation: {

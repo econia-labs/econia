@@ -8,6 +8,8 @@ import { type Precision } from "@/types/global";
 import { type OrderBook, type PriceLevel } from "@/types/global";
 import { averageOrOtherPriceLevel } from "@/utils/formatter";
 import { useOrderEntry } from "@/contexts/OrderEntryContext";
+import BigNumber from "bignumber.js";
+import { toDecimalPrice, toDecimalSize } from "@/utils/econia";
 
 const precisionOptions: Precision[] = [
   "0.01",
@@ -24,14 +26,29 @@ const Row: React.FC<{
   order: PriceLevel;
   type: "bid" | "ask";
   highestSize: number;
-}> = ({ order, type, highestSize }) => {
+  marketData: ApiMarket;
+}> = ({ order, type, highestSize, marketData }) => {
   const { setType, setPrice } = useOrderEntry();
+  const price = toDecimalPrice({
+    price: new BigNumber(order.price),
+    lotSize: BigNumber(marketData.lot_size),
+    tickSize: BigNumber(marketData.tick_size),
+    baseCoinDecimals: BigNumber(marketData.base?.decimals || 0),
+    quoteCoinDecimals: BigNumber(marketData.quote?.decimals || 0),
+  }).toNumber();
+
+  const size = toDecimalSize({
+    size: new BigNumber(order.size),
+    lotSize: BigNumber(marketData.lot_size),
+    baseCoinDecimals: BigNumber(marketData.base?.decimals || 0),
+  });
+
   return (
     <div
       className="relative my-[1px] flex min-h-[16px] min-w-full items-center justify-between hover:font-bold hover:outline hover:outline-neutral-600"
       onClick={() => {
         setType(type === "ask" ? "buy" : "sell");
-        setPrice(order.price.toString());
+        setPrice(price.toString());
       }}
     >
       <div
@@ -39,9 +56,9 @@ const Row: React.FC<{
           type === "ask" ? "text-red" : "text-green"
         }`}
       >
-        {order.price}
+        {price}
       </div>
-      <div className="z-10 mr-4 text-white">{order.size}</div>
+      <div className="z-10 mr-4 text-white">{size.toPrecision(4)}</div>
       <div
         className={`absolute right-0 z-0 h-full opacity-30 ${
           type === "ask" ? "bg-red" : "bg-green"
@@ -143,6 +160,7 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
               type={"ask"}
               key={`ask-${order.price}-${order.size}`}
               highestSize={highestSize}
+              marketData={marketData}
             />
           ))}
           {/* SPREAD */}
@@ -151,7 +169,13 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
             ref={centerRef}
           >
             <div className={`z-10 ml-4 text-right text-white`}>
-              {midPrice?.price || "-"}
+              {toDecimalPrice({
+                price: new BigNumber(midPrice?.price || 0),
+                lotSize: BigNumber(marketData.lot_size),
+                tickSize: BigNumber(marketData.tick_size),
+                baseCoinDecimals: BigNumber(marketData.base?.decimals || 0),
+                quoteCoinDecimals: BigNumber(marketData.quote?.decimals || 0),
+              }).toNumber()}
             </div>
             <div className="z-10 mr-4 text-white">{midPrice?.size || "-"}</div>
           </div>
@@ -162,6 +186,7 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
               type={"bid"}
               key={`bid-${order.price}-${order.size}`}
               highestSize={highestSize}
+              marketData={marketData}
             />
           ))}
         </div>

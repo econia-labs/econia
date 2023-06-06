@@ -15,10 +15,10 @@ docgen_address="0xc0deb00c"
 move_dir="src/move/econia/"
 
 # Python build scripts directory.
-python_build_dir="src/python/"
+python_build_dir="src/python/build_scripts/"
 
 # Relative path to this directory from Python build scripts directory.
-python_build_dir_inverse="../../"
+python_build_dir_inverse="../../../"
 
 # Rust directory.
 rust_dir="src/rust/"
@@ -42,7 +42,8 @@ manifest=$move_dir"Move.toml"
 incentives_module=$move_dir"sources/incentives.move"
 
 # Governance script path.
-governance_script=$move_dir"scripts/govern.move"
+governance_script="src/move/governance_scripts/update_incentives/sources/\
+update_incentives.move"
 
 # Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -63,7 +64,7 @@ function brew_install {
 function generate_temporary_account {
     cd $python_build_dir # Navigate to Python build scripts directory.
     # Generate temporary account.
-    poetry run python -m econia.account generate \
+    poetry run python -m src.account generate \
         $python_build_dir_inverse$secrets_dir \
         --type temporary
     cd $python_build_dir_inverse # Go back to repository root.
@@ -74,7 +75,7 @@ function print_auth_key_message {
     type=$1              # Get address.
     cd $python_build_dir # Navigate to Python build scripts directory.
     # Print authentication key message.
-    poetry run python -m econia.account authentication-key \
+    poetry run python -m src.account authentication-key \
         $python_build_dir_inverse$secrets_dir$type
     cd $python_build_dir_inverse # Go back to repository root.
 }
@@ -89,7 +90,7 @@ function set_econia_address {
     fi                   # Address now reassigned.
     cd $python_build_dir # Navigate to Python build scripts directory.
     # Set address.
-    poetry run python -m econia.manifest address \
+    poetry run python -m src.manifest address \
         $python_build_dir_inverse$manifest \
         $address
     cd $python_build_dir_inverse # Go back to repository root.
@@ -292,7 +293,7 @@ case "$1" in
         echo "Updating genesis parameters" # Print notice.
         cd $python_build_dir               # Navigate to Python build package.
         # Run incentives CLI genesis command, passing remaining arguments.
-        poetry run python -m econia.incentives update \
+        poetry run python -m src.incentives update \
             $python_build_dir_inverse$incentives_module \
             --genesis-parameters "${@:2}"
         cd $python_build_dir_inverse # Go back to repository root.
@@ -303,7 +304,7 @@ case "$1" in
         echo "Updating script parameters" # Print notice.
         cd $python_build_dir              # Navigate to Python build package.
         # Run incentives CLI command, passing remaining arguments.
-        poetry run python -m econia.incentives update \
+        poetry run python -m src.incentives update \
             $python_build_dir_inverse$governance_script "${@:2}"
         cd $python_build_dir_inverse # Go back to repository root.
         ;;

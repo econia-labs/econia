@@ -6,6 +6,7 @@ import { Line } from "react-chartjs-2";
 import { useOrderBook } from "@/hooks/useOrderbook";
 import { type ApiMarket } from "@/types/api";
 import { formatNumber } from "@/utils/formatter";
+import { toDecimalPrice, toDecimalSize } from "@/utils/econia";
 
 export const ZERO_BIGNUMBER = new BigNumber(0);
 
@@ -158,10 +159,17 @@ export const DepthChart: React.FC<{
               },
               title: {
                 display: true,
-                text: `MID MARKET $${formatNumber(
-                  labels[labels.length / 2],
-                  2
-                )}`,
+                text: `MID MARKET $${
+                  // labels length should never be odd
+                  labels.length % 2 === 0
+                    ? formatNumber(
+                        (labels[labels.length / 2] +
+                          labels[labels.length / 2 - 1]) /
+                          2,
+                        2
+                      )
+                    : formatNumber(labels[labels.length / 2], 2)
+                }`,
                 color: "white",
               },
               animation: {
@@ -229,7 +237,7 @@ export const DepthChart: React.FC<{
                     const formatted = formatter.format(Number(value));
 
                     // show 0.0 as <0.1
-                    return value === "0"
+                    return value == "0"
                       ? "0"
                       : formatted === "0.0"
                       ? "<0.1"
@@ -265,40 +273,6 @@ export const DepthChart: React.FC<{
       </div>
     </div>
   );
-};
-
-// depth chart related util
-const TEN = new BigNumber(10);
-export const toDecimalPrice = ({
-  price,
-  lotSize,
-  tickSize,
-  baseCoinDecimals,
-  quoteCoinDecimals,
-}: {
-  price: BigNumber;
-  lotSize: BigNumber;
-  tickSize: BigNumber;
-  baseCoinDecimals: BigNumber;
-  quoteCoinDecimals: BigNumber;
-}) => {
-  const lotsPerUnit = TEN.exponentiatedBy(baseCoinDecimals).div(lotSize);
-  const pricePerLot = price
-    .multipliedBy(tickSize)
-    .div(TEN.exponentiatedBy(quoteCoinDecimals));
-  return pricePerLot.multipliedBy(lotsPerUnit);
-};
-
-export const toDecimalSize = ({
-  size,
-  lotSize,
-  baseCoinDecimals,
-}: {
-  size: BigNumber;
-  lotSize: BigNumber;
-  baseCoinDecimals: BigNumber;
-}) => {
-  return size.multipliedBy(lotSize).div(TEN.exponentiatedBy(baseCoinDecimals));
 };
 
 // crosshair plugin

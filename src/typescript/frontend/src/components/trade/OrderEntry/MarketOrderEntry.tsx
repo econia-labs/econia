@@ -88,10 +88,12 @@ export const MarketOrderEntry: React.FC<{
               required: "required",
               min: 0,
             })}
-            className="h-full w-[100px] flex-1 bg-transparent text-right font-roboto-mono font-light text-neutral-400 outline-none"
+            className="h-full w-[100px] flex-1 bg-transparent text-right font-roboto-mono text-xs font-light text-neutral-400 outline-none"
           />
         </OrderEntryInputWrapper>
-        <p className="text-red">{errors.size != null && errors.size.message}</p>
+        <p className="text-xs uppercase text-red">
+          {errors.size != null && errors.size.message}
+        </p>
       </div>
       <hr className="my-4 border-neutral-600" />
       <div className="mx-4 mb-4 flex flex-col gap-4">

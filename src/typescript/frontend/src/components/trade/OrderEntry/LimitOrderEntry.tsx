@@ -107,7 +107,7 @@ export const LimitOrderEntry: React.FC<{
             step="any"
             placeholder="0.00"
             {...register("price", {
-              required: "REQUIRED",
+              required: "required",
               min: 0,
               // TODO: check that amount * size does not exceed quote currency
               // balance for bids
@@ -125,7 +125,7 @@ export const LimitOrderEntry: React.FC<{
           />
         </OrderEntryInputWrapper>
         <div className="relative mb-4">
-          <p className="absolute text-xs text-red">
+          <p className="absolute text-xs uppercase text-red">
             {errors.price != null && errors.price.message}
           </p>
         </div>
@@ -142,7 +142,7 @@ export const LimitOrderEntry: React.FC<{
               step="any"
               placeholder="0.00"
               {...register("size", {
-                required: "REQUIRED",
+                required: "required",
                 min: 0,
                 // TODO: check that size does not exceed base currency balance for asks
                 onChange: (e) => {
@@ -159,7 +159,7 @@ export const LimitOrderEntry: React.FC<{
             />
           </OrderEntryInputWrapper>
           <div className="relative">
-            <p className="absolute text-xs text-red">
+            <p className="absolute text-xs uppercase text-red">
               {errors.size != null && errors.size.message}
             </p>
           </div>

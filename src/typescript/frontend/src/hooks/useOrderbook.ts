@@ -1,13 +1,15 @@
 import {
+  useMutation,
   useQuery,
   useQueryClient,
   type UseQueryResult,
 } from "@tanstack/react-query";
+import { useEffect } from "react";
 
 import { API_URL } from "@/env";
 import { type OrderBook, type Precision } from "@/types/global";
-import { useEffect } from "react";
 import { PriceLevel } from "@/types/global";
+
 // TODO: precision not yet implemented in API yet, so does nothing as of now
 export const useOrderBook = (
   market_id: number,
@@ -45,19 +47,48 @@ export const useOrderBook = (
     };
 
     websocket.onmessage = (event) => {
-      const data: PriceLevel = JSON.parse(event.data);
-      queryClient.setQueryData(QUERY_KEY, (oldData: OrderBook | undefined) => {
-        return oldData;
-      });
+      const data: PriceLevel = JSON.parse(event.data).data;
+      updateOrderBook(data);
       console.log("websocket message", data);
       // queryClient.invalidateQueries({ queryKey });
     };
+
+    const updateOrderBook = (event: PriceLevel) => {
+      queryClient.setQueryData(QUERY_KEY, (oldData: OrderBook | undefined) => {
+        if (oldData) {
+          const newData: OrderBook = {
+            bids: [...oldData.bids],
+            asks: [...oldData.asks],
+          };
+          // TODO
+          newData.bids[0] = { ...newData.bids[0], size: 100 };
+          return newData;
+        }
+        return oldData;
+      });
+    };
+
+    // testing
+    // setTimeout(() => {
+    //   console.log("sending message");
+    //   queryClient.setQueryData(QUERY_KEY, (oldData: OrderBook | undefined) => {
+    //     if (oldData) {
+    //       const newData: OrderBook = {
+    //         bids: [...oldData.bids],
+    //         asks: [...oldData.asks],
+    //       };
+    //       newData.bids[0] = { ...newData.bids[0], size: 100 };
+    //       return newData;
+    //     }
+    //     return oldData;
+    //   });
+    // }, 5000);
 
     // cleanup
     return () => {
       websocket.close();
     };
-  }, []);
+  }, [QUERY_KEY, queryClient, market_id]);
 
   //  initial fetch
   return useQuery(
@@ -69,26 +100,11 @@ export const useOrderBook = (
       const data = await response.json();
       return data as OrderBook;
     },
-    { keepPreviousData: true, refetchOnWindowFocus: false }
+    {
+      keepPreviousData: true,
+      refetchOnWindowFocus: false,
+      cacheTime: Infinity,
+      staleTime: Infinity,
+    }
   );
-};
-
-const useReactQuerySubscription = () => {
-  const queryClient = useQueryClient();
-  useEffect(() => {
-    const websocket = new WebSocket(`wss://${API_URL}/ws`);
-    websocket.onopen = () => {
-      console.log("connected");
-    };
-
-    websocket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      const queryKey = [...data.entity, data.id].filter(Boolean);
-      queryClient.invalidateQueries({ queryKey });
-    };
-
-    return () => {
-      websocket.close();
-    };
-  }, []);
 };

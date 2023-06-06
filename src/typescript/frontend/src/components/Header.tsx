@@ -24,7 +24,7 @@ const NavItem: React.FC<
         target="_blank"
         rel="noreferrer"
         className={`cursor-pointer font-roboto-mono text-lg font-medium uppercase tracking-wide transition-all ${
-          active ? "text-neutral-100" : "text-neutral-500 hover:text-purple"
+          active ? "text-neutral-100" : "text-neutral-500 hover:text-blue"
         } ${className ? className : ""}`}
       >
         {children}
@@ -36,7 +36,7 @@ const NavItem: React.FC<
     <Link
       href={href}
       className={`cursor-pointer font-roboto-mono text-lg font-medium uppercase tracking-wide transition-all ${
-        active ? "text-neutral-100" : "text-neutral-500 hover:text-purple"
+        active ? "text-neutral-100" : "text-neutral-500 hover:text-blue"
       }`}
     >
       {children}

@@ -10,15 +10,15 @@ import { StatsBar } from "@/components/StatsBar";
 import { OrderEntry } from "@/components/trade/OrderEntry";
 import { OrdersTable } from "@/components/trade/OrdersTable";
 import { TradeHistoryTable } from "@/components/trade/TradeHistoryTable";
+import { OrderEntryContextProvider } from "@/contexts/OrderEntryContext";
 import { API_URL } from "@/env";
+import { MOCK_MARKETS } from "@/mockdata/markets";
 import type { ApiMarket } from "@/types/api";
 
 import {
   type ResolutionString,
   type ThemeName,
 } from "../../../public/static/charting_library";
-import { MOCK_MARKETS } from "@/mockdata/markets";
-import { OrderEntryContextProvider } from "@/contexts/OrderEntryContext";
 
 const TVChartContainer = dynamic(
   () =>
@@ -97,7 +97,7 @@ export default function Market({ allMarketData, marketData }: Props) {
               <OrdersTable allMarketData={allMarketData} />
             </ChartCard>
           </div>
-          <div className="flex min-w-[360px] flex-initial flex-col border-neutral-600">
+          <div className="flex min-w-[268px] flex-initial flex-col border-neutral-600">
             <ChartCard className="flex flex-1 flex-col">
               <OrderBook marketData={marketData} />
             </ChartCard>

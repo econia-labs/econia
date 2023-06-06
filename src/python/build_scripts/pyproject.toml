@@ -6,4 +6,4 @@ authors = ["Econia Labs"]
 
 [tool.poetry.dependencies]
 aptos-sdk = "^0.5.1"
-python = "^3.11"
+python = "^3.9"

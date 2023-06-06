@@ -33,7 +33,15 @@ export const useOrderBook = (
     const websocket = new WebSocket(`wss://dev.api.econia.exchange/ws`);
 
     websocket.onopen = () => {
-      console.log("websocket connected");
+      websocket.send(
+        JSON.stringify({
+          method: "subscribe",
+          channel: "price_level",
+          params: {
+            market_id: market_id,
+          },
+        })
+      );
     };
 
     websocket.onmessage = (event) => {

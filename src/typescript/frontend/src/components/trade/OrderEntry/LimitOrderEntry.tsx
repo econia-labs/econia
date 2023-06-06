@@ -155,7 +155,7 @@ export const LimitOrderEntry: React.FC<{
                   }
                 },
               })}
-              className="h-full w-[100px] flex-1 bg-transparent text-right font-roboto-mono font-light text-neutral-400 outline-none"
+              className="h-full w-[100px] flex-1 bg-transparent text-right font-roboto-mono text-xs font-light text-neutral-400 outline-none"
             />
           </OrderEntryInputWrapper>
           <div className="relative">

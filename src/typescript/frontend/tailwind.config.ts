@@ -18,7 +18,8 @@ const config = {
     colors: {
       ...colors,
       purple: "#8c3dd8",
-      blue: "#62c6f8",
+      blue: "#086cd9",
+      "light-blue": "#62c6f8",
       green: "#6ed5a3",
       yellow: "#eef081",
       red: "#d56e6e",

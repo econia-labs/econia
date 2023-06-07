@@ -6,6 +6,15 @@
   .scrollbar-none::-webkit-scrollbar {
     width: 0px;
   }
+  .flash-bg-once {
+    animation: pulse-bg-once 0.5s ease-out forwards;
+  }
+
+  @keyframes flash-bg-once {
+    to {
+      background-color: transparent;
+    }
+  }
 }
 @layer base {
   input[type="number"]::-webkit-outer-spin-button,

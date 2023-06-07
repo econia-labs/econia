@@ -5,12 +5,15 @@ import {
   flexRender,
   getCoreRowModel,
   useReactTable,
+  SortingState,
+  getSortedRowModel,
 } from "@tanstack/react-table";
 import React from "react";
 
 import { type ApiMarket, type ApiOrder } from "@/types/api";
 
 import { ConnectedButton } from "../ConnectedButton";
+import ts from "typescript";
 
 const columnHelper = createColumnHelper<ApiOrder>();
 
@@ -18,6 +21,8 @@ export const OrdersTable: React.FC<{
   className?: string;
   allMarketData: ApiMarket[];
 }> = ({ className, allMarketData }) => {
+  const [sorting, setSorting] = React.useState<SortingState>([]);
+
   const { connected, account } = useWallet();
   const { data, isLoading } = useQuery<ApiOrder[]>(
     ["useUserOrders", account?.address],
@@ -59,6 +64,11 @@ export const OrdersTable: React.FC<{
     return map;
   }, [allMarketData]);
   const table = useReactTable({
+    state: {
+      sorting,
+    },
+    getSortedRowModel: getSortedRowModel(),
+    onSortingChange: setSorting,
     columns: [
       columnHelper.accessor("created_at", {
         cell: (info) =>
@@ -125,13 +135,27 @@ export const OrdersTable: React.FC<{
               key={headerGroup.id}
             >
               {headerGroup.headers.map((header, i) => (
-                <th className={i === 0 ? "pl-4 text-left" : ""} key={header.id}>
+                <th
+                  className={i === 0 ? "pl-4 text-left" : ""}
+                  key={header.id}
+                  onClick={header.column.getToggleSortingHandler()}
+                  // onClick={() => {
+                  //   // for some reason this doesn't match the codesandbox example but it works?
+                  //   const sortingHandler =
+                  //     header.column.getToggleSortingHandler();
+                  //   sortingHandler ? sortingHandler("asc") : null;
+                  // }}
+                >
                   {header.isPlaceholder
                     ? null
                     : flexRender(
                         header.column.columnDef.header,
                         header.getContext()
-                      )}
+                      )}{" "}
+                  {{
+                    asc: " ▴",
+                    desc: " ▾",
+                  }[header.column.getIsSorted() as string] ?? null}
                 </th>
               ))}
             </tr>

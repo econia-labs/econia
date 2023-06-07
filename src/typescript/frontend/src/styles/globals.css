@@ -7,7 +7,7 @@
     width: 0px;
   }
   .flash-bg-once {
-    animation: flash-bg-once 0.3s ease-out forwards;
+    animation: flash-bg-once 0.5s ease-out forwards;
   }
 
   @keyframes flash-bg-once {

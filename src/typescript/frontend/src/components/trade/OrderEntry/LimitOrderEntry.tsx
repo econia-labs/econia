@@ -192,6 +192,13 @@ export const LimitOrderEntry: React.FC<{
         <OrderEntryInfo
           label={`${marketData.base?.symbol} AVAILABLE`}
           value={`${baseBalance.data ?? "--"} ${marketData.base?.symbol}`}
+          className="cursor-pointer"
+          onClick={() => {
+            setValue(
+              "size",
+              baseBalance.data ? baseBalance.data.toString() : ""
+            );
+          }}
         />
         <OrderEntryInfo
           label={`${marketData.quote?.symbol} AVAILABLE`}

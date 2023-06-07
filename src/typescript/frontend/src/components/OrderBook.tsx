@@ -2,12 +2,12 @@ import { Listbox } from "@headlessui/react";
 import { CheckIcon, ChevronDownIcon } from "@heroicons/react/20/solid";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { useOrderEntry } from "@/contexts/OrderEntryContext";
 import { useOrderBook } from "@/hooks/useOrderbook";
 import { type ApiMarket } from "@/types/api";
-import { type Precision } from "@/types/global";
+import { type Precision, type UpdatedPriceLevel } from "@/types/global";
 import { type OrderBook, type PriceLevel } from "@/types/global";
 import { averageOrOtherPriceLevel } from "@/utils/formatter";
-import { useOrderEntry } from "@/contexts/OrderEntryContext";
 
 const precisionOptions: Precision[] = [
   "0.01",
@@ -21,14 +21,17 @@ const precisionOptions: Precision[] = [
 ];
 
 const Row: React.FC<{
-  order: PriceLevel;
+  order: UpdatedPriceLevel;
   type: "bid" | "ask";
   highestSize: number;
 }> = ({ order, type, highestSize }) => {
   const { setType, setPrice } = useOrderEntry();
   return (
     <div
-      className="relative my-[1px] flex min-h-[16px] min-w-full items-center justify-between hover:font-bold hover:outline hover:outline-neutral-600"
+      className={`relative my-[1px] flex min-h-[16px] min-w-full items-center justify-between hover:font-bold hover:outline hover:outline-neutral-600 ${
+        order.didUpdate &&
+        `pulse-bg-once ${type === "ask" ? "bg-red" : "bg-green"}`
+      }`}
       onClick={() => {
         setType(type === "ask" ? "buy" : "sell");
         setPrice(order.price.toString());

@@ -62,8 +62,6 @@ export function ConnectWalletContextProvider({ children }: PropsWithChildren) {
                   ? `Install ${wallet.adapter.name} Wallet`
                   : `${wallet.adapter.name} Wallet`}
               </p>
-              {/* unsure if i'm doing something wrong, but some tailwind classes do not render, but intellisense shows that it should work */}
-
               <div
                 className={
                   "absolute bottom-[-1px] right-[-1px] border border-neutral-600 p-[7px] transition-all"

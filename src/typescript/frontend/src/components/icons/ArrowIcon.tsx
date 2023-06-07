@@ -1,5 +1,6 @@
 export const ArrowIcon: React.FC<React.SVGProps<SVGSVGElement>> = ({
   className,
+  id,
 }) => {
   return (
     <svg
@@ -9,6 +10,7 @@ export const ArrowIcon: React.FC<React.SVGProps<SVGSVGElement>> = ({
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
+      id={id}
     >
       <path
         d="M6.229 2.01317L10.6882 6.47241L6.229 10.9316"

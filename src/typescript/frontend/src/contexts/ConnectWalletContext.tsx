@@ -43,7 +43,7 @@ export function ConnectWalletContextProvider({ children }: PropsWithChildren) {
           {wallets.map((wallet) => (
             <div
               key={wallet.adapter.name}
-              className="relative flex w-full cursor-pointer items-center gap-2 border border-neutral-600 p-4 font-jost text-lg font-medium text-neutral-500  [&:hover>#arrow-wrapper]:text-red"
+              className="relative flex w-full cursor-pointer items-center gap-2 border border-neutral-600 p-4 font-jost text-lg font-medium  text-neutral-500 transition-all hover:border-blue [&:hover>#arrow-wrapper]:border-blue [&:hover>#arrow-wrapper]:bg-blue [&:hover>#token-icon]:border-blue [&:hover>div>#arrow]:rotate-[-45deg]"
               onClick={() => {
                 select(wallet.adapter.name);
                 setOpen(false);
@@ -55,6 +55,7 @@ export function ConnectWalletContextProvider({ children }: PropsWithChildren) {
                 width={36}
                 className=""
                 alt={"Wallet Icon"}
+                id={"token-icon"}
               />
               <p>
                 {wallet.readyState === WalletReadyState.NotDetected
@@ -62,12 +63,14 @@ export function ConnectWalletContextProvider({ children }: PropsWithChildren) {
                   : `${wallet.adapter.name} Wallet`}
               </p>
               {/* unsure if i'm doing something wrong, but some tailwind classes do not render, but intellisense shows that it should work */}
+
               <div
-                className={"absolute border border-neutral-600"}
+                className={
+                  "absolute bottom-[-1px] right-[-1px] border border-neutral-600 p-[7px] transition-all"
+                }
                 id={"arrow-wrapper"}
-                style={{ bottom: "-1px", right: "-1px", padding: "7px" }}
               >
-                <ArrowIcon />
+                <ArrowIcon id={"arrow"} className={"transition-all"} />
               </div>
             </div>
           ))}

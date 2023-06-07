@@ -104,10 +104,15 @@ export function Header() {
               <Button
                 variant="secondary"
                 onClick={() => setDepositWithdrawOpen(true)}
+                className="whitespace-nowrap"
               >
                 Deposit / Withdraw
               </Button>
-              <Button variant="outlined" onClick={() => disconnect()}>
+              <Button
+                variant="outlined"
+                onClick={() => disconnect()}
+                className="whitespace-nowrap"
+              >
                 Disconnect
               </Button>
             </div>

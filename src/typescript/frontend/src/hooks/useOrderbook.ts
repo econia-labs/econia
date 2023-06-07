@@ -7,15 +7,19 @@ import {
 import { useEffect } from "react";
 
 import { API_URL } from "@/env";
-import { type OrderBook, type Precision } from "@/types/global";
-import { PriceLevel } from "@/types/global";
+import {
+  type OrderBook,
+  type OrderBookWithUpdatedLevel,
+  type Precision,
+} from "@/types/global";
+import { type PriceLevel } from "@/types/global";
 
 // TODO: precision not yet implemented in API yet, so does nothing as of now
 export const useOrderBook = (
   market_id: number,
   precision: Precision = "0.01",
   depth = 60
-): UseQueryResult<OrderBook> => {
+): UseQueryResult<OrderBookWithUpdatedLevel> => {
   const QUERY_KEY = ["orderBook", market_id, precision];
 
   /**
@@ -71,42 +75,72 @@ export const useOrderBook = (
     // testing
     setTimeout(() => {
       console.log("sending message");
-      queryClient.setQueryData(QUERY_KEY, (oldData: OrderBook | undefined) => {
-        if (oldData) {
-          const newData: OrderBook = {
-            bids: [...oldData.bids],
-            asks: [...oldData.asks],
-          };
-          newData.bids[0] = { ...newData.bids[0], size: 100 };
-          return newData;
+      queryClient.setQueryData(
+        QUERY_KEY,
+        (oldData: OrderBookWithUpdatedLevel | undefined) => {
+          if (oldData) {
+            const newData: OrderBookWithUpdatedLevel = {
+              bids: [...oldData.bids],
+              asks: [...oldData.asks],
+              updatedLevel: {
+                price: oldData.bids[0].price,
+                size: 100,
+              },
+            };
+            newData.bids[0] = { ...newData.bids[0], size: 100 };
+            console.log(newData);
+            return newData;
+          }
+          return oldData;
         }
-        return oldData;
-      });
+      );
     }, 5000);
+    setTimeout(() => {
+      console.log("sending message");
+      queryClient.setQueryData(
+        QUERY_KEY,
+        (oldData: OrderBookWithUpdatedLevel | undefined) => {
+          if (oldData) {
+            const newData: OrderBookWithUpdatedLevel = {
+              bids: [...oldData.bids],
+              asks: [...oldData.asks],
+              updatedLevel: {
+                price: oldData.bids[1].price,
+                size: 300,
+              },
+            };
+            newData.bids[1] = { ...newData.bids[1], size: 300 };
+            console.log(newData);
+            return newData;
+          }
+          return oldData;
+        }
+      );
+    }, 5200);
 
     // we wanna test
     /**
-     * 1. update animation
-     * 2. same level getting updated twice
-     * 3. levels getting updated in quick succession before animation ends
-     * 4. same level getting updated in quick succession before animation ends
+     * 1. update animation - this works
+     * 2. same level getting updated twice - this works
+     * 3. levels getting updated in quick succession before animation ends - this does not work yet
+     * 4. same level getting updated in quick succession before animation ends - this works
      */
     //  TODO: Remove after RR
     // 1
-    setTimeout(() => {
-      console.log("sending message");
-      queryClient.setQueryData(QUERY_KEY, (oldData: OrderBook | undefined) => {
-        if (oldData) {
-          const newData: OrderBook = {
-            bids: [...oldData.bids],
-            asks: [...oldData.asks],
-          };
-          newData.bids[0] = { ...newData.bids[0], size: 100, didUpdate: true };
-          return newData;
-        }
-        return oldData;
-      });
-    }, 5000);
+    // setTimeout(() => {
+    //   console.log("sending message");
+    //   queryClient.setQueryData(QUERY_KEY, (oldData: OrderBook | undefined) => {
+    //     if (oldData) {
+    //       const newData: OrderBook = {
+    //         bids: [...oldData.bids],
+    //         asks: [...oldData.asks],
+    //       };
+    //       newData.bids[0] = { ...newData.bids[0], size: 100, didUpdate: true };
+    //       return newData;
+    //     }
+    //     return oldData;
+    //   });
+    // }, 5000);
 
     // 2
 

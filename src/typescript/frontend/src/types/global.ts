@@ -5,13 +5,13 @@ export type PriceLevel = {
   size: number;
 };
 
-export type UpdatedPriceLevel = PriceLevel & {
-  didUpdate?: boolean;
+export type OrderBook = {
+  bids: PriceLevel[];
+  asks: PriceLevel[];
 };
 
-export type OrderBook = {
-  bids: PriceLevel[] | UpdatedPriceLevel[];
-  asks: PriceLevel[] | UpdatedPriceLevel[];
+export type OrderBookWithUpdatedLevel = OrderBook & {
+  updatedLevel?: PriceLevel;
 };
 export type Precision =
   | "0.01"

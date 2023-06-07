@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useOrderEntry } from "@/contexts/OrderEntryContext";
 import { useOrderBook } from "@/hooks/useOrderbook";
 import { type ApiMarket } from "@/types/api";
-import { type Precision, type UpdatedPriceLevel } from "@/types/global";
+import { type Precision } from "@/types/global";
 import { type OrderBook, type PriceLevel } from "@/types/global";
 import { averageOrOtherPriceLevel } from "@/utils/formatter";
 
@@ -21,16 +21,18 @@ const precisionOptions: Precision[] = [
 ];
 
 const Row: React.FC<{
-  order: UpdatedPriceLevel;
+  order: PriceLevel;
   type: "bid" | "ask";
   highestSize: number;
-}> = ({ order, type, highestSize }) => {
+  updatedLevel: PriceLevel | undefined;
+}> = ({ order, type, highestSize, updatedLevel }) => {
   const { setType, setPrice } = useOrderEntry();
   return (
     <div
-      className={`relative my-[1px] flex min-h-[16px] min-w-full items-center justify-between hover:font-bold hover:outline hover:outline-neutral-600 ${
-        order.didUpdate &&
-        `pulse-bg-once ${type === "ask" ? "bg-red" : "bg-green"}`
+      className={`relative my-[1px] flex min-h-[16px] min-w-full items-center justify-between transition-all hover:font-bold hover:outline hover:outline-neutral-600 ${
+        updatedLevel?.price == order.price &&
+        // using 50% opacity to make it more visible, as price levels with high volume
+        `flash-bg-once ${type === "ask" ? "bg-red/50" : "bg-green/50"}`
       }`}
       onClick={() => {
         setType(type === "ask" ? "buy" : "sell");
@@ -46,8 +48,8 @@ const Row: React.FC<{
       </div>
       <div className="z-10 mr-4 text-white">{order.size}</div>
       <div
-        className={`absolute right-0 z-0 h-full opacity-30 ${
-          type === "ask" ? "bg-red" : "bg-green"
+        className={`absolute right-0 z-0 h-full ${
+          type === "ask" ? "bg-red/30" : "bg-green/30"
         }`}
         // dynamic taillwind?
 
@@ -63,6 +65,8 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
     marketData.market_id,
     precision
   );
+
+  console.log(data, "orderbook print");
 
   const centerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -146,6 +150,7 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
               type={"ask"}
               key={`ask-${order.price}-${order.size}`}
               highestSize={highestSize}
+              updatedLevel={data.updatedLevel}
             />
           ))}
           {/* SPREAD */}
@@ -165,6 +170,7 @@ export function OrderBook({ marketData }: { marketData: ApiMarket }) {
               type={"bid"}
               key={`bid-${order.price}-${order.size}`}
               highestSize={highestSize}
+              updatedLevel={data.updatedLevel}
             />
           ))}
         </div>

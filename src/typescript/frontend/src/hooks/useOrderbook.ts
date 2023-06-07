@@ -73,6 +73,7 @@ export const useOrderBook = (
     };
 
     // testing
+    //  TODO: Remove after RR
     setTimeout(() => {
       console.log("sending message");
       queryClient.setQueryData(
@@ -117,32 +118,6 @@ export const useOrderBook = (
         }
       );
     }, 5200);
-
-    // we wanna test
-    /**
-     * 1. update animation - this works
-     * 2. same level getting updated twice - this works
-     * 3. levels getting updated in quick succession before animation ends - this does not work yet
-     * 4. same level getting updated in quick succession before animation ends - this works
-     */
-    //  TODO: Remove after RR
-    // 1
-    // setTimeout(() => {
-    //   console.log("sending message");
-    //   queryClient.setQueryData(QUERY_KEY, (oldData: OrderBook | undefined) => {
-    //     if (oldData) {
-    //       const newData: OrderBook = {
-    //         bids: [...oldData.bids],
-    //         asks: [...oldData.asks],
-    //       };
-    //       newData.bids[0] = { ...newData.bids[0], size: 100, didUpdate: true };
-    //       return newData;
-    //     }
-    //     return oldData;
-    //   });
-    // }, 5000);
-
-    // 2
 
     // cleanup
     return () => {

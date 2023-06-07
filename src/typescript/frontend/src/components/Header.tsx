@@ -46,14 +46,14 @@ const NavItem: React.FC<
 
 const NavItemDivider: React.FC = () => {
   return (
-    <p className="interact cursor-default font-roboto-mono text-xl font-medium uppercase tracking-wide text-neutral-600">
+    <p className="interact text-neutral-60p0 cursor-default font-roboto-mono text-xl font-medium uppercase tracking-wide">
       /
     </p>
   );
 };
 
 export function Header() {
-  const { disconnect } = useWallet();
+  const { disconnect, account } = useWallet();
   const router = useRouter();
   const [depositWithdrawOpen, setDepositWithdrawOpen] = useState(false);
 
@@ -107,8 +107,17 @@ export function Header() {
               >
                 Deposit / Withdraw
               </Button>
-              <Button variant="outlined" onClick={() => disconnect()}>
-                Disconnect
+              <Button
+                variant="outlined"
+                onClick={() => disconnect()}
+                className="bg-white"
+              >
+                <div className="bg-white font-roboto-mono font-medium text-black">
+                  {account?.address &&
+                    (
+                      account?.address.toString().slice(0, 10) + ".."
+                    ).toUpperCase()}
+                </div>
               </Button>
             </div>
           </ConnectedButton>

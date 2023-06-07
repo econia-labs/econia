@@ -12,13 +12,13 @@ export const OrderEntryInputWrapper: React.FC<
       {/* start adornment */}
       <label
         htmlFor={labelFor}
-        className="flex h-full items-center whitespace-nowrap font-roboto-mono text-xs text-white"
+        className="flex h-full min-w-[80px] items-center whitespace-nowrap font-roboto-mono text-xs text-white"
       >
         {startAdornment}
       </label>
       {children}
       {/* end adornment */}
-      <span className="flex h-full items-center font-roboto-mono text-xs font-light text-neutral-400">
+      <span className="flex h-full min-w-[37px] items-center font-roboto-mono text-xs font-light text-neutral-400">
         {endAdornment}
       </span>
     </div>

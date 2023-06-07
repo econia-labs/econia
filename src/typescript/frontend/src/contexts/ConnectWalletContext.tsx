@@ -7,6 +7,7 @@ import {
 } from "react";
 
 import { BaseModal } from "@/components/BaseModal";
+import { ArrowIcon } from "@/components/icons/ArrowIcon";
 
 export type ConnectWalletContextState = {
   connectWallet: () => void;
@@ -42,7 +43,7 @@ export function ConnectWalletContextProvider({ children }: PropsWithChildren) {
           {wallets.map((wallet) => (
             <div
               key={wallet.adapter.name}
-              className="flex w-full cursor-pointer items-center gap-2 border border-neutral-600 p-4 font-jost text-lg font-medium text-neutral-500 hover:text-white"
+              className="relative flex w-full cursor-pointer items-center gap-2 border border-neutral-600 p-4 font-jost text-lg font-medium text-neutral-500  [&:hover>#arrow-wrapper]:text-red"
               onClick={() => {
                 select(wallet.adapter.name);
                 setOpen(false);
@@ -53,12 +54,21 @@ export function ConnectWalletContextProvider({ children }: PropsWithChildren) {
                 height={36}
                 width={36}
                 className=""
+                alt={"Wallet Icon"}
               />
               <p>
                 {wallet.readyState === WalletReadyState.NotDetected
                   ? `Install ${wallet.adapter.name} Wallet`
                   : `${wallet.adapter.name} Wallet`}
               </p>
+              {/* unsure if i'm doing something wrong, but some tailwind classes do not render, but intellisense shows that it should work */}
+              <div
+                className={"absolute border border-neutral-600"}
+                id={"arrow-wrapper"}
+                style={{ bottom: "-1px", right: "-1px", padding: "7px" }}
+              >
+                <ArrowIcon />
+              </div>
             </div>
           ))}
         </div>

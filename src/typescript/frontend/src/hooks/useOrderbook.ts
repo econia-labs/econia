@@ -48,7 +48,7 @@ export const useOrderBook = (
 
     websocket.onmessage = (event) => {
       const data: PriceLevel = JSON.parse(event.data).data;
-      updateOrderBook(data);
+      // updateOrderBook(data);
       console.log("websocket message", data);
       // queryClient.invalidateQueries({ queryKey });
     };
@@ -69,20 +69,46 @@ export const useOrderBook = (
     };
 
     // testing
-    // setTimeout(() => {
-    //   console.log("sending message");
-    //   queryClient.setQueryData(QUERY_KEY, (oldData: OrderBook | undefined) => {
-    //     if (oldData) {
-    //       const newData: OrderBook = {
-    //         bids: [...oldData.bids],
-    //         asks: [...oldData.asks],
-    //       };
-    //       newData.bids[0] = { ...newData.bids[0], size: 100 };
-    //       return newData;
-    //     }
-    //     return oldData;
-    //   });
-    // }, 5000);
+    setTimeout(() => {
+      console.log("sending message");
+      queryClient.setQueryData(QUERY_KEY, (oldData: OrderBook | undefined) => {
+        if (oldData) {
+          const newData: OrderBook = {
+            bids: [...oldData.bids],
+            asks: [...oldData.asks],
+          };
+          newData.bids[0] = { ...newData.bids[0], size: 100 };
+          return newData;
+        }
+        return oldData;
+      });
+    }, 5000);
+
+    // we wanna test
+    /**
+     * 1. update animation
+     * 2. same level getting updated twice
+     * 3. levels getting updated in quick succession before animation ends
+     * 4. same level getting updated in quick succession before animation ends
+     */
+    //  TODO: Remove after RR
+    // 1
+    setTimeout(() => {
+      console.log("sending message");
+      queryClient.setQueryData(QUERY_KEY, (oldData: OrderBook | undefined) => {
+        if (oldData) {
+          const newData: OrderBook = {
+            bids: [...oldData.bids],
+            asks: [...oldData.asks],
+          };
+          newData.bids[0] = { ...newData.bids[0], size: 100, didUpdate: true };
+          return newData;
+        }
+        return oldData;
+      });
+    }, 5000);
+
+    // 2
 
     // cleanup
     return () => {

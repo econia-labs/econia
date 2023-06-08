@@ -1,8 +1,9 @@
+import { ApiMarket } from "@/types/api";
 import { useWallet } from "@manahippo/aptos-wallet-adapter";
 import { useEffect } from "react";
 import { toast } from "react-toastify";
 
-export const useOrderStatusNotif = ({ market_id }: { market_id: string }) => {
+export const useOrderStatusNotif = (selectedMarket: ApiMarket | undefined) => {
   const { account } = useWallet();
 
   useEffect(() => {
@@ -15,7 +16,7 @@ export const useOrderStatusNotif = ({ market_id }: { market_id: string }) => {
           method: "subscribe",
           channel: "orders",
           params: {
-            market_id: market_id,
+            market_id: selectedMarket?.market_id,
             user_address: account?.address,
           },
         })
@@ -39,5 +40,5 @@ export const useOrderStatusNotif = ({ market_id }: { market_id: string }) => {
     return () => {
       websocket.close();
     };
-  }, [account?.address, market_id]);
+  }, [account?.address, selectedMarket?.market_id]);
 };

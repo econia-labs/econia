@@ -19,6 +19,7 @@ import {
   type ResolutionString,
   type ThemeName,
 } from "../../../public/static/charting_library";
+import { useOrderStatusNotif } from "@/hooks/useOrderStatusNotif";
 
 const TVChartContainer = dynamic(
   () =>
@@ -63,6 +64,7 @@ const ChartName: React.FC<PropsWithChildren<{ className?: string }>> = ({
 );
 
 export default function Market({ allMarketData, marketData }: Props) {
+  useOrderStatusNotif(marketData);
   const [isScriptReady, setIsScriptReady] = useState(false);
 
   if (!marketData) return <Page>Market not found.</Page>;

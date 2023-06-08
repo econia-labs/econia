@@ -27,13 +27,23 @@ const Row: React.FC<{
   updatedLevel: PriceLevel | undefined;
 }> = ({ order, type, highestSize, updatedLevel }) => {
   const { setType, setPrice } = useOrderEntry();
+  const [flash, setFlash] = useState<string>("");
+
+  useEffect(() => {
+    if (updatedLevel == null) {
+      return;
+    }
+    if (updatedLevel.price == order.price) {
+      setFlash(type === "ask" ? "flash-red" : "flash-green");
+      setTimeout(() => {
+        setFlash("");
+      }, 100);
+    }
+  }, [order, type, updatedLevel]);
+
   return (
     <div
-      className={`relative my-[1px] flex min-h-[16px] min-w-full items-center justify-between transition-all hover:font-bold hover:outline hover:outline-neutral-600 ${
-        updatedLevel?.price == order.price &&
-        // using 50% opacity to make it more visible, as price levels with high volume
-        `flash-bg-once ${type === "ask" ? "bg-red/50" : "bg-green/50"}`
-      }`}
+      className={`flash-bg-once relative my-[1px] flex min-h-[16px] min-w-full items-center justify-between hover:font-bold hover:outline hover:outline-neutral-600 ${flash}`}
       onClick={() => {
         setType(type === "ask" ? "buy" : "sell");
         setPrice(order.price.toString());

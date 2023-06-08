@@ -75,7 +75,6 @@ export const useOrderBook = (
     // testing
     //  TODO: Remove after RR
     setTimeout(() => {
-      console.log("sending message");
       queryClient.setQueryData(
         QUERY_KEY,
         (oldData: OrderBookWithUpdatedLevel | undefined) => {
@@ -97,7 +96,6 @@ export const useOrderBook = (
       );
     }, 5000);
     setTimeout(() => {
-      console.log("sending message");
       queryClient.setQueryData(
         QUERY_KEY,
         (oldData: OrderBookWithUpdatedLevel | undefined) => {

@@ -7,10 +7,18 @@
     width: 0px;
   }
   .flash-bg-once {
-    animation: flash-bg-once 0.5s ease-out forwards;
+    background-color: transparent;
+    transition: 0.5s linear background-color;
   }
-
-  @keyframes flash-bg-once {
+  .flash-green {
+    transition: none;
+    @apply bg-green/50;
+  }
+  .flash-red {
+    transition: none;
+    @apply bg-red/50;
+  }
+  @keyframes flash-bg {
     to {
       background-color: transparent;
     }

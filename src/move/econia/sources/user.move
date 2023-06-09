@@ -104,7 +104,8 @@
 ///
 /// Open order lookup:
 ///
-/// * `get_market_order_id()`
+/// * `get_open_order_id()`
+/// * `get_open_order_ids()`
 ///
 /// ## Public functions
 ///
@@ -232,6 +233,22 @@
 ///
 /// ```
 ///
+/// Open order lookup:
+///
+/// ```mermaid
+///
+/// flowchart LR
+///
+/// get_open_order_ids --> get_all_market_account_ids_for_user
+/// get_open_order_ids --> get_market_id
+/// get_open_order_ids --> get_custodian_id
+/// get_open_order_ids --> get_active_market_order_ids_internal
+///
+/// get_open_order_id --> get_market_account_id
+/// get_open_order_id --> has_market_account_by_market_account_id
+///
+/// ```
+///
 /// Market account registration:
 ///
 /// ```mermaid
@@ -349,6 +366,19 @@ module econia::user {
         quote_available: u64,
         /// Amount `quote_total` will increase to if all open asks fill.
         quote_ceiling: u64
+    }
+
+    /// All order IDs (market order IDs) for all open orders in a user's
+    /// `MarketAccount`.
+    struct MarketAccountOpenOrderIDs has copy, drop {
+        /// Market ID for given market account.
+        market_id: u64,
+        /// Custodian ID for given market account.
+        custodian_id: u64,
+        /// All open asks market order IDs for given market account.
+        asks: vector<u128>,
+        /// All open bids market order IDs for given market account.
+        bids: vector<u128>
     }
 
     /// All of a user's market accounts.
@@ -618,6 +648,81 @@ module econia::user {
     }
 
     #[view]
+    /// Return optional market order ID corresponding to open order for
+    /// `user`, `market_id`, `custodian_id`, `side`, and
+    /// `order_access_key`, if one exists.
+    ///
+    /// Restricted to public friend to prevent runtime user state
+    /// contention.
+    ///
+    /// # Testing
+    ///
+    /// * `test_market_account_getters()`
+    /// * `test_change_order_size_internal_ask()`
+    /// * `test_change_order_size_internal_bid()`
+    public(friend) fun get_open_order_id(
+        user: address,
+        market_id: u64,
+        custodian_id: u64,
+        side: bool,
+        order_access_key: u64
+    ): Option<u128>
+    acquires MarketAccounts {
+        // Get market account ID.
+        let market_account_id = get_market_account_id(market_id, custodian_id);
+        // Return empty option if no corresponding market account.
+        if (!has_market_account_by_market_account_id(user, market_account_id))
+            return option::none();
+        // Immutably borrow market accounts map.
+        let market_accounts_map_ref = &borrow_global<MarketAccounts>(user).map;
+        // Immutably borrow market account.
+        let market_account_ref = table::borrow(
+            market_accounts_map_ref, market_account_id);
+        // Immutably borrow open orders for given side.
+        let open_orders_ref = if (side == ASK) &market_account_ref.asks else
+            &market_account_ref.bids;
+        // Return empty option if no open order with given access key.
+        if (!tablist::contains(open_orders_ref, order_access_key))
+            return option::none();
+        option::some( // Return option-packed market order ID.
+            tablist::borrow(open_orders_ref, order_access_key).market_order_id)
+    }
+
+    #[view]
+    /// Get all open order IDs (market order IDs) across all of `user`'s
+    /// `MarketAccount`s.
+    ///
+    /// Restricted to private view function to prevent runtime state
+    /// contention.
+    fun get_open_order_ids(
+        user: address
+    ): vector<MarketAccountOpenOrderIDs>
+    acquires MarketAccounts {
+        // Get all of user's market account IDs.
+        let market_account_ids = get_all_market_account_ids_for_user(user);
+        // Initialize empty vector for open order IDs.
+        let open_order_ids = vector::empty(); //
+        // For each market account ID:
+        vector::for_each_reverse(market_account_ids, |market_account_id| {
+            // Get encoded market ID.
+            let market_id = get_market_id(market_account_id);
+            // Get encoded custodian ID.
+            let custodian_id = get_custodian_id(market_account_id);
+            // Get open asks order IDs.
+            let asks = get_active_market_order_ids_internal(
+                user, market_id, custodian_id, ASK);
+            // Get open bids order IDs.
+            let bids = get_active_market_order_ids_internal(
+                user, market_id, custodian_id, BID);
+            // Push back market-specific open order IDs onto user-wide
+            // vector.
+            vector::push_back(&mut open_order_ids, MarketAccountOpenOrderIDs{
+                market_id, custodian_id, asks, bids});
+        });
+        open_order_ids // Return all open order IDs.
+    }
+
+    #[view]
     /// Return `true` if `user` has market account registered with
     /// given `market_account_id`.
     ///
@@ -655,47 +760,6 @@ module econia::user {
             &borrow_global<MarketAccounts>(user).custodians;
         // Return if custodians map has entry for given market ID.
         tablist::contains(custodians_map_ref, market_id)
-    }
-
-    #[view]
-    /// Return optional market order ID corresponding to open order for
-    /// `user`, `market_id`, `custodian_id`, `side`, and
-    /// `order_access_key`, if one exists.
-    ///
-    /// Restricted to public friend to prevent runtime user state
-    /// contention.
-    ///
-    /// # Testing
-    ///
-    /// * `test_market_account_getters()`
-    /// * `test_change_order_size_internal_ask()`
-    /// * `test_change_order_size_internal_bid()`
-    public(friend) fun get_market_order_id(
-        user: address,
-        market_id: u64,
-        custodian_id: u64,
-        side: bool,
-        order_access_key: u64
-    ): Option<u128>
-    acquires MarketAccounts {
-        // Get market account ID.
-        let market_account_id = get_market_account_id(market_id, custodian_id);
-        // Return empty option if no corresponding market account.
-        if (!has_market_account_by_market_account_id(user, market_account_id))
-            return option::none();
-        // Immutably borrow market accounts map.
-        let market_accounts_map_ref = &borrow_global<MarketAccounts>(user).map;
-        // Immutably borrow market account.
-        let market_account_ref = table::borrow(
-            market_accounts_map_ref, market_account_id);
-        // Immutably borrow open orders for given side.
-        let open_orders_ref = if (side == ASK) &market_account_ref.asks else
-            &market_account_ref.bids;
-        // Return empty option if no open order with given access key.
-        if (!tablist::contains(open_orders_ref, order_access_key))
-            return option::none();
-        option::some( // Return option-packed market order ID.
-            tablist::borrow(open_orders_ref, order_access_key).market_order_id)
     }
 
     // View functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -2781,12 +2845,12 @@ module econia::user {
         assert!(quote_available == QUOTE_START, 0);
         assert!(quote_ceiling   == QUOTE_START + quote_delta, 0);
         // Check market order ID for valid access key.
-        let optional_market_order_id = get_market_order_id(
+        let optional_market_order_id = get_open_order_id(
             @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, order_access_key);
         assert!( // Verify market order ID match.
             *option::borrow(&optional_market_order_id) == market_order_id, 0);
         // Check market order ID for invalid access key.
-        optional_market_order_id = get_market_order_id(
+        optional_market_order_id = get_open_order_id(
             @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
             order_access_key + 1);
         // Verify empty option.
@@ -2835,7 +2899,7 @@ module econia::user {
         assert!(quote_available == QUOTE_START - quote_delta, 0);
         assert!(quote_ceiling   == QUOTE_START, 0);
         // Check market order ID for valid access key.
-        let optional_market_order_id = get_market_order_id(
+        let optional_market_order_id = get_open_order_id(
             @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, order_access_key);
         assert!( // Verify market order ID match.
             *option::borrow(&optional_market_order_id) == market_order_id, 0);
@@ -3649,7 +3713,7 @@ module econia::user {
                 @user, MARKET_ID_GENERIC) == vector[], 0);
         assert!(get_all_market_account_ids_for_user(
                 @user) == vector[], 0);
-        assert!(option::is_none(&get_market_order_id(
+        assert!(option::is_none(&get_open_order_id(
             @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, ASK, 0)), 0);
         // Assert false returns.
         assert!(!has_market_account_by_market_account_id(

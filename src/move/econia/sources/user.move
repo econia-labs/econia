@@ -18,6 +18,7 @@
 ///
 /// [Function index](#function-index)
 ///
+/// * [View functions](#view-functions)
 /// * [Public functions](#public-functions)
 /// * [Public entry functions](#public-entry-functions)
 /// * [Public friend functions](#public-friend-functions)
@@ -80,13 +81,39 @@
 ///
 /// # Function index
 ///
-/// ## Public functions
+/// ## View functions
 ///
 /// Constant getters:
 ///
 /// * `get_ASK()`
 /// * `get_BID()`
 /// * `get_NO_CUSTODIAN()`
+///
+/// Market account lookup:
+///
+/// * `get_all_market_account_ids_for_market_id()`
+/// * `get_all_market_account_ids_for_user()`
+/// * `has_market_account_by_market_account_id()`
+/// * `has_market_account_by_market_id()`
+///
+/// Market account ID lookup:
+///
+/// * `get_custodian_id()`
+/// * `get_market_account_id()`
+/// * `get_market_id()`
+///
+/// Open order lookup:
+///
+/// * `get_market_order_id()`
+///
+/// ## Public functions
+///
+/// Market account lookup
+///
+/// * `get_asset_counts_custodian()`
+/// * `get_asset_counts_user()`
+/// * `get_market_account_market_info_custodian()`
+/// * `get_market_account_market_info_user()`
 ///
 /// Asset transfer:
 ///
@@ -96,23 +123,6 @@
 /// * `withdraw_coins_user()`
 /// * `withdraw_generic_asset_custodian()`
 /// * `withdraw_generic_asset_user()`
-///
-/// Market account lookup:
-///
-/// * `get_all_market_account_ids_for_market_id()`
-/// * `get_all_market_account_ids_for_user()`
-/// * `get_asset_counts_custodian()`
-/// * `get_asset_counts_user()`
-/// * `get_market_account_market_info_custodian()`
-/// * `get_market_account_market_info_user()`
-/// * `has_market_account_by_market_account_id()`
-/// * `has_market_account_by_market_id()`
-///
-/// Market account ID lookup:
-///
-/// * `get_custodian_id()`
-/// * `get_market_account_id()`
-/// * `get_market_id()`
 ///
 /// ## Public entry functions
 ///
@@ -433,6 +443,263 @@ module econia::user {
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+    // View functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[view]
+    /// Public constant getter for `ASK`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_ASK()`
+    public fun get_ASK(): bool {ASK}
+
+    #[view]
+    /// Public constant getter for `BID`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_BID()`
+    public fun get_BID(): bool {BID}
+
+    #[view]
+    /// Public constant getter for `NO_CUSTODIAN`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_NO_CUSTODIAN()`
+    public fun get_NO_CUSTODIAN(): u64 {NO_CUSTODIAN}
+
+    #[view]
+    /// Return all market account IDs associated with market ID.
+    ///
+    /// # Parameters
+    ///
+    /// * `user`: Address of user to check market account IDs for.
+    /// * `market_id`: Market ID to check market accounts for.
+    ///
+    /// # Returns
+    ///
+    /// * `vector<u128>`: Vector of user's market account IDs for given
+    ///   market, empty if no market accounts.
+    ///
+    /// # Gas considerations
+    ///
+    /// Loops over all elements within a vector that is itself a single
+    /// item in global storage, and returns a vector via pass-by-value.
+    ///
+    /// # Testing
+    ///
+    /// * `test_market_account_getters()`
+    public fun get_all_market_account_ids_for_market_id(
+        user: address,
+        market_id: u64
+    ): vector<u128>
+    acquires MarketAccounts {
+        let market_account_ids = vector::empty(); // Init empty vector.
+        // Return empty if user has no market accounts resource.
+        if (!exists<MarketAccounts>(user)) return market_account_ids;
+        let custodians_map_ref = // Immutably borrow custodians map.
+            &borrow_global<MarketAccounts>(user).custodians;
+        // Return empty if user has no market accounts for given market.
+        if (!tablist::contains(custodians_map_ref, market_id))
+            return market_account_ids;
+        // Immutably borrow list of custodians for given market.
+        let custodians_ref = tablist::borrow(custodians_map_ref, market_id);
+        // Initialize loop counter and number of elements in vector.
+        let (i, n_custodians) = (0, vector::length(custodians_ref));
+        while (i < n_custodians) { // Loop over all elements.
+            // Get custodian ID.
+            let custodian_id = *vector::borrow(custodians_ref, i);
+            // Get market account ID.
+            let market_account_id = ((market_id as u128) << SHIFT_MARKET_ID) |
+                                    (custodian_id as u128);
+            // Push back onto ongoing market account ID vector.
+            vector::push_back(&mut market_account_ids, market_account_id);
+            i = i + 1; // Increment loop counter
+        };
+        market_account_ids // Return market account IDs.
+    }
+
+    #[view]
+    /// Return all of a user's market account IDs.
+    ///
+    /// # Parameters
+    ///
+    /// * `user`: Address of user to check market account IDs for.
+    ///
+    /// # Returns
+    ///
+    /// * `vector<u128>`: Vector of user's market account IDs, empty if
+    ///   no market accounts.
+    ///
+    /// # Gas considerations
+    ///
+    /// For each market that a user has market accounts for, loops over
+    /// a separate item in global storage, incurring a per-item read
+    /// cost. Additionally loops over a vector for each such per-item
+    /// read, incurring linearly-scaled vector operation costs. Returns
+    /// a vector via pass-by-value.
+    ///
+    /// # Testing
+    ///
+    /// * `test_market_account_getters()`
+    public fun get_all_market_account_ids_for_user(
+        user: address,
+    ): vector<u128>
+    acquires MarketAccounts {
+        let market_account_ids = vector::empty(); // Init empty vector.
+        // Return empty if user has no market accounts resource.
+        if (!exists<MarketAccounts>(user)) return market_account_ids;
+        let custodians_map_ref = // Immutably borrow custodians map.
+            &borrow_global<MarketAccounts>(user).custodians;
+        // Get market ID option at head of market ID list.
+        let market_id_option = tablist::get_head_key(custodians_map_ref);
+        // While market IDs left to loop over:
+        while (option::is_some(&market_id_option)) {
+            // Get market ID.
+            let market_id = *option::borrow(&market_id_option);
+            // Immutably borrow list of custodians for given market and
+            // next market ID option in list.
+            let (custodians_ref, _, next) = tablist::borrow_iterable(
+                custodians_map_ref, market_id);
+            // Initialize loop counter and number of elements in vector.
+            let (i, n_custodians) = (0, vector::length(custodians_ref));
+            while (i < n_custodians) { // Loop over all elements.
+                // Get custodian ID.
+                let custodian_id = *vector::borrow(custodians_ref, i);
+                let market_account_id = // Get market account ID.
+                    ((market_id as u128) << SHIFT_MARKET_ID) |
+                    (custodian_id as u128);
+                // Push back onto ongoing market account ID vector.
+                vector::push_back(&mut market_account_ids, market_account_id);
+                i = i + 1; // Increment loop counter
+            };
+            // Review next market ID option in list.
+            market_id_option = next;
+        };
+        market_account_ids // Return market account IDs.
+    }
+
+    #[view]
+    /// Return custodian ID encoded in market account ID.
+    ///
+    /// # Testing
+    ///
+    /// * `test_market_account_id_getters()`
+    public fun get_custodian_id(
+        market_account_id: u128
+    ): u64 {
+        ((market_account_id & (HI_64 as u128)) as u64)
+    }
+
+    #[view]
+    /// Return market account ID with encoded market and custodian IDs.
+    ///
+    /// # Testing
+    ///
+    /// * `test_market_account_id_getters()`
+    public fun get_market_account_id(
+        market_id: u64,
+        custodian_id: u64
+    ): u128 {
+        ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128)
+    }
+
+    #[view]
+    /// Return market ID encoded in market account ID.
+    ///
+    /// # Testing
+    ///
+    /// * `test_market_account_id_getters()`
+    public fun get_market_id(
+        market_account_id: u128
+    ): u64 {
+        (market_account_id >> SHIFT_MARKET_ID as u64)
+    }
+
+    #[view]
+    /// Return `true` if `user` has market account registered with
+    /// given `market_account_id`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_market_account_getters()`
+    public fun has_market_account_by_market_account_id(
+        user: address,
+        market_account_id: u128
+    ): bool
+    acquires MarketAccounts {
+        // Return false if user has no market accounts resource.
+        if (!exists<MarketAccounts>(user)) return false;
+        // Immutably borrow market accounts map.
+        let market_accounts_map_ref = &borrow_global<MarketAccounts>(user).map;
+        // Return if map has entry for given market account ID.
+        table::contains(market_accounts_map_ref, market_account_id)
+    }
+
+    #[view]
+    /// Return `true` if `user` has at least one market account
+    /// registered with given `market_id`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_market_account_getters()`
+    public fun has_market_account_by_market_id(
+        user: address,
+        market_id: u64
+    ): bool
+    acquires MarketAccounts {
+        // Return false if user has no market accounts resource.
+        if (!exists<MarketAccounts>(user)) return false;
+        let custodians_map_ref = // Immutably borrow custodians map.
+            &borrow_global<MarketAccounts>(user).custodians;
+        // Return if custodians map has entry for given market ID.
+        tablist::contains(custodians_map_ref, market_id)
+    }
+
+    #[view]
+    /// Return optional market order ID corresponding to open order for
+    /// `user`, `market_id`, `custodian_id`, `side`, and
+    /// `order_access_key`, if one exists.
+    ///
+    /// Restricted to public friend to prevent runtime user state
+    /// contention.
+    ///
+    /// # Testing
+    ///
+    /// * `test_market_account_getters()`
+    /// * `test_change_order_size_internal_ask()`
+    /// * `test_change_order_size_internal_bid()`
+    public(friend) fun get_market_order_id(
+        user: address,
+        market_id: u64,
+        custodian_id: u64,
+        side: bool,
+        order_access_key: u64
+    ): Option<u128>
+    acquires MarketAccounts {
+        // Get market account ID.
+        let market_account_id = get_market_account_id(market_id, custodian_id);
+        // Return empty option if no corresponding market account.
+        if (!has_market_account_by_market_account_id(user, market_account_id))
+            return option::none();
+        // Immutably borrow market accounts map.
+        let market_accounts_map_ref = &borrow_global<MarketAccounts>(user).map;
+        // Immutably borrow market account.
+        let market_account_ref = table::borrow(
+            market_accounts_map_ref, market_account_id);
+        // Immutably borrow open orders for given side.
+        let open_orders_ref = if (side == ASK) &market_account_ref.asks else
+            &market_account_ref.bids;
+        // Return empty option if no open order with given access key.
+        if (!tablist::contains(open_orders_ref, order_access_key))
+            return option::none();
+        option::some( // Return option-packed market order ID.
+            tablist::borrow(open_orders_ref, order_access_key).market_order_id)
+    }
+
+    // View functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
     // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Wrapped call to `deposit_asset()` for depositing coins.
@@ -496,126 +763,6 @@ module econia::user {
             registry::get_underwriter_id(underwriter_capability_ref));
     }
 
-    #[app]
-    /// Return all market account IDs associated with market ID.
-    ///
-    /// # Parameters
-    ///
-    /// * `user`: Address of user to check market account IDs for.
-    /// * `market_id`: Market ID to check market accounts for.
-    ///
-    /// # Returns
-    ///
-    /// * `vector<u128>`: Vector of user's market account IDs for given
-    ///   market, empty if no market accounts.
-    ///
-    /// # Gas considerations
-    ///
-    /// Loops over all elements within a vector that is itself a single
-    /// item in global storage, and returns a vector via pass-by-value.
-    ///
-    /// # Testing
-    ///
-    /// * `test_market_account_getters()`
-    public fun get_all_market_account_ids_for_market_id(
-        user: address,
-        market_id: u64
-    ): vector<u128>
-    acquires MarketAccounts {
-        let market_account_ids = vector::empty(); // Init empty vector.
-        // Return empty if user has no market accounts resource.
-        if (!exists<MarketAccounts>(user)) return market_account_ids;
-        let custodians_map_ref = // Immutably borrow custodians map.
-            &borrow_global<MarketAccounts>(user).custodians;
-        // Return empty if user has no market accounts for given market.
-        if (!tablist::contains(custodians_map_ref, market_id))
-            return market_account_ids;
-        // Immutably borrow list of custodians for given market.
-        let custodians_ref = tablist::borrow(custodians_map_ref, market_id);
-        // Initialize loop counter and number of elements in vector.
-        let (i, n_custodians) = (0, vector::length(custodians_ref));
-        while (i < n_custodians) { // Loop over all elements.
-            // Get custodian ID.
-            let custodian_id = *vector::borrow(custodians_ref, i);
-            // Get market account ID.
-            let market_account_id = ((market_id as u128) << SHIFT_MARKET_ID) |
-                                    (custodian_id as u128);
-            // Push back onto ongoing market account ID vector.
-            vector::push_back(&mut market_account_ids, market_account_id);
-            i = i + 1; // Increment loop counter
-        };
-        market_account_ids // Return market account IDs.
-    }
-
-    #[app]
-    /// Return all of a user's market account IDs.
-    ///
-    /// # Parameters
-    ///
-    /// * `user`: Address of user to check market account IDs for.
-    ///
-    /// # Returns
-    ///
-    /// * `vector<u128>`: Vector of user's market account IDs, empty if
-    ///   no market accounts.
-    ///
-    /// # Gas considerations
-    ///
-    /// For each market that a user has market accounts for, loops over
-    /// a separate item in global storage, incurring a per-item read
-    /// cost. Additionally loops over a vector for each such per-item
-    /// read, incurring linearly-scaled vector operation costs. Returns
-    /// a vector via pass-by-value.
-    ///
-    /// # Testing
-    ///
-    /// * `test_market_account_getters()`
-    public fun get_all_market_account_ids_for_user(
-        user: address,
-    ): vector<u128>
-    acquires MarketAccounts {
-        let market_account_ids = vector::empty(); // Init empty vector.
-        // Return empty if user has no market accounts resource.
-        if (!exists<MarketAccounts>(user)) return market_account_ids;
-        let custodians_map_ref = // Immutably borrow custodians map.
-            &borrow_global<MarketAccounts>(user).custodians;
-        // Get market ID option at head of market ID list.
-        let market_id_option = tablist::get_head_key(custodians_map_ref);
-        // While market IDs left to loop over:
-        while (option::is_some(&market_id_option)) {
-            // Get market ID.
-            let market_id = *option::borrow(&market_id_option);
-            // Immutably borrow list of custodians for given market and
-            // next market ID option in list.
-            let (custodians_ref, _, next) = tablist::borrow_iterable(
-                custodians_map_ref, market_id);
-            // Initialize loop counter and number of elements in vector.
-            let (i, n_custodians) = (0, vector::length(custodians_ref));
-            while (i < n_custodians) { // Loop over all elements.
-                // Get custodian ID.
-                let custodian_id = *vector::borrow(custodians_ref, i);
-                let market_account_id = // Get market account ID.
-                    ((market_id as u128) << SHIFT_MARKET_ID) |
-                    (custodian_id as u128);
-                // Push back onto ongoing market account ID vector.
-                vector::push_back(&mut market_account_ids, market_account_id);
-                i = i + 1; // Increment loop counter
-            };
-            // Review next market ID option in list.
-            market_id_option = next;
-        };
-        market_account_ids // Return market account IDs.
-    }
-
-    #[app]
-    /// Public constant getter for `ASK`.
-    ///
-    /// # Testing
-    ///
-    /// * `test_get_ASK()`
-    public fun get_ASK(): bool {ASK}
-
-    #[app]
     /// Wrapped call to `get_asset_counts_internal()` for custodian.
     ///
     /// Restricted to custodian for given market account to prevent
@@ -641,7 +788,6 @@ module econia::user {
             registry::get_custodian_id(custodian_capability_ref))
     }
 
-    #[app]
     /// Wrapped call to `get_asset_counts_internal()` for signing user.
     ///
     /// Restricted to signing user for given market account to prevent
@@ -664,40 +810,6 @@ module econia::user {
         get_asset_counts_internal(address_of(user), market_id, NO_CUSTODIAN)
     }
 
-    #[app]
-    /// Public constant getter for `BID`.
-    ///
-    /// # Testing
-    ///
-    /// * `test_get_BID()`
-    public fun get_BID(): bool {BID}
-
-    #[app]
-    /// Return custodian ID encoded in market account ID.
-    ///
-    /// # Testing
-    ///
-    /// * `test_market_account_id_getters()`
-    public fun get_custodian_id(
-        market_account_id: u128
-    ): u64 {
-        ((market_account_id & (HI_64 as u128)) as u64)
-    }
-
-    #[app]
-    /// Return market account ID with encoded market and custodian IDs.
-    ///
-    /// # Testing
-    ///
-    /// * `test_market_account_id_getters()`
-    public fun get_market_account_id(
-        market_id: u64,
-        custodian_id: u64
-    ): u128 {
-        ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128)
-    }
-
-    #[app]
     /// Wrapped call to `get_market_account_market_info()` for
     /// custodian.
     ///
@@ -725,7 +837,6 @@ module econia::user {
             registry::get_custodian_id(custodian_capability_ref))
     }
 
-    #[app]
     /// Wrapped call to `get_market_account_market_info()` for signing
     /// user.
     ///
@@ -749,67 +860,6 @@ module econia::user {
     ) acquires MarketAccounts {
         get_market_account_market_info(
             address_of(user), market_id, NO_CUSTODIAN)
-    }
-
-    #[app]
-    /// Return market ID encoded in market account ID.
-    ///
-    /// # Testing
-    ///
-    /// * `test_market_account_id_getters()`
-    public fun get_market_id(
-        market_account_id: u128
-    ): u64 {
-        (market_account_id >> SHIFT_MARKET_ID as u64)
-    }
-
-    #[app]
-    /// Public constant getter for `NO_CUSTODIAN`.
-    ///
-    /// # Testing
-    ///
-    /// * `test_get_NO_CUSTODIAN()`
-    public fun get_NO_CUSTODIAN(): u64 {NO_CUSTODIAN}
-
-    #[app]
-    /// Return `true` if `user` has market account registered with
-    /// given `market_account_id`.
-    ///
-    /// # Testing
-    ///
-    /// * `test_market_account_getters()`
-    public fun has_market_account_by_market_account_id(
-        user: address,
-        market_account_id: u128
-    ): bool
-    acquires MarketAccounts {
-        // Return false if user has no market accounts resource.
-        if (!exists<MarketAccounts>(user)) return false;
-        // Immutably borrow market accounts map.
-        let market_accounts_map =
-            &borrow_global<MarketAccounts>(user).map;
-        // Return if map has entry for given market account ID.
-        table::contains(market_accounts_map, market_account_id)
-    }
-
-    #[app]
-    /// Return `true` if `user` has at least one market account
-    /// registered with given `market_id`.
-    ///
-    /// # Testing
-    ///
-    /// * `test_market_account_getters()`
-    public fun has_market_account_by_market_id(
-        user: address,
-        market_id: u64
-    ): bool
-    acquires MarketAccounts {
-        // Return false if user has no market accounts resource.
-        if (!exists<MarketAccounts>(user)) return false;
-        let custodians_map_ref = // Immutably borrow custodians map.
-            &borrow_global<MarketAccounts>(user).custodians;
-        // Return if custodians map has entry for given market ID.
-        tablist::contains(custodians_map_ref, market_id)
     }
 
     /// Wrapped call to `withdraw_coins()` for withdrawing under
@@ -2730,6 +2780,17 @@ module econia::user {
         assert!(quote_total     == QUOTE_START, 0);
         assert!(quote_available == QUOTE_START, 0);
         assert!(quote_ceiling   == QUOTE_START + quote_delta, 0);
+        // Check market order ID for valid access key.
+        let optional_market_order_id = get_market_order_id(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, order_access_key);
+        assert!( // Verify market order ID match.
+            *option::borrow(&optional_market_order_id) == market_order_id, 0);
+        // Check market order ID for invalid access key.
+        optional_market_order_id = get_market_order_id(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+            order_access_key + 1);
+        // Verify empty option.
+        assert!(option::is_none(&optional_market_order_id), 0);
     }
 
     #[test]
@@ -2773,6 +2834,11 @@ module econia::user {
         assert!(quote_total     == QUOTE_START, 0);
         assert!(quote_available == QUOTE_START - quote_delta, 0);
         assert!(quote_ceiling   == QUOTE_START, 0);
+        // Check market order ID for valid access key.
+        let optional_market_order_id = get_market_order_id(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, order_access_key);
+        assert!( // Verify market order ID match.
+            *option::borrow(&optional_market_order_id) == market_order_id, 0);
     }
 
     #[test]
@@ -3583,6 +3649,8 @@ module econia::user {
                 @user, MARKET_ID_GENERIC) == vector[], 0);
         assert!(get_all_market_account_ids_for_user(
                 @user) == vector[], 0);
+        assert!(option::is_none(&get_market_order_id(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, ASK, 0)), 0);
         // Assert false returns.
         assert!(!has_market_account_by_market_account_id(
                 @user, market_account_id_coin_self), 0);

@@ -26,6 +26,7 @@ export const MarketOrderEntry: React.FC<{
   const {
     handleSubmit,
     register,
+    setValue,
     formState: { errors },
   } = useForm<MarketFormValues>();
   const baseBalance = useMarketAccountBalance(
@@ -109,6 +110,13 @@ export const MarketOrderEntry: React.FC<{
         <OrderEntryInfo
           label={`${marketData.base?.symbol} AVAIABLE`}
           value={`${baseBalance.data ?? "--"} ${marketData.base?.symbol}`}
+          className="cursor-pointer"
+          onClick={() => {
+            setValue(
+              "size",
+              baseBalance.data ? baseBalance.data.toString() : ""
+            );
+          }}
         />
         <OrderEntryInfo
           label={`${marketData.quote?.symbol} AVAIABLE`}

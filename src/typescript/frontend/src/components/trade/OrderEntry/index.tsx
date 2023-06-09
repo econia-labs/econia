@@ -17,7 +17,6 @@ export const OrderEntry: React.FC<{ marketData: ApiMarket }> = ({
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   React.useEffect(() => {
-    setSide(type);
     setSelectedIndex(0);
   }, [type]);
 

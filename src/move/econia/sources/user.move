@@ -657,16 +657,12 @@ module econia::user {
         // Mutably borrow market account.
         let market_account_ref_mut = table::borrow_mut(
             market_accounts_map_ref_mut, market_account_id);
-        // Get open asks vector.
-        let asks = vectorize_open_orders(&mut market_account_ref_mut.asks);
-        // Get open bids vector.
-        let bids = vectorize_open_orders(&mut market_account_ref_mut.bids);
         // Return market account view with parsed fields.
         MarketAccountView{
             market_id,
             custodian_id,
-            asks,
-            bids,
+            asks: vectorize_open_orders(&mut market_account_ref_mut.asks),
+            bids: vectorize_open_orders(&mut market_account_ref_mut.bids),
             base_total: market_account_ref_mut.base_total,
             base_available: market_account_ref_mut.base_available,
             base_ceiling: market_account_ref_mut.base_ceiling,

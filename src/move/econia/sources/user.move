@@ -93,6 +93,7 @@
 ///
 /// * `get_all_market_account_ids_for_market_id()`
 /// * `get_all_market_account_ids_for_user()`
+/// * `get_all_open_orders()`
 /// * `has_market_account_by_market_account_id()`
 /// * `has_market_account_by_market_id()`
 ///
@@ -101,11 +102,6 @@
 /// * `get_custodian_id()`
 /// * `get_market_account_id()`
 /// * `get_market_id()`
-///
-/// Open order lookup:
-///
-/// * `get_open_order_id()`
-/// * `get_open_order_ids()`
 ///
 /// ## Public functions
 ///
@@ -143,6 +139,7 @@
 ///
 /// * `cancel_order_internal()`
 /// * `change_order_size_internal()`
+/// * `get_open_order_id_internal()`
 /// * `fill_order_internal()`
 /// * `place_order_internal()`
 ///
@@ -239,13 +236,13 @@
 ///
 /// flowchart LR
 ///
-/// get_open_order_ids --> get_all_market_account_ids_for_user
-/// get_open_order_ids --> get_market_id
-/// get_open_order_ids --> get_custodian_id
-/// get_open_order_ids --> get_active_market_order_ids_internal
+/// get_all_open_orders --> get_all_market_account_ids_for_user
+/// get_all_open_orders --> get_market_id
+/// get_all_open_orders --> get_custodian_id
+/// get_all_open_orders --> vectorize_open_orders
 ///
-/// get_open_order_id --> get_market_account_id
-/// get_open_order_id --> has_market_account_by_market_account_id
+/// get_open_order_id_internal --> get_market_account_id
+/// get_open_order_id_internal --> has_market_account_by_market_account_id
 ///
 /// ```
 ///
@@ -368,17 +365,16 @@ module econia::user {
         quote_ceiling: u64
     }
 
-    /// All order IDs (market order IDs) for all open orders in a user's
-    /// `MarketAccount`.
-    struct MarketAccountOpenOrderIDs has copy, drop {
+    /// All open orders in a user's `MarketAccount`.
+    struct MarketAccountOpenOrders has store {
         /// Market ID for given market account.
         market_id: u64,
         /// Custodian ID for given market account.
         custodian_id: u64,
-        /// All open asks market order IDs for given market account.
-        asks: vector<u128>,
-        /// All open bids market order IDs for given market account.
-        bids: vector<u128>
+        /// All open asks for given market account.
+        asks: vector<Order>,
+        /// All open bids for given market account.
+        bids: vector<Order>
     }
 
     /// All of a user's market accounts.
@@ -611,6 +607,58 @@ module econia::user {
     }
 
     #[view]
+    /// Get all open orders across all of `user`'s `MarketAccount`s.
+    ///
+    /// Mutates state, so kept as a private view function.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_all_open_orders()`
+    fun get_all_open_orders(
+        user: address
+    ): vector<MarketAccountOpenOrders>
+    acquires MarketAccounts {
+        // Get all of user's market account IDs.
+        let market_account_ids = get_all_market_account_ids_for_user(user);
+        // Initialize empty vector for open order IDs.
+        let open_order_ids = vector::empty();
+        // If no market account IDs, return empty vector.
+        if (vector::is_empty(&market_account_ids)) return open_order_ids;
+        // Mutably borrow market accounts map.
+        let market_accounts_map_ref_mut =
+            &mut borrow_global_mut<MarketAccounts>(user).map;
+        // For each market account ID:
+        vector::for_each_reverse(market_account_ids, |market_account_id| {
+            // Mutably borrow market account.
+            let market_account_ref_mut = table::borrow_mut(
+                market_accounts_map_ref_mut, market_account_id);
+            // Get encoded market ID.
+            let market_id = get_market_id(market_account_id);
+            // Get encoded custodian ID.
+            let custodian_id = get_custodian_id(market_account_id);
+            // Get open asks vector.
+            let asks = vectorize_open_orders(&mut market_account_ref_mut.asks);
+            // Get open bids vector.
+            let bids = vectorize_open_orders(&mut market_account_ref_mut.bids);
+            // If no open asks or bids:
+            if (vector::is_empty(&asks) && vector::is_empty(&bids)) {
+                // Destroy vectorized open asks vector.
+                vector::destroy_empty(asks);
+                // Destroy vectorized open bids vector.
+                vector::destroy_empty(bids);
+            } else { // If at least one open ask or bid:
+                // Get market account open orders struct.
+                let market_account_open_orders = MarketAccountOpenOrders{
+                    market_id, custodian_id, asks, bids};
+                // Push back struct onto vector of ongoing structs.
+                vector::push_back(
+                    &mut open_order_ids, market_account_open_orders);
+            }
+        });
+        open_order_ids // Return all open order IDs.
+    }
+
+    #[view]
     /// Return custodian ID encoded in market account ID.
     ///
     /// # Testing
@@ -645,81 +693,6 @@ module econia::user {
         market_account_id: u128
     ): u64 {
         (market_account_id >> SHIFT_MARKET_ID as u64)
-    }
-
-    #[view]
-    /// Return optional market order ID corresponding to open order for
-    /// `user`, `market_id`, `custodian_id`, `side`, and
-    /// `order_access_key`, if one exists.
-    ///
-    /// Restricted to public friend to prevent runtime user state
-    /// contention.
-    ///
-    /// # Testing
-    ///
-    /// * `test_market_account_getters()`
-    /// * `test_change_order_size_internal_ask()`
-    /// * `test_change_order_size_internal_bid()`
-    public(friend) fun get_open_order_id(
-        user: address,
-        market_id: u64,
-        custodian_id: u64,
-        side: bool,
-        order_access_key: u64
-    ): Option<u128>
-    acquires MarketAccounts {
-        // Get market account ID.
-        let market_account_id = get_market_account_id(market_id, custodian_id);
-        // Return empty option if no corresponding market account.
-        if (!has_market_account_by_market_account_id(user, market_account_id))
-            return option::none();
-        // Immutably borrow market accounts map.
-        let market_accounts_map_ref = &borrow_global<MarketAccounts>(user).map;
-        // Immutably borrow market account.
-        let market_account_ref = table::borrow(
-            market_accounts_map_ref, market_account_id);
-        // Immutably borrow open orders for given side.
-        let open_orders_ref = if (side == ASK) &market_account_ref.asks else
-            &market_account_ref.bids;
-        // Return empty option if no open order with given access key.
-        if (!tablist::contains(open_orders_ref, order_access_key))
-            return option::none();
-        option::some( // Return option-packed market order ID.
-            tablist::borrow(open_orders_ref, order_access_key).market_order_id)
-    }
-
-    #[view]
-    /// Get all open order IDs (market order IDs) across all of `user`'s
-    /// `MarketAccount`s.
-    ///
-    /// Restricted to private view function to prevent runtime state
-    /// contention.
-    fun get_open_order_ids(
-        user: address
-    ): vector<MarketAccountOpenOrderIDs>
-    acquires MarketAccounts {
-        // Get all of user's market account IDs.
-        let market_account_ids = get_all_market_account_ids_for_user(user);
-        // Initialize empty vector for open order IDs.
-        let open_order_ids = vector::empty(); //
-        // For each market account ID:
-        vector::for_each_reverse(market_account_ids, |market_account_id| {
-            // Get encoded market ID.
-            let market_id = get_market_id(market_account_id);
-            // Get encoded custodian ID.
-            let custodian_id = get_custodian_id(market_account_id);
-            // Get open asks order IDs.
-            let asks = get_active_market_order_ids_internal(
-                user, market_id, custodian_id, ASK);
-            // Get open bids order IDs.
-            let bids = get_active_market_order_ids_internal(
-                user, market_id, custodian_id, BID);
-            // Push back market-specific open order IDs onto user-wide
-            // vector.
-            vector::push_back(&mut open_order_ids, MarketAccountOpenOrderIDs{
-                market_id, custodian_id, asks, bids});
-        });
-        open_order_ids // Return all open order IDs.
     }
 
     #[view]
@@ -1772,6 +1745,46 @@ module econia::user {
             *stack_top_ref // Otherwise the top of the inactive stack.
     }
 
+    /// Return optional market order ID corresponding to open order for
+    /// `user`, `market_id`, `custodian_id`, `side`, and
+    /// `order_access_key`, if one exists.
+    ///
+    /// Restricted to public friend to prevent runtime user state
+    /// contention.
+    ///
+    /// # Testing
+    ///
+    /// * `test_market_account_getters()`
+    /// * `test_change_order_size_internal_ask()`
+    /// * `test_change_order_size_internal_bid()`
+    public(friend) fun get_open_order_id_internal(
+        user: address,
+        market_id: u64,
+        custodian_id: u64,
+        side: bool,
+        order_access_key: u64
+    ): Option<u128>
+    acquires MarketAccounts {
+        // Get market account ID.
+        let market_account_id = get_market_account_id(market_id, custodian_id);
+        // Return empty option if no corresponding market account.
+        if (!has_market_account_by_market_account_id(user, market_account_id))
+            return option::none();
+        // Immutably borrow market accounts map.
+        let market_accounts_map_ref = &borrow_global<MarketAccounts>(user).map;
+        // Immutably borrow market account.
+        let market_account_ref = table::borrow(
+            market_accounts_map_ref, market_account_id);
+        // Immutably borrow open orders for given side.
+        let open_orders_ref = if (side == ASK) &market_account_ref.asks else
+            &market_account_ref.bids;
+        // Return empty option if no open order with given access key.
+        if (!tablist::contains(open_orders_ref, order_access_key))
+            return option::none();
+        option::some( // Return option-packed market order ID.
+            tablist::borrow(open_orders_ref, order_access_key).market_order_id)
+    }
+
     /// Place order in user's tablist of open orders on given side.
     ///
     /// Range checks order parameters and updates asset counts
@@ -2270,6 +2283,36 @@ module econia::user {
         // Add an empty entry for given market account ID.
         tablist::add(collateral_map_ref_mut, market_account_id,
                      coin::zero<CoinType>());
+    }
+
+    /// Convert a tablist of `Order` into a vector of only open orders.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_all_open_orders()`
+    inline fun vectorize_open_orders(
+        tablist_ref_mut: &mut Tablist<u64, Order>,
+    ): vector<Order> {
+        let open_orders = vector::empty(); // Get empty orders vector.
+        // Get optional head key.
+        let optional_access_key = tablist::get_head_key(tablist_ref_mut);
+        // While keys left to iterate on:
+        while (option::is_some(&optional_access_key)) {
+            // Get open order and next optional access key in tablist.
+            let (order, _, next) = tablist::remove_iterable(
+                tablist_ref_mut, *option::borrow(&optional_access_key));
+            // If market order ID flagged as null:
+            if (order.market_order_id == (NIL as u128)) {
+                // Unpack order and drop fields.
+                let Order{market_order_id: _, size: _} = order;
+            } else { // Otherwise, if order is active:
+                // Push back onto vector of open orders.
+                vector::push_back(&mut open_orders, order);
+            };
+            // Review next optional access key.
+            optional_access_key = next;
+        };
+        open_orders // Return vectorized open orders.
     }
 
     /// Withdraw an asset from a user's market account.
@@ -2845,12 +2888,12 @@ module econia::user {
         assert!(quote_available == QUOTE_START, 0);
         assert!(quote_ceiling   == QUOTE_START + quote_delta, 0);
         // Check market order ID for valid access key.
-        let optional_market_order_id = get_open_order_id(
+        let optional_market_order_id = get_open_order_id_internal(
             @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, order_access_key);
         assert!( // Verify market order ID match.
             *option::borrow(&optional_market_order_id) == market_order_id, 0);
         // Check market order ID for invalid access key.
-        optional_market_order_id = get_open_order_id(
+        optional_market_order_id = get_open_order_id_internal(
             @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
             order_access_key + 1);
         // Verify empty option.
@@ -2899,7 +2942,7 @@ module econia::user {
         assert!(quote_available == QUOTE_START - quote_delta, 0);
         assert!(quote_ceiling   == QUOTE_START, 0);
         // Check market order ID for valid access key.
-        let optional_market_order_id = get_open_order_id(
+        let optional_market_order_id = get_open_order_id_internal(
             @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, order_access_key);
         assert!( // Verify market order ID match.
             *option::borrow(&optional_market_order_id) == market_order_id, 0);
@@ -3611,6 +3654,124 @@ module econia::user {
     fun test_get_ASK() {assert!(get_ASK() == ASK, 0)}
 
     #[test]
+    /// Verify returns.
+    fun test_get_all_open_orders():
+    vector<vector<MarketAccountOpenOrders>>
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register test market accounts.
+        register_market_accounts_test();
+        // Initialize empty vector to return instead of dropping.
+        let return_instead_of_dropping = vector::empty();
+        // Define order parameters.
+        let market_order_id_ask_0  = 123;
+        let market_order_id_bid_0  = 456;
+        let market_order_id_bid_1  = 789;
+        let order_access_key_ask_0 = 1;
+        let order_access_key_bid_0 = 1;
+        let order_access_key_bid_1 = 2;
+        let size                   = MIN_SIZE_PURE_COIN;
+        let price                  = 1;
+        let market_id              = MARKET_ID_PURE_COIN;
+        let user                   = @user;
+        // Deposit starting base and quote coins.
+        deposit_coins<BC>(
+            user, market_id, NO_CUSTODIAN, assets::mint_test(BASE_START));
+        deposit_coins<BC>(
+            user, market_id, CUSTODIAN_ID, assets::mint_test(BASE_START));
+        deposit_coins<QC>(
+            user, market_id, NO_CUSTODIAN, assets::mint_test(QUOTE_START));
+        deposit_coins<QC>(
+            user, market_id, CUSTODIAN_ID, assets::mint_test(QUOTE_START));
+        // Get all of user's open orders.
+        let open_orders = get_all_open_orders(user);
+        // Assert empty vector.
+        assert!(vector::is_empty(&open_orders), 0);
+        // Push back value to return instead of dropping.
+        vector::push_back(&mut return_instead_of_dropping, open_orders);
+        // Place single ask for market account without custodian.
+        place_order_internal(
+            user, market_id, NO_CUSTODIAN, ASK, size, price,
+            market_order_id_ask_0, order_access_key_ask_0);
+        // Get all of user's open orders.
+        open_orders = get_all_open_orders(user);
+        // Assert open orders vector length.
+        assert!(vector::length(&open_orders) == 1, 0);
+        // Immutably borrow first market account open orders element.
+        let market_account_open_orders_ref =
+            vector::borrow(&open_orders, 0);
+        // Assert element state.
+        assert!(market_account_open_orders_ref.market_id
+                == market_id, 0);
+        assert!(market_account_open_orders_ref.custodian_id
+                == NO_CUSTODIAN, 0);
+        let asks_ref = &market_account_open_orders_ref.asks;
+        assert!(vector::length(asks_ref) == 1, 0);
+        let bids_ref = &market_account_open_orders_ref.bids;
+        assert!(vector::length(bids_ref) == 0, 0);
+        let order_ref = vector::borrow(asks_ref, 0);
+        assert!(order_ref.market_order_id == market_order_id_ask_0, 0);
+        assert!(order_ref.size == size, 0);
+        // Push back value to return instead of dropping.
+        vector::push_back(&mut return_instead_of_dropping, open_orders);
+        // Place single ask for market account without custodian, since
+        // consumed during previous operation.
+        place_order_internal(
+            user, market_id, NO_CUSTODIAN, ASK, size, price,
+            market_order_id_ask_0, order_access_key_ask_0);
+        // Place bids for market account with custodian.
+        place_order_internal(
+            user, market_id, CUSTODIAN_ID, BID, size, price,
+            market_order_id_bid_0, order_access_key_bid_0);
+        place_order_internal(
+            user, market_id, CUSTODIAN_ID, BID, size, price,
+            market_order_id_bid_1, order_access_key_bid_1);
+        // Cancel the first placed bid.
+        cancel_order_internal(
+            user, market_id, CUSTODIAN_ID, BID, size, price,
+            order_access_key_bid_0, market_order_id_bid_0);
+        // Get all of user's open orders.
+        open_orders = get_all_open_orders(user);
+        // Assert open orders vector length.
+        assert!(vector::length(&open_orders) == 2, 0);
+        // Immutably borrow first market account open orders element.
+        let market_account_open_orders_ref =
+            vector::borrow(&open_orders, 0);
+        // Assert element state.
+        assert!(market_account_open_orders_ref.market_id
+                == market_id, 0);
+        assert!(market_account_open_orders_ref.custodian_id
+                == CUSTODIAN_ID, 0);
+        let asks_ref = &market_account_open_orders_ref.asks;
+        assert!(vector::length(asks_ref) == 0, 0);
+        let bids_ref = &market_account_open_orders_ref.bids;
+        assert!(vector::length(bids_ref) == 1, 0);
+        let order_ref = vector::borrow(bids_ref, 0);
+        assert!(order_ref.market_order_id == market_order_id_bid_1, 0);
+        assert!(order_ref.size == size, 0);
+        // Immutably borrow second market account open orders element.
+        let market_account_open_orders_ref =
+            vector::borrow(&open_orders, 1);
+        // Assert element state.
+        assert!(market_account_open_orders_ref.market_id
+                == market_id, 0);
+        assert!(market_account_open_orders_ref.custodian_id
+                == NO_CUSTODIAN, 0);
+        let asks_ref = &market_account_open_orders_ref.asks;
+        assert!(vector::length(asks_ref) == 1, 0);
+        let bids_ref = &market_account_open_orders_ref.bids;
+        assert!(vector::length(bids_ref) == 0, 0);
+        let order_ref = vector::borrow(asks_ref, 0);
+        assert!(order_ref.market_order_id == market_order_id_ask_0, 0);
+        assert!(order_ref.size == size, 0);
+        // Push back value to return instead of dropping.
+        vector::push_back(&mut return_instead_of_dropping, open_orders);
+        return_instead_of_dropping
+    }
+
+    #[test]
     #[expected_failure(abort_code = E_NO_MARKET_ACCOUNT)]
     /// Verify failure for no market account resource.
     fun test_get_asset_counts_internal_no_account()
@@ -3713,7 +3874,7 @@ module econia::user {
                 @user, MARKET_ID_GENERIC) == vector[], 0);
         assert!(get_all_market_account_ids_for_user(
                 @user) == vector[], 0);
-        assert!(option::is_none(&get_open_order_id(
+        assert!(option::is_none(&get_open_order_id_internal(
             @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, ASK, 0)), 0);
         // Assert false returns.
         assert!(!has_market_account_by_market_account_id(

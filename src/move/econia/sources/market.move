@@ -370,7 +370,7 @@
 ///
 /// cancel_all_orders --> user::get_active_market_order_ids_internal
 ///
-/// has_open_order --> user::get_open_order_id
+/// has_open_order --> user::get_open_order_id_internal
 ///
 /// ```
 ///
@@ -1125,7 +1125,7 @@ module econia::market {
         // Immutably borrow order having list node ID.
         let order_ref = avl_queue::borrow(orders_ref, avlq_access_key);
         // Check if user has corresponding open order market order ID.
-        let optional_market_order_id = user::get_open_order_id(
+        let optional_market_order_id = user::get_open_order_id_internal(
             order_ref.user, market_id, order_ref.custodian_id, side,
             order_ref.order_access_key);
         // If user has no corresponding market order ID return false.

@@ -154,7 +154,7 @@ export const StatsBar: React.FC<{
           }}
         />
       </BaseModal>
-      <div className="flex justify-between border-b border-neutral-600 bg-black px-9 py-3">
+      <div className="flex justify-between border-b border-neutral-600 px-9 py-3">
         <div className="flex overflow-x-clip whitespace-nowrap">
           <div className="flex items-center">
             <MarketIconPair

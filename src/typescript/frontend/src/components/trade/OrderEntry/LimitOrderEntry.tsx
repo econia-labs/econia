@@ -101,9 +101,13 @@ export const LimitOrderEntry: React.FC<{
         <OrderEntryInputWrapper
           startAdornment="LIMIT PRICE"
           endAdornment={marketData.quote.symbol}
-          inputWithRef={(focusRef) => {
-            const { ref, ...rest } = register("price", {
-              required: "REQUIRED",
+        >
+          <input
+            type="number"
+            step="any"
+            placeholder="0.00"
+            {...register("price", {
+              required: "required",
               min: 0,
               // TODO: check that amount * size does not exceed quote currency
               // balance for bids
@@ -134,7 +138,7 @@ export const LimitOrderEntry: React.FC<{
           }}
         ></OrderEntryInputWrapper>
         <div className="relative mb-4">
-          <p className="absolute text-xs text-red">
+          <p className="absolute text-xs uppercase text-red">
             {errors.price != null && errors.price.message}
           </p>
         </div>
@@ -145,9 +149,13 @@ export const LimitOrderEntry: React.FC<{
           <OrderEntryInputWrapper
             startAdornment="AMOUNT"
             endAdornment={marketData.base?.symbol}
-            inputWithRef={(focusRef) => {
-              const { ref, ...rest } = register("size", {
-                required: "REQUIRED",
+          >
+            <input
+              type="number"
+              step="any"
+              placeholder="0.00"
+              {...register("size", {
+                required: "required",
                 min: 0,
                 // TODO: check that size does not exceed base currency balance for asks
                 onChange: (e) => {
@@ -159,25 +167,12 @@ export const LimitOrderEntry: React.FC<{
                     setValue("totalSize", "");
                   }
                 },
-              });
-              return (
-                <input
-                  ref={(e) => {
-                    ref(e);
-                    focusRef.current = e;
-                    // focusRef.current?.focus();
-                  }}
-                  type="number"
-                  step="any"
-                  placeholder="0.00"
-                  {...rest}
-                  className="h-full w-[100px] flex-1 bg-transparent text-right font-roboto-mono font-light text-neutral-400 outline-none"
-                />
-              );
-            }}
-          ></OrderEntryInputWrapper>
+              })}
+              className="h-full w-[100px] flex-1 bg-transparent text-right font-roboto-mono text-xs font-light text-neutral-400 outline-none"
+            />
+          </OrderEntryInputWrapper>
           <div className="relative">
-            <p className="absolute text-xs text-red">
+            <p className="absolute text-xs uppercase text-red">
               {errors.size != null && errors.size.message}
             </p>
           </div>
@@ -219,6 +214,13 @@ export const LimitOrderEntry: React.FC<{
         <OrderEntryInfo
           label={`${marketData.base?.symbol} AVAILABLE`}
           value={`${baseBalance.data ?? "--"} ${marketData.base?.symbol}`}
+          className="cursor-pointer"
+          onClick={() => {
+            setValue(
+              "size",
+              baseBalance.data ? baseBalance.data.toString() : ""
+            );
+          }}
         />
         <OrderEntryInfo
           label={`${marketData.quote?.symbol} AVAILABLE`}

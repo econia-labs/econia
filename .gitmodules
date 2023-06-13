@@ -1,6 +1,7 @@
 [submodule "src/rust/dependencies/aptos-core"]
 	path = src/rust/dependencies/aptos-core
 	url = git@github.com:econia-labs/aptos-core.git
+	branch = econia
 [submodule "src/typescript/frontend/public/static"]
 	path = src/typescript/frontend/public/static
 	url = git@github.com:tradingview/charting_library.git

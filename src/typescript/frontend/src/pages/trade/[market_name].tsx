@@ -104,7 +104,7 @@ export default function Market({ allMarketData, marketData }: Props) {
               </ChartCard>
             </div>
             <div className="flex min-w-[268px] flex-initial flex-col gap-4 border-neutral-600">
-              <div className="flex flex-1 flex-col space-y-3">
+              <div className="flex w-max flex-1 flex-col space-y-3">
                 <ChartCard>
                   <OrderEntry marketData={marketData} />
                 </ChartCard>

@@ -89,7 +89,7 @@ export const MarketOrderEntry: React.FC<{
               required: "required",
               min: 0,
             })}
-            className="z-30 w-full bg-transparent pl-14 pr-14 text-right font-roboto-mono text-xs font-light text-neutral-400 outline-none"
+            className="z-30 w-full bg-transparent pb-3 pl-14 pr-14 pt-3 text-right font-roboto-mono text-xs font-light text-neutral-400 outline-none"
           />
         </OrderEntryInputWrapper>
         <div className="relative">

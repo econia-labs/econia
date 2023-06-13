@@ -140,10 +140,10 @@ function publish {
     secret_file_path=$(print_auth_key_message $type | sed -n '2 p')
     # Extract authentication key from auth key message (4th line).
     auth_key=$(print_auth_key_message $type | sed -n '4 p')
-    set_econia_address $auth_key # Set Econia address in manifest.
+    set_econia_address 0x$auth_key # Set Econia address in manifest.
     # Fund the account.
     aptos account fund-with-faucet \
-        --account $auth_key \
+        --account 0x$auth_key \
         --amount 1000000000
     # Publish the package.
     aptos move publish \
@@ -153,7 +153,7 @@ function publish {
         --package-dir $move_dir \
         --assume-yes
     # Print explorer link for account.
-    echo https://aptos-explorer.netlify.app/account/$auth_key
+    echo https://aptos-explorer.netlify.app/account/0x$auth_key
     set_econia_address $docgen_address # Set DocGen address in manifest.
 }
 

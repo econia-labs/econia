@@ -62,12 +62,12 @@ export const useOrderStatusNotif = (selectedMarket: ApiMarket | undefined) => {
 
       // transaction hash here?
       if (data.order_state === "evicted") {
-        toast.success(
+        toast.info(
           `Order of ${data.order_size} ${selectedMarket?.base?.name} for ${price.data} ${selectedMarket?.quote.name} is evicted`
         );
       }
       if (data.order_state === "cancelled") {
-        toast.success(
+        toast.info(
           `Order of ${data.order_size} ${selectedMarket?.base?.name} for ${price.data} ${selectedMarket?.quote.name} is cancelled`
         );
       }

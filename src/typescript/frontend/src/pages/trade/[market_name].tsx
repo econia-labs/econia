@@ -86,8 +86,23 @@ export default function Market({ allMarketData, marketData }: Props) {
     <OrderEntryContextProvider>
       <Page>
         <StatsBar selectedMarket={marketData} />
-        <div className="overflow-hidden">
-          <main className="flex w-full space-x-3 overflow-auto px-3 py-3">
+        <main className="flex w-full space-x-3 px-3 py-3">
+          <div className="flex flex-1 flex-col space-y-3">
+            <ChartCard className="flex min-h-[590px] flex-1 flex-col">
+              {isScriptReady && <TVChartContainer {...defaultTVChartProps} />}
+              <DepthChart marketData={marketData} />
+            </ChartCard>
+            <ChartCard>
+              <ChartName className="mb-4">Orders</ChartName>
+              <OrdersTable allMarketData={allMarketData} />
+            </ChartCard>
+          </div>
+          <div className="flex min-w-[268px] flex-initial flex-col border-neutral-600">
+            <ChartCard className="flex flex-1 flex-col">
+              <OrderBook marketData={marketData} />
+            </ChartCard>
+          </div>
+          <div className="flex min-w-[268px] flex-initial flex-col gap-4 border-neutral-600">
             <div className="flex flex-1 flex-col space-y-3">
               <ChartCard className="flex min-h-[590px] flex-1 flex-col">
                 {isScriptReady && <TVChartContainer {...defaultTVChartProps} />}
@@ -116,8 +131,8 @@ export default function Market({ allMarketData, marketData }: Props) {
                 </ChartCard>
               </div>
             </div>
-          </main>
-        </div>
+          </div>
+        </main>
         <Script
           src="/static/datafeeds/udf/dist/bundle.js"
           strategy="lazyOnload"

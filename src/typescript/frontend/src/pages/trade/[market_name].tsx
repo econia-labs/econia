@@ -131,8 +131,8 @@ export default function Market({ allMarketData, marketData }: Props) {
                 </ChartCard>
               </div>
             </div>
-          </main>
-        </div>
+          </div>
+        </main>
         <Script
           src="/static/datafeeds/udf/dist/bundle.js"
           strategy="lazyOnload"

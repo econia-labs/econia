@@ -237,7 +237,7 @@ export const DepthChart: React.FC<{
                     const formatted = formatter.format(Number(value));
 
                     // show 0.0 as <0.1
-                    return value == "0"
+                    return value === 0
                       ? "0"
                       : formatted === "0.0"
                       ? "<0.1"

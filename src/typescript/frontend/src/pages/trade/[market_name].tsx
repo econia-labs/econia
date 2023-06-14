@@ -104,18 +104,35 @@ export default function Market({ allMarketData, marketData }: Props) {
           </div>
           <div className="flex min-w-[268px] flex-initial flex-col gap-4 border-neutral-600">
             <div className="flex flex-1 flex-col space-y-3">
-              <ChartCard>
-                <OrderEntry marketData={marketData} />
+              <ChartCard className="flex min-h-[590px] flex-1 flex-col">
+                {isScriptReady && <TVChartContainer {...defaultTVChartProps} />}
+                <DepthChart marketData={marketData} />
               </ChartCard>
-              <ChartCard className="flex-1">
-                <ChartName className="mb-3 mt-3 font-bold">
-                  Trade History
-                </ChartName>
-                <TradeHistoryTable marketData={marketData} />
+              <ChartCard>
+                <ChartName className="mb-4">Orders</ChartName>
+                <OrdersTable allMarketData={allMarketData} />
               </ChartCard>
             </div>
-          </div>
-        </main>
+            <div className="flex min-w-[268px] flex-initial flex-col border-neutral-600">
+              <ChartCard className="flex flex-1 flex-col">
+                <OrderBook marketData={marketData} />
+              </ChartCard>
+            </div>
+            <div className="flex min-w-[268px] flex-initial flex-col gap-4 border-neutral-600">
+              <div className="flex flex-1 flex-col space-y-3">
+                <ChartCard>
+                  <OrderEntry marketData={marketData} />
+                </ChartCard>
+                <ChartCard className="flex-1">
+                  <ChartName className="mb-3 mt-3 font-bold">
+                    Trade History
+                  </ChartName>
+                  <TradeHistoryTable marketData={marketData} />
+                </ChartCard>
+              </div>
+            </div>
+          </main>
+        </div>
         <Script
           src="/static/datafeeds/udf/dist/bundle.js"
           strategy="lazyOnload"

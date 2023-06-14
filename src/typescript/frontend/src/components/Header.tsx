@@ -104,6 +104,7 @@ export function Header() {
               <Button
                 variant="secondary"
                 onClick={() => setDepositWithdrawOpen(true)}
+                className="whitespace-nowrap"
               >
                 Deposit / Withdraw
               </Button>

@@ -3,9 +3,7 @@
 Econia has been independently audited by three firms, and all [audit reports] are public:
 Move source code is audited through commit [`8148afe`] (tag [`v4.0.2-audited`]), via three initial audits and a complimentary followup audit.
 
-Econia will deploy on Aptos mainnet under a community-governed multisig account in accordance with the [Econia signatory guide].
-
-Econia is currently rehearsing package deployment and on-chain parameter updates on testnet, so stay tuned for more security updates!
+Moreover, Econia is deployed on Aptos mainnet under a community-governed multisig account in accordance with the [Econia signatory guide].
 
 :::note
 

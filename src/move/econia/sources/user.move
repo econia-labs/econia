@@ -95,6 +95,7 @@
 /// * `get_all_market_account_ids_for_user()`
 /// * `get_market_account()`
 /// * `get_market_accounts()`
+/// * `has_market_account()`
 /// * `has_market_account_by_market_account_id()`
 /// * `has_market_account_by_market_id()`
 ///
@@ -726,6 +727,23 @@ module econia::user {
         market_account_id: u128
     ): u64 {
         (market_account_id >> SHIFT_MARKET_ID as u64)
+    }
+
+    #[view]
+    /// Return `true` if `user` has market account registered with
+    /// given `market_id` and `custodian_id`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_market_account_getters()`
+    public fun has_market_account(
+        user: address,
+        market_id: u64,
+        custodian_id: u64
+    ): bool
+    acquires MarketAccounts {
+        has_market_account_by_market_account_id(
+            user, get_market_account_id(market_id, custodian_id))
     }
 
     #[view]
@@ -3956,6 +3974,14 @@ module econia::user {
                 @user, MARKET_ID_PURE_COIN), 0);
         assert!(!has_market_account_by_market_id(
                 @user, MARKET_ID_GENERIC), 0);
+        assert!(!has_market_account(
+                @user, MARKET_ID_PURE_COIN, NO_CUSTODIAN), 0);
+        assert!(!has_market_account(
+                @user, MARKET_ID_GENERIC  , NO_CUSTODIAN), 0);
+        assert!(!has_market_account(
+                @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID), 0);
+        assert!(!has_market_account(
+                @user, MARKET_ID_GENERIC  , CUSTODIAN_ID), 0);
         register_market_accounts_test(); // Register market accounts.
         // Assert empty returns.
         assert!(get_all_market_account_ids_for_market_id(
@@ -3997,6 +4023,14 @@ module econia::user {
                 @user, MARKET_ID_PURE_COIN), 0);
         assert!(has_market_account_by_market_id(
                 @user, MARKET_ID_GENERIC), 0);
+        assert!(has_market_account(
+                @user, MARKET_ID_PURE_COIN, NO_CUSTODIAN), 0);
+        assert!(has_market_account(
+                @user, MARKET_ID_GENERIC  , NO_CUSTODIAN), 0);
+        assert!(has_market_account(
+                @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID), 0);
+        assert!(has_market_account(
+                @user, MARKET_ID_GENERIC  , CUSTODIAN_ID), 0);
         // Assert false returns.
         assert!(!has_market_account_by_market_account_id(
                 @user_1, market_account_id_coin_self), 0);

@@ -3,13 +3,12 @@ import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/Button";
 import { ConnectedButton } from "@/components/ConnectedButton";
-import { Input } from "@/components/Input";
 import { useAptos } from "@/contexts/AptosContext";
 import { ECONIA_ADDR } from "@/env";
 import { useMarketAccountBalance } from "@/hooks/useMarketAccountBalance";
 import { type ApiMarket } from "@/types/api";
 import { type Side } from "@/types/global";
-import { fromDecimalPrice, fromDecimalSize } from "@/utils/econia";
+import { fromDecimalSize } from "@/utils/econia";
 import { TypeTag } from "@/utils/TypeTag";
 
 import { OrderEntryInfo } from "./OrderEntryInfo";

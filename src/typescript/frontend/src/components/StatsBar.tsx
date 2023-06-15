@@ -1,7 +1,6 @@
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import { useQuery } from "@tanstack/react-query";
 import BigNumber from "bignumber.js";
-import Image from "next/image";
 import { useRouter } from "next/router";
 import React, { useState } from "react";
 

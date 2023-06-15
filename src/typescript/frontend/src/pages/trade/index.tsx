@@ -2,7 +2,6 @@ import { type GetStaticProps } from "next";
 import { useRouter } from "next/router";
 
 import { Page } from "@/components/Page";
-import { API_URL } from "@/env";
 import { MOCK_MARKETS } from "@/mockdata/markets";
 import { type ApiMarket } from "@/types/api";
 

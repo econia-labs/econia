@@ -1,5 +1,3 @@
-import { Listbox } from "@headlessui/react";
-import { CheckIcon, ChevronDownIcon } from "@heroicons/react/20/solid";
 import BigNumber from "bignumber.js";
 import { useEffect, useMemo, useRef, useState } from "react";
 

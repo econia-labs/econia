@@ -10,6 +10,7 @@
 ///
 /// [Functions](#functions)
 ///
+/// * [View functions](#view-functions)
 /// * [Public getters](#public-getters)
 /// * [Other public functions](#other-public-functions)
 /// * [Public entry functions](#public-entry-functions)
@@ -78,12 +79,12 @@
 ///
 /// # Functions
 ///
-/// ## Public getters
+/// ## View functions
 ///
-/// * `get_cost_to_upgrade_integrator_fee_store()`
+/// * `get_cost_to_upgrade_integrator_fee_store_view()`
 /// * `get_custodian_registration_fee()`
 /// * `get_fee_share_divisor()`
-/// * `get_integrator_withdrawal_fee()`
+/// * `get_integrator_withdrawal_fee_view()`
 /// * `get_market_registration_fee()`
 /// * `get_n_fee_store_tiers()`
 /// * `get_taker_fee_divisor()`
@@ -91,6 +92,11 @@
 /// * `get_tier_withdrawal_fee()`
 /// * `get_underwriter_registration_fee()`
 /// * `is_utility_coin_type()`
+///
+/// ## Public getters
+///
+/// * `get_cost_to_upgrade_integrator_fee_store()`
+/// * `get_integrator_withdrawal_fee()`
 /// * `verify_utility_coin_type()`
 ///
 /// ## Other public functions
@@ -504,9 +510,9 @@ module econia::incentives {
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-    // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    // View functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    #[app]
+    #[view]
     /// Calculate cost to upgrade `IntegratorFeeStore` to higher tier.
     ///
     /// # Type parameters
@@ -516,7 +522,7 @@ module econia::incentives {
     ///
     /// # Parameters
     ///
-    /// * `integrator`: Integrator account.
+    /// * `integrator_address`: Integrator address.
     /// * `market_id`: Market ID for corresponding market.
     /// * `new_tier`: Tier to upgrade to.
     ///
@@ -537,7 +543,7 @@ module econia::incentives {
     ///
     /// # Restrictions
     ///
-    /// * Requires signature of integrator to prevent excessive public
+    /// * Restricted to private function to prevent excessive public
     ///   queries on an `IntegratorFeeStore` and thus transaction
     ///   collisions with the matching engine.
     ///
@@ -545,20 +551,18 @@ module econia::incentives {
     ///
     /// * `test_get_cost_to_upgrade_integrator_fee_store_not_increase()`
     /// * `test_get_cost_to_upgrade_integrator_fee_store_not_upgrade()`
-    public fun get_cost_to_upgrade_integrator_fee_store<
+    fun get_cost_to_upgrade_integrator_fee_store_view<
         QuoteCoinType,
         UtilityCoinType
     >(
-        integrator: &signer,
+        integrator_address: address,
         market_id: u64,
-        new_tier: u8,
+        new_tier: u8
     ): u64
     acquires
         IncentiveParameters,
         IntegratorFeeStores
     {
-        // Get integrator address.
-        let integrator_address = address_of(integrator);
         // Borrow mutable reference to integrator fee stores map for
         // given quote coin type.
         let integrator_fee_stores_map_ref_mut =
@@ -582,7 +586,7 @@ module econia::incentives {
         new_tier_fee - current_tier_fee
     }
 
-    #[app]
+    #[view]
     /// Return custodian registration fee.
     ///
     /// # Testing
@@ -594,7 +598,7 @@ module econia::incentives {
         borrow_global<IncentiveParameters>(@econia).custodian_registration_fee
     }
 
-    #[app]
+    #[view]
     /// Return integrator fee share divisor for `tier`.
     ///
     /// # Testing
@@ -620,16 +624,17 @@ module econia::incentives {
         integrator_fee_store_tier_ref.fee_share_divisor
     }
 
-    #[app]
-    /// Return withdrawal fee for given `integrator` and `market_id`.
+    #[view]
+    /// Return withdrawal fee for given `integrator_address` and
+    /// `market_id`.
     ///
     /// # Restrictions
     ///
-    /// * Requires signature of integrator to prevent excessive public
+    /// * Restricted to private function to prevent excessive public
     ///   queries on an `IntegratorFeeStore` and thus transaction
     ///   collisions with the matching engine.
-    public fun get_integrator_withdrawal_fee<QuoteCoinType>(
-        integrator: &signer,
+    fun get_integrator_withdrawal_fee_view<QuoteCoinType>(
+        integrator_address: address,
         market_id: u64,
     ): u64
     acquires
@@ -639,7 +644,7 @@ module econia::incentives {
         // Borrow mutable reference to integrator fee stores map for
         // quote coin type.
         let integrator_fee_stores_map_ref = &borrow_global<
-            IntegratorFeeStores<QuoteCoinType>>(address_of(integrator)).map;
+            IntegratorFeeStores<QuoteCoinType>>(integrator_address).map;
         // Borrow mutable reference to integrator fee store for given
         // market ID.
         let integrator_fee_store_ref = tablist::borrow(
@@ -648,7 +653,7 @@ module econia::incentives {
         get_tier_withdrawal_fee(integrator_fee_store_ref.tier)
     }
 
-    #[app]
+    #[view]
     /// Return market registration fee.
     ///
     /// # Testing
@@ -660,7 +665,7 @@ module econia::incentives {
         borrow_global<IncentiveParameters>(@econia).market_registration_fee
     }
 
-    #[app]
+    #[view]
     /// Return number of fee store tiers.
     ///
     /// # Testing
@@ -678,7 +683,7 @@ module econia::incentives {
         vector::length(integrator_fee_store_tiers_ref)
     }
 
-    #[app]
+    #[view]
     /// Return taker fee divisor.
     ///
     /// # Testing
@@ -690,7 +695,7 @@ module econia::incentives {
         borrow_global<IncentiveParameters>(@econia).taker_fee_divisor
     }
 
-    #[app]
+    #[view]
     /// Return fee to activate an `IntegratorFeeStore` to given `tier`.
     ///
     /// # Testing
@@ -716,7 +721,7 @@ module econia::incentives {
         integrator_fee_store_tier_ref.tier_activation_fee
     }
 
-    #[app]
+    #[view]
     /// Return fee to withdraw from `IntegratorFeeStore` activated to
     /// given `tier`.
     ///
@@ -743,7 +748,7 @@ module econia::incentives {
         integrator_fee_store_tier_ref.withdrawal_fee
     }
 
-    #[app]
+    #[view]
     /// Return underwriter registration fee.
     ///
     /// # Testing
@@ -756,7 +761,7 @@ module econia::incentives {
             underwriter_registration_fee
     }
 
-    #[app]
+    #[view]
     /// Return `true` if `T` is the utility coin type.
     ///
     /// # Testing
@@ -768,6 +773,50 @@ module econia::incentives {
         // Return if provided type info is that of the utility coin.
         type_info::type_of<T>() ==
             borrow_global<IncentiveParameters>(@econia).utility_coin_type_info
+    }
+
+    // View functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Public function wrapper for
+    /// `get_cost_to_upgrade_integrator_fee_store_view()`, requiring
+    /// integrator signature to prevent runtime transaction collisions.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_cost_to_upgrade_integrator_fee_store_not_increase()`
+    /// * `test_get_cost_to_upgrade_integrator_fee_store_not_upgrade()`
+    public fun get_cost_to_upgrade_integrator_fee_store<
+        QuoteCoinType,
+        UtilityCoinType
+    >(
+        integrator: &signer,
+        market_id: u64,
+        new_tier: u8,
+    ): u64
+    acquires
+        IncentiveParameters,
+        IntegratorFeeStores
+    {
+        get_cost_to_upgrade_integrator_fee_store_view<
+            QuoteCoinType, UtilityCoinType>(
+                address_of(integrator), market_id, new_tier)
+    }
+
+    /// Public function wrapper for
+    /// `get_integrator_withdrawal_fee_view()`, requiring integrator
+    /// signature to prevent runtime transaction collisions.
+    public fun get_integrator_withdrawal_fee<QuoteCoinType>(
+        integrator: &signer,
+        market_id: u64,
+    ): u64
+    acquires
+        IncentiveParameters,
+        IntegratorFeeStores
+    {
+        get_integrator_withdrawal_fee_view<QuoteCoinType>(
+                address_of(integrator), market_id)
     }
 
     /// Upgrade `IntegratorFeeStore` to a higher tier.

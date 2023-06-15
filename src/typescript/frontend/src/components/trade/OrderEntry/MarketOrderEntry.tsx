@@ -78,7 +78,7 @@ export const MarketOrderEntry: React.FC<{
     <form onSubmit={handleSubmit(onSubmit)}>
       <div className="mx-4 flex flex-col">
         <OrderEntryInputWrapper
-          startAdornment="AMOUNT"
+          startAdornment="Amount"
           endAdornment={marketData.base?.symbol}
         >
           <input
@@ -89,7 +89,7 @@ export const MarketOrderEntry: React.FC<{
               required: "REQUIRED",
               min: 0,
             })}
-            className="h-full w-[100px] flex-1 bg-transparent text-right font-roboto-mono text-xs font-light text-neutral-400 outline-none"
+            className="z-30 w-full bg-transparent pb-3 pl-14 pr-14 pt-3 text-right font-roboto-mono text-xs font-light text-neutral-400 outline-none"
           />
         </OrderEntryInputWrapper>
         <div className="relative mb-4">

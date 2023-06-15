@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import React, { useEffect } from "react";
 
 import { API_URL } from "@/env";
+import { MOCK_MARKETS } from "@/mockdata/markets";
 import { type ApiMarket, type ApiStats } from "@/types/api";
 import { type OrderBook } from "@/types/global";
 
@@ -9,7 +10,6 @@ import { BaseModal } from "../../BaseModal";
 import { DepositWithdrawContent } from "./DepositWithdrawContent";
 import { InitialContent } from "./InitialContent";
 import { SelectMarketContent } from "./SelectMarketContent";
-import { MOCK_MARKETS } from "@/mockdata/markets";
 
 enum Step {
   Initial,

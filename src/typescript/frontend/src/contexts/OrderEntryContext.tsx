@@ -4,8 +4,8 @@ import {
   type PropsWithChildren,
   type SetStateAction,
   useContext,
-  useState,
   useEffect,
+  useState,
 } from "react";
 
 import { type Side } from "@/types/global";

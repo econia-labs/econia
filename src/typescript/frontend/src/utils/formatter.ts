@@ -1,4 +1,4 @@
-import { PriceLevel } from "@/types/global";
+import { type PriceLevel } from "@/types/global";
 
 export const getLang = () => {
   return typeof window === "undefined"

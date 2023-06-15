@@ -1,4 +1,4 @@
-import { ApiMarket } from "@/types/api";
+import { type ApiMarket } from "@/types/api";
 
 export const MOCK_MARKETS: ApiMarket[] = [
   {

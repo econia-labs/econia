@@ -16,13 +16,10 @@
     - [Shell scripts](#shell-scripts)
     - [Environment setup](#environment-setup)
     - [Freeing up disk space](#freeing-up-disk-space)
-  - [Major filetypes](#major-filetypes)
+  - [Key filetypes for Econia developers](#key-filetypes-for-econia-developers)
     - [Move](#move)
     - [Markdown](#markdown)
     - [Python](#python)
-    - [Rust](#rust)
-    - [TypeScript](#typescript)
-    - [Jupyter](#jupyter)
 
 If you haven't already, consider checking out Econia Labs' [Teach yourself Move on Aptos] guide for some helpful background information!
 
@@ -98,7 +95,7 @@ It is possible to disable snapshots as mentioned in the support thread, but back
 
 Also consider deleting `~/.move` from time to time.
 
-## Major filetypes
+## Key filetypes for Econia developers
 
 ### Move
 
@@ -113,22 +110,8 @@ Documentation markdown source files are at [`doc/doc-site/docs`].
 
 ### Python
 
-Econia comes with a Python package at [`src/python/econia`], used for assorted build scripting functionality.
+Econia comes with a Python package at [`src/python/build_scripts`], used for assorted build scripting functionality.
 Most Python commands are called on by [`scripts.sh`] commands, with dependencies managed by [Poetry].
-
-### Rust
-
-Econia contains a Rust API backend (in development) at [`src/rust`].
-
-### TypeScript
-
-Econia contains a TypeScript SDK (in development) at [`src/typescript/sdk`].
-
-### Jupyter
-
-Interactive Jupyter notebook examples are at [`src/jupyter`], listed in increasing order of creation number.
-The earliest notebooks are subject to breaking changes at the most recent commit, but they have been archived so as to be functional at the commit when they where finalized.
-Hence, older commits can be checked out and experimented with, but mostly they are useful for harvesting old code patterns.
 
 [local time machine snapshots]: https://discussions.apple.com/thread/7676695
 [poetry]: https://python-poetry.org/
@@ -138,9 +121,6 @@ Hence, older commits can be checked out and experimented with, but mostly they a
 [`doc/doc-site/docs`]: doc/doc-site/docs
 [`kondo`]: https://github.com/tbillington/kondo
 [`scripts.sh`]: scripts.sh
-[`src/jupyter`]: src/jupyter
 [`src/move/econia/doc`]: src/move/econia/doc
 [`src/move/econia`]: src/move/econia
-[`src/python/econia`]: src/python/econia
-[`src/rust`]: src/rust
-[`src/typescript/sdk`]: src/typescript/sdk
+[`src/python/build_scripts`]: src/python/build_scripts

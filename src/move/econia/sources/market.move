@@ -29,6 +29,10 @@
 ///
 /// [View functions](#view-functions)
 ///
+/// * [Constant getters](#constant-getters)
+/// * [Market order IDs](#market-order-ids)
+/// * [Order lookup](#order-lookup)
+///
 /// [Public function index](#public-function-index)
 ///
 /// * [Market registration](#market-registration)
@@ -55,6 +59,8 @@
 ///
 /// # View functions
 ///
+/// ## Constant getters
+///
 /// * `get_ABORT()`
 /// * `get_ASK()`
 /// * `get_BID()`
@@ -73,6 +79,15 @@
 /// * `get_PERCENT()`
 /// * `get_SELL()`
 /// * `get_TICKS()`
+///
+/// ## Market order IDs
+///
+/// * `get_market_order_id_counter()`
+/// * `get_market_order_id_price()`
+/// * `get_market_order_id_side()`
+///
+/// ## Order lookup
+///
 /// * `get_open_order()`
 /// * `get_open_orders()`
 /// * `get_price_levels()`
@@ -88,12 +103,6 @@
 /// * `register_market_base_coin()`
 /// * `register_market_base_coin_from_coinstore()`
 /// * `register_market_base_generic()`
-///
-/// ## Market order IDs
-///
-/// * `get_market_order_id_counter()`
-/// * `get_market_order_id_price()`
-/// * `get_market_order_id_side()`
 ///
 /// ## Limit orders
 ///

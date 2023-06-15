@@ -241,6 +241,9 @@
 /// get_open_order_id_internal --> get_market_account_id
 /// get_open_order_id_internal --> has_market_account_by_market_account_id
 ///
+/// has_market_account --> has_market_account_by_market_account_id
+/// has_market_account --> get_market_account_id
+///
 /// ```
 ///
 /// Market account registration:

@@ -102,7 +102,7 @@ function set_econia_address {
         $python_build_dir_inverse$manifest \
         $address
     cd $python_build_dir_inverse # Go back to repository root.
-    format_code_toml # Format .toml files
+    format_code_toml             # Format .toml files
 }
 
 # Build Move documentation.

@@ -217,6 +217,17 @@ module econia::registry {
 
     // Structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /// Human-readable asset type descriptor for view functions.
+    struct AssetTypeView has copy, drop {
+        /// Address of package containing type definition.
+        package_address: address,
+        /// Module name where type is defined.
+        module_name: String,
+        /// Struct type name, either a phantom `CoinType` or
+        /// `GenericAsset`
+        type_name: String
+    }
+
     /// Custodian capability required to approve order operations and
     /// withdrawals. Administered to third-party registrants who may
     /// store it as they wish.
@@ -268,6 +279,28 @@ module econia::registry {
         /// underwriter capability required to verify generic asset
         /// amounts. A market-wide ID that only applies to markets
         /// having a generic base asset.
+        underwriter_id: u64
+    }
+
+    /// Human-readable market info return for view functions.
+    struct MarketInfoView has copy, drop {
+        /// 1-indexed Market ID.
+        market_id: u64,
+        /// Marked `true` if market is recognized.
+        is_recognized: bool,
+        /// `MarketInfo.base_type` as an `AssetTypeView`.
+        base_type: AssetTypeView,
+        /// `MarketInfo.base_name_generic`.
+        base_name_generic: String,
+        /// `MarketInfo.quote_type` as an `AssetTypeView`.
+        quote_type: AssetTypeView,
+        /// `MarketInfo.lot_size`.
+        lot_size: u64,
+        /// `MarketInfo.tick_size`.
+        tick_size: u64,
+        /// `MarketInfo.min_size`.
+        min_size: u64,
+        /// `MarketInfo.underwriter_id`.
         underwriter_id: u64
     }
 
@@ -476,6 +509,67 @@ module econia::registry {
         let n_recognized_markets = tablist::length(recognized_markets_map_ref);
         // Return market counts.
         MarketCounts{n_markets, n_recognized_markets}
+    }
+
+    #[view]
+    /// Return a `MarketInfoView` for given `market_id`.
+    ///
+    /// Restricted to private view function to prevent runtime
+    /// transaction collisions against the registry.
+    ///
+    /// Add to dependency charts TODO
+    /// Add to index TODO
+    ///
+    /// # Testing
+    ///
+    /// * `test_set_remove_check_recognized_markets()` TODO
+    /// * `test_get_market_info_invalid_market_id()` TODO
+    fun get_market_info(
+        market_id: u64
+    ): MarketInfoView
+    acquires
+        RecognizedMarkets,
+        Registry
+    {
+        let markets_map_ref = // Immutably borrow markets map.
+            &borrow_global<Registry>(@econia).market_id_to_info;
+        assert!( // Assert market ID corresponds to registered market.
+            tablist::contains(markets_map_ref, market_id),
+            E_INVALID_MARKET_ID);
+        // Immutably borrow market info for market ID.
+        let market_info_ref = tablist::borrow(markets_map_ref, market_id);
+        // Get base type for market.
+        let base_type = market_info_ref.base_type;
+        // Get generic base name for market.
+        let base_name_generic = market_info_ref.base_name_generic;
+        // Get quote type for market.
+        let quote_type = market_info_ref.quote_type;
+        let trading_pair = // Get trading pair for market.
+            TradingPair{base_type, base_name_generic, quote_type};
+        // Check if market is recognized. If a recognized market exists
+        // for given trading pair:
+        let is_recognized = if (has_recognized_market(trading_pair)) {
+            // Get recognized market ID for given trading pair.
+            let (recognized_market_id_for_trading_pair, _, _, _, _) =
+                get_recognized_market_info(trading_pair);
+            // Indicated market ID is recognized if it is the same as
+            // the recognized market ID for the given trading pair.
+            market_id == recognized_market_id_for_trading_pair
+        } else { // If no recognized market for given trading pair:
+            false // Market is necessarily not recognized.
+        };
+        // Pack and return a human-readable market info view.
+        MarketInfoView{
+            market_id,
+            is_recognized,
+            base_type: to_asset_type_view(&base_type),
+            base_name_generic,
+            quote_type: to_asset_type_view(&quote_type),
+            lot_size: market_info_ref.lot_size,
+            tick_size: market_info_ref.tick_size,
+            min_size: market_info_ref.min_size,
+            underwriter_id: market_info_ref.underwriter_id
+        }
     }
 
     #[view]
@@ -1449,6 +1543,21 @@ module econia::registry {
         incentives::deposit_market_registration_utility_coins<UtilityCoinType>(
                 utility_coins); // Deposit utility coins.
         market_id // Return market ID.
+    }
+
+    /// Convert a `TypeInfo` to an `AssetTypeView`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_set_remove_check_recognized_markets()` TODO
+    fun to_asset_type_view(
+        type_info_ref: &TypeInfo
+    ): AssetTypeView {
+        AssetTypeView{
+            package_address: type_info::account_address(type_info_ref),
+            module_name: string::utf8(type_info::module_name(type_info_ref)),
+            type_name: string::utf8(type_info::struct_name(type_info_ref)),
+        }
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

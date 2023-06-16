@@ -588,7 +588,6 @@ module econia::registry {
             get_recognized_market_info_base_coin_by_type<
                 BaseCoinType, QuoteCoinType>();
         market_id // Return resultant market ID
-
     }
 
     #[view]

@@ -1462,7 +1462,6 @@ Return recognized market ID for a pure coin trading pair.
         <a href="registry.md#0xc0deb00c_registry_get_recognized_market_info_base_coin_by_type">get_recognized_market_info_base_coin_by_type</a>&lt;
             BaseCoinType, QuoteCoinType&gt;();
     market_id // Return resultant <a href="market.md#0xc0deb00c_market">market</a> ID
-
 }
 </code></pre>
 

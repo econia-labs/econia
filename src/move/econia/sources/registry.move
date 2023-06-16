@@ -34,7 +34,7 @@
 ///
 /// * [Capability registration](#capability-registration)
 /// * [Fee store registration](#fee-store-registration)
-/// * [Recognized market getters](#recognized-market-getters)
+/// * [Market getters](#market-getters)
 /// * [Recognized market setters](#recognized-market-setters)
 /// * [Internal market registration](#internal-market-registration)
 ///
@@ -52,6 +52,7 @@
 /// ## Market lookup
 ///
 /// * `get_market_counts()`
+/// * `get_market_info()`
 /// * `get_recognized_market_id_base_coin()`
 /// * `get_recognized_market_id_base_generic()`
 /// * `has_recognized_market_base_coin_by_type()`
@@ -124,7 +125,7 @@
 ///
 /// ```
 ///
-/// ## Recognized market getters
+/// ## Market getters
 ///
 /// ```mermaid
 ///
@@ -142,8 +143,7 @@
 /// has_recognized_market_base_coin --> has_recognized_market
 /// has_recognized_market_base_coin_by_type -->
 ///     has_recognized_market_base_coin
-/// has_recognized_market_base_generic -->
-///     has_recognized_market
+/// has_recognized_market_base_generic --> has_recognized_market
 /// has_recognized_market_base_generic_by_type -->
 ///     has_recognized_market_base_generic
 ///
@@ -152,6 +152,9 @@
 ///
 /// get_recognized_market_id_base_generic -->
 ///     get_recognized_market_info_base_generic_by_type
+///
+/// get_market_info --> has_recognized_market
+/// get_market_info --> get_recognized_market_info
 ///
 /// ```
 ///
@@ -517,13 +520,10 @@ module econia::registry {
     /// Restricted to private view function to prevent runtime
     /// transaction collisions against the registry.
     ///
-    /// Add to dependency charts TODO
-    /// Add to index TODO
-    ///
     /// # Testing
     ///
-    /// * `test_set_remove_check_recognized_markets()` TODO
-    /// * `test_get_market_info_invalid_market_id()` TODO
+    /// * `test_set_remove_check_recognized_markets()`
+    /// * `test_get_market_info_invalid_market_id()`
     fun get_market_info(
         market_id: u64
     ): MarketInfoView
@@ -1549,7 +1549,7 @@ module econia::registry {
     ///
     /// # Testing
     ///
-    /// * `test_set_remove_check_recognized_markets()` TODO
+    /// * `test_set_remove_check_recognized_markets()`
     fun to_asset_type_view(
         type_info_ref: &TypeInfo
     ): AssetTypeView {
@@ -1853,6 +1853,18 @@ module econia::registry {
     /// Verify constant getter return.
     fun test_get_NO_UNDERWRITER() {
         assert!(get_NO_UNDERWRITER() == NO_UNDERWRITER, 0)
+    }
+
+    #[test]
+    #[expected_failure(abort_code = E_INVALID_MARKET_ID)]
+    /// Verify failure for no such market ID.
+    fun test_get_market_info_invalid_market_id()
+    acquires
+        RecognizedMarkets,
+        Registry
+    {
+        init_test(); // Initialize for testing.
+        get_market_info(1); // Attempt invalid invocation.
     }
 
     #[test]
@@ -2374,6 +2386,24 @@ module econia::registry {
         let lot_size_2 = lot_size_1 - 1;
         let tick_size_2 = tick_size_1 - 1;
         let min_size_2 = min_size_1 - 1;
+        let lot_size_3 = lot_size_2 - 1;
+        let tick_size_3 = tick_size_2 - 1;
+        let min_size_3 = min_size_2 - 1;
+        let base_type_view = AssetTypeView{
+            package_address: @econia,
+            module_name: string::utf8(b"assets"),
+            type_name: string::utf8(b"BC"),
+        };
+        let base_type_view_generic = AssetTypeView{
+            package_address: @econia,
+            module_name: string::utf8(b"registry"),
+            type_name: string::utf8(b"GenericAsset"),
+        };
+        let quote_type_view = AssetTypeView{
+            package_address: @econia,
+            module_name: string::utf8(b"assets"),
+            type_name: string::utf8(b"QC"),
+        };
         // Get market registration fee.
         let fee = incentives::get_market_registration_fee();
         // Assert existence checks.
@@ -2387,6 +2417,29 @@ module econia::registry {
             &underwriter_capability, assets::mint_test(fee));
         register_market_base_coin_internal<BC, QC, UC>(
             lot_size_2, tick_size_2, min_size_2, assets::mint_test(fee));
+        // Verify market info.
+        assert!(get_market_info(1) == MarketInfoView{
+            market_id: 1,
+            is_recognized: false,
+            base_type: base_type_view_generic,
+            base_name_generic,
+            quote_type: quote_type_view,
+            lot_size: lot_size_1,
+            tick_size: tick_size_1,
+            min_size: min_size_1,
+            underwriter_id: underwriter_id_generic
+        }, 0);
+        assert!(get_market_info(2) == MarketInfoView{
+            market_id: 2,
+            is_recognized: false,
+            base_type: base_type_view,
+            base_name_generic: string::utf8(b""),
+            quote_type: quote_type_view,
+            lot_size: lot_size_2,
+            tick_size: tick_size_2,
+            min_size: min_size_2,
+            underwriter_id: NO_UNDERWRITER
+        }, 0);
         // Drop underwriter capability.
         drop_underwriter_capability_test(underwriter_capability);
         // Set both as recognized markets.
@@ -2419,6 +2472,29 @@ module econia::registry {
         // Assert market counts.
         assert!(get_market_counts() ==
                 MarketCounts{n_markets: 2, n_recognized_markets: 2}, 0);
+        // Verify market info.
+        assert!(get_market_info(1) == MarketInfoView{
+            market_id: 1,
+            is_recognized: true,
+            base_type: base_type_view_generic,
+            base_name_generic,
+            quote_type: quote_type_view,
+            lot_size: lot_size_1,
+            tick_size: tick_size_1,
+            min_size: min_size_1,
+            underwriter_id: underwriter_id_generic
+        }, 0);
+        assert!(get_market_info(2) == MarketInfoView{
+            market_id: 2,
+            is_recognized: true,
+            base_type: base_type_view,
+            base_name_generic: string::utf8(b""),
+            quote_type: quote_type_view,
+            lot_size: lot_size_2,
+            tick_size: tick_size_2,
+            min_size: min_size_2,
+            underwriter_id: NO_UNDERWRITER
+        }, 0);
         // Remove both recognized markets.
         remove_recognized_markets(econia, vector[1, 2]);
         // Assert existence checks.
@@ -2429,6 +2505,24 @@ module econia::registry {
         // Assert market counts.
         assert!(get_market_counts() ==
                 MarketCounts{n_markets: 2, n_recognized_markets: 0}, 0);
+        // Register a third market having the same trading pair as the
+        // second market, and set it as recognized.
+        register_market_base_coin_internal<BC, QC, UC>(
+            lot_size_3, tick_size_3, min_size_3, assets::mint_test(fee));
+        set_recognized_markets(econia, vector[3]);
+        // Verify that second market, which has same trading pair, is
+        // not marked as recognized.
+        assert!(get_market_info(2) == MarketInfoView{
+            market_id: 2,
+            is_recognized: false,
+            base_type: base_type_view,
+            base_name_generic: string::utf8(b""),
+            quote_type: quote_type_view,
+            lot_size: lot_size_2,
+            tick_size: tick_size_2,
+            min_size: min_size_2,
+            underwriter_id: NO_UNDERWRITER
+        }, 0);
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

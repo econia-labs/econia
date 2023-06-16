@@ -40,26 +40,13 @@ More specifically, Econia is an order book, a fundamental financial tool utilize
 
 Econia has completed [three independent audits].
 
-## Testnet account
+## Account addresses
 
-As of 2023-04-21, Econia is initialized on the Aptos Testnet as follows:
-
-| Field      | Value                                                                |
-| ---------- | -------------------------------------------------------------------- |
-| Account    | [0x40b119411c6a975fca28f1ba5800a8a418bba1e16a3f13b1de92f731e023d135] |
-| Public key | `0x91a50d9a266133c1921bb3be982af33eae1c661a1ae80fafde8f46d1fddcd2d2` |
-
-Note that on 2023-06-06, the Testnet deployment was upgraded to [commit `c79e58e`] from the [`view-functions` branch].
-
-## Mainnet account
-
-As of 2023-06-05, Econia is initialized on the Aptos Mainnet as follows:
-
-| Field   | Value                                                                |
-| ------- | -------------------------------------------------------------------- |
-| Account | [0xc0deb00c405f84c85dc13442e305df75d1288100cdd82675695f6148c7ece51c] |
-
-Since Econia is deployed on Mainnet under an [Aptos multisig v2] account, it does not have a public key.
+| Chain   | Account address                                                      | Multisig? | Commit (tag)                     |
+| ------- | -------------------------------------------------------------------- | --------- | -------------------------------- |
+| Mainnet | [0xc0deb00c405f84c85dc13442e305df75d1288100cdd82675695f6148c7ece51c] | Yes       | [`8148afe`] ([`v4.0.2-audited`]) |
+| Testnet | [0x40b119411c6a975fca28f1ba5800a8a418bba1e16a3f13b1de92f731e023d135] | No        | [`c79e58e`]                      |
+| Devnet  | [0xc0de0000fe693e08f668613c502360dc48508197401d2ac1ae79571498cd8b74] | Yes       | [`647c3d4a`]                     |
 
 If you would like to use the Econia Mainnet deployment as a dependency in your Move package, use the [`mainnet-dependency` branch] in your package's `Move.toml`:
 
@@ -70,6 +57,14 @@ subdir = "src/move/econia"
 rev = "mainnet-dependency"
 ```
 
+:::tip
+Aptos Devnet resets about once weekly, and there may be a slight delay between a weekly reset and the re-publication of Econia.
+:::
+
+:::caution
+The Econia Testnet account will soon be migrated from a single-signer account to a multisig (with a different address), to ensure similar conditions to mainnet.
+:::
+
 ## External resources
 
 - [Discord]
@@ -78,15 +73,17 @@ rev = "mainnet-dependency"
 - [Twitter]
 
 [0x40b119411c6a975fca28f1ba5800a8a418bba1e16a3f13b1de92f731e023d135]: https://explorer.aptoslabs.com/account/0x40b119411c6a975fca28f1ba5800a8a418bba1e16a3f13b1de92f731e023d135?network=testnet
+[0xc0de0000fe693e08f668613c502360dc48508197401d2ac1ae79571498cd8b74]: https://explorer.aptoslabs.com/account/0xc0de0000fe693e08f668613c502360dc48508197401d2ac1ae79571498cd8b74?network=devnet
 [0xc0deb00c405f84c85dc13442e305df75d1288100cdd82675695f6148c7ece51c]: https://aptos-explorer.netlify.app/account/0xc0deb00c405f84c85dc13442e305df75d1288100cdd82675695f6148c7ece51c/transactions?network=mainnet
 [aptos]: https://aptos.dev
-[aptos multisig v2]: https://github.com/aptos-labs/aptos-core/blob/main/aptos-move/framework/aptos-framework/sources/multisig_account.move
-[commit `c79e58e`]: https://github.com/econia-labs/econia/commit/c79e58eeb7129029d9336edd6205c8aaf73e3866
 [discord]: https://discord.gg/econia
 [github]: https://github.com/econia-labs/econia
 [medium]: https://medium.com/econialabs
 [teach yourself move on aptos]: https://github.com/econia-labs/teach-yourself-move
 [three independent audits]: security
 [twitter]: https://twitter.com/econialabs
+[`647c3d4a`]: https://github.com/econia-labs/econia/commit/647c3d4a
+[`8148afe`]: https://github.com/econia-labs/econia/commit/8148afe8c2fe4a298ef6fa2990d10b813ff0cd54
+[`c79e58e`]: https://github.com/econia-labs/econia/commit/c79e58e
 [`mainnet-dependency` branch]: https://github.com/econia-labs/econia/tree/mainnet-dependency
-[`view-functions` branch]: https://github.com/econia-labs/econia/tree/view-functions
+[`v4.0.2-audited`]: https://github.com/econia-labs/econia/releases/tag/v4.0.2-audited

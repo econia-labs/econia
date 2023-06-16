@@ -522,8 +522,8 @@ module econia::registry {
     ///
     /// # Testing
     ///
-    /// * `test_set_remove_check_recognized_markets()`
     /// * `test_get_market_info_invalid_market_id()`
+    /// * `test_set_remove_check_recognized_markets()`
     fun get_market_info(
         market_id: u64
     ): MarketInfoView

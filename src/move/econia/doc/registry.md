@@ -1366,8 +1366,8 @@ transaction collisions against the registry.
 ### Testing
 
 
-* <code>test_set_remove_check_recognized_markets()</code>
 * <code>test_get_market_info_invalid_market_id()</code>
+* <code>test_set_remove_check_recognized_markets()</code>
 
 
 <pre><code><b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_market_info">get_market_info</a>(market_id: u64): <a href="registry.md#0xc0deb00c_registry_MarketInfoView">registry::MarketInfoView</a>

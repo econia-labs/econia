@@ -30,7 +30,7 @@
 /// [View functions](#view-functions)
 ///
 /// * [Constant getters](#constant-getters)
-/// * [Market order ID decoders](#market-order-decoders)
+/// * [Market order ID decoders](#market-order-id-decoders)
 /// * [Order lookup](#order-lookup)
 ///
 /// [Public function index](#public-function-index)
@@ -2327,7 +2327,7 @@ module econia::market {
     ///
     /// # Testing
     ///
-    /// # `test_get_market_order_id_avl_queue_access_key()`
+    /// * `test_get_market_order_id_avl_queue_access_key()`
     inline fun get_market_order_id_avl_queue_access_key(
         market_order_id: u128
     ): u64 {

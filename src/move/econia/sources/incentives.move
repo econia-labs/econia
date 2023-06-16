@@ -546,8 +546,8 @@ module econia::incentives {
     ///
     /// # Restrictions
     ///
-    /// * Restricted to private vew function to prevent excessive public
-    ///   queries on an `IntegratorFeeStore` and thus transaction
+    /// * Restricted to private view function to prevent excessive
+    ///   public queries on an `IntegratorFeeStore` and thus transaction
     ///   collisions with the matching engine.
     ///
     /// # Testing

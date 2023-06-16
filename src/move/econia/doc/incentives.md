@@ -1381,8 +1381,8 @@ tier is not greater than that of current tier.
 ### Restrictions
 
 
-* Restricted to private vew function to prevent excessive public
-queries on an <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStore">IntegratorFeeStore</a></code> and thus transaction
+* Restricted to private view function to prevent excessive
+public queries on an <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStore">IntegratorFeeStore</a></code> and thus transaction
 collisions with the matching engine.
 
 

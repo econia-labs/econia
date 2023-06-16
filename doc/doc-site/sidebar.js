@@ -1,7 +1,17 @@
 module.exports = {
     docs: [
         'welcome',
-        'modules',
+        {
+            type: 'category',
+            label: 'Move modules',
+            link: {
+                type: 'doc',
+                id: 'move/modules'
+            },
+            items: [
+                'move/changelog'
+            ]
+        },
         {
             type: 'category',
             label: 'Design overview',

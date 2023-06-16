@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use axum::{
     extract::{Path, Query, State},
     Json,
@@ -12,7 +14,7 @@ use types::{bar::Resolution, book::PriceLevel, error::TypeError, stats::Stats, M
 use crate::{error::ApiError, AppState};
 
 pub async fn get_markets(
-    State(state): State<AppState>,
+    State(state): State<Arc<AppState>>,
 ) -> Result<Json<Vec<types::Market>>, ApiError> {
     let query_markets = sqlx::query_as!(
         QueryMarket,
@@ -61,7 +63,7 @@ pub async fn get_markets(
 
 pub async fn get_market_by_id(
     Path(market_id): Path<u64>,
-    State(state): State<AppState>,
+    State(state): State<Arc<AppState>>,
 ) -> Result<Json<Market>, ApiError> {
     let market_id = BigDecimal::from(market_id);
 
@@ -120,7 +122,7 @@ pub struct TickerParams {
 
 pub async fn get_stats(
     Query(params): Query<TickerParams>,
-    State(state): State<AppState>,
+    State(state): State<Arc<AppState>>,
 ) -> Result<Json<Vec<Stats>>, ApiError> {
     let resolution: Duration = params.resolution.into();
     let interval: PgInterval = resolution
@@ -177,7 +179,7 @@ pub async fn get_stats(
 pub async fn get_stats_by_id(
     Query(params): Query<TickerParams>,
     Path(market_id): Path<u64>,
-    State(state): State<AppState>,
+    State(state): State<Arc<AppState>>,
 ) -> Result<Json<Stats>, ApiError> {
     let resolution: Duration = params.resolution.into();
     let interval: PgInterval = resolution
@@ -246,7 +248,7 @@ pub struct OrderbookResponse {
 pub async fn get_orderbook(
     Path(market_id): Path<u64>,
     Query(params): Query<OrderbookParams>,
-    State(state): State<AppState>,
+    State(state): State<Arc<AppState>>,
 ) -> Result<Json<OrderbookResponse>, ApiError> {
     if params.depth < 1 {
         return Err(ApiError::InvalidDepth);
@@ -321,7 +323,7 @@ pub struct MarketHistoryParams {
 pub async fn get_market_history(
     Path(market_id): Path<u64>,
     Query(params): Query<MarketHistoryParams>,
-    State(state): State<AppState>,
+    State(state): State<Arc<AppState>>,
 ) -> Result<Json<Vec<types::bar::Bar>>, ApiError> {
     if params.from > params.to {
         return Err(ApiError::InvalidTimeRange);
@@ -476,7 +478,7 @@ pub struct FillsParams {
 pub async fn get_fills(
     Path(market_id): Path<u64>,
     Query(params): Query<FillsParams>,
-    State(state): State<AppState>,
+    State(state): State<Arc<AppState>>,
 ) -> Result<Json<Vec<types::order::Fill>>, ApiError> {
     if params.from > params.to {
         return Err(ApiError::InvalidTimeRange);
@@ -552,11 +554,11 @@ mod tests {
 
         let (tx, _) = broadcast::channel(16);
 
-        let state = AppState {
+        let state = Arc::new(AppState {
             pool,
             sender: tx,
             market_ids: HashSet::new(),
-        };
+        });
 
         let app = Router::new()
             .route("/markets", get(get_markets))
@@ -628,11 +630,11 @@ mod tests {
         let (btx, _brx) = broadcast::channel(16);
         let _conn = start_redis_channels(config.redis_url, market_ids.clone(), btx.clone()).await;
 
-        let state = AppState {
+        let state = Arc::new(AppState {
             pool,
             sender: btx,
             market_ids: HashSet::from_iter(market_ids.into_iter()),
-        };
+        });
         let app = router(state);
 
         let response = app
@@ -694,11 +696,11 @@ mod tests {
         let (btx, _brx) = broadcast::channel(16);
         let _conn = start_redis_channels(config.redis_url, market_ids.clone(), btx.clone()).await;
 
-        let state = AppState {
+        let state = Arc::new(AppState {
             pool,
             sender: btx,
             market_ids: HashSet::from_iter(market_ids.into_iter()),
-        };
+        });
         let app = router(state);
 
         let response = app
@@ -758,11 +760,11 @@ mod tests {
         let (btx, _brx) = broadcast::channel(16);
         let _conn = start_redis_channels(config.redis_url, market_ids.clone(), btx.clone()).await;
 
-        let state = AppState {
+        let state = Arc::new(AppState {
             pool,
             sender: btx,
             market_ids: HashSet::from_iter(market_ids.into_iter()),
-        };
+        });
         let app = router(state);
 
         let response = app
@@ -817,11 +819,11 @@ mod tests {
         let (btx, _brx) = broadcast::channel(16);
         let _conn = start_redis_channels(config.redis_url, market_ids.clone(), btx.clone()).await;
 
-        let state = AppState {
+        let state = Arc::new(AppState {
             pool,
             sender: btx,
             market_ids: HashSet::from_iter(market_ids.into_iter()),
-        };
+        });
         let app = router(state);
 
         let response = app

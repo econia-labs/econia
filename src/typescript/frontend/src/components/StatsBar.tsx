@@ -16,6 +16,8 @@ import { TwitterIcon } from "./icons/TwitterIcon";
 import { SelectMarketContent } from "./trade/DepositWithdrawModal/SelectMarketContent";
 import { MarketIconPair } from "./MarketIconPair";
 import { averageOrOther, formatNumber } from "@/utils/formatter";
+import BigNumber from "bignumber.js";
+import { toDecimalPrice } from "@/utils/econia";
 
 const DEFAULT_TOKEN_ICON = "/tokenImages/default.png";
 
@@ -80,7 +82,6 @@ export const StatsBar: React.FC<{
   const { data } = useQuery(
     ["marketStats", selectedMarket],
     async () => {
-      // TODO: MOCK API CALL
       const resProm = fetch(
         `${API_URL}/market/${selectedMarket.market_id}/stats?resolution=1d`
       ).then((res) => res.json());
@@ -100,12 +101,16 @@ export const StatsBar: React.FC<{
           TypeTag.fromApiCoin(selectedMarket.quote).toString()
         )?.logo_url ?? DEFAULT_TOKEN_ICON;
 
-      // END MOCK API CALL
       return {
-        lastPrice: averageOrOther(
-          priceRes.asks[0].price,
-          priceRes.bids[0].price
-        ),
+        lastPrice: toDecimalPrice({
+          price: new BigNumber(
+            averageOrOther(priceRes.asks[0].price, priceRes.bids[0].price) || 0
+          ),
+          lotSize: BigNumber(selectedMarket.lot_size),
+          tickSize: BigNumber(selectedMarket.tick_size),
+          baseCoinDecimals: BigNumber(selectedMarket.base?.decimals || 0),
+          quoteCoinDecimals: BigNumber(selectedMarket.quote?.decimals || 0),
+        }).toNumber(),
         lastPriceChange: 10.1738, // TODO: Mock data
         change24h: res.close,
         change24hPercent: res.change * 100,
@@ -148,7 +153,7 @@ export const StatsBar: React.FC<{
           }}
         />
       </BaseModal>
-      <div className="flex justify-between border-b border-neutral-600 bg-black px-9 py-3">
+      <div className="flex justify-between border-b border-neutral-600 px-9 py-3">
         <div className="flex overflow-x-clip whitespace-nowrap">
           <div className="flex items-center">
             <MarketIconPair

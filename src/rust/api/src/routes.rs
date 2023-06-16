@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use axum::{routing::get, Router};
 use tower::ServiceBuilder;
 use tower_http::{
@@ -11,7 +13,7 @@ use crate::{ws::ws_handler, AppState};
 mod account;
 mod market;
 
-pub fn router(state: AppState) -> Router {
+pub fn router(state: Arc<AppState>) -> Router {
     let cors_layer = CorsLayer::new()
         .allow_methods(Any)
         .allow_headers(Any)

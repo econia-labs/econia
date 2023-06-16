@@ -1,5 +1,5 @@
 [workspace]
-members = ["api", "db", "types"]
+members = ["aggregator", "api", "db", "types"]
 exclude = ["dependencies", "sdk"]
 
 [workspace.dependencies]

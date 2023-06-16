@@ -8,8 +8,12 @@
 # URL to download homebrew.
 brew_url="https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh"
 
-# DocGen address name.
+# DocGen address.
 docgen_address="0xc0deb00c"
+
+# Mainnet address.
+mainnet_address="0xc0deb00c4\
+05f84c85dc13442e305df75d1288100cdd82675695f6148c7ece51c"
 
 # Move package directory.
 move_dir="src/move/econia/"
@@ -83,10 +87,14 @@ function print_auth_key_message {
 # Substiute econia named address.
 function set_econia_address {
     address=$1 # Get address.
-    ## If address flagged as temporary or persistent type:
+    # If address flagged as temporary or persistent type:
     if [[ $address == temporary || $address == persistent ]]; then
         # Extract authentication key from auth key message (4th line).
         address=$(print_auth_key_message $address | sed -n '4 p')
+    # If address flagged as mainnet type:
+    elif [[ $address == mainnet ]]; then
+        # Use mainnet address.
+        address=$mainnet_address
     fi                   # Address now reassigned.
     cd $python_build_dir # Navigate to Python build scripts directory.
     # Set address.
@@ -94,6 +102,7 @@ function set_econia_address {
         $python_build_dir_inverse$manifest \
         $address
     cd $python_build_dir_inverse # Go back to repository root.
+    format_code_toml # Format .toml files
 }
 
 # Build Move documentation.
@@ -103,7 +112,7 @@ function build_move_docs {
         --include-dep-diagram \
         --include-impl \
         --package-dir $move_dir "$@"
-    set_econia_address persistent
+    set_econia_address mainnet
 }
 
 # Run Move unit tests.
@@ -111,7 +120,7 @@ function test_move {
     set_econia_address 0x0 # Set Econia address to null.
     # Run Move tests with enough instruction time and optional arguments.
     aptos move test --instructions 1000000 --package-dir $move_dir "$@"
-    set_econia_address persistent
+    set_econia_address mainnet
 }
 
 # Run Python tests.
@@ -140,10 +149,10 @@ function publish {
     secret_file_path=$(print_auth_key_message $type | sed -n '2 p')
     # Extract authentication key from auth key message (4th line).
     auth_key=$(print_auth_key_message $type | sed -n '4 p')
-    set_econia_address $auth_key # Set Econia address in manifest.
+    set_econia_address 0x$auth_key # Set Econia address in manifest.
     # Fund the account.
     aptos account fund-with-faucet \
-        --account $auth_key \
+        --account 0x$auth_key \
         --amount 1000000000
     # Publish the package.
     aptos move publish \
@@ -153,8 +162,8 @@ function publish {
         --package-dir $move_dir \
         --assume-yes
     # Print explorer link for account.
-    echo https://aptos-explorer.netlify.app/account/$auth_key
-    set_econia_address $docgen_address # Set DocGen address in manifest.
+    echo https://aptos-explorer.netlify.app/account/0x$auth_key
+    set_econia_address $mainnet # Set mainnet address in manifest.
 }
 
 # Format Markdown code.
@@ -281,6 +290,9 @@ case "$1" in
 
     # Set econia address to DocGen address.
     ad) set_econia_address $docgen_address ;;
+
+    # Set econia address to Mainnet address.
+    am) set_econia_address $mainnet_address ;;
 
     # Set econia address to persistent address.
     ap) set_econia_address persistent ;;

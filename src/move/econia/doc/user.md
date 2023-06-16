@@ -728,37 +728,37 @@ User-friendly market account view function return.
 <code>base_total: u64</code>
 </dt>
 <dd>
- Total base asset units held as collateral.
+ <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>.base_total</code>.
 </dd>
 <dt>
 <code>base_available: u64</code>
 </dt>
 <dd>
- Base asset units available to withdraw.
+ <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>.base_available</code>.
 </dd>
 <dt>
 <code>base_ceiling: u64</code>
 </dt>
 <dd>
- Amount <code>base_total</code> will increase to if all open bids fill.
+ <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>.base_ceiling</code>.
 </dd>
 <dt>
 <code>quote_total: u64</code>
 </dt>
 <dd>
- Total quote asset units held as collateral.
+ <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>.quote_total</code>.
 </dd>
 <dt>
 <code>quote_available: u64</code>
 </dt>
 <dd>
- Quote asset units available to withdraw.
+ <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>.quote_available</code>.
 </dd>
 <dt>
 <code>quote_ceiling: u64</code>
 </dt>
 <dd>
- Amount <code>quote_total</code> will increase to if all open asks fill.
+ <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>.quote_ceiling</code>.
 </dd>
 </dl>
 
@@ -1413,7 +1413,7 @@ Return custodian ID encoded in market account ID.
 
 ## Function `get_market_account`
 
-Return user-friendly market account view.
+Return human-readable <code><a href="user.md#0xc0deb00c_user_MarketAccountView">MarketAccountView</a></code>.
 
 Mutates state, so kept as a private view function.
 

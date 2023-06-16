@@ -27,7 +27,7 @@ IDs are 1-indexed too.
 ## General overview sections
 
 
-[View functions]
+[View functions](#view-functions)
 
 * [Constant getters](#constant-getters)
 * [Market lookup](#market-lookup)

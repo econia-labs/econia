@@ -228,6 +228,9 @@
 /// upgrade_integrator_fee_store --> deposit_utility_coins_verified
 /// upgrade_integrator_fee_store -->
 ///     get_cost_to_upgrade_integrator_fee_store
+/// get_cost_to_upgrade_integrator_fee_store -->
+///     get_cost_to_upgrade_integrator_fee_store_view
+/// get_integrator_withdrawal_fee --> get_integrator_withdrawal_fee_view
 ///
 /// ```
 ///
@@ -543,7 +546,7 @@ module econia::incentives {
     ///
     /// # Restrictions
     ///
-    /// * Restricted to private function to prevent excessive public
+    /// * Restricted to private vew function to prevent excessive public
     ///   queries on an `IntegratorFeeStore` and thus transaction
     ///   collisions with the matching engine.
     ///
@@ -630,8 +633,8 @@ module econia::incentives {
     ///
     /// # Restrictions
     ///
-    /// * Restricted to private function to prevent excessive public
-    ///   queries on an `IntegratorFeeStore` and thus transaction
+    /// * Restricted to private view function to prevent excessive
+    ///   public queries on an `IntegratorFeeStore` and thus transaction
     ///   collisions with the matching engine.
     fun get_integrator_withdrawal_fee_view<QuoteCoinType>(
         integrator_address: address,

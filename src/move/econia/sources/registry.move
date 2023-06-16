@@ -18,7 +18,7 @@
 ///
 /// # General overview sections
 ///
-/// [View functions]
+/// [View functions](#view-functions)
 ///
 /// * [Constant getters](#constant-getters)
 /// * [Market lookup](#market-lookup)

@@ -30,14 +30,14 @@
 /// [View functions](#view-functions)
 ///
 /// * [Constant getters](#constant-getters)
-/// * [Market order IDs](#market-order-ids)
+/// * [Market order ID decoders](#market-order-decoders)
 /// * [Order lookup](#order-lookup)
 ///
 /// [Public function index](#public-function-index)
 ///
 /// * [Market registration](#market-registration)
-/// * [Market order IDs](#market-order-ids)
 /// * [Limit orders](#limit-orders)
+/// * [Passive advance limit orders](#passive-advance-limit-orders)
 /// * [Market orders](#market-orders)
 /// * [Swaps](#swaps)
 /// * [Change order size](#change-order-size)
@@ -80,7 +80,7 @@
 /// * `get_SELL()`
 /// * `get_TICKS()`
 ///
-/// ## Market order IDs
+/// ## Market order ID decoders
 ///
 /// * `get_market_order_id_counter()`
 /// * `get_market_order_id_price()`
@@ -151,7 +151,7 @@
 ///
 /// ## Internal dependencies
 ///
-/// These charts describe dependencies between core `market` functions.
+/// These charts describe dependencies between `market` functions.
 ///
 /// Market registration:
 ///
@@ -278,6 +278,12 @@
 /// get_price_levels --> get_open_orders
 /// get_price_levels --> sorted_orders_vector_to_price_levels_vector
 /// get_open_order --> has_open_order
+/// get_open_order --> get_market_order_id_side
+/// get_open_order --> get_market_order_id_avl_queue_access_key
+/// get_market_order_id_side -->
+///     get_market_order_id_avl_queue_access_key
+/// has_open_order --> get_market_order_id_side
+/// has_open_order --> get_market_order_id_avl_queue_access_key
 ///
 /// ```
 ///
@@ -351,6 +357,12 @@
 /// change_order_size --> resource_account::get_address
 ///
 /// cancel_order --> resource_account::get_address
+///
+/// get_open_order --> resource_account::get_address
+///
+/// get_open_orders --> resource_account::get_address
+///
+/// has_open_order --> resource_account::get_address
 ///
 /// ```
 ///

@@ -375,17 +375,17 @@ module econia::user {
         asks: vector<Order>,
         /// All open bids.
         bids: vector<Order>,
-        /// Total base asset units held as collateral.
+        /// `MarketAccount.base_total`.
         base_total: u64,
-        /// Base asset units available to withdraw.
+        /// `MarketAccount.base_available`.
         base_available: u64,
-        /// Amount `base_total` will increase to if all open bids fill.
+        /// `MarketAccount.base_ceiling`.
         base_ceiling: u64,
-        /// Total quote asset units held as collateral.
+        /// `MarketAccount.quote_total`.
         quote_total: u64,
-        /// Quote asset units available to withdraw.
+        /// `MarketAccount.quote_available`.
         quote_available: u64,
-        /// Amount `quote_total` will increase to if all open asks fill.
+        /// `MarketAccount.quote_ceiling`.
         quote_ceiling: u64
     }
 
@@ -631,7 +631,7 @@ module econia::user {
     }
 
     #[view]
-    /// Return user-friendly market account view.
+    /// Return human-readable `MarketAccountView`.
     ///
     /// Mutates state, so kept as a private view function.
     ///

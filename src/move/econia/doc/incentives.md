@@ -285,6 +285,9 @@ get_cost_to_upgrade_integrator_fee_store
 upgrade_integrator_fee_store --> deposit_utility_coins_verified
 upgrade_integrator_fee_store -->
 get_cost_to_upgrade_integrator_fee_store
+get_cost_to_upgrade_integrator_fee_store -->
+get_cost_to_upgrade_integrator_fee_store_view
+get_integrator_withdrawal_fee --> get_integrator_withdrawal_fee_view
 
 ```
 
@@ -1378,7 +1381,7 @@ tier is not greater than that of current tier.
 ### Restrictions
 
 
-* Restricted to private function to prevent excessive public
+* Restricted to private vew function to prevent excessive public
 queries on an <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStore">IntegratorFeeStore</a></code> and thus transaction
 collisions with the matching engine.
 
@@ -1529,8 +1532,8 @@ Return withdrawal fee for given <code>integrator_address</code> and
 ### Restrictions
 
 
-* Restricted to private function to prevent excessive public
-queries on an <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStore">IntegratorFeeStore</a></code> and thus transaction
+* Restricted to private view function to prevent excessive
+public queries on an <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStore">IntegratorFeeStore</a></code> and thus transaction
 collisions with the matching engine.
 
 

@@ -39,14 +39,14 @@ of orders that have been placed on the corresponding order book.
 [View functions](#view-functions)
 
 * [Constant getters](#constant-getters)
-* [Market order IDs](#market-order-ids)
+* [Market order ID decoders](#market-order-decoders)
 * [Order lookup](#order-lookup)
 
 [Public function index](#public-function-index)
 
 * [Market registration](#market-registration)
-* [Market order IDs](#market-order-ids)
 * [Limit orders](#limit-orders)
+* [Passive advance limit orders](#passive-advance-limit-orders)
 * [Market orders](#market-orders)
 * [Swaps](#swaps)
 * [Change order size](#change-order-size)
@@ -98,9 +98,9 @@ of orders that have been placed on the corresponding order book.
 * <code><a href="market.md#0xc0deb00c_market_get_TICKS">get_TICKS</a>()</code>
 
 
-<a name="@Market_order_IDs_3"></a>
+<a name="@Market_order_ID_decoders_3"></a>
 
-### Market order IDs
+### Market order ID decoders
 
 
 * <code><a href="market.md#0xc0deb00c_market_get_market_order_id_counter">get_market_order_id_counter</a>()</code>
@@ -216,7 +216,7 @@ to read, try a different browser.
 ### Internal dependencies
 
 
-These charts describe dependencies between core <code><a href="market.md#0xc0deb00c_market">market</a></code> functions.
+These charts describe dependencies between <code><a href="market.md#0xc0deb00c_market">market</a></code> functions.
 
 Market registration:
 
@@ -343,6 +343,12 @@ flowchart LR
 get_price_levels --> get_open_orders
 get_price_levels --> sorted_orders_vector_to_price_levels_vector
 get_open_order --> has_open_order
+get_open_order --> get_market_order_id_side
+get_open_order --> get_market_order_id_avl_queue_access_key
+get_market_order_id_side -->
+get_market_order_id_avl_queue_access_key
+has_open_order --> get_market_order_id_side
+has_open_order --> get_market_order_id_avl_queue_access_key
 
 ```
 
@@ -420,6 +426,12 @@ swap --> resource_account::get_address
 change_order_size --> resource_account::get_address
 
 cancel_order --> resource_account::get_address
+
+get_open_order --> resource_account::get_address
+
+get_open_orders --> resource_account::get_address
+
+has_open_order --> resource_account::get_address
 
 ```
 
@@ -598,7 +610,7 @@ The below index is automatically generated from source code:
 -  [General overview sections](#@General_overview_sections_0)
 -  [View functions](#@View_functions_1)
     -  [Constant getters](#@Constant_getters_2)
-    -  [Market order IDs](#@Market_order_IDs_3)
+    -  [Market order ID decoders](#@Market_order_ID_decoders_3)
     -  [Order lookup](#@Order_lookup_4)
 -  [Public function index](#@Public_function_index_5)
     -  [Market registration](#@Market_registration_6)

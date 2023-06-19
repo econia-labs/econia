@@ -1,7 +1,7 @@
 import type { GetStaticPaths, GetStaticProps } from "next";
 import dynamic from "next/dynamic";
 import Script from "next/script";
-import { type PropsWithChildren, useState } from "react";
+import { type PropsWithChildren, useEffect, useRef, useState } from "react";
 
 import { DepthChart } from "@/components/DepthChart";
 import { OrderBook } from "@/components/OrderBook";
@@ -11,7 +11,7 @@ import { OrderEntry } from "@/components/trade/OrderEntry";
 import { OrdersTable } from "@/components/trade/OrdersTable";
 import { TradeHistoryTable } from "@/components/trade/TradeHistoryTable";
 import { OrderEntryContextProvider } from "@/contexts/OrderEntryContext";
-import { API_URL } from "@/env";
+import { API_URL, WS_URL } from "@/env";
 import { MOCK_MARKETS } from "@/mockdata/markets";
 import type { ApiMarket } from "@/types/api";
 
@@ -63,7 +63,24 @@ const ChartName: React.FC<PropsWithChildren<{ className?: string }>> = ({
 );
 
 export default function Market({ allMarketData, marketData }: Props) {
+  const ws = useRef<WebSocket | undefined>(undefined);
   const [isScriptReady, setIsScriptReady] = useState(false);
+
+  useEffect(() => {
+    // Set up WebSocket API connection
+    ws.current = new WebSocket(WS_URL);
+    ws.current.onopen = () => {
+      if (marketData == null || ws.current == null) {
+        return;
+      }
+    };
+    return () => {
+      // Close WebSocket connection on page close
+      if (ws.current != null) {
+        ws.current.close();
+      }
+    };
+  }, [marketData]);
 
   if (!marketData) return <Page>Market not found.</Page>;
 

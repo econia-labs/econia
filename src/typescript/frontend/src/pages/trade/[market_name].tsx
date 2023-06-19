@@ -10,6 +10,7 @@ import { StatsBar } from "@/components/StatsBar";
 import { OrderEntry } from "@/components/trade/OrderEntry";
 import { OrdersTable } from "@/components/trade/OrdersTable";
 import { TradeHistoryTable } from "@/components/trade/TradeHistoryTable";
+import { useAptos } from "@/contexts/AptosContext";
 import { OrderEntryContextProvider } from "@/contexts/OrderEntryContext";
 import { API_URL, WS_URL } from "@/env";
 import { MOCK_MARKETS } from "@/mockdata/markets";
@@ -19,7 +20,6 @@ import {
   type ResolutionString,
   type ThemeName,
 } from "../../../public/static/charting_library";
-import { useAptos } from "@/contexts/AptosContext";
 
 const TVChartContainer = dynamic(
   () =>
@@ -102,30 +102,52 @@ export default function Market({ allMarketData, marketData }: Props) {
       return;
     }
     if (account?.address != null) {
-      // Subscribe to orders by account channel
-      ws.current.send(
-        JSON.stringify({
-          method: "subscribe",
-          channel: "orders",
-          params: {
-            market_id: marketData.market_id,
-            user_address: account.address,
-          },
-        })
-      );
+      const trySubscribeToAccount = async () => {
+        if (ws.current == null) {
+          return;
+        }
+        // Wait for WebSocket connection to be opened
+        while (ws.current.readyState !== WebSocket.OPEN) {
+          await new Promise((r) => setTimeout(r, 1000));
+        }
 
-      // Subscribe to fills by account channel
-      ws.current.send(
-        JSON.stringify({
-          method: "subscribe",
-          channel: "fills",
-          params: {
-            market_id: marketData.market_id,
-            user_address: account.address,
-          },
-        })
-      );
+        // Subscribe to orders by account channel
+        ws.current.send(
+          JSON.stringify({
+            method: "subscribe",
+            channel: "orders",
+            params: {
+              market_id: marketData.market_id,
+              user_address: account.address,
+            },
+          })
+        );
+
+        // Subscribe to fills by account channel
+        ws.current.send(
+          JSON.stringify({
+            method: "subscribe",
+            channel: "fills",
+            params: {
+              market_id: marketData.market_id,
+              user_address: account.address,
+            },
+          })
+        );
+      };
+      trySubscribeToAccount();
     }
+  }, [marketData, account?.address]);
+
+  // Handle incoming WebSocket messages
+  useEffect(() => {
+    if (marketData == null || ws.current == null) {
+      return;
+    }
+
+    ws.current.onmessage = (msg) => {
+      console.log(msg.data);
+    };
   }, [marketData, account?.address]);
 
   if (!marketData) return <Page>Market not found.</Page>;

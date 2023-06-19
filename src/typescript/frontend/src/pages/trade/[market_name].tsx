@@ -73,6 +73,16 @@ export default function Market({ allMarketData, marketData }: Props) {
       if (marketData == null || ws.current == null) {
         return;
       }
+
+      // Subscribe to orderbook price level updates
+      const priceLevelMsg = {
+        method: "subscribe",
+        channel: "price_levels",
+        params: {
+          market_id: marketData.market_id,
+        },
+      };
+      ws.current.send(JSON.stringify(priceLevelMsg));
     };
     return () => {
       // Close WebSocket connection on page close

@@ -143,7 +143,7 @@ fn get_response_message(
                         ref market_id,
                         ref user_address,
                     } => {
-                        if is_valid_addr(user_address) {
+                        if !is_valid_addr(user_address) {
                             return Ok(OutboundMessage::Error {
                                 message: format!("user address `{}` is not valid", user_address),
                             });
@@ -158,7 +158,7 @@ fn get_response_message(
                         ref market_id,
                         ref user_address,
                     } => {
-                        if is_valid_addr(user_address) {
+                        if !is_valid_addr(user_address) {
                             return Ok(OutboundMessage::Error {
                                 message: format!("user address `{}` is not valid", user_address),
                             });

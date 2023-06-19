@@ -1,3 +1,4 @@
+import { type MaybeHexString } from "aptos";
 import type { GetStaticPaths, GetStaticProps } from "next";
 import dynamic from "next/dynamic";
 import Script from "next/script";
@@ -67,6 +68,7 @@ const ChartName: React.FC<PropsWithChildren<{ className?: string }>> = ({
 export default function Market({ allMarketData, marketData }: Props) {
   const { account } = useAptos();
   const ws = useRef<WebSocket | undefined>(undefined);
+  const prevAddress = useRef<MaybeHexString | undefined>(undefined);
   const [isScriptReady, setIsScriptReady] = useState(false);
 
   // Set up WebSocket API connection
@@ -99,44 +101,80 @@ export default function Market({ allMarketData, marketData }: Props) {
 
   // Handle wallet connect and disconnect
   useEffect(() => {
-    if (marketData == null || ws.current == null) {
-      return;
-    }
     if (account?.address != null) {
-      const trySubscribeToAccount = async () => {
-        if (ws.current == null) {
+      if (marketData == null || ws.current == null) {
+        return;
+      }
+
+      // If the WebSocket connection is not ready,
+      // wait for the WebSocket connection to be opened.
+      if (ws.current.readyState === WebSocket.CONNECTING) {
+        const interval = setInterval(() => {
+          if (ws.current?.readyState === WebSocket.OPEN) {
+            clearInterval(interval);
+          }
+        }, 500);
+      }
+
+      // Subscribe to orders by account channel
+      ws.current.send(
+        JSON.stringify({
+          method: "subscribe",
+          channel: "orders",
+          params: {
+            market_id: marketData.market_id,
+            user_address: account.address,
+          },
+        })
+      );
+
+      // Subscribe to fills by account channel
+      ws.current.send(
+        JSON.stringify({
+          method: "subscribe",
+          channel: "fills",
+          params: {
+            market_id: marketData.market_id,
+            user_address: account.address,
+          },
+        })
+      );
+
+      // Store address for unsubscribing when wallet is disconnected.
+      prevAddress.current = account.address;
+    } else {
+      if (prevAddress.current != null) {
+        if (marketData == null || ws.current == null) {
           return;
         }
-        // Wait for WebSocket connection to be opened
-        while (ws.current.readyState !== WebSocket.OPEN) {
-          await new Promise((r) => setTimeout(r, 500));
-        }
 
-        // Subscribe to orders by account channel
+        // Unsubscribe to orders by account channel
         ws.current.send(
           JSON.stringify({
-            method: "subscribe",
+            method: "unsubscribe",
             channel: "orders",
             params: {
               market_id: marketData.market_id,
-              user_address: account.address,
+              user_address: prevAddress.current,
             },
           })
         );
 
-        // Subscribe to fills by account channel
+        // Unsubscribe to fills by account channel
         ws.current.send(
           JSON.stringify({
-            method: "subscribe",
+            method: "unsubscribe",
             channel: "fills",
             params: {
               market_id: marketData.market_id,
-              user_address: account.address,
+              user_address: prevAddress.current,
             },
           })
         );
-      };
-      trySubscribeToAccount();
+
+        // Clear saved address
+        prevAddress.current = undefined;
+      }
     }
   }, [marketData, account?.address]);
 
@@ -146,28 +184,34 @@ export default function Market({ allMarketData, marketData }: Props) {
       return;
     }
 
-    ws.current.onmessage = (wsmsg) => {
-      const msg = JSON.parse(wsmsg.data);
+    ws.current.onmessage = (message) => {
+      const msg = JSON.parse(message.data);
 
       if (msg.event === "update") {
         if (msg.channel === "orders") {
-          const order: ApiOrder = msg.data;
-          if (order.order_state === "open") {
-            toast.success(
-              `Order with order ID ${order.market_order_id} placed successfully.`
-            );
-          } else if (order.order_state === "filled") {
-            toast.success(
-              `Order with order ID ${order.market_order_id} filled.`
-            );
-          } else if (order.order_state === "cancelled") {
-            toast.warn(
-              `Order with order ID ${order.market_order_id} cancelled.`
-            );
-          } else if (order.order_state === "evicted") {
-            toast.warn(`Order with order ID ${order.market_order_id} evicted.`);
+          const { order_state, market_order_id }: ApiOrder = msg.data;
+          switch (order_state) {
+            // TODO further discuss what toast text should be
+            case "open":
+              toast.success(
+                `Order with order ID ${market_order_id} placed successfully.`
+              );
+              break;
+            case "filled":
+              toast.success(`Order with order ID ${market_order_id} filled.`);
+              break;
+            case "cancelled":
+              toast.warn(`Order with order ID ${market_order_id} cancelled.`);
+              break;
+            case "evicted":
+              toast.warn(`Order with order ID ${market_order_id} evicted.`);
+              break;
           }
+        } else {
+          // TODO
         }
+      } else {
+        // TODO
       }
     };
   }, [marketData, account?.address]);

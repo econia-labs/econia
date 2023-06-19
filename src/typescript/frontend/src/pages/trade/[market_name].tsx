@@ -2,6 +2,7 @@ import type { GetStaticPaths, GetStaticProps } from "next";
 import dynamic from "next/dynamic";
 import Script from "next/script";
 import { type PropsWithChildren, useEffect, useRef, useState } from "react";
+import { toast } from "react-toastify";
 
 import { DepthChart } from "@/components/DepthChart";
 import { OrderBook } from "@/components/OrderBook";
@@ -14,7 +15,7 @@ import { useAptos } from "@/contexts/AptosContext";
 import { OrderEntryContextProvider } from "@/contexts/OrderEntryContext";
 import { API_URL, WS_URL } from "@/env";
 import { MOCK_MARKETS } from "@/mockdata/markets";
-import type { ApiMarket } from "@/types/api";
+import type { ApiMarket, ApiOrder } from "@/types/api";
 
 import {
   type ResolutionString,
@@ -108,7 +109,7 @@ export default function Market({ allMarketData, marketData }: Props) {
         }
         // Wait for WebSocket connection to be opened
         while (ws.current.readyState !== WebSocket.OPEN) {
-          await new Promise((r) => setTimeout(r, 1000));
+          await new Promise((r) => setTimeout(r, 500));
         }
 
         // Subscribe to orders by account channel
@@ -145,8 +146,29 @@ export default function Market({ allMarketData, marketData }: Props) {
       return;
     }
 
-    ws.current.onmessage = (msg) => {
-      console.log(msg.data);
+    ws.current.onmessage = (wsmsg) => {
+      const msg = JSON.parse(wsmsg.data);
+
+      if (msg.event === "update") {
+        if (msg.channel === "orders") {
+          const order: ApiOrder = msg.data;
+          if (order.order_state === "open") {
+            toast.success(
+              `Order with order ID ${order.market_order_id} placed successfully.`
+            );
+          } else if (order.order_state === "filled") {
+            toast.success(
+              `Order with order ID ${order.market_order_id} filled.`
+            );
+          } else if (order.order_state === "cancelled") {
+            toast.warn(
+              `Order with order ID ${order.market_order_id} cancelled.`
+            );
+          } else if (order.order_state === "evicted") {
+            toast.warn(`Order with order ID ${order.market_order_id} evicted.`);
+          }
+        }
+      }
     };
   }, [marketData, account?.address]);
 

@@ -19,6 +19,7 @@ import {
   type ResolutionString,
   type ThemeName,
 } from "../../../public/static/charting_library";
+import { useAptos } from "@/contexts/AptosContext";
 
 const TVChartContainer = dynamic(
   () =>
@@ -63,11 +64,12 @@ const ChartName: React.FC<PropsWithChildren<{ className?: string }>> = ({
 );
 
 export default function Market({ allMarketData, marketData }: Props) {
+  const { account } = useAptos();
   const ws = useRef<WebSocket | undefined>(undefined);
   const [isScriptReady, setIsScriptReady] = useState(false);
 
+  // Set up WebSocket API connection
   useEffect(() => {
-    // Set up WebSocket API connection
     ws.current = new WebSocket(WS_URL);
     ws.current.onopen = () => {
       if (marketData == null || ws.current == null) {
@@ -75,22 +77,56 @@ export default function Market({ allMarketData, marketData }: Props) {
       }
 
       // Subscribe to orderbook price level updates
-      const priceLevelMsg = {
-        method: "subscribe",
-        channel: "price_levels",
-        params: {
-          market_id: marketData.market_id,
-        },
-      };
-      ws.current.send(JSON.stringify(priceLevelMsg));
+      ws.current.send(
+        JSON.stringify({
+          method: "subscribe",
+          channel: "price_levels",
+          params: {
+            market_id: marketData.market_id,
+          },
+        })
+      );
     };
+
+    // Close WebSocket connection on page close
     return () => {
-      // Close WebSocket connection on page close
       if (ws.current != null) {
         ws.current.close();
       }
     };
   }, [marketData]);
+
+  // Handle wallet connect and disconnect
+  useEffect(() => {
+    if (marketData == null || ws.current == null) {
+      return;
+    }
+    if (account?.address != null) {
+      // Subscribe to orders by account channel
+      ws.current.send(
+        JSON.stringify({
+          method: "subscribe",
+          channel: "orders",
+          params: {
+            market_id: marketData.market_id,
+            user_address: account.address,
+          },
+        })
+      );
+
+      // Subscribe to fills by account channel
+      ws.current.send(
+        JSON.stringify({
+          method: "subscribe",
+          channel: "fills",
+          params: {
+            market_id: marketData.market_id,
+            user_address: account.address,
+          },
+        })
+      );
+    }
+  }, [marketData, account?.address]);
 
   if (!marketData) return <Page>Market not found.</Page>;
 

@@ -220,7 +220,11 @@ export default function Market({ allMarketData, marketData }: Props) {
     };
   }, [marketData, account?.address]);
 
-  const { data: orderbookData } = useQuery(
+  const {
+    data: orderbookData,
+    isFetching: orderbookIsFetching,
+    isLoading: orderbookIsLoading,
+  } = useQuery(
     ["orderbook", marketData?.market_id],
     async () => {
       const res = await fetch(
@@ -266,7 +270,12 @@ export default function Market({ allMarketData, marketData }: Props) {
           </div>
           <div className="flex min-w-[268px] flex-initial flex-col border-neutral-600">
             <ChartCard className="flex flex-1 flex-col">
-              <OrderbookTable marketData={marketData} />
+              <OrderbookTable
+                marketData={marketData}
+                data={orderbookData}
+                isFetching={orderbookIsFetching}
+                isLoading={orderbookIsLoading}
+              />
             </ChartCard>
           </div>
           <div className="flex min-w-[268px] flex-initial flex-col gap-4 border-neutral-600">

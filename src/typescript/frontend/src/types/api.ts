@@ -1,3 +1,5 @@
+import { Side } from "./global";
+
 export type ApiCoin = {
   account_address: string;
   module_name: string;
@@ -60,4 +62,11 @@ export type ApiStats = {
   close: number;
   change: number;
   volume: number;
+};
+
+export type ApiPriceLevel = {
+  market_id: number;
+  side: Side;
+  price: number;
+  size: number;
 };

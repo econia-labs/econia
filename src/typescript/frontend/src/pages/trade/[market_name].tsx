@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type MaybeHexString } from "aptos";
 import type { GetStaticPaths, GetStaticProps } from "next";
 import dynamic from "next/dynamic";
@@ -17,7 +17,7 @@ import { useAptos } from "@/contexts/AptosContext";
 import { OrderEntryContextProvider } from "@/contexts/OrderEntryContext";
 import { API_URL, WS_URL } from "@/env";
 import { MOCK_MARKETS } from "@/mockdata/markets";
-import type { ApiMarket, ApiOrder } from "@/types/api";
+import type { ApiMarket, ApiOrder, ApiPriceLevel } from "@/types/api";
 import { type Orderbook } from "@/types/global";
 
 import {
@@ -71,6 +71,7 @@ const ChartName: React.FC<PropsWithChildren<{ className?: string }>> = ({
 
 export default function Market({ allMarketData, marketData }: Props) {
   const { account } = useAptos();
+  const queryClient = useQueryClient();
   const ws = useRef<WebSocket | undefined>(undefined);
   const prevAddress = useRef<MaybeHexString | undefined>(undefined);
   const [isScriptReady, setIsScriptReady] = useState(false);
@@ -211,6 +212,75 @@ export default function Market({ allMarketData, marketData }: Props) {
               toast.warn(`Order with order ID ${market_order_id} evicted.`);
               break;
           }
+        } else if (msg.channel === "price_levels") {
+          const priceLevel: ApiPriceLevel = msg.data;
+          queryClient.setQueriesData(
+            ["orderbook", marketData.market_id],
+            (prevData: Orderbook | undefined) => {
+              if (prevData == null) {
+                return undefined;
+              }
+              if (priceLevel.side === "buy") {
+                for (const [i, lvl] of prevData.bids.entries()) {
+                  if (priceLevel.price === lvl.price) {
+                    return {
+                      bids: [
+                        ...prevData.bids.slice(0, i),
+                        { price: priceLevel.price, size: priceLevel.size },
+                        ...prevData.bids.slice(i + 1),
+                      ],
+                      asks: prevData.asks,
+                    };
+                  } else if (priceLevel.price > lvl.price) {
+                    return {
+                      bids: [
+                        ...prevData.bids.slice(0, i),
+                        { price: priceLevel.price, size: priceLevel.size },
+                        ...prevData.bids.slice(i),
+                      ],
+                      asks: prevData.asks,
+                    };
+                  }
+                }
+                return {
+                  bids: [
+                    ...prevData.bids,
+                    { price: priceLevel.price, size: priceLevel.size },
+                  ],
+                  asks: prevData.asks,
+                };
+              } else {
+                for (const [i, lvl] of prevData.asks.entries()) {
+                  if (priceLevel.price === lvl.price) {
+                    return {
+                      bids: prevData.bids,
+                      asks: [
+                        ...prevData.asks.slice(0, i),
+                        { price: priceLevel.price, size: priceLevel.size },
+                        ...prevData.asks.slice(i + 1),
+                      ],
+                    };
+                  } else if (priceLevel.price < lvl.price) {
+                    return {
+                      bids: prevData.bids,
+                      asks: [
+                        ...prevData.asks.slice(0, i),
+                        { price: priceLevel.price, size: priceLevel.size },
+                        ...prevData.asks.slice(i),
+                      ],
+                    };
+                  }
+                }
+                return {
+                  bids: prevData.bids,
+                  asks: [
+                    ...prevData.asks,
+                    { price: priceLevel.price, size: priceLevel.size },
+                  ],
+                };
+              }
+            }
+          );
         } else {
           // TODO
         }
@@ -218,8 +288,9 @@ export default function Market({ allMarketData, marketData }: Props) {
         // TODO
       }
     };
-  }, [marketData, account?.address]);
+  }, [marketData, account?.address, queryClient]);
 
+  // TODO update to include precision when backend is updated
   const {
     data: orderbookData,
     isFetching: orderbookIsFetching,

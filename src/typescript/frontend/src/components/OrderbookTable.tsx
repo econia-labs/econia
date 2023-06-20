@@ -69,7 +69,7 @@ const Row: React.FC<{
   );
 };
 
-export function OrderBook({ marketData }: { marketData: ApiMarket }) {
+export function OrderbookTable({ marketData }: { marketData: ApiMarket }) {
   const [precision, setPrecision] = useState<Precision>(precisionOptions[0]);
   const { data, isFetching, isLoading } = useOrderBook(
     marketData.market_id,

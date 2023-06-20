@@ -5,7 +5,7 @@ import { useOrderEntry } from "@/contexts/OrderEntryContext";
 import { useOrderBook } from "@/hooks/useOrderbook";
 import { type ApiMarket } from "@/types/api";
 import { type Precision } from "@/types/global";
-import { type OrderBook, type PriceLevel } from "@/types/global";
+import { type Orderbook, type PriceLevel } from "@/types/global";
 import { toDecimalPrice, toDecimalSize } from "@/utils/econia";
 import { averageOrOtherPriceLevel } from "@/utils/formatter";
 

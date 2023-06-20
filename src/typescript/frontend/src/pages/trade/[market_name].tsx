@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { type MaybeHexString } from "aptos";
 import type { GetStaticPaths, GetStaticProps } from "next";
 import dynamic from "next/dynamic";
@@ -6,7 +7,7 @@ import { type PropsWithChildren, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 
 import { DepthChart } from "@/components/DepthChart";
-import { OrderBook } from "@/components/OrderBook";
+import { OrderbookTable } from "@/components/OrderbookTable";
 import { Page } from "@/components/Page";
 import { StatsBar } from "@/components/StatsBar";
 import { OrderEntry } from "@/components/trade/OrderEntry";
@@ -17,11 +18,14 @@ import { OrderEntryContextProvider } from "@/contexts/OrderEntryContext";
 import { API_URL, WS_URL } from "@/env";
 import { MOCK_MARKETS } from "@/mockdata/markets";
 import type { ApiMarket, ApiOrder } from "@/types/api";
+import { type Orderbook } from "@/types/global";
 
 import {
   type ResolutionString,
   type ThemeName,
 } from "../../../public/static/charting_library";
+
+const ORDERBOOK_DEPTH = 60;
 
 const TVChartContainer = dynamic(
   () =>
@@ -216,6 +220,18 @@ export default function Market({ allMarketData, marketData }: Props) {
     };
   }, [marketData, account?.address]);
 
+  const { data: orderbookData } = useQuery(
+    ["orderbook", marketData?.market_id],
+    async () => {
+      const res = await fetch(
+        `${API_URL}/market/${marketData?.market_id}/orderbook?depth=${ORDERBOOK_DEPTH}`
+      );
+      const data: Orderbook = await res.json();
+      return data;
+    },
+    { keepPreviousData: true, refetchOnWindowFocus: false }
+  );
+
   if (!marketData) return <Page>Market not found.</Page>;
 
   const defaultTVChartProps = {
@@ -250,7 +266,7 @@ export default function Market({ allMarketData, marketData }: Props) {
           </div>
           <div className="flex min-w-[268px] flex-initial flex-col border-neutral-600">
             <ChartCard className="flex flex-1 flex-col">
-              <OrderBook marketData={marketData} />
+              <OrderbookTable marketData={marketData} />
             </ChartCard>
           </div>
           <div className="flex min-w-[268px] flex-initial flex-col gap-4 border-neutral-600">

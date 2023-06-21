@@ -868,7 +868,6 @@ module econia::incentives {
         integrator_fee_store_ref_mut.tier = new_tier;
     }
 
-    #[app]
     /// Assert `T` is utility coin type.
     ///
     /// # Aborts
@@ -1018,7 +1017,6 @@ module econia::incentives {
 
     // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    #[cmd]
     /// Wrapped call to `set_incentive_parameters()`, when calling after
     /// initialization.
     ///
@@ -1044,7 +1042,6 @@ module econia::incentives {
             &integrator_fee_store_tiers, true);
     }
 
-    #[cmd]
     /// Wrapped call to `upgrade_integrator_fee_store()`, for paying
     /// utility coins from an `aptos_framework::Coin::CoinStore`.
     ///
@@ -1074,7 +1071,6 @@ module econia::incentives {
                 integrator, cost));
     }
 
-    #[cmd]
     /// Wrapped call to `withdraw_econia_fees_to_coin_store_internal()`,
     /// similar to `withdraw_econia_fees_all()`.
     ///
@@ -1091,7 +1087,6 @@ module econia::incentives {
             econia, market_id, true, 0);
     }
 
-    #[cmd]
     /// Wrapped call to `withdraw_econia_fees_to_coin_store_internal()`,
     /// similar to `withdraw_econia_fees()`.
     ///
@@ -1109,7 +1104,6 @@ module econia::incentives {
             econia, market_id, false, amount);
     }
 
-    #[cmd]
     /// Wrapped call to `get_withdraw_integrator_fees()`, for paying
     /// utility coins from an `aptos_framework::Coin::CoinStore` and
     /// depositing quote coins to one too.
@@ -1158,7 +1152,6 @@ module econia::incentives {
         coin::deposit(address_of(integrator), quote_coins);
     }
 
-    #[cmd]
     /// Wrapped `withdraw_utility_coins_to_coin_store_internal()` call,
     /// similar to `withdraw_utility_coins_all()`.
     ///
@@ -1174,7 +1167,6 @@ module econia::incentives {
             econia, true, 0);
     }
 
-    #[cmd]
     /// Wrapped `withdraw_utility_coins_to_coin_store_internal()` call,
     /// similar to `withdraw_utility_coins()`.
     ///

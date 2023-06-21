@@ -11,6 +11,7 @@ Econia Move source code adheres to [Semantic Versioning] and [Keep a Changelog] 
 ### Deprecated
 
 - [`market::index_orders_sdk()`](https://github.com/econia-labs/econia/blob/v4.0.2-audited/src/move/econia/sources/market.move#L3362) ([#287])
+- [`move-to-ts`](https://github.com/hippospace/move-to-ts) attributes
 
 [#287]: https://github.com/econia-labs/econia/pull/287
 [keep a changelog]: https://keepachangelog.com/en/1.0.0/

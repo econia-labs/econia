@@ -1053,7 +1053,6 @@ module econia::user {
 
     // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    #[cmd]
     /// Wrapped call to `deposit_coins()` for depositing from an
     /// `aptos_framework::coin::CoinStore`.
     ///
@@ -1078,7 +1077,6 @@ module econia::user {
             coin::withdraw<CoinType>(user, amount));
     }
 
-    #[cmd]
     /// Register market account for indicated market and custodian.
     ///
     /// Verifies market ID and asset types via internal call to
@@ -1139,7 +1137,6 @@ module econia::user {
             user, market_account_id);
     }
 
-    #[cmd]
     /// Wrapped `register_market_account()` call for generic base asset.
     ///
     /// # Testing
@@ -1159,7 +1156,6 @@ module econia::user {
             user, market_id, custodian_id);
     }
 
-    #[cmd]
     /// Wrapped call to `withdraw_coins_user()` for withdrawing from
     /// market account to user's `aptos_framework::coin::CoinStore`.
     ///

@@ -98,15 +98,9 @@ This sequence results in the same final order book depth chart state as in examp
 
 :::
 
-## `move-to-ts` hooks
-
-Econia was originally designed for use with [Hippo's `move-to-ts` tool], which auto-generates a TypeScript software development kit (SDK) from Move source code.
-As such, Econia's Move source code contains assorted  `#[cmd]` attributes on public entry functions and `#[app]` attributes on public getter functions for SDK generation.
-
 [econia api reference]: https://docs.econia.exchange/#introduction
 [events by creation number api]: https://fullnode.testnet.aptoslabs.com/v1/spec#/operations/get_events_by_creation_number
 [events by event handle api]: https://fullnode.testnet.aptoslabs.com/v1/spec#/operations/get_events_by_event_handle
-[hippo's `move-to-ts` tool]: https://github.com/hippospace/move-to-ts
 [`change_order_size_user()`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_change_order_size_user
 [`makerevent`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_MakerEvent
 [`marketregistrationevent`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/registry.md#0xc0deb00c_registry_MarketRegistrationEvent

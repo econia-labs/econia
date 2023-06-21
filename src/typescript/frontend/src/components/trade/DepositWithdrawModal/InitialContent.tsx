@@ -1,14 +1,15 @@
+import { entryFunctions } from "@econia-labs/sdk";
+import { ChevronDownIcon } from "@heroicons/react/20/solid";
+import { useQuery } from "@tanstack/react-query";
+
 import { Button } from "@/components/Button";
 import { NO_CUSTODIAN } from "@/constants";
 import { useAptos } from "@/contexts/AptosContext";
 import { ECONIA_ADDR } from "@/env";
-import { ApiMarket } from "@/types/api";
-import { MarketAccount, MarketAccounts } from "@/types/econia";
-import { TypeTag } from "@/utils/TypeTag";
+import { type ApiMarket } from "@/types/api";
+import { type MarketAccount, type MarketAccounts } from "@/types/econia";
 import { makeMarketAccountId } from "@/utils/econia";
-import { entryFunctions } from "@econia-labs/sdk";
-import { ChevronDownIcon } from "@heroicons/react/20/solid";
-import { useQuery } from "@tanstack/react-query";
+import { TypeTag } from "@/utils/TypeTag";
 
 export const InitialContent: React.FC<{
   selectedMarket?: ApiMarket;

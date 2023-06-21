@@ -1,7 +1,7 @@
 import {
   DEFAULT_TESTNET_LIST,
   PERMISSIONED_LIST,
-  RawCoinInfo,
+  type RawCoinInfo,
 } from "@manahippo/coin-list";
 
 export const NO_CUSTODIAN = 0;

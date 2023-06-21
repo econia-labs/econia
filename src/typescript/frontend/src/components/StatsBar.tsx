@@ -1,23 +1,22 @@
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import { useQuery } from "@tanstack/react-query";
-import Image from "next/image";
+import BigNumber from "bignumber.js";
 import { useRouter } from "next/router";
 import React, { useState } from "react";
 
 import { useAptos } from "@/contexts/AptosContext";
 import { API_URL } from "@/env";
 import { type ApiMarket } from "@/types/api";
+import { toDecimalPrice } from "@/utils/econia";
+import { averageOrOther, formatNumber } from "@/utils/formatter";
 import { TypeTag } from "@/utils/TypeTag";
 
 import { BaseModal } from "./BaseModal";
 import { DiscordIcon } from "./icons/DiscordIcon";
 import { MediumIcon } from "./icons/MediumIcon";
 import { TwitterIcon } from "./icons/TwitterIcon";
-import { SelectMarketContent } from "./trade/DepositWithdrawModal/SelectMarketContent";
 import { MarketIconPair } from "./MarketIconPair";
-import { averageOrOther, formatNumber } from "@/utils/formatter";
-import BigNumber from "bignumber.js";
-import { toDecimalPrice } from "@/utils/econia";
+import { SelectMarketContent } from "./trade/DepositWithdrawModal/SelectMarketContent";
 
 const DEFAULT_TOKEN_ICON = "/tokenImages/default.png";
 

@@ -5,7 +5,6 @@ import {
   type SetStateAction,
   useContext,
   useState,
-  useEffect,
 } from "react";
 
 import { type Side } from "@/types/global";

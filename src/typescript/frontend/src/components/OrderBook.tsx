@@ -1,15 +1,13 @@
-import { Listbox } from "@headlessui/react";
-import { CheckIcon, ChevronDownIcon } from "@heroicons/react/20/solid";
+import BigNumber from "bignumber.js";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { useOrderEntry } from "@/contexts/OrderEntryContext";
 import { useOrderBook } from "@/hooks/useOrderbook";
 import { type ApiMarket } from "@/types/api";
 import { type Precision } from "@/types/global";
 import { type OrderBook, type PriceLevel } from "@/types/global";
-import { averageOrOtherPriceLevel } from "@/utils/formatter";
-import { useOrderEntry } from "@/contexts/OrderEntryContext";
-import BigNumber from "bignumber.js";
 import { toDecimalPrice, toDecimalSize } from "@/utils/econia";
+import { averageOrOtherPriceLevel } from "@/utils/formatter";
 
 const precisionOptions: Precision[] = [
   "0.01",

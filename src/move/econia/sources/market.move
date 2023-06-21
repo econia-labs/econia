@@ -1884,7 +1884,6 @@ module econia::market {
 
     // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    #[cmd]
     /// Public entry function wrapper for `cancel_all_orders()` for
     /// cancelling orders under authority of signing user.
     ///
@@ -1903,7 +1902,6 @@ module econia::market {
             side);
     }
 
-    #[cmd]
     /// Public entry function wrapper for `cancel_order()` for
     /// cancelling order under authority of signing user.
     ///
@@ -1924,7 +1922,6 @@ module econia::market {
             market_order_id);
     }
 
-    #[cmd]
     /// Public entry function wrapper for `change_order_size()` for
     /// changing order size under authority of signing user.
     ///
@@ -1947,7 +1944,6 @@ module econia::market {
             new_size);
     }
 
-    #[cmd]
     /// Public entry function wrapper for
     /// `place_limit_order_passive_advance_user()`.
     ///
@@ -1979,7 +1975,6 @@ module econia::market {
             target_advance_amount);
     }
 
-    #[cmd]
     /// Public entry function wrapper for `place_limit_order_user()`.
     ///
     /// # Invocation testing
@@ -2003,7 +1998,6 @@ module econia::market {
             self_match_behavior);
     }
 
-    #[cmd]
     /// Public entry function wrapper for `place_market_order_user()`.
     ///
     /// # Invocation testing
@@ -2024,7 +2018,6 @@ module econia::market {
             user, market_id, integrator, direction, size, self_match_behavior);
     }
 
-    #[cmd]
     /// Wrapped call to `register_market_base_coin()` for paying utility
     /// coins from an `aptos_framework::coin::CoinStore`.
     ///
@@ -2048,7 +2041,6 @@ module econia::market {
             lot_size, tick_size, min_size, coin::withdraw(user, fee));
     }
 
-    #[cmd]
     /// Public entry function wrapper for `swap_between_coinstores()`.
     ///
     /// # Invocation testing

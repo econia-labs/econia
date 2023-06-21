@@ -662,7 +662,6 @@ module econia::registry {
 
     // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    #[app]
     /// Return serial ID of given `CustodianCapability`.
     ///
     /// # Testing
@@ -674,7 +673,6 @@ module econia::registry {
         custodian_capability_ref.custodian_id
     }
 
-    #[app]
     /// Wrapper for `get_recognized_market_info()` for coin base asset.
     ///
     /// # Parameters
@@ -703,7 +701,6 @@ module econia::registry {
         get_recognized_market_info(trading_pair)
     }
 
-    #[app]
     /// Wrapper for `get_recognized_market_info_base_coin()` with
     /// type parameters.
     ///
@@ -730,7 +727,6 @@ module econia::registry {
             type_info::type_of<QuoteCoinType>())
     }
 
-    #[app]
     /// Wrapper for `get_recognized_market_info()` for generic base
     /// asset.
     ///
@@ -760,7 +756,6 @@ module econia::registry {
         get_recognized_market_info(trading_pair)
     }
 
-    #[app]
     /// Wrapper for `get_recognized_market_info_base_generic()` with
     /// quote type parameter.
     ///
@@ -791,7 +786,6 @@ module econia::registry {
             type_info::type_of<QuoteCoinType>())
     }
 
-    #[app]
     /// Return serial ID of given `UnderwriterCapability`.
     ///
     /// # Testing
@@ -803,7 +797,6 @@ module econia::registry {
         underwriter_capability_ref.underwriter_id
     }
 
-    #[app]
     /// Wrapper for `has_recognized_market()` for coin base asset.
     ///
     /// # Parameters
@@ -827,7 +820,6 @@ module econia::registry {
         has_recognized_market(trading_pair)
     }
 
-    #[app]
     /// Wrapper for `has_recognized_market()` for generic base asset.
     ///
     /// # Parameters
@@ -954,7 +946,6 @@ module econia::registry {
 
     // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    #[cmd]
     /// Wrapped call to `register_integrator_fee_store()` for activating
     /// to base tier, which does not require utility coins.
     ///
@@ -972,7 +963,6 @@ module econia::registry {
             integrator, market_id, 0, coin::zero<UtilityCoinType>());
     }
 
-    #[cmd]
     /// Wrapped call to `register_integrator_fee_store()` for paying
     /// utility coins from an `aptos_framework::coin::CoinStore`.
     ///
@@ -992,7 +982,6 @@ module econia::registry {
                 integrator, incentives::get_tier_activation_fee(tier)));
     }
 
-    #[cmd]
     /// Remove market having given ID from recognized markets list.
     ///
     /// # Parameters
@@ -1065,7 +1054,6 @@ module econia::registry {
             trading_pair, recognized_market_info: option::none()});
     }
 
-    #[cmd]
     /// Wrapper for `remove_recognized_market()` with market IDs vector.
     ///
     /// # Testing
@@ -1090,7 +1078,6 @@ module econia::registry {
         }
     }
 
-    #[cmd]
     /// Set market having given ID as recognized market.
     ///
     /// # Parameters
@@ -1164,7 +1151,6 @@ module econia::registry {
             trading_pair, recognized_market_info: optional_market_info});
     }
 
-    #[cmd]
     /// Wrapper for `set_recognized_market()` with market IDs vector.
     ///
     /// # Testing

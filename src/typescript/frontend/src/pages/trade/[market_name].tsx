@@ -80,7 +80,7 @@ export default function Market({ allMarketData, marketData }: Props) {
   useEffect(() => {
     ws.current = new WebSocket(WS_URL);
     ws.current.onopen = () => {
-      if (marketData == null || ws.current == null) {
+      if (marketData?.market_id == null || ws.current == null) {
         return;
       }
 
@@ -102,15 +102,14 @@ export default function Market({ allMarketData, marketData }: Props) {
         ws.current.close();
       }
     };
-  }, [marketData]);
+  }, [marketData?.market_id]);
 
   // Handle wallet connect and disconnect
   useEffect(() => {
+    if (marketData?.market_id == null || ws.current == null) {
+      return;
+    }
     if (account?.address != null) {
-      if (marketData == null || ws.current == null) {
-        return;
-      }
-
       // If the WebSocket connection is not ready,
       // wait for the WebSocket connection to be opened.
       if (ws.current.readyState === WebSocket.CONNECTING) {
@@ -149,10 +148,6 @@ export default function Market({ allMarketData, marketData }: Props) {
       prevAddress.current = account.address;
     } else {
       if (prevAddress.current != null) {
-        if (marketData == null || ws.current == null) {
-          return;
-        }
-
         // Unsubscribe to orders by account channel
         ws.current.send(
           JSON.stringify({
@@ -181,11 +176,11 @@ export default function Market({ allMarketData, marketData }: Props) {
         prevAddress.current = undefined;
       }
     }
-  }, [marketData, account?.address]);
+  }, [marketData?.market_id, account?.address]);
 
   // Handle incoming WebSocket messages
   useEffect(() => {
-    if (marketData == null || ws.current == null) {
+    if (marketData?.market_id == null || ws.current == null) {
       return;
     }
 

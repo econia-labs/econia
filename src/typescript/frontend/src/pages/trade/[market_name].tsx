@@ -1,7 +1,9 @@
+import { type MaybeHexString } from "aptos";
 import type { GetStaticPaths, GetStaticProps } from "next";
 import dynamic from "next/dynamic";
 import Script from "next/script";
-import { type PropsWithChildren, useState } from "react";
+import { type PropsWithChildren, useEffect, useRef, useState } from "react";
+import { toast } from "react-toastify";
 
 import { DepthChart } from "@/components/DepthChart";
 import { OrderBook } from "@/components/OrderBook";
@@ -10,10 +12,11 @@ import { StatsBar } from "@/components/StatsBar";
 import { OrderEntry } from "@/components/trade/OrderEntry";
 import { OrdersTable } from "@/components/trade/OrdersTable";
 import { TradeHistoryTable } from "@/components/trade/TradeHistoryTable";
+import { useAptos } from "@/contexts/AptosContext";
 import { OrderEntryContextProvider } from "@/contexts/OrderEntryContext";
-import { API_URL } from "@/env";
+import { API_URL, WS_URL } from "@/env";
 import { MOCK_MARKETS } from "@/mockdata/markets";
-import type { ApiMarket } from "@/types/api";
+import type { ApiMarket, ApiOrder } from "@/types/api";
 
 import {
   type ResolutionString,
@@ -63,7 +66,155 @@ const ChartName: React.FC<PropsWithChildren<{ className?: string }>> = ({
 );
 
 export default function Market({ allMarketData, marketData }: Props) {
+  const { account } = useAptos();
+  const ws = useRef<WebSocket | undefined>(undefined);
+  const prevAddress = useRef<MaybeHexString | undefined>(undefined);
   const [isScriptReady, setIsScriptReady] = useState(false);
+
+  // Set up WebSocket API connection
+  useEffect(() => {
+    ws.current = new WebSocket(WS_URL);
+    ws.current.onopen = () => {
+      if (marketData == null || ws.current == null) {
+        return;
+      }
+
+      // Subscribe to orderbook price level updates
+      ws.current.send(
+        JSON.stringify({
+          method: "subscribe",
+          channel: "price_levels",
+          params: {
+            market_id: marketData.market_id,
+          },
+        })
+      );
+    };
+
+    // Close WebSocket connection on page close
+    return () => {
+      if (ws.current != null) {
+        ws.current.close();
+      }
+    };
+  }, [marketData]);
+
+  // Handle wallet connect and disconnect
+  useEffect(() => {
+    if (account?.address != null) {
+      if (marketData == null || ws.current == null) {
+        return;
+      }
+
+      // If the WebSocket connection is not ready,
+      // wait for the WebSocket connection to be opened.
+      if (ws.current.readyState === WebSocket.CONNECTING) {
+        const interval = setInterval(() => {
+          if (ws.current?.readyState === WebSocket.OPEN) {
+            clearInterval(interval);
+          }
+        }, 500);
+      }
+
+      // Subscribe to orders by account channel
+      ws.current.send(
+        JSON.stringify({
+          method: "subscribe",
+          channel: "orders",
+          params: {
+            market_id: marketData.market_id,
+            user_address: account.address,
+          },
+        })
+      );
+
+      // Subscribe to fills by account channel
+      ws.current.send(
+        JSON.stringify({
+          method: "subscribe",
+          channel: "fills",
+          params: {
+            market_id: marketData.market_id,
+            user_address: account.address,
+          },
+        })
+      );
+
+      // Store address for unsubscribing when wallet is disconnected.
+      prevAddress.current = account.address;
+    } else {
+      if (prevAddress.current != null) {
+        if (marketData == null || ws.current == null) {
+          return;
+        }
+
+        // Unsubscribe to orders by account channel
+        ws.current.send(
+          JSON.stringify({
+            method: "unsubscribe",
+            channel: "orders",
+            params: {
+              market_id: marketData.market_id,
+              user_address: prevAddress.current,
+            },
+          })
+        );
+
+        // Unsubscribe to fills by account channel
+        ws.current.send(
+          JSON.stringify({
+            method: "unsubscribe",
+            channel: "fills",
+            params: {
+              market_id: marketData.market_id,
+              user_address: prevAddress.current,
+            },
+          })
+        );
+
+        // Clear saved address
+        prevAddress.current = undefined;
+      }
+    }
+  }, [marketData, account?.address]);
+
+  // Handle incoming WebSocket messages
+  useEffect(() => {
+    if (marketData == null || ws.current == null) {
+      return;
+    }
+
+    ws.current.onmessage = (message) => {
+      const msg = JSON.parse(message.data);
+
+      if (msg.event === "update") {
+        if (msg.channel === "orders") {
+          const { order_state, market_order_id }: ApiOrder = msg.data;
+          switch (order_state) {
+            // TODO further discuss what toast text should be
+            case "open":
+              toast.success(
+                `Order with order ID ${market_order_id} placed successfully.`
+              );
+              break;
+            case "filled":
+              toast.success(`Order with order ID ${market_order_id} filled.`);
+              break;
+            case "cancelled":
+              toast.warn(`Order with order ID ${market_order_id} cancelled.`);
+              break;
+            case "evicted":
+              toast.warn(`Order with order ID ${market_order_id} evicted.`);
+              break;
+          }
+        } else {
+          // TODO
+        }
+      } else {
+        // TODO
+      }
+    };
+  }, [marketData, account?.address]);
 
   if (!marketData) return <Page>Market not found.</Page>;
 

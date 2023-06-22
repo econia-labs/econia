@@ -1,15 +1,16 @@
+import { type Address } from "@manahippo/aptos-wallet-adapter";
+import { useQuery } from "@tanstack/react-query";
+import { type U128 } from "aptos/src/generated";
+
 import { NO_CUSTODIAN } from "@/constants";
 import { useAptos } from "@/contexts/AptosContext";
 import { ECONIA_ADDR } from "@/env";
-import { ApiCoin } from "@/types/api";
-import { Collateral, TabListNode } from "@/types/econia";
-import { MoveCoin } from "@/types/move";
-import { TypeTag } from "@/utils/TypeTag";
+import { type ApiCoin } from "@/types/api";
+import { type Collateral, type TabListNode } from "@/types/econia";
+import { type MoveCoin } from "@/types/move";
 import { fromRawCoinAmount } from "@/utils/coin";
 import { makeMarketAccountId } from "@/utils/econia";
-import { Address } from "@manahippo/aptos-wallet-adapter";
-import { useQuery } from "@tanstack/react-query";
-import { U128 } from "aptos/src/generated";
+import { TypeTag } from "@/utils/TypeTag";
 
 export const useMarketAccountBalance = (
   addr: Address | undefined | null,

@@ -1,4 +1,4 @@
-import { Side } from "./global";
+import { type Side } from "./global";
 
 export type ApiCoin = {
   account_address: string;

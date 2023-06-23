@@ -1,5 +1,6 @@
 use std::collections::{BTreeMap, HashMap};
 
+use chrono::{DateTime, Utc};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
@@ -105,8 +106,10 @@ impl OrderBook {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct PriceLevelWithId {
     pub market_id: u64,
+    pub side: Side,
     pub price: u64,
     pub size: u64,
+    pub timestamp: DateTime<Utc>,
 }
 
 #[derive(Debug, Clone)]

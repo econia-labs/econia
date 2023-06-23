@@ -604,15 +604,15 @@ mod tests {
     /// correct format.
     #[tokio::test]
     async fn test_get_market_history_1m_resolution() {
-        let market_id = "0";
+        let market_id = 1;
         let resolution = Resolution::R1m;
 
         let from = Utc
-            .with_ymd_and_hms(2023, 4, 5, 0, 0, 0)
+            .with_ymd_and_hms(2023, 6, 20, 0, 0, 0)
             .unwrap()
             .timestamp();
         let to = Utc
-            .with_ymd_and_hms(2023, 4, 5, 0, 10, 0)
+            .with_ymd_and_hms(2023, 6, 20, 0, 10, 0)
             .unwrap()
             .timestamp();
 
@@ -670,15 +670,15 @@ mod tests {
     /// correct format.
     #[tokio::test]
     async fn test_get_market_history_1h_resolution() {
-        let market_id = "0";
+        let market_id = 1;
         let resolution = Resolution::R1h;
 
         let from = Utc
-            .with_ymd_and_hms(2023, 4, 5, 0, 0, 0)
+            .with_ymd_and_hms(2023, 6, 20, 0, 0, 0)
             .unwrap()
             .timestamp();
         let to = Utc
-            .with_ymd_and_hms(2023, 4, 5, 1, 0, 0)
+            .with_ymd_and_hms(2023, 6, 20, 1, 0, 0)
             .unwrap()
             .timestamp();
 
@@ -735,14 +735,14 @@ mod tests {
     /// has a `400 Bad Request` status code.
     #[tokio::test]
     async fn test_get_market_history_invalid_resolution() {
-        let market_id = "0";
+        let market_id = 1;
 
         let from = Utc
-            .with_ymd_and_hms(2023, 4, 5, 0, 0, 0)
+            .with_ymd_and_hms(2023, 6, 20, 0, 0, 0)
             .unwrap()
             .timestamp();
         let to = Utc
-            .with_ymd_and_hms(2023, 4, 5, 1, 0, 0)
+            .with_ymd_and_hms(2023, 6, 20, 1, 0, 0)
             .unwrap()
             .timestamp();
 
@@ -793,7 +793,7 @@ mod tests {
     /// status code.
     #[tokio::test]
     async fn test_get_market_history_to_before_from() {
-        let market_id = "0";
+        let market_id = 1;
         let resolution = Resolution::R1m;
 
         let from = Utc
@@ -853,7 +853,7 @@ mod tests {
     /// correct format.
     #[tokio::test]
     async fn test_get_l1_orderbook() {
-        let market_id = 0;
+        let market_id = 1;
         let depth = 1;
 
         let config = load_config();
@@ -890,7 +890,7 @@ mod tests {
     /// correct format.
     #[tokio::test]
     async fn test_get_l2_orderbook() {
-        let market_id = 0;
+        let market_id = 1;
         let depth = 10;
 
         let config = load_config();
@@ -921,7 +921,7 @@ mod tests {
     /// ensure that it has a `400 Bad Request` status code.
     #[tokio::test]
     async fn test_get_orderbook_no_depth_param() {
-        let market_id = 0;
+        let market_id = 1;
         let config = load_config();
         let app = make_test_server(config).await;
 
@@ -946,7 +946,7 @@ mod tests {
     /// checked to ensure that it has a `400 Bad Request` status code.
     #[tokio::test]
     async fn test_get_orderbook_negative_depth_param() {
-        let market_id = 0;
+        let market_id = 1;
         let depth = -1;
 
         let config = load_config();

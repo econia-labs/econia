@@ -148,7 +148,7 @@ async fn start_redis_channels(
 
     for market_id in market_ids {
         // TODO add more channels
-        let channels = vec!["orders", "fills"];
+        let channels = vec!["orders", "fills", "price_levels"];
         for channel in channels {
             // Note: support for pubsub over a multiplexed connection should be coming soon.
             let pubsub_ch = format!("{}:{}", channel, market_id);

@@ -15,6 +15,10 @@ docgen_address="0xc0deb00c"
 mainnet_address="0xc0deb00c4\
 05f84c85dc13442e305df75d1288100cdd82675695f6148c7ece51c"
 
+# Devnet address.
+devnet_address="0xc0de0000\
+fe693e08f668613c502360dc48508197401d2ac1ae79571498cd8b74"
+
 # Move package directory.
 move_dir="src/move/econia/"
 
@@ -290,6 +294,9 @@ case "$1" in
 
     # Set econia address to DocGen address.
     ad) set_econia_address $docgen_address ;;
+
+    # Set econia address to Devnet address.
+    adn) set_econia_address $devnet_address ;;
 
     # Set econia address to Mainnet address.
     am) set_econia_address $mainnet_address ;;

@@ -10,9 +10,9 @@ Econia Move source code adheres to [Semantic Versioning] and [Keep a Changelog] 
 
 ### Deprecated
 
+- [`market::Orders`](https://github.com/econia-labs/econia/blob/v4.0.2-audited/src/move/econia/sources/market.move#L3337) ([#301])
 - [`market::index_orders_sdk()`](https://github.com/econia-labs/econia/blob/v4.0.2-audited/src/move/econia/sources/market.move#L3362) ([#287])
 - [`move-to-ts`](https://github.com/hippospace/move-to-ts) attributes ([#292])
-- [`market::Orders`](https://github.com/econia-labs/econia/blob/v4.0.2-audited/src/move/econia/sources/market.move#L3337) ([#301])
 
 [#287]: https://github.com/econia-labs/econia/pull/287
 [#292]: https://github.com/econia-labs/econia/pull/292

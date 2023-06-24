@@ -32,6 +32,12 @@ export interface ChartContainerProps {
   theme: ChartingLibraryWidgetOptions["theme"];
 }
 
+const GREEN = "rgba(110, 213, 163, 1.0)";
+const RED = "rgba(240, 129, 129, 1.0)";
+
+const GREEN_OPACITY_HALF = "rgba(110, 213, 163, 0.5)";
+const RED_OPACITY_HALF = "rgba(240, 129, 129, 0.5)";
+
 const resolutions = [
   "1",
   "5",
@@ -290,8 +296,27 @@ export const TVChartContainer: React.FC<
         "paneProperties.backgroundType": "solid",
         "paneProperties.background": "#000000",
         "scalesProperties.backgroundColor": "#000000",
+        "mainSeriesProperties.barStyle.upColor": GREEN,
+        "mainSeriesProperties.barStyle.downColor": RED,
+        "mainSeriesProperties.candleStyle.upColor": GREEN,
+        "mainSeriesProperties.candleStyle.downColor": RED,
+        "mainSeriesProperties.candleStyle.borderUpColor": GREEN,
+        "mainSeriesProperties.candleStyle.borderDownColor": RED,
+        "mainSeriesProperties.candleStyle.wickUpColor": GREEN,
+        "mainSeriesProperties.candleStyle.wickDownColor": RED,
+        "mainSeriesProperties.columnStyle.upColor": GREEN_OPACITY_HALF,
+        "mainSeriesProperties.columnStyle.downColor": RED_OPACITY_HALF,
+        "mainSeriesProperties.hollowCandleStyle.upColor": GREEN,
+        "mainSeriesProperties.hollowCandleStyle.downColor": RED,
+        "mainSeriesProperties.rangeStyle.upColor": GREEN,
+        "mainSeriesProperties.rangeStyle.downColor": RED,
+        "paneProperties.legendProperties.showVolume": true,
       },
-      studies_overrides: props.studiesOverrides,
+      studies_overrides: {
+        ...props.studiesOverrides,
+        "volume.volume.color.0": RED_OPACITY_HALF,
+        "volume.volume.color.1": GREEN_OPACITY_HALF,
+      },
     };
 
     tvWidget.current = new widget(widgetOptions);

@@ -26,6 +26,7 @@ import { ToastContainer } from "react-toastify";
 
 import { AptosContextProvider } from "@/contexts/AptosContext";
 import { ConnectWalletContextProvider } from "@/contexts/ConnectWalletContext";
+
 import bg from "../../public/bg.png";
 
 Chart.register(

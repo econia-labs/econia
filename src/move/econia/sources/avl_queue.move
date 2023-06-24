@@ -555,7 +555,6 @@
 /// * `borrow_tail()`
 /// * `borrow_tail_mut()`
 /// * `contains_active_list_node_id()`
-/// * `empty_into_sorted_vector()`
 /// * `get_access_key_insertion_key()`
 /// * `get_head_key()`
 /// * `get_height()`
@@ -655,13 +654,11 @@
 /// insert_check_eviction --> remove
 /// insert_check_eviction --> insert
 ///
+/// has_key --> search
+///
 /// pop_head --> remove
 ///
 /// pop_tail --> remove
-///
-/// empty_into_sorted_vector --> pop_head
-///
-/// has_key --> search
 ///
 /// ```
 ///
@@ -709,9 +706,15 @@ module econia::avl_queue {
     use aptos_std::table::{Self, Table};
     use aptos_std::table_with_length::{Self, TableWithLength};
     use std::option::{Self, Option};
-    use std::vector;
 
     // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Test-only uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test_only]
+    use std::vector;
+
+    // Test-only uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -1033,22 +1036,6 @@ module econia::avl_queue {
             // Otherwise, return if there is an insertion value for
             // given list node ID.
             option::is_some(table::borrow(&avlq_ref.values, list_node_id))
-    }
-
-    /// Empty all elements into a sorted vector.
-    ///
-    /// # Testing
-    ///
-    /// * `test_empty_into_sorted_vector()`
-    public fun empty_into_sorted_vector<V>(
-        avlq_ref_mut: &mut AVLqueue<V>
-    ): vector<V> {
-        let sorted_vector = vector::empty(); // Initialize empty vector.
-        while(!is_empty(avlq_ref_mut)) { // While AVL queue not empty:
-            // Pop head of AVL queue, push back onto sorted vector.
-            vector::push_back(&mut sorted_vector, pop_head(avlq_ref_mut))
-        };
-        sorted_vector // Return sorted vector.
     }
 
     /// Get insertion key encoded in an access key.
@@ -5314,26 +5301,6 @@ module econia::avl_queue {
         *borrow_head_mut(&mut avlq) = 123; // Mutate via head lookup.
         // Assert borrow.
         assert!(*borrow(&avlq, access_key_0) == 123, 0);
-        drop_avlq_test(avlq); // Drop AVL queue.
-    }
-
-    #[test]
-    /// Verify successful emptying.
-    fun test_empty_into_sorted_vector() {
-        // Init ascending AVL queue with allocated nodes.
-        let avlq = new(ASCENDING, 7, 3);
-        // Insert out of order.
-        insert(&mut avlq, 3, 9);
-        insert(&mut avlq, 2, 4);
-        insert(&mut avlq, 3, 10);
-        insert(&mut avlq, 1, 7);
-        // Empty into sorted vector.
-        let sorted_vector = empty_into_sorted_vector(&mut avlq);
-        // Assert vector state.
-        assert!(*vector::borrow(&sorted_vector, 0) == 7, 0);
-        assert!(*vector::borrow(&sorted_vector, 1) == 4, 0);
-        assert!(*vector::borrow(&sorted_vector, 2) == 9, 0);
-        assert!(*vector::borrow(&sorted_vector, 3) == 10, 0);
         drop_avlq_test(avlq); // Drop AVL queue.
     }
 

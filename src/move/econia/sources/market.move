@@ -90,7 +90,9 @@
 ///
 /// * `get_open_order()`
 /// * `get_open_orders()`
+/// * `get_open_orders_all()`
 /// * `get_price_levels()`
+/// * `get_price_levels_all()`
 /// * `has_open_order()`
 ///
 /// # Public function index
@@ -276,7 +278,8 @@
 /// flowchart LR
 ///
 /// get_price_levels --> get_open_orders
-/// get_price_levels --> sorted_orders_vector_to_price_levels_vector
+/// get_price_levels --> get_price_levels_for_side
+/// get_price_levels_all --> get_price_levels
 /// get_open_order --> has_open_order
 /// get_open_order --> get_market_order_id_side
 /// get_open_order --> get_market_order_id_avl_queue_access_key
@@ -284,6 +287,8 @@
 ///     get_market_order_id_avl_queue_access_key
 /// has_open_order --> get_market_order_id_side
 /// has_open_order --> get_market_order_id_avl_queue_access_key
+/// get_open_orders --> get_open_orders_for_side
+/// get_open_orders_all --> get_open_orders
 ///
 /// ```
 ///
@@ -364,6 +369,8 @@
 ///
 /// has_open_order --> resource_account::get_address
 ///
+/// get_price_levels --> resource_account::get_address
+///
 /// ```
 ///
 /// `user`:
@@ -392,6 +399,8 @@
 /// cancel_all_orders --> user::get_active_market_order_ids_internal
 ///
 /// has_open_order --> user::get_open_order_id_internal
+///
+/// get_open_orders_for_side --> user::get_open_order_id_internal
 ///
 /// ```
 ///
@@ -619,16 +628,35 @@ module econia::market {
         map: Tablist<u64, OrderBook>
     }
 
-    /// All `Order` instances from an `OrderBook`, indexed by side and
-    /// sorted by price-time priority. Has only the key ability to
-    /// maintain backwards compatibility.
-    struct Orders has key {
+    /// User-friendly representation of an open order on the order book,
+    /// combining fields from `Order` and the corresponding
+    /// `MakerEvent` emitted when order was first placed.
+    struct OrderView has copy, drop {
+        /// `MakerEvent.market_id`.
+        market_id: u64,
+        /// `MakerEvent.side`.
+        side: bool,
+        /// `MakerEvent.market_order_id`.
+        market_order_id: u128,
+        /// `Order.size`.
+        size: u64,
+        /// `Order.price`.
+        price: u64,
+        /// `Order.user`.
+        user: address,
+        /// `Order.custodian_id`.
+        custodian_id: u64
+    }
+
+    /// `OrderView` instances from an `OrderBook`, indexed by side and
+    /// sorted by price-time priority.
+    struct OrdersView has copy, drop {
         /// Asks sorted by price-time priority: oldest order at lowest
         /// price first in vector.
-        asks: vector<Order>,
+        asks: vector<OrderView>,
         /// Bids sorted by price-time priority: oldest order at highest
         /// price first in vector.
-        bids: vector<Order>
+        bids: vector<OrderView>
     }
 
     /// A price level from an `OrderBook`.
@@ -636,12 +664,14 @@ module econia::market {
         /// Price, in ticks per lot.
         price: u64,
         /// Cumulative size of open orders at price level, in lots.
-        size: u64
+        size: u128
     }
 
-    /// All `PriceLevel` instances from an `OrderBook`, indexed by side
-    /// and sorted by price-time priority.
+    /// `PriceLevel` instances from an `OrderBook`, indexed by side and
+    /// sorted by price-time priority.
     struct PriceLevels has copy, drop {
+        /// Market ID of corresponding market.
+        market_id: u64,
         /// Ask price levels sorted by price-time priority: lowest price
         /// level first in vector.
         asks: vector<PriceLevel>,
@@ -1008,7 +1038,7 @@ module econia::market {
     public fun get_TICKS(): bool {TICKS}
 
     #[view]
-    /// Get open `Order` having `market_id` and `market_order_id`.
+    /// Return `OrderView` for `market_id` and `market_order_id`.
     ///
     /// Mutates state, so kept as a private view function.
     ///
@@ -1025,7 +1055,7 @@ module econia::market {
     fun get_open_order(
         market_id: u64,
         market_order_id: u128
-    ): Order
+    ): OrderView
     acquires OrderBooks {
         // Assert market has an open order with given market order ID.
         assert!(has_open_order(market_id, market_order_id),
@@ -1038,21 +1068,33 @@ module econia::market {
         // Mutably borrow market order book.
         let order_book_ref_mut = tablist::borrow_mut(
             order_books_map_ref_mut, market_id);
-        let orders_ref_mut = // Get open orders for given side.
-            if (get_market_order_id_side(market_order_id) == ASK)
-                &mut order_book_ref_mut.asks else &mut order_book_ref_mut.bids;
+        // Get market order ID side.
+        let side = get_market_order_id_side(market_order_id);
+        // Get open orders for given side.
+        let orders_ref_mut = if (side == ASK) &mut order_book_ref_mut.asks else
+            &mut order_book_ref_mut.bids;
         let avlq_access_key = // Get AVL queue access key.
             get_market_order_id_avl_queue_access_key(market_order_id);
-        // Remove and return order with given access key.
-        avl_queue::remove(orders_ref_mut, avlq_access_key)
+        // Remove and unpack order with given access key, discarding
+        // order access key.
+        let Order{size, price, user, custodian_id, order_access_key: _} =
+            avl_queue::remove(orders_ref_mut, avlq_access_key);
+        OrderView{market_id, side, market_order_id, size, price, user,
+                  custodian_id} // Pack and return an order view.
     }
 
     #[view]
     /// Index order book for given market ID into ask and bid vectors.
     ///
-    /// Vectors sorted by price-time priority per `Orders` schema.
+    /// Vectors sorted by price-time priority per `OrdersView` schema.
     ///
     /// Mutates state, so kept as a private view function.
+    ///
+    /// # Parameters
+    ///
+    /// * `market_id`: Market ID of maker orders to index.
+    /// * `n_asks_max`: Maximum number of asks to index.
+    /// * `n_bids_max`: Maximum number of bids to index.
     ///
     /// # Aborts
     ///
@@ -1063,8 +1105,10 @@ module econia::market {
     /// * `test_get_open_orders()`
     /// * `test_get_open_orders_invalid_market_id()`
     fun get_open_orders(
-        market_id: u64
-    ): Orders
+        market_id: u64,
+        n_asks_max: u64,
+        n_bids_max: u64
+    ): OrdersView
     acquires OrderBooks {
         // Get address of resource account where order books are stored.
         let resource_address = resource_account::get_address();
@@ -1076,12 +1120,26 @@ module econia::market {
         // Mutably borrow order book with given market ID.
         let order_book_ref_mut =
             tablist::borrow_mut(order_books_map_ref_mut, market_id);
-        Orders{ // Return indexed orders.
-            asks: avl_queue::empty_into_sorted_vector(
-                &mut order_book_ref_mut.asks),
-            bids: avl_queue::empty_into_sorted_vector(
-                &mut order_book_ref_mut.bids)
+        OrdersView{ // Return indexed orders.
+            asks: get_open_orders_for_side(
+                market_id, order_book_ref_mut, ASK, n_asks_max),
+            bids: get_open_orders_for_side(
+                market_id, order_book_ref_mut, BID, n_bids_max)
         }
+    }
+
+    #[view]
+    /// Wrapped call to `get_open_orders()` for getting all open orders
+    /// on both sides.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_open_orders()`
+    fun get_open_orders_all(
+        market_id: u64
+    ): OrdersView
+    acquires OrderBooks {
+        get_open_orders(market_id, HI_64, HI_64)
     }
 
     #[view]
@@ -1091,19 +1149,55 @@ module econia::market {
     ///
     /// Mutates state, so kept as a private view function.
     ///
+    /// # Parameters
+    ///
+    /// * `market_id`: Market ID of price levels to index.
+    /// * `n_ask_levels_max`: Maximum number of ask price levels to
+    ///   index.
+    /// * `n_bid_levels_max`: Maximum number of bid price levels to
+    ///   index.
+    ///
     /// # Testing
     ///
     /// * `test_get_price_levels()`
+    /// * `test_get_price_levels_invalid_market_id()`
     fun get_price_levels(
+        market_id: u64,
+        n_ask_levels_max: u64,
+        n_bid_levels_max: u64
+    ): PriceLevels
+    acquires OrderBooks {
+        // Get address of resource account where order books are stored.
+        let resource_address = resource_account::get_address();
+        let order_books_map_ref_mut = // Mutably borrow order books map.
+            &mut borrow_global_mut<OrderBooks>(resource_address).map;
+        // Assert order books map has order book with given market ID.
+        assert!(tablist::contains(order_books_map_ref_mut, market_id),
+                E_INVALID_MARKET_ID);
+        // Mutably borrow order book with given market ID.
+        let order_book_ref_mut =
+            tablist::borrow_mut(order_books_map_ref_mut, market_id);
+        PriceLevels{ // Return indexed price levels.
+            market_id,
+            asks: get_price_levels_for_side(
+                order_book_ref_mut, ASK, n_ask_levels_max),
+            bids: get_price_levels_for_side(
+                order_book_ref_mut, BID, n_bid_levels_max)
+        }
+    }
+
+    #[view]
+    /// Wrapped call to `get_price_levels()` for getting all price
+    /// levels on both sides.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_price_levels()`
+    fun get_price_levels_all(
         market_id: u64
     ): PriceLevels
     acquires OrderBooks {
-        // Index orders.
-        let Orders{asks, bids} = get_open_orders(market_id);
-        PriceLevels{
-            asks: sorted_orders_vector_to_price_levels_vector(asks),
-            bids: sorted_orders_vector_to_price_levels_vector(bids)
-        } // Return orders indexed into price levels.
+        get_price_levels(market_id, HI_64, HI_64)
     }
 
     #[view]
@@ -2326,6 +2420,92 @@ module econia::market {
         ((market_order_id & (HI_64 as u128)) as u64)
     }
 
+    /// Index specified number of open orders for given side of order
+    /// book.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_open_orders()`
+    fun get_open_orders_for_side(
+        market_id: u64,
+        order_book_ref_mut: &mut OrderBook,
+        side: bool,
+        n_orders_max: u64
+    ): vector<OrderView> {
+        let orders = vector[]; // Initialize empty vector of orders.
+        // Get mutable reference to orders AVL queue for given side.
+        let avlq_ref_mut = if (side == ASK) &mut order_book_ref_mut.asks else
+            &mut order_book_ref_mut.bids;
+        // While there are still orders left to index:
+        while((vector::length(&orders) < n_orders_max) &&
+              (!avl_queue::is_empty(avlq_ref_mut))) {
+            // Remove and unpack order at head of queue.
+            let Order{size, price, user, custodian_id, order_access_key} =
+                avl_queue::pop_head(avlq_ref_mut);
+            // Get market order ID from user-side order memory.
+            let market_order_id = option::destroy_some(
+                user::get_open_order_id_internal(user, market_id, custodian_id,
+                                                 side, order_access_key));
+            // Push back an order view to orders view vector.
+            vector::push_back(&mut orders, OrderView{
+                market_id, side, market_order_id, size, price, user,
+                custodian_id});
+        };
+        orders // Return vector of view-friendly orders.
+    }
+
+    /// Index specified number of price levels for given side of order
+    /// book.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_price_levels()`
+    fun get_price_levels_for_side(
+        order_book_ref_mut: &mut OrderBook,
+        side: bool,
+        n_price_levels_max: u64
+    ): vector<PriceLevel> {
+        // Initialize empty price levels vector.
+        let price_levels = vector[];
+        // Get mutable reference to orders AVL queue for given side.
+        let avlq_ref_mut = if (side == ASK) &mut order_book_ref_mut.asks else
+            &mut order_book_ref_mut.bids;
+        // While more price levels can be indexed:
+        while (vector::length(&price_levels) < n_price_levels_max) {
+            let size = 0; // Initialize price level size to 0.
+            // Get optional price of order at head of queue.
+            let optional_head_price = avl_queue::get_head_key(avlq_ref_mut);
+            // If there is an order at the head of the queue:
+            if (option::is_some(&optional_head_price)) {
+                // Unpack its price as the price tracker for the level.
+                let price = option::destroy_some(optional_head_price);
+                // While orders still left on book:
+                while (!avl_queue::is_empty(avlq_ref_mut)) {
+                    // If order at head of the queue is in price level:
+                    if (option::contains(
+                            &avl_queue::get_head_key(avlq_ref_mut), &price)) {
+                        // Pop order, storing only its size.
+                        let Order{size: order_size, price: _, user: _,
+                                  custodian_id: _, order_access_key: _} =
+                            avl_queue::pop_head(avlq_ref_mut);
+                        // Increment tracker for price level size. Note
+                        // that no overflow is checked because an open
+                        // order's size is a u64, and an AVL queue can
+                        // hold at most 2 ^ 14 - 1 open orders.
+                        size = size + (order_size as u128);
+                    } else { // If order at head of queue not in level:
+                        break // Break of out loop over head of queue.
+                    }
+                };
+                // Push back price level to price levels vector.
+                vector::push_back(&mut price_levels, PriceLevel{price, size});
+            } else { // If no order at the head of the queue:
+                break // Break of out loop on price level vector length.
+            }
+        };
+        price_levels // Return vector of price levels.
+    }
+
     /// Initialize the order books map upon module publication.
     fun init_module(
         _econia: &signer
@@ -3456,46 +3636,6 @@ module econia::market {
         market_id // Return market ID.
     }
 
-    /// Index a sorted vector of `Order` into a vector of `PriceLevel`.
-    ///
-    /// # Testing
-    ///
-    //// * `test_sorted_orders_vector_to_price_levels_vector()`
-    fun sorted_orders_vector_to_price_levels_vector(
-        orders: vector<Order>
-    ): vector<PriceLevel> {
-        // Initialize price levels vector to empty vector.
-        let price_levels = vector::empty();
-        if (vector::is_empty(&orders)) { // If no orders to index:
-            vector::destroy_empty(orders); // Destroy orders vector.
-        } else { // If orders to index:
-            // Initialize price tracker to first order price.
-            let price = vector::borrow(&orders, 0).price;
-            // Initialize size at price level to 0.
-            let size = 0;
-            // For each order:
-            vector::for_each(orders, |order| {
-                // Unpack order, storing size and price.
-                let Order{size: order_size, price: order_price, user: _,
-                          custodian_id: _, order_access_key: _} = order;
-                // If order has same price as last checked price:
-                if (order_price == price) {
-                    // Increment size for the given price level.
-                    size = size + order_size;
-                } else { // If order is in new price level:
-                    // Push back last price level to ongoing vector.
-                    vector::push_back(&mut price_levels,
-                                      PriceLevel{price, size});
-                    price = order_price; // Start new price level price.
-                    size = order_size; // Start new price level size.
-                };
-            });
-            // Push back final price level to price levels vector.
-            vector::push_back(&mut price_levels, PriceLevel{price, size});
-        };
-        price_levels // Return price levels vector.
-    }
-
     /// Match a taker's swap order against order book for given market.
     ///
     /// # Type Parameters
@@ -3599,6 +3739,15 @@ module econia::market {
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Deprecated structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Deprecated struct retained for backwards compatibility.
+    struct Orders has key {asks: vector<Order>, bids: vector<Order>}
+
+    // Deprecated structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Deprecated functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Deprecated functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -4392,15 +4541,23 @@ module econia::market {
         avl_queue::borrow_mut(asks_ref_mut, avl_queue_access_key).user =
             maker_address; // Manually fix book-side user field.
         // Get order for given market order ID, unpack into fields.
-        let Order{size: size_r, price: price_r, user: user_r, custodian_id:
-                  custodian_id_r, order_access_key: order_access_key_r} =
-            get_open_order(market_id, market_order_id);
+        let OrderView{
+            market_id: market_id_r,
+            side: side_r,
+            market_order_id: market_order_id_r,
+            size: size_r,
+            price: price_r,
+            user: user_r,
+            custodian_id: custodian_id_r,
+        } = get_open_order(market_id, market_order_id);
         // Assert field returns.
+        assert!(market_id_r        == market_id, 0);
+        assert!(side_r             == side, 0);
+        assert!(market_order_id_r  == market_order_id, 0);
         assert!(size_r             == size_end, 0);
         assert!(price_r            == price, 0);
         assert!(user_r             == maker_address, 0);
         assert!(custodian_id_r     == custodian_id, 0);
-        assert!(order_access_key_r == order_access_key, 0);
     }
 
     #[test]
@@ -4481,15 +4638,23 @@ module econia::market {
         // Assert order marked as open.
         assert!(has_open_order(market_id, market_order_id), 0);
         // Get order for given market order ID, unpack into fields.
-        let Order{size: size_r, price: price_r, user: user_r, custodian_id:
-                  custodian_id_r, order_access_key: order_access_key_r} =
-            get_open_order(market_id, market_order_id);
+        let OrderView{
+            market_id: market_id_r,
+            side: side_r,
+            market_order_id: market_order_id_r,
+            size: size_r,
+            price: price_r,
+            user: user_r,
+            custodian_id: custodian_id_r,
+        } = get_open_order(market_id, market_order_id);
         // Assert field returns.
+        assert!(market_id_r        == market_id, 0);
+        assert!(side_r             == side, 0);
+        assert!(market_order_id_r  == market_order_id, 0);
         assert!(size_r             == size_end, 0);
         assert!(price_r            == price, 0);
         assert!(user_r             == maker_address, 0);
         assert!(custodian_id_r     == custodian_id, 0);
-        assert!(order_access_key_r == order_access_key, 0);
     }
 
     #[test]
@@ -4902,18 +5067,14 @@ module econia::market {
     #[test]
     #[expected_failure(abort_code = E_INVALID_MARKET_ORDER_ID)]
     /// Verify failure for unregistered market.
-    fun test_get_open_order_invalid_market_order_id():
-    Order
-    acquires OrderBooks {
+    fun test_get_open_order_invalid_market_order_id() acquires OrderBooks {
         init_test(); // Initialize for testing.
-        get_open_order(0, 0) // Attempt invalid lookup.
+        get_open_order(0, 0); // Attempt invalid lookup.
     }
 
     #[test]
     /// Verify indexing results.
-    fun test_get_open_orders():
-    Orders
-    acquires OrderBooks {
+    fun test_get_open_orders() acquires OrderBooks {
         // Initialize markets, users, and an integrator.
         let (maker, _) = init_markets_users_integrator_test();
         // Declare common order parameters.
@@ -4938,44 +5099,103 @@ module econia::market {
         user::deposit_coins<QC>(maker_address, market_id, custodian_id,
                                 assets::mint_test(HI_64 / 2));
         // Place maker orders.
-        place_limit_order_user<BC, QC>(
+        let (market_order_id_bid_1, _, _, _) = place_limit_order_user<BC, QC>(
             &maker, market_id, integrator, BID, bid_1_size, bid_1_price,
             restriction, self_match_behavior);
-        place_limit_order_user<BC, QC>(
+        let (market_order_id_bid_0, _, _, _) = place_limit_order_user<BC, QC>(
             &maker, market_id, integrator, BID, bid_0_size, bid_0_price,
             restriction, self_match_behavior);
-        place_limit_order_user<BC, QC>(
+        let (market_order_id_ask_0, _, _, _) = place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, ASK, ask_0_size, ask_0_price,
+            restriction, self_match_behavior);
+        let (market_order_id_ask_1, _, _, _) = place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, ASK, ask_1_size, ask_1_price,
+            restriction, self_match_behavior);
+        // Index orders.
+        let orders = get_open_orders_all(market_id);
+        // Assert order state.
+        assert!(vector::length(&orders.asks) == 2, 0);
+        assert!(vector::length(&orders.bids) == 2, 0);
+        let order_ref = vector::borrow(&orders.asks, 1);
+        assert!(order_ref.market_id       == market_id, 0);
+        assert!(order_ref.side            == ASK, 0);
+        assert!(order_ref.market_order_id == market_order_id_ask_1, 0);
+        assert!(order_ref.price           == ask_1_price, 0);
+        assert!(order_ref.user            == maker_address, 0);
+        assert!(order_ref.custodian_id    == custodian_id, 0);
+        order_ref = vector::borrow(&orders.asks, 0);
+        assert!(order_ref.market_id       == market_id, 0);
+        assert!(order_ref.side            == ASK, 0);
+        assert!(order_ref.market_order_id == market_order_id_ask_0, 0);
+        assert!(order_ref.price           == ask_0_price, 0);
+        assert!(order_ref.user            == maker_address, 0);
+        assert!(order_ref.custodian_id    == custodian_id, 0);
+        order_ref = vector::borrow(&orders.bids, 0);
+        assert!(order_ref.market_id       == market_id, 0);
+        assert!(order_ref.side            == BID, 0);
+        assert!(order_ref.market_order_id == market_order_id_bid_0, 0);
+        assert!(order_ref.price           == bid_0_price, 0);
+        assert!(order_ref.user            == maker_address, 0);
+        assert!(order_ref.custodian_id    == custodian_id, 0);
+        order_ref = vector::borrow(&orders.bids, 1);
+        assert!(order_ref.market_id       == market_id, 0);
+        assert!(order_ref.side            == BID, 0);
+        assert!(order_ref.market_order_id == market_order_id_bid_1, 0);
+        assert!(order_ref.price           == bid_1_price, 0);
+        assert!(order_ref.user            == maker_address, 0);
+        assert!(order_ref.custodian_id    == custodian_id, 0);
+        // Place maker orders again.
+        (market_order_id_bid_1, _, _, _) = place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, BID, bid_1_size, bid_1_price,
+            restriction, self_match_behavior);
+        (market_order_id_bid_0, _, _, _) = place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, BID, bid_0_size, bid_0_price,
+            restriction, self_match_behavior);
+        (market_order_id_ask_0, _, _, _) = place_limit_order_user<BC, QC>(
             &maker, market_id, integrator, ASK, ask_0_size, ask_0_price,
             restriction, self_match_behavior);
         place_limit_order_user<BC, QC>(
             &maker, market_id, integrator, ASK, ask_1_size, ask_1_price,
             restriction, self_match_behavior);
-        // Index orders.
-        let orders = get_open_orders(market_id);
+        // Index just 1 ask and no bids.
+        orders = get_open_orders(market_id, 1, 0);
         // Assert order state.
-        let order_ref = vector::borrow(&orders.asks, 1);
-        assert!(order_ref.price == ask_1_price, 0);
-        assert!(order_ref.size  == ask_1_size, 0);
+        assert!(vector::length(&orders.asks) == 1, 0);
+        assert!(vector::length(&orders.bids) == 0, 0);
         order_ref = vector::borrow(&orders.asks, 0);
-        assert!(order_ref.price == ask_0_price, 0);
-        assert!(order_ref.size  == ask_0_size, 0);
+        assert!(order_ref.market_id       == market_id, 0);
+        assert!(order_ref.side            == ASK, 0);
+        assert!(order_ref.market_order_id == market_order_id_ask_0, 0);
+        assert!(order_ref.price           == ask_0_price, 0);
+        assert!(order_ref.user            == maker_address, 0);
+        assert!(order_ref.custodian_id    == custodian_id, 0);
+        // Index just 2 bids.
+        let orders = get_open_orders(market_id, 0, 2);
+        // Assert order state.
+        assert!(vector::length(&orders.asks) == 0, 0);
+        assert!(vector::length(&orders.bids) == 2, 0);
         order_ref = vector::borrow(&orders.bids, 0);
-        assert!(order_ref.price == bid_0_price, 0);
-        assert!(order_ref.size  == bid_0_size, 0);
+        assert!(order_ref.market_id       == market_id, 0);
+        assert!(order_ref.side            == BID, 0);
+        assert!(order_ref.market_order_id == market_order_id_bid_0, 0);
+        assert!(order_ref.price           == bid_0_price, 0);
+        assert!(order_ref.user            == maker_address, 0);
+        assert!(order_ref.custodian_id    == custodian_id, 0);
         order_ref = vector::borrow(&orders.bids, 1);
-        assert!(order_ref.price == bid_1_price, 0);
-        assert!(order_ref.size  == bid_1_size, 0);
-        orders // Return, rather than unpacking.
+        assert!(order_ref.market_id       == market_id, 0);
+        assert!(order_ref.side            == BID, 0);
+        assert!(order_ref.market_order_id == market_order_id_bid_1, 0);
+        assert!(order_ref.price           == bid_1_price, 0);
+        assert!(order_ref.user            == maker_address, 0);
+        assert!(order_ref.custodian_id    == custodian_id, 0);
     }
 
     #[test]
     #[expected_failure(abort_code = E_INVALID_MARKET_ID)]
     /// Verify failure for unregistered market.
-    fun test_get_open_orders_invalid_market_id():
-    Orders
-    acquires OrderBooks {
+    fun test_get_open_orders_invalid_market_id() acquires OrderBooks {
         init_test(); // Initialize for testing.
-        get_open_orders(0) // Attempt invalid lookup.
+        get_open_orders_all(0); // Attempt invalid lookup.
     }
 
     #[test]
@@ -5018,19 +5238,63 @@ module econia::market {
             &maker, market_id, integrator, ASK, ask_1_size, ask_1_price,
             restriction, self_match_behavior);
         // Index price levels.
-        let PriceLevels{asks, bids} = get_price_levels(market_id);
+        let PriceLevels{market_id: market_id_r, asks, bids} =
+            get_price_levels_all(market_id);
+        // Assert market ID.
+        assert!(market_id_r == market_id, 0);
         // Assert ask price levels state.
         assert!(vector::length(&asks) == 2, 0);
         assert!(*vector::borrow(&asks, 1) ==
-                PriceLevel{price: ask_1_price, size: ask_1_size}, 0);
+                PriceLevel{price: ask_1_price, size: (ask_1_size as u128)}, 0);
         assert!(*vector::borrow(&asks, 0) ==
-                PriceLevel{price: ask_0_price, size: ask_0_size}, 0);
+                PriceLevel{price: ask_0_price, size: (ask_0_size as u128)}, 0);
         // Assert bid price levels state.
         assert!(vector::length(&bids) == 2, 0);
         assert!(*vector::borrow(&bids, 0) ==
-                PriceLevel{price: bid_0_price, size: bid_0_size}, 0);
+                PriceLevel{price: bid_0_price, size: (bid_0_size as u128)}, 0);
         assert!(*vector::borrow(&bids, 1) ==
-                PriceLevel{price: bid_1_price, size: bid_1_size}, 0);
+                PriceLevel{price: bid_1_price, size: (bid_1_size as u128)}, 0);
+        // Place same maker orders again.
+        place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, BID, bid_1_size, bid_1_price,
+            restriction, self_match_behavior);
+        place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, BID, bid_0_size, bid_0_price,
+            restriction, self_match_behavior);
+        place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, ASK, ask_0_size, ask_0_price,
+            restriction, self_match_behavior);
+        place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, ASK, ask_1_size, ask_1_price,
+            restriction, self_match_behavior);
+        // Index price levels, only requesting one ask price level.
+        let PriceLevels{market_id: _, asks, bids} =
+            get_price_levels(market_id, 1, 0);
+        // Assert ask price levels state.
+        assert!(vector::length(&asks) == 1, 0);
+        assert!(*vector::borrow(&asks, 0) ==
+                PriceLevel{price: ask_0_price, size: (ask_0_size as u128)}, 0);
+        // Assert bid price levels state.
+        assert!(vector::length(&bids) == 0, 0);
+        // Index price levels, only requesting two bid price levels.
+        let PriceLevels{market_id: _, asks, bids} =
+            get_price_levels(market_id, 0, 2);
+        // Assert ask price levels state.
+        assert!(vector::length(&asks) == 0, 0);
+        // Assert bid price levels state.
+        assert!(vector::length(&bids) == 2, 0);
+        assert!(*vector::borrow(&bids, 0) ==
+                PriceLevel{price: bid_0_price, size: (bid_0_size as u128)}, 0);
+        assert!(*vector::borrow(&bids, 1) ==
+                PriceLevel{price: bid_1_price, size: (bid_1_size as u128)}, 0);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = E_INVALID_MARKET_ID)]
+    /// Verify failure for unregistered market.
+    fun test_get_price_levels_invalid_market_id() acquires OrderBooks {
+        init_test(); // Initialize for testing.
+        get_price_levels_all(0); // Attempt invalid lookup.
     }
 
     #[test]
@@ -9548,48 +9812,6 @@ module econia::market {
         // from coin store.
         assert!(register_market_base_coin<QC, BC, UC>(
             1, 1, 1, assets::mint_test<UC>(fee)) == 3, 0);
-    }
-
-    #[test]
-    /// Verify order sorting.
-    fun test_sorted_orders_vector_to_price_levels_vector() {
-        // Initialize mock fields not relevant to indexing.
-        let user = @0x0;
-        let custodian_id = NO_CUSTODIAN;
-        let order_access_key = 0;
-        let price_levels = // Try indexing empty vector.
-            sorted_orders_vector_to_price_levels_vector(vector[]);
-        // Assert empty return.
-        assert!(vector::is_empty(&price_levels), 0);
-        // Index a singleton vector.
-        price_levels = sorted_orders_vector_to_price_levels_vector(vector[
-            Order{size: 1, price: 10, user, custodian_id, order_access_key}
-        ]);
-        // Assert vector state.
-        assert!(vector::length(&price_levels) == 1, 0);
-        assert!(*vector::borrow(&price_levels, 0) ==
-                PriceLevel{price: 10, size: 1}, 0);
-        // Index a vector where second order has same price as first.
-        price_levels = sorted_orders_vector_to_price_levels_vector(vector[
-            Order{size: 1, price: 10, user, custodian_id, order_access_key},
-            Order{size: 2, price: 10, user, custodian_id, order_access_key},
-        ]);
-        // Assert vector state.
-        assert!(vector::length(&price_levels) == 1, 0);
-        assert!(*vector::borrow(&price_levels, 0) ==
-                PriceLevel{price: 10, size: 3}, 0);
-        // Index a vector where first and second orders have different
-        // price.
-        price_levels = sorted_orders_vector_to_price_levels_vector(vector[
-            Order{size: 1, price: 10, user, custodian_id, order_access_key},
-            Order{size: 2, price: 11, user, custodian_id, order_access_key},
-        ]);
-        // Assert vector state.
-        assert!(vector::length(&price_levels) == 2, 0);
-        assert!(*vector::borrow(&price_levels, 0) ==
-                PriceLevel{price: 10, size: 1}, 0);
-        assert!(*vector::borrow(&price_levels, 1) ==
-                PriceLevel{price: 11, size: 2}, 0);
     }
 
     #[test]

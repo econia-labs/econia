@@ -930,49 +930,6 @@ module econia::market {
     public fun get_IMMEDIATE_OR_CANCEL(): u8 {IMMEDIATE_OR_CANCEL}
 
     #[view]
-    /// Return maker order counter encoded in market order ID.
-    ///
-    /// # Testing
-    ///
-    /// * `test_place_limit_order_no_cross_ask_user()`
-    /// * `test_place_limit_order_no_cross_bid_custodian()`
-    public fun get_market_order_id_counter(
-        market_order_id: u128
-    ): u64 {
-        (((market_order_id >> SHIFT_COUNTER) & (HI_64 as u128)) as u64)
-    }
-
-    #[view]
-    /// Return order price encoded in market order ID.
-    ///
-    /// # Testing
-    ///
-    /// * `test_place_limit_order_no_cross_ask_user()`
-    /// * `test_place_limit_order_no_cross_bid_custodian()`
-    public fun get_market_order_id_price(
-        market_order_id: u128
-    ): u64 {
-        ((market_order_id & (HI_PRICE as u128)) as u64)
-    }
-
-    #[view]
-    /// Return order side encoded in market order ID.
-    ///
-    /// # Testing
-    ///
-    /// * `test_place_limit_order_no_cross_ask_user()`
-    /// * `test_place_limit_order_no_cross_bid_custodian()`
-    public fun get_market_order_id_side(
-        market_order_id: u128
-    ): bool {
-        // Get AVL queue access key encoded in market order ID.
-        let avlq_access_key =
-            get_market_order_id_avl_queue_access_key(market_order_id);
-        // If ascending AVL queue indicated is an ask, else a bid.
-        if (avl_queue::is_ascending_access_key(avlq_access_key)) ASK else BID
-    }
-
-    #[view]
     /// Public constant getter for `MAX_POSSIBLE`.
     ///
     /// # Testing
@@ -1036,6 +993,49 @@ module econia::market {
     ///
     /// * `test_get_TICKS()`
     public fun get_TICKS(): bool {TICKS}
+
+    #[view]
+    /// Return maker order counter encoded in market order ID.
+    ///
+    /// # Testing
+    ///
+    /// * `test_place_limit_order_no_cross_ask_user()`
+    /// * `test_place_limit_order_no_cross_bid_custodian()`
+    public fun get_market_order_id_counter(
+        market_order_id: u128
+    ): u64 {
+        (((market_order_id >> SHIFT_COUNTER) & (HI_64 as u128)) as u64)
+    }
+
+    #[view]
+    /// Return order price encoded in market order ID.
+    ///
+    /// # Testing
+    ///
+    /// * `test_place_limit_order_no_cross_ask_user()`
+    /// * `test_place_limit_order_no_cross_bid_custodian()`
+    public fun get_market_order_id_price(
+        market_order_id: u128
+    ): u64 {
+        ((market_order_id & (HI_PRICE as u128)) as u64)
+    }
+
+    #[view]
+    /// Return order side encoded in market order ID.
+    ///
+    /// # Testing
+    ///
+    /// * `test_place_limit_order_no_cross_ask_user()`
+    /// * `test_place_limit_order_no_cross_bid_custodian()`
+    public fun get_market_order_id_side(
+        market_order_id: u128
+    ): bool {
+        // Get AVL queue access key encoded in market order ID.
+        let avlq_access_key =
+            get_market_order_id_avl_queue_access_key(market_order_id);
+        // If ascending AVL queue indicated is an ask, else a bid.
+        if (avl_queue::is_ascending_access_key(avlq_access_key)) ASK else BID
+    }
 
     #[view]
     /// Return `OrderView` for `market_id` and `market_order_id`.

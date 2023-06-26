@@ -1,0 +1,10 @@
+{
+  "econia_address": "$ECONIA_ADDR",
+  "redis": {
+    "url": "$REDIS_URI",
+    "book_prefix": "books",
+    "order_prefix": "orders",
+    "fill_prefix": "fills",
+    "markets": "markets"
+  }
+}

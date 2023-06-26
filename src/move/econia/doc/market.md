@@ -669,27 +669,27 @@ The below index is automatically generated from source code:
     -  [Testing](#@Testing_31)
 -  [Function `get_IMMEDIATE_OR_CANCEL`](#0xc0deb00c_market_get_IMMEDIATE_OR_CANCEL)
     -  [Testing](#@Testing_32)
--  [Function `get_market_order_id_counter`](#0xc0deb00c_market_get_market_order_id_counter)
-    -  [Testing](#@Testing_33)
--  [Function `get_market_order_id_price`](#0xc0deb00c_market_get_market_order_id_price)
-    -  [Testing](#@Testing_34)
--  [Function `get_market_order_id_side`](#0xc0deb00c_market_get_market_order_id_side)
-    -  [Testing](#@Testing_35)
 -  [Function `get_MAX_POSSIBLE`](#0xc0deb00c_market_get_MAX_POSSIBLE)
-    -  [Testing](#@Testing_36)
+    -  [Testing](#@Testing_33)
 -  [Function `get_NO_CUSTODIAN`](#0xc0deb00c_market_get_NO_CUSTODIAN)
-    -  [Testing](#@Testing_37)
+    -  [Testing](#@Testing_34)
 -  [Function `get_NO_RESTRICTION`](#0xc0deb00c_market_get_NO_RESTRICTION)
-    -  [Testing](#@Testing_38)
+    -  [Testing](#@Testing_35)
 -  [Function `get_NO_UNDERWRITER`](#0xc0deb00c_market_get_NO_UNDERWRITER)
-    -  [Testing](#@Testing_39)
+    -  [Testing](#@Testing_36)
 -  [Function `get_POST_OR_ABORT`](#0xc0deb00c_market_get_POST_OR_ABORT)
-    -  [Testing](#@Testing_40)
+    -  [Testing](#@Testing_37)
 -  [Function `get_PERCENT`](#0xc0deb00c_market_get_PERCENT)
-    -  [Testing](#@Testing_41)
+    -  [Testing](#@Testing_38)
 -  [Function `get_SELL`](#0xc0deb00c_market_get_SELL)
-    -  [Testing](#@Testing_42)
+    -  [Testing](#@Testing_39)
 -  [Function `get_TICKS`](#0xc0deb00c_market_get_TICKS)
+    -  [Testing](#@Testing_40)
+-  [Function `get_market_order_id_counter`](#0xc0deb00c_market_get_market_order_id_counter)
+    -  [Testing](#@Testing_41)
+-  [Function `get_market_order_id_price`](#0xc0deb00c_market_get_market_order_id_price)
+    -  [Testing](#@Testing_42)
+-  [Function `get_market_order_id_side`](#0xc0deb00c_market_get_market_order_id_side)
     -  [Testing](#@Testing_43)
 -  [Function `get_open_order`](#0xc0deb00c_market_get_open_order)
     -  [Aborts](#@Aborts_44)
@@ -2291,6 +2291,231 @@ Public constant getter for <code><a href="market.md#0xc0deb00c_market_IMMEDIATE_
 
 
 
+<a name="0xc0deb00c_market_get_MAX_POSSIBLE"></a>
+
+## Function `get_MAX_POSSIBLE`
+
+Public constant getter for <code><a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a></code>.
+
+
+<a name="@Testing_33"></a>
+
+### Testing
+
+
+* <code>test_get_MAX_POSSIBLE()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_MAX_POSSIBLE">get_MAX_POSSIBLE</a>(): u64
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_MAX_POSSIBLE">get_MAX_POSSIBLE</a>(): u64 {<a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a>}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_get_NO_CUSTODIAN"></a>
+
+## Function `get_NO_CUSTODIAN`
+
+Public constant getter for <code><a href="market.md#0xc0deb00c_market_NO_CUSTODIAN">NO_CUSTODIAN</a></code>.
+
+
+<a name="@Testing_34"></a>
+
+### Testing
+
+
+* <code>test_get_NO_CUSTODIAN()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_NO_CUSTODIAN">get_NO_CUSTODIAN</a>(): u64
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_NO_CUSTODIAN">get_NO_CUSTODIAN</a>(): u64 {<a href="market.md#0xc0deb00c_market_NO_CUSTODIAN">NO_CUSTODIAN</a>}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_get_NO_RESTRICTION"></a>
+
+## Function `get_NO_RESTRICTION`
+
+Public constant getter for <code><a href="market.md#0xc0deb00c_market_NO_RESTRICTION">NO_RESTRICTION</a></code>.
+
+
+<a name="@Testing_35"></a>
+
+### Testing
+
+
+* <code>test_get_NO_RESTRICTION()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_NO_RESTRICTION">get_NO_RESTRICTION</a>(): u8
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_NO_RESTRICTION">get_NO_RESTRICTION</a>(): u8 {<a href="market.md#0xc0deb00c_market_NO_RESTRICTION">NO_RESTRICTION</a>}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_get_NO_UNDERWRITER"></a>
+
+## Function `get_NO_UNDERWRITER`
+
+Public constant getter for <code><a href="market.md#0xc0deb00c_market_NO_UNDERWRITER">NO_UNDERWRITER</a></code>.
+
+
+<a name="@Testing_36"></a>
+
+### Testing
+
+
+* <code>test_get_NO_UNDERWRITER()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_NO_UNDERWRITER">get_NO_UNDERWRITER</a>(): u64
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_NO_UNDERWRITER">get_NO_UNDERWRITER</a>(): u64 {<a href="market.md#0xc0deb00c_market_NO_UNDERWRITER">NO_UNDERWRITER</a>}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_get_POST_OR_ABORT"></a>
+
+## Function `get_POST_OR_ABORT`
+
+Public constant getter for <code><a href="market.md#0xc0deb00c_market_POST_OR_ABORT">POST_OR_ABORT</a></code>.
+
+
+<a name="@Testing_37"></a>
+
+### Testing
+
+
+* <code>test_get_POST_OR_ABORT()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_POST_OR_ABORT">get_POST_OR_ABORT</a>(): u8
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_POST_OR_ABORT">get_POST_OR_ABORT</a>(): u8 {<a href="market.md#0xc0deb00c_market_POST_OR_ABORT">POST_OR_ABORT</a>}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_get_PERCENT"></a>
+
+## Function `get_PERCENT`
+
+Public constant getter for <code><a href="market.md#0xc0deb00c_market_PERCENT">PERCENT</a></code>.
+
+
+<a name="@Testing_38"></a>
+
+### Testing
+
+
+* <code>test_get_PERCENT()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_PERCENT">get_PERCENT</a>(): bool
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_PERCENT">get_PERCENT</a>(): bool {<a href="market.md#0xc0deb00c_market_PERCENT">PERCENT</a>}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_get_SELL"></a>
+
+## Function `get_SELL`
+
+Public constant getter for <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>.
+
+
+<a name="@Testing_39"></a>
+
+### Testing
+
+
+* <code>test_direction_side_polarities()</code>
+* <code>test_get_SELL()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_SELL">get_SELL</a>(): bool
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_SELL">get_SELL</a>(): bool {<a href="market.md#0xc0deb00c_market_SELL">SELL</a>}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_get_TICKS"></a>
+
+## Function `get_TICKS`
+
+Public constant getter for <code><a href="market.md#0xc0deb00c_market_TICKS">TICKS</a></code>.
+
+
+<a name="@Testing_40"></a>
+
+### Testing
+
+
+* <code>test_get_TICKS()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_TICKS">get_TICKS</a>(): bool
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_TICKS">get_TICKS</a>(): bool {<a href="market.md#0xc0deb00c_market_TICKS">TICKS</a>}
+</code></pre>
+
+
+
 <a name="0xc0deb00c_market_get_market_order_id_counter"></a>
 
 ## Function `get_market_order_id_counter`
@@ -2298,7 +2523,7 @@ Public constant getter for <code><a href="market.md#0xc0deb00c_market_IMMEDIATE_
 Return maker order counter encoded in market order ID.
 
 
-<a name="@Testing_33"></a>
+<a name="@Testing_41"></a>
 
 ### Testing
 
@@ -2331,7 +2556,7 @@ Return maker order counter encoded in market order ID.
 Return order price encoded in market order ID.
 
 
-<a name="@Testing_34"></a>
+<a name="@Testing_42"></a>
 
 ### Testing
 
@@ -2364,7 +2589,7 @@ Return order price encoded in market order ID.
 Return order side encoded in market order ID.
 
 
-<a name="@Testing_35"></a>
+<a name="@Testing_43"></a>
 
 ### Testing
 
@@ -2390,231 +2615,6 @@ Return order side encoded in market order ID.
     // If ascending AVL queue indicated is an ask, <b>else</b> a bid.
     <b>if</b> (<a href="avl_queue.md#0xc0deb00c_avl_queue_is_ascending_access_key">avl_queue::is_ascending_access_key</a>(avlq_access_key)) <a href="market.md#0xc0deb00c_market_ASK">ASK</a> <b>else</b> <a href="market.md#0xc0deb00c_market_BID">BID</a>
 }
-</code></pre>
-
-
-
-<a name="0xc0deb00c_market_get_MAX_POSSIBLE"></a>
-
-## Function `get_MAX_POSSIBLE`
-
-Public constant getter for <code><a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a></code>.
-
-
-<a name="@Testing_36"></a>
-
-### Testing
-
-
-* <code>test_get_MAX_POSSIBLE()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_MAX_POSSIBLE">get_MAX_POSSIBLE</a>(): u64
-</code></pre>
-
-
-
-##### Implementation
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_MAX_POSSIBLE">get_MAX_POSSIBLE</a>(): u64 {<a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a>}
-</code></pre>
-
-
-
-<a name="0xc0deb00c_market_get_NO_CUSTODIAN"></a>
-
-## Function `get_NO_CUSTODIAN`
-
-Public constant getter for <code><a href="market.md#0xc0deb00c_market_NO_CUSTODIAN">NO_CUSTODIAN</a></code>.
-
-
-<a name="@Testing_37"></a>
-
-### Testing
-
-
-* <code>test_get_NO_CUSTODIAN()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_NO_CUSTODIAN">get_NO_CUSTODIAN</a>(): u64
-</code></pre>
-
-
-
-##### Implementation
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_NO_CUSTODIAN">get_NO_CUSTODIAN</a>(): u64 {<a href="market.md#0xc0deb00c_market_NO_CUSTODIAN">NO_CUSTODIAN</a>}
-</code></pre>
-
-
-
-<a name="0xc0deb00c_market_get_NO_RESTRICTION"></a>
-
-## Function `get_NO_RESTRICTION`
-
-Public constant getter for <code><a href="market.md#0xc0deb00c_market_NO_RESTRICTION">NO_RESTRICTION</a></code>.
-
-
-<a name="@Testing_38"></a>
-
-### Testing
-
-
-* <code>test_get_NO_RESTRICTION()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_NO_RESTRICTION">get_NO_RESTRICTION</a>(): u8
-</code></pre>
-
-
-
-##### Implementation
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_NO_RESTRICTION">get_NO_RESTRICTION</a>(): u8 {<a href="market.md#0xc0deb00c_market_NO_RESTRICTION">NO_RESTRICTION</a>}
-</code></pre>
-
-
-
-<a name="0xc0deb00c_market_get_NO_UNDERWRITER"></a>
-
-## Function `get_NO_UNDERWRITER`
-
-Public constant getter for <code><a href="market.md#0xc0deb00c_market_NO_UNDERWRITER">NO_UNDERWRITER</a></code>.
-
-
-<a name="@Testing_39"></a>
-
-### Testing
-
-
-* <code>test_get_NO_UNDERWRITER()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_NO_UNDERWRITER">get_NO_UNDERWRITER</a>(): u64
-</code></pre>
-
-
-
-##### Implementation
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_NO_UNDERWRITER">get_NO_UNDERWRITER</a>(): u64 {<a href="market.md#0xc0deb00c_market_NO_UNDERWRITER">NO_UNDERWRITER</a>}
-</code></pre>
-
-
-
-<a name="0xc0deb00c_market_get_POST_OR_ABORT"></a>
-
-## Function `get_POST_OR_ABORT`
-
-Public constant getter for <code><a href="market.md#0xc0deb00c_market_POST_OR_ABORT">POST_OR_ABORT</a></code>.
-
-
-<a name="@Testing_40"></a>
-
-### Testing
-
-
-* <code>test_get_POST_OR_ABORT()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_POST_OR_ABORT">get_POST_OR_ABORT</a>(): u8
-</code></pre>
-
-
-
-##### Implementation
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_POST_OR_ABORT">get_POST_OR_ABORT</a>(): u8 {<a href="market.md#0xc0deb00c_market_POST_OR_ABORT">POST_OR_ABORT</a>}
-</code></pre>
-
-
-
-<a name="0xc0deb00c_market_get_PERCENT"></a>
-
-## Function `get_PERCENT`
-
-Public constant getter for <code><a href="market.md#0xc0deb00c_market_PERCENT">PERCENT</a></code>.
-
-
-<a name="@Testing_41"></a>
-
-### Testing
-
-
-* <code>test_get_PERCENT()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_PERCENT">get_PERCENT</a>(): bool
-</code></pre>
-
-
-
-##### Implementation
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_PERCENT">get_PERCENT</a>(): bool {<a href="market.md#0xc0deb00c_market_PERCENT">PERCENT</a>}
-</code></pre>
-
-
-
-<a name="0xc0deb00c_market_get_SELL"></a>
-
-## Function `get_SELL`
-
-Public constant getter for <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>.
-
-
-<a name="@Testing_42"></a>
-
-### Testing
-
-
-* <code>test_direction_side_polarities()</code>
-* <code>test_get_SELL()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_SELL">get_SELL</a>(): bool
-</code></pre>
-
-
-
-##### Implementation
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_SELL">get_SELL</a>(): bool {<a href="market.md#0xc0deb00c_market_SELL">SELL</a>}
-</code></pre>
-
-
-
-<a name="0xc0deb00c_market_get_TICKS"></a>
-
-## Function `get_TICKS`
-
-Public constant getter for <code><a href="market.md#0xc0deb00c_market_TICKS">TICKS</a></code>.
-
-
-<a name="@Testing_43"></a>
-
-### Testing
-
-
-* <code>test_get_TICKS()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_TICKS">get_TICKS</a>(): bool
-</code></pre>
-
-
-
-##### Implementation
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_TICKS">get_TICKS</a>(): bool {<a href="market.md#0xc0deb00c_market_TICKS">TICKS</a>}
 </code></pre>
 
 

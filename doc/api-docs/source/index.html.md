@@ -1022,8 +1022,10 @@ them that this is the case.
   "channel": "price_levels",
   "data": {
     "market_id": 0,
+    "side": "bid",
     "size": 1000,
-    "price": 1000
+    "price": 1000,
+    "timestamp": "2023-05-01T12:34:56.789012Z"
   }
 }
 ```
@@ -1047,3 +1049,7 @@ available to fill at a price changes, or orders become available at a new price.
 
 The client can use the updates available from this channel along with the results
 of the GET orderbook endpoint to keep track of the current state of the orderbook.
+
+The price level update message contains the side of the orderbook, and a timestamp
+so that users can be sure whether or not an update should be applied to the
+locally tracking state to reach the correct current orderbook state.

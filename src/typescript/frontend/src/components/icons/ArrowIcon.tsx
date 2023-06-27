@@ -15,14 +15,14 @@ export const ArrowIcon: React.FC<React.SVGProps<SVGSVGElement>> = ({
       <path
         d="M6.229 2.01317L10.6882 6.47241L6.229 10.9316"
         stroke="white"
-        stroke-width="2"
-        stroke-linecap="square"
+        strokeWidth="2"
+        strokeLinecap="square"
       />
       <path
         d="M10.3184 6.4724L1.20117 6.4724"
         stroke="white"
-        stroke-width="2"
-        stroke-linecap="square"
+        strokeWidth="2"
+        strokeLinecap="square"
       />
     </svg>
   );

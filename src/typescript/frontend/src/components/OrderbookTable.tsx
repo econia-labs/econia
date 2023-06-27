@@ -2,10 +2,9 @@ import BigNumber from "bignumber.js";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useOrderEntry } from "@/contexts/OrderEntryContext";
-import { useOrderBook } from "@/hooks/useOrderbook";
 import { type ApiMarket } from "@/types/api";
 import { type Precision } from "@/types/global";
-import { type OrderBook, type PriceLevel } from "@/types/global";
+import { type Orderbook, type PriceLevel } from "@/types/global";
 import { toDecimalPrice, toDecimalSize } from "@/utils/econia";
 import { averageOrOtherPriceLevel } from "@/utils/formatter";
 
@@ -69,12 +68,18 @@ const Row: React.FC<{
   );
 };
 
-export function OrderBook({ marketData }: { marketData: ApiMarket }) {
+export function OrderbookTable({
+  marketData,
+  data,
+  isFetching,
+  isLoading,
+}: {
+  marketData: ApiMarket;
+  data: Orderbook | undefined;
+  isFetching: boolean;
+  isLoading: boolean;
+}) {
   const [precision, setPrecision] = useState<Precision>(precisionOptions[0]);
-  const { data, isFetching, isLoading } = useOrderBook(
-    marketData.market_id,
-    precision
-  );
 
   const centerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {

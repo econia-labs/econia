@@ -285,7 +285,7 @@ export default function Market({ allMarketData, marketData }: Props) {
     };
   }, [marketData, account?.address, queryClient]);
 
-  // TODO update to include precision when backend is updated
+  // TODO update to include precision when backend is updated (ECO-199)
   const {
     data: orderbookData,
     isFetching: orderbookIsFetching,

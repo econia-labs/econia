@@ -80,10 +80,6 @@ export function OrderbookTable({
   isLoading: boolean;
 }) {
   const [precision, setPrecision] = useState<Precision>(precisionOptions[0]);
-  // const { data, isFetching, isLoading } = useOrderBook(
-  //   marketData.market_id,
-  //   precision
-  // );
 
   const centerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {

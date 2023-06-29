@@ -628,6 +628,17 @@ module econia::market {
         map: Tablist<u64, OrderBook>
     }
 
+    /// Stored in the Econia resource account.
+    struct TakerEventV2Handles has key {
+        /// Map from market ID to TakerEventV2 handle holder.
+        map: Table<u64, v2TakerEventHandleHolder>
+    }
+
+    /// Stores handles for TakerEventV2 streams for each market.
+    struct TakerEventV2HandleHolder has store {
+        taker_events: EventHandle<TakerEventV2>
+    }
+
     /// User-friendly representation of an open order on the order book,
     /// combining fields from `Order` and the corresponding
     /// `MakerEvent` emitted when order was first placed.
@@ -702,6 +713,18 @@ module econia::market {
         price: u64
     }
 
+    struct TakerEventV2 has drop, store {
+        market_id: u64,
+        side: bool,
+        /// Market order ID of maker side of trade.
+        market_order_id_maker: u128,
+        /// Market order ID of taker side of trade.
+        market_order_id_taker: u128,
+        maker: address,
+        custodian_id: u64,
+        size: u64,
+        price: u64
+    }
     // Structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Error codes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -2652,6 +2675,11 @@ module econia::market {
         u64,
         bool
     ) {
+        /*
+        Borrow the TakerEventV2HandleHolder for the market ID.
+        */
+        // Increment order counter.
+        order_book_ref_mut.counter = order_book_ref_mut.counter + 1;
         // Assert price is not too high.
         assert!(limit_price <= HI_PRICE, E_PRICE_TOO_HIGH);
         // Taker buy fills against asks, sell against bids.
@@ -2772,6 +2800,12 @@ module econia::market {
                 event::emit_event(taker_handle, TakerEvent{
                     market_id, side, market_order_id, maker, custodian_id:
                     maker_custodian_id, size: fill_size, price});
+                // Get market order ID for taker side of trade.
+                let market_order_id_taker =
+                    ((order_book_ref_mut.counter as u128) << SHIFT_COUNTER);
+                /*
+                Emit a Taker Event V2.
+                */
                 // If order on book completely filled:
                 if (complete_fill) {
                     let avlq_access_key = // Get AVL queue access key.
@@ -3089,7 +3123,10 @@ module econia::market {
             size = if (still_crosses_spread || self_match_cancel) 0 else
                 // Else update size to amount left to fill post-match.
                 size - (base_traded / order_book_ref_mut.lot_size);
-        }; // Done with optional matching as a taker across the spread.
+        } else { // If spread not crossed (matching engine not called):
+            // Increment order counter.
+            order_book_ref_mut.counter = order_book_ref_mut.counter + 1;
+        };
         // Return without market order ID if immediate-or-cancel or if
         // remaining size to fill after matching does not meet minimum
         // size requirement for market.
@@ -3115,8 +3152,6 @@ module econia::market {
         // Get market order ID from AVL queue access key, counter.
         let market_order_id = (avlq_access_key as u128) |
             ((order_book_ref_mut.counter as u128) << SHIFT_COUNTER);
-        // Increment maker counter.
-        order_book_ref_mut.counter = order_book_ref_mut.counter + 1;
         user::place_order_internal( // Place order user-side.
             user_address, market_id, custodian_id, side, size, price,
             market_order_id, order_access_key);

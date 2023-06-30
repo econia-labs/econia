@@ -4,6 +4,7 @@ use axum::{
     extract::{Path, State},
     Json,
 };
+use bigdecimal::BigDecimal;
 use types::error::TypeError;
 
 use crate::{error::ApiError, util::check_addr, AppState};
@@ -83,6 +84,41 @@ pub async fn open_orders_by_account(
         .collect::<Result<Vec<types::order::Order>, TypeError>>()?;
 
     Ok(Json(open_orders))
+}
+
+pub async fn fills_by_account_and_market(
+    Path((account_address, market_id)): Path<(String, u64)>,
+    State(state): State<Arc<AppState>>,
+) -> Result<Json<Vec<types::order::Fill>>, ApiError> {
+    check_addr(&account_address)?;
+    let market_id = BigDecimal::from(market_id);
+
+    let fills_query = sqlx::query_as!(
+        db::models::fill::Fill,
+        r#"
+        select
+            market_id,
+            maker_order_id,
+            maker,
+            maker_side as "maker_side: db::models::order::Side",
+            custodian_id,
+            size,
+            price,
+            time
+        from fills where maker = $1 and market_id = $2 order by time;
+        "#,
+        account_address,
+        market_id,
+    )
+    .fetch_all(&state.pool)
+    .await?;
+
+    let fills = fills_query
+        .into_iter()
+        .map(|v| v.try_into())
+        .collect::<Result<Vec<types::order::Fill>, TypeError>>()?;
+
+    Ok(Json(fills))
 }
 
 #[cfg(test)]

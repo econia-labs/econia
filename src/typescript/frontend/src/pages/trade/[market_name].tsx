@@ -1,3 +1,4 @@
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type MaybeHexString } from "aptos";
 import type { GetStaticPaths, GetStaticProps } from "next";
 import dynamic from "next/dynamic";
@@ -6,7 +7,7 @@ import { type PropsWithChildren, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 
 import { DepthChart } from "@/components/DepthChart";
-import { OrderBook } from "@/components/OrderBook";
+import { OrderbookTable } from "@/components/OrderbookTable";
 import { Page } from "@/components/Page";
 import { StatsBar } from "@/components/StatsBar";
 import { OrderEntry } from "@/components/trade/OrderEntry";
@@ -16,12 +17,15 @@ import { useAptos } from "@/contexts/AptosContext";
 import { OrderEntryContextProvider } from "@/contexts/OrderEntryContext";
 import { API_URL, WS_URL } from "@/env";
 import { MOCK_MARKETS } from "@/mockdata/markets";
-import type { ApiMarket, ApiOrder } from "@/types/api";
+import type { ApiMarket, ApiOrder, ApiPriceLevel } from "@/types/api";
+import { type Orderbook } from "@/types/global";
 
 import {
   type ResolutionString,
   type ThemeName,
 } from "../../../public/static/charting_library";
+
+const ORDERBOOK_DEPTH = 60;
 
 const TVChartContainer = dynamic(
   () =>
@@ -67,6 +71,7 @@ const ChartName: React.FC<PropsWithChildren<{ className?: string }>> = ({
 
 export default function Market({ allMarketData, marketData }: Props) {
   const { account } = useAptos();
+  const queryClient = useQueryClient();
   const ws = useRef<WebSocket | undefined>(undefined);
   const prevAddress = useRef<MaybeHexString | undefined>(undefined);
   const [isScriptReady, setIsScriptReady] = useState(false);
@@ -202,6 +207,75 @@ export default function Market({ allMarketData, marketData }: Props) {
               toast.warn(`Order with order ID ${market_order_id} evicted.`);
               break;
           }
+        } else if (msg.channel === "price_levels") {
+          const priceLevel: ApiPriceLevel = msg.data;
+          queryClient.setQueriesData(
+            ["orderbook", marketData.market_id],
+            (prevData: Orderbook | undefined) => {
+              if (prevData == null) {
+                return undefined;
+              }
+              if (priceLevel.side === "buy") {
+                for (const [i, lvl] of prevData.bids.entries()) {
+                  if (priceLevel.price === lvl.price) {
+                    return {
+                      bids: [
+                        ...prevData.bids.slice(0, i),
+                        { price: priceLevel.price, size: priceLevel.size },
+                        ...prevData.bids.slice(i + 1),
+                      ],
+                      asks: prevData.asks,
+                    };
+                  } else if (priceLevel.price > lvl.price) {
+                    return {
+                      bids: [
+                        ...prevData.bids.slice(0, i),
+                        { price: priceLevel.price, size: priceLevel.size },
+                        ...prevData.bids.slice(i),
+                      ],
+                      asks: prevData.asks,
+                    };
+                  }
+                }
+                return {
+                  bids: [
+                    ...prevData.bids,
+                    { price: priceLevel.price, size: priceLevel.size },
+                  ],
+                  asks: prevData.asks,
+                };
+              } else {
+                for (const [i, lvl] of prevData.asks.entries()) {
+                  if (priceLevel.price === lvl.price) {
+                    return {
+                      bids: prevData.bids,
+                      asks: [
+                        ...prevData.asks.slice(0, i),
+                        { price: priceLevel.price, size: priceLevel.size },
+                        ...prevData.asks.slice(i + 1),
+                      ],
+                    };
+                  } else if (priceLevel.price < lvl.price) {
+                    return {
+                      bids: prevData.bids,
+                      asks: [
+                        ...prevData.asks.slice(0, i),
+                        { price: priceLevel.price, size: priceLevel.size },
+                        ...prevData.asks.slice(i),
+                      ],
+                    };
+                  }
+                }
+                return {
+                  bids: prevData.bids,
+                  asks: [
+                    ...prevData.asks,
+                    { price: priceLevel.price, size: priceLevel.size },
+                  ],
+                };
+              }
+            }
+          );
         } else {
           // TODO
         }
@@ -209,7 +283,24 @@ export default function Market({ allMarketData, marketData }: Props) {
         // TODO
       }
     };
-  }, [marketData?.market_id, account?.address]);
+  }, [marketData, account?.address, queryClient]);
+
+  // TODO update to include precision when backend is updated (ECO-199)
+  const {
+    data: orderbookData,
+    isFetching: orderbookIsFetching,
+    isLoading: orderbookIsLoading,
+  } = useQuery(
+    ["orderbook", marketData?.market_id],
+    async () => {
+      const res = await fetch(
+        `${API_URL}/market/${marketData?.market_id}/orderbook?depth=${ORDERBOOK_DEPTH}`
+      );
+      const data: Orderbook = await res.json();
+      return data;
+    },
+    { keepPreviousData: true, refetchOnWindowFocus: false }
+  );
 
   if (!marketData) return <Page>Market not found.</Page>;
 
@@ -245,7 +336,12 @@ export default function Market({ allMarketData, marketData }: Props) {
           </div>
           <div className="flex min-w-[268px] flex-initial flex-col border-neutral-600">
             <ChartCard className="flex flex-1 flex-col">
-              <OrderBook marketData={marketData} />
+              <OrderbookTable
+                marketData={marketData}
+                data={orderbookData}
+                isFetching={orderbookIsFetching}
+                isLoading={orderbookIsLoading}
+              />
             </ChartCard>
           </div>
           <div className="flex min-w-[268px] flex-initial flex-col gap-4 border-neutral-600">

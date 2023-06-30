@@ -4,7 +4,7 @@ import React, { useEffect } from "react";
 import { API_URL } from "@/env";
 import { MOCK_MARKETS } from "@/mockdata/markets";
 import { type ApiMarket, type ApiStats } from "@/types/api";
-import { type OrderBook } from "@/types/global";
+import { type Orderbook } from "@/types/global";
 
 import { BaseModal } from "../../BaseModal";
 import { DepositWithdrawContent } from "./DepositWithdrawContent";
@@ -21,7 +21,7 @@ export const useAllMarketPrices = (allMarketData: ApiMarket[]) => {
   return useQuery<{ market_id: number; price: number }[]>(
     ["allMarketPrices", allMarketData],
     async () => {
-      const data: Promise<OrderBook>[] = [];
+      const data: Promise<Orderbook>[] = [];
       allMarketData.forEach((market) => {
         data.push(
           fetch(

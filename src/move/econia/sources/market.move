@@ -6,9 +6,10 @@
 /// ID.
 ///
 /// Once a market is registered, signing users and delegated custodians
-/// can place limit orders on the book as makers, takers can place
-/// market orders or swaps against the order book, and makers can cancel
-/// or change the size of any outstanding orders they have on the book.
+/// can place limit orders on the book as makers and/or as takers,
+/// takers can place market orders or swaps against the order book, and
+/// makers can cancel or change the size of any outstanding orders they
+/// have on the book.
 ///
 /// Econia implements an atomic matching engine for processing taker
 /// fills against maker orders on the book, and emits events in response
@@ -20,10 +21,15 @@
 /// order management function, to enable diagnostic function returns,
 /// public entry calls, etc.
 ///
-/// When a maker places a limit order, they are issued a "market order
-/// ID" that is unique to the given market. The maker order price is
-/// encoded in the market order ID, as well as a counter for the number
-/// of orders that have been placed on the corresponding order book.
+/// When someone places an order that result in one or more fills and/or
+/// a post to the book, they are issued a "market order ID" that is
+/// unique to the given market but not necessarily across different
+/// markets. Each market order ID encodes a counter for the number of
+/// orders that have been placed on the corresponding market. For orders
+/// that result in a post to the book, the market order ID additionally
+/// encodes an "AVL queue access key" (essentially a pointer into
+/// order book memory), which is required for order lookup during order
+/// size change and/or order cancellation operations.
 ///
 /// # General overview sections
 ///
@@ -82,6 +88,7 @@
 ///
 /// ## Market order ID decoders
 ///
+/// * `did_order_post()`
 /// * `get_market_order_id_counter()`
 /// * `get_market_order_id_price()`
 /// * `get_market_order_id_side()`
@@ -289,6 +296,8 @@
 /// has_open_order --> get_market_order_id_avl_queue_access_key
 /// get_open_orders --> get_open_orders_for_side
 /// get_open_orders_all --> get_open_orders
+/// get_market_order_id_price --> did_order_post
+/// get_market_order_id_side --> did_order_post
 ///
 /// ```
 ///
@@ -528,6 +537,7 @@ module econia::market {
     use aptos_framework::account;
     use aptos_framework::coin::{Self, Coin};
     use aptos_framework::event::{Self, EventHandle};
+    use aptos_framework::table::{Self, Table};
     use aptos_framework::type_info::{Self, TypeInfo};
     use econia::avl_queue::{Self, AVLqueue};
     use econia::incentives;
@@ -552,14 +562,52 @@ module econia::market {
 
     // Structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Emitted when a maker order is placed, cancelled, evicted, or its
+    /// Emitted for each order fill. If an order results in multiple
+    /// fills, a separate event is emitted for each one.
+    struct FillEvent has copy, drop, store {
+        /// Market ID of corresponding market.
+        market_id: u64,
+        /// The size filled, in lots.
+        size: u64,
+        /// Fill price, in ticks per lot.
+        price: u64,
+        /// `ASK` or `BID`, the side of the maker order filled against.
+        maker_side: bool,
+        /// Market order ID of for maker order just filled against.
+        maker_market_order_id: u128,
+        /// Address of user holding maker order.
+        maker: address,
+        /// For given maker, ID of custodian required to approve order
+        /// operations and withdrawals on given market account.
+        maker_custodian_id: u64,
+        /// Market order ID for taker side of fill. If multiple
+        /// `FillEvent`s are emitted for a single order, they all have
+        /// the same `FillEvent.taker_order_id`. If a limit order that
+        /// crosses the spread partially fills as a taker then posts as
+        /// a maker, `FillEvent.taker_market_order_id` for the taker
+        /// portion is identical to `MakerEvent.market_order_id` emitted
+        /// for the maker portion.
+        taker_market_order_id: u128
+    }
+
+    /// Map of `FillEvent` handles, implemented as a replacement for
+    /// `OrderBook.taker_events` through a backwards-compatible package
+    /// upgrade.
+    struct FillEventHandles has key {
+        /// Map from market ID to `FillEvent` event handle.
+        map: Table<u64, EventHandle<FillEvent>>
+    }
+
+    /// Emitted when a maker order (treated as the portion of an order
+    /// that posts to the book) is placed, cancelled, evicted, or its
     /// size is manually changed.
     struct MakerEvent has drop, store {
         /// Market ID of corresponding market.
         market_id: u64,
         /// `ASK` or `BID`, the side of the maker order.
         side: bool,
-        /// Market order ID, unique within given market.
+        /// Market order ID, unique within a given market but not
+        /// necessarily across markets.
         market_order_id: u128,
         /// Address of user holding maker order.
         user: address,
@@ -613,11 +661,11 @@ module econia::market {
         asks: AVLqueue<Order>,
         /// Bids AVL queue.
         bids: AVLqueue<Order>,
-        /// Cumulative number of maker orders placed on book.
+        /// Cumulative number of orders placed.
         counter: u64,
         /// Event handle for maker events.
         maker_events: EventHandle<MakerEvent>,
-        /// Event handle for taker events.
+        /// Deprecated field retained for backwards compatibility.
         taker_events: EventHandle<TakerEvent>
     }
 
@@ -678,28 +726,6 @@ module econia::market {
         /// Ask price levels sorted by price-time priority: highest
         /// price level first in vector.
         bids: vector<PriceLevel>
-    }
-
-    /// Emitted when a taker order fills against a maker order. If a
-    /// taker order fills against multiple maker orders, a separate
-    /// event is emitted for each one.
-    struct TakerEvent has drop, store {
-        /// Market ID of corresponding market.
-        market_id: u64,
-        /// `ASK` or `BID`, the side of the maker order.
-        side: bool,
-        /// Order ID, unique within given market, of maker order just
-        /// filled against.
-        market_order_id: u128,
-        /// Address of user holding maker order.
-        maker: address,
-        /// For given maker, ID of custodian required to approve order
-        /// operations and withdrawals on given market account.
-        custodian_id: u64,
-        /// The size filled, in lots.
-        size: u64,
-        /// Fill price, in ticks per lot.
-        price: u64
     }
 
     // Structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -769,6 +795,8 @@ module econia::market {
     /// Order size change requiring insertion resulted in an AVL queue
     /// access key mismatch.
     const E_SIZE_CHANGE_INSERTION_ERROR: u64 = 30;
+    /// Market order ID corresponds to an order that did not post.
+    const E_ORDER_DID_NOT_POST: u64 = 31;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -836,8 +864,7 @@ module econia::market {
     const POST_OR_ABORT: u8 = 3;
     /// Flag for sell direction.
     const SELL: bool = true;
-    /// Number of bits maker order counter is shifted in a market order
-    /// ID.
+    /// Number of bits order counter is shifted in a market order ID.
     const SHIFT_COUNTER: u8 = 64;
     /// Flag for passive order specified by advance in ticks.
     const TICKS: bool = false;
@@ -845,6 +872,23 @@ module econia::market {
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // View functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[view]
+    /// Return true if the market order ID corresponds to an order that
+    /// resulted in a post to the order book (including an order that
+    /// filled across the spread as a taker before posting as a maker).
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_market_order_id_price_did_not_post()`
+    /// * `test_get_market_order_id_side_did_not_post()`
+    /// * `test_place_limit_order_no_cross_ask_user()`
+    /// * `test_place_limit_order_no_cross_bid_custodian()`
+    public fun did_order_post(
+        market_order_id: u128
+    ): bool {
+        (market_order_id & (HI_64 as u128)) != (NIL as u128)
+    }
 
     #[view]
     /// Public constant getter for `ABORT`.
@@ -930,49 +974,6 @@ module econia::market {
     public fun get_IMMEDIATE_OR_CANCEL(): u8 {IMMEDIATE_OR_CANCEL}
 
     #[view]
-    /// Return maker order counter encoded in market order ID.
-    ///
-    /// # Testing
-    ///
-    /// * `test_place_limit_order_no_cross_ask_user()`
-    /// * `test_place_limit_order_no_cross_bid_custodian()`
-    public fun get_market_order_id_counter(
-        market_order_id: u128
-    ): u64 {
-        (((market_order_id >> SHIFT_COUNTER) & (HI_64 as u128)) as u64)
-    }
-
-    #[view]
-    /// Return order price encoded in market order ID.
-    ///
-    /// # Testing
-    ///
-    /// * `test_place_limit_order_no_cross_ask_user()`
-    /// * `test_place_limit_order_no_cross_bid_custodian()`
-    public fun get_market_order_id_price(
-        market_order_id: u128
-    ): u64 {
-        ((market_order_id & (HI_PRICE as u128)) as u64)
-    }
-
-    #[view]
-    /// Return order side encoded in market order ID.
-    ///
-    /// # Testing
-    ///
-    /// * `test_place_limit_order_no_cross_ask_user()`
-    /// * `test_place_limit_order_no_cross_bid_custodian()`
-    public fun get_market_order_id_side(
-        market_order_id: u128
-    ): bool {
-        // Get AVL queue access key encoded in market order ID.
-        let avlq_access_key =
-            get_market_order_id_avl_queue_access_key(market_order_id);
-        // If ascending AVL queue indicated is an ask, else a bid.
-        if (avl_queue::is_ascending_access_key(avlq_access_key)) ASK else BID
-    }
-
-    #[view]
     /// Public constant getter for `MAX_POSSIBLE`.
     ///
     /// # Testing
@@ -1036,6 +1037,72 @@ module econia::market {
     ///
     /// * `test_get_TICKS()`
     public fun get_TICKS(): bool {TICKS}
+
+    #[view]
+    /// Return order counter encoded in market order ID.
+    ///
+    /// # Testing
+    ///
+    /// * `test_place_limit_order_no_cross_ask_user()`
+    /// * `test_place_limit_order_no_cross_bid_custodian()`
+    public fun get_market_order_id_counter(
+        market_order_id: u128
+    ): u64 {
+        (((market_order_id >> SHIFT_COUNTER) & (HI_64 as u128)) as u64)
+    }
+
+    #[view]
+    /// For an order that resulted in a post to the order book, return
+    /// the order price encoded in its market order ID, corresponding to
+    /// the price that the maker portion of the order posted to the book
+    /// at.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_ORDER_DID_NOT_POST`: market order ID corresponds to an
+    ///   order that did not post to the book.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_market_order_id_price_did_not_post()`
+    /// * `test_place_limit_order_no_cross_ask_user()`
+    /// * `test_place_limit_order_no_cross_bid_custodian()`
+    public fun get_market_order_id_price(
+        market_order_id: u128
+    ): u64 {
+        // Assert order posted to the order book.
+        assert!(did_order_post(market_order_id), E_ORDER_DID_NOT_POST);
+        // Extract encoded price.
+        ((market_order_id & (HI_PRICE as u128)) as u64)
+    }
+
+    #[view]
+    /// For an order that resulted in a post to the order book, return
+    /// the order side encoded in its market order ID, corresponding to
+    /// the side that the maker portion of the order posted to the book
+    /// at.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_ORDER_DID_NOT_POST`: market order ID corresponds to an
+    ///   order that did not post to the book.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_market_order_id_side_did_not_post()`
+    /// * `test_place_limit_order_no_cross_ask_user()`
+    /// * `test_place_limit_order_no_cross_bid_custodian()`
+    public fun get_market_order_id_side(
+        market_order_id: u128
+    ): bool {
+        // Assert order posted to the order book.
+        assert!(did_order_post(market_order_id), E_ORDER_DID_NOT_POST);
+        // Get AVL queue access key encoded in market order ID.
+        let avlq_access_key =
+            get_market_order_id_avl_queue_access_key(market_order_id);
+        // If ascending AVL queue indicated is an ask, else a bid.
+        if (avl_queue::is_ascending_access_key(avlq_access_key)) ASK else BID
+    }
 
     #[view]
     /// Return `OrderView` for `market_id` and `market_order_id`.
@@ -1342,7 +1409,10 @@ module econia::market {
         u64,
         u64,
         u64
-    ) acquires OrderBooks {
+    ) acquires
+        FillEventHandles,
+        OrderBooks
+    {
         place_limit_order<
             BaseType,
             QuoteType
@@ -1379,7 +1449,10 @@ module econia::market {
         target_advance_amount: u64,
         custodian_capability_ref: &CustodianCapability
     ): u128
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         place_limit_order_passive_advance<
             BaseType,
             QuoteType
@@ -1420,7 +1493,10 @@ module econia::market {
         advance_style: bool,
         target_advance_amount: u64
     ): u128
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         place_limit_order_passive_advance<
             BaseType,
             QuoteType
@@ -1465,7 +1541,10 @@ module econia::market {
         u64,
         u64,
         u64
-    ) acquires OrderBooks {
+    ) acquires
+        FillEventHandles,
+        OrderBooks
+    {
         place_limit_order<
             BaseType,
             QuoteType
@@ -1504,7 +1583,10 @@ module econia::market {
         u64,
         u64,
         u64
-    ) acquires OrderBooks {
+    ) acquires
+        FillEventHandles,
+        OrderBooks
+    {
         place_market_order<BaseType, QuoteType>(
             user_address,
             market_id,
@@ -1536,7 +1618,10 @@ module econia::market {
         u64,
         u64,
         u64
-    ) acquires OrderBooks {
+    ) acquires
+        FillEventHandles,
+        OrderBooks
+    {
         place_market_order<BaseType, QuoteType>(
             address_of(user),
             market_id,
@@ -1583,7 +1668,10 @@ module econia::market {
         min_size: u64,
         utility_coins: Coin<UtilityType>
     ): u64
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Register market in global registry, storing market ID.
         let market_id = registry::register_market_base_coin_internal<
             BaseType, QuoteType, UtilityType>(lot_size, tick_size, min_size,
@@ -1638,7 +1726,10 @@ module econia::market {
         utility_coins: Coin<UtilityType>,
         underwriter_capability_ref: &UnderwriterCapability
     ): u64
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Register market in global registry, storing market ID.
         let market_id = registry::register_market_base_generic_internal<
             QuoteType, UtilityType>(base_name_generic, lot_size, tick_size,
@@ -1706,7 +1797,10 @@ module econia::market {
         u64,
         u64,
         u64
-    ) acquires OrderBooks {
+    ) acquires
+        FillEventHandles,
+        OrderBooks
+    {
         let user_address = address_of(user); // Get user address.
         // Register base coin store if user does not have one.
         if (!coin::is_account_registered<BaseType>(user_address))
@@ -1830,7 +1924,10 @@ module econia::market {
         u64,
         u64,
         u64
-    ) acquires OrderBooks {
+    ) acquires
+        FillEventHandles,
+        OrderBooks
+    {
         let (base_value, quote_value) = // Get coin value amounts.
             (coin::value(&base_coins), coin::value(&quote_coins));
         // Get option wrapped base coins.
@@ -1933,7 +2030,10 @@ module econia::market {
         u64,
         u64,
         u64
-    ) acquires OrderBooks {
+    ) acquires
+        FillEventHandles,
+        OrderBooks
+    {
         let underwriter_id = // Get underwriter ID.
             registry::get_underwriter_id(underwriter_capability_ref);
         // Get quote coin value.
@@ -2055,7 +2155,10 @@ module econia::market {
         size: u64,
         advance_style: bool,
         target_advance_amount: u64
-    ) acquires OrderBooks {
+    ) acquires
+        FillEventHandles,
+        OrderBooks
+    {
         place_limit_order_passive_advance_user<
             BaseType,
             QuoteType
@@ -2086,7 +2189,10 @@ module econia::market {
         price: u64,
         restriction: u8,
         self_match_behavior: u8
-    ) acquires OrderBooks {
+    ) acquires
+        FillEventHandles,
+        OrderBooks
+    {
         place_limit_order_user<BaseType, QuoteType>(
             user, market_id, integrator, side, size, price, restriction,
             self_match_behavior);
@@ -2107,7 +2213,10 @@ module econia::market {
         direction: bool,
         size: u64,
         self_match_behavior: u8
-    ) acquires OrderBooks {
+    ) acquires
+        FillEventHandles,
+        OrderBooks
+    {
         place_market_order_user<BaseType, QuoteType>(
             user, market_id, integrator, direction, size, self_match_behavior);
     }
@@ -2127,7 +2236,10 @@ module econia::market {
         lot_size: u64,
         tick_size: u64,
         min_size: u64
-    ) acquires OrderBooks {
+    ) acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Get market registration fee, denominated in utility coins.
         let fee = incentives::get_market_registration_fee();
         // Register market with base coin, paying fees from coin store.
@@ -2154,7 +2266,10 @@ module econia::market {
         min_quote: u64,
         max_quote: u64,
         limit_price: u64
-    ) acquires OrderBooks {
+    ) acquires
+        FillEventHandles,
+        OrderBooks
+    {
         swap_between_coinstores<BaseType, QuoteType>(
             user, market_id, integrator, direction, min_base, max_base,
             min_quote, max_quote, limit_price);
@@ -2531,6 +2646,14 @@ module econia::market {
     /// # Parameters
     ///
     /// * `market_id`: Market ID of market.
+    /// * `resource_address`: Address of resource account where order
+    ///   books and fill event handles are stored.
+    /// * `fill_event_queue_option_ref_mut`: Mutable reference to
+    ///   optional queue for `FillEvent`s, used to defer event emission
+    ///   for limit orders: if a limit order fills across the spread
+    ///   before posting to the order book, the market order ID requires
+    ///   an encoded AVL queue access key that is not known at the time
+    ///   of fills.
     /// * `order_book_ref_mut`: Mutable reference to market order book.
     /// * `taker`: Address of taker whose order is matched. Passed as
     ///   `NO_MARKET_ACCOUNT` when taker order originates from a swap.
@@ -2585,8 +2708,8 @@ module econia::market {
     ///
     /// # Emits
     ///
-    /// * `TakerEvent`: Information about a fill against a maker order,
-    ///   emitted for each separate maker order that is filled against.
+    /// * `FillEvent`: Information about a fill, emitted for each fill,
+    ///   when fill events are not marked for deferral.
     ///
     /// # Aborts
     ///
@@ -2631,6 +2754,8 @@ module econia::market {
         QuoteType
     >(
         market_id: u64,
+        resource_address: address,
+        fill_event_queue_option_ref_mut: &mut Option<vector<FillEvent>>,
         order_book_ref_mut: &mut OrderBook,
         taker: address,
         custodian_id: u64,
@@ -2651,7 +2776,7 @@ module econia::market {
         u64,
         u64,
         bool
-    ) {
+    ) acquires FillEventHandles {
         // Assert price is not too high.
         assert!(limit_price <= HI_PRICE, E_PRICE_TOO_HIGH);
         // Taker buy fills against asks, sell against bids.
@@ -2674,6 +2799,18 @@ module econia::market {
         // Assume it is not the case that a self match led to a taker
         // order cancellation.
         let self_match_taker_cancel = false;
+        // Determine if fill events should be deferred into a queue.
+        let defer_events = option::is_some(fill_event_queue_option_ref_mut);
+        // If should defer events, mutably borrow event queue:
+        let event_queue_ref_mut = if (defer_events)
+            option::borrow_mut(fill_event_queue_option_ref_mut) else
+            &mut vector[]; // Otherwise mutably borrow null vector.
+        // Mutably borrow fill event handle:
+        let fill_event_handle_ref_mut = table::borrow_mut(
+            &mut borrow_global_mut<FillEventHandles>(resource_address).map,
+            market_id);
+        // Increment order counter.
+        order_book_ref_mut.counter = order_book_ref_mut.counter + 1;
         // While there are orders to match against:
         while (!avl_queue::is_empty(orders_ref_mut)) {
             let price = // Get price of order at head of AVL queue.
@@ -2766,13 +2903,16 @@ module econia::market {
                         fill_size, complete_fill, optional_base_coins,
                         quote_coins, fill_size * lot_size,
                         ticks_filled * tick_size);
-                // Get taker events handle.
-                let taker_handle = &mut order_book_ref_mut.taker_events;
-                // Emit corresponding taker event.
-                event::emit_event(taker_handle, TakerEvent{
-                    market_id, side, market_order_id, maker, custodian_id:
-                    maker_custodian_id, size: fill_size, price});
-                // If order on book completely filled:
+                let fill_event = FillEvent{ // Create fill event.
+                    market_id, size: fill_size, price, maker_side: side,
+                    maker_market_order_id: market_order_id, maker,
+                    maker_custodian_id: custodian_id, taker_market_order_id:
+                    ((order_book_ref_mut.counter as u128) << SHIFT_COUNTER)};
+                // If should defer events, push pack event onto queue:
+                if (defer_events)
+                    vector::push_back(event_queue_ref_mut, fill_event) else
+                    // Otherwise emit event.
+                    event::emit_event(fill_event_handle_ref_mut, fill_event);
                 if (complete_fill) {
                     let avlq_access_key = // Get AVL queue access key.
                         ((market_order_id & (HI_64 as u128)) as u64);
@@ -2874,6 +3014,8 @@ module econia::market {
     ///
     /// # Emits
     ///
+    /// * `FillEvent`: Information about the portion of the order that
+    ///   fills as a taker, if the order fills across the spread.
     /// * `MakerEvent`: Information about the user's maker order placed
     ///   on the order book, if one was placed.
     /// * `MakerEvent`: Information about the maker order evicted from
@@ -2955,7 +3097,10 @@ module econia::market {
         u64,
         u64,
         u64
-    ) acquires OrderBooks {
+    ) acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Assert valid order restriction flag.
         assert!(restriction <= N_RESTRICTIONS, E_INVALID_RESTRICTION);
         assert!(price != 0, E_PRICE_0); // Assert nonzero price.
@@ -3044,7 +3189,9 @@ module econia::market {
             base_available, base_ceiling, quote_available, quote_ceiling);
         // Assume no assets traded as a taker.
         let (base_traded, quote_traded, fees) = (0, 0, 0);
-        if (crosses_spread) { // If order price crosses spread:
+        // Evaluate any potential fills across the spread, which may
+        // result in deferred fill events:
+        let fill_event_queue = if (crosses_spread) {
             // Calculate max base and quote to withdraw. If a buy:
             let (base_withdraw, quote_withdraw) = if (direction == BUY)
                 // Withdraw quote to buy base, else sell base for quote.
@@ -3057,16 +3204,18 @@ module econia::market {
                     quote_withdraw, underwriter_id);
             // Declare return assignment variable.
             let self_match_cancel;
+            // Declare empty fill event queue inside of an option.
+            let fill_event_queue_option = option::some(vector[]);
             // Match against order book, storing optionally modified
             // asset inputs, base and quote trade amounts, quote fees
             // paid, and if a self match requires canceling the rest of
-            // the order.
+            // the order. (Increments order book counter).
             (optional_base_coins, quote_coins, base_traded, quote_traded, fees,
              self_match_cancel) = match(
-                market_id, order_book_ref_mut, user_address, custodian_id,
-                integrator, direction, min_base, max_base, min_quote,
-                max_quote, price, self_match_behavior, optional_base_coins,
-                quote_coins);
+                market_id, resource_address, &mut fill_event_queue_option,
+                order_book_ref_mut, user_address, custodian_id, integrator,
+                direction, min_base, max_base, min_quote, max_quote, price,
+                self_match_behavior, optional_base_coins, quote_coins);
             // Calculate amount of base deposited back to market account.
             let base_deposit = if (direction == BUY) base_traded else
                 base_withdraw - base_traded;
@@ -3089,13 +3238,31 @@ module econia::market {
             size = if (still_crosses_spread || self_match_cancel) 0 else
                 // Else update size to amount left to fill post-match.
                 size - (base_traded / order_book_ref_mut.lot_size);
-        }; // Done with optional matching as a taker across the spread.
-        // Return without market order ID if immediate-or-cancel or if
-        // remaining size to fill after matching does not meet minimum
-        // size requirement for market.
+            // Extract fill event queue packed by matching engine.
+            option::extract(&mut fill_event_queue_option)
+        } else { // If spread not crossed (matching engine not called):
+            // Increment order counter.
+            order_book_ref_mut.counter = order_book_ref_mut.counter + 1;
+            vector[] // There are no fill events to defer.
+        };
+        // Determine if there are fill events to emit.
+        let fill_events_to_emit = !vector::is_empty(&fill_event_queue);
+        // Mutably borrow fill event handle:
+        let fill_event_handle_ref_mut = table::borrow_mut(
+            &mut borrow_global_mut<FillEventHandles>(resource_address).map,
+            market_id);
+        // If immediate-or-cancel or if remaining size to fill after
+        // matching does not meet minimum size requirement for market:
         if ((restriction == IMMEDIATE_OR_CANCEL) ||
-            (size < order_book_ref_mut.min_size))
-            return ((NIL as u128), base_traded, quote_traded, fees);
+                (size < order_book_ref_mut.min_size)) {
+            if (fill_events_to_emit) // If fill events are enqueued:
+                vector::for_each_ref(&fill_event_queue, |fill_event_ref| {
+                    event::emit_event(fill_event_handle_ref_mut,
+                                      *fill_event_ref);
+                }); // Emit each fill event (first-in-first-out):
+            // Return without posting.
+            return ((NIL as u128), base_traded, quote_traded, fees)
+        };
         // Get next order access key for user-side order placement.
         let order_access_key = user::get_next_order_access_key_internal(
             user_address, market_id, custodian_id, side);
@@ -3115,8 +3282,19 @@ module econia::market {
         // Get market order ID from AVL queue access key, counter.
         let market_order_id = (avlq_access_key as u128) |
             ((order_book_ref_mut.counter as u128) << SHIFT_COUNTER);
-        // Increment maker counter.
-        order_book_ref_mut.counter = order_book_ref_mut.counter + 1;
+        // If fill events have been deferred:
+        if (fill_events_to_emit) {
+            // For each fill event (first-in-first-out):
+            vector::for_each_ref(&fill_event_queue, |fill_event_ref| {
+                // Get a copy of the fill event.
+                let fill_event: FillEvent = *fill_event_ref;
+                // Re-assign common market order ID generated from
+                // portion of order that posts as a maker.
+                fill_event.taker_market_order_id = market_order_id;
+                // Emit event.
+                event::emit_event(fill_event_handle_ref_mut, fill_event);
+            })
+        };
         user::place_order_internal( // Place order user-side.
             user_address, market_id, custodian_id, side, size, price,
             market_order_id, order_access_key);
@@ -3241,7 +3419,10 @@ module econia::market {
         advance_style: bool,
         target_advance_amount: u64
     ): u128
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Get address of resource account where order books are stored.
         let resource_address = resource_account::get_address();
         let order_books_map_ref = // Immutably borrow order books map.
@@ -3394,7 +3575,10 @@ module econia::market {
         u64,
         u64,
         u64
-    ) acquires OrderBooks {
+    ) acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Get user's available and ceiling asset counts.
         let (_, base_available, base_ceiling, _, quote_available,
              quote_ceiling) = user::get_asset_counts_internal(
@@ -3455,10 +3639,11 @@ module econia::market {
         // Match against order book, storing optionally modified asset
         // inputs, base and quote trade amounts, and quote fees paid.
         let (optional_base_coins, quote_coins, base_traded, quote_traded, fees,
-             _) = match(market_id, order_book_ref_mut, user_address,
-                        custodian_id, integrator, direction, min_base,
-                        max_base, min_quote, max_quote, limit_price,
-                        self_match_behavior, optional_base_coins, quote_coins);
+                 _) = match(
+            market_id, resource_address, &mut option::none(),
+            order_book_ref_mut, user_address, custodian_id, integrator,
+            direction, min_base, max_base, min_quote, max_quote, limit_price,
+            self_match_behavior, optional_base_coins, quote_coins);
         // Calculate amount of base deposited back to market account.
         let base_deposit = if (direction == BUY) base_traded else
             (base_withdraw - base_traded);
@@ -3608,7 +3793,10 @@ module econia::market {
         min_size: u64,
         underwriter_id: u64
     ): u64
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Get Econia resource account signer.
         let resource_account = resource_account::get_signer();
         // Get resource account address.
@@ -3631,6 +3819,21 @@ module econia::market {
                 account::new_event_handle<MakerEvent>(&resource_account),
             taker_events:
                 account::new_event_handle<TakerEvent>(&resource_account)});
+        // If a fill event handles map has not yet been moved to the
+        // resource account:
+        if (!exists<FillEventHandles>(resource_address)) {
+            // Initialize fill event handles map under resource account.
+            // This is done here rather than in `init_module()` since
+            // the fill event handles map was implemented in a
+            // backwards-compatible package upgrade.
+            move_to(&resource_account, FillEventHandles{map: table::new()});
+        };
+        // Mutably borrow fill event handles map.
+        let fill_event_handles_map_ref_mut =
+            &mut borrow_global_mut<FillEventHandles>(resource_address).map;
+        table::add( // Add fill event handle to fill event handles map.
+            fill_event_handles_map_ref_mut, market_id,
+            account::new_event_handle<FillEvent>(&resource_account));
         // Register an Econia fee store entry for market quote coin.
         incentives::register_econia_fee_store_entry<QuoteType>(market_id);
         market_id // Return market ID.
@@ -3708,7 +3911,10 @@ module econia::market {
         u64,
         u64,
         u64
-    ) acquires OrderBooks {
+    ) acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Get address of resource account where order books are stored.
         let resource_address = resource_account::get_address();
         let order_books_map_ref_mut = // Mutably borrow order books map.
@@ -3729,8 +3935,9 @@ module econia::market {
         // Declare return assignment variables.
         let (base_traded, quote_traded, fees);
         (optional_base_coins, quote_coins, base_traded, quote_traded, fees, _)
-            = match<BaseType, QuoteType>( // Match against order book.
-                market_id, order_book_ref_mut, NO_MARKET_ACCOUNT, NO_CUSTODIAN,
+            = match( // Match against order book.
+                market_id, resource_address, &mut option::none(),
+                order_book_ref_mut, NO_MARKET_ACCOUNT, NO_CUSTODIAN,
                 integrator, direction, min_base, max_base, min_quote,
                 max_quote, limit_price, ABORT, optional_base_coins,
                 quote_coins);
@@ -3744,6 +3951,17 @@ module econia::market {
 
     /// Deprecated struct retained for backwards compatibility.
     struct Orders has key {asks: vector<Order>, bids: vector<Order>}
+
+    /// Deprecated struct retained for backwards compatibility.
+    struct TakerEvent has drop, store {
+        market_id: u64,
+        side: bool,
+        market_order_id: u128,
+        maker: address,
+        custodian_id: u64,
+        size: u64,
+        price: u64
+    }
 
     // Deprecated structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -3798,7 +4016,10 @@ module econia::market {
         max_bid_price: u64,
         min_ask_price: u64
     ): signer
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user, _) = init_markets_users_integrator_test();
         let user_address = address_of(&user); // Get user address.
@@ -3878,7 +4099,10 @@ module econia::market {
     public fun init_markets_users_integrator_test(): (
         signer,
         signer
-    ) acquires OrderBooks {
+    ) acquires
+        FillEventHandles,
+        OrderBooks
+    {
         init_test(); // Init for testing.
         // Get market registration fee.
         let fee = incentives::get_market_registration_fee();
@@ -4032,7 +4256,10 @@ module econia::market {
     /// Verify state updates for cancelling three asks under authority
     /// of custodian.
     fun test_cancel_all_orders_ask_custodian()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (maker, _) = init_markets_users_integrator_test();
         // Declare order parameters.
@@ -4092,7 +4319,10 @@ module econia::market {
     /// Verify state updates for cancelling three bids under authority
     /// of signing user.
     fun test_cancel_all_orders_bid_user()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (maker, _) = init_markets_users_integrator_test();
         // Declare order parameters.
@@ -4148,7 +4378,10 @@ module econia::market {
     /// Verify state updates for cancelling ask under authority of
     /// custodian.
     fun test_cancel_order_ask_custodian()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (maker, _) = init_markets_users_integrator_test();
         // Declare order parameters.
@@ -4225,7 +4458,10 @@ module econia::market {
     /// Verify state updates for cancelling bid under authority of
     /// signing user.
     fun test_cancel_order_bid_user()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (maker, _) = init_markets_users_integrator_test();
         // Declare order parameters.
@@ -4297,7 +4533,10 @@ module econia::market {
     #[expected_failure(abort_code = E_INVALID_CUSTODIAN)]
     /// Verify failure for invalid custodian.
     fun test_cancel_order_invalid_custodian()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (maker, _) = init_markets_users_integrator_test();
         // Declare order parameters.
@@ -4338,7 +4577,10 @@ module econia::market {
     #[expected_failure(abort_code = E_INVALID_MARKET_ID)]
     /// Verify failure for invalid market ID.
     fun test_cancel_order_invalid_market_id()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (maker, _) = init_markets_users_integrator_test();
         // Declare order change parameters.
@@ -4353,7 +4595,10 @@ module econia::market {
     #[expected_failure(abort_code = E_INVALID_MARKET_ORDER_ID)]
     /// Verify failure for invalid bogus market order ID.
     fun test_cancel_order_invalid_market_order_id_bogus()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (maker, _) = init_markets_users_integrator_test();
         // Declare order change parameters.
@@ -4368,7 +4613,10 @@ module econia::market {
     #[expected_failure(abort_code = E_INVALID_MARKET_ORDER_ID)]
     /// Verify failure for invalid market order ID passed as `NIL`.
     fun test_cancel_order_invalid_market_order_id_null()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (maker, _) = init_markets_users_integrator_test();
         // Declare order change parameters.
@@ -4383,7 +4631,10 @@ module econia::market {
     #[expected_failure(abort_code = E_INVALID_USER)]
     /// Verify failure for invalid user.
     fun test_cancel_order_invalid_user()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (maker, attacker) = init_markets_users_integrator_test();
         // Declare order parameters.
@@ -4419,7 +4670,10 @@ module econia::market {
     /// Verify state updates for changing ask under authority of
     /// custodian, for size increase at tail of price level queue.
     fun test_change_order_size_ask_custodian()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (maker, _) = init_markets_users_integrator_test();
         // Declare order parameters.
@@ -4564,7 +4818,10 @@ module econia::market {
     /// Verify state updates for changing bid under authority of signing
     /// user, for size decrease at tail of queue.
     fun test_change_order_size_bid_user()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (maker, _) = init_markets_users_integrator_test();
         // Declare order parameters.
@@ -4661,7 +4918,10 @@ module econia::market {
     /// Verify state updates for changing bid under authority of signing
     /// user, for size increase not at tail of queue.
     fun test_change_order_size_bid_user_new_tail()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (maker, _) = init_markets_users_integrator_test();
         // Declare order parameters.
@@ -4750,7 +5010,10 @@ module econia::market {
     /// queue access key mismatch. Based on
     /// `test_change_order_size_bid_user_new_tail`.
     fun test_change_order_size_insertion_error()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (maker, _) = init_markets_users_integrator_test();
         // Declare order parameters.
@@ -4783,7 +5046,7 @@ module econia::market {
         place_limit_order_user<BC, QC>( // Place second maker order.
             &maker, market_id, integrator, side, size_1, price,
             restriction, self_match_behavior);
-        // Get maker order counter from market order ID.
+        // Get order counter from market order ID.
         let order_counter = ((market_order_id >> SHIFT_COUNTER) as u64);
         // Get AVL queue access key from market order ID.
         let avlq_access_key = ((market_order_id & (HI_64 as u128)) as u64);
@@ -4811,7 +5074,10 @@ module econia::market {
     #[expected_failure(abort_code = E_INVALID_CUSTODIAN)]
     /// Verify failure for invalid custodian.
     fun test_change_order_size_invalid_custodian()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (maker, _) = init_markets_users_integrator_test();
         // Declare order parameters.
@@ -4853,7 +5119,10 @@ module econia::market {
     #[expected_failure(abort_code = E_INVALID_MARKET_ID)]
     /// Verify failure for invalid market ID.
     fun test_change_order_size_invalid_market_id()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (maker, _) = init_markets_users_integrator_test();
         // Declare order change parameters.
@@ -4869,7 +5138,10 @@ module econia::market {
     #[expected_failure(abort_code = E_INVALID_MARKET_ORDER_ID)]
     /// Verify failure for invalid bogus market order ID.
     fun test_change_order_size_invalid_market_order_id_bogus()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (maker, _) = init_markets_users_integrator_test();
         // Declare order change parameters.
@@ -4885,7 +5157,10 @@ module econia::market {
     #[expected_failure(abort_code = E_INVALID_MARKET_ORDER_ID)]
     /// Verify failure for invalid market order ID passed as `NIL`.
     fun test_change_order_size_invalid_market_order_id_null()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (maker, _) = init_markets_users_integrator_test();
         // Declare order change parameters.
@@ -4901,7 +5176,10 @@ module econia::market {
     #[expected_failure(abort_code = E_INVALID_USER)]
     /// Verify failure for invalid user.
     fun test_change_order_size_invalid_user()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (maker, attacker) = init_markets_users_integrator_test();
         // Declare order parameters.
@@ -5053,7 +5331,7 @@ module econia::market {
     #[test]
     /// Verify return.
     fun test_get_market_order_id_avl_queue_access_key() {
-        // Declare mock AVL queue access key, maker counter.
+        // Declare mock AVL queue access key, order counter.
         let avlq_access_key = 12345;
         let counter = 67890;
         // Construct mock market order ID.
@@ -5062,6 +5340,20 @@ module econia::market {
         // Assert AVL queue access key lookup.
         assert!(get_market_order_id_avl_queue_access_key(market_order_id) ==
                 avlq_access_key, 0);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = E_ORDER_DID_NOT_POST)]
+    /// Verify failure for market order ID corresponding to fills only.
+    fun test_get_market_order_id_price_did_not_post() {
+        get_market_order_id_price((1 as u128) << SHIFT_COUNTER);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = E_ORDER_DID_NOT_POST)]
+    /// Verify failure for market order ID corresponding to fills only.
+    fun test_get_market_order_id_side_did_not_post() {
+        get_market_order_id_side((1 as u128) << SHIFT_COUNTER);
     }
 
     #[test]
@@ -5074,7 +5366,11 @@ module econia::market {
 
     #[test]
     /// Verify indexing results.
-    fun test_get_open_orders() acquires OrderBooks {
+    fun test_get_open_orders()
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (maker, _) = init_markets_users_integrator_test();
         // Declare common order parameters.
@@ -5200,7 +5496,11 @@ module econia::market {
 
     #[test]
     /// Verify indexing results.
-    fun test_get_price_levels() acquires OrderBooks {
+    fun test_get_price_levels()
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (maker, _) = init_markets_users_integrator_test();
         // Declare common order parameters.
@@ -5317,7 +5617,10 @@ module econia::market {
     /// Verify returns, state updates for complete buy fill with no lots
     /// left to fill on matched order.
     fun test_match_complete_fill_no_lots_buy()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (maker, _) = init_markets_users_integrator_test();
         // Get fee divisors.
@@ -5442,7 +5745,10 @@ module econia::market {
     /// Verify returns, state updates for complete sell fill with no
     /// ticks left to fill on matched order.
     fun test_match_complete_fill_no_ticks_sell()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (maker, _) = init_markets_users_integrator_test();
         // Get fee divisors.
@@ -5566,7 +5872,10 @@ module econia::market {
     #[test]
     /// Verify returns for no orders to match against.
     fun test_match_empty()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         init_markets_users_integrator_test();
         // Declare swap arguments.
@@ -5599,7 +5908,10 @@ module econia::market {
     #[test]
     /// Verify returns for not enough size to fill.
     fun test_match_fill_size_0()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (maker, _) = init_markets_users_integrator_test();
         // Get fee divisors.
@@ -5712,7 +6024,10 @@ module econia::market {
     /// partial fill on second order during match loop. A taker sell
     /// where one maker has two bids at different prices.
     fun test_match_loop_twice()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (maker, _) = init_markets_users_integrator_test();
         // Get fee divisors.
@@ -5801,6 +6116,8 @@ module econia::market {
         let (market_order_id_lo, _, _, _) = place_limit_order_user<BC, QC>(
             &maker, market_id, @integrator, side_maker, size_maker_lo,
             price_lo, restriction, self_match_behavior);
+        // Assert order book counter.
+        assert!(get_order_book_counter(market_id) == 2, 0);
         // Get user-side high-price order access key for later.
         let (_, _, _, _, order_access_key_hi) =
             get_order_fields_test(market_id, side_maker, market_order_id_hi);
@@ -5809,6 +6126,8 @@ module econia::market {
             swap_coins(market_id, integrator, direction_taker, min_base,
                        max_base, min_quote, max_quote, price, base_coins,
                        quote_coins);
+        // Assert order book counter.
+        assert!(get_order_book_counter(market_id) == 3, 0);
         // Assert returns.
         assert!(coin::value(&base_coins)  == base_coin_end, 0);
         assert!(coin::value(&quote_coins) == quote_coin_end, 0);
@@ -5873,7 +6192,10 @@ module econia::market {
     #[expected_failure(abort_code = E_MIN_BASE_NOT_TRADED)]
     /// Verify failure for minimum base amount not traded.
     fun test_match_min_base_not_traded()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         init_markets_users_integrator_test();
         // Declare swap arguments.
@@ -5902,7 +6224,10 @@ module econia::market {
     #[expected_failure(abort_code = E_MIN_QUOTE_NOT_TRADED)]
     /// Verify failure for minimum quote amount not traded.
     fun test_match_min_quote_not_traded()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         init_markets_users_integrator_test();
         // Declare swap arguments.
@@ -5930,7 +6255,10 @@ module econia::market {
     #[test]
     /// Verify returns for partial sell fill with lot-limited fill size.
     fun test_match_partial_fill_lot_limited_sell()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (maker, _) = init_markets_users_integrator_test();
         // Get fee divisors.
@@ -6057,7 +6385,10 @@ module econia::market {
     #[test]
     /// Verify returns for partial buy fill with tick-limited fill size.
     fun test_match_partial_fill_tick_limited_buy()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (maker, _) = init_markets_users_integrator_test();
         // Get fee divisors.
@@ -6184,7 +6515,10 @@ module econia::market {
     #[test]
     /// Verify returns for limit price violation on buy.
     fun test_match_price_break_buy()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (maker, _) = init_markets_users_integrator_test();
         // Declare shared/dependent market parameters.
@@ -6288,7 +6622,10 @@ module econia::market {
     #[test]
     /// Verify returns for limit price violation on sell.
     fun test_match_price_break_sell()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (maker, _) = init_markets_users_integrator_test();
         // Declare shared/dependent market parameters.
@@ -6394,7 +6731,10 @@ module econia::market {
     /// Verify failure for price mismatch between order and AVL queue
     /// head key. Test setup based on `test_match_fill_size_0()`
     fun test_match_price_mismatch()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (maker, _) = init_markets_users_integrator_test();
         // Declare shared/dependent market parameters.
@@ -6462,7 +6802,10 @@ module econia::market {
     #[expected_failure(abort_code = E_PRICE_TOO_HIGH)]
     /// Verify failure for price too high.
     fun test_match_price_too_high()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         init_markets_users_integrator_test();
         // Declare swap arguments.
@@ -6491,7 +6834,10 @@ module econia::market {
     #[expected_failure(abort_code = E_SELF_MATCH)]
     /// Verify failure for self match with abort behavior.
     fun test_match_self_match_abort()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user, _) = init_markets_users_integrator_test();
         // Declare common market parameters.
@@ -6536,7 +6882,10 @@ module econia::market {
     /// the order at the lower price. Here, matching halts after the
     /// self match.
     fun test_match_self_match_cancel_both()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user, _) = init_markets_users_integrator_test();
         // Get fee divisors.
@@ -6646,7 +6995,10 @@ module econia::market {
     /// the order at the lower price. Here, matching continues against
     /// the order at the higher price.
     fun test_match_self_match_cancel_maker()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user, _) = init_markets_users_integrator_test();
         // Get fee divisors.
@@ -6780,7 +7132,10 @@ module econia::market {
     /// the order at the lower price. Here, matching halts after the
     /// self match.
     fun test_match_self_match_cancel_taker()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user, _) = init_markets_users_integrator_test();
         // Get fee divisors.
@@ -6894,7 +7249,10 @@ module econia::market {
     #[expected_failure(abort_code = E_INVALID_SELF_MATCH_BEHAVIOR)]
     /// Verify failure for self match with invalid abort behavior.
     fun test_match_self_match_invalid()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user, _) = init_markets_users_integrator_test();
         // Declare common market parameters.
@@ -6933,7 +7291,10 @@ module econia::market {
     #[expected_failure(abort_code = E_SIZE_BASE_OVERFLOW)]
     /// Verify failure for base overflow.
     fun test_place_limit_order_base_overflow()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Declare order parameters.
         let side = ASK;
         let size = HI_64 / LOT_SIZE_COIN + 1;
@@ -6953,7 +7314,10 @@ module econia::market {
     /// completely and exactly across the spread, under authority of
     /// signing user.
     fun test_place_limit_order_crosses_ask_exact()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user_0, user_1) = init_markets_users_integrator_test();
         // Get fee divisors.
@@ -7058,7 +7422,10 @@ module econia::market {
     /// partially across the spread, under authority of signing user.
     /// Based on `test_place_limit_order_crosses_ask_exact()`.
     fun test_place_limit_order_crosses_ask_partial()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user_0, user_1) = init_markets_users_integrator_test();
         // Get fee divisors.
@@ -7108,6 +7475,8 @@ module econia::market {
             place_limit_order_user<BC, QC>(
                 &user_1, MARKET_ID_COIN, @integrator, side, size, price,
                 restriction, self_match_behavior);
+        // Assert order book counter.
+        assert!(get_order_book_counter(MARKET_ID_COIN) == 2, 0);
         // Assert returns
         assert!(base_trade_r      == base_match, 0);
         assert!(quote_trade_r     == quote_trade, 0);
@@ -7168,7 +7537,10 @@ module econia::market {
     /// signing user. Based on
     /// `test_place_limit_order_crosses_ask_partial()`.
     fun test_place_limit_order_crosses_ask_partial_cancel()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user_0, user_1) = init_markets_users_integrator_test();
         // Get fee divisors.
@@ -7246,7 +7618,10 @@ module econia::market {
     /// with taker cancellation. Based on
     /// `test_place_limit_order_crosses_ask_partial()`.
     fun test_place_limit_order_crosses_ask_self_match_cancel()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user, _) = init_markets_users_integrator_test();
         // Declare order parameters.
@@ -7317,7 +7692,10 @@ module econia::market {
     /// signing user. Mirror of
     /// `test_place_limit_order_crosses_ask_exact()`.
     fun test_place_limit_order_crosses_bid_exact()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user_0, user_1) = init_markets_users_integrator_test();
         // Get fee divisors.
@@ -7422,7 +7800,10 @@ module econia::market {
     /// partially across the spread, under authority of signing user.
     /// Mirror of `test_place_limit_order_crosses_ask_partial()`.
     fun test_place_limit_order_crosses_bid_partial()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user_0, user_1) = init_markets_users_integrator_test();
         // Get fee divisors.
@@ -7534,7 +7915,10 @@ module econia::market {
     /// enough remaining size to meet minimum size requirement. Based on
     /// `test_place_limit_order_crosses_bid_partial()`.
     fun test_place_limit_order_crosses_bid_partial_cancel()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user_0, user_1) = init_markets_users_integrator_test();
         // Get fee divisors.
@@ -7632,7 +8016,10 @@ module econia::market {
     /// Verify state updates, returns, for placing limit order that
     /// evicts another user's order.
     fun test_place_limit_order_evict()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user_0, user_1) = init_markets_users_integrator_test();
         // Declare order parameters.
@@ -7750,7 +8137,10 @@ module econia::market {
     #[expected_failure(abort_code = E_FILL_OR_ABORT_NOT_CROSS_SPREAD)]
     /// Verify failure for not crossing spread when fill-or-abort.
     fun test_place_limit_order_fill_or_abort_not_cross()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Declare order parameters.
         let side = ASK;
         let size = MIN_SIZE_COIN;
@@ -7775,7 +8165,10 @@ module econia::market {
     /// Verify failure for not filling completely across spread when
     /// fill-or-abort.
     fun test_place_limit_order_fill_or_abort_partial()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user_0, user_1) = init_markets_users_integrator_test();
         // Declare order parameters.
@@ -7807,7 +8200,10 @@ module econia::market {
     #[expected_failure(abort_code = E_INVALID_BASE)]
     /// Verify failure for invalid base type argument.
     fun test_place_limit_order_invalid_base()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Declare order parameters.
         let side = ASK;
         let size = MIN_SIZE_COIN;
@@ -7831,7 +8227,10 @@ module econia::market {
     #[expected_failure(abort_code = E_INVALID_QUOTE)]
     /// Verify failure for invalid quote type argument.
     fun test_place_limit_order_invalid_quote()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Declare order parameters.
         let side = ASK;
         let size = MIN_SIZE_COIN;
@@ -7855,7 +8254,10 @@ module econia::market {
     #[expected_failure(abort_code = E_INVALID_RESTRICTION)]
     /// Verify failure for invalid restriction.
     fun test_place_limit_order_invalid_restriction()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Declare order parameters.
         let side = ASK;
         let size = 123;
@@ -7872,7 +8274,10 @@ module econia::market {
     /// Verify state updates, returns, for placing ask that does not
     /// cross the spread, under authority of signing user.
     fun test_place_limit_order_no_cross_ask_user()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Declare order parameters.
         let side                = ASK;
         let size                = MIN_SIZE_COIN;
@@ -7903,7 +8308,9 @@ module econia::market {
         assert!(quote_trade == 0, 0);
         assert!(fees == 0, 0);
         // Assert counter encoded in order ID.
-        assert!(get_market_order_id_counter(market_order_id) == 0, 0);
+        assert!(get_market_order_id_counter(market_order_id) == 1, 0);
+        // Assert market order ID marked as posting.
+        assert!(did_order_post(market_order_id), 0);
         // Assert price encoded in order ID.
         assert!(get_market_order_id_price(market_order_id) == price, 0);
         // Assert side encoded in order ID.
@@ -7943,7 +8350,7 @@ module econia::market {
         let (market_order_id, _, _, _) = place_limit_order_user<BC, QC>(
             &user_0, MARKET_ID_COIN, @integrator, !side, size, price - 1,
             restriction, self_match_behavior);
-        assert!(get_market_order_id_counter(market_order_id) == 1, 0);
+        assert!(get_market_order_id_counter(market_order_id) == 2, 0);
         // Assert order book counter.
         assert!(get_order_book_counter(MARKET_ID_COIN) == 2, 0);
     }
@@ -7952,7 +8359,10 @@ module econia::market {
     /// Verify state updates, returns, for placing bid that does not
     /// cross the spread, under authority of custodian.
     fun test_place_limit_order_no_cross_bid_custodian()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Declare order parameters.
         let side                = BID;
         let size                = MIN_SIZE_COIN;
@@ -7979,7 +8389,9 @@ module econia::market {
                 @user_0, MARKET_ID_COIN, @integrator, side, size, price,
                 restriction, self_match_behavior, &custodian_capability);
         // Assert counter encoded in order ID.
-        assert!(get_market_order_id_counter(market_order_id) == 0, 0);
+        assert!(get_market_order_id_counter(market_order_id) == 1, 0);
+        // Assert market order ID marked as posting.
+        assert!(did_order_post(market_order_id), 0);
         // Assert price encoded in order ID.
         assert!(get_market_order_id_price(market_order_id) == price, 0);
         // Assert side encoded in order ID.
@@ -8022,7 +8434,7 @@ module econia::market {
         let (market_order_id, _, _, _) = place_limit_order_custodian<BC, QC>(
             @user_0, MARKET_ID_COIN, @integrator, !side, size, price + 1,
             restriction, self_match_behavior, &custodian_capability);
-        assert!(get_market_order_id_counter(market_order_id) == 1, 0);
+        assert!(get_market_order_id_counter(market_order_id) == 2, 0);
         // Assert order book counter.
         assert!(get_order_book_counter(MARKET_ID_COIN) == 2, 0);
         // Drop custodian capability.
@@ -8033,7 +8445,10 @@ module econia::market {
     #[expected_failure(abort_code = E_PRICE_0)]
     /// Verify failure for invalid price.
     fun test_place_limit_order_no_price()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Declare order parameters.
         let side = ASK;
         let size = 123;
@@ -8050,7 +8465,10 @@ module econia::market {
     #[expected_failure(abort_code = E_INVALID_BASE)]
     /// Verify failure for invalid base type argument.
     fun test_place_limit_order_passive_advance_invalid_base()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user, _) = init_markets_users_integrator_test();
         // Declare order parameters.
@@ -8070,7 +8488,10 @@ module econia::market {
     #[expected_failure(abort_code = E_INVALID_MARKET_ID)]
     /// Verify failure for invalid market ID.
     fun test_place_limit_order_passive_advance_invalid_market_id()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user, _) = init_markets_users_integrator_test();
         // Declare order parameters.
@@ -8090,7 +8511,10 @@ module econia::market {
     #[expected_failure(abort_code = E_INVALID_PERCENT)]
     /// Verify failure for invalid percent
     fun test_place_limit_order_passive_advance_invalid_percent()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Configure spread.
         let max_bid_price = 100;
         let min_ask_price = 201;
@@ -8112,7 +8536,10 @@ module econia::market {
     #[expected_failure(abort_code = E_INVALID_QUOTE)]
     /// Verify failure for invalid quote type argument.
     fun test_place_limit_order_passive_advance_invalid_quote()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user, _) = init_markets_users_integrator_test();
         // Declare order parameters.
@@ -8131,7 +8558,10 @@ module econia::market {
     #[test]
     /// Verify return for no cross price when placing an ask.
     fun test_place_limit_order_passive_advance_no_cross_price_ask()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Configure spread.
         let max_bid_price = NIL;
         let min_ask_price = 201;
@@ -8154,7 +8584,10 @@ module econia::market {
     #[test]
     /// Verify return for no cross price when placing a bid.
     fun test_place_limit_order_passive_advance_no_cross_price_bid()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Configure spread.
         let max_bid_price = 100;
         let min_ask_price = NIL;
@@ -8177,7 +8610,10 @@ module econia::market {
     #[test]
     /// Verify returns, state updates for full advance is start price.
     fun test_place_limit_order_passive_advance_no_full_advance()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Configure spread.
         let max_bid_price = 100;
         let min_ask_price = 101;
@@ -8205,7 +8641,10 @@ module econia::market {
     #[test]
     /// Verify returns for no start price.
     fun test_place_limit_order_passive_advance_no_start_price()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user, _) = init_markets_users_integrator_test();
         // Declare order parameters.
@@ -8232,7 +8671,10 @@ module econia::market {
     #[test]
     /// Verify returns, state updates for no target advance amount.
     fun test_place_limit_order_passive_advance_no_target_advance()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Configure spread.
         let max_bid_price = 100;
         let min_ask_price = 201;
@@ -8259,7 +8701,10 @@ module econia::market {
     #[test]
     /// Verify returns, state updates for percent-specified asks.
     fun test_place_limit_order_passive_advance_percent_ask()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Configure spread.
         let max_bid_price = 99;
         let min_ask_price = 500;
@@ -8290,7 +8735,10 @@ module econia::market {
     #[test]
     /// Verify returns, state updates for percent-specified bids.
     fun test_place_limit_order_passive_advance_percent_bid()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Configure spread.
         let max_bid_price = 100;
         let min_ask_price = 501;
@@ -8321,7 +8769,10 @@ module econia::market {
     #[test]
     /// Verify returns, state updates for ticks-specified asks.
     fun test_place_limit_order_passive_advance_ticks_ask()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Configure spread.
         let max_bid_price = 100;
         let min_ask_price = 500;
@@ -8370,7 +8821,10 @@ module econia::market {
     /// Verify returns, state updates for ticks-specified bid, for
     /// delegated custodian.
     fun test_place_limit_order_passive_advance_ticks_bid()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Configure spread.
         let max_bid_price = 100;
         let min_ask_price = 500;
@@ -8421,7 +8875,10 @@ module econia::market {
     #[expected_failure(abort_code = E_POST_OR_ABORT_CROSSES_SPREAD)]
     /// Verify failure for not crossing spread as post-or-abort.
     fun test_place_limit_order_post_or_abort_crosses()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user_0, user_1) = init_markets_users_integrator_test();
         // Declare order parameters.
@@ -8453,7 +8910,10 @@ module econia::market {
     #[expected_failure(abort_code = E_PRICE_TOO_HIGH)]
     /// Verify failure for invalid price.
     fun test_place_limit_order_price_hi()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Declare order parameters.
         let side = ASK;
         let size = 123;
@@ -8471,7 +8931,10 @@ module econia::market {
     /// Verify failure for unable to insert to AVL queue. Modeled off
     /// `test_place_limit_order_evict()`.
     fun test_place_limit_order_price_time_priority_low()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user_0, user_1) = init_markets_users_integrator_test();
         // Declare order parameters.
@@ -8518,7 +8981,10 @@ module econia::market {
     #[expected_failure(abort_code = E_SIZE_PRICE_QUOTE_OVERFLOW)]
     /// Verify failure for quote overflow.
     fun test_place_limit_order_quote_overflow()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Declare order parameters.
         let side = ASK;
         let size = HI_64 / LOT_SIZE_COIN;
@@ -8537,7 +9003,10 @@ module econia::market {
     #[expected_failure(abort_code = E_SIZE_TOO_SMALL)]
     /// Verify failure for invalid size.
     fun test_place_limit_order_size_lo()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Declare order parameters.
         let side = ASK;
         let size = MIN_SIZE_COIN - 1;
@@ -8562,7 +9031,10 @@ module econia::market {
     /// the spread after matching as a taker, under authority of signing
     /// user. Based on `test_place_limit_order_crosses_ask_partial()`.
     fun test_place_limit_order_still_crosses_ask()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (maker, taker) = init_markets_users_integrator_test();
         let (maker_address, taker_address) = // Get user addresses.
@@ -8681,7 +9153,10 @@ module econia::market {
     /// the spread after matching as a taker, under authority of signing
     /// user. Based on `test_place_limit_order_still_crosses_ask()`.
     fun test_place_limit_order_still_crosses_bid()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (maker, taker) = init_markets_users_integrator_test();
         let (maker_address, taker_address) = // Get user addresses.
@@ -8796,7 +9271,10 @@ module econia::market {
     #[expected_failure(abort_code = E_SIZE_PRICE_TICKS_OVERFLOW)]
     /// Verify failure for ticks overflow.
     fun test_place_limit_order_ticks_overflow()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Declare order parameters.
         let side = ASK;
         let size = HI_64 / LOT_SIZE_COIN;
@@ -8815,7 +9293,10 @@ module econia::market {
     /// Verify state updates for public entry wrapper invocation. Based
     /// on `test_place_limit_order_no_cross_ask_user()`.
     fun test_place_limit_order_user_entry()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Declare order parameters.
         let side                = ASK;
         let size                = MIN_SIZE_COIN;
@@ -8876,7 +9357,10 @@ module econia::market {
     #[expected_failure(abort_code = E_INVALID_BASE)]
     /// Verify failure for invalid base type argument.
     fun test_place_market_order_invalid_base()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         init_markets_users_integrator_test();
         // Declare order arguments.
@@ -8897,7 +9381,10 @@ module econia::market {
     #[expected_failure(abort_code = E_INVALID_QUOTE)]
     /// Verify failure for invalid quote type argument.
     fun test_place_market_order_invalid_quote()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         init_markets_users_integrator_test();
         // Declare order arguments.
@@ -8918,7 +9405,10 @@ module econia::market {
     #[expected_failure(abort_code = E_SIZE_TOO_SMALL)]
     /// Verify failure for invalid size argument.
     fun test_place_market_order_size_too_small()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         init_markets_users_integrator_test();
         // Declare order arguments.
@@ -8940,7 +9430,10 @@ module econia::market {
     /// base trade amount that is less than max possible, under
     /// authority of signing user.
     fun test_place_market_order_max_base_adjust_buy_user()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user_0, user_1) = init_markets_users_integrator_test();
         // Get fee divisors.
@@ -9045,7 +9538,10 @@ module econia::market {
     /// max possible base trade amount, under authority of signing
     /// user.
     fun test_place_market_order_max_base_buy_user()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user_0, user_1) = init_markets_users_integrator_test();
         // Get fee divisors.
@@ -9147,7 +9643,10 @@ module econia::market {
     /// Verify state updates, returns for market sell when max possible
     /// base trade amount specified, under authority of custodian.
     fun test_place_market_order_max_base_sell_custodian()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user_0, _) = init_markets_users_integrator_test();
         // Get fee divisors.
@@ -9254,7 +9753,10 @@ module econia::market {
     /// Verify state updates, returns for market buy when max possible
     /// quote trade amount specified, under authority of custodian.
     fun test_place_market_order_max_quote_buy_custodian()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user_0, _) = init_markets_users_integrator_test();
         // Get fee divisors.
@@ -9360,7 +9862,10 @@ module econia::market {
     /// Verify state updates, returns for market sell when max possible
     /// quote trade amount specified, under authority of signing user.
     fun test_place_market_order_max_quote_sell_user()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user_0, user_1) = init_markets_users_integrator_test();
         // Get fee divisors.
@@ -9462,7 +9967,10 @@ module econia::market {
     /// Verify state updates for public entry wrapper invocation. Based
     /// on `test_place_market_order_max_base_buy_user()`.
     fun test_place_market_order_user_entry()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user_0, user_1) = init_markets_users_integrator_test();
         // Get fee divisors.
@@ -9721,7 +10229,10 @@ module econia::market {
     /// 2. Registering generic market.
     /// 3. Registering pure coin market, not from coin store.
     fun test_register_markets()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         init_test(); // Init for testing.
         // Get market registration fee, denominated in utility coins.
         let fee = incentives::get_market_registration_fee();
@@ -9818,7 +10329,10 @@ module econia::market {
     /// Verify returns, state updates for specifying max possible base
     /// during a buy.
     fun test_swap_between_coinstores_max_possible_base_buy()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user_0, user_1) = init_markets_users_integrator_test();
         // Get taker fee divisor.
@@ -9920,7 +10434,10 @@ module econia::market {
     /// Verify returns, state updates for specifying max possible base
     /// during a sell.
     fun test_swap_between_coinstores_max_possible_base_sell()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user_0, user_1) = init_markets_users_integrator_test();
         // Get taker fee divisor.
@@ -10022,7 +10539,10 @@ module econia::market {
     /// Verify returns, state updates for specifying max possible quote
     /// during a buy.
     fun test_swap_between_coinstores_max_possible_quote_buy()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user_0, user_1) = init_markets_users_integrator_test();
         // Get taker fee divisor.
@@ -10124,7 +10644,10 @@ module econia::market {
     /// Verify returns, state updates for specifying max possible quote
     /// during a sell.
     fun test_swap_between_coinstores_max_possible_quote_sell()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user_0, user_1) = init_markets_users_integrator_test();
         // Get taker fee divisor.
@@ -10225,7 +10748,10 @@ module econia::market {
     #[test]
     /// Verify returns, state updates for registering base coin store.
     fun test_swap_between_coinstores_register_base_store()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user_0, user_1) = init_markets_users_integrator_test();
         // Get taker fee divisor.
@@ -10318,7 +10844,10 @@ module econia::market {
     #[test]
     /// Verify returns, state updates for registering quote coin store.
     fun test_swap_between_coinstores_register_quote_store()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user_0, user_1) = init_markets_users_integrator_test();
         // Get taker fee divisor.
@@ -10412,7 +10941,10 @@ module econia::market {
     /// Verify returns, state updates for swap buy for max possible
     /// base amount specified, with base amount as limiting factor.
     fun test_swap_coins_buy_max_base_limiting()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user_0, _) = init_markets_users_integrator_test();
         // Get taker fee divisor.
@@ -10517,7 +11049,10 @@ module econia::market {
     /// Verify returns, state updates for swap buy for max possible
     /// base amount not specified, with base amount as limiting factor.
     fun test_swap_coins_buy_no_max_base_limiting()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user_0, _) = init_markets_users_integrator_test();
         // Get taker fee divisor.
@@ -10622,7 +11157,10 @@ module econia::market {
     /// Verify returns, state updates for swap buy for max possible
     /// base amount not specified, with quote amount as limiting factor.
     fun test_swap_coins_buy_no_max_quote_limiting()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user_0, _) = init_markets_users_integrator_test();
         // Get taker fee divisor.
@@ -10726,7 +11264,10 @@ module econia::market {
     /// Verify returns, state updates for swap sell for max possible
     /// quote amount specified, with quote amount as limiting factor.
     fun test_swap_coins_sell_max_quote_limiting()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user_0, _) = init_markets_users_integrator_test();
         // Get taker fee divisor.
@@ -10831,7 +11372,10 @@ module econia::market {
     /// Verify returns, state updates for swap sell for no max possible
     /// quote amount specified, with base amount as limiting factor.
     fun test_swap_coins_sell_no_max_base_limiting()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user_0, _) = init_markets_users_integrator_test();
         // Get taker fee divisor.
@@ -10936,7 +11480,10 @@ module econia::market {
     /// Verify returns, state updates for swap sell for no max possible
     /// quote amount specified, with quote amount as limiting factor.
     fun test_swap_coins_sell_no_max_quote_limiting()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user_0, _) = init_markets_users_integrator_test();
         // Get taker fee divisor.
@@ -11040,7 +11587,10 @@ module econia::market {
     /// Verify returns, state updates for swap buy with base amount as
     /// limiting factor.
     fun test_swap_generic_buy_base_limiting()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user_0, _) = init_markets_users_integrator_test();
         // Get taker fee divisor.
@@ -11144,7 +11694,10 @@ module econia::market {
     /// Verify returns, state updates for swap buy with quote amount as
     /// limiting factor.
     fun test_swap_generic_buy_quote_limiting()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user_0, _) = init_markets_users_integrator_test();
         // Get taker fee divisor.
@@ -11248,7 +11801,10 @@ module econia::market {
     /// Verify returns, state updates for swap sell with max possible
     /// quote flag specified, with quote amount as limiting factor.
     fun test_swap_generic_sell_max_quote_limiting()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user_0, _) = init_markets_users_integrator_test();
         // Get taker fee divisor.
@@ -11352,7 +11908,10 @@ module econia::market {
     /// Verify returns, state updates for swap sell without max possible
     /// quote flag specified, with base amount as limiting factor.
     fun test_swap_generic_sell_no_max_base_limiting()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user_0, _) = init_markets_users_integrator_test();
         // Get taker fee divisor.
@@ -11456,7 +12015,10 @@ module econia::market {
     /// Verify returns, state updates for swap sell without max possible
     /// quote flag specified, with quote amount as limiting factor.
     fun test_swap_generic_sell_no_max_quote_limiting()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         let (user_0, _) = init_markets_users_integrator_test();
         // Get taker fee divisor.
@@ -11560,7 +12122,10 @@ module econia::market {
     #[expected_failure(abort_code = E_INVALID_BASE)]
     /// Verify failure for invalid base type.
     fun test_swap_invalid_base()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         init_markets_users_integrator_test();
         // Define swap parameters.
@@ -11587,7 +12152,10 @@ module econia::market {
     #[expected_failure(abort_code = E_INVALID_MARKET_ID)]
     /// Verify failure for invalid market ID.
     fun test_swap_invalid_market_id()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         init_markets_users_integrator_test();
         // Define swap parameters.
@@ -11614,7 +12182,10 @@ module econia::market {
     #[expected_failure(abort_code = E_INVALID_QUOTE)]
     /// Verify failure for invalid quote type.
     fun test_swap_invalid_quote()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         init_markets_users_integrator_test();
         // Define swap parameters.
@@ -11641,7 +12212,10 @@ module econia::market {
     #[expected_failure(abort_code = E_INVALID_UNDERWRITER)]
     /// Verify failure for invalid underwriter.
     fun test_swap_invalid_underwriter()
-    acquires OrderBooks {
+    acquires
+        FillEventHandles,
+        OrderBooks
+    {
         // Initialize markets, users, and an integrator.
         init_markets_users_integrator_test();
         // Define swap parameters.

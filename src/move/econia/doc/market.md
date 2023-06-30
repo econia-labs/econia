@@ -955,7 +955,7 @@ fills, a separate event is emitted for each one.
 </dt>
 <dd>
  Market order ID for taker side of fill. If multiple
- <code><a href="market.md#0xc0deb00c_market_FillEvent">FillEvent</a></code>(s) are emitted for a single order, they all have
+ <code><a href="market.md#0xc0deb00c_market_FillEvent">FillEvent</a></code>s are emitted for a single order, they all have
  the same <code><a href="market.md#0xc0deb00c_market_FillEvent">FillEvent</a>.taker_order_id</code>. If a limit order that
  crosses the spread partially fills as a taker then posts as
  a maker, <code><a href="market.md#0xc0deb00c_market_FillEvent">FillEvent</a>.taker_market_order_id</code> for the taker

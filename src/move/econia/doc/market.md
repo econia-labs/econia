@@ -11,9 +11,10 @@ order book entry is added under the resource account at a new market
 ID.
 
 Once a market is registered, signing users and delegated custodians
-can place limit orders on the book as makers, takers can place
-market orders or swaps against the order book, and makers can cancel
-or change the size of any outstanding orders they have on the book.
+can place limit orders on the book as makers and/or as takers,
+takers can place market orders or swaps against the order book, and
+makers can cancel or change the size of any outstanding orders they
+have on the book.
 
 Econia implements an atomic matching engine for processing taker
 fills against maker orders on the book, and emits events in response
@@ -25,10 +26,11 @@ Multiple API variants are supported for market registration and
 order management function, to enable diagnostic function returns,
 public entry calls, etc.
 
-When a maker places a limit order, they are issued a "market order
-ID" that is unique to the given market. The maker order price is
-encoded in the market order ID, as well as a counter for the number
-of orders that have been placed on the corresponding order book.
+When a maker places a limit order that posts against the book, they
+are issued a "market order ID" that is unique to the given market.
+The maker order price is encoded in the market order ID, as well as
+a counter for the number of orders that have been placed for the
+corresponding market.
 
 
 <a name="@General_overview_sections_0"></a>
@@ -638,6 +640,8 @@ The below index is automatically generated from source code:
     -  [Invocation proxies](#@Invocation_proxies_19)
     -  [Branching functions](#@Branching_functions_20)
 -  [Complete DocGen index](#@Complete_DocGen_index_21)
+-  [Struct `FillEvent`](#0xc0deb00c_market_FillEvent)
+-  [Resource `FillEventHandles`](#0xc0deb00c_market_FillEventHandles)
 -  [Struct `MakerEvent`](#0xc0deb00c_market_MakerEvent)
 -  [Struct `Order`](#0xc0deb00c_market_Order)
 -  [Struct `OrderBook`](#0xc0deb00c_market_OrderBook)
@@ -646,8 +650,8 @@ The below index is automatically generated from source code:
 -  [Struct `OrdersView`](#0xc0deb00c_market_OrdersView)
 -  [Struct `PriceLevel`](#0xc0deb00c_market_PriceLevel)
 -  [Struct `PriceLevels`](#0xc0deb00c_market_PriceLevels)
--  [Struct `TakerEvent`](#0xc0deb00c_market_TakerEvent)
 -  [Resource `Orders`](#0xc0deb00c_market_Orders)
+-  [Struct `TakerEvent`](#0xc0deb00c_market_TakerEvent)
 -  [Constants](#@Constants_22)
 -  [Function `get_ABORT`](#0xc0deb00c_market_get_ABORT)
     -  [Testing](#@Testing_23)
@@ -850,6 +854,7 @@ The below index is automatically generated from source code:
 <b>use</b> <a href="">0x1::option</a>;
 <b>use</b> <a href="">0x1::signer</a>;
 <b>use</b> <a href="">0x1::string</a>;
+<b>use</b> <a href="">0x1::table</a>;
 <b>use</b> <a href="">0x1::type_info</a>;
 <b>use</b> <a href="avl_queue.md#0xc0deb00c_avl_queue">0xc0deb00c::avl_queue</a>;
 <b>use</b> <a href="incentives.md#0xc0deb00c_incentives">0xc0deb00c::incentives</a>;
@@ -871,6 +876,109 @@ The below index is automatically generated from source code:
 
 
 ![](img/market_backward_dep.svg)
+
+
+<a name="0xc0deb00c_market_FillEvent"></a>
+
+## Struct `FillEvent`
+
+Emitted each time an order fills as a taker. If an order results
+in multiple fills, a separate event is emitted for each one.
+
+
+<pre><code><b>struct</b> <a href="market.md#0xc0deb00c_market_FillEvent">FillEvent</a> <b>has</b> drop, store
+</code></pre>
+
+
+
+##### Fields
+
+
+<dl>
+<dt>
+<code>market_id: u64</code>
+</dt>
+<dd>
+ Market ID of corresponding market.
+</dd>
+<dt>
+<code>order_book_counter: u64</code>
+</dt>
+<dd>
+ Order book counter at time of fill, incremented for each
+ order placed on the book. If an order results in multiple
+ <code><a href="market.md#0xc0deb00c_market_FillEvent">FillEvent</a></code>s, they will all have the same
+ <code><a href="market.md#0xc0deb00c_market_FillEvent">FillEvent</a>.order_book_counter</code>. If a limit order crosses the
+ spread and fills first as a taker before posting to the book
+ as a maker, the <code><a href="market.md#0xc0deb00c_market_FillEvent">FillEvent</a>.order_book_counter</code> field for
+ each fill is identical to the counter encoded in the
+ corresponding <code><a href="market.md#0xc0deb00c_market_MakerEvent">MakerEvent</a>.market_order_id</code>.
+</dd>
+<dt>
+<code>size: u64</code>
+</dt>
+<dd>
+ The size filled, in lots.
+</dd>
+<dt>
+<code>price: u64</code>
+</dt>
+<dd>
+ Fill price, in ticks per lot.
+</dd>
+<dt>
+<code>maker_side: bool</code>
+</dt>
+<dd>
+ <code><a href="market.md#0xc0deb00c_market_ASK">ASK</a></code> or <code><a href="market.md#0xc0deb00c_market_BID">BID</a></code>, the side of the maker order filled against.
+</dd>
+<dt>
+<code>maker_market_order_id: u128</code>
+</dt>
+<dd>
+ Maket order ID of maker order just filled against.
+</dd>
+<dt>
+<code>maker: <b>address</b></code>
+</dt>
+<dd>
+ Address of user holding maker order.
+</dd>
+<dt>
+<code>maker_custodian_id: u64</code>
+</dt>
+<dd>
+ For given maker, ID of custodian required to approve order
+ operations and withdrawals on given market account.
+</dd>
+</dl>
+
+
+<a name="0xc0deb00c_market_FillEventHandles"></a>
+
+## Resource `FillEventHandles`
+
+Map of <code><a href="market.md#0xc0deb00c_market_FillEvent">FillEvent</a></code> handles, implemented as a replacement for
+<code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a>.taker_events</code> through a backwards-compatible package
+upgrade.
+
+
+<pre><code><b>struct</b> <a href="market.md#0xc0deb00c_market_FillEventHandles">FillEventHandles</a> <b>has</b> key
+</code></pre>
+
+
+
+##### Fields
+
+
+<dl>
+<dt>
+<code>map: <a href="_Table">table::Table</a>&lt;u64, <a href="_EventHandle">event::EventHandle</a>&lt;<a href="market.md#0xc0deb00c_market_FillEvent">market::FillEvent</a>&gt;&gt;</code>
+</dt>
+<dd>
+ Map from market ID to <code><a href="market.md#0xc0deb00c_market_FillEvent">FillEvent</a></code> event handle.
+</dd>
+</dl>
 
 
 <a name="0xc0deb00c_market_MakerEvent"></a>
@@ -1070,7 +1178,7 @@ item queries against the registry.
 <code>counter: u64</code>
 </dt>
 <dd>
- Cumulative number of maker orders placed on book.
+ Cumulative number of orders placed.
 </dd>
 <dt>
 <code>maker_events: <a href="_EventHandle">event::EventHandle</a>&lt;<a href="market.md#0xc0deb00c_market_MakerEvent">market::MakerEvent</a>&gt;</code>
@@ -1082,7 +1190,7 @@ item queries against the registry.
 <code>taker_events: <a href="_EventHandle">event::EventHandle</a>&lt;<a href="market.md#0xc0deb00c_market_TakerEvent">market::TakerEvent</a>&gt;</code>
 </dt>
 <dd>
- Event handle for taker events.
+ Deprecated field retained for backwards compatibility.
 </dd>
 </dl>
 
@@ -1281,71 +1389,6 @@ sorted by price-time priority.
 </dl>
 
 
-<a name="0xc0deb00c_market_TakerEvent"></a>
-
-## Struct `TakerEvent`
-
-Emitted when a taker order fills against a maker order. If a
-taker order fills against multiple maker orders, a separate
-event is emitted for each one.
-
-
-<pre><code><b>struct</b> <a href="market.md#0xc0deb00c_market_TakerEvent">TakerEvent</a> <b>has</b> drop, store
-</code></pre>
-
-
-
-##### Fields
-
-
-<dl>
-<dt>
-<code>market_id: u64</code>
-</dt>
-<dd>
- Market ID of corresponding market.
-</dd>
-<dt>
-<code>side: bool</code>
-</dt>
-<dd>
- <code><a href="market.md#0xc0deb00c_market_ASK">ASK</a></code> or <code><a href="market.md#0xc0deb00c_market_BID">BID</a></code>, the side of the maker order.
-</dd>
-<dt>
-<code>market_order_id: u128</code>
-</dt>
-<dd>
- Order ID, unique within given market, of maker order just
- filled against.
-</dd>
-<dt>
-<code>maker: <b>address</b></code>
-</dt>
-<dd>
- Address of user holding maker order.
-</dd>
-<dt>
-<code>custodian_id: u64</code>
-</dt>
-<dd>
- For given maker, ID of custodian required to approve order
- operations and withdrawals on given market account.
-</dd>
-<dt>
-<code>size: u64</code>
-</dt>
-<dd>
- The size filled, in lots.
-</dd>
-<dt>
-<code>price: u64</code>
-</dt>
-<dd>
- Fill price, in ticks per lot.
-</dd>
-</dl>
-
-
 <a name="0xc0deb00c_market_Orders"></a>
 
 ## Resource `Orders`
@@ -1370,6 +1413,67 @@ Deprecated struct retained for backwards compatibility.
 </dd>
 <dt>
 <code>bids: <a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_Order">market::Order</a>&gt;</code>
+</dt>
+<dd>
+
+</dd>
+</dl>
+
+
+<a name="0xc0deb00c_market_TakerEvent"></a>
+
+## Struct `TakerEvent`
+
+Deprecated struct retained for backwards compatibility.
+
+
+<pre><code><b>struct</b> <a href="market.md#0xc0deb00c_market_TakerEvent">TakerEvent</a> <b>has</b> drop, store
+</code></pre>
+
+
+
+##### Fields
+
+
+<dl>
+<dt>
+<code>market_id: u64</code>
+</dt>
+<dd>
+
+</dd>
+<dt>
+<code>side: bool</code>
+</dt>
+<dd>
+
+</dd>
+<dt>
+<code>market_order_id: u128</code>
+</dt>
+<dd>
+
+</dd>
+<dt>
+<code>maker: <b>address</b></code>
+</dt>
+<dd>
+
+</dd>
+<dt>
+<code>custodian_id: u64</code>
+</dt>
+<dd>
+
+</dd>
+<dt>
+<code>size: u64</code>
+</dt>
+<dd>
+
+</dd>
+<dt>
+<code>price: u64</code>
 </dt>
 <dd>
 
@@ -1989,8 +2093,7 @@ Flag for post-or-abort order restriction.
 
 <a name="0xc0deb00c_market_SHIFT_COUNTER"></a>
 
-Number of bits maker order counter is shifted in a market order
-ID.
+Number of bits order counter is shifted in a market order ID.
 
 
 <pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_SHIFT_COUNTER">SHIFT_COUNTER</a>: u8 = 64;
@@ -2520,7 +2623,7 @@ Public constant getter for <code><a href="market.md#0xc0deb00c_market_TICKS">TIC
 
 ## Function `get_market_order_id_counter`
 
-Return maker order counter encoded in market order ID.
+Return order counter encoded in market order ID.
 
 
 <a name="@Testing_41"></a>
@@ -3137,7 +3240,10 @@ order under authority of delegated custodian.
     u64,
     u64,
     u64
-) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+) <b>acquires</b>
+    <a href="market.md#0xc0deb00c_market_FillEventHandles">FillEventHandles</a>,
+    <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>
+{
     <a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>&lt;
         BaseType,
         QuoteType
@@ -3195,7 +3301,10 @@ authority of delegated custodian.
     target_advance_amount: u64,
     custodian_capability_ref: &CustodianCapability
 ): u128
-<b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+<b>acquires</b>
+    <a href="market.md#0xc0deb00c_market_FillEventHandles">FillEventHandles</a>,
+    <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>
+{
     <a href="market.md#0xc0deb00c_market_place_limit_order_passive_advance">place_limit_order_passive_advance</a>&lt;
         BaseType,
         QuoteType
@@ -3257,7 +3366,10 @@ authority of signing user.
     advance_style: bool,
     target_advance_amount: u64
 ): u128
-<b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+<b>acquires</b>
+    <a href="market.md#0xc0deb00c_market_FillEventHandles">FillEventHandles</a>,
+    <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>
+{
     <a href="market.md#0xc0deb00c_market_place_limit_order_passive_advance">place_limit_order_passive_advance</a>&lt;
         BaseType,
         QuoteType
@@ -3323,7 +3435,10 @@ order under authority of signing user.
     u64,
     u64,
     u64
-) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+) <b>acquires</b>
+    <a href="market.md#0xc0deb00c_market_FillEventHandles">FillEventHandles</a>,
+    <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>
+{
     <a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>&lt;
         BaseType,
         QuoteType
@@ -3383,7 +3498,10 @@ order under authority of delegated custodian.
     u64,
     u64,
     u64
-) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+) <b>acquires</b>
+    <a href="market.md#0xc0deb00c_market_FillEventHandles">FillEventHandles</a>,
+    <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>
+{
     <a href="market.md#0xc0deb00c_market_place_market_order">place_market_order</a>&lt;BaseType, QuoteType&gt;(
         user_address,
         market_id,
@@ -3436,7 +3554,10 @@ order under authority of signing user.
     u64,
     u64,
     u64
-) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+) <b>acquires</b>
+    <a href="market.md#0xc0deb00c_market_FillEventHandles">FillEventHandles</a>,
+    <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>
+{
     <a href="market.md#0xc0deb00c_market_place_market_order">place_market_order</a>&lt;BaseType, QuoteType&gt;(
         address_of(<a href="user.md#0xc0deb00c_user">user</a>),
         market_id,
@@ -3516,7 +3637,10 @@ See inner function <code><a href="market.md#0xc0deb00c_market_register_market">r
     min_size: u64,
     utility_coins: Coin&lt;UtilityType&gt;
 ): u64
-<b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+<b>acquires</b>
+    <a href="market.md#0xc0deb00c_market_FillEventHandles">FillEventHandles</a>,
+    <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>
+{
     // Register <a href="market.md#0xc0deb00c_market">market</a> in <b>global</b> <a href="registry.md#0xc0deb00c_registry">registry</a>, storing <a href="market.md#0xc0deb00c_market">market</a> ID.
     <b>let</b> market_id = <a href="registry.md#0xc0deb00c_registry_register_market_base_coin_internal">registry::register_market_base_coin_internal</a>&lt;
         BaseType, QuoteType, UtilityType&gt;(lot_size, tick_size, min_size,
@@ -3604,7 +3728,10 @@ underwriter capability.
     utility_coins: Coin&lt;UtilityType&gt;,
     underwriter_capability_ref: &UnderwriterCapability
 ): u64
-<b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+<b>acquires</b>
+    <a href="market.md#0xc0deb00c_market_FillEventHandles">FillEventHandles</a>,
+    <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>
+{
     // Register <a href="market.md#0xc0deb00c_market">market</a> in <b>global</b> <a href="registry.md#0xc0deb00c_registry">registry</a>, storing <a href="market.md#0xc0deb00c_market">market</a> ID.
     <b>let</b> market_id = <a href="registry.md#0xc0deb00c_registry_register_market_base_generic_internal">registry::register_market_base_generic_internal</a>&lt;
         QuoteType, UtilityType&gt;(base_name_generic, lot_size, tick_size,
@@ -3705,7 +3832,10 @@ for coin store.
     u64,
     u64,
     u64
-) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+) <b>acquires</b>
+    <a href="market.md#0xc0deb00c_market_FillEventHandles">FillEventHandles</a>,
+    <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>
+{
     <b>let</b> user_address = address_of(<a href="user.md#0xc0deb00c_user">user</a>); // Get <a href="user.md#0xc0deb00c_user">user</a> <b>address</b>.
     // Register base <a href="">coin</a> store <b>if</b> <a href="user.md#0xc0deb00c_user">user</a> does not have one.
     <b>if</b> (!<a href="_is_account_registered">coin::is_account_registered</a>&lt;BaseType&gt;(user_address))
@@ -3866,7 +3996,10 @@ the case of a buy, base coins in the case of a sell.
     u64,
     u64,
     u64
-) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+) <b>acquires</b>
+    <a href="market.md#0xc0deb00c_market_FillEventHandles">FillEventHandles</a>,
+    <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>
+{
     <b>let</b> (base_value, quote_value) = // Get <a href="">coin</a> value amounts.
         (<a href="_value">coin::value</a>(&base_coins), <a href="_value">coin::value</a>(&quote_coins));
     // Get <a href="">option</a> wrapped base coins.
@@ -4002,7 +4135,10 @@ underwriter capability for given market.
     u64,
     u64,
     u64
-) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+) <b>acquires</b>
+    <a href="market.md#0xc0deb00c_market_FillEventHandles">FillEventHandles</a>,
+    <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>
+{
     <b>let</b> underwriter_id = // Get underwriter ID.
         <a href="registry.md#0xc0deb00c_registry_get_underwriter_id">registry::get_underwriter_id</a>(underwriter_capability_ref);
     // Get quote <a href="">coin</a> value.
@@ -4204,7 +4340,10 @@ Public entry function wrapper for
     size: u64,
     advance_style: bool,
     target_advance_amount: u64
-) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+) <b>acquires</b>
+    <a href="market.md#0xc0deb00c_market_FillEventHandles">FillEventHandles</a>,
+    <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>
+{
     <a href="market.md#0xc0deb00c_market_place_limit_order_passive_advance_user">place_limit_order_passive_advance_user</a>&lt;
         BaseType,
         QuoteType
@@ -4256,7 +4395,10 @@ Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_pla
     price: u64,
     restriction: u8,
     self_match_behavior: u8
-) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+) <b>acquires</b>
+    <a href="market.md#0xc0deb00c_market_FillEventHandles">FillEventHandles</a>,
+    <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>
+{
     <a href="market.md#0xc0deb00c_market_place_limit_order_user">place_limit_order_user</a>&lt;BaseType, QuoteType&gt;(
         <a href="user.md#0xc0deb00c_user">user</a>, market_id, integrator, side, size, price, restriction,
         self_match_behavior);
@@ -4298,7 +4440,10 @@ Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_pla
     direction: bool,
     size: u64,
     self_match_behavior: u8
-) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+) <b>acquires</b>
+    <a href="market.md#0xc0deb00c_market_FillEventHandles">FillEventHandles</a>,
+    <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>
+{
     <a href="market.md#0xc0deb00c_market_place_market_order_user">place_market_order_user</a>&lt;BaseType, QuoteType&gt;(
         <a href="user.md#0xc0deb00c_user">user</a>, market_id, integrator, direction, size, self_match_behavior);
 }
@@ -4339,7 +4484,10 @@ coins from an <code>aptos_framework::coin::CoinStore</code>.
     lot_size: u64,
     tick_size: u64,
     min_size: u64
-) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+) <b>acquires</b>
+    <a href="market.md#0xc0deb00c_market_FillEventHandles">FillEventHandles</a>,
+    <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>
+{
     // Get <a href="market.md#0xc0deb00c_market">market</a> registration fee, denominated in utility coins.
     <b>let</b> fee = <a href="incentives.md#0xc0deb00c_incentives_get_market_registration_fee">incentives::get_market_registration_fee</a>();
     // Register <a href="market.md#0xc0deb00c_market">market</a> <b>with</b> base <a href="">coin</a>, paying fees from <a href="">coin</a> store.
@@ -4387,7 +4535,10 @@ Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_swa
     min_quote: u64,
     max_quote: u64,
     limit_price: u64
-) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+) <b>acquires</b>
+    <a href="market.md#0xc0deb00c_market_FillEventHandles">FillEventHandles</a>,
+    <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>
+{
     <a href="market.md#0xc0deb00c_market_swap_between_coinstores">swap_between_coinstores</a>&lt;BaseType, QuoteType&gt;(
         <a href="user.md#0xc0deb00c_user">user</a>, market_id, integrator, direction, min_base, max_base,
         min_quote, max_quote, limit_price);
@@ -4954,6 +5105,8 @@ then proceeds according to specified self match behavior.
 
 
 * <code>market_id</code>: Market ID of market.
+* <code>resource_address</code>: Address of resource account where order
+books and fill event handles are stored.
 * <code>order_book_ref_mut</code>: Mutable reference to market order book.
 * <code>taker</code>: Address of taker whose order is matched. Passed as
 <code><a href="market.md#0xc0deb00c_market_NO_MARKET_ACCOUNT">NO_MARKET_ACCOUNT</a></code> when taker order originates from a swap.
@@ -5016,7 +5169,7 @@ net change in taker's quote coin holdings.
 ### Emits
 
 
-* <code><a href="market.md#0xc0deb00c_market_TakerEvent">TakerEvent</a></code>: Information about a fill against a maker order,
+* <code><a href="market.md#0xc0deb00c_market_FillEvent">FillEvent</a></code>: Information about a fill against a maker order,
 emitted for each separate maker order that is filled against.
 
 
@@ -5071,7 +5224,7 @@ requirement not met.
 * <code>test_match_self_match_invalid()</code>
 
 
-<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_match">match</a>&lt;BaseType, QuoteType&gt;(market_id: u64, order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">market::OrderBook</a>, taker: <b>address</b>, custodian_id: u64, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64, self_match_behavior: u8, optional_base_coins: <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, quote_coins: <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;): (<a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;, u64, u64, u64, bool)
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_match">match</a>&lt;BaseType, QuoteType&gt;(market_id: u64, resource_address: <b>address</b>, order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">market::OrderBook</a>, taker: <b>address</b>, custodian_id: u64, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64, self_match_behavior: u8, optional_base_coins: <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, quote_coins: <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;): (<a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;, u64, u64, u64, bool)
 </code></pre>
 
 
@@ -5084,6 +5237,7 @@ requirement not met.
     QuoteType
 &gt;(
     market_id: u64,
+    resource_address: <b>address</b>,
     order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a>,
     taker: <b>address</b>,
     custodian_id: u64,
@@ -5104,7 +5258,7 @@ requirement not met.
     u64,
     u64,
     bool
-) {
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_FillEventHandles">FillEventHandles</a> {
     // Assert price is not too high.
     <b>assert</b>!(limit_price &lt;= <a href="market.md#0xc0deb00c_market_HI_PRICE">HI_PRICE</a>, <a href="market.md#0xc0deb00c_market_E_PRICE_TOO_HIGH">E_PRICE_TOO_HIGH</a>);
     // Taker buy fills against asks, sell against bids.
@@ -5127,6 +5281,14 @@ requirement not met.
     // Assume it is not the case that a self match led <b>to</b> a taker
     // order cancellation.
     <b>let</b> self_match_taker_cancel = <b>false</b>;
+    // Mutably borrow fill <a href="">event</a> handles map.
+    <b>let</b> fill_event_handles_map_ref_mut =
+        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="market.md#0xc0deb00c_market_FillEventHandles">FillEventHandles</a>&gt;(resource_address).map;
+    // Mutably borrow fill <a href="">event</a> handle for <a href="market.md#0xc0deb00c_market">market</a>.
+    <b>let</b> fill_event_handle_ref_mut =
+        <a href="_borrow_mut">table::borrow_mut</a>(fill_event_handles_map_ref_mut, market_id);
+    // Increment order counter.
+    order_book_ref_mut.counter = order_book_ref_mut.counter + 1;
     // While there are orders <b>to</b> match against:
     <b>while</b> (!<a href="avl_queue.md#0xc0deb00c_avl_queue_is_empty">avl_queue::is_empty</a>(orders_ref_mut)) {
         <b>let</b> price = // Get price of order at head of AVL queue.
@@ -5219,13 +5381,12 @@ requirement not met.
                     fill_size, complete_fill, optional_base_coins,
                     quote_coins, fill_size * lot_size,
                     ticks_filled * tick_size);
-            // Get taker events handle.
-            <b>let</b> taker_handle = &<b>mut</b> order_book_ref_mut.taker_events;
-            // Emit corresponding taker <a href="">event</a>.
-            <a href="_emit_event">event::emit_event</a>(taker_handle, <a href="market.md#0xc0deb00c_market_TakerEvent">TakerEvent</a>{
-                market_id, side, market_order_id, maker, custodian_id:
-                maker_custodian_id, size: fill_size, price});
-            // If order on book completely filled:
+            // Emit corresponding fill <a href="">event</a>.
+            <a href="_emit_event">event::emit_event</a>(fill_event_handle_ref_mut, <a href="market.md#0xc0deb00c_market_FillEvent">FillEvent</a>{
+                market_id, order_book_counter: order_book_ref_mut.counter,
+                size: fill_size, price, maker_side: side,
+                maker_market_order_id: market_order_id, maker,
+                maker_custodian_id: custodian_id});
             <b>if</b> (complete_fill) {
                 <b>let</b> avlq_access_key = // Get AVL queue access key.
                     ((market_order_id & (<a href="market.md#0xc0deb00c_market_HI_64">HI_64</a> <b>as</b> u128)) <b>as</b> u64);
@@ -5465,7 +5626,10 @@ restriction, and
     u64,
     u64,
     u64
-) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+) <b>acquires</b>
+    <a href="market.md#0xc0deb00c_market_FillEventHandles">FillEventHandles</a>,
+    <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>
+{
     // Assert valid order restriction flag.
     <b>assert</b>!(restriction &lt;= <a href="market.md#0xc0deb00c_market_N_RESTRICTIONS">N_RESTRICTIONS</a>, <a href="market.md#0xc0deb00c_market_E_INVALID_RESTRICTION">E_INVALID_RESTRICTION</a>);
     <b>assert</b>!(price != 0, <a href="market.md#0xc0deb00c_market_E_PRICE_0">E_PRICE_0</a>); // Assert nonzero price.
@@ -5570,13 +5734,13 @@ restriction, and
         // Match against order book, storing optionally modified
         // asset inputs, base and quote trade amounts, quote fees
         // paid, and <b>if</b> a self match <b>requires</b> canceling the rest of
-        // the order.
+        // the order. (Increments order book counter).
         (optional_base_coins, quote_coins, base_traded, quote_traded, fees,
          self_match_cancel) = <a href="market.md#0xc0deb00c_market_match">match</a>(
-            market_id, order_book_ref_mut, user_address, custodian_id,
-            integrator, direction, min_base, max_base, min_quote,
-            max_quote, price, self_match_behavior, optional_base_coins,
-            quote_coins);
+            market_id, resource_address, order_book_ref_mut, user_address,
+            custodian_id, integrator, direction, min_base, max_base,
+            min_quote, max_quote, price, self_match_behavior,
+            optional_base_coins, quote_coins);
         // Calculate amount of base deposited back <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
         <b>let</b> base_deposit = <b>if</b> (direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>) base_traded <b>else</b>
             base_withdraw - base_traded;
@@ -5599,7 +5763,10 @@ restriction, and
         size = <b>if</b> (still_crosses_spread || self_match_cancel) 0 <b>else</b>
             // Else <b>update</b> size <b>to</b> amount left <b>to</b> fill <b>post</b>-match.
             size - (base_traded / order_book_ref_mut.lot_size);
-    }; // Done <b>with</b> optional matching <b>as</b> a taker across the spread.
+    } <b>else</b> { // If spread not crossed (matching engine not called):
+        // Increment order counter.
+        order_book_ref_mut.counter = order_book_ref_mut.counter + 1;
+    };
     // Return without <a href="market.md#0xc0deb00c_market">market</a> order ID <b>if</b> immediate-or-cancel or <b>if</b>
     // remaining size <b>to</b> fill after matching does not meet minimum
     // size requirement for <a href="market.md#0xc0deb00c_market">market</a>.
@@ -5625,8 +5792,6 @@ restriction, and
     // Get <a href="market.md#0xc0deb00c_market">market</a> order ID from AVL queue access key, counter.
     <b>let</b> market_order_id = (avlq_access_key <b>as</b> u128) |
         ((order_book_ref_mut.counter <b>as</b> u128) &lt;&lt; <a href="market.md#0xc0deb00c_market_SHIFT_COUNTER">SHIFT_COUNTER</a>);
-    // Increment maker counter.
-    order_book_ref_mut.counter = order_book_ref_mut.counter + 1;
     <a href="user.md#0xc0deb00c_user_place_order_internal">user::place_order_internal</a>( // Place order <a href="user.md#0xc0deb00c_user">user</a>-side.
         user_address, market_id, custodian_id, side, size, price,
         market_order_id, order_access_key);
@@ -5796,7 +5961,10 @@ advance.
     advance_style: bool,
     target_advance_amount: u64
 ): u128
-<b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+<b>acquires</b>
+    <a href="market.md#0xc0deb00c_market_FillEventHandles">FillEventHandles</a>,
+    <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>
+{
     // Get <b>address</b> of resource <a href="">account</a> <b>where</b> order books are stored.
     <b>let</b> resource_address = resource_account::get_address();
     <b>let</b> order_books_map_ref = // Immutably borrow order books map.
@@ -5990,7 +6158,10 @@ size for market.
     u64,
     u64,
     u64
-) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+) <b>acquires</b>
+    <a href="market.md#0xc0deb00c_market_FillEventHandles">FillEventHandles</a>,
+    <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>
+{
     // Get <a href="user.md#0xc0deb00c_user">user</a>'s available and ceiling asset counts.
     <b>let</b> (_, base_available, base_ceiling, _, quote_available,
          quote_ceiling) = <a href="user.md#0xc0deb00c_user_get_asset_counts_internal">user::get_asset_counts_internal</a>(
@@ -6051,9 +6222,9 @@ size for market.
     // Match against order book, storing optionally modified asset
     // inputs, base and quote trade amounts, and quote fees paid.
     <b>let</b> (optional_base_coins, quote_coins, base_traded, quote_traded, fees,
-         _) = <a href="market.md#0xc0deb00c_market_match">match</a>(market_id, order_book_ref_mut, user_address,
-                    custodian_id, integrator, direction, min_base,
-                    max_base, min_quote, max_quote, limit_price,
+         _) = <a href="market.md#0xc0deb00c_market_match">match</a>(market_id, resource_address, order_book_ref_mut,
+                    user_address, custodian_id, integrator, direction,
+                    min_base, max_base, min_quote, max_quote, limit_price,
                     self_match_behavior, optional_base_coins, quote_coins);
     // Calculate amount of base deposited back <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
     <b>let</b> base_deposit = <b>if</b> (direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>) base_traded <b>else</b>
@@ -6270,7 +6441,10 @@ for market.
     min_size: u64,
     underwriter_id: u64
 ): u64
-<b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+<b>acquires</b>
+    <a href="market.md#0xc0deb00c_market_FillEventHandles">FillEventHandles</a>,
+    <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>
+{
     // Get Econia resource <a href="">account</a> <a href="">signer</a>.
     <b>let</b> <a href="">resource_account</a> = resource_account::get_signer();
     // Get resource <a href="">account</a> <b>address</b>.
@@ -6293,6 +6467,21 @@ for market.
             <a href="_new_event_handle">account::new_event_handle</a>&lt;<a href="market.md#0xc0deb00c_market_MakerEvent">MakerEvent</a>&gt;(&<a href="">resource_account</a>),
         taker_events:
             <a href="_new_event_handle">account::new_event_handle</a>&lt;<a href="market.md#0xc0deb00c_market_TakerEvent">TakerEvent</a>&gt;(&<a href="">resource_account</a>)});
+    // If a fill <a href="">event</a> handles map <b>has</b> not yet been moved <b>to</b> the
+    // resource <a href="">account</a>:
+    <b>if</b> (!<b>exists</b>&lt;<a href="market.md#0xc0deb00c_market_FillEventHandles">FillEventHandles</a>&gt;(resource_address)) {
+        // Initialize fill <a href="">event</a> handles map under resource <a href="">account</a>.
+        // This is done here rather than in `<a href="market.md#0xc0deb00c_market_init_module">init_module</a>()` since
+        // the fill <a href="">event</a> handles map was implemented in a
+        // backwards-compatible package upgrade.
+        <b>move_to</b>(&<a href="">resource_account</a>, <a href="market.md#0xc0deb00c_market_FillEventHandles">FillEventHandles</a>{map: <a href="_new">table::new</a>()});
+    };
+    // Mutably borrow fill <a href="">event</a> handles map.
+    <b>let</b> fill_event_handles_map_ref_mut =
+        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="market.md#0xc0deb00c_market_FillEventHandles">FillEventHandles</a>&gt;(resource_address).map;
+    <a href="_add">table::add</a>( // Add fill <a href="">event</a> handle <b>to</b> fill <a href="">event</a> handles map.
+        fill_event_handles_map_ref_mut, market_id,
+        <a href="_new_event_handle">account::new_event_handle</a>&lt;<a href="market.md#0xc0deb00c_market_FillEvent">FillEvent</a>&gt;(&<a href="">resource_account</a>));
     // Register an Econia fee store entry for <a href="market.md#0xc0deb00c_market">market</a> quote <a href="">coin</a>.
     <a href="incentives.md#0xc0deb00c_incentives_register_econia_fee_store_entry">incentives::register_econia_fee_store_entry</a>&lt;QuoteType&gt;(market_id);
     market_id // Return <a href="market.md#0xc0deb00c_market">market</a> ID.
@@ -6411,7 +6600,10 @@ same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>
     u64,
     u64,
     u64
-) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+) <b>acquires</b>
+    <a href="market.md#0xc0deb00c_market_FillEventHandles">FillEventHandles</a>,
+    <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>
+{
     // Get <b>address</b> of resource <a href="">account</a> <b>where</b> order books are stored.
     <b>let</b> resource_address = resource_account::get_address();
     <b>let</b> order_books_map_ref_mut = // Mutably borrow order books map.
@@ -6433,10 +6625,10 @@ same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>
     <b>let</b> (base_traded, quote_traded, fees);
     (optional_base_coins, quote_coins, base_traded, quote_traded, fees, _)
         = <a href="market.md#0xc0deb00c_market_match">match</a>&lt;BaseType, QuoteType&gt;( // Match against order book.
-            market_id, order_book_ref_mut, <a href="market.md#0xc0deb00c_market_NO_MARKET_ACCOUNT">NO_MARKET_ACCOUNT</a>, <a href="market.md#0xc0deb00c_market_NO_CUSTODIAN">NO_CUSTODIAN</a>,
-            integrator, direction, min_base, max_base, min_quote,
-            max_quote, limit_price, <a href="market.md#0xc0deb00c_market_ABORT">ABORT</a>, optional_base_coins,
-            quote_coins);
+            market_id, resource_address, order_book_ref_mut,
+            <a href="market.md#0xc0deb00c_market_NO_MARKET_ACCOUNT">NO_MARKET_ACCOUNT</a>, <a href="market.md#0xc0deb00c_market_NO_CUSTODIAN">NO_CUSTODIAN</a>, integrator, direction,
+            min_base, max_base, min_quote, max_quote, limit_price, <a href="market.md#0xc0deb00c_market_ABORT">ABORT</a>,
+            optional_base_coins, quote_coins);
     // Return optionally modified asset inputs, trade amounts, fees.
     (optional_base_coins, quote_coins, base_traded, quote_traded, fees)
 }

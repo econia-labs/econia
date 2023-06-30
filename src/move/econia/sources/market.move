@@ -581,7 +581,7 @@ module econia::market {
         /// operations and withdrawals on given market account.
         maker_custodian_id: u64,
         /// Market order ID for taker side of fill. If multiple
-        /// `FillEvent`(s) are emitted for a single order, they all have
+        /// `FillEvent`s are emitted for a single order, they all have
         /// the same `FillEvent.taker_order_id`. If a limit order that
         /// crosses the spread partially fills as a taker then posts as
         /// a maker, `FillEvent.taker_market_order_id` for the taker

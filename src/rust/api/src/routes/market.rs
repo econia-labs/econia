@@ -524,6 +524,42 @@ pub async fn get_fills(
     Ok(Json(fills))
 }
 
+pub async fn get_order_by_market_order_id(
+    Path((market_id, market_order_id)): Path<(u64, u64)>,
+    State(state): State<Arc<AppState>>,
+) -> Result<Json<types::order::Order>, ApiError> {
+    let market_id = BigDecimal::from(market_id);
+    let market_order_id = BigDecimal::from(market_order_id);
+
+    let order_query = sqlx::query_as!(
+        db::models::order::Order,
+        r#"
+        select
+            market_order_id,
+            market_id,
+            side as "side: db::models::order::Side",
+            size,
+            price,
+            user_address,
+            custodian_id,
+            order_state as "order_state: db::models::order::OrderState",
+            created_at
+        from orders where market_id = $1 and market_order_id = $2;
+        "#,
+        market_id,
+        market_order_id
+    )
+    .fetch_all(&state.pool)
+    .await?;
+
+    if let Some(order) = order_query.into_iter().next() {
+        let order: types::order::Order = order.try_into()?;
+        Ok(Json(order))
+    } else {
+        Err(ApiError::NotFound)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::collections::HashSet;

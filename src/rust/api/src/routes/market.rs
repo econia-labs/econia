@@ -1034,4 +1034,32 @@ mod tests {
         let res = serde_json::from_slice::<types::order::Order>(&body);
         assert!(res.is_ok());
     }
+
+    /// Test that the order by market ID and market order ID returns a
+    /// `404 Not Found` error when a request is sent for a nonexistent order.
+    ///
+    /// This test sends a GET request to the `/markets/{market_id}/order/{order_id}`
+    /// endpoint with the `market_id` path parameter set to `1` and the
+    /// `market_order_id` path parameter set to `999999`. The response is
+    /// then checked to ensure that it has a `404 Not Found` status code.
+    #[tokio::test]
+    async fn test_get_order_by_market_order_id_not_found() {
+        let market_id = 1;
+        let market_order_id = 999999;
+
+        let config = load_config();
+        let app = make_test_server(config).await;
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri(format!("/markets/{}/order/{}", market_id, market_order_id))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    }
 }

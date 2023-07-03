@@ -28,7 +28,7 @@ ENTRYPOINT [ \
     " \
     curl -O https://raw.githubusercontent.com/aptos-labs/aptos-networks/main/${APTOS_NETWORK}/genesis.blob; \ 
     curl -O https://raw.githubusercontent.com/aptos-labs/aptos-networks/main/${APTOS_NETWORK}/waypoint.txt; \
-    # sed -i -e \"s|postgres_uri:.*|postgres_uri: \"${DATABASE_URL}\"|g\" indexer-node.yaml; \
+    sed -i -e \"s|postgres_uri:.*|postgres_uri: \"${DATABASE_URL}\"|g\" indexer-node.yaml; \
     ./aptos-node --config indexer-node.yaml \
     " \
 ]

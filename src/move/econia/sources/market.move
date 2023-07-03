@@ -676,6 +676,58 @@ module econia::market {
         map: Tablist<u64, OrderBook>
     }
 
+    struct MarketEvents has key {
+        map: Tablist<u64, MarketEventHandles>
+    }
+
+    struct UserWithCustodian has copy, drop, store {
+        user: address,
+        custodian_id: u64
+    }
+
+    /// An event handle can be looked up via a view functions, then
+    /// passed into the REST API to query events emitted to the handle.
+    ///
+    /// Events are emitted to handle for the market, and to a handle for
+    /// affected user/custodian ID tuple (affected signer in the case of
+    /// a swap, which is is not affiliated with a market account).
+    struct MarketEventHandles has store {
+        market_id: u64,
+        /// place_limit_order()
+        new_limit_order_events_market: EventHandle<NewLimitOrderEvent>,
+        new_limit_order_events_user:
+            map<UserWithCustodian, EventHandle<NewLimitOrderEvent>>,
+        /// place_market_order()
+        new_market_order_events_market: EventHandle<NewMarketOrderEvent>,
+        new_market_order_events_user:
+            map<UserWithCustodian, EventHandle<NewMarketOrderEvent>>,
+        /// swap()
+        new_swap_order_events_market: EventHandle<NewMarketOrderEvent>,
+        new_swap_order_events_signer:
+            map<address, EventHandle<NewSwapOrderEvent>>,
+        /// match() (events deferred to calling function)
+        match_events_market: EventHandle<MatchEvent>,
+        match_events_user:
+            map<UserWithCustodian, EventHandle<MatchEvent>>,
+        /// place_limit_order() (only amount that posts to book)
+        order_post_events_market: EventHandle<OrderPostEvent>,
+        order_post_events_user:
+            map<UserWithCustodian, EventHandle<OrderPostEvent>>,
+        /// change_order_size()
+        change_order_size_event_market: EventHandle<ChangeOrderSizeEvent>,
+        change_order_size_event_user:
+            map<UserWithCustodian, EventHandle<ChangeOrderSizeEvent>>,
+        /// cancel_order()
+        cancel_order_event_market: EventHandle<CancelOrderEvent>,
+        cancel_order_event_user:
+            map<UserWithCustodian, EventHandle<CancelOrderEvent>>,
+        cancel_order_event_market: EventHandle<CancelOrderEvent>,
+        /// place_limit_order()
+        order_evict_event_market: EventHandle<OrderEvictEvent>,
+        order_evict_event_user:
+            map<UserWithCustodian, EventHandle<OrderEvictEvent>>,
+    }
+
     /// User-friendly representation of an open order on the order book,
     /// combining fields from `Order` and the corresponding
     /// `MakerEvent` emitted when order was first placed.

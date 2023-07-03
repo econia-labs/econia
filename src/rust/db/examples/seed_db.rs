@@ -4,11 +4,11 @@ mod helpers;
 use bigdecimal::{BigDecimal, FromPrimitive};
 use chrono::{DateTime, Duration, TimeZone, Utc};
 use db::{
-    add_maker_event, add_taker_event, create_coin, establish_connection,
+    add_maker_event, create_coin, establish_connection,
     models::{
         bar::{Bar, NewBar},
         coin::NewCoin,
-        events::{MakerEventType, NewMakerEvent, NewTakerEvent},
+        events::{MakerEventType, NewMakerEvent},
         market::NewMarketRegistrationEvent,
         order::Side,
     },
@@ -53,21 +53,6 @@ fn place_random_orders(
                 custodian_id: None,
                 event_type: MakerEventType::Place,
                 size: &BigDecimal::from_u64(size).unwrap(),
-                price: &BigDecimal::from_u64(price).unwrap(),
-                time: Utc::now(),
-            },
-        )
-        .unwrap();
-
-        add_taker_event(
-            conn,
-            &NewTakerEvent {
-                market_id: market_id_bd,
-                side,
-                market_order_id: &id.into(),
-                maker: "0x123",
-                custodian_id: None,
-                size: &BigDecimal::from_u64(size >> 2).unwrap(),
                 price: &BigDecimal::from_u64(price).unwrap(),
                 time: Utc::now(),
             },

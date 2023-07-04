@@ -142,14 +142,14 @@ documentation <a href="https://econia.dev/overview/registry/" target="_blank" re
 Get information about a specific market.
 
 ```shell
-curl "https://dev.api.econia.exchange/market/0"
+curl "https://dev.api.econia.exchange/markets/0"
 ```
 
 ```python
 import requests
 
 market_id = 0
-res = requests.get(f"https://dev.api.econia.exchange/market/{market_id}")
+res = requests.get(f"https://dev.api.econia.exchange/markets/{market_id}")
 data = res.json()
 
 print(data)
@@ -158,7 +158,7 @@ print(data)
 ```javascript
 async function main() {
   const marketId = 0;
-  const res = await fetch(`https://dev.api.econia.exchange/market/${marketId}`);
+  const res = await fetch(`https://dev.api.econia.exchange/markets/${marketId}`);
   const data = await res.json();
   console.log(data);
 }
@@ -198,7 +198,7 @@ main();
 
 ### HTTP Request
 
-`GET /market/:market_id`
+`GET /markets/:market_id`
 
 ### Path Parameters
 
@@ -220,7 +220,7 @@ prices for each level on the orderbook, and the total size of the orders
 available at that price.
 
 ```shell
-curl "https://dev.api.econia.exchange/market/0/orderbook?depth=1"
+curl "https://dev.api.econia.exchange/markets/0/orderbook?depth=1"
 ```
 
 ```python
@@ -230,7 +230,7 @@ market_id = 0
 params = {"depth": 1}
 
 res = requests.get(
-    f"https://dev.api.econia.exchange/market/{market_id}/orderbook", params=params)
+    f"https://dev.api.econia.exchange/markets/{market_id}/orderbook", params=params)
 data = res.json()
 
 print(data)
@@ -241,7 +241,7 @@ async function main() {
   const marketId = 0;
   const params = new URLSearchParams({ depth: 1 });
   const res = await fetch(
-    `https://dev.api.econia.exchange/market/${marketId}/orderbook?${params}`
+    `https://dev.api.econia.exchange/markets/${marketId}/orderbook?${params}`
   );
   const data = await res.json();
   console.log(data);
@@ -271,7 +271,7 @@ main();
 
 ### HTTP Request
 
-`GET /market/:market_id/orderbook`
+`GET /markets/:market_id/orderbook`
 
 ### Path Parameters
 
@@ -301,7 +301,7 @@ open, high, low, and close prices for each interval, as well as the total volume
 for that interval.
 
 ```shell
-curl -G "https://dev.api.econia.exchange/market/0/history" \
+curl -G "https://dev.api.econia.exchange/markets/0/history" \
   -d resolution=1m \
   -d from=1683018300 \
   -d to=1683024240
@@ -318,7 +318,7 @@ params = {
 }
 
 res = requests.get(
-    f"https://dev.api.econia.exchange/market/{market_id}/history", params=params)
+    f"https://dev.api.econia.exchange/markets/{market_id}/history", params=params)
 data = res.json()
 
 print(data)
@@ -333,7 +333,7 @@ async function main() {
     to: 1683024240,
   });
   const res = await fetch(
-    `https://dev.api.econia.exchange/market/${marketId}/history?${params}`
+    `https://dev.api.econia.exchange/markets/${marketId}/history?${params}`
   );
   const data = await res.json();
   console.log(data);
@@ -366,7 +366,7 @@ main();
 
 ### HTTP Request
 
-`GET /market/:market_id/orderbook`
+`GET /markets/:market_id/orderbook`
 
 ### Path Parameters
 
@@ -398,7 +398,7 @@ and the `from` timestamp must come before the `to` timestamp.
 Get the fills for a particular market.
 
 ```shell
-curl -G "https://dev.api.econia.exchange/market/0/fills" \
+curl -G "https://dev.api.econia.exchange/markets/0/fills" \
   -d from=1682944490 \
   -d to=1682944500
 ```
@@ -413,7 +413,7 @@ params = {
 }
 
 res = requests.get(
-    f"https://dev.api.econia.exchange/market/{market_id}/fills", params=params)
+    f"https://dev.api.econia.exchange/markets/{market_id}/fills", params=params)
 data = res.json()
 
 print(data)
@@ -427,7 +427,7 @@ async function main() {
     to: 1682944500,
   });
   const res = await fetch(
-    `https://dev.api.econia.exchange/market/${marketId}/fills?${params}`
+    `https://dev.api.econia.exchange/markets/${marketId}/fills?${params}`
   );
   const data = await res.json();
   console.log(data);
@@ -454,7 +454,7 @@ main();
 
 ### HTTP Request
 
-`GET /market/:market_id/fills`
+`GET /markets/:market_id/fills`
 
 ### Path Parameters
 
@@ -580,7 +580,7 @@ The change field is given in decimals, so a value of `1.2345` would indicate a
 Get stats for a specific market.
 
 ```shell
-curl "https://dev.api.econia.exchange/market/0/stats?resolution=1d"
+curl "https://dev.api.econia.exchange/markets/0/stats?resolution=1d"
 ```
 
 ```python
@@ -592,7 +592,7 @@ params = {
 }
 
 res = requests.get(
-    f"https://dev.api.econia.exchange/market/{market_id}/stats", params=params)
+    f"https://dev.api.econia.exchange/markets/{market_id}/stats", params=params)
 data = res.json()
 
 print(data)
@@ -605,7 +605,7 @@ async function main() {
     resolution: "1d",
   });
   const res = await fetch(
-    `https://dev.api.econia.exchange/market/${marketId}/stats?${params}`
+    `https://dev.api.econia.exchange/markets/${marketId}/stats?${params}`
   );
   const data = await res.json();
   console.log(data);
@@ -629,7 +629,7 @@ main();
 
 ### HTTP Request
 
-`GET /market/:market_id/stats`
+`GET /markets/:market_id/stats`
 
 ### Path Parameters
 

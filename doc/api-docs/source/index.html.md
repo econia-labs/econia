@@ -806,6 +806,75 @@ main();
 | ---------- | ----------------------------------------------------- |
 | 404        | Not Found: no account with the specified ID was found |
 
+## Get fills by account and market
+
+Get fills for a particular account and market.
+
+```shell
+curl "https://dev.api.econia.exchange/account/0x1/markets/1/fills"
+```
+
+```python
+import requests
+
+account_id = "0x1"
+market_id = 1
+
+res = requests.get(
+    f"https://dev.api.econia.exchange/account/{account_id}/markets/{market_id}/fills")
+data = res.json()
+
+print(data)
+```
+
+```javascript
+async function main() {
+  const accountId = "0x1";
+  const marketId = 1;
+  const res = await fetch(
+    `https://dev.api.econia.exchange/account/${accountId}/markets/${marketId}/fills`
+  );
+  const data = await res.json();
+  console.log(data);
+}
+main();
+
+```
+
+> The above request returns JSON structured like this:
+
+```json
+[
+  {
+    "market_id": 0,
+    "maker_order_id": 0,
+    "maker": "0x3",
+    "maker_side": "buy",
+    "custodian_id": null,
+    "size": 1000,
+    "price": 1000,
+    "time": "2023-05-01T12:34:56.789012Z"
+  }
+]
+```
+
+### HTTP Request
+
+`GET /account/:account_id/markets/:market_id/fills`
+
+### Path Parameters
+
+| Parameter  | Type   | Description                                         |
+| ---------- | ------ | --------------------------------------------------- |
+| account_id | String | The ID of the account to retrieve order history for |
+| market_id  | u64    | The ID of the market to retrieve                    |
+### Errors
+
+| Error Code | Description                                                     |
+| ---------- | --------------------------------------------------------------- |
+| 400        | Bad Request: invalid parameters                                 |
+| 404        | Not Found: no account or market with the specified ID was found |
+
 # WebSocket API
 
 ## Overview

@@ -730,10 +730,10 @@ curl "https://dev.api.econia.exchange/account/0x1/open-orders"
 ```python
 import requests
 
-account_id = "0x1"
+account_address = "0x1"
 
 res = requests.get(
-    f"https://dev.api.econia.exchange/account/{account_id}/open-orders")
+    f"https://dev.api.econia.exchange/account/{account_address}/open-orders")
 data = res.json()
 
 print(data)
@@ -741,9 +741,9 @@ print(data)
 
 ```javascript
 async function main() {
-  const accountId = "0x1";
+  const accountAddress = "0x1";
   const res = await fetch(
-    `https://dev.api.econia.exchange/account/${accountId}/open-orders`
+    `https://dev.api.econia.exchange/account/${accountAddress}/open-orders`
   );
   const data = await res.json();
   console.log(data);
@@ -783,13 +783,13 @@ main();
 
 ### HTTP Request
 
-`GET /account/:account_id/open-orders`
+`GET /account/:account_address/open-orders`
 
 ### Path Parameters
 
-| Parameter  | Type   | Description                                       |
-| ---------- | ------ | ------------------------------------------------- |
-| account_id | String | The ID of the account to retrieve open orders for |
+| Parameter       | Type   | Description                                       |
+| --------------- | ------ | ------------------------------------------------- |
+| account_address | String | The ID of the account to retrieve open orders for |
 
 ### Errors
 
@@ -808,10 +808,10 @@ curl "https://dev.api.econia.exchange/account/0x1/order-history"
 ```python
 import requests
 
-account_id = "0x1"
+account_address = "0x1"
 
 res = requests.get(
-    f"https://dev.api.econia.exchange/account/{account_id}/order-history")
+    f"https://dev.api.econia.exchange/account/{account_address}/order-history")
 data = res.json()
 
 print(data)
@@ -819,9 +819,9 @@ print(data)
 
 ```javascript
 async function main() {
-  const accountId = "0x1";
+  const accountAddress = "0x1";
   const res = await fetch(
-    `https://dev.api.econia.exchange/account/${accountId}/order-history`
+    `https://dev.api.econia.exchange/account/${accountAddress}/order-history`
   );
   const data = await res.json();
   console.log(data);
@@ -861,13 +861,13 @@ main();
 
 ### HTTP Request
 
-`GET /account/:account_id/order-history`
+`GET /account/:account_address/order-history`
 
 ### Path Parameters
 
-| Parameter  | Type   | Description                                         |
-| ---------- | ------ | --------------------------------------------------- |
-| account_id | String | The ID of the account to retrieve order history for |
+| Parameter       | Type   | Description                                         |
+| --------------- | ------ | --------------------------------------------------- |
+| account_address | String | The ID of the account to retrieve order history for |
 
 ### Errors
 
@@ -886,11 +886,11 @@ curl "https://dev.api.econia.exchange/account/0x1/markets/1/fills"
 ```python
 import requests
 
-account_id = "0x1"
+account_address = "0x1"
 market_id = 1
 
 res = requests.get(
-    f"https://dev.api.econia.exchange/account/{account_id}/markets/{market_id}/fills")
+    f"https://dev.api.econia.exchange/account/{account_address}/markets/{market_id}/fills")
 data = res.json()
 
 print(data)
@@ -898,10 +898,10 @@ print(data)
 
 ```javascript
 async function main() {
-  const accountId = "0x1";
+  const accountAddress = "0x1";
   const marketId = 1;
   const res = await fetch(
-    `https://dev.api.econia.exchange/account/${accountId}/markets/${marketId}/fills`
+    `https://dev.api.econia.exchange/account/${accountAddress}/markets/${marketId}/fills`
   );
   const data = await res.json();
   console.log(data);
@@ -929,14 +929,14 @@ main();
 
 ### HTTP Request
 
-`GET /account/:account_id/markets/:market_id/fills`
+`GET /account/:account_address/markets/:market_id/fills`
 
 ### Path Parameters
 
-| Parameter  | Type   | Description                                         |
-| ---------- | ------ | --------------------------------------------------- |
-| account_id | String | The ID of the account to retrieve order history for |
-| market_id  | u64    | The ID of the market to retrieve                    |
+| Parameter       | Type   | Description                                         |
+| --------------- | ------ | --------------------------------------------------- |
+| account_address | String | The ID of the account to retrieve order history for |
+| market_id       | u64    | The ID of the market to retrieve                    |
 ### Errors
 
 | Error Code | Description                                                     |

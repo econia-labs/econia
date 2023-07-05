@@ -22,6 +22,8 @@ WORKDIR /node
 RUN apt-get update && apt-get install libpq-dev curl -y && rm -rf /var/lib/apt/lists/*
 ENV APTOS_NETWORK=devnet
 ENV DATABASE_URL=postgres://postgres:mysecretpassword@localhost:5432/postgres
+ENV REDIS_URL=redis://localhost:6379
+ENV ECONIA_ADDRESS=0x000000
 ENTRYPOINT [ \ 
     "/bin/bash", \ 
     "-c", \ 

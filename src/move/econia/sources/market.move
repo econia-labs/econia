@@ -629,7 +629,6 @@ module econia::market {
     /// affected user/custodian ID tuple (affected signer in the case of
     /// a swap, which is is not affiliated with a market account).
     struct MarketEventHandles has key {
-        /// match() (events deferred to calling function)
         fill_events: Table<u64, EventHandle<FillEvent>>,
         /*
         /// place_limit_order()
@@ -2504,21 +2503,23 @@ module econia::market {
     }
 
     /// Return taker order ID (assumed constant across all fill events):
-    /// * Null if no events
-    /// * New taker order ID if one provided
-    /// * Otherwise the taker order ID of the first element in queue.
+    /// * If posted order ID given (if fill events from limit order that
+    ///   took then posted), return posted order ID
+    /// * If no post and no fill events, then taker order ID is null
+    /// * Otherwise, order did not post but it did result in fills, so
+    ///   get the taker order ID from the first fill event
     fun emit_fill_events(
         market_id: u64,
         fill_events_queue_ref: &vector<FillEvent>,
         handles_ref_mut: &mut MarketEventHandles,
-        new_taker_order_id: u128
+        posted_order_id: u128
     ): u128 {
-        let update_taker_order_id = new_taker_order_id != (NIL as u128);
+        let update_taker_order_id = posted_order_id != (NIL as u128);
         vector::for_each_ref(fill_events_queue_ref, |event_ref| {
             let event: FillEvent = *event_ref;
             if (update_taker_order_id) {
                 user::set_fill_event_taker_order_id(
-                    &mut event, new_taker_order_id);
+                    &mut event, posted_order_id);
             };
             user::emit_fill_event_for_maker_and_taker(event);
             // Emit event for market, creating handle as needed.
@@ -2536,10 +2537,10 @@ module econia::market {
                 market_id);
             event::emit_event(handle_ref_mut, event);
         });
-        if (vector::is_empty(fill_events_queue_ref)) {
+        if (update_taker_order_id) {
+            posted_order_id
+        } else if (vector::is_empty(fill_events_queue_ref)) {
             (NIL as u128)
-        } else if (update_taker_order_id) {
-            new_taker_order_id
         } else {
             user::get_fill_event_taker_order_id(
                 vector::borrow(fill_events_queue_ref, 0))
@@ -4231,6 +4232,15 @@ module econia::market {
         let avlq_access_key = ((market_order_id & (HI_64 as u128)) as u64);
         // Return if corresponding order is tail of local price queue.
         avl_queue::is_local_tail(orders_ref, avlq_access_key)
+    }
+
+    #[test_only]
+    /// Return order ID derived solely from order book counter for a
+    /// limit order that took without posting.
+    public fun order_id_no_post(
+        counter: u64
+    ): u128 {
+        (counter as u128) << SHIFT_COUNTER
     }
 
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -7394,7 +7404,7 @@ module econia::market {
                 &user_1, MARKET_ID_COIN, @integrator, side, size, price,
                 restriction, self_match_behavior);
         // Assert returns.
-        assert!(market_order_id_1 == (NIL as u128), 0);
+        assert!(market_order_id_1 == order_id_no_post(2), 0);
         assert!(base_trade_r      == base, 0);
         assert!(quote_trade_r     == quote_trade, 0);
         assert!(fee_r             == fee, 0);
@@ -7618,7 +7628,7 @@ module econia::market {
                 &user_1, MARKET_ID_COIN, @integrator, side, size, price,
                 restriction, self_match_behavior);
         // Assert returns
-        assert!(market_order_id_1 == (NIL as u128), 0);
+        assert!(market_order_id_1 == order_id_no_post(2), 0);
         assert!(base_trade_r      == base_match, 0);
         assert!(quote_trade_r     == quote_trade, 0);
         assert!(fee_r             == fee, 0);
@@ -7772,7 +7782,7 @@ module econia::market {
                 &user_1, MARKET_ID_COIN, @integrator, side, size, price,
                 restriction, self_match_behavior);
         // Assert returns.
-        assert!(market_order_id_1 == (NIL as u128), 0);
+        assert!(market_order_id_1 == order_id_no_post(2), 0);
         assert!(base_trade_r      == base, 0);
         assert!(quote_trade_r     == quote_trade, 0);
         assert!(fee_r             == fee, 0);
@@ -8000,7 +8010,7 @@ module econia::market {
                 &user_1, MARKET_ID_COIN, @integrator, side, size, price,
                 restriction, self_match_behavior);
         // Assert returns
-        assert!(market_order_id_1 == (NIL as u128), 0);
+        assert!(market_order_id_1 == order_id_no_post(2), 0);
         assert!(base_trade_r      == base_match, 0);
         assert!(quote_trade_r     == quote_trade, 0);
         assert!(fee_r             == fee, 0);
@@ -9121,7 +9131,7 @@ module econia::market {
                 &taker, MARKET_ID_COIN, @integrator, side_taker,
                 size_taker_requested, price, restriction, self_match_behavior);
         // Assert returns
-        assert!(market_order_id_1 == (NIL as u128), 0);
+        assert!(market_order_id_1 == order_id_no_post(2), 0);
         assert!(base_trade_r      == base_taker, 0);
         assert!(quote_trade_r     == quote_trade, 0);
         assert!(fee_r             == fee, 0);
@@ -9242,7 +9252,7 @@ module econia::market {
                 &taker, MARKET_ID_COIN, @integrator, side_taker,
                 size_taker_requested, price, restriction, self_match_behavior);
         // Assert returns
-        assert!(market_order_id_1 == (NIL as u128), 0);
+        assert!(market_order_id_1 == order_id_no_post(2), 0);
         assert!(base_trade_r      == base_taker, 0);
         assert!(quote_trade_r     == quote_trade, 0);
         assert!(fee_r             == fee, 0);

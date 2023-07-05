@@ -4631,6 +4631,7 @@ module econia::user {
         MarketAccounts,
         MarketEventHandles
     {
+        account::create_account_for_test(address_of(user));
         // Register test markets, storing pure coin market ID.
         let (market_id_pure_coin, _, _, _, _, _, _, _, _, _, _, _) =
             registry::register_markets_test();
@@ -4672,6 +4673,7 @@ module econia::user {
         MarketAccounts,
         MarketEventHandles
     {
+        account::create_account_for_test(address_of(user));
         // Register test markets, storing market info.
         let (market_id_pure_coin, base_name_generic_pure_coin,
              lot_size_pure_coin, tick_size_pure_coin, min_size_pure_coin,

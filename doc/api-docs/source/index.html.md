@@ -479,6 +479,75 @@ main();
 The `to` and `from` timestamps must be valid Unix timestamps denoted in seconds,
 and the `from` timestamp must come before the `to` timestamp.
 
+## Get order status
+
+Get the status for an individual order.
+
+```shell
+curl -G "https://dev.api.econia.exchange/markets/1/order/100"
+```
+
+```python
+import requests
+
+market_id = 1
+market_order_id = 100
+
+res = requests.get(
+    f"https://dev.api.econia.exchange/markets/{market_id}/order/{market_order_id}")
+data = res.json()
+
+print(data)
+```
+
+```javascript
+async function main() {
+  const marketId = 1;
+  const marketOrderId = 100;
+
+  const res = await fetch(
+    `https://dev.api.econia.exchange/markets/${marketId}/order/${marketOrderId}`
+  );
+  const data = await res.json();
+  console.log(data);
+}
+main();
+```
+
+> The above request returns JSON structured like this:
+
+```json
+{
+  "market_order_id": 100,
+  "market_id": 1,
+  "side": "ask",
+  "size": 1000,
+  "price": 2000,
+  "user_address": "0x1",
+  "custodian_id": null,
+  "order_state": "open",
+  "created_at": "2023-05-01T12:34:56.789012Z"
+}
+```
+
+### HTTP Request
+
+`GET /markets/:market_id/order/:market_order_id`
+
+### Path Parameters
+
+| Parameter       | Type | Description                      |
+| --------------- | ---- | -------------------------------- |
+| market_id       | u64  | The ID of the market to retrieve |
+| market_order_id | u64  | The ID of the order to retrieve  |
+
+### Errors
+
+| Error Code | Description                                          |
+| ---------- | ---------------------------------------------------- |
+| 400        | Bad Request: invalid parameters                      |
+| 404        | Not Found: no order with the specified ID was found |
+
 ## Get stats
 
 Get stats for all available markets. The stats returned are the open, high, low,

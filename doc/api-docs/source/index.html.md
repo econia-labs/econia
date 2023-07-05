@@ -71,7 +71,7 @@ main();
 ```json
 [
   {
-    "market_id": 0,
+    "market_id": 1,
     "name": "APT-tUSDC",
     "base": {
       "account_address": "0x1",
@@ -97,7 +97,7 @@ main();
     "created_at": "2023-05-01T12:34:56.789012Z"
   },
   {
-    "market_id": 1,
+    "market_id": 2,
     "name": "APT-PERP",
     "base": null,
     "base_name_generic": "APT-PERP",
@@ -142,13 +142,13 @@ documentation <a href="https://econia.dev/overview/registry/" target="_blank" re
 Get information about a specific market.
 
 ```shell
-curl "https://dev.api.econia.exchange/markets/0"
+curl "https://dev.api.econia.exchange/markets/1"
 ```
 
 ```python
 import requests
 
-market_id = 0
+market_id = 1
 res = requests.get(f"https://dev.api.econia.exchange/markets/{market_id}")
 data = res.json()
 
@@ -157,7 +157,7 @@ print(data)
 
 ```javascript
 async function main() {
-  const marketId = 0;
+  const marketId = 1;
   const res = await fetch(`https://dev.api.econia.exchange/markets/${marketId}`);
   const data = await res.json();
   console.log(data);
@@ -169,7 +169,7 @@ main();
 
 ```json
 {
-  "market_id": 0,
+  "market_id": 1,
   "name": "APT-tUSDC",
   "base": {
     "account_address": "0x1",
@@ -220,13 +220,13 @@ prices for each level on the orderbook, and the total size of the orders
 available at that price.
 
 ```shell
-curl "https://dev.api.econia.exchange/markets/0/orderbook?depth=1"
+curl "https://dev.api.econia.exchange/markets/1/orderbook?depth=1"
 ```
 
 ```python
 import requests
 
-market_id = 0
+market_id = 1
 params = {"depth": 1}
 
 res = requests.get(
@@ -238,7 +238,7 @@ print(data)
 
 ```javascript
 async function main() {
-  const marketId = 0;
+  const marketId = 1;
   const params = new URLSearchParams({ depth: 1 });
   const res = await fetch(
     `https://dev.api.econia.exchange/markets/${marketId}/orderbook?${params}`
@@ -301,7 +301,7 @@ open, high, low, and close prices for each interval, as well as the total volume
 for that interval.
 
 ```shell
-curl -G "https://dev.api.econia.exchange/markets/0/history" \
+curl -G "https://dev.api.econia.exchange/markets/1/history" \
   -d resolution=1m \
   -d from=1683018300 \
   -d to=1683024240
@@ -310,7 +310,7 @@ curl -G "https://dev.api.econia.exchange/markets/0/history" \
 ```python
 import requests
 
-market_id = 0
+market_id = 1
 params = {
     "resolution": "1m",
     "from": 1683018300,
@@ -326,7 +326,7 @@ print(data)
 
 ```javascript
 async function main() {
-  const marketId = 0;
+  const marketId = 1;
   const params = new URLSearchParams({
     resolution: "1m",
     from: 1683018300,
@@ -398,7 +398,7 @@ and the `from` timestamp must come before the `to` timestamp.
 Get the fills for a particular market.
 
 ```shell
-curl -G "https://dev.api.econia.exchange/markets/0/fills" \
+curl -G "https://dev.api.econia.exchange/markets/1/fills" \
   -d from=1682944490 \
   -d to=1682944500
 ```
@@ -406,7 +406,7 @@ curl -G "https://dev.api.econia.exchange/markets/0/fills" \
 ```python
 import requests
 
-market_id = 0
+market_id = 1
 params = {
     "from": 1682944490,
     "to": 1682944500,
@@ -421,7 +421,7 @@ print(data)
 
 ```javascript
 async function main() {
-  const marketId = 0;
+  const marketId = 1;
   const params = new URLSearchParams({
     from: 1682944490,
     to: 1682944500,
@@ -440,7 +440,7 @@ main();
 ```json
 [
   {
-    "market_id": 0,
+    "market_id": 1,
     "maker_order_id": 0,
     "maker": "0x3",
     "maker_side": "buy",
@@ -591,7 +591,7 @@ main();
 ```json
 [
   {
-    "market_id": 0,
+    "market_id": 1,
     "open": 30891,
     "high": 39427,
     "low": 30380,
@@ -600,7 +600,7 @@ main();
     "volume": 116906256
   },
   {
-    "market_id": 1,
+    "market_id": 2,
     "open": 30891,
     "high": 36681,
     "low": 28596,
@@ -649,13 +649,13 @@ The change field is given in decimals, so a value of `1.2345` would indicate a
 Get stats for a specific market.
 
 ```shell
-curl "https://dev.api.econia.exchange/markets/0/stats?resolution=1d"
+curl "https://dev.api.econia.exchange/markets/1/stats?resolution=1d"
 ```
 
 ```python
 import requests
 
-market_id = 0
+market_id = 1
 params = {
     "resolution": "1d",
 }
@@ -669,7 +669,7 @@ print(data)
 
 ```javascript
 async function main() {
-  const marketId = 0;
+  const marketId = 1;
   const params = new URLSearchParams({
     resolution: "1d",
   });
@@ -686,7 +686,7 @@ main();
 
 ```json
 {
-  "market_id": 0,
+  "market_id": 1,
   "open": 30891,
   "high": 39427,
   "low": 30380,
@@ -757,8 +757,8 @@ main();
 ```json
 [
   {
-    "market_order_id": 0,
-    "market_id": 0,
+    "market_order_id": 100,
+    "market_id": 1,
     "side": "bid",
     "size": 1000,
     "price": 1000,
@@ -768,8 +768,8 @@ main();
     "created_at": "2023-05-01T12:34:56.789012Z"
   },
   {
-    "market_order_id": 1,
-    "market_id": 0,
+    "market_order_id": 101,
+    "market_id": 1,
     "side": "ask",
     "size": 1000,
     "price": 2000,
@@ -835,8 +835,8 @@ main();
 ```json
 [
   {
-    "market_order_id": 0,
-    "market_id": 0,
+    "market_order_id": 100,
+    "market_id": 1,
     "side": "bid",
     "size": 1000,
     "price": 1000,
@@ -846,8 +846,8 @@ main();
     "created_at": "2023-04-30T12:34:56.789012Z"
   },
   {
-    "market_order_id": 1,
-    "market_id": 0,
+    "market_order_id": 101,
+    "market_id": 1,
     "side": "ask",
     "size": 1000,
     "price": 2000,
@@ -915,8 +915,8 @@ main();
 ```json
 [
   {
-    "market_id": 0,
-    "maker_order_id": 0,
+    "market_id": 1,
+    "maker_order_id": 100,
     "maker": "0x3",
     "maker_side": "buy",
     "custodian_id": null,
@@ -979,7 +979,7 @@ the connection.
   "method": "subscribe",
   "channel": "orders",
   "params": {
-    "market_id": 0,
+    "market_id": 1,
     "user_address": "0x1"
   }
 }
@@ -993,7 +993,7 @@ the connection.
   "channel": "orders",
   "method": "subscribe",
   "params": {
-    "market_id": 0,
+    "market_id": 1,
     "user_address": "0x1"
   }
 }
@@ -1008,7 +1008,7 @@ the connection.
   "channel": "orders",
   "data": {
     "market_order_id": 1,
-    "market_id": 0,
+    "market_id": 1,
     "side": "bid",
     "size": 1000,
     "price": 1000,
@@ -1037,7 +1037,7 @@ the connection.
   "method": "subscribe",
   "channel": "orders",
   "params": {
-    "market_id": 0,
+    "market_id": 1,
     "user_address": "0x1"
   }
 }
@@ -1062,7 +1062,7 @@ them that this is the case.
   "method": "subscribe",
   "channel": "fills",
   "params": {
-    "market_id": 0,
+    "market_id": 1,
     "user_address": "0x1"
   }
 }
@@ -1076,7 +1076,7 @@ them that this is the case.
   "channel": "fills",
   "method": "subscribe",
   "params": {
-    "market_id": 0,
+    "market_id": 1,
     "user_address": "0x1"
   }
 }
@@ -1091,7 +1091,7 @@ them that this is the case.
   "channel": "fills",
   "data": {
     "market_order_id": 1,
-    "market_id": 0,
+    "market_id": 1,
     "side": "bid",
     "size": 500,
     "price": 1000,
@@ -1110,7 +1110,7 @@ them that this is the case.
   "method": "subscribe",
   "channel": "fills",
   "params": {
-    "market_id": 0,
+    "market_id": 1,
     "user_address": "0x1"
   }
 }
@@ -1133,7 +1133,7 @@ them that this is the case.
   "method": "subscribe",
   "channel": "price_levels",
   "params": {
-    "market_id": 0,
+    "market_id": 1,
   }
 }
 ```
@@ -1146,7 +1146,7 @@ them that this is the case.
   "channel": "price_levels",
   "method": "subscribe",
   "params": {
-    "market_id": 0,
+    "market_id": 1,
   }
 }
 ```
@@ -1159,7 +1159,7 @@ them that this is the case.
   "event": "update",
   "channel": "price_levels",
   "data": {
-    "market_id": 0,
+    "market_id": 1,
     "side": "bid",
     "size": 1000,
     "price": 1000,
@@ -1175,7 +1175,7 @@ them that this is the case.
   "method": "subscribe",
   "channel": "price_levels",
   "params": {
-    "market_id": 0
+    "market_id": 1
   }
 }
 ```

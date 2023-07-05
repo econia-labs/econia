@@ -247,7 +247,7 @@ mod tests {
     /// Test that the fills by accoutn and market endpoint returns a `400 Bad Request`
     /// error when an invalid account address is sent.
     ///
-    /// This test sends a GET request to the `/account/{account_address}/market/{market_id}/fills`
+    /// This test sends a GET request to the `/account/{account_address}/markets/{market_id}/fills`
     /// endpoint with the `account_address` parameter set to `hello`. The response is
     /// checked to ensure that it has a `400 Bad Request` status code.
     #[tokio::test]
@@ -261,7 +261,7 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .uri(format!(
-                        "/account/{}/market/{}/fills",
+                        "/account/{}/markets/{}/fills",
                         account_address, market_id
                     ))
                     .body(Body::empty())
@@ -280,7 +280,7 @@ mod tests {
     /// Test that the fills by account and market endpoint returns fills for the
     /// specified user and market.
     ///
-    /// This test sends a GET request to the `/account/{account_address}/market/{market_id}/fills`
+    /// This test sends a GET request to the `/account/{account_address}/markets/{market_id}/fills`
     /// endpoint with the `account_address` parameter set to `0x123`, and the
     /// `market_id` parameter set to `1`. The response is checked to ensure that
     /// it has a `200 OK` status code, and the response body is checked to ensure
@@ -296,7 +296,7 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .uri(format!(
-                        "/account/{}/market/{}/fills",
+                        "/account/{}/markets/{}/fills",
                         account_address, market_id
                     ))
                     .body(Body::empty())

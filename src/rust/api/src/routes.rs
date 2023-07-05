@@ -39,7 +39,7 @@ pub fn router(state: Arc<AppState>) -> Router {
             get(account::open_orders_by_account),
         )
         .route(
-            "/account/:account_address/market/:market_id/fills",
+            "/account/:account_address/markets/:market_id/fills",
             get(account::fills_by_account_and_market),
         )
         .route("/market/:market_id/orderbook", get(market::get_orderbook))

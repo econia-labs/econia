@@ -545,7 +545,7 @@ module econia::market {
         Self, CustodianCapability, GenericAsset, UnderwriterCapability};
     use econia::resource_account;
     use econia::tablist::{Self, Tablist};
-    use econia::user;
+    use econia::user::{Self, FillEvent};
     use std::option::{Self, Option};
     use std::signer::address_of;
     use std::string::{Self, String};
@@ -561,19 +561,6 @@ module econia::market {
     // Test-only uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-    struct MatchEvent has copy, drop, store {
-        market_id: u64,
-        size: u64,
-        price: u64,
-        maker_side: bool,
-        maker: address,
-        maker_custodian_id: u64,
-        maker_order_id: u128,
-        taker: address,
-        taker_custodian_id: u64,
-        taker_order_id: u128,
-    }
 
     /*
     TODO: Cancel event, flag for is_self_match_cancel
@@ -635,12 +622,6 @@ module econia::market {
         map: Tablist<u64, OrderBook>
     }
 
-    struct MarketAccountInfo has copy, drop, store {
-        market_id: u64,
-        user: address,
-        custodian_id: u64
-    }
-
     /// An event handle can be looked up via a view functions, then
     /// passed into the REST API to query events emitted to the handle.
     ///
@@ -649,10 +630,7 @@ module econia::market {
     /// a swap, which is is not affiliated with a market account).
     struct MarketEventHandles has key {
         /// match() (events deferred to calling function)
-        match_events_by_market:
-            Table<u64, EventHandle<MatchEvent>>,
-        match_events_by_market_account:
-            Table<MarketAccountInfo, EventHandle<MatchEvent>>,
+        fill_events: Table<u64, EventHandle<FillEvent>>,
         /*
         /// place_limit_order()
         new_limit_order_events_market: EventHandle<NewLimitOrderEvent>,
@@ -2525,80 +2503,46 @@ module econia::market {
             size: new_size, price});
     }
 
-    inline fun emit_match_events(
+    /// Return taker order ID (assumed constant across all fill events):
+    /// * Null if no events
+    /// * New taker order ID if one provided
+    /// * Otherwise the taker order ID of the first element in queue.
+    fun emit_fill_events(
+        market_id: u64,
+        fill_events_queue_ref: &vector<FillEvent>,
         handles_ref_mut: &mut MarketEventHandles,
-        match_events_queue_ref_mut: &mut vector<MatchEvent>,
-        new_taker_order_id: u128,
+        new_taker_order_id: u128
     ): u128 {
-        vector::for_each_ref(match_events_queue_ref_mut, |event_ref| {
-            let event: MatchEvent = *event_ref;
-            if (new_taker_order_id != (NIL as u128)) {
-                event.taker_order_id = new_taker_order_id
+        let update_taker_order_id = new_taker_order_id != (NIL as u128);
+        vector::for_each_ref(fill_events_queue_ref, |event_ref| {
+            let event: FillEvent = *event_ref;
+            if (update_taker_order_id) {
+                user::set_fill_event_taker_order_id(
+                    &mut event, new_taker_order_id);
             };
-            // Event for market.
-            let has_market_handle = table::contains(
-                &handles_ref_mut.match_events_by_market,
-                event.market_id);
-            if (!has_market_handle) {
+            user::emit_fill_event_for_maker_and_taker(event);
+            // Emit event for market, creating handle as needed.
+            let has_handle = table::contains(
+                &handles_ref_mut.fill_events, market_id);
+            if (!has_handle) {
                 table::add(
-                    &mut handles_ref_mut.match_events_by_market,
-                    event.market_id,
-                    account::new_event_handle<MatchEvent>(
+                    &mut handles_ref_mut.fill_events,
+                    market_id,
+                    account::new_event_handle<FillEvent>(
                         &resource_account::get_signer()));
             };
-            let market_handle_ref_mut = table::borrow_mut(
-                &mut handles_ref_mut.match_events_by_market,
-                event.market_id);
-            event::emit_event(market_handle_ref_mut, copy event);
-            // Event for taker.
-            if (event.taker != NO_MARKET_ACCOUNT) {
-                let taker_market_account_info = MarketAccountInfo{
-                    market_id: event.market_id,
-                    user: event.taker,
-                    custodian_id: event.taker_custodian_id
-                };
-                let has_taker_handle = table::contains(
-                    &handles_ref_mut.match_events_by_market_account,
-                    taker_market_account_info);
-                if (!has_taker_handle) {
-                    table::add(
-                        &mut handles_ref_mut.match_events_by_market_account,
-                        taker_market_account_info,
-                        account::new_event_handle<MatchEvent>(
-                            &resource_account::get_signer()));
-                };
-                let taker_handle_ref_mut = table::borrow_mut(
-                    &mut handles_ref_mut.match_events_by_market_account,
-                    taker_market_account_info);
-                event::emit_event(taker_handle_ref_mut, copy event);
-            };
-            // Event for maker.
-            let maker_market_account_info = MarketAccountInfo{
-                market_id: event.market_id,
-                user: event.maker,
-                custodian_id: event.maker_custodian_id
-            };
-            let has_maker_handle = table::contains(
-                &handles_ref_mut.match_events_by_market_account,
-                maker_market_account_info);
-            if (!has_maker_handle) {
-                table::add(
-                    &mut handles_ref_mut.match_events_by_market_account,
-                    maker_market_account_info,
-                    account::new_event_handle<MatchEvent>(
-                        &resource_account::get_signer()));
-            };
-            let maker_handle_ref_mut = table::borrow_mut(
-                &mut handles_ref_mut.match_events_by_market_account,
-                maker_market_account_info);
-            event::emit_event(maker_handle_ref_mut, copy event);
+            let handle_ref_mut = table::borrow_mut(
+                &mut handles_ref_mut.fill_events,
+                market_id);
+            event::emit_event(handle_ref_mut, event);
         });
-        if (vector::is_empty(match_events_queue_ref_mut)) {
+        if (vector::is_empty(fill_events_queue_ref)) {
             (NIL as u128)
-        } else if (new_taker_order_id != (NIL as u128)) {
+        } else if (update_taker_order_id) {
             new_taker_order_id
         } else {
-            vector::borrow(match_events_queue_ref_mut, 0).taker_order_id
+            user::get_fill_event_taker_order_id(
+                vector::borrow(fill_events_queue_ref, 0))
         }
     }
 
@@ -2717,8 +2661,7 @@ module econia::market {
             move_to<MarketEventHandles>(
                 &resource_account::get_signer(),
                 MarketEventHandles{
-                    match_events_by_market: table::new(),
-                    match_events_by_market_account: table::new()
+                    fill_events: table::new(),
                 }
             );
         borrow_global_mut<MarketEventHandles>(resource_address)
@@ -2848,7 +2791,7 @@ module econia::market {
     >(
         market_id: u64,
         _event_handles_ref_mut: &mut MarketEventHandles,
-        event_queue_ref_mut: &mut vector<MatchEvent>,
+        event_queue_ref_mut: &mut vector<FillEvent>,
         order_book_ref_mut: &mut OrderBook,
         taker: address,
         custodian_id: u64,
@@ -2986,19 +2929,18 @@ module econia::market {
                         fill_size, complete_fill, optional_base_coins,
                         quote_coins, fill_size * lot_size,
                         ticks_filled * tick_size);
-                vector::push_back(event_queue_ref_mut, MatchEvent{
+                vector::push_back(event_queue_ref_mut, user::get_fill_event(
                     market_id,
-                    size: fill_size,
+                    fill_size,
                     price,
-                    maker_side: side,
+                    side,
                     maker,
-                    maker_custodian_id: maker_custodian_id,
-                    maker_order_id: market_order_id,
+                    maker_custodian_id,
+                    market_order_id,
                     taker,
-                    taker_custodian_id: custodian_id,
-                    taker_order_id:
-                        ((order_book_ref_mut.counter as u128) << SHIFT_COUNTER)
-                });
+                    custodian_id,
+                    ((order_book_ref_mut.counter as u128) << SHIFT_COUNTER)
+                ));
                 if (complete_fill) {
                     let avlq_access_key = // Get AVL queue access key.
                         ((market_order_id & (HI_64 as u128)) as u64);
@@ -3274,7 +3216,7 @@ module econia::market {
             direction, min_base, max_base, min_quote, max_quote,
             base_available, base_ceiling, quote_available, quote_ceiling);
         // Assume no assets traded as a taker.
-        let (base_traded, quote_traded, fees, match_event_queue) =
+        let (base_traded, quote_traded, fees, fill_event_queue) =
             (0, 0, 0, vector[]);
         let market_event_handles_ref_mut =
             market_event_handles_borrow_mut(resource_address);
@@ -3299,7 +3241,7 @@ module econia::market {
              self_match_cancel) = match(
                 market_id,
                 market_event_handles_ref_mut,
-                &mut match_event_queue,
+                &mut fill_event_queue,
                 order_book_ref_mut,
                 user_address,
                 custodian_id,
@@ -3387,8 +3329,8 @@ module econia::market {
             // Order ID as maker is from post to book.
             order_id_as_maker = market_order_id
         };
-        let market_order_id = emit_match_events(
-            market_event_handles_ref_mut, &mut match_event_queue,
+        let market_order_id = emit_fill_events(
+            market_id, &mut fill_event_queue, market_event_handles_ref_mut,
             order_id_as_maker);
         // Return market order ID and taker trade amounts.
         return (market_order_id, base_traded, quote_traded, fees)
@@ -4189,7 +4131,6 @@ module econia::market {
         signer,
         signer
     ) acquires
-        MarketEventHandles,
         OrderBooks
     {
         init_test(); // Init for testing.
@@ -4667,7 +4608,6 @@ module econia::market {
     /// Verify failure for invalid market ID.
     fun test_cancel_order_invalid_market_id()
     acquires
-        MarketEventHandles,
         OrderBooks
     {
         // Initialize markets, users, and an integrator.
@@ -4685,7 +4625,6 @@ module econia::market {
     /// Verify failure for invalid bogus market order ID.
     fun test_cancel_order_invalid_market_order_id_bogus()
     acquires
-        MarketEventHandles,
         OrderBooks
     {
         // Initialize markets, users, and an integrator.
@@ -4703,7 +4642,6 @@ module econia::market {
     /// Verify failure for invalid market order ID passed as `NIL`.
     fun test_cancel_order_invalid_market_order_id_null()
     acquires
-        MarketEventHandles,
         OrderBooks
     {
         // Initialize markets, users, and an integrator.
@@ -5209,7 +5147,6 @@ module econia::market {
     /// Verify failure for invalid market ID.
     fun test_change_order_size_invalid_market_id()
     acquires
-        MarketEventHandles,
         OrderBooks
     {
         // Initialize markets, users, and an integrator.
@@ -5228,7 +5165,6 @@ module econia::market {
     /// Verify failure for invalid bogus market order ID.
     fun test_change_order_size_invalid_market_order_id_bogus()
     acquires
-        MarketEventHandles,
         OrderBooks
     {
         // Initialize markets, users, and an integrator.
@@ -5247,7 +5183,6 @@ module econia::market {
     /// Verify failure for invalid market order ID passed as `NIL`.
     fun test_change_order_size_invalid_market_order_id_null()
     acquires
-        MarketEventHandles,
         OrderBooks
     {
         // Initialize markets, users, and an integrator.
@@ -5380,6 +5315,12 @@ module econia::market {
         assert!(get_NO_CUSTODIAN() == NO_CUSTODIAN, 0);
         assert!(get_NO_CUSTODIAN() == user::get_NO_CUSTODIAN(), 0);
         assert!(get_NO_CUSTODIAN() == registry::get_NO_CUSTODIAN(), 0);
+    }
+
+    #[test]
+    /// Verify constant is same across modules.
+    fun test_get_NO_MARKET_ACCOUNT() {
+        assert!(user::get_NO_MARKET_ACCOUNT_test() == NO_MARKET_ACCOUNT, 0)
     }
 
     #[test]
@@ -10319,7 +10260,6 @@ module econia::market {
     /// 3. Registering pure coin market, not from coin store.
     fun test_register_markets()
     acquires
-        MarketEventHandles,
         OrderBooks
     {
         init_test(); // Init for testing.

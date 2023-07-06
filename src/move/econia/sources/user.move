@@ -400,9 +400,19 @@ module econia::user {
         custodians: Tablist<u64, vector<u64>>
     }
 
+    /// An open order, either ask or bid.
+    struct Order has store {
+        /// Market order ID. `NIL` if inactive.
+        market_order_id: u128,
+        /// Order size left to fill, in lots. When `market_order_id` is
+        /// `NIL`, indicates access key of next inactive order in stack.
+        size: u64
+    }
+
     /// Table keys are market account IDs.
     struct MarketEventHandles has key {
         fill_events: Table<u128, EventHandle<FillEvent>>,
+        limit_order_events: Table<u128, EventHandle<LimitOrderEvent>>
     }
 
     struct FillEvent has copy, drop, store {
@@ -418,13 +428,21 @@ module econia::user {
         taker_order_id: u128
     }
 
-    /// An open order, either ask or bid.
-    struct Order has store {
-        /// Market order ID. `NIL` if inactive.
-        market_order_id: u128,
-        /// Order size left to fill, in lots. When `market_order_id` is
-        /// `NIL`, indicates access key of next inactive order in stack.
-        size: u64
+    struct LimitOrderEvent has copy, drop, store {
+        market_id: u64,
+        user: address,
+        custodian_id: u64,
+        integrator: address,
+        side: bool,
+        size: u64,
+        price: u64,
+        restriction: u8,
+        self_match_behavior: u8,
+        base_traded_as_taker: u64,
+        quote_traded_as_taker: u64,
+        fees_as_taker: u64,
+        size_posted_as_maker: u64,
+        order_id: u128
     }
 
     // Structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1111,7 +1129,8 @@ module econia::user {
                 E_NO_MARKET_ACCOUNT);
         if (!exists<MarketEventHandles>(address_of(user)))
             move_to(user, MarketEventHandles{
-                fill_events: table::new()
+                fill_events: table::new(),
+                limit_order_events: table::new()
             });
         let market_event_handles_ref_mut =
             borrow_global_mut<MarketEventHandles>(user_address);
@@ -1489,36 +1508,33 @@ module econia::user {
             user_address, market_id, custodian_id, quote_coins);
     }
 
-    /// Emit fill event for either maker or taker, if handle exists.
-    public(friend) fun emit_fill_event(
-        event: FillEvent,
-        is_maker: bool
-    ) acquires MarketEventHandles {
-        let (user_address, custodian_id) = if (is_maker)
-            (event.maker, event.maker_custodian_id) else
-            (event.taker, event.taker_custodian_id);
-        if ((exists<MarketEventHandles>(user_address)) &&
-                (user_address != NO_MARKET_ACCOUNT)) {
-            let market_event_handles_ref_mut =
-                borrow_global_mut<MarketEventHandles>(user_address);
-            let fill_events_ref_mut =
-                &mut market_event_handles_ref_mut.fill_events;
-            let market_account_id =
-                get_market_account_id(event.market_id, custodian_id);
-            if (table::contains(fill_events_ref_mut, market_account_id)) {
-                let fill_event_handle_ref_mut = table::borrow_mut(
-                    fill_events_ref_mut, market_account_id);
-                event::emit_event(fill_event_handle_ref_mut, event)
-            }
-        }
-    }
-
     /// Emit fill event to specified handle, if handle exists.
     public(friend) fun emit_fill_event_for_maker_and_taker(
         event: FillEvent
     ) acquires MarketEventHandles {
         emit_fill_event(event, true);
         emit_fill_event(event, false);
+    }
+
+    public(friend) fun emit_limit_order_event(
+        event: LimitOrderEvent
+    ) acquires MarketEventHandles {
+        let user_address = event.user;
+        if (exists<MarketEventHandles>(user_address)) {
+            let market_event_handles_ref_mut =
+                borrow_global_mut<MarketEventHandles>(user_address);
+            let limit_order_events_ref_mut =
+                &mut market_event_handles_ref_mut.limit_order_events;
+            let market_account_id =
+                get_market_account_id(event.market_id, event.custodian_id);
+            let has_handle = table::contains(
+                limit_order_events_ref_mut, market_account_id);
+            if (has_handle) {
+                let limit_order_event_handle_ref_mut = table::borrow_mut(
+                    limit_order_events_ref_mut, market_account_id);
+                event::emit_event(limit_order_event_handle_ref_mut, event)
+            }
+        }
     }
 
     public(friend) fun get_fill_event(
@@ -1558,6 +1574,40 @@ module econia::user {
         taker_order_id: u128
     ) {
         fill_event_ref_mut.taker_order_id = taker_order_id
+    }
+
+    public(friend) fun get_limit_order_event(
+        market_id: u64,
+        user: address,
+        custodian_id: u64,
+        integrator: address,
+        side: bool,
+        size: u64,
+        price: u64,
+        restriction: u8,
+        self_match_behavior: u8,
+        base_traded_as_taker: u64,
+        quote_traded_as_taker: u64,
+        fees_as_taker: u64,
+        size_posted_as_maker: u64,
+        order_id: u128
+    ): LimitOrderEvent {
+        LimitOrderEvent {
+            market_id,
+            user,
+            custodian_id,
+            integrator,
+            side,
+            size,
+            price,
+            restriction,
+            self_match_behavior,
+            base_traded_as_taker,
+            quote_traded_as_taker,
+            fees_as_taker,
+            size_posted_as_maker,
+            order_id
+        }
     }
 
     /// Fill a user's order, routing collateral appropriately.
@@ -2273,6 +2323,30 @@ module econia::user {
             // Merge coins into collateral.
             coin::merge(collateral_ref_mut, coins);
         };
+    }
+
+    /// Emit fill event for either maker or taker, if handle exists.
+    inline fun emit_fill_event(
+        event: FillEvent,
+        is_maker: bool
+    ) acquires MarketEventHandles {
+        let (user_address, custodian_id) = if (is_maker)
+            (event.maker, event.maker_custodian_id) else
+            (event.taker, event.taker_custodian_id);
+        if ((exists<MarketEventHandles>(user_address)) &&
+                (user_address != NO_MARKET_ACCOUNT)) {
+            let market_event_handles_ref_mut =
+                borrow_global_mut<MarketEventHandles>(user_address);
+            let fill_events_ref_mut =
+                &mut market_event_handles_ref_mut.fill_events;
+            let market_account_id =
+                get_market_account_id(event.market_id, custodian_id);
+            if (table::contains(fill_events_ref_mut, market_account_id)) {
+                let fill_event_handle_ref_mut = table::borrow_mut(
+                    fill_events_ref_mut, market_account_id);
+                event::emit_event(fill_event_handle_ref_mut, event)
+            }
+        }
     }
 
     /// Return `registry::MarketInfo` fields stored in market account.

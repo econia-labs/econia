@@ -605,9 +605,9 @@ module econia::market {
         bids: AVLqueue<Order>,
         /// Cumulative number of orders placed.
         counter: u64,
-        /// Deprecated field retained for backwards compatibility.
+        /// Deprecated field retained for compatible upgrade policy.
         maker_events: EventHandle<MakerEvent>,
-        /// Deprecated field retained for backwards compatibility.
+        /// Deprecated field retained for compatible upgrade policy.
         taker_events: EventHandle<TakerEvent>
     }
 
@@ -3974,7 +3974,7 @@ module econia::market {
 
     // Deprecated structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Deprecated struct retained for backwards compatibility.
+    /// Deprecated struct retained for compatible upgrade policy.
     struct MakerEvent has drop, store {
         market_id: u64,
         side: bool,
@@ -3986,10 +3986,10 @@ module econia::market {
         price: u64
     }
 
-    /// Deprecated struct retained for backwards compatibility.
+    /// Deprecated struct retained for compatible upgrade policy.
     struct Orders has key {asks: vector<Order>, bids: vector<Order>}
 
-    /// Deprecated struct retained for backwards compatibility.
+    /// Deprecated struct retained for compatible upgrade policy.
     struct TakerEvent has drop, store {
         market_id: u64,
         side: bool,
@@ -4006,7 +4006,7 @@ module econia::market {
 
     // Deprecated functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Deprecated function retained for backwards compatibility.
+    /// Deprecated function retained for compatible upgrade policy.
     ///
     /// # Coverage testing
     ///

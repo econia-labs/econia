@@ -48,6 +48,10 @@ pub fn router(state: Arc<AppState>) -> Router {
             get(account::open_orders_by_account),
         )
         .route("/stats", get(market::get_stats))
+        .route(
+            "/account/:account_address/markets/:market_id/fills",
+            get(account::fills_by_account_and_market),
+        )
         .route("/ws", get(ws_handler))
         .with_state(state)
         .layer(middleware_stack)

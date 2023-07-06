@@ -40,5 +40,5 @@ types = { path = "../types", features = ["serde"] }
 [dev-dependencies]
 hyper = "0.14.26"
 rand = { version = "0.8.5", features = ["std_rng"] }
-tokio-tungstenite = "0.18.0"
+tokio-tungstenite = "0.19.0"
 url = "2.3.1"

@@ -545,7 +545,11 @@ module econia::market {
         Self, CustodianCapability, GenericAsset, UnderwriterCapability};
     use econia::resource_account;
     use econia::tablist::{Self, Tablist};
-    use econia::user::{Self, FillEvent};
+    use econia::user::{
+        Self,
+        FillEvent,
+        LimitOrderEvent
+    };
     use std::option::{Self, Option};
     use std::signer::address_of;
     use std::string::{Self, String};
@@ -561,14 +565,6 @@ module econia::market {
     // Test-only uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-    /*
-    TODO: Cancel event, flag for is_self_match_cancel
-    */
-
-    /*
-    TODO: Fee event should be for integrator, taker fee divisor, amounts assessed?
-    */
 
     /// An order on the order book.
     struct Order has store {
@@ -630,36 +626,18 @@ module econia::market {
     /// a swap, which is is not affiliated with a market account).
     struct MarketEventHandles has key {
         fill_events: Table<u64, EventHandle<FillEvent>>,
+        limit_order_events: Table<u64, EventHandle<LimitOrderEvent>>
         /*
-        /// place_limit_order()
-        new_limit_order_events_market: EventHandle<NewLimitOrderEvent>,
-        new_limit_order_events_user:
-            map<UserWithCustodian, EventHandle<NewLimitOrderEvent>>,
         /// place_market_order()
-        new_market_order_events_market: EventHandle<NewMarketOrderEvent>,
-        new_market_order_events_user:
-            map<UserWithCustodian, EventHandle<NewMarketOrderEvent>>,
+        market_order_events: EventHandle<MarketOrderEvent>,
         /// swap()
-        new_swap_order_events_market: EventHandle<NewMarketOrderEvent>,
-        new_swap_order_events_signer:
-            map<address, EventHandle<NewSwapOrderEvent>>,
-        /// place_limit_order() (only amount that posts to book)
-        order_post_events_market: EventHandle<OrderPostEvent>,
-        order_post_events_user:
-            map<UserWithCustodian, EventHandle<OrderPostEvent>>,
+        swap_events_market: EventHandle<SwapEvent>,
+        swap_events_signer:
+            map<address, EventHandle<SwapEvent>>,
         /// change_order_size()
-        change_order_size_event_market: EventHandle<ChangeOrderSizeEvent>,
-        change_order_size_event_user:
-            map<UserWithCustodian, EventHandle<ChangeOrderSizeEvent>>,
-        /// cancel_order()
+        change_order_size_events: EventHandle<ChangeOrderSizeEvent>,
+        /// cancel_order() (and place_limit_order(), for flag on eviction)
         cancel_order_event_market: EventHandle<CancelOrderEvent>,
-        cancel_order_event_user:
-            map<UserWithCustodian, EventHandle<CancelOrderEvent>>,
-        cancel_order_event_market: EventHandle<CancelOrderEvent>,
-        /// place_limit_order()
-        order_evict_event_market: EventHandle<OrderEvictEvent>,
-        order_evict_event_user:
-            map<UserWithCustodian, EventHandle<OrderEvictEvent>>,
         */
     }
 
@@ -2663,6 +2641,7 @@ module econia::market {
                 &resource_account::get_signer(),
                 MarketEventHandles{
                     fill_events: table::new(),
+                    limit_order_events: table::new()
                 }
             );
         borrow_global_mut<MarketEventHandles>(resource_address)
@@ -3281,7 +3260,8 @@ module econia::market {
         } else { // If spread not crossed (matching engine not called):
             order_book_ref_mut.counter = order_book_ref_mut.counter + 1;
         };
-        let order_id_as_maker = (NIL as u128); // Assume no post.
+        // Assume no size posted to book.
+        let (size_posted, order_id_as_maker) = (0, (NIL as u128));
         // If size big enough to post and not immediate-or-cancel:
         if ((size >= order_book_ref_mut.min_size) &&
                 (restriction != IMMEDIATE_OR_CANCEL)) {
@@ -3307,10 +3287,7 @@ module econia::market {
             user::place_order_internal( // Place order user-side.
                 user_address, market_id, custodian_id, side, size, price,
                 market_order_id, order_access_key);
-            // Emit a maker place event.
-            event::emit_event(&mut order_book_ref_mut.maker_events, MakerEvent{
-                market_id, side, market_order_id, user: user_address,
-                custodian_id, type: PLACE, size, price});
+            size_posted = size; // Mark size posted as maker.
             if (evictee_access_key == NIL) { // If no eviction required:
                 // Destroy empty evictee value option.
                 option::destroy_none(evictee_value);
@@ -3333,6 +3310,34 @@ module econia::market {
         let market_order_id = emit_fill_events(
             market_id, &mut fill_event_queue, market_event_handles_ref_mut,
             order_id_as_maker);
+        // Emit a limit order event, creating handle as needed.
+        let limit_order_event = user::get_limit_order_event(
+            market_id,
+            user_address,
+            custodian_id,
+            integrator,
+            side,
+            size,
+            price,
+            restriction,
+            self_match_behavior,
+            base_traded,
+            quote_traded,
+            fees,
+            size_posted,
+            market_order_id);
+        let has_limit_order_handle = table::contains(
+            &market_event_handles_ref_mut.limit_order_events, market_id);
+        if (!has_limit_order_handle) table::add(
+            &mut market_event_handles_ref_mut.limit_order_events,
+            market_id,
+            account::new_event_handle<LimitOrderEvent>(
+                &resource_account::get_signer()));
+        let limit_order_handle_ref_mut = table::borrow_mut(
+            &mut market_event_handles_ref_mut.limit_order_events,
+            market_id);
+        event::emit_event(limit_order_handle_ref_mut, limit_order_event);
+        user::emit_limit_order_event(limit_order_event);
         // Return market order ID and taker trade amounts.
         return (market_order_id, base_traded, quote_traded, fees)
     }

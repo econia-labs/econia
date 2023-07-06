@@ -548,7 +548,7 @@ module econia::market {
     use econia::user::{
         Self,
         FillEvent,
-        LimitOrderEvent
+        PlaceLimitOrderEvent
     };
     use std::option::{Self, Option};
     use std::signer::address_of;
@@ -626,7 +626,8 @@ module econia::market {
     /// a swap, which is is not affiliated with a market account).
     struct MarketEventHandles has key {
         fill_events: Table<u64, EventHandle<FillEvent>>,
-        limit_order_events: Table<u64, EventHandle<LimitOrderEvent>>
+        place_limit_order_events:
+            Table<u64, EventHandle<PlaceLimitOrderEvent>>
         /*
         /// place_market_order()
         market_order_events: EventHandle<MarketOrderEvent>,
@@ -2641,7 +2642,7 @@ module econia::market {
                 &resource_account::get_signer(),
                 MarketEventHandles{
                     fill_events: table::new(),
-                    limit_order_events: table::new()
+                    place_limit_order_events: table::new()
                 }
             );
         borrow_global_mut<MarketEventHandles>(resource_address)
@@ -2909,7 +2910,7 @@ module econia::market {
                         fill_size, complete_fill, optional_base_coins,
                         quote_coins, fill_size * lot_size,
                         ticks_filled * tick_size);
-                vector::push_back(event_queue_ref_mut, user::get_fill_event(
+                vector::push_back(event_queue_ref_mut, user::pack_fill_event(
                     market_id,
                     fill_size,
                     price,
@@ -3310,8 +3311,8 @@ module econia::market {
         let market_order_id = emit_fill_events(
             market_id, &mut fill_event_queue, market_event_handles_ref_mut,
             order_id_as_maker);
-        // Emit a limit order event, creating handle as needed.
-        let limit_order_event = user::get_limit_order_event(
+        // Emit a place limit order event, creating handle as needed.
+        let place_limit_order_event = user::pack_place_limit_order_event(
             market_id,
             user_address,
             custodian_id,
@@ -3326,18 +3327,19 @@ module econia::market {
             fees,
             size_posted,
             market_order_id);
-        let has_limit_order_handle = table::contains(
-            &market_event_handles_ref_mut.limit_order_events, market_id);
-        if (!has_limit_order_handle) table::add(
-            &mut market_event_handles_ref_mut.limit_order_events,
+        let has_place_limit_order_event_handle = table::contains(
+            &market_event_handles_ref_mut.place_limit_order_events, market_id);
+        if (!has_place_limit_order_event_handle) table::add(
+            &mut market_event_handles_ref_mut.place_limit_order_events,
             market_id,
-            account::new_event_handle<LimitOrderEvent>(
+            account::new_event_handle<PlaceLimitOrderEvent>(
                 &resource_account::get_signer()));
-        let limit_order_handle_ref_mut = table::borrow_mut(
-            &mut market_event_handles_ref_mut.limit_order_events,
+        let place_limit_order_event_handle_ref_mut = table::borrow_mut(
+            &mut market_event_handles_ref_mut.place_limit_order_events,
             market_id);
-        event::emit_event(limit_order_handle_ref_mut, limit_order_event);
-        user::emit_limit_order_event(limit_order_event);
+        event::emit_event(place_limit_order_event_handle_ref_mut,
+                          place_limit_order_event);
+        user::emit_place_limit_order_event(place_limit_order_event);
         // Return market order ID and taker trade amounts.
         return (market_order_id, base_traded, quote_traded, fees)
     }

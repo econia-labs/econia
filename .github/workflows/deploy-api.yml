@@ -45,6 +45,7 @@ jobs:
           context: ./src/rust
           tags: asia-northeast1-docker.pkg.dev/econia-0/econia-backend/api:latest
           file: ./src/rust/api/Dockerfile
+          outputs: type=docker,dest=/tmp/image.tar
           push: false
 
       - name: Upload artifact
@@ -88,7 +89,7 @@ jobs:
           path: /tmp
 
       - name: Load Docker image
-        run: docker load --input /tmp/image.tar
+        run: docker load -i /tmp/image.tar
 
       - name: Push to Artifact Registry
         run: docker push asia-northeast1-docker.pkg.dev/econia-0/econia-backend/api:latest

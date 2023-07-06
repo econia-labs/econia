@@ -5,7 +5,17 @@ on:
   push:
     branches:
       - main
-      - dev
+    paths:
+      - src/rust/api/**
+      - src/rust/db/**
+      - src/rust/types/**
+      - src/rust/Cargo.toml
+      - src/rust/Cargo.lock
+      - src/rust/.dockerignore
+      - .github/workflows/deploy-api.yml
+  pull_request:
+    branches:
+      - main
     paths:
       - src/rust/api/**
       - src/rust/db/**
@@ -17,6 +27,7 @@ on:
 
 jobs:
   build:
+    name: Build API Docker image
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -32,6 +43,7 @@ jobs:
           workload_identity_provider: projects/153655225733/locations/global/workloadIdentityPools/github-actions-identity-pool/providers/github-actions-oidc-provider
           service_account: "github-actions-service-account@econia-0.iam.gserviceaccount.com"
           token_format: "access_token"
+        if: github.event_name != 'pull_request'
 
       - name: Log In to Artifact Registry
         uses: docker/login-action@v2
@@ -39,6 +51,7 @@ jobs:
           registry: asia-northeast1-docker.pkg.dev
           username: oauth2accesstoken
           password: ${{ steps.auth.outputs.access_token }}
+        if: github.event_name != 'pull_request'
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -47,6 +60,6 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: ./src/rust
-          push: true
+          push: ${{ github.event_name == 'push' }}
           tags: asia-northeast1-docker.pkg.dev/econia-0/econia-backend/api:latest
           file: ./src/rust/api/Dockerfile

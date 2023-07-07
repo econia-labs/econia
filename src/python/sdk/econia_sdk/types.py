@@ -22,3 +22,4 @@ class Restriction(IntEnum):
     NoRestriction = 0
     FillOrAbort = 1
     ImmediateOrCancel = 2
+    PostOrAbort = 3

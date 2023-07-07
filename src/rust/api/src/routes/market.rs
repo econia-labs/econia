@@ -524,6 +524,42 @@ pub async fn get_fills(
     Ok(Json(fills))
 }
 
+pub async fn get_order_by_market_order_id(
+    Path((market_id, market_order_id)): Path<(u64, u64)>,
+    State(state): State<Arc<AppState>>,
+) -> Result<Json<types::order::Order>, ApiError> {
+    let market_id = BigDecimal::from(market_id);
+    let market_order_id = BigDecimal::from(market_order_id);
+
+    let order_query = sqlx::query_as!(
+        db::models::order::Order,
+        r#"
+        select
+            market_order_id,
+            market_id,
+            side as "side: db::models::order::Side",
+            size,
+            price,
+            user_address,
+            custodian_id,
+            order_state as "order_state: db::models::order::OrderState",
+            created_at
+        from orders where market_id = $1 and market_order_id = $2;
+        "#,
+        market_id,
+        market_order_id
+    )
+    .fetch_all(&state.pool)
+    .await?;
+
+    if let Some(order) = order_query.into_iter().next() {
+        let order: types::order::Order = order.try_into()?;
+        Ok(Json(order))
+    } else {
+        Err(ApiError::NotFound)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::collections::HashSet;
@@ -597,7 +633,7 @@ mod tests {
     /// Test that the market history endpoint returns market data with a
     /// resolution of 1 minute.
     ///
-    /// This test sends a GET request to the `/market/{market_id}/history`
+    /// This test sends a GET request to the `/markets/{market_id}/history`
     /// endpoint with the `resolution` parameter set to `1h`. The response is
     /// then checked to ensure that it has a `200 OK` status code, and the
     /// response body is checked to ensure that it is a JSON response in the
@@ -641,7 +677,7 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .uri(format!(
-                        "/market/{}/history?resolution={}&from={}&to={}",
+                        "/markets/{}/history?resolution={}&from={}&to={}",
                         market_id, resolution, from, to
                     ))
                     .body(Body::empty())
@@ -663,7 +699,7 @@ mod tests {
     /// Test that the market history endpoint returns market data with a
     /// resolution of 1 hour.
     ///
-    /// This test sends a GET request to the `/market/{market_id}/history`
+    /// This test sends a GET request to the `/markets/{market_id}/history`
     /// endpoint with the `resolution` parameter set to `1h`. The response is
     /// then checked to ensure that it has a `200 OK` status code, and the
     /// response body is checked to ensure that it is a JSON response in the
@@ -707,7 +743,7 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .uri(format!(
-                        "/market/{}/history?resolution={}&from={}&to={}",
+                        "/markets/{}/history?resolution={}&from={}&to={}",
                         market_id, resolution, from, to
                     ))
                     .body(Body::empty())
@@ -729,7 +765,7 @@ mod tests {
     /// Test that the market history endpoint returns a `400 Bad Request` error
     /// when the resolution parameter is set to an unsupported value.
     ///
-    /// This test sends a GET request to the `/market/{market_id}/history`
+    /// This test sends a GET request to the `/markets/{market_id}/history`
     /// endpoint with the `resolution` parameter set to `3m`, which is not
     /// supported by the API. The response is then checked to ensure that it
     /// has a `400 Bad Request` status code.
@@ -771,7 +807,7 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .uri(format!(
-                        "/market/{}/history?resolution=3m&from={}&to={}",
+                        "/markets/{}/history?resolution=3m&from={}&to={}",
                         market_id, from, to
                     ))
                     .body(Body::empty())
@@ -786,7 +822,7 @@ mod tests {
     /// Test that the market history endpoint returns a `400 Bad Request` error
     /// when the `to` timestamp comes before the `from` timestamp.
     ///
-    /// This test sends a GET request to the `/market/{market_id}/history`
+    /// This test sends a GET request to the `/markets/{market_id}/history`
     /// endpoint with the `resolution` parameter set to `1m`, and with the `to`
     /// timestamp set to a value that is before the `from` timestamp. The
     /// response is then checked to ensure that it has a `400 Bad Request`
@@ -830,7 +866,7 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .uri(format!(
-                        "/market/{}/history?resolution={}&from={}&to={}",
+                        "/markets/{}/history?resolution={}&from={}&to={}",
                         market_id, resolution, from, to
                     ))
                     .body(Body::empty())
@@ -846,7 +882,7 @@ mod tests {
     /// with depth set to 1 is sent. Only the best bid and ask prices and the
     /// size available at those prices should be returned.
     ///
-    /// This test sends a GET request to the `/market/{market_id}/orderbook`
+    /// This test sends a GET request to the `/markets/{market_id}/orderbook`
     /// endpoint with the `depth` parameter set to `1`. The response is
     /// then checked to ensure that it has a `200 OK` status code, and the
     /// response body is checked to ensure that it is a JSON response in the
@@ -862,7 +898,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri(format!("/market/{}/orderbook?depth={}", market_id, depth))
+                    .uri(format!("/markets/{}/orderbook?depth={}", market_id, depth))
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -883,7 +919,7 @@ mod tests {
     /// Test that the orderbook endpoint returns L2 market data when a request
     /// with depth set to 10 is sent.
     ///
-    /// This test sends a GET request to the `/market/{market_id}/orderbook`
+    /// This test sends a GET request to the `/markets/{market_id}/orderbook`
     /// endpoint with the `depth` parameter set to `10`. The response is
     /// then checked to ensure that it has a `200 OK` status code, and the
     /// response body is checked to ensure that it is a JSON response in the
@@ -899,7 +935,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri(format!("/market/{}/orderbook?depth={}", market_id, depth))
+                    .uri(format!("/markets/{}/orderbook?depth={}", market_id, depth))
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -916,7 +952,7 @@ mod tests {
     /// Test that the orderbook endpoint returns a `400 Bad Request` error
     /// when the depth parameter is not set.
     ///
-    /// This test sends a GET request to the `/market/{market_id}/orderbook`
+    /// This test sends a GET request to the `/markets/{market_id}/orderbook`
     /// endpoint without the `depth` parameter. The response is then checked to
     /// ensure that it has a `400 Bad Request` status code.
     #[tokio::test]
@@ -928,7 +964,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri(format!("/market/{}/orderbook", market_id))
+                    .uri(format!("/markets/{}/orderbook", market_id))
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -941,7 +977,7 @@ mod tests {
     /// Test that the orderbook endpoint returns a `400 Bad Request` error
     /// when the depth parameter is set to a negative number.
     ///
-    /// This test sends a GET request to the `/market/{market_id}/orderbook`
+    /// This test sends a GET request to the `/markets/{market_id}/orderbook`
     /// endpoint with the `depth` parameter of `-1`. The response is then
     /// checked to ensure that it has a `400 Bad Request` status code.
     #[tokio::test]
@@ -955,7 +991,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri(format!("/market/{}/orderbook?depth={}", market_id, depth))
+                    .uri(format!("/markets/{}/orderbook?depth={}", market_id, depth))
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -963,5 +999,67 @@ mod tests {
             .unwrap();
 
         assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    }
+
+    /// Test that the order by market ID and market order ID returns values
+    /// representing the current status of the order when a request is sent.
+    ///
+    /// This test sends a GET request to the `/markets/{market_id}/order/{order_id}`
+    /// endpoint with the `market_id` path parameter set to `1` and the
+    /// `market_order_id` path parameter set to `1000`. The response is
+    /// then checked to ensure that it has a `200 OK` status code, and the
+    /// response body is checked to ensure that it is a JSON response in the
+    /// correct format.
+    #[tokio::test]
+    async fn test_get_order_by_market_order_id() {
+        let market_id = 1;
+        let market_order_id = 1000;
+
+        let config = load_config();
+        let app = make_test_server(config).await;
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri(format!("/markets/{}/order/{}", market_id, market_order_id))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
+        let res = serde_json::from_slice::<types::order::Order>(&body);
+        assert!(res.is_ok());
+    }
+
+    /// Test that the order by market ID and market order ID returns a
+    /// `404 Not Found` error when a request is sent for a nonexistent order.
+    ///
+    /// This test sends a GET request to the `/markets/{market_id}/order/{order_id}`
+    /// endpoint with the `market_id` path parameter set to `1` and the
+    /// `market_order_id` path parameter set to `999999`. The response is
+    /// then checked to ensure that it has a `404 Not Found` status code.
+    #[tokio::test]
+    async fn test_get_order_by_market_order_id_not_found() {
+        let market_id = 1;
+        let market_order_id = 999999;
+
+        let config = load_config();
+        let app = make_test_server(config).await;
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri(format!("/markets/{}/order/{}", market_id, market_order_id))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
     }
 }

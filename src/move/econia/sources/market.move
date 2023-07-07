@@ -537,7 +537,6 @@ module econia::market {
     use aptos_framework::account;
     use aptos_framework::coin::{Self, Coin};
     use aptos_framework::event::{Self, EventHandle};
-    use aptos_framework::table::{Self, Table};
     use aptos_framework::type_info::{Self, TypeInfo};
     use econia::avl_queue::{Self, AVLqueue};
     use econia::incentives;
@@ -548,7 +547,8 @@ module econia::market {
     use econia::user::{
         Self,
         FillEvent,
-        PlaceLimitOrderEvent
+        PlaceLimitOrderEvent,
+        PlaceMarketOrderEvent
     };
     use std::option::{Self, Option};
     use std::signer::address_of;
@@ -625,9 +625,11 @@ module econia::market {
     /// affected user/custodian ID tuple (affected signer in the case of
     /// a swap, which is is not affiliated with a market account).
     struct MarketEventHandles has key {
-        fill_events: Table<u64, EventHandle<FillEvent>>,
+        fill_events: Tablist<u64, EventHandle<FillEvent>>,
         place_limit_order_events:
-            Table<u64, EventHandle<PlaceLimitOrderEvent>>
+            Tablist<u64, EventHandle<PlaceLimitOrderEvent>>,
+        place_market_order_events:
+            Tablist<u64, EventHandle<PlaceMarketOrderEvent>>
         /*
         /// place_market_order()
         market_order_events: EventHandle<MarketOrderEvent>,
@@ -2481,49 +2483,35 @@ module econia::market {
             size: new_size, price});
     }
 
-    /// Return taker order ID (assumed constant across all fill events):
-    /// * If posted order ID given (if fill events from limit order that
-    ///   took then posted), return posted order ID
-    /// * If no post and no fill events, then taker order ID is null
-    /// * Otherwise, order did not post but it did result in fills, so
-    ///   get the taker order ID from the first fill event
     fun emit_fill_events(
         market_id: u64,
         fill_events_queue_ref: &vector<FillEvent>,
         handles_ref_mut: &mut MarketEventHandles,
-        posted_order_id: u128
-    ): u128 {
-        let update_taker_order_id = posted_order_id != (NIL as u128);
+        new_taker_order_id: u128
+    ) {
+        let update_taker_order_id = new_taker_order_id == (NIL as u128);
         vector::for_each_ref(fill_events_queue_ref, |event_ref| {
             let event: FillEvent = *event_ref;
             if (update_taker_order_id) {
                 user::set_fill_event_taker_order_id(
-                    &mut event, posted_order_id);
+                    &mut event, new_taker_order_id);
             };
             user::emit_fill_event_for_maker_and_taker(event);
             // Emit event for market, creating handle as needed.
-            let has_handle = table::contains(
+            let has_handle = tablist::contains(
                 &handles_ref_mut.fill_events, market_id);
             if (!has_handle) {
-                table::add(
+                tablist::add(
                     &mut handles_ref_mut.fill_events,
                     market_id,
                     account::new_event_handle<FillEvent>(
                         &resource_account::get_signer()));
             };
-            let handle_ref_mut = table::borrow_mut(
+            let handle_ref_mut = tablist::borrow_mut(
                 &mut handles_ref_mut.fill_events,
                 market_id);
             event::emit_event(handle_ref_mut, event);
         });
-        if (update_taker_order_id) {
-            posted_order_id
-        } else if (vector::is_empty(fill_events_queue_ref)) {
-            (NIL as u128)
-        } else {
-            user::get_fill_event_taker_order_id(
-                vector::borrow(fill_events_queue_ref, 0))
-        }
     }
 
     /// Get AVL queue access key encoded in `market_order_id`.
@@ -2641,8 +2629,9 @@ module econia::market {
             move_to<MarketEventHandles>(
                 &resource_account::get_signer(),
                 MarketEventHandles{
-                    fill_events: table::new(),
-                    place_limit_order_events: table::new()
+                    fill_events: tablist::new(),
+                    place_limit_order_events: tablist::new(),
+                    place_market_order_events: tablist::new()
                 }
             );
         borrow_global_mut<MarketEventHandles>(resource_address)
@@ -3262,7 +3251,8 @@ module econia::market {
             order_book_ref_mut.counter = order_book_ref_mut.counter + 1;
         };
         // Assume no size posted to book.
-        let (size_posted, order_id_as_maker) = (0, (NIL as u128));
+        let (size_posted, market_order_id) =
+            (0, ((order_book_ref_mut.counter as u128) << SHIFT_COUNTER));
         // If size big enough to post and not immediate-or-cancel:
         if ((size >= order_book_ref_mut.min_size) &&
                 (restriction != IMMEDIATE_OR_CANCEL)) {
@@ -3283,7 +3273,7 @@ module econia::market {
             // Assert that order could be inserted to AVL queue.
             assert!(avlq_access_key != NIL, E_PRICE_TIME_PRIORITY_TOO_LOW);
             // Get market order ID from AVL queue access key, counter.
-            let market_order_id = (avlq_access_key as u128) |
+            market_order_id = (avlq_access_key as u128) |
                 ((order_book_ref_mut.counter as u128) << SHIFT_COUNTER);
             user::place_order_internal( // Place order user-side.
                 user_address, market_id, custodian_id, side, size, price,
@@ -3305,12 +3295,10 @@ module econia::market {
                     market_id, side, market_order_id: market_order_id_cancel, user,
                     custodian_id, type: EVICT, size, price});
             };
-            // Order ID as maker is from post to book.
-            order_id_as_maker = market_order_id
         };
-        let market_order_id = emit_fill_events(
+        emit_fill_events(
             market_id, &mut fill_event_queue, market_event_handles_ref_mut,
-            order_id_as_maker);
+            market_order_id);
         // Emit a place limit order event, creating handle as needed.
         let place_limit_order_event = user::pack_place_limit_order_event(
             market_id,
@@ -3327,14 +3315,14 @@ module econia::market {
             fees,
             size_posted,
             market_order_id);
-        let has_place_limit_order_event_handle = table::contains(
+        let has_place_limit_order_event_handle = tablist::contains(
             &market_event_handles_ref_mut.place_limit_order_events, market_id);
-        if (!has_place_limit_order_event_handle) table::add(
+        if (!has_place_limit_order_event_handle) tablist::add(
             &mut market_event_handles_ref_mut.place_limit_order_events,
             market_id,
             account::new_event_handle<PlaceLimitOrderEvent>(
                 &resource_account::get_signer()));
-        let place_limit_order_event_handle_ref_mut = table::borrow_mut(
+        let place_limit_order_event_handle_ref_mut = tablist::borrow_mut(
             &mut market_event_handles_ref_mut.place_limit_order_events,
             market_id);
         event::emit_event(place_limit_order_event_handle_ref_mut,
@@ -3658,13 +3646,16 @@ module econia::market {
         // Calculate limit price for matching engine: 0 when selling,
         // max price possible when buying.
         let limit_price = if (direction == SELL) 0 else HI_PRICE;
+        let market_event_handles_ref_mut =
+            market_event_handles_borrow_mut(resource_address);
+        let fill_event_queue = vector[];
         // Match against order book, storing optionally modified asset
         // inputs, base and quote trade amounts, and quote fees paid.
         let (optional_base_coins, quote_coins, base_traded, quote_traded, fees,
-                 _) = match(
+             _) = match(
             market_id,
-            market_event_handles_borrow_mut(resource_address),
-            &mut vector[],
+            market_event_handles_ref_mut,
+            &mut fill_event_queue,
             order_book_ref_mut,
             user_address,
             custodian_id,
@@ -3678,6 +3669,8 @@ module econia::market {
             self_match_behavior,
             optional_base_coins,
             quote_coins);
+        let market_order_id =
+            ((order_book_ref_mut.counter as u128) << SHIFT_COUNTER);
         // Calculate amount of base deposited back to market account.
         let base_deposit = if (direction == BUY) base_traded else
             (base_withdraw - base_traded);
@@ -3685,6 +3678,35 @@ module econia::market {
         user::deposit_assets_internal<BaseType, QuoteType>(
             user_address, market_id, custodian_id, base_deposit,
             optional_base_coins, quote_coins, underwriter_id);
+        emit_fill_events(
+            market_id, &mut fill_event_queue, market_event_handles_ref_mut,
+            (NIL as u128));
+        // Emit a place market order event, creating handle as needed.
+        let place_market_order_event = user::pack_place_market_order_event(
+            market_id,
+            user_address,
+            custodian_id,
+            integrator,
+            direction,
+            size,
+            self_match_behavior,
+            base_traded,
+            quote_traded,
+            fees,
+            market_order_id);
+        let has_place_market_order_event_handle = tablist::contains(
+            &market_event_handles_ref_mut.place_market_order_events, market_id);
+        if (!has_place_market_order_event_handle) tablist::add(
+            &mut market_event_handles_ref_mut.place_market_order_events,
+            market_id,
+            account::new_event_handle<PlaceMarketOrderEvent>(
+                &resource_account::get_signer()));
+        let place_market_order_event_handle_ref_mut = tablist::borrow_mut(
+            &mut market_event_handles_ref_mut.place_market_order_events,
+            market_id);
+        event::emit_event(place_market_order_event_handle_ref_mut,
+                          place_market_order_event);
+        user::emit_place_market_order_event(place_market_order_event);
         // Return base and quote traded by user, fees paid.
         (base_traded, quote_traded, fees)
     }
@@ -7701,7 +7723,7 @@ module econia::market {
                 &user, MARKET_ID_COIN, @integrator, side_taker, size, price,
                 restriction, self_match_behavior);
         // Assert returns
-        assert!(market_order_id_r == (NIL as u128), 0);
+        assert!(market_order_id_r == order_id_no_post(2), 0);
         assert!(base_trade_r      == 0, 0);
         assert!(quote_trade_r     == 0, 0);
         assert!(fee_r             == 0, 0);

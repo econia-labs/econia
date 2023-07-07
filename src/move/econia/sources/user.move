@@ -428,7 +428,20 @@ module econia::user {
         maker_order_id: u128,
         taker: address,
         taker_custodian_id: u64,
-        taker_order_id: u128
+        taker_order_id: u128,
+        sequence_number_for_trade: u64
+    }
+
+    struct TradeSummaryEvent has copy, drop, store {
+        market_id: u64,
+        taker: address,
+        custodian_id: u64,
+        is_swap: bool,
+        n_fills: u64,
+        base_traded: u64,
+        quote_traded: u64,
+        quote_fee_paid: u64,
+        order_id: u128
     }
 
     struct PlaceLimitOrderEvent has copy, drop, store {
@@ -441,10 +454,7 @@ module econia::user {
         price: u64,
         restriction: u8,
         self_match_behavior: u8,
-        base_traded_as_taker: u64,
-        quote_traded_as_taker: u64,
-        quote_fee_paid_as_taker: u64,
-        size_posted_as_maker: u64,
+        size_posted: u64,
         order_id: u128
     }
 
@@ -456,9 +466,6 @@ module econia::user {
         direction: bool,
         size: u64,
         self_match_behavior: u8,
-        base_traded: u64,
-        quote_traded: u64,
-        quote_fee_paid: u64,
         order_id: u128
     }
 
@@ -1150,15 +1157,41 @@ module econia::user {
                 place_limit_order_events: tablist::new(),
                 place_market_order_events: tablist::new()
             });
+
+        /////////// Also init handle below if no handle:
+
         let market_event_handles_ref_mut =
             borrow_global_mut<MarketEventHandles>(user_address);
         let market_account_id =
             get_market_account_id(market_id, custodian_id);
+
         let fill_events_ref_mut =
             &mut market_event_handles_ref_mut.fill_events;
-        if (!tablist::contains(fill_events_ref_mut, market_account_id)) {
+        let has_fill_events_handle =
+            tablist::contains(fill_events_ref_mut, market_account_id);
+        if (!has_fill_events_handle) {
             tablist::add(fill_events_ref_mut, market_account_id,
-                       account::new_event_handle(user));
+                         account::new_event_handle(user));
+        };
+
+        let place_limit_order_events_ref_mut =
+            &mut market_event_handles_ref_mut.place_limit_order_events;
+        let has_place_limit_order_events_handle =
+            tablist::contains(place_limit_order_events_ref_mut,
+                              market_account_id);
+        if (!has_place_limit_order_events_handle) {
+            tablist::add(place_limit_order_events_ref_mut, market_account_id,
+                         account::new_event_handle(user));
+        };
+
+        let place_market_order_events_ref_mut =
+            &mut market_event_handles_ref_mut.place_market_order_events;
+        let has_place_market_order_events_handle =
+            tablist::contains(place_market_order_events_ref_mut,
+                              market_account_id);
+        if (!has_place_market_order_events_handle) {
+            tablist::add(place_market_order_events_ref_mut, market_account_id,
+                         account::new_event_handle(user));
         };
     }
 
@@ -1534,6 +1567,12 @@ module econia::user {
         emit_fill_event(event, false);
     }
 
+    public(friend) fun emit_fill_event_for_maker(
+        event: FillEvent
+    ) acquires MarketEventHandles {
+        emit_fill_event(event, true);
+    }
+
     public(friend) fun emit_place_limit_order_event(
         event: PlaceLimitOrderEvent
     ) acquires MarketEventHandles {
@@ -1585,6 +1624,7 @@ module econia::user {
         taker: address,
         taker_custodian_id: u64,
         taker_order_id: u128,
+        sequence_number_for_trade: u64
     ): FillEvent {
         FillEvent{
             market_id,
@@ -1596,7 +1636,8 @@ module econia::user {
             maker_order_id,
             taker,
             taker_custodian_id,
-            taker_order_id
+            taker_order_id,
+            sequence_number_for_trade
         }
     }
 
@@ -1623,10 +1664,7 @@ module econia::user {
         price: u64,
         restriction: u8,
         self_match_behavior: u8,
-        base_traded_as_taker: u64,
-        quote_traded_as_taker: u64,
-        quote_fee_paid_as_taker: u64,
-        size_posted_as_maker: u64,
+        size_posted: u64,
         order_id: u128
     ): PlaceLimitOrderEvent {
         PlaceLimitOrderEvent {
@@ -1639,10 +1677,7 @@ module econia::user {
             price,
             restriction,
             self_match_behavior,
-            base_traded_as_taker,
-            quote_traded_as_taker,
-            quote_fee_paid_as_taker,
-            size_posted_as_maker,
+            size_posted,
             order_id
         }
     }
@@ -1655,9 +1690,6 @@ module econia::user {
         direction: bool,
         size: u64,
         self_match_behavior: u8,
-        base_traded: u64,
-        quote_traded: u64,
-        quote_fee_paid: u64,
         order_id: u128
     ): PlaceMarketOrderEvent {
         PlaceMarketOrderEvent {
@@ -1668,9 +1700,6 @@ module econia::user {
             direction,
             size,
             self_match_behavior,
-            base_traded,
-            quote_traded,
-            quote_fee_paid,
             order_id
         }
     }

@@ -432,7 +432,7 @@ module econia::user {
         sequence_number_for_trade: u64
     }
 
-    struct TradeSummaryEvent has copy, drop, store {
+    struct TakerFillSummaryEvent has copy, drop, store {
         market_id: u64,
         taker: address,
         custodian_id: u64,

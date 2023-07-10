@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - main
-      - dev
     paths:
       - doc/api-docs/**
       - .github/workflows/deploy-api-docs.yml

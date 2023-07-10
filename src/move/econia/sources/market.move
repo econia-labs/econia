@@ -2900,6 +2900,8 @@ module econia::market {
         // Increment order counter.
         order_book_ref_mut.counter = order_book_ref_mut.counter + 1;
         let fill_count = 0;
+        let fees_paid = 0;
+        let fees_paid_for_fill;
         // While there are orders to match against:
         while (!avl_queue::is_empty(orders_ref_mut)) {
             let price = // Get price of order at head of AVL queue.
@@ -2992,6 +2994,10 @@ module econia::market {
                         fill_size, complete_fill, optional_base_coins,
                         quote_coins, fill_size * lot_size,
                         ticks_filled * tick_size);
+                (quote_coins, fees_paid_for_fill) =
+                    incentives::assess_taker_fees<QuoteType>(
+                        market_id, integrator, taker_fee_divisor,
+                        ticks_filled * tick_size, quote_coins);
                 vector::push_back(event_queue_ref_mut, user::create_fill_event(
                     market_id,
                     fill_size,
@@ -3003,9 +3009,11 @@ module econia::market {
                     taker,
                     custodian_id,
                     order_id_no_post(order_book_ref_mut.counter),
+                    fees_paid_for_fill,
                     fill_count
                 ));
                 fill_count = fill_count + 1;
+                fees_paid = fees_paid + fees_paid_for_fill;
                 if (complete_fill) {
                     let avlq_access_key = // Get AVL queue access key.
                         ((market_order_id & (HI_64 as u128)) as u64);
@@ -3025,10 +3033,6 @@ module econia::market {
         let (base_fill, quote_fill) = // Calculate base and quote fills.
             (((max_lots  - lots_until_max ) * lot_size),
              ((max_ticks - ticks_until_max) * tick_size));
-        // Assess taker fees, storing taker fees paid.
-        let (quote_coins, fees_paid) = incentives::assess_taker_fees<
-            QuoteType>(market_id, integrator, taker_fee_divisor, quote_fill,
-            quote_coins);
         // If a buy, taker pays quote required for fills, and additional
         // fee assessed after matching. If a sell, taker receives quote
         // from fills, then has a portion assessed as fees.

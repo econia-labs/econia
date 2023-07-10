@@ -10,6 +10,9 @@ packages = [{ include = "econia_sdk" }]
 aptos-sdk = "^0.5.1"
 python = "^3.11"
 
+[tool.poetry.scripts]
+view = "examples.view:start"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

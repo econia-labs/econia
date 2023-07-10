@@ -12,7 +12,7 @@ export const useOrderBook = (
     ["orderBook", market_id, precision],
     async () => {
       const response = await fetch(
-        `${API_URL}/market/${market_id}/orderbook?depth=${depth}`
+        `${API_URL}/markets/${market_id}/orderbook?depth=${depth}`
       );
       const data = await response.json();
       return data as Orderbook;

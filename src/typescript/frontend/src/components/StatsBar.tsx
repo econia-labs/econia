@@ -82,10 +82,10 @@ export const StatsBar: React.FC<{
     ["marketStats", selectedMarket],
     async () => {
       const resProm = fetch(
-        `${API_URL}/market/${selectedMarket.market_id}/stats?resolution=1d`
+        `${API_URL}/markets/${selectedMarket.market_id}/stats?resolution=1d`
       ).then((res) => res.json());
       const priceProm = fetch(
-        `${API_URL}/market/${selectedMarket.market_id}/orderbook?depth=1`
+        `${API_URL}/markets/${selectedMarket.market_id}/orderbook?depth=1`
       ).then((res) => res.json());
       const res = await resProm;
       const priceRes = await priceProm;

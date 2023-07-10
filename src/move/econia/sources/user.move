@@ -429,19 +429,8 @@ module econia::user {
         taker: address,
         taker_custodian_id: u64,
         taker_order_id: u128,
+        taker_quote_fees_paid: u64,
         sequence_number_for_trade: u64
-    }
-
-    struct TakerFillSummaryEvent has copy, drop, store {
-        market_id: u64,
-        taker: address,
-        custodian_id: u64,
-        is_swap: bool,
-        n_fills: u64,
-        base_traded: u64,
-        quote_traded: u64,
-        quote_fee_paid: u64,
-        order_id: u128
     }
 
     struct PlaceLimitOrderEvent has copy, drop, store {
@@ -1624,6 +1613,7 @@ module econia::user {
         taker: address,
         taker_custodian_id: u64,
         taker_order_id: u128,
+        taker_quote_fees_paid: u64,
         sequence_number_for_trade: u64
     ): FillEvent {
         FillEvent{
@@ -1637,6 +1627,7 @@ module econia::user {
             taker,
             taker_custodian_id,
             taker_order_id,
+            taker_quote_fees_paid,
             sequence_number_for_trade
         }
     }

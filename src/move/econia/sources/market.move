@@ -2992,7 +2992,7 @@ module econia::market {
                         fill_size, complete_fill, optional_base_coins,
                         quote_coins, fill_size * lot_size,
                         ticks_filled * tick_size);
-                vector::push_back(event_queue_ref_mut, user::pack_fill_event(
+                vector::push_back(event_queue_ref_mut, user::create_fill_event(
                     market_id,
                     fill_size,
                     price,
@@ -3399,7 +3399,7 @@ module econia::market {
             };
         };
         // Emit a place limit order event, creating handle as needed.
-        let place_limit_order_event = user::pack_place_limit_order_event(
+        let place_limit_order_event = user::create_place_limit_order_event(
             market_id,
             user_address,
             custodian_id,
@@ -3776,7 +3776,7 @@ module econia::market {
             user_address, market_id, custodian_id, base_deposit,
             optional_base_coins, quote_coins, underwriter_id);
         // Emit a place market order event, creating handle as needed.
-        let place_market_order_event = user::pack_place_market_order_event(
+        let place_market_order_event = user::create_place_market_order_event(
             market_id,
             user_address,
             custodian_id,

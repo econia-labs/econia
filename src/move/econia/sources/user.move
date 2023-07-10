@@ -1613,7 +1613,7 @@ module econia::user {
             place_market_order_event_handle_ref_mut, event)
     }
 
-    public(friend) fun pack_fill_event(
+    public(friend) fun create_fill_event(
         market_id: u64,
         size: u64,
         price: u64,
@@ -1654,7 +1654,7 @@ module econia::user {
         fill_event_ref_mut.taker_order_id = taker_order_id
     }
 
-    public(friend) fun pack_place_limit_order_event(
+    public(friend) fun create_place_limit_order_event(
         market_id: u64,
         user: address,
         custodian_id: u64,
@@ -1682,7 +1682,7 @@ module econia::user {
         }
     }
 
-    public(friend) fun pack_place_market_order_event(
+    public(friend) fun create_place_market_order_event(
         market_id: u64,
         user: address,
         custodian_id: u64,

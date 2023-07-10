@@ -937,6 +937,7 @@ main();
 | --------------- | ------ | --------------------------------------------------- |
 | account_address | String | The ID of the account to retrieve order history for |
 | market_id       | u64    | The ID of the market to retrieve                    |
+
 ### Errors
 
 | Error Code | Description                                                     |

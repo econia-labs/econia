@@ -580,6 +580,13 @@ mod tests {
         get_market_ids, load_config, routes::router, start_redis_channels, tests::make_test_server,
     };
 
+    /// Test that the markets endpoint returns information about all available
+    /// markets.
+    ///
+    /// This test sends a GET request to the `/markets` endpoint. The response
+    /// is then checked to ensure that it has a `200 OK` status code, and the
+    /// response body is checked to ensure that it is a JSON response in the
+    /// correct format.
     #[tokio::test]
     async fn test_markets() {
         let config = load_config();

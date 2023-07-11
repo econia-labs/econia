@@ -294,7 +294,7 @@ export default function Market({ allMarketData, marketData }: Props) {
     ["orderbook", marketData?.market_id],
     async () => {
       const res = await fetch(
-        `${API_URL}/market/${marketData?.market_id}/orderbook?depth=${ORDERBOOK_DEPTH}`
+        `${API_URL}/markets/${marketData?.market_id}/orderbook?depth=${ORDERBOOK_DEPTH}`
       );
       const data: Orderbook = await res.json();
       return data;

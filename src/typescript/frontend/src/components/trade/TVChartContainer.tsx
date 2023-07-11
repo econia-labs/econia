@@ -223,7 +223,7 @@ export const TVChartContainer: React.FC<
         try {
           const res = await fetch(
             new URL(
-              `/market/${market.market_id}/history?${new URLSearchParams({
+              `/markets/${market.market_id}/history?${new URLSearchParams({
                 resolution: resolutionMap[resolution],
                 from: from.toString(),
                 to: to.toString(),

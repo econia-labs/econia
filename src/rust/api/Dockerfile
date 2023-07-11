@@ -1,9 +1,16 @@
-FROM rust:1.69-bookworm as builder
-RUN apt-get update
-RUN apt-get install mold -y
+FROM lukemathwalker/cargo-chef:0.1.61-rust-1.70-bookworm AS chef
 WORKDIR /app
+
+FROM chef AS planner
 COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
+
+FROM chef AS builder
+COPY --from=planner /app/recipe.json recipe.json
+RUN apt-get update && apt-get install mold -y
 ARG RUSTFLAGS="-C link-arg=-fuse-ld=mold"
+RUN cargo chef cook --release --recipe-path recipe.json
+COPY . .
 RUN cargo build --release --bin api
 
 FROM debian:bookworm-slim AS runtime

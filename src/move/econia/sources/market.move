@@ -2434,10 +2434,17 @@ module econia::market {
         // Cancel order user-side, thus verifying market order ID.
         user::cancel_order_internal(user, market_id, custodian_id, side, size,
                                     price, order_access_key, market_order_id);
-        // Emit a maker cancel event.
-        event::emit_event(&mut order_book_ref_mut.maker_events, MakerEvent{
-            market_id, side, market_order_id, user, custodian_id,
-            type: CANCEL, size, price});
+        user::emit_cancel_posted_order_event(
+            user::create_cancel_posted_order_event(
+                market_id,
+                market_order_id,
+                user,
+                custodian_id,
+                side,
+                false,
+                false
+            )
+        );
     }
 
     /// Change maker order size on book and in user's market account.
@@ -2972,16 +2979,20 @@ module econia::market {
                     let avlq_access_key =
                         ((market_order_id & (HI_64 as u128)) as u64);
                     // Remove order from AVL queue, storing size.
-                    let Order{size, price: _, user: _, custodian_id: _,
+                    let Order{size: _, price: _, user: _, custodian_id: _,
                               order_access_key: _} = avl_queue::remove(
                         orders_ref_mut, avlq_access_key);
-                    // Get maker events handle.
-                    let maker_handle = &mut order_book_ref_mut.maker_events;
-                    // Emit a maker cancel event.
-                    event::emit_event(maker_handle, MakerEvent{
-                        market_id, side, market_order_id, user: maker,
-                        custodian_id: maker_custodian_id, type: CANCEL,
-                        size, price});
+                    user::emit_cancel_posted_order_event(
+                        user::create_cancel_posted_order_event(
+                            market_id,
+                            market_order_id,
+                            maker,
+                            maker_custodian_id,
+                            side,
+                            false,
+                            true
+                        )
+                    );
                 }; // Optional maker order cancellation complete.
                 // Break out of loop if a self match taker cancel.
                 if (self_match_taker_cancel) break;
@@ -3404,10 +3415,17 @@ module econia::market {
                 let market_order_id_cancel = user::cancel_order_internal(
                     user, market_id, custodian_id, side, size, price,
                     order_access_key, (NIL as u128));
-                // Emit a maker evict event.
-                event::emit_event(&mut order_book_ref_mut.maker_events, MakerEvent{
-                    market_id, side, market_order_id: market_order_id_cancel, user,
-                    custodian_id, type: EVICT, size, price});
+                user::emit_cancel_posted_order_event(
+                    user::create_cancel_posted_order_event(
+                        market_id,
+                        market_order_id_cancel,
+                        user,
+                        custodian_id,
+                        side,
+                        true,
+                        false
+                    )
+                );
             };
         };
         // Emit a place limit order event, creating handle as needed.

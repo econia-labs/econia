@@ -2561,10 +2561,16 @@ module econia::market {
             assert!(new_avlq_access_key == avlq_access_key,
                     E_SIZE_CHANGE_INSERTION_ERROR);
         };
-        // Emit a maker change event.
-        event::emit_event(&mut order_book_ref_mut.maker_events, MakerEvent{
-            market_id, side, market_order_id, user, custodian_id, type: CHANGE,
-            size: new_size, price});
+        user::emit_change_order_size_event(
+            user::create_change_order_size_event(
+                market_id,
+                market_order_id,
+                user,
+                custodian_id,
+                side,
+                new_size
+            )
+        );
     }
 
     fun emit_fill_events_for_market_accounts(

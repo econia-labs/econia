@@ -523,6 +523,9 @@ module econia::registry {
     /// Return optional market ID corresponding to given market
     /// parameters when the base asset is a coin type.
     ///
+    /// Restricted to private view function to prevent runtime
+    /// transaction collisions against the registry.
+    ///
     /// # Testing
     ///
     /// * `test_set_remove_check_recognized_markets()`
@@ -546,6 +549,9 @@ module econia::registry {
     #[view]
     /// Return optional market ID corresponding to given market
     /// parameters when the base asset is generic.
+    ///
+    /// Restricted to private view function to prevent runtime
+    /// transaction collisions against the registry.
     ///
     /// # Testing
     ///
@@ -1395,6 +1401,23 @@ module econia::registry {
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /// Return optional market ID corresponding to given `MarketInfo`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_set_remove_check_recognized_markets()`
+    fun get_market_id(
+        market_info: MarketInfo
+    ): Option<u64>
+    acquires Registry {
+        let market_id_map_ref = // Immutably borrow market ID map.
+            &borrow_global<Registry>(@econia).market_info_to_id;
+        // Return optional market ID if one exists, else empty option.
+        if (table::contains(market_id_map_ref, market_info))
+            option::some(*table::borrow(market_id_map_ref, market_info)) else
+            option::none()
+    }
+
     /// Return recognized market info for given trading pair.
     ///
     /// # Parameters
@@ -1442,23 +1465,6 @@ module econia::registry {
          recognized_market_info_ref.tick_size,
          recognized_market_info_ref.min_size,
          recognized_market_info_ref.underwriter_id)
-    }
-
-    /// Return optional market ID corresponding to given `MarketInfo`.
-    ///
-    /// # Testing
-    ///
-    /// * `test_set_remove_check_recognized_markets()`
-    fun get_market_id(
-        market_info: MarketInfo
-    ): Option<u64>
-    acquires Registry {
-        let market_id_map_ref = // Immutably borrow market ID map.
-            &borrow_global<Registry>(@econia).market_info_to_id;
-        // Return optional market ID if one exists, else empty option.
-        if (table::contains(market_id_map_ref, market_info))
-            option::some(*table::borrow(market_id_map_ref, market_info)) else
-            option::none()
     }
 
     /// Return `true` if given `TradingPair` has recognized market.

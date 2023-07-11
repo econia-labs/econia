@@ -384,12 +384,12 @@ The below index is automatically generated from source code:
 -  [Function `register_market_base_generic_internal`](#0xc0deb00c_registry_register_market_base_generic_internal)
     -  [Aborts](#@Aborts_74)
     -  [Testing](#@Testing_75)
--  [Function `get_recognized_market_info`](#0xc0deb00c_registry_get_recognized_market_info)
-    -  [Parameters](#@Parameters_76)
-    -  [Returns](#@Returns_77)
-    -  [Aborts](#@Aborts_78)
-    -  [Testing](#@Testing_79)
 -  [Function `get_market_id`](#0xc0deb00c_registry_get_market_id)
+    -  [Testing](#@Testing_76)
+-  [Function `get_recognized_market_info`](#0xc0deb00c_registry_get_recognized_market_info)
+    -  [Parameters](#@Parameters_77)
+    -  [Returns](#@Returns_78)
+    -  [Aborts](#@Aborts_79)
     -  [Testing](#@Testing_80)
 -  [Function `has_recognized_market`](#0xc0deb00c_registry_has_recognized_market)
     -  [Testing](#@Testing_81)
@@ -1369,6 +1369,9 @@ transaction collisions against the registry.
 Return optional market ID corresponding to given market
 parameters when the base asset is a coin type.
 
+Restricted to private view function to prevent runtime
+transaction collisions against the registry.
+
 
 <a name="@Testing_22"></a>
 
@@ -1412,6 +1415,9 @@ parameters when the base asset is a coin type.
 
 Return optional market ID corresponding to given market
 parameters when the base asset is generic.
+
+Restricted to private view function to prevent runtime
+transaction collisions against the registry.
 
 
 <a name="@Testing_23"></a>
@@ -2907,6 +2913,44 @@ See inner function <code><a href="registry.md#0xc0deb00c_registry_register_marke
 
 
 
+<a name="0xc0deb00c_registry_get_market_id"></a>
+
+## Function `get_market_id`
+
+Return optional market ID corresponding to given <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a></code>.
+
+
+<a name="@Testing_76"></a>
+
+### Testing
+
+
+* <code>test_set_remove_check_recognized_markets()</code>
+
+
+<pre><code><b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_market_id">get_market_id</a>(market_info: <a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>): <a href="_Option">option::Option</a>&lt;u64&gt;
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_market_id">get_market_id</a>(
+    market_info: <a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a>
+): Option&lt;u64&gt;
+<b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
+    <b>let</b> market_id_map_ref = // Immutably borrow <a href="market.md#0xc0deb00c_market">market</a> ID map.
+        &<b>borrow_global</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia).market_info_to_id;
+    // Return optional <a href="market.md#0xc0deb00c_market">market</a> ID <b>if</b> one <b>exists</b>, <b>else</b> empty <a href="">option</a>.
+    <b>if</b> (<a href="_contains">table::contains</a>(market_id_map_ref, market_info))
+        <a href="_some">option::some</a>(*<a href="_borrow">table::borrow</a>(market_id_map_ref, market_info)) <b>else</b>
+        <a href="_none">option::none</a>()
+}
+</code></pre>
+
+
+
 <a name="0xc0deb00c_registry_get_recognized_market_info"></a>
 
 ## Function `get_recognized_market_info`
@@ -2914,7 +2958,7 @@ See inner function <code><a href="registry.md#0xc0deb00c_registry_register_marke
 Return recognized market info for given trading pair.
 
 
-<a name="@Parameters_76"></a>
+<a name="@Parameters_77"></a>
 
 ### Parameters
 
@@ -2922,7 +2966,7 @@ Return recognized market info for given trading pair.
 * <code>trading_pair</code>: Trading pair to look up.
 
 
-<a name="@Returns_77"></a>
+<a name="@Returns_78"></a>
 
 ### Returns
 
@@ -2934,7 +2978,7 @@ Return recognized market info for given trading pair.
 * <code>u64</code>: <code><a href="registry.md#0xc0deb00c_registry_RecognizedMarketInfo">RecognizedMarketInfo</a>.underwriter_id</code>
 
 
-<a name="@Aborts_78"></a>
+<a name="@Aborts_79"></a>
 
 ### Aborts
 
@@ -2943,7 +2987,7 @@ Return recognized market info for given trading pair.
 market.
 
 
-<a name="@Testing_79"></a>
+<a name="@Testing_80"></a>
 
 ### Testing
 
@@ -2984,44 +3028,6 @@ market.
      recognized_market_info_ref.tick_size,
      recognized_market_info_ref.min_size,
      recognized_market_info_ref.underwriter_id)
-}
-</code></pre>
-
-
-
-<a name="0xc0deb00c_registry_get_market_id"></a>
-
-## Function `get_market_id`
-
-Return optional market ID corresponding to given <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a></code>.
-
-
-<a name="@Testing_80"></a>
-
-### Testing
-
-
-* <code>test_set_remove_check_recognized_markets()</code>
-
-
-<pre><code><b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_market_id">get_market_id</a>(market_info: <a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>): <a href="_Option">option::Option</a>&lt;u64&gt;
-</code></pre>
-
-
-
-##### Implementation
-
-
-<pre><code><b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_market_id">get_market_id</a>(
-    market_info: <a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a>
-): Option&lt;u64&gt;
-<b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
-    <b>let</b> market_id_map_ref = // Immutably borrow <a href="market.md#0xc0deb00c_market">market</a> ID map.
-        &<b>borrow_global</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia).market_info_to_id;
-    // Return optional <a href="market.md#0xc0deb00c_market">market</a> ID <b>if</b> one <b>exists</b>, <b>else</b> empty <a href="">option</a>.
-    <b>if</b> (<a href="_contains">table::contains</a>(market_id_map_ref, market_info))
-        <a href="_some">option::some</a>(*<a href="_borrow">table::borrow</a>(market_id_map_ref, market_info)) <b>else</b>
-        <a href="_none">option::none</a>()
 }
 </code></pre>
 

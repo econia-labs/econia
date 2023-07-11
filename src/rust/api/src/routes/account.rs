@@ -185,8 +185,8 @@ mod tests {
     /// query parameters when provided, and returns the appropriate order history
     /// items for the query.
     ///
-    /// This test sends a GET request to the `/accounts/{account_id}/order-history`
-    /// endpoint with the `account_id` path parameter set to `0x123`, the `limit`
+    /// This test sends a GET request to the `/accounts/{account_address}/order-history`
+    /// endpoint with the `account_address` path parameter set to `0x123`, the `limit`
     /// query parameter set to `10`, and the `offset` query parameter set to `10`.
     /// The response is then checked to ensure that it has a `200 OK` status code,
     /// and the response body is checked to ensure that it is a JSON response in
@@ -194,7 +194,7 @@ mod tests {
     /// the number of items it contains is correct.
     #[tokio::test]
     async fn test_order_history_by_account_with_limit_offset() {
-        let account_id = "0x123";
+        let account_address = "0x123";
         let limit = 10;
         let offset = 10;
 
@@ -206,7 +206,7 @@ mod tests {
                 Request::builder()
                     .uri(format!(
                         "/account/{}/order-history?limit={}&offset={}",
-                        account_id, limit, offset
+                        account_address, limit, offset
                     ))
                     .body(Body::empty())
                     .unwrap(),
@@ -284,16 +284,16 @@ mod tests {
     /// query parameters when provided, and returns the appropriate order history
     /// items for the query.
     ///
-    /// This test sends a GET request to the `/accounts/{account_id}/open-orders`
-    /// endpoint with the `account_id` parameter set to `0x123`, the `limit`
+    /// This test sends a GET request to the `/accounts/{account_address}/open-orders`
+    /// endpoint with the `account_address` parameter set to `0x123`, the `limit`
     /// query parameter set to `10`, and the `offset` query parameter set to `10`.
     /// The response is then checked to ensure that it has a `200 OK` status code,
     /// and the response body is checked to ensure that it is a JSON response in
     /// the correct format. Additionally, the JSON is checked to make sure it has
     /// the number of items it contains is correct.
     #[tokio::test]
-    async fn test_open_orders_by_account() {
-        let account_id = "0x123";
+    async fn test_open_orders_by_account_with_limit_offset() {
+        let account_address = "0x123";
         let limit = 10;
         let offset = 10;
 
@@ -305,7 +305,7 @@ mod tests {
                 Request::builder()
                     .uri(format!(
                         "/account/{}/open-orders?limit={}&offset={}",
-                        account_id, limit, offset
+                        account_address, limit, offset
                     ))
                     .body(Body::empty())
                     .unwrap(),

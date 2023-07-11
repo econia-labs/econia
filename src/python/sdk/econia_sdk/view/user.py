@@ -12,7 +12,7 @@ def get_BID(view: EconiaViewer) -> bool:
     return bool(returns[0])
 
 def get_NO_CUSTODIAN(view: EconiaViewer) -> int:
-    returns = view.get_returns("user", "get_BID")
+    returns = view.get_returns("user", "get_NO_CUSTODIAN")
     return int(returns[0])
 
 def serialize_address(addr: AccountAddress) -> Any:

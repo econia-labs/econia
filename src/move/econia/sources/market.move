@@ -613,29 +613,10 @@ module econia::market {
         map: Tablist<u64, OrderBook>
     }
 
-    /// An event handle can be looked up via a view functions, then
-    /// passed into the REST API to query events emitted to the handle.
-    ///
-    /// Events are emitted to handle for the market, and to a handle for
-    /// affected user/custodian ID tuple (affected signer in the case of
-    /// a swap, which is is not affiliated with a market account).
     struct MarketEventHandles has key {
         /// Not emitted at user level when swapper doesn't sign.
         place_swap_order_events:
             Tablist<u64, EventHandle<PlaceSwapOrderEvent>>
-        /*
-        fill_events: Tablist<u64, EventHandle<FillEvent>>,
-        place_limit_order_events:
-            Tablist<u64, EventHandle<PlaceLimitOrderEvent>>,
-        place_market_order_events:
-            Tablist<u64, EventHandle<PlaceMarketOrderEvent>>,
-        */
-        /*
-        /// change_order_size()
-        change_order_size_events: EventHandle<ChangeOrderSizeEvent>,
-        /// assorted (direct cancel, self match cancel, and eviction)
-        cancel_order_event_market: EventHandle<CancelOrderEvent>,
-        */
     }
 
     /// Stored under a signing user's account (not market account),

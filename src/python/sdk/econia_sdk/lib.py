@@ -29,7 +29,7 @@ class EconiaViewer:
         self.econia_address = econia
         self.aptos_client = RestClient(node_url)
         
-    def get_returns(
+    def view_fn(
         self,
         module: str,
         function: str,

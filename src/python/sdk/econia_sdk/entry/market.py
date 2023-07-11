@@ -6,6 +6,7 @@ from aptos_sdk.transactions import EntryFunction, ModuleId
 from aptos_sdk.type_tag import TypeTag
 from econia_sdk.types import AdvanceStyle, Restriction, SelfMatchBehavior, Side
 
+
 def get_module_id(econia_address: AccountAddress) -> ModuleId:
     return ModuleId.from_str("{}::market".format(econia_address))
 

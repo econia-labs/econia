@@ -215,8 +215,9 @@ get_recognized_market_info_base_generic_by_type
 get_market_info --> has_recognized_market
 get_market_info --> get_recognized_market_info
 
-get_market_id_base_coin() --> get_market_id
-get_market_id_base_generic() --> get_market_id
+get_market_id_base_coin --> get_market_id
+get_market_id_base_generic --> get_market_id
+
 ```
 
 

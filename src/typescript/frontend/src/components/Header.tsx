@@ -10,8 +10,13 @@ import { ConnectedButton } from "./ConnectedButton";
 import { DepositWithdrawModal } from "./trade/DepositWithdrawModal";
 
 const NavItem: React.FC<
-  PropsWithChildren<{ href: string; active?: boolean; external?: boolean }>
-> = ({ href, active, external, children }) => {
+  PropsWithChildren<{
+    className?: string;
+    href: string;
+    active?: boolean;
+    external?: boolean;
+  }>
+> = ({ className, href, active, external, children }) => {
   if (external) {
     return (
       <a
@@ -19,8 +24,8 @@ const NavItem: React.FC<
         target="_blank"
         rel="noreferrer"
         className={`cursor-pointer font-roboto-mono text-lg font-medium uppercase tracking-wide transition-all ${
-          active ? "text-neutral-100" : "text-neutral-500 hover:text-purple"
-        }`}
+          active ? "text-neutral-100" : "text-neutral-500 hover:text-blue"
+        } ${className ? className : ""}`}
       >
         {children}
       </a>
@@ -31,7 +36,7 @@ const NavItem: React.FC<
     <Link
       href={href}
       className={`cursor-pointer font-roboto-mono text-lg font-medium uppercase tracking-wide transition-all ${
-        active ? "text-neutral-100" : "text-neutral-500 hover:text-purple"
+        active ? "text-neutral-100" : "text-neutral-500 hover:text-blue"
       }`}
     >
       {children}
@@ -53,7 +58,7 @@ export function Header() {
   const [depositWithdrawOpen, setDepositWithdrawOpen] = useState(false);
 
   return (
-    <header className="flex flex-col border-b border-neutral-600 bg-black">
+    <header className="flex flex-col border-b border-neutral-600">
       <nav className="flex items-center justify-between px-8 py-6">
         <div className="my-auto flex-1 items-center">
           <Link href="/">
@@ -68,10 +73,11 @@ export function Header() {
           </Link>
         </div>
         <div className="flex flex-1 items-center justify-center gap-5">
-          <NavItem href="/swap" active={router.pathname.startsWith("/swap")}>
+          {/* TODO: Enable swap */}
+          {/* <NavItem href="/swap" active={router.pathname.startsWith("/swap")}>
             Swap
           </NavItem>
-          <NavItemDivider />
+          <NavItemDivider /> */}
           <NavItem href="/trade" active={router.pathname.startsWith("/trade")}>
             Trade
           </NavItem>
@@ -83,9 +89,13 @@ export function Header() {
             Faucet
           </NavItem>
           <NavItemDivider />
-          <NavItem href="https://econia.dev" external>
-            Docs
-            <ArrowRightIcon className="ml-1 inline-block h-3 w-3 -rotate-45" />
+          <NavItem
+            className="flex items-center gap-1"
+            href="https://econia.dev"
+            external
+          >
+            <p>Docs</p>
+            <ArrowRightIcon className="inline-block h-3 w-3 -rotate-45" />
           </NavItem>
         </div>
         <div className="flex flex-1 justify-end">
@@ -94,6 +104,7 @@ export function Header() {
               <Button
                 variant="secondary"
                 onClick={() => setDepositWithdrawOpen(true)}
+                className="whitespace-nowrap"
               >
                 Deposit / Withdraw
               </Button>

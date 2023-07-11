@@ -33,7 +33,7 @@ export const TradeHistoryTable: React.FC<{
       ] as ApiOrder[];
       // TODO: Endpoint needs to return data
       // return await fetch(
-      //   `${API_URL}/market/${
+      //   `${API_URL}/markets/${
       //     marketData.market_id
       //   }/fills?from=${0}&to=${Math.floor(Date.now() / 1000)}`
       // ).then((res) => res.json());
@@ -43,14 +43,11 @@ export const TradeHistoryTable: React.FC<{
     columns: [
       columnHelper.accessor("price", {
         cell: (info) => info.getValue(),
-        header: () => `PRICE (${marketData.quote.symbol})`,
+        header: () => "PRICE",
       }),
       columnHelper.accessor("size", {
         cell: (info) => info.getValue(),
-        header: () =>
-          `AMOUNT ${
-            marketData.base?.symbol ? `(${marketData.base.symbol})` : ""
-          }`,
+        header: () => "AMOUNT",
       }),
       columnHelper.accessor("created_at", {
         cell: (info) =>
@@ -68,7 +65,7 @@ export const TradeHistoryTable: React.FC<{
   });
 
   return (
-    <div className="h-[200px]">
+    <div className="min-h-[200px]">
       <table className={"w-full" + (className ? ` ${className}` : "")}>
         <thead>
           {table.getHeaderGroups().map((headerGroup) => (
@@ -78,13 +75,13 @@ export const TradeHistoryTable: React.FC<{
             >
               {headerGroup.headers.map((header, i) => (
                 <th
-                  className={
+                  className={`text-xs ${
                     i === 0
                       ? "pl-4 text-left"
                       : i === 1
-                      ? "text-center"
+                      ? "text-left"
                       : "pr-4 text-right"
-                  }
+                  }`}
                   key={header.id}
                 >
                   {header.isPlaceholder
@@ -128,13 +125,13 @@ export const TradeHistoryTable: React.FC<{
               >
                 {row.getVisibleCells().map((cell, i) => (
                   <td
-                    className={
+                    className={`text-xs ${
                       i === 0
                         ? "pl-4 text-left"
                         : i === 1
-                        ? "text-center"
-                        : "pr-4 text-right text-neutral-500"
-                    }
+                        ? "text-left"
+                        : "pr-4 text-right"
+                    }`}
                     key={cell.id}
                   >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}

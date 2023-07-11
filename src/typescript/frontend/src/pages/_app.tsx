@@ -8,6 +8,17 @@ import {
 } from "@manahippo/aptos-wallet-adapter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import {
+  CategoryScale,
+  Chart,
+  Filler,
+  Legend,
+  LinearScale,
+  LineElement,
+  PointElement,
+  Title,
+  Tooltip,
+} from "chart.js";
 import { type AppProps } from "next/app";
 import { Jost, Roboto_Mono } from "next/font/google";
 import { useMemo } from "react";
@@ -15,6 +26,22 @@ import { ToastContainer } from "react-toastify";
 
 import { AptosContextProvider } from "@/contexts/AptosContext";
 import { ConnectWalletContextProvider } from "@/contexts/ConnectWalletContext";
+
+import bg from "../../public/bg.png";
+
+Chart.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Filler,
+  Legend
+);
+
+Chart.defaults.font.family = "Roboto Mono";
+Chart.defaults.animation = false;
 
 const jost = Jost({
   subsets: ["latin"],
@@ -39,6 +66,10 @@ export default function App({ Component, pageProps }: AppProps) {
         <AptosContextProvider>
           <ConnectWalletContextProvider>
             <style jsx global>{`
+              body {
+                background-color: #020202;
+                background-image: url(${bg.src});
+              }
               :root {
                 --font-jost: ${jost.style.fontFamily};
                 --font-roboto-mono: ${robotoMono.style.fontFamily};

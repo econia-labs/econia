@@ -1,13 +1,18 @@
+import { entryFunctions } from "@econia-labs/sdk";
 import { Menu, Tab } from "@headlessui/react";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
-import { useWallet } from "@manahippo/aptos-wallet-adapter";
-import React from "react";
+import React, { useState } from "react";
 
 import { Button } from "@/components/Button";
 import { Input } from "@/components/Input";
+import { NO_CUSTODIAN } from "@/constants";
+import { useAptos } from "@/contexts/AptosContext";
+import { ECONIA_ADDR } from "@/env";
 import { useCoinBalance } from "@/hooks/useCoinBalance";
+import { useMarketAccountBalance } from "@/hooks/useMarketAccountBalance";
 import { type ApiCoin, type ApiMarket } from "@/types/api";
-import { TypeTag } from "@/types/move";
+import { toRawCoinAmount } from "@/utils/coin";
+import { TypeTag } from "@/utils/TypeTag";
 
 const SelectCoinInput: React.FC<{
   coins: ApiCoin[];
@@ -63,15 +68,30 @@ const DepositWithdrawForm: React.FC<{
   selectedMarket: ApiMarket;
   mode: "deposit" | "withdraw";
 }> = ({ selectedMarket, mode }) => {
-  const [selectedCoin, setSelectedCoin] = React.useState<ApiCoin>(
+  const { account, aptosClient, signAndSubmitTransaction } = useAptos();
+  const [selectedCoin, setSelectedCoin] = useState<ApiCoin>(
     selectedMarket.base ?? selectedMarket.quote
   );
-  const [amount, setAmount] = React.useState<string>("");
-  const { account } = useWallet();
-  const balance = useCoinBalance(
+  const { data: marketAccountBalance } = useMarketAccountBalance(
+    account?.address,
+    selectedMarket.market_id,
+    selectedCoin
+  );
+
+  const [amount, setAmount] = useState<string>("");
+  const { data: balance } = useCoinBalance(
     TypeTag.fromApiCoin(selectedCoin),
     account?.address
   );
+
+  const disabledReason =
+    balance == null || marketAccountBalance == null
+      ? "Loading balance..."
+      : (mode === "deposit" && parseFloat(amount) > balance) ||
+        (mode === "withdraw" && parseFloat(amount) > marketAccountBalance)
+      ? "Not enough coins"
+      : null;
+
   return (
     <div className="flex flex-col gap-4">
       <SelectCoinInput
@@ -94,18 +114,43 @@ const DepositWithdrawForm: React.FC<{
         <p className="font-roboto-mono uppercase text-neutral-500">
           Available in market account
         </p>
-        <p className="font-roboto-mono uppercase text-neutral-500">
-          {balance.data ?? "--"} {selectedCoin.symbol}
+        <p className="font-roboto-mono text-neutral-500">
+          {marketAccountBalance ?? "--"} {selectedCoin.symbol}
         </p>
       </div>
       <div className="flex w-full justify-between">
         <p className="font-roboto-mono uppercase text-neutral-500">In Wallet</p>
-        <p className="font-roboto-mono uppercase text-neutral-500">
-          {/* TODO: Get wallet balance */}
-          {balance.data ?? "--"} {selectedCoin.symbol}
+        <p className="font-roboto-mono text-neutral-500">
+          {balance ?? "--"} {selectedCoin.symbol}
         </p>
       </div>
-      <Button variant="primary">
+      <Button
+        variant="primary"
+        onClick={async () => {
+          let payload;
+          if (mode === "deposit") {
+            payload = entryFunctions.depositFromCoinstore(
+              ECONIA_ADDR,
+              TypeTag.fromApiCoin(selectedCoin).toString(),
+              BigInt(selectedMarket.market_id),
+              BigInt(NO_CUSTODIAN),
+              BigInt(toRawCoinAmount(amount, selectedCoin.decimals))
+            );
+          } else {
+            payload = entryFunctions.withdrawToCoinstore(
+              ECONIA_ADDR,
+              TypeTag.fromApiCoin(selectedCoin).toString(),
+              BigInt(selectedMarket.market_id),
+              BigInt(toRawCoinAmount(amount, selectedCoin.decimals))
+            );
+          }
+          await signAndSubmitTransaction({
+            type: "entry_function_payload",
+            ...payload,
+          });
+        }}
+        disabledReason={disabledReason}
+      >
         {mode === "deposit" ? "Deposit" : "Withdraw"}
       </Button>
     </div>

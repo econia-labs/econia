@@ -30,7 +30,7 @@ export const Input: React.FC<{
         onChange={(e) => {
           if (!onChange) return;
           if (type == "number") {
-            if (isNaN(Number(e.target.value))) return;
+            if (e.target.value !== "." && isNaN(Number(e.target.value))) return;
           }
           onChange(e.target.value);
         }}

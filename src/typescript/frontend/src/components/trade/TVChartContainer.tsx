@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 
 import { API_URL } from "@/env";
 import { type ApiBar, type ApiMarket, type ApiResolution } from "@/types/api";
-import { TypeTag } from "@/types/move";
+import { TypeTag } from "@/utils/TypeTag";
 
 import {
   type Bar,
@@ -31,6 +31,12 @@ export interface ChartContainerProps {
   container: ChartingLibraryWidgetOptions["container"];
   theme: ChartingLibraryWidgetOptions["theme"];
 }
+
+const GREEN = "rgba(110, 213, 163, 1.0)";
+const RED = "rgba(240, 129, 129, 1.0)";
+
+const GREEN_OPACITY_HALF = "rgba(110, 213, 163, 0.5)";
+const RED_OPACITY_HALF = "rgba(240, 129, 129, 0.5)";
 
 const resolutions = [
   "1",
@@ -217,7 +223,7 @@ export const TVChartContainer: React.FC<
         try {
           const res = await fetch(
             new URL(
-              `/market/${market.market_id}/history?${new URLSearchParams({
+              `/markets/${market.market_id}/history?${new URLSearchParams({
                 resolution: resolutionMap[resolution],
                 from: from.toString(),
                 to: to.toString(),
@@ -290,8 +296,27 @@ export const TVChartContainer: React.FC<
         "paneProperties.backgroundType": "solid",
         "paneProperties.background": "#000000",
         "scalesProperties.backgroundColor": "#000000",
+        "mainSeriesProperties.barStyle.upColor": GREEN,
+        "mainSeriesProperties.barStyle.downColor": RED,
+        "mainSeriesProperties.candleStyle.upColor": GREEN,
+        "mainSeriesProperties.candleStyle.downColor": RED,
+        "mainSeriesProperties.candleStyle.borderUpColor": GREEN,
+        "mainSeriesProperties.candleStyle.borderDownColor": RED,
+        "mainSeriesProperties.candleStyle.wickUpColor": GREEN,
+        "mainSeriesProperties.candleStyle.wickDownColor": RED,
+        "mainSeriesProperties.columnStyle.upColor": GREEN_OPACITY_HALF,
+        "mainSeriesProperties.columnStyle.downColor": RED_OPACITY_HALF,
+        "mainSeriesProperties.hollowCandleStyle.upColor": GREEN,
+        "mainSeriesProperties.hollowCandleStyle.downColor": RED,
+        "mainSeriesProperties.rangeStyle.upColor": GREEN,
+        "mainSeriesProperties.rangeStyle.downColor": RED,
+        "paneProperties.legendProperties.showVolume": true,
       },
-      studies_overrides: props.studiesOverrides,
+      studies_overrides: {
+        ...props.studiesOverrides,
+        "volume.volume.color.0": RED_OPACITY_HALF,
+        "volume.volume.color.1": GREEN_OPACITY_HALF,
+      },
     };
 
     tvWidget.current = new widget(widgetOptions);
@@ -314,5 +339,5 @@ export const TVChartContainer: React.FC<
     props.libraryPath,
   ]);
 
-  return <div ref={ref} className="h-full" />;
+  return <div ref={ref} className="h-4/5 flex-[4_1_0%]" />;
 };

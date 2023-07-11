@@ -2,7 +2,7 @@ import { type GetStaticProps } from "next";
 import { useRouter } from "next/router";
 
 import { Page } from "@/components/Page";
-import { API_URL } from "@/env";
+import { MOCK_MARKETS } from "@/mockdata/markets";
 import { type ApiMarket } from "@/types/api";
 
 type Props = {
@@ -24,8 +24,10 @@ export default function Trade({ marketData }: Props) {
 }
 
 export const getStaticProps: GetStaticProps<Props> = async () => {
-  const res = await fetch(new URL("markets", API_URL).href);
-  const marketData: ApiMarket[] = await res.json();
+  // const res = await fetch(new URL("markets", API_URL).href);
+  // const marketData: ApiMarket[] = await res.json();
+  // TODO: Working API
+  const marketData = MOCK_MARKETS;
   return {
     props: {
       marketData,

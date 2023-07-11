@@ -1,9 +1,9 @@
 # Market entry functions
 
-from aptos_sdk.type_tag import TypeTag
-from aptos_sdk.transactions import EntryFunction, ModuleId
 from aptos_sdk.account_address import AccountAddress
-from aptos_sdk.bcs import encoder, Serializer
+from aptos_sdk.bcs import Serializer, encoder
+from aptos_sdk.transactions import EntryFunction, ModuleId
+from aptos_sdk.type_tag import TypeTag
 from econia_sdk.types import AdvanceStyle, Restriction, SelfMatchBehavior, Side
 
 
@@ -34,7 +34,10 @@ def cancel_all_orders_user(
 
 
 def cancel_order_user(
-    econia_address: AccountAddress, market_id: int, side: Side, market_order_id: int
+    econia_address: AccountAddress,
+    market_id: int,
+    side: Side,
+    market_order_id: int,
 ) -> EntryFunction:
     """
     Create the `EntryFunction` for [cancel_order_user](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#0xc0deb00c_market_cancel_order_user)

@@ -36,18 +36,21 @@ of orders that have been placed on the corresponding order book.
 ## General overview sections
 
 
-[Public function index](#public-function-index)
+[View functions](#view-functions)
 
 * [Constant getters](#constant-getters)
+* [Market order ID decoders](#market-order-id-decoders)
+* [Order lookup](#order-lookup)
+
+[Public function index](#public-function-index)
+
 * [Market registration](#market-registration)
-* [Market order IDs](#market-order-ids)
 * [Limit orders](#limit-orders)
+* [Passive advance limit orders](#passive-advance-limit-orders)
 * [Market orders](#market-orders)
 * [Swaps](#swaps)
 * [Change order size](#change-order-size)
 * [Cancel orders](#cancel-orders)
-
-[Indexing](#indexing)
 
 [Dependency charts](#dependency-charts)
 
@@ -64,13 +67,10 @@ of orders that have been placed on the corresponding order book.
 [Complete DocGen index](#complete-docgen-index)
 
 
-<a name="@Public_function_index_1"></a>
+<a name="@View_functions_1"></a>
 
-## Public function index
+## View functions
 
-
-See the [dependency charts](#dependency-charts) for a visual map of
-associated function wrappers.
 
 
 <a name="@Constant_getters_2"></a>
@@ -98,7 +98,39 @@ associated function wrappers.
 * <code><a href="market.md#0xc0deb00c_market_get_TICKS">get_TICKS</a>()</code>
 
 
-<a name="@Market_registration_3"></a>
+<a name="@Market_order_ID_decoders_3"></a>
+
+### Market order ID decoders
+
+
+* <code><a href="market.md#0xc0deb00c_market_get_market_order_id_counter">get_market_order_id_counter</a>()</code>
+* <code><a href="market.md#0xc0deb00c_market_get_market_order_id_price">get_market_order_id_price</a>()</code>
+* <code><a href="market.md#0xc0deb00c_market_get_market_order_id_side">get_market_order_id_side</a>()</code>
+
+
+<a name="@Order_lookup_4"></a>
+
+### Order lookup
+
+
+* <code><a href="market.md#0xc0deb00c_market_get_open_order">get_open_order</a>()</code>
+* <code><a href="market.md#0xc0deb00c_market_get_open_orders">get_open_orders</a>()</code>
+* <code><a href="market.md#0xc0deb00c_market_get_open_orders_all">get_open_orders_all</a>()</code>
+* <code><a href="market.md#0xc0deb00c_market_get_price_levels">get_price_levels</a>()</code>
+* <code><a href="market.md#0xc0deb00c_market_get_price_levels_all">get_price_levels_all</a>()</code>
+* <code><a href="market.md#0xc0deb00c_market_has_open_order">has_open_order</a>()</code>
+
+
+<a name="@Public_function_index_5"></a>
+
+## Public function index
+
+
+See the [dependency charts](#dependency-charts) for a visual map of
+associated function wrappers.
+
+
+<a name="@Market_registration_6"></a>
 
 ### Market registration
 
@@ -108,16 +140,7 @@ associated function wrappers.
 * <code><a href="market.md#0xc0deb00c_market_register_market_base_generic">register_market_base_generic</a>()</code>
 
 
-<a name="@Market_order_IDs_4"></a>
-
-### Market order IDs
-
-
-* <code><a href="market.md#0xc0deb00c_market_get_market_order_id_counter">get_market_order_id_counter</a>()</code>
-* <code><a href="market.md#0xc0deb00c_market_get_market_order_id_price">get_market_order_id_price</a>()</code>
-
-
-<a name="@Limit_orders_5"></a>
+<a name="@Limit_orders_7"></a>
 
 ### Limit orders
 
@@ -127,7 +150,7 @@ associated function wrappers.
 * <code><a href="market.md#0xc0deb00c_market_place_limit_order_user_entry">place_limit_order_user_entry</a>()</code>
 
 
-<a name="@Passive_advance_limit_orders_6"></a>
+<a name="@Passive_advance_limit_orders_8"></a>
 
 ### Passive advance limit orders
 
@@ -137,7 +160,7 @@ associated function wrappers.
 * <code><a href="market.md#0xc0deb00c_market_place_limit_order_passive_advance_user_entry">place_limit_order_passive_advance_user_entry</a>()</code>
 
 
-<a name="@Market_orders_7"></a>
+<a name="@Market_orders_9"></a>
 
 ### Market orders
 
@@ -147,7 +170,7 @@ associated function wrappers.
 * <code><a href="market.md#0xc0deb00c_market_place_market_order_user_entry">place_market_order_user_entry</a>()</code>
 
 
-<a name="@Swaps_8"></a>
+<a name="@Swaps_10"></a>
 
 ### Swaps
 
@@ -158,7 +181,7 @@ associated function wrappers.
 * <code><a href="market.md#0xc0deb00c_market_swap_generic">swap_generic</a>()</code>
 
 
-<a name="@Change_order_size_9"></a>
+<a name="@Change_order_size_11"></a>
 
 ### Change order size
 
@@ -167,7 +190,7 @@ associated function wrappers.
 * <code><a href="market.md#0xc0deb00c_market_change_order_size_user">change_order_size_user</a>()</code>
 
 
-<a name="@Cancel_orders_10"></a>
+<a name="@Cancel_orders_12"></a>
 
 ### Cancel orders
 
@@ -178,25 +201,7 @@ associated function wrappers.
 * <code><a href="market.md#0xc0deb00c_market_cancel_all_orders_user">cancel_all_orders_user</a>()</code>
 
 
-<a name="@Indexing_11"></a>
-
-## Indexing
-
-
-An order book can be indexed off-chain via <code><a href="market.md#0xc0deb00c_market_index_orders_sdk">index_orders_sdk</a>()</code>, an
-SDK-generative function for use with <code><b>move</b>-<b>to</b>-ts</code>.
-
-Once an order book has been indexed, the off-chain model can be kept
-current by monitoring <code><a href="market.md#0xc0deb00c_market_MakerEvent">MakerEvent</a></code> and <code><a href="market.md#0xc0deb00c_market_TakerEvent">TakerEvent</a></code> emissions from
-the following functions:
-
-* <code><a href="market.md#0xc0deb00c_market_cancel_order">cancel_order</a>()</code>
-* <code><a href="market.md#0xc0deb00c_market_change_order_size">change_order_size</a>()</code>
-* <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>
-* <code><a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>()</code>
-
-
-<a name="@Dependency_charts_12"></a>
+<a name="@Dependency_charts_13"></a>
 
 ## Dependency charts
 
@@ -208,7 +213,7 @@ a browser renders the diagrams with coloring that makes it difficult
 to read, try a different browser.
 
 
-<a name="@Internal_dependencies_13"></a>
+<a name="@Internal_dependencies_14"></a>
 
 ### Internal dependencies
 
@@ -331,8 +336,29 @@ cancel_all_orders --> cancel_order
 
 ```
 
+View functions:
 
-<a name="@External_module_dependencies_14"></a>
+```mermaid
+
+flowchart LR
+
+get_price_levels --> get_open_orders
+get_price_levels --> get_price_levels_for_side
+get_price_levels_all --> get_price_levels
+get_open_order --> has_open_order
+get_open_order --> get_market_order_id_side
+get_open_order --> get_market_order_id_avl_queue_access_key
+get_market_order_id_side -->
+get_market_order_id_avl_queue_access_key
+has_open_order --> get_market_order_id_side
+has_open_order --> get_market_order_id_avl_queue_access_key
+get_open_orders --> get_open_orders_for_side
+get_open_orders_all --> get_open_orders
+
+```
+
+
+<a name="@External_module_dependencies_15"></a>
 
 ### External module dependencies
 
@@ -406,6 +432,14 @@ change_order_size --> resource_account::get_address
 
 cancel_order --> resource_account::get_address
 
+get_open_order --> resource_account::get_address
+
+get_open_orders --> resource_account::get_address
+
+has_open_order --> resource_account::get_address
+
+get_price_levels --> resource_account::get_address
+
 ```
 
 <code><a href="user.md#0xc0deb00c_user">user</a></code>:
@@ -433,10 +467,14 @@ cancel_order --> user::cancel_order_internal
 
 cancel_all_orders --> user::get_active_market_order_ids_internal
 
+has_open_order --> user::get_open_order_id_internal
+
+get_open_orders_for_side --> user::get_open_order_id_internal
+
 ```
 
 
-<a name="@Order_management_testing_15"></a>
+<a name="@Order_management_testing_16"></a>
 
 ## Order management testing
 
@@ -448,7 +486,7 @@ logical branches, returns, and state updates. Aborts are tested
 individually for each function.
 
 
-<a name="@Functions_with_aborts_16"></a>
+<a name="@Functions_with_aborts_17"></a>
 
 ### Functions with aborts
 
@@ -465,7 +503,7 @@ Function aborts to test:
 * [x] <code><a href="market.md#0xc0deb00c_market_swap">swap</a>()</code>
 
 
-<a name="@Return_proxies_17"></a>
+<a name="@Return_proxies_18"></a>
 
 ### Return proxies
 
@@ -516,7 +554,7 @@ Function returns to test:
 * [x] <code><a href="market.md#0xc0deb00c_market_swap_generic">swap_generic</a>()</code>
 
 
-<a name="@Invocation_proxies_18"></a>
+<a name="@Invocation_proxies_19"></a>
 
 ### Invocation proxies
 
@@ -547,7 +585,7 @@ Function invocations to test:
 * [x] <code><a href="market.md#0xc0deb00c_market_swap_generic">swap_generic</a>()</code>
 
 
-<a name="@Branching_functions_19"></a>
+<a name="@Branching_functions_20"></a>
 
 ### Branching functions
 
@@ -570,7 +608,7 @@ Functions with logical branches to test:
 See each function for its logical branches.
 
 
-<a name="@Complete_DocGen_index_20"></a>
+<a name="@Complete_DocGen_index_21"></a>
 
 ## Complete DocGen index
 
@@ -579,202 +617,231 @@ The below index is automatically generated from source code:
 
 
 -  [General overview sections](#@General_overview_sections_0)
--  [Public function index](#@Public_function_index_1)
+-  [View functions](#@View_functions_1)
     -  [Constant getters](#@Constant_getters_2)
-    -  [Market registration](#@Market_registration_3)
-    -  [Market order IDs](#@Market_order_IDs_4)
-    -  [Limit orders](#@Limit_orders_5)
-    -  [Passive advance limit orders](#@Passive_advance_limit_orders_6)
-    -  [Market orders](#@Market_orders_7)
-    -  [Swaps](#@Swaps_8)
-    -  [Change order size](#@Change_order_size_9)
-    -  [Cancel orders](#@Cancel_orders_10)
--  [Indexing](#@Indexing_11)
--  [Dependency charts](#@Dependency_charts_12)
-    -  [Internal dependencies](#@Internal_dependencies_13)
-    -  [External module dependencies](#@External_module_dependencies_14)
--  [Order management testing](#@Order_management_testing_15)
-    -  [Functions with aborts](#@Functions_with_aborts_16)
-    -  [Return proxies](#@Return_proxies_17)
-    -  [Invocation proxies](#@Invocation_proxies_18)
-    -  [Branching functions](#@Branching_functions_19)
--  [Complete DocGen index](#@Complete_DocGen_index_20)
+    -  [Market order ID decoders](#@Market_order_ID_decoders_3)
+    -  [Order lookup](#@Order_lookup_4)
+-  [Public function index](#@Public_function_index_5)
+    -  [Market registration](#@Market_registration_6)
+    -  [Limit orders](#@Limit_orders_7)
+    -  [Passive advance limit orders](#@Passive_advance_limit_orders_8)
+    -  [Market orders](#@Market_orders_9)
+    -  [Swaps](#@Swaps_10)
+    -  [Change order size](#@Change_order_size_11)
+    -  [Cancel orders](#@Cancel_orders_12)
+-  [Dependency charts](#@Dependency_charts_13)
+    -  [Internal dependencies](#@Internal_dependencies_14)
+    -  [External module dependencies](#@External_module_dependencies_15)
+-  [Order management testing](#@Order_management_testing_16)
+    -  [Functions with aborts](#@Functions_with_aborts_17)
+    -  [Return proxies](#@Return_proxies_18)
+    -  [Invocation proxies](#@Invocation_proxies_19)
+    -  [Branching functions](#@Branching_functions_20)
+-  [Complete DocGen index](#@Complete_DocGen_index_21)
 -  [Struct `MakerEvent`](#0xc0deb00c_market_MakerEvent)
 -  [Struct `Order`](#0xc0deb00c_market_Order)
 -  [Struct `OrderBook`](#0xc0deb00c_market_OrderBook)
 -  [Resource `OrderBooks`](#0xc0deb00c_market_OrderBooks)
+-  [Struct `OrderView`](#0xc0deb00c_market_OrderView)
+-  [Struct `OrdersView`](#0xc0deb00c_market_OrdersView)
+-  [Struct `PriceLevel`](#0xc0deb00c_market_PriceLevel)
+-  [Struct `PriceLevels`](#0xc0deb00c_market_PriceLevels)
 -  [Struct `TakerEvent`](#0xc0deb00c_market_TakerEvent)
 -  [Resource `Orders`](#0xc0deb00c_market_Orders)
--  [Constants](#@Constants_21)
--  [Function `cancel_all_orders_custodian`](#0xc0deb00c_market_cancel_all_orders_custodian)
-    -  [Invocation testing](#@Invocation_testing_22)
--  [Function `cancel_order_custodian`](#0xc0deb00c_market_cancel_order_custodian)
-    -  [Invocation testing](#@Invocation_testing_23)
--  [Function `change_order_size_custodian`](#0xc0deb00c_market_change_order_size_custodian)
-    -  [Invocation testing](#@Invocation_testing_24)
+-  [Constants](#@Constants_22)
 -  [Function `get_ABORT`](#0xc0deb00c_market_get_ABORT)
-    -  [Testing](#@Testing_25)
+    -  [Testing](#@Testing_23)
 -  [Function `get_ASK`](#0xc0deb00c_market_get_ASK)
-    -  [Testing](#@Testing_26)
+    -  [Testing](#@Testing_24)
 -  [Function `get_BID`](#0xc0deb00c_market_get_BID)
-    -  [Testing](#@Testing_27)
+    -  [Testing](#@Testing_25)
 -  [Function `get_BUY`](#0xc0deb00c_market_get_BUY)
-    -  [Testing](#@Testing_28)
+    -  [Testing](#@Testing_26)
 -  [Function `get_CANCEL_BOTH`](#0xc0deb00c_market_get_CANCEL_BOTH)
-    -  [Testing](#@Testing_29)
+    -  [Testing](#@Testing_27)
 -  [Function `get_CANCEL_MAKER`](#0xc0deb00c_market_get_CANCEL_MAKER)
-    -  [Testing](#@Testing_30)
+    -  [Testing](#@Testing_28)
 -  [Function `get_CANCEL_TAKER`](#0xc0deb00c_market_get_CANCEL_TAKER)
-    -  [Testing](#@Testing_31)
+    -  [Testing](#@Testing_29)
 -  [Function `get_FILL_OR_ABORT`](#0xc0deb00c_market_get_FILL_OR_ABORT)
-    -  [Testing](#@Testing_32)
+    -  [Testing](#@Testing_30)
 -  [Function `get_HI_PRICE`](#0xc0deb00c_market_get_HI_PRICE)
-    -  [Testing](#@Testing_33)
+    -  [Testing](#@Testing_31)
 -  [Function `get_IMMEDIATE_OR_CANCEL`](#0xc0deb00c_market_get_IMMEDIATE_OR_CANCEL)
-    -  [Testing](#@Testing_34)
--  [Function `get_market_order_id_counter`](#0xc0deb00c_market_get_market_order_id_counter)
-    -  [Testing](#@Testing_35)
--  [Function `get_market_order_id_price`](#0xc0deb00c_market_get_market_order_id_price)
-    -  [Testing](#@Testing_36)
+    -  [Testing](#@Testing_32)
 -  [Function `get_MAX_POSSIBLE`](#0xc0deb00c_market_get_MAX_POSSIBLE)
-    -  [Testing](#@Testing_37)
+    -  [Testing](#@Testing_33)
 -  [Function `get_NO_CUSTODIAN`](#0xc0deb00c_market_get_NO_CUSTODIAN)
-    -  [Testing](#@Testing_38)
+    -  [Testing](#@Testing_34)
 -  [Function `get_NO_RESTRICTION`](#0xc0deb00c_market_get_NO_RESTRICTION)
-    -  [Testing](#@Testing_39)
+    -  [Testing](#@Testing_35)
 -  [Function `get_NO_UNDERWRITER`](#0xc0deb00c_market_get_NO_UNDERWRITER)
-    -  [Testing](#@Testing_40)
+    -  [Testing](#@Testing_36)
 -  [Function `get_POST_OR_ABORT`](#0xc0deb00c_market_get_POST_OR_ABORT)
-    -  [Testing](#@Testing_41)
+    -  [Testing](#@Testing_37)
 -  [Function `get_PERCENT`](#0xc0deb00c_market_get_PERCENT)
-    -  [Testing](#@Testing_42)
+    -  [Testing](#@Testing_38)
 -  [Function `get_SELL`](#0xc0deb00c_market_get_SELL)
-    -  [Testing](#@Testing_43)
+    -  [Testing](#@Testing_39)
 -  [Function `get_TICKS`](#0xc0deb00c_market_get_TICKS)
-    -  [Testing](#@Testing_44)
+    -  [Testing](#@Testing_40)
+-  [Function `get_market_order_id_counter`](#0xc0deb00c_market_get_market_order_id_counter)
+    -  [Testing](#@Testing_41)
+-  [Function `get_market_order_id_price`](#0xc0deb00c_market_get_market_order_id_price)
+    -  [Testing](#@Testing_42)
+-  [Function `get_market_order_id_side`](#0xc0deb00c_market_get_market_order_id_side)
+    -  [Testing](#@Testing_43)
+-  [Function `get_open_order`](#0xc0deb00c_market_get_open_order)
+    -  [Aborts](#@Aborts_44)
+    -  [Testing](#@Testing_45)
+-  [Function `get_open_orders`](#0xc0deb00c_market_get_open_orders)
+    -  [Parameters](#@Parameters_46)
+    -  [Aborts](#@Aborts_47)
+    -  [Testing](#@Testing_48)
+-  [Function `get_open_orders_all`](#0xc0deb00c_market_get_open_orders_all)
+    -  [Testing](#@Testing_49)
+-  [Function `get_price_levels`](#0xc0deb00c_market_get_price_levels)
+    -  [Parameters](#@Parameters_50)
+    -  [Testing](#@Testing_51)
+-  [Function `get_price_levels_all`](#0xc0deb00c_market_get_price_levels_all)
+    -  [Testing](#@Testing_52)
+-  [Function `has_open_order`](#0xc0deb00c_market_has_open_order)
+    -  [Testing](#@Testing_53)
+-  [Function `cancel_all_orders_custodian`](#0xc0deb00c_market_cancel_all_orders_custodian)
+    -  [Invocation testing](#@Invocation_testing_54)
+-  [Function `cancel_order_custodian`](#0xc0deb00c_market_cancel_order_custodian)
+    -  [Invocation testing](#@Invocation_testing_55)
+-  [Function `change_order_size_custodian`](#0xc0deb00c_market_change_order_size_custodian)
+    -  [Invocation testing](#@Invocation_testing_56)
 -  [Function `place_limit_order_custodian`](#0xc0deb00c_market_place_limit_order_custodian)
-    -  [Invocation and return testing](#@Invocation_and_return_testing_45)
+    -  [Invocation and return testing](#@Invocation_and_return_testing_57)
 -  [Function `place_limit_order_passive_advance_custodian`](#0xc0deb00c_market_place_limit_order_passive_advance_custodian)
-    -  [Invocation and return testing](#@Invocation_and_return_testing_46)
+    -  [Invocation and return testing](#@Invocation_and_return_testing_58)
 -  [Function `place_limit_order_passive_advance_user`](#0xc0deb00c_market_place_limit_order_passive_advance_user)
-    -  [Invocation and return testing](#@Invocation_and_return_testing_47)
+    -  [Invocation and return testing](#@Invocation_and_return_testing_59)
 -  [Function `place_limit_order_user`](#0xc0deb00c_market_place_limit_order_user)
-    -  [Invocation and return testing](#@Invocation_and_return_testing_48)
+    -  [Invocation and return testing](#@Invocation_and_return_testing_60)
 -  [Function `place_market_order_custodian`](#0xc0deb00c_market_place_market_order_custodian)
-    -  [Invocation and return testing](#@Invocation_and_return_testing_49)
+    -  [Invocation and return testing](#@Invocation_and_return_testing_61)
 -  [Function `place_market_order_user`](#0xc0deb00c_market_place_market_order_user)
-    -  [Invocation and return testing](#@Invocation_and_return_testing_50)
+    -  [Invocation and return testing](#@Invocation_and_return_testing_62)
 -  [Function `register_market_base_coin`](#0xc0deb00c_market_register_market_base_coin)
-    -  [Type parameters](#@Type_parameters_51)
-    -  [Parameters](#@Parameters_52)
-    -  [Returns](#@Returns_53)
-    -  [Testing](#@Testing_54)
--  [Function `register_market_base_generic`](#0xc0deb00c_market_register_market_base_generic)
-    -  [Type parameters](#@Type_parameters_55)
-    -  [Parameters](#@Parameters_56)
-    -  [Returns](#@Returns_57)
-    -  [Testing](#@Testing_58)
--  [Function `swap_between_coinstores`](#0xc0deb00c_market_swap_between_coinstores)
-    -  [Type Parameters](#@Type_Parameters_59)
-    -  [Parameters](#@Parameters_60)
-    -  [Returns](#@Returns_61)
-    -  [Testing](#@Testing_62)
--  [Function `swap_coins`](#0xc0deb00c_market_swap_coins)
-    -  [Type Parameters](#@Type_Parameters_63)
+    -  [Type parameters](#@Type_parameters_63)
     -  [Parameters](#@Parameters_64)
     -  [Returns](#@Returns_65)
-    -  [Terminology](#@Terminology_66)
-    -  [Testing](#@Testing_67)
+    -  [Testing](#@Testing_66)
+-  [Function `register_market_base_generic`](#0xc0deb00c_market_register_market_base_generic)
+    -  [Type parameters](#@Type_parameters_67)
+    -  [Parameters](#@Parameters_68)
+    -  [Returns](#@Returns_69)
+    -  [Testing](#@Testing_70)
+-  [Function `swap_between_coinstores`](#0xc0deb00c_market_swap_between_coinstores)
+    -  [Type Parameters](#@Type_Parameters_71)
+    -  [Parameters](#@Parameters_72)
+    -  [Returns](#@Returns_73)
+    -  [Testing](#@Testing_74)
+-  [Function `swap_coins`](#0xc0deb00c_market_swap_coins)
+    -  [Type Parameters](#@Type_Parameters_75)
+    -  [Parameters](#@Parameters_76)
+    -  [Returns](#@Returns_77)
+    -  [Terminology](#@Terminology_78)
+    -  [Testing](#@Testing_79)
 -  [Function `swap_generic`](#0xc0deb00c_market_swap_generic)
-    -  [Type Parameters](#@Type_Parameters_68)
-    -  [Parameters](#@Parameters_69)
-    -  [Returns](#@Returns_70)
-    -  [Testing](#@Testing_71)
+    -  [Type Parameters](#@Type_Parameters_80)
+    -  [Parameters](#@Parameters_81)
+    -  [Returns](#@Returns_82)
+    -  [Testing](#@Testing_83)
 -  [Function `cancel_all_orders_user`](#0xc0deb00c_market_cancel_all_orders_user)
-    -  [Invocation testing](#@Invocation_testing_72)
+    -  [Invocation testing](#@Invocation_testing_84)
 -  [Function `cancel_order_user`](#0xc0deb00c_market_cancel_order_user)
-    -  [Invocation testing](#@Invocation_testing_73)
+    -  [Invocation testing](#@Invocation_testing_85)
 -  [Function `change_order_size_user`](#0xc0deb00c_market_change_order_size_user)
-    -  [Invocation testing](#@Invocation_testing_74)
+    -  [Invocation testing](#@Invocation_testing_86)
 -  [Function `place_limit_order_passive_advance_user_entry`](#0xc0deb00c_market_place_limit_order_passive_advance_user_entry)
-    -  [Invocation testing](#@Invocation_testing_75)
+    -  [Invocation testing](#@Invocation_testing_87)
 -  [Function `place_limit_order_user_entry`](#0xc0deb00c_market_place_limit_order_user_entry)
-    -  [Invocation testing](#@Invocation_testing_76)
+    -  [Invocation testing](#@Invocation_testing_88)
 -  [Function `place_market_order_user_entry`](#0xc0deb00c_market_place_market_order_user_entry)
-    -  [Invocation testing](#@Invocation_testing_77)
+    -  [Invocation testing](#@Invocation_testing_89)
 -  [Function `register_market_base_coin_from_coinstore`](#0xc0deb00c_market_register_market_base_coin_from_coinstore)
-    -  [Testing](#@Testing_78)
+    -  [Testing](#@Testing_90)
 -  [Function `swap_between_coinstores_entry`](#0xc0deb00c_market_swap_between_coinstores_entry)
-    -  [Invocation testing](#@Invocation_testing_79)
+    -  [Invocation testing](#@Invocation_testing_91)
 -  [Function `cancel_all_orders`](#0xc0deb00c_market_cancel_all_orders)
-    -  [Parameters](#@Parameters_80)
-    -  [Expected value testing](#@Expected_value_testing_81)
+    -  [Parameters](#@Parameters_92)
+    -  [Expected value testing](#@Expected_value_testing_93)
 -  [Function `cancel_order`](#0xc0deb00c_market_cancel_order)
-    -  [Parameters](#@Parameters_82)
-    -  [Aborts](#@Aborts_83)
-    -  [Emits](#@Emits_84)
-    -  [Expected value testing](#@Expected_value_testing_85)
-    -  [Failure testing](#@Failure_testing_86)
--  [Function `change_order_size`](#0xc0deb00c_market_change_order_size)
-    -  [Parameters](#@Parameters_87)
-    -  [Aborts](#@Aborts_88)
-    -  [Emits](#@Emits_89)
-    -  [Expected value testing](#@Expected_value_testing_90)
-    -  [Failure testing](#@Failure_testing_91)
--  [Function `init_module`](#0xc0deb00c_market_init_module)
--  [Function `match`](#0xc0deb00c_market_match)
-    -  [Type Parameters](#@Type_Parameters_92)
-    -  [Parameters](#@Parameters_93)
-    -  [Returns](#@Returns_94)
-    -  [Emits](#@Emits_95)
-    -  [Aborts](#@Aborts_96)
+    -  [Parameters](#@Parameters_94)
+    -  [Aborts](#@Aborts_95)
+    -  [Emits](#@Emits_96)
     -  [Expected value testing](#@Expected_value_testing_97)
     -  [Failure testing](#@Failure_testing_98)
+-  [Function `change_order_size`](#0xc0deb00c_market_change_order_size)
+    -  [Parameters](#@Parameters_99)
+    -  [Aborts](#@Aborts_100)
+    -  [Emits](#@Emits_101)
+    -  [Expected value testing](#@Expected_value_testing_102)
+    -  [Failure testing](#@Failure_testing_103)
+-  [Function `get_market_order_id_avl_queue_access_key`](#0xc0deb00c_market_get_market_order_id_avl_queue_access_key)
+    -  [Testing](#@Testing_104)
+-  [Function `get_open_orders_for_side`](#0xc0deb00c_market_get_open_orders_for_side)
+    -  [Testing](#@Testing_105)
+-  [Function `get_price_levels_for_side`](#0xc0deb00c_market_get_price_levels_for_side)
+    -  [Testing](#@Testing_106)
+-  [Function `init_module`](#0xc0deb00c_market_init_module)
+-  [Function `match`](#0xc0deb00c_market_match)
+    -  [Type Parameters](#@Type_Parameters_107)
+    -  [Parameters](#@Parameters_108)
+    -  [Returns](#@Returns_109)
+    -  [Emits](#@Emits_110)
+    -  [Aborts](#@Aborts_111)
+    -  [Expected value testing](#@Expected_value_testing_112)
+    -  [Failure testing](#@Failure_testing_113)
 -  [Function `place_limit_order`](#0xc0deb00c_market_place_limit_order)
-    -  [Type Parameters](#@Type_Parameters_99)
-    -  [Parameters](#@Parameters_100)
-    -  [Returns](#@Returns_101)
-    -  [Aborts](#@Aborts_102)
-    -  [Emits](#@Emits_103)
-    -  [Restrictions](#@Restrictions_104)
-    -  [Minimum size](#@Minimum_size_105)
-    -  [Self matching](#@Self_matching_106)
-    -  [Expected value testing](#@Expected_value_testing_107)
-    -  [Failure testing](#@Failure_testing_108)
+    -  [Type Parameters](#@Type_Parameters_114)
+    -  [Parameters](#@Parameters_115)
+    -  [Returns](#@Returns_116)
+    -  [Aborts](#@Aborts_117)
+    -  [Emits](#@Emits_118)
+    -  [Restrictions](#@Restrictions_119)
+    -  [Minimum size](#@Minimum_size_120)
+    -  [Self matching](#@Self_matching_121)
+    -  [Expected value testing](#@Expected_value_testing_122)
+    -  [Failure testing](#@Failure_testing_123)
 -  [Function `place_limit_order_passive_advance`](#0xc0deb00c_market_place_limit_order_passive_advance)
-    -  [Price calculations](#@Price_calculations_109)
-    -  [Type Parameters](#@Type_Parameters_110)
-    -  [Parameters](#@Parameters_111)
-    -  [Returns](#@Returns_112)
-    -  [Aborts](#@Aborts_113)
-    -  [Expected value testing](#@Expected_value_testing_114)
-    -  [Failure testing](#@Failure_testing_115)
+    -  [Price calculations](#@Price_calculations_124)
+    -  [Type Parameters](#@Type_Parameters_125)
+    -  [Parameters](#@Parameters_126)
+    -  [Returns](#@Returns_127)
+    -  [Aborts](#@Aborts_128)
+    -  [Expected value testing](#@Expected_value_testing_129)
+    -  [Failure testing](#@Failure_testing_130)
 -  [Function `place_market_order`](#0xc0deb00c_market_place_market_order)
-    -  [Type Parameters](#@Type_Parameters_116)
-    -  [Parameters](#@Parameters_117)
-    -  [Returns](#@Returns_118)
-    -  [Aborts](#@Aborts_119)
-    -  [Expected value testing](#@Expected_value_testing_120)
-    -  [Failure testing](#@Failure_testing_121)
+    -  [Type Parameters](#@Type_Parameters_131)
+    -  [Parameters](#@Parameters_132)
+    -  [Returns](#@Returns_133)
+    -  [Aborts](#@Aborts_134)
+    -  [Expected value testing](#@Expected_value_testing_135)
+    -  [Failure testing](#@Failure_testing_136)
 -  [Function `range_check_trade`](#0xc0deb00c_market_range_check_trade)
-    -  [Terminology](#@Terminology_122)
-    -  [Parameters](#@Parameters_123)
-    -  [Aborts](#@Aborts_124)
-    -  [Failure testing](#@Failure_testing_125)
+    -  [Terminology](#@Terminology_137)
+    -  [Parameters](#@Parameters_138)
+    -  [Aborts](#@Aborts_139)
+    -  [Failure testing](#@Failure_testing_140)
 -  [Function `register_market`](#0xc0deb00c_market_register_market)
-    -  [Type parameters](#@Type_parameters_126)
-    -  [Parameters](#@Parameters_127)
-    -  [Returns](#@Returns_128)
-    -  [Testing](#@Testing_129)
+    -  [Type parameters](#@Type_parameters_141)
+    -  [Parameters](#@Parameters_142)
+    -  [Returns](#@Returns_143)
+    -  [Testing](#@Testing_144)
 -  [Function `swap`](#0xc0deb00c_market_swap)
-    -  [Type Parameters](#@Type_Parameters_130)
-    -  [Parameters](#@Parameters_131)
-    -  [Returns](#@Returns_132)
-    -  [Aborts](#@Aborts_133)
-    -  [Expected value testing](#@Expected_value_testing_134)
-    -  [Failure testing](#@Failure_testing_135)
+    -  [Type Parameters](#@Type_Parameters_145)
+    -  [Parameters](#@Parameters_146)
+    -  [Returns](#@Returns_147)
+    -  [Aborts](#@Aborts_148)
+    -  [Expected value testing](#@Expected_value_testing_149)
+    -  [Failure testing](#@Failure_testing_150)
 -  [Function `index_orders_sdk`](#0xc0deb00c_market_index_orders_sdk)
-    -  [Testing](#@Testing_136)
+    -  [Coverage testing](#@Coverage_testing_151)
 
 
 <pre><code><b>use</b> <a href="">0x1::account</a>;
@@ -1046,6 +1113,174 @@ Order book map for all Econia order books.
 </dl>
 
 
+<a name="0xc0deb00c_market_OrderView"></a>
+
+## Struct `OrderView`
+
+User-friendly representation of an open order on the order book,
+combining fields from <code><a href="market.md#0xc0deb00c_market_Order">Order</a></code> and the corresponding
+<code><a href="market.md#0xc0deb00c_market_MakerEvent">MakerEvent</a></code> emitted when order was first placed.
+
+
+<pre><code><b>struct</b> <a href="market.md#0xc0deb00c_market_OrderView">OrderView</a> <b>has</b> <b>copy</b>, drop
+</code></pre>
+
+
+
+##### Fields
+
+
+<dl>
+<dt>
+<code>market_id: u64</code>
+</dt>
+<dd>
+ <code><a href="market.md#0xc0deb00c_market_MakerEvent">MakerEvent</a>.market_id</code>.
+</dd>
+<dt>
+<code>side: bool</code>
+</dt>
+<dd>
+ <code><a href="market.md#0xc0deb00c_market_MakerEvent">MakerEvent</a>.side</code>.
+</dd>
+<dt>
+<code>market_order_id: u128</code>
+</dt>
+<dd>
+ <code><a href="market.md#0xc0deb00c_market_MakerEvent">MakerEvent</a>.market_order_id</code>.
+</dd>
+<dt>
+<code>size: u64</code>
+</dt>
+<dd>
+ <code><a href="market.md#0xc0deb00c_market_Order">Order</a>.size</code>.
+</dd>
+<dt>
+<code>price: u64</code>
+</dt>
+<dd>
+ <code><a href="market.md#0xc0deb00c_market_Order">Order</a>.price</code>.
+</dd>
+<dt>
+<code><a href="user.md#0xc0deb00c_user">user</a>: <b>address</b></code>
+</dt>
+<dd>
+ <code><a href="market.md#0xc0deb00c_market_Order">Order</a>.<a href="user.md#0xc0deb00c_user">user</a></code>.
+</dd>
+<dt>
+<code>custodian_id: u64</code>
+</dt>
+<dd>
+ <code><a href="market.md#0xc0deb00c_market_Order">Order</a>.custodian_id</code>.
+</dd>
+</dl>
+
+
+<a name="0xc0deb00c_market_OrdersView"></a>
+
+## Struct `OrdersView`
+
+<code><a href="market.md#0xc0deb00c_market_OrderView">OrderView</a></code> instances from an <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code>, indexed by side and
+sorted by price-time priority.
+
+
+<pre><code><b>struct</b> <a href="market.md#0xc0deb00c_market_OrdersView">OrdersView</a> <b>has</b> <b>copy</b>, drop
+</code></pre>
+
+
+
+##### Fields
+
+
+<dl>
+<dt>
+<code>asks: <a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_OrderView">market::OrderView</a>&gt;</code>
+</dt>
+<dd>
+ Asks sorted by price-time priority: oldest order at lowest
+ price first in vector.
+</dd>
+<dt>
+<code>bids: <a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_OrderView">market::OrderView</a>&gt;</code>
+</dt>
+<dd>
+ Bids sorted by price-time priority: oldest order at highest
+ price first in vector.
+</dd>
+</dl>
+
+
+<a name="0xc0deb00c_market_PriceLevel"></a>
+
+## Struct `PriceLevel`
+
+A price level from an <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code>.
+
+
+<pre><code><b>struct</b> <a href="market.md#0xc0deb00c_market_PriceLevel">PriceLevel</a> <b>has</b> <b>copy</b>, drop
+</code></pre>
+
+
+
+##### Fields
+
+
+<dl>
+<dt>
+<code>price: u64</code>
+</dt>
+<dd>
+ Price, in ticks per lot.
+</dd>
+<dt>
+<code>size: u128</code>
+</dt>
+<dd>
+ Cumulative size of open orders at price level, in lots.
+</dd>
+</dl>
+
+
+<a name="0xc0deb00c_market_PriceLevels"></a>
+
+## Struct `PriceLevels`
+
+<code><a href="market.md#0xc0deb00c_market_PriceLevel">PriceLevel</a></code> instances from an <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code>, indexed by side and
+sorted by price-time priority.
+
+
+<pre><code><b>struct</b> <a href="market.md#0xc0deb00c_market_PriceLevels">PriceLevels</a> <b>has</b> <b>copy</b>, drop
+</code></pre>
+
+
+
+##### Fields
+
+
+<dl>
+<dt>
+<code>market_id: u64</code>
+</dt>
+<dd>
+ Market ID of corresponding market.
+</dd>
+<dt>
+<code>asks: <a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_PriceLevel">market::PriceLevel</a>&gt;</code>
+</dt>
+<dd>
+ Ask price levels sorted by price-time priority: lowest price
+ level first in vector.
+</dd>
+<dt>
+<code>bids: <a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_PriceLevel">market::PriceLevel</a>&gt;</code>
+</dt>
+<dd>
+ Ask price levels sorted by price-time priority: highest
+ price level first in vector.
+</dd>
+</dl>
+
+
 <a name="0xc0deb00c_market_TakerEvent"></a>
 
 ## Struct `TakerEvent`
@@ -1115,8 +1350,7 @@ event is emitted for each one.
 
 ## Resource `Orders`
 
-All <code><a href="market.md#0xc0deb00c_market_Order">Order</a></code> instances from an <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code>, indexed by side and
-sorted by price-time priority. Only for SDK generation.
+Deprecated struct retained for backwards compatibility.
 
 
 <pre><code><b>struct</b> <a href="market.md#0xc0deb00c_market_Orders">Orders</a> <b>has</b> key
@@ -1132,20 +1366,18 @@ sorted by price-time priority. Only for SDK generation.
 <code>asks: <a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_Order">market::Order</a>&gt;</code>
 </dt>
 <dd>
- Asks sorted by price-time priority: oldest order at lowest
- price first in vector.
+
 </dd>
 <dt>
 <code>bids: <a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_Order">market::Order</a>&gt;</code>
 </dt>
 <dd>
- Bids sorted by price-time priority: oldest order at highest
- price first in vector.
+
 </dd>
 </dl>
 
 
-<a name="@Constants_21"></a>
+<a name="@Constants_22"></a>
 
 ## Constants
 
@@ -1690,7 +1922,7 @@ Taker address flag for when taker order does not originate from
 a market account.
 
 
-<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_NO_MARKET_ACCOUNT">NO_MARKET_ACCOUNT</a>: <b>address</b> = 0;
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_NO_MARKET_ACCOUNT">NO_MARKET_ACCOUNT</a>: <b>address</b> = 0x0;
 </code></pre>
 
 
@@ -1776,6 +2008,967 @@ Flag for passive order specified by advance in ticks.
 
 
 
+<a name="0xc0deb00c_market_get_ABORT"></a>
+
+## Function `get_ABORT`
+
+Public constant getter for <code><a href="market.md#0xc0deb00c_market_ABORT">ABORT</a></code>.
+
+
+<a name="@Testing_23"></a>
+
+### Testing
+
+
+* <code>test_get_ABORT()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_ABORT">get_ABORT</a>(): u8
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_ABORT">get_ABORT</a>(): u8 {<a href="market.md#0xc0deb00c_market_ABORT">ABORT</a>}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_get_ASK"></a>
+
+## Function `get_ASK`
+
+Public constant getter for <code><a href="market.md#0xc0deb00c_market_ASK">ASK</a></code>.
+
+
+<a name="@Testing_24"></a>
+
+### Testing
+
+
+* <code>test_direction_side_polarities()</code>
+* <code>test_get_ASK()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_ASK">get_ASK</a>(): bool
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_ASK">get_ASK</a>(): bool {<a href="market.md#0xc0deb00c_market_ASK">ASK</a>}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_get_BID"></a>
+
+## Function `get_BID`
+
+Public constant getter for <code><a href="market.md#0xc0deb00c_market_BID">BID</a></code>.
+
+
+<a name="@Testing_25"></a>
+
+### Testing
+
+
+* <code>test_direction_side_polarities()</code>
+* <code>test_get_BID()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_BID">get_BID</a>(): bool
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_BID">get_BID</a>(): bool {<a href="market.md#0xc0deb00c_market_BID">BID</a>}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_get_BUY"></a>
+
+## Function `get_BUY`
+
+Public constant getter for <code><a href="market.md#0xc0deb00c_market_BUY">BUY</a></code>.
+
+
+<a name="@Testing_26"></a>
+
+### Testing
+
+
+* <code>test_direction_side_polarities()</code>
+* <code>test_get_BUY()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_BUY">get_BUY</a>(): bool
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_BUY">get_BUY</a>(): bool {<a href="market.md#0xc0deb00c_market_BUY">BUY</a>}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_get_CANCEL_BOTH"></a>
+
+## Function `get_CANCEL_BOTH`
+
+Public constant getter for <code><a href="market.md#0xc0deb00c_market_CANCEL_BOTH">CANCEL_BOTH</a></code>.
+
+
+<a name="@Testing_27"></a>
+
+### Testing
+
+
+* <code>test_get_CANCEL_BOTH()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_CANCEL_BOTH">get_CANCEL_BOTH</a>(): u8
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_CANCEL_BOTH">get_CANCEL_BOTH</a>(): u8 {<a href="market.md#0xc0deb00c_market_CANCEL_BOTH">CANCEL_BOTH</a>}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_get_CANCEL_MAKER"></a>
+
+## Function `get_CANCEL_MAKER`
+
+Public constant getter for <code><a href="market.md#0xc0deb00c_market_CANCEL_MAKER">CANCEL_MAKER</a></code>.
+
+
+<a name="@Testing_28"></a>
+
+### Testing
+
+
+* <code>test_get_CANCEL_MAKER()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_CANCEL_MAKER">get_CANCEL_MAKER</a>(): u8
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_CANCEL_MAKER">get_CANCEL_MAKER</a>(): u8 {<a href="market.md#0xc0deb00c_market_CANCEL_MAKER">CANCEL_MAKER</a>}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_get_CANCEL_TAKER"></a>
+
+## Function `get_CANCEL_TAKER`
+
+Public constant getter for <code><a href="market.md#0xc0deb00c_market_CANCEL_TAKER">CANCEL_TAKER</a></code>.
+
+
+<a name="@Testing_29"></a>
+
+### Testing
+
+
+* <code>test_get_CANCEL_TAKER()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_CANCEL_TAKER">get_CANCEL_TAKER</a>(): u8
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_CANCEL_TAKER">get_CANCEL_TAKER</a>(): u8 {<a href="market.md#0xc0deb00c_market_CANCEL_TAKER">CANCEL_TAKER</a>}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_get_FILL_OR_ABORT"></a>
+
+## Function `get_FILL_OR_ABORT`
+
+Public constant getter for <code><a href="market.md#0xc0deb00c_market_FILL_OR_ABORT">FILL_OR_ABORT</a></code>.
+
+
+<a name="@Testing_30"></a>
+
+### Testing
+
+
+* <code>test_get_FILL_OR_ABORT()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_FILL_OR_ABORT">get_FILL_OR_ABORT</a>(): u8
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_FILL_OR_ABORT">get_FILL_OR_ABORT</a>(): u8 {<a href="market.md#0xc0deb00c_market_FILL_OR_ABORT">FILL_OR_ABORT</a>}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_get_HI_PRICE"></a>
+
+## Function `get_HI_PRICE`
+
+Public constant getter for <code><a href="market.md#0xc0deb00c_market_HI_PRICE">HI_PRICE</a></code>.
+
+
+<a name="@Testing_31"></a>
+
+### Testing
+
+
+* <code>test_get_HI_PRICE()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_HI_PRICE">get_HI_PRICE</a>(): u64
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_HI_PRICE">get_HI_PRICE</a>(): u64 {<a href="market.md#0xc0deb00c_market_HI_PRICE">HI_PRICE</a>}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_get_IMMEDIATE_OR_CANCEL"></a>
+
+## Function `get_IMMEDIATE_OR_CANCEL`
+
+Public constant getter for <code><a href="market.md#0xc0deb00c_market_IMMEDIATE_OR_CANCEL">IMMEDIATE_OR_CANCEL</a></code>.
+
+
+<a name="@Testing_32"></a>
+
+### Testing
+
+
+* <code>test_get_IMMEDIATE_OR_CANCEL()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_IMMEDIATE_OR_CANCEL">get_IMMEDIATE_OR_CANCEL</a>(): u8
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_IMMEDIATE_OR_CANCEL">get_IMMEDIATE_OR_CANCEL</a>(): u8 {<a href="market.md#0xc0deb00c_market_IMMEDIATE_OR_CANCEL">IMMEDIATE_OR_CANCEL</a>}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_get_MAX_POSSIBLE"></a>
+
+## Function `get_MAX_POSSIBLE`
+
+Public constant getter for <code><a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a></code>.
+
+
+<a name="@Testing_33"></a>
+
+### Testing
+
+
+* <code>test_get_MAX_POSSIBLE()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_MAX_POSSIBLE">get_MAX_POSSIBLE</a>(): u64
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_MAX_POSSIBLE">get_MAX_POSSIBLE</a>(): u64 {<a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a>}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_get_NO_CUSTODIAN"></a>
+
+## Function `get_NO_CUSTODIAN`
+
+Public constant getter for <code><a href="market.md#0xc0deb00c_market_NO_CUSTODIAN">NO_CUSTODIAN</a></code>.
+
+
+<a name="@Testing_34"></a>
+
+### Testing
+
+
+* <code>test_get_NO_CUSTODIAN()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_NO_CUSTODIAN">get_NO_CUSTODIAN</a>(): u64
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_NO_CUSTODIAN">get_NO_CUSTODIAN</a>(): u64 {<a href="market.md#0xc0deb00c_market_NO_CUSTODIAN">NO_CUSTODIAN</a>}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_get_NO_RESTRICTION"></a>
+
+## Function `get_NO_RESTRICTION`
+
+Public constant getter for <code><a href="market.md#0xc0deb00c_market_NO_RESTRICTION">NO_RESTRICTION</a></code>.
+
+
+<a name="@Testing_35"></a>
+
+### Testing
+
+
+* <code>test_get_NO_RESTRICTION()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_NO_RESTRICTION">get_NO_RESTRICTION</a>(): u8
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_NO_RESTRICTION">get_NO_RESTRICTION</a>(): u8 {<a href="market.md#0xc0deb00c_market_NO_RESTRICTION">NO_RESTRICTION</a>}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_get_NO_UNDERWRITER"></a>
+
+## Function `get_NO_UNDERWRITER`
+
+Public constant getter for <code><a href="market.md#0xc0deb00c_market_NO_UNDERWRITER">NO_UNDERWRITER</a></code>.
+
+
+<a name="@Testing_36"></a>
+
+### Testing
+
+
+* <code>test_get_NO_UNDERWRITER()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_NO_UNDERWRITER">get_NO_UNDERWRITER</a>(): u64
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_NO_UNDERWRITER">get_NO_UNDERWRITER</a>(): u64 {<a href="market.md#0xc0deb00c_market_NO_UNDERWRITER">NO_UNDERWRITER</a>}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_get_POST_OR_ABORT"></a>
+
+## Function `get_POST_OR_ABORT`
+
+Public constant getter for <code><a href="market.md#0xc0deb00c_market_POST_OR_ABORT">POST_OR_ABORT</a></code>.
+
+
+<a name="@Testing_37"></a>
+
+### Testing
+
+
+* <code>test_get_POST_OR_ABORT()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_POST_OR_ABORT">get_POST_OR_ABORT</a>(): u8
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_POST_OR_ABORT">get_POST_OR_ABORT</a>(): u8 {<a href="market.md#0xc0deb00c_market_POST_OR_ABORT">POST_OR_ABORT</a>}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_get_PERCENT"></a>
+
+## Function `get_PERCENT`
+
+Public constant getter for <code><a href="market.md#0xc0deb00c_market_PERCENT">PERCENT</a></code>.
+
+
+<a name="@Testing_38"></a>
+
+### Testing
+
+
+* <code>test_get_PERCENT()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_PERCENT">get_PERCENT</a>(): bool
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_PERCENT">get_PERCENT</a>(): bool {<a href="market.md#0xc0deb00c_market_PERCENT">PERCENT</a>}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_get_SELL"></a>
+
+## Function `get_SELL`
+
+Public constant getter for <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>.
+
+
+<a name="@Testing_39"></a>
+
+### Testing
+
+
+* <code>test_direction_side_polarities()</code>
+* <code>test_get_SELL()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_SELL">get_SELL</a>(): bool
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_SELL">get_SELL</a>(): bool {<a href="market.md#0xc0deb00c_market_SELL">SELL</a>}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_get_TICKS"></a>
+
+## Function `get_TICKS`
+
+Public constant getter for <code><a href="market.md#0xc0deb00c_market_TICKS">TICKS</a></code>.
+
+
+<a name="@Testing_40"></a>
+
+### Testing
+
+
+* <code>test_get_TICKS()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_TICKS">get_TICKS</a>(): bool
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_TICKS">get_TICKS</a>(): bool {<a href="market.md#0xc0deb00c_market_TICKS">TICKS</a>}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_get_market_order_id_counter"></a>
+
+## Function `get_market_order_id_counter`
+
+Return maker order counter encoded in market order ID.
+
+
+<a name="@Testing_41"></a>
+
+### Testing
+
+
+* <code>test_place_limit_order_no_cross_ask_user()</code>
+* <code>test_place_limit_order_no_cross_bid_custodian()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_market_order_id_counter">get_market_order_id_counter</a>(market_order_id: u128): u64
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_market_order_id_counter">get_market_order_id_counter</a>(
+    market_order_id: u128
+): u64 {
+    (((market_order_id &gt;&gt; <a href="market.md#0xc0deb00c_market_SHIFT_COUNTER">SHIFT_COUNTER</a>) & (<a href="market.md#0xc0deb00c_market_HI_64">HI_64</a> <b>as</b> u128)) <b>as</b> u64)
+}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_get_market_order_id_price"></a>
+
+## Function `get_market_order_id_price`
+
+Return order price encoded in market order ID.
+
+
+<a name="@Testing_42"></a>
+
+### Testing
+
+
+* <code>test_place_limit_order_no_cross_ask_user()</code>
+* <code>test_place_limit_order_no_cross_bid_custodian()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_market_order_id_price">get_market_order_id_price</a>(market_order_id: u128): u64
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_market_order_id_price">get_market_order_id_price</a>(
+    market_order_id: u128
+): u64 {
+    ((market_order_id & (<a href="market.md#0xc0deb00c_market_HI_PRICE">HI_PRICE</a> <b>as</b> u128)) <b>as</b> u64)
+}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_get_market_order_id_side"></a>
+
+## Function `get_market_order_id_side`
+
+Return order side encoded in market order ID.
+
+
+<a name="@Testing_43"></a>
+
+### Testing
+
+
+* <code>test_place_limit_order_no_cross_ask_user()</code>
+* <code>test_place_limit_order_no_cross_bid_custodian()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_market_order_id_side">get_market_order_id_side</a>(market_order_id: u128): bool
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_market_order_id_side">get_market_order_id_side</a>(
+    market_order_id: u128
+): bool {
+    // Get AVL queue access key encoded in <a href="market.md#0xc0deb00c_market">market</a> order ID.
+    <b>let</b> avlq_access_key =
+        <a href="market.md#0xc0deb00c_market_get_market_order_id_avl_queue_access_key">get_market_order_id_avl_queue_access_key</a>(market_order_id);
+    // If ascending AVL queue indicated is an ask, <b>else</b> a bid.
+    <b>if</b> (<a href="avl_queue.md#0xc0deb00c_avl_queue_is_ascending_access_key">avl_queue::is_ascending_access_key</a>(avlq_access_key)) <a href="market.md#0xc0deb00c_market_ASK">ASK</a> <b>else</b> <a href="market.md#0xc0deb00c_market_BID">BID</a>
+}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_get_open_order"></a>
+
+## Function `get_open_order`
+
+Return <code><a href="market.md#0xc0deb00c_market_OrderView">OrderView</a></code> for <code>market_id</code> and <code>market_order_id</code>.
+
+Mutates state, so kept as a private view function.
+
+
+<a name="@Aborts_44"></a>
+
+### Aborts
+
+
+* <code><a href="market.md#0xc0deb00c_market_E_INVALID_MARKET_ORDER_ID">E_INVALID_MARKET_ORDER_ID</a></code>: No market order with given ID for
+indicated market.
+
+
+<a name="@Testing_45"></a>
+
+### Testing
+
+
+* <code>test_change_order_size_ask_custodian()</code>
+* <code>test_change_order_size_bid_user()</code>
+* <code>test_get_open_order_invalid_market_order_id()</code>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_get_open_order">get_open_order</a>(market_id: u64, market_order_id: u128): <a href="market.md#0xc0deb00c_market_OrderView">market::OrderView</a>
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_get_open_order">get_open_order</a>(
+    market_id: u64,
+    market_order_id: u128
+): <a href="market.md#0xc0deb00c_market_OrderView">OrderView</a>
+<b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    // Assert <a href="market.md#0xc0deb00c_market">market</a> <b>has</b> an open order <b>with</b> given <a href="market.md#0xc0deb00c_market">market</a> order ID.
+    <b>assert</b>!(<a href="market.md#0xc0deb00c_market_has_open_order">has_open_order</a>(market_id, market_order_id),
+            <a href="market.md#0xc0deb00c_market_E_INVALID_MARKET_ORDER_ID">E_INVALID_MARKET_ORDER_ID</a>);
+    // Get <b>address</b> of resource <a href="">account</a> <b>where</b> order books are stored.
+    <b>let</b> resource_address = resource_account::get_address();
+    // Mutably borrow order books map.
+    <b>let</b> order_books_map_ref_mut =
+        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>&gt;(resource_address).map;
+    // Mutably borrow <a href="market.md#0xc0deb00c_market">market</a> order book.
+    <b>let</b> order_book_ref_mut = <a href="tablist.md#0xc0deb00c_tablist_borrow_mut">tablist::borrow_mut</a>(
+        order_books_map_ref_mut, market_id);
+    // Get <a href="market.md#0xc0deb00c_market">market</a> order ID side.
+    <b>let</b> side = <a href="market.md#0xc0deb00c_market_get_market_order_id_side">get_market_order_id_side</a>(market_order_id);
+    // Get open orders for given side.
+    <b>let</b> orders_ref_mut = <b>if</b> (side == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>) &<b>mut</b> order_book_ref_mut.asks <b>else</b>
+        &<b>mut</b> order_book_ref_mut.bids;
+    <b>let</b> avlq_access_key = // Get AVL queue access key.
+        <a href="market.md#0xc0deb00c_market_get_market_order_id_avl_queue_access_key">get_market_order_id_avl_queue_access_key</a>(market_order_id);
+    // Remove and unpack order <b>with</b> given access key, discarding
+    // order access key.
+    <b>let</b> <a href="market.md#0xc0deb00c_market_Order">Order</a>{size, price, <a href="user.md#0xc0deb00c_user">user</a>, custodian_id, order_access_key: _} =
+        <a href="avl_queue.md#0xc0deb00c_avl_queue_remove">avl_queue::remove</a>(orders_ref_mut, avlq_access_key);
+    <a href="market.md#0xc0deb00c_market_OrderView">OrderView</a>{market_id, side, market_order_id, size, price, <a href="user.md#0xc0deb00c_user">user</a>,
+              custodian_id} // Pack and <b>return</b> an order view.
+}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_get_open_orders"></a>
+
+## Function `get_open_orders`
+
+Index order book for given market ID into ask and bid vectors.
+
+Vectors sorted by price-time priority per <code><a href="market.md#0xc0deb00c_market_OrdersView">OrdersView</a></code> schema.
+
+Mutates state, so kept as a private view function.
+
+
+<a name="@Parameters_46"></a>
+
+### Parameters
+
+
+* <code>market_id</code>: Market ID of maker orders to index.
+* <code>n_asks_max</code>: Maximum number of asks to index.
+* <code>n_bids_max</code>: Maximum number of bids to index.
+
+
+<a name="@Aborts_47"></a>
+
+### Aborts
+
+
+* <code><a href="market.md#0xc0deb00c_market_E_INVALID_MARKET_ID">E_INVALID_MARKET_ID</a></code>: No market with given ID.
+
+
+<a name="@Testing_48"></a>
+
+### Testing
+
+
+* <code>test_get_open_orders()</code>
+* <code>test_get_open_orders_invalid_market_id()</code>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_get_open_orders">get_open_orders</a>(market_id: u64, n_asks_max: u64, n_bids_max: u64): <a href="market.md#0xc0deb00c_market_OrdersView">market::OrdersView</a>
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_get_open_orders">get_open_orders</a>(
+    market_id: u64,
+    n_asks_max: u64,
+    n_bids_max: u64
+): <a href="market.md#0xc0deb00c_market_OrdersView">OrdersView</a>
+<b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    // Get <b>address</b> of resource <a href="">account</a> <b>where</b> order books are stored.
+    <b>let</b> resource_address = resource_account::get_address();
+    <b>let</b> order_books_map_ref_mut = // Mutably borrow order books map.
+        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>&gt;(resource_address).map;
+    // Assert order books map <b>has</b> order book <b>with</b> given <a href="market.md#0xc0deb00c_market">market</a> ID.
+    <b>assert</b>!(<a href="tablist.md#0xc0deb00c_tablist_contains">tablist::contains</a>(order_books_map_ref_mut, market_id),
+            <a href="market.md#0xc0deb00c_market_E_INVALID_MARKET_ID">E_INVALID_MARKET_ID</a>);
+    // Mutably borrow order book <b>with</b> given <a href="market.md#0xc0deb00c_market">market</a> ID.
+    <b>let</b> order_book_ref_mut =
+        <a href="tablist.md#0xc0deb00c_tablist_borrow_mut">tablist::borrow_mut</a>(order_books_map_ref_mut, market_id);
+    <a href="market.md#0xc0deb00c_market_OrdersView">OrdersView</a>{ // Return indexed orders.
+        asks: <a href="market.md#0xc0deb00c_market_get_open_orders_for_side">get_open_orders_for_side</a>(
+            market_id, order_book_ref_mut, <a href="market.md#0xc0deb00c_market_ASK">ASK</a>, n_asks_max),
+        bids: <a href="market.md#0xc0deb00c_market_get_open_orders_for_side">get_open_orders_for_side</a>(
+            market_id, order_book_ref_mut, <a href="market.md#0xc0deb00c_market_BID">BID</a>, n_bids_max)
+    }
+}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_get_open_orders_all"></a>
+
+## Function `get_open_orders_all`
+
+Wrapped call to <code><a href="market.md#0xc0deb00c_market_get_open_orders">get_open_orders</a>()</code> for getting all open orders
+on both sides.
+
+
+<a name="@Testing_49"></a>
+
+### Testing
+
+
+* <code>test_get_open_orders()</code>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_get_open_orders_all">get_open_orders_all</a>(market_id: u64): <a href="market.md#0xc0deb00c_market_OrdersView">market::OrdersView</a>
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_get_open_orders_all">get_open_orders_all</a>(
+    market_id: u64
+): <a href="market.md#0xc0deb00c_market_OrdersView">OrdersView</a>
+<b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    <a href="market.md#0xc0deb00c_market_get_open_orders">get_open_orders</a>(market_id, <a href="market.md#0xc0deb00c_market_HI_64">HI_64</a>, <a href="market.md#0xc0deb00c_market_HI_64">HI_64</a>)
+}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_get_price_levels"></a>
+
+## Function `get_price_levels`
+
+Index order book for given market ID into price level vectors.
+
+Vectors sorted by price priority per <code><a href="market.md#0xc0deb00c_market_PriceLevels">PriceLevels</a></code> schema.
+
+Mutates state, so kept as a private view function.
+
+
+<a name="@Parameters_50"></a>
+
+### Parameters
+
+
+* <code>market_id</code>: Market ID of price levels to index.
+* <code>n_ask_levels_max</code>: Maximum number of ask price levels to
+index.
+* <code>n_bid_levels_max</code>: Maximum number of bid price levels to
+index.
+
+
+<a name="@Testing_51"></a>
+
+### Testing
+
+
+* <code>test_get_price_levels()</code>
+* <code>test_get_price_levels_invalid_market_id()</code>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_get_price_levels">get_price_levels</a>(market_id: u64, n_ask_levels_max: u64, n_bid_levels_max: u64): <a href="market.md#0xc0deb00c_market_PriceLevels">market::PriceLevels</a>
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_get_price_levels">get_price_levels</a>(
+    market_id: u64,
+    n_ask_levels_max: u64,
+    n_bid_levels_max: u64
+): <a href="market.md#0xc0deb00c_market_PriceLevels">PriceLevels</a>
+<b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    // Get <b>address</b> of resource <a href="">account</a> <b>where</b> order books are stored.
+    <b>let</b> resource_address = resource_account::get_address();
+    <b>let</b> order_books_map_ref_mut = // Mutably borrow order books map.
+        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>&gt;(resource_address).map;
+    // Assert order books map <b>has</b> order book <b>with</b> given <a href="market.md#0xc0deb00c_market">market</a> ID.
+    <b>assert</b>!(<a href="tablist.md#0xc0deb00c_tablist_contains">tablist::contains</a>(order_books_map_ref_mut, market_id),
+            <a href="market.md#0xc0deb00c_market_E_INVALID_MARKET_ID">E_INVALID_MARKET_ID</a>);
+    // Mutably borrow order book <b>with</b> given <a href="market.md#0xc0deb00c_market">market</a> ID.
+    <b>let</b> order_book_ref_mut =
+        <a href="tablist.md#0xc0deb00c_tablist_borrow_mut">tablist::borrow_mut</a>(order_books_map_ref_mut, market_id);
+    <a href="market.md#0xc0deb00c_market_PriceLevels">PriceLevels</a>{ // Return indexed price levels.
+        market_id,
+        asks: <a href="market.md#0xc0deb00c_market_get_price_levels_for_side">get_price_levels_for_side</a>(
+            order_book_ref_mut, <a href="market.md#0xc0deb00c_market_ASK">ASK</a>, n_ask_levels_max),
+        bids: <a href="market.md#0xc0deb00c_market_get_price_levels_for_side">get_price_levels_for_side</a>(
+            order_book_ref_mut, <a href="market.md#0xc0deb00c_market_BID">BID</a>, n_bid_levels_max)
+    }
+}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_get_price_levels_all"></a>
+
+## Function `get_price_levels_all`
+
+Wrapped call to <code><a href="market.md#0xc0deb00c_market_get_price_levels">get_price_levels</a>()</code> for getting all price
+levels on both sides.
+
+
+<a name="@Testing_52"></a>
+
+### Testing
+
+
+* <code>test_get_price_levels()</code>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_get_price_levels_all">get_price_levels_all</a>(market_id: u64): <a href="market.md#0xc0deb00c_market_PriceLevels">market::PriceLevels</a>
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_get_price_levels_all">get_price_levels_all</a>(
+    market_id: u64
+): <a href="market.md#0xc0deb00c_market_PriceLevels">PriceLevels</a>
+<b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    <a href="market.md#0xc0deb00c_market_get_price_levels">get_price_levels</a>(market_id, <a href="market.md#0xc0deb00c_market_HI_64">HI_64</a>, <a href="market.md#0xc0deb00c_market_HI_64">HI_64</a>)
+}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_has_open_order"></a>
+
+## Function `has_open_order`
+
+Return <code><b>true</b></code> if <code>market_order_id</code> corresponds to open order for
+given <code>market_id</code>.
+
+Kept private to prevent runtime order book state contention.
+
+
+<a name="@Testing_53"></a>
+
+### Testing
+
+
+* <code>test_has_open_order_no_market()</code>
+* <code>test_change_order_size_ask_custodian()</code>
+* <code>test_change_order_size_bid_user()</code>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_has_open_order">has_open_order</a>(market_id: u64, market_order_id: u128): bool
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_has_open_order">has_open_order</a>(
+    market_id: u64,
+    market_order_id: u128
+): bool
+<b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    // Get <b>address</b> of resource <a href="">account</a> <b>where</b> order books are stored.
+    <b>let</b> resource_address = resource_account::get_address();
+    <b>let</b> order_books_map_ref = // Immutably borrow order books map.
+        &<b>borrow_global</b>&lt;<a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>&gt;(resource_address).map;
+    <b>if</b> (!<a href="tablist.md#0xc0deb00c_tablist_contains">tablist::contains</a>(order_books_map_ref, market_id))
+        <b>return</b> <b>false</b>; // Return <b>false</b> <b>if</b> no <a href="market.md#0xc0deb00c_market">market</a> <b>with</b> <a href="market.md#0xc0deb00c_market">market</a> ID.
+    // Immutably borrow order book for given <a href="market.md#0xc0deb00c_market">market</a> ID.
+    <b>let</b> order_book_ref = <a href="tablist.md#0xc0deb00c_tablist_borrow">tablist::borrow</a>(order_books_map_ref, market_id);
+    // Determine side indicated by <a href="market.md#0xc0deb00c_market">market</a> order ID.
+    <b>let</b> side = <a href="market.md#0xc0deb00c_market_get_market_order_id_side">get_market_order_id_side</a>(market_order_id);
+    // Get open orders for given side.
+    <b>let</b> orders_ref = <b>if</b> (side == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>) &order_book_ref.asks
+        <b>else</b> &order_book_ref.bids;
+    // Get AVL queue access key from <a href="market.md#0xc0deb00c_market">market</a> order ID.
+    <b>let</b> avlq_access_key =
+        <a href="market.md#0xc0deb00c_market_get_market_order_id_avl_queue_access_key">get_market_order_id_avl_queue_access_key</a>(market_order_id);
+    // Check <b>if</b> borrowing from the AVL queue is even possible.
+    <b>let</b> borrow_possible = <a href="avl_queue.md#0xc0deb00c_avl_queue_contains_active_list_node_id">avl_queue::contains_active_list_node_id</a>(
+        orders_ref, avlq_access_key);
+    // Return <b>false</b> <b>if</b> can't borrow from the AVL queue.
+    <b>if</b> (!borrow_possible) <b>return</b> <b>false</b>;
+    // Immutably borrow order having list node ID.
+    <b>let</b> order_ref = <a href="avl_queue.md#0xc0deb00c_avl_queue_borrow">avl_queue::borrow</a>(orders_ref, avlq_access_key);
+    // Check <b>if</b> <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> corresponding open order <a href="market.md#0xc0deb00c_market">market</a> order ID.
+    <b>let</b> optional_market_order_id = <a href="user.md#0xc0deb00c_user_get_open_order_id_internal">user::get_open_order_id_internal</a>(
+        order_ref.<a href="user.md#0xc0deb00c_user">user</a>, market_id, order_ref.custodian_id, side,
+        order_ref.order_access_key);
+    // If <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> no corresponding <a href="market.md#0xc0deb00c_market">market</a> order ID <b>return</b> <b>false</b>.
+    <b>if</b> (<a href="_is_none">option::is_none</a>(&optional_market_order_id)) <b>return</b> <b>false</b>;
+    <b>let</b> user_market_order_id = // Get <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> order ID.
+        <a href="_destroy_some">option::destroy_some</a>(optional_market_order_id);
+    // Return <b>if</b> <a href="user.md#0xc0deb00c_user">user</a>-indicated <a href="market.md#0xc0deb00c_market">market</a> order ID matches passed one.
+    user_market_order_id == market_order_id
+}
+</code></pre>
+
+
+
 <a name="0xc0deb00c_market_cancel_all_orders_custodian"></a>
 
 ## Function `cancel_all_orders_custodian`
@@ -1784,7 +2977,7 @@ Public function wrapper for <code><a href="market.md#0xc0deb00c_market_cancel_al
 orders under authority of delegated custodian.
 
 
-<a name="@Invocation_testing_22"></a>
+<a name="@Invocation_testing_54"></a>
 
 ### Invocation testing
 
@@ -1824,7 +3017,7 @@ Public function wrapper for <code><a href="market.md#0xc0deb00c_market_cancel_or
 order under authority of delegated custodian.
 
 
-<a name="@Invocation_testing_23"></a>
+<a name="@Invocation_testing_55"></a>
 
 ### Invocation testing
 
@@ -1866,7 +3059,7 @@ Public function wrapper for <code><a href="market.md#0xc0deb00c_market_change_or
 order size under authority of delegated custodian.
 
 
-<a name="@Invocation_testing_24"></a>
+<a name="@Invocation_testing_56"></a>
 
 ### Invocation testing
 
@@ -1902,580 +3095,6 @@ order size under authority of delegated custodian.
 
 
 
-<a name="0xc0deb00c_market_get_ABORT"></a>
-
-## Function `get_ABORT`
-
-Public constant getter for <code><a href="market.md#0xc0deb00c_market_ABORT">ABORT</a></code>.
-
-
-<a name="@Testing_25"></a>
-
-### Testing
-
-
-* <code>test_get_ABORT()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_ABORT">get_ABORT</a>(): u8
-</code></pre>
-
-
-
-##### Implementation
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_ABORT">get_ABORT</a>(): u8 {<a href="market.md#0xc0deb00c_market_ABORT">ABORT</a>}
-</code></pre>
-
-
-
-<a name="0xc0deb00c_market_get_ASK"></a>
-
-## Function `get_ASK`
-
-Public constant getter for <code><a href="market.md#0xc0deb00c_market_ASK">ASK</a></code>.
-
-
-<a name="@Testing_26"></a>
-
-### Testing
-
-
-* <code>test_direction_side_polarities()</code>
-* <code>test_get_ASK()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_ASK">get_ASK</a>(): bool
-</code></pre>
-
-
-
-##### Implementation
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_ASK">get_ASK</a>(): bool {<a href="market.md#0xc0deb00c_market_ASK">ASK</a>}
-</code></pre>
-
-
-
-<a name="0xc0deb00c_market_get_BID"></a>
-
-## Function `get_BID`
-
-Public constant getter for <code><a href="market.md#0xc0deb00c_market_BID">BID</a></code>.
-
-
-<a name="@Testing_27"></a>
-
-### Testing
-
-
-* <code>test_direction_side_polarities()</code>
-* <code>test_get_BID()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_BID">get_BID</a>(): bool
-</code></pre>
-
-
-
-##### Implementation
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_BID">get_BID</a>(): bool {<a href="market.md#0xc0deb00c_market_BID">BID</a>}
-</code></pre>
-
-
-
-<a name="0xc0deb00c_market_get_BUY"></a>
-
-## Function `get_BUY`
-
-Public constant getter for <code><a href="market.md#0xc0deb00c_market_BUY">BUY</a></code>.
-
-
-<a name="@Testing_28"></a>
-
-### Testing
-
-
-* <code>test_direction_side_polarities()</code>
-* <code>test_get_BUY()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_BUY">get_BUY</a>(): bool
-</code></pre>
-
-
-
-##### Implementation
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_BUY">get_BUY</a>(): bool {<a href="market.md#0xc0deb00c_market_BUY">BUY</a>}
-</code></pre>
-
-
-
-<a name="0xc0deb00c_market_get_CANCEL_BOTH"></a>
-
-## Function `get_CANCEL_BOTH`
-
-Public constant getter for <code><a href="market.md#0xc0deb00c_market_CANCEL_BOTH">CANCEL_BOTH</a></code>.
-
-
-<a name="@Testing_29"></a>
-
-### Testing
-
-
-* <code>test_get_CANCEL_BOTH()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_CANCEL_BOTH">get_CANCEL_BOTH</a>(): u8
-</code></pre>
-
-
-
-##### Implementation
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_CANCEL_BOTH">get_CANCEL_BOTH</a>(): u8 {<a href="market.md#0xc0deb00c_market_CANCEL_BOTH">CANCEL_BOTH</a>}
-</code></pre>
-
-
-
-<a name="0xc0deb00c_market_get_CANCEL_MAKER"></a>
-
-## Function `get_CANCEL_MAKER`
-
-Public constant getter for <code><a href="market.md#0xc0deb00c_market_CANCEL_MAKER">CANCEL_MAKER</a></code>.
-
-
-<a name="@Testing_30"></a>
-
-### Testing
-
-
-* <code>test_get_CANCEL_MAKER()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_CANCEL_MAKER">get_CANCEL_MAKER</a>(): u8
-</code></pre>
-
-
-
-##### Implementation
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_CANCEL_MAKER">get_CANCEL_MAKER</a>(): u8 {<a href="market.md#0xc0deb00c_market_CANCEL_MAKER">CANCEL_MAKER</a>}
-</code></pre>
-
-
-
-<a name="0xc0deb00c_market_get_CANCEL_TAKER"></a>
-
-## Function `get_CANCEL_TAKER`
-
-Public constant getter for <code><a href="market.md#0xc0deb00c_market_CANCEL_TAKER">CANCEL_TAKER</a></code>.
-
-
-<a name="@Testing_31"></a>
-
-### Testing
-
-
-* <code>test_get_CANCEL_TAKER()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_CANCEL_TAKER">get_CANCEL_TAKER</a>(): u8
-</code></pre>
-
-
-
-##### Implementation
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_CANCEL_TAKER">get_CANCEL_TAKER</a>(): u8 {<a href="market.md#0xc0deb00c_market_CANCEL_TAKER">CANCEL_TAKER</a>}
-</code></pre>
-
-
-
-<a name="0xc0deb00c_market_get_FILL_OR_ABORT"></a>
-
-## Function `get_FILL_OR_ABORT`
-
-Public constant getter for <code><a href="market.md#0xc0deb00c_market_FILL_OR_ABORT">FILL_OR_ABORT</a></code>.
-
-
-<a name="@Testing_32"></a>
-
-### Testing
-
-
-* <code>test_get_FILL_OR_ABORT()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_FILL_OR_ABORT">get_FILL_OR_ABORT</a>(): u8
-</code></pre>
-
-
-
-##### Implementation
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_FILL_OR_ABORT">get_FILL_OR_ABORT</a>(): u8 {<a href="market.md#0xc0deb00c_market_FILL_OR_ABORT">FILL_OR_ABORT</a>}
-</code></pre>
-
-
-
-<a name="0xc0deb00c_market_get_HI_PRICE"></a>
-
-## Function `get_HI_PRICE`
-
-Public constant getter for <code><a href="market.md#0xc0deb00c_market_HI_PRICE">HI_PRICE</a></code>.
-
-
-<a name="@Testing_33"></a>
-
-### Testing
-
-
-* <code>test_get_HI_PRICE()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_HI_PRICE">get_HI_PRICE</a>(): u64
-</code></pre>
-
-
-
-##### Implementation
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_HI_PRICE">get_HI_PRICE</a>(): u64 {<a href="market.md#0xc0deb00c_market_HI_PRICE">HI_PRICE</a>}
-</code></pre>
-
-
-
-<a name="0xc0deb00c_market_get_IMMEDIATE_OR_CANCEL"></a>
-
-## Function `get_IMMEDIATE_OR_CANCEL`
-
-Public constant getter for <code><a href="market.md#0xc0deb00c_market_IMMEDIATE_OR_CANCEL">IMMEDIATE_OR_CANCEL</a></code>.
-
-
-<a name="@Testing_34"></a>
-
-### Testing
-
-
-* <code>test_get_IMMEDIATE_OR_CANCEL()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_IMMEDIATE_OR_CANCEL">get_IMMEDIATE_OR_CANCEL</a>(): u8
-</code></pre>
-
-
-
-##### Implementation
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_IMMEDIATE_OR_CANCEL">get_IMMEDIATE_OR_CANCEL</a>(): u8 {<a href="market.md#0xc0deb00c_market_IMMEDIATE_OR_CANCEL">IMMEDIATE_OR_CANCEL</a>}
-</code></pre>
-
-
-
-<a name="0xc0deb00c_market_get_market_order_id_counter"></a>
-
-## Function `get_market_order_id_counter`
-
-Return maker order counter encoded in market order ID.
-
-
-<a name="@Testing_35"></a>
-
-### Testing
-
-
-* <code>test_place_limit_order_no_cross_ask_user()</code>
-* <code>test_place_limit_order_no_cross_bid_custodian()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_market_order_id_counter">get_market_order_id_counter</a>(market_order_id: u128): u64
-</code></pre>
-
-
-
-##### Implementation
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_market_order_id_counter">get_market_order_id_counter</a>(
-    market_order_id: u128
-): u64 {
-    (((market_order_id &gt;&gt; <a href="market.md#0xc0deb00c_market_SHIFT_COUNTER">SHIFT_COUNTER</a>) & (<a href="market.md#0xc0deb00c_market_HI_64">HI_64</a> <b>as</b> u128)) <b>as</b> u64)
-}
-</code></pre>
-
-
-
-<a name="0xc0deb00c_market_get_market_order_id_price"></a>
-
-## Function `get_market_order_id_price`
-
-Return order price encoded in market order ID.
-
-
-<a name="@Testing_36"></a>
-
-### Testing
-
-
-* <code>test_place_limit_order_no_cross_ask_user()</code>
-* <code>test_place_limit_order_no_cross_bid_custodian()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_market_order_id_price">get_market_order_id_price</a>(market_order_id: u128): u64
-</code></pre>
-
-
-
-##### Implementation
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_market_order_id_price">get_market_order_id_price</a>(
-    market_order_id: u128
-): u64 {
-    ((market_order_id & (<a href="market.md#0xc0deb00c_market_HI_PRICE">HI_PRICE</a> <b>as</b> u128)) <b>as</b> u64)
-}
-</code></pre>
-
-
-
-<a name="0xc0deb00c_market_get_MAX_POSSIBLE"></a>
-
-## Function `get_MAX_POSSIBLE`
-
-Public constant getter for <code><a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a></code>.
-
-
-<a name="@Testing_37"></a>
-
-### Testing
-
-
-* <code>test_get_MAX_POSSIBLE()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_MAX_POSSIBLE">get_MAX_POSSIBLE</a>(): u64
-</code></pre>
-
-
-
-##### Implementation
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_MAX_POSSIBLE">get_MAX_POSSIBLE</a>(): u64 {<a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a>}
-</code></pre>
-
-
-
-<a name="0xc0deb00c_market_get_NO_CUSTODIAN"></a>
-
-## Function `get_NO_CUSTODIAN`
-
-Public constant getter for <code><a href="market.md#0xc0deb00c_market_NO_CUSTODIAN">NO_CUSTODIAN</a></code>.
-
-
-<a name="@Testing_38"></a>
-
-### Testing
-
-
-* <code>test_get_NO_CUSTODIAN()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_NO_CUSTODIAN">get_NO_CUSTODIAN</a>(): u64
-</code></pre>
-
-
-
-##### Implementation
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_NO_CUSTODIAN">get_NO_CUSTODIAN</a>(): u64 {<a href="market.md#0xc0deb00c_market_NO_CUSTODIAN">NO_CUSTODIAN</a>}
-</code></pre>
-
-
-
-<a name="0xc0deb00c_market_get_NO_RESTRICTION"></a>
-
-## Function `get_NO_RESTRICTION`
-
-Public constant getter for <code><a href="market.md#0xc0deb00c_market_NO_RESTRICTION">NO_RESTRICTION</a></code>.
-
-
-<a name="@Testing_39"></a>
-
-### Testing
-
-
-* <code>test_get_NO_RESTRICTION()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_NO_RESTRICTION">get_NO_RESTRICTION</a>(): u8
-</code></pre>
-
-
-
-##### Implementation
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_NO_RESTRICTION">get_NO_RESTRICTION</a>(): u8 {<a href="market.md#0xc0deb00c_market_NO_RESTRICTION">NO_RESTRICTION</a>}
-</code></pre>
-
-
-
-<a name="0xc0deb00c_market_get_NO_UNDERWRITER"></a>
-
-## Function `get_NO_UNDERWRITER`
-
-Public constant getter for <code><a href="market.md#0xc0deb00c_market_NO_UNDERWRITER">NO_UNDERWRITER</a></code>.
-
-
-<a name="@Testing_40"></a>
-
-### Testing
-
-
-* <code>test_get_NO_UNDERWRITER()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_NO_UNDERWRITER">get_NO_UNDERWRITER</a>(): u64
-</code></pre>
-
-
-
-##### Implementation
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_NO_UNDERWRITER">get_NO_UNDERWRITER</a>(): u64 {<a href="market.md#0xc0deb00c_market_NO_UNDERWRITER">NO_UNDERWRITER</a>}
-</code></pre>
-
-
-
-<a name="0xc0deb00c_market_get_POST_OR_ABORT"></a>
-
-## Function `get_POST_OR_ABORT`
-
-Public constant getter for <code><a href="market.md#0xc0deb00c_market_POST_OR_ABORT">POST_OR_ABORT</a></code>.
-
-
-<a name="@Testing_41"></a>
-
-### Testing
-
-
-* <code>test_get_POST_OR_ABORT()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_POST_OR_ABORT">get_POST_OR_ABORT</a>(): u8
-</code></pre>
-
-
-
-##### Implementation
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_POST_OR_ABORT">get_POST_OR_ABORT</a>(): u8 {<a href="market.md#0xc0deb00c_market_POST_OR_ABORT">POST_OR_ABORT</a>}
-</code></pre>
-
-
-
-<a name="0xc0deb00c_market_get_PERCENT"></a>
-
-## Function `get_PERCENT`
-
-Public constant getter for <code><a href="market.md#0xc0deb00c_market_PERCENT">PERCENT</a></code>.
-
-
-<a name="@Testing_42"></a>
-
-### Testing
-
-
-* <code>test_get_PERCENT()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_PERCENT">get_PERCENT</a>(): bool
-</code></pre>
-
-
-
-##### Implementation
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_PERCENT">get_PERCENT</a>(): bool {<a href="market.md#0xc0deb00c_market_PERCENT">PERCENT</a>}
-</code></pre>
-
-
-
-<a name="0xc0deb00c_market_get_SELL"></a>
-
-## Function `get_SELL`
-
-Public constant getter for <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>.
-
-
-<a name="@Testing_43"></a>
-
-### Testing
-
-
-* <code>test_direction_side_polarities()</code>
-* <code>test_get_SELL()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_SELL">get_SELL</a>(): bool
-</code></pre>
-
-
-
-##### Implementation
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_SELL">get_SELL</a>(): bool {<a href="market.md#0xc0deb00c_market_SELL">SELL</a>}
-</code></pre>
-
-
-
-<a name="0xc0deb00c_market_get_TICKS"></a>
-
-## Function `get_TICKS`
-
-Public constant getter for <code><a href="market.md#0xc0deb00c_market_TICKS">TICKS</a></code>.
-
-
-<a name="@Testing_44"></a>
-
-### Testing
-
-
-* <code>test_get_TICKS()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_TICKS">get_TICKS</a>(): bool
-</code></pre>
-
-
-
-##### Implementation
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_get_TICKS">get_TICKS</a>(): bool {<a href="market.md#0xc0deb00c_market_TICKS">TICKS</a>}
-</code></pre>
-
-
-
 <a name="0xc0deb00c_market_place_limit_order_custodian"></a>
 
 ## Function `place_limit_order_custodian`
@@ -2484,7 +3103,7 @@ Public function wrapper for <code><a href="market.md#0xc0deb00c_market_place_lim
 order under authority of delegated custodian.
 
 
-<a name="@Invocation_and_return_testing_45"></a>
+<a name="@Invocation_and_return_testing_57"></a>
 
 ### Invocation and return testing
 
@@ -2547,7 +3166,7 @@ Public function wrapper for
 authority of delegated custodian.
 
 
-<a name="@Invocation_and_return_testing_46"></a>
+<a name="@Invocation_and_return_testing_58"></a>
 
 ### Invocation and return testing
 
@@ -2603,7 +3222,7 @@ Public function wrapper for
 authority of signing user.
 
 
-<a name="@Invocation_and_return_testing_47"></a>
+<a name="@Invocation_and_return_testing_59"></a>
 
 ### Invocation and return testing
 
@@ -2664,7 +3283,7 @@ Public function wrapper for <code><a href="market.md#0xc0deb00c_market_place_lim
 order under authority of signing user.
 
 
-<a name="@Invocation_and_return_testing_48"></a>
+<a name="@Invocation_and_return_testing_60"></a>
 
 ### Invocation and return testing
 
@@ -2732,7 +3351,7 @@ Public function wrapper for <code><a href="market.md#0xc0deb00c_market_place_mar
 order under authority of delegated custodian.
 
 
-<a name="@Invocation_and_return_testing_49"></a>
+<a name="@Invocation_and_return_testing_61"></a>
 
 ### Invocation and return testing
 
@@ -2786,7 +3405,7 @@ Public function wrapper for <code><a href="market.md#0xc0deb00c_market_place_mar
 order under authority of signing user.
 
 
-<a name="@Invocation_and_return_testing_50"></a>
+<a name="@Invocation_and_return_testing_62"></a>
 
 ### Invocation and return testing
 
@@ -2840,7 +3459,7 @@ Register pure coin market, return resultant market ID.
 See inner function <code><a href="market.md#0xc0deb00c_market_register_market">register_market</a>()</code>.
 
 
-<a name="@Type_parameters_51"></a>
+<a name="@Type_parameters_63"></a>
 
 ### Type parameters
 
@@ -2851,7 +3470,7 @@ See inner function <code><a href="market.md#0xc0deb00c_market_register_market">r
 <code><a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">incentives::IncentiveParameters</a>.utility_coin_type_info</code>.
 
 
-<a name="@Parameters_52"></a>
+<a name="@Parameters_64"></a>
 
 ### Parameters
 
@@ -2863,7 +3482,7 @@ See inner function <code><a href="market.md#0xc0deb00c_market_register_market">r
 <code><a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">incentives::IncentiveParameters</a>.market_registration_fee</code>.
 
 
-<a name="@Returns_53"></a>
+<a name="@Returns_65"></a>
 
 ### Returns
 
@@ -2871,7 +3490,7 @@ See inner function <code><a href="market.md#0xc0deb00c_market_register_market">r
 * <code>u64</code>: Market ID for new market.
 
 
-<a name="@Testing_54"></a>
+<a name="@Testing_66"></a>
 
 ### Testing
 
@@ -2924,7 +3543,7 @@ Generic base name restrictions described at
 <code><a href="registry.md#0xc0deb00c_registry_register_market_base_generic_internal">registry::register_market_base_generic_internal</a>()</code>.
 
 
-<a name="@Type_parameters_55"></a>
+<a name="@Type_parameters_67"></a>
 
 ### Type parameters
 
@@ -2934,7 +3553,7 @@ Generic base name restrictions described at
 <code><a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">incentives::IncentiveParameters</a>.utility_coin_type_info</code>.
 
 
-<a name="@Parameters_56"></a>
+<a name="@Parameters_68"></a>
 
 ### Parameters
 
@@ -2950,7 +3569,7 @@ for market.
 underwriter capability.
 
 
-<a name="@Returns_57"></a>
+<a name="@Returns_69"></a>
 
 ### Returns
 
@@ -2958,7 +3577,7 @@ underwriter capability.
 * <code>u64</code>: Market ID for new market.
 
 
-<a name="@Testing_58"></a>
+<a name="@Testing_70"></a>
 
 ### Testing
 
@@ -3010,7 +3629,7 @@ Initializes an <code>aptos_framework::coin::CoinStore</code> for each coin
 type that does not yet have one.
 
 
-<a name="@Type_Parameters_59"></a>
+<a name="@Type_Parameters_71"></a>
 
 ### Type Parameters
 
@@ -3019,7 +3638,7 @@ type that does not yet have one.
 * <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Parameters_60"></a>
+<a name="@Parameters_72"></a>
 
 ### Parameters
 
@@ -3038,7 +3657,7 @@ for coin store.
 * <code>limit_price</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Returns_61"></a>
+<a name="@Returns_73"></a>
 
 ### Returns
 
@@ -3048,7 +3667,7 @@ for coin store.
 * <code>u64</code>: Quote coin fees paid, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Testing_62"></a>
+<a name="@Testing_74"></a>
 
 ### Testing
 
@@ -3150,7 +3769,7 @@ intermediate quote match overflow that could occur prior to fee
 assessment.
 
 
-<a name="@Type_Parameters_63"></a>
+<a name="@Type_Parameters_75"></a>
 
 ### Type Parameters
 
@@ -3159,7 +3778,7 @@ assessment.
 * <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Parameters_64"></a>
+<a name="@Parameters_76"></a>
 
 ### Parameters
 
@@ -3181,7 +3800,7 @@ unpacked.
 * <code>quote_coins</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Returns_65"></a>
+<a name="@Returns_77"></a>
 
 ### Returns
 
@@ -3195,7 +3814,7 @@ unpacked.
 * <code>u64</code>: Quote coin fees paid, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Terminology_66"></a>
+<a name="@Terminology_78"></a>
 
 ### Terminology
 
@@ -3206,7 +3825,7 @@ coins in the case of a buy, quote coins in the case of a sell.
 the case of a buy, base coins in the case of a sell.
 
 
-<a name="@Testing_67"></a>
+<a name="@Testing_79"></a>
 
 ### Testing
 
@@ -3305,7 +3924,7 @@ intermediate quote match overflow that could occur prior to fee
 assessment.
 
 
-<a name="@Type_Parameters_68"></a>
+<a name="@Type_Parameters_80"></a>
 
 ### Type Parameters
 
@@ -3313,7 +3932,7 @@ assessment.
 * <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Parameters_69"></a>
+<a name="@Parameters_81"></a>
 
 ### Parameters
 
@@ -3333,7 +3952,7 @@ possible amount for passed coin holdings.
 underwriter capability for given market.
 
 
-<a name="@Returns_70"></a>
+<a name="@Returns_82"></a>
 
 ### Returns
 
@@ -3345,7 +3964,7 @@ underwriter capability for given market.
 * <code>u64</code>: Quote coin fees paid, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Testing_71"></a>
+<a name="@Testing_83"></a>
 
 ### Testing
 
@@ -3435,7 +4054,7 @@ Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_can
 cancelling orders under authority of signing user.
 
 
-<a name="@Invocation_testing_72"></a>
+<a name="@Invocation_testing_84"></a>
 
 ### Invocation testing
 
@@ -3474,7 +4093,7 @@ Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_can
 cancelling order under authority of signing user.
 
 
-<a name="@Invocation_testing_73"></a>
+<a name="@Invocation_testing_85"></a>
 
 ### Invocation testing
 
@@ -3515,7 +4134,7 @@ Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_cha
 changing order size under authority of signing user.
 
 
-<a name="@Invocation_testing_74"></a>
+<a name="@Invocation_testing_86"></a>
 
 ### Invocation testing
 
@@ -3558,7 +4177,7 @@ Public entry function wrapper for
 <code><a href="market.md#0xc0deb00c_market_place_limit_order_passive_advance_user">place_limit_order_passive_advance_user</a>()</code>.
 
 
-<a name="@Invocation_testing_75"></a>
+<a name="@Invocation_testing_87"></a>
 
 ### Invocation testing
 
@@ -3609,7 +4228,7 @@ Public entry function wrapper for
 Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_place_limit_order_user">place_limit_order_user</a>()</code>.
 
 
-<a name="@Invocation_testing_76"></a>
+<a name="@Invocation_testing_88"></a>
 
 ### Invocation testing
 
@@ -3653,7 +4272,7 @@ Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_pla
 Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_place_market_order_user">place_market_order_user</a>()</code>.
 
 
-<a name="@Invocation_testing_77"></a>
+<a name="@Invocation_testing_89"></a>
 
 ### Invocation testing
 
@@ -3695,7 +4314,7 @@ Wrapped call to <code><a href="market.md#0xc0deb00c_market_register_market_base_
 coins from an <code>aptos_framework::coin::CoinStore</code>.
 
 
-<a name="@Testing_78"></a>
+<a name="@Testing_90"></a>
 
 ### Testing
 
@@ -3738,7 +4357,7 @@ coins from an <code>aptos_framework::coin::CoinStore</code>.
 Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_swap_between_coinstores">swap_between_coinstores</a>()</code>.
 
 
-<a name="@Invocation_testing_79"></a>
+<a name="@Invocation_testing_91"></a>
 
 ### Invocation testing
 
@@ -3784,7 +4403,7 @@ Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_swa
 Cancel all of a user's open maker orders.
 
 
-<a name="@Parameters_80"></a>
+<a name="@Parameters_92"></a>
 
 ### Parameters
 
@@ -3795,7 +4414,7 @@ Cancel all of a user's open maker orders.
 * <code>side</code>: Same as for <code><a href="market.md#0xc0deb00c_market_cancel_order">cancel_order</a>()</code>.
 
 
-<a name="@Expected_value_testing_81"></a>
+<a name="@Expected_value_testing_93"></a>
 
 ### Expected value testing
 
@@ -3848,7 +4467,7 @@ verified against the order access key derived from the AVL queue
 removal operation.
 
 
-<a name="@Parameters_82"></a>
+<a name="@Parameters_94"></a>
 
 ### Parameters
 
@@ -3860,7 +4479,7 @@ removal operation.
 * <code>market_order_id</code>: Market order ID of order on order book.
 
 
-<a name="@Aborts_83"></a>
+<a name="@Aborts_95"></a>
 
 ### Aborts
 
@@ -3874,7 +4493,7 @@ on book having given market order ID.
 custodian ID of order on order book having market order ID.
 
 
-<a name="@Emits_84"></a>
+<a name="@Emits_96"></a>
 
 ### Emits
 
@@ -3882,7 +4501,7 @@ custodian ID of order on order book having market order ID.
 * <code><a href="market.md#0xc0deb00c_market_MakerEvent">MakerEvent</a></code>: Information about the maker order cancelled.
 
 
-<a name="@Expected_value_testing_85"></a>
+<a name="@Expected_value_testing_97"></a>
 
 ### Expected value testing
 
@@ -3891,7 +4510,7 @@ custodian ID of order on order book having market order ID.
 * <code>test_cancel_order_bid_user()</code>
 
 
-<a name="@Failure_testing_86"></a>
+<a name="@Failure_testing_98"></a>
 
 ### Failure testing
 
@@ -3974,7 +4593,7 @@ again verified against the order access key derived from the AVL
 queue borrow operation.
 
 
-<a name="@Parameters_87"></a>
+<a name="@Parameters_99"></a>
 
 ### Parameters
 
@@ -3987,7 +4606,7 @@ queue borrow operation.
 * <code>new_size</code>: The new order size to change to.
 
 
-<a name="@Aborts_88"></a>
+<a name="@Aborts_100"></a>
 
 ### Aborts
 
@@ -4001,7 +4620,7 @@ on book having given market order ID.
 custodian ID of order on order book having market order ID.
 
 
-<a name="@Emits_89"></a>
+<a name="@Emits_101"></a>
 
 ### Emits
 
@@ -4009,7 +4628,7 @@ custodian ID of order on order book having market order ID.
 * <code><a href="market.md#0xc0deb00c_market_MakerEvent">MakerEvent</a></code>: Information about the changed maker order.
 
 
-<a name="@Expected_value_testing_90"></a>
+<a name="@Expected_value_testing_102"></a>
 
 ### Expected value testing
 
@@ -4019,7 +4638,7 @@ custodian ID of order on order book having market order ID.
 * <code>test_change_order_size_bid_user_new_tail()</code>
 
 
-<a name="@Failure_testing_91"></a>
+<a name="@Failure_testing_103"></a>
 
 ### Failure testing
 
@@ -4121,6 +4740,166 @@ custodian ID of order on order book having market order ID.
 
 
 
+<a name="0xc0deb00c_market_get_market_order_id_avl_queue_access_key"></a>
+
+## Function `get_market_order_id_avl_queue_access_key`
+
+Get AVL queue access key encoded in <code>market_order_id</code>.
+
+
+<a name="@Testing_104"></a>
+
+### Testing
+
+
+* <code>test_get_market_order_id_avl_queue_access_key()</code>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_get_market_order_id_avl_queue_access_key">get_market_order_id_avl_queue_access_key</a>(market_order_id: u128): u64
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code>inline <b>fun</b> <a href="market.md#0xc0deb00c_market_get_market_order_id_avl_queue_access_key">get_market_order_id_avl_queue_access_key</a>(
+    market_order_id: u128
+): u64 {
+    ((market_order_id & (<a href="market.md#0xc0deb00c_market_HI_64">HI_64</a> <b>as</b> u128)) <b>as</b> u64)
+}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_get_open_orders_for_side"></a>
+
+## Function `get_open_orders_for_side`
+
+Index specified number of open orders for given side of order
+book.
+
+
+<a name="@Testing_105"></a>
+
+### Testing
+
+
+* <code>test_get_open_orders()</code>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_get_open_orders_for_side">get_open_orders_for_side</a>(market_id: u64, order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">market::OrderBook</a>, side: bool, n_orders_max: u64): <a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_OrderView">market::OrderView</a>&gt;
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_get_open_orders_for_side">get_open_orders_for_side</a>(
+    market_id: u64,
+    order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a>,
+    side: bool,
+    n_orders_max: u64
+): <a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_OrderView">OrderView</a>&gt; {
+    <b>let</b> orders = <a href="">vector</a>[]; // Initialize empty <a href="">vector</a> of orders.
+    // Get mutable reference <b>to</b> orders AVL queue for given side.
+    <b>let</b> avlq_ref_mut = <b>if</b> (side == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>) &<b>mut</b> order_book_ref_mut.asks <b>else</b>
+        &<b>mut</b> order_book_ref_mut.bids;
+    // While there are still orders left <b>to</b> index:
+    <b>while</b>((<a href="_length">vector::length</a>(&orders) &lt; n_orders_max) &&
+          (!<a href="avl_queue.md#0xc0deb00c_avl_queue_is_empty">avl_queue::is_empty</a>(avlq_ref_mut))) {
+        // Remove and unpack order at head of queue.
+        <b>let</b> <a href="market.md#0xc0deb00c_market_Order">Order</a>{size, price, <a href="user.md#0xc0deb00c_user">user</a>, custodian_id, order_access_key} =
+            <a href="avl_queue.md#0xc0deb00c_avl_queue_pop_head">avl_queue::pop_head</a>(avlq_ref_mut);
+        // Get <a href="market.md#0xc0deb00c_market">market</a> order ID from <a href="user.md#0xc0deb00c_user">user</a>-side order memory.
+        <b>let</b> market_order_id = <a href="_destroy_some">option::destroy_some</a>(
+            <a href="user.md#0xc0deb00c_user_get_open_order_id_internal">user::get_open_order_id_internal</a>(<a href="user.md#0xc0deb00c_user">user</a>, market_id, custodian_id,
+                                             side, order_access_key));
+        // Push back an order view <b>to</b> orders view <a href="">vector</a>.
+        <a href="_push_back">vector::push_back</a>(&<b>mut</b> orders, <a href="market.md#0xc0deb00c_market_OrderView">OrderView</a>{
+            market_id, side, market_order_id, size, price, <a href="user.md#0xc0deb00c_user">user</a>,
+            custodian_id});
+    };
+    orders // Return <a href="">vector</a> of view-friendly orders.
+}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_get_price_levels_for_side"></a>
+
+## Function `get_price_levels_for_side`
+
+Index specified number of price levels for given side of order
+book.
+
+
+<a name="@Testing_106"></a>
+
+### Testing
+
+
+* <code>test_get_price_levels()</code>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_get_price_levels_for_side">get_price_levels_for_side</a>(order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">market::OrderBook</a>, side: bool, n_price_levels_max: u64): <a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_PriceLevel">market::PriceLevel</a>&gt;
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_get_price_levels_for_side">get_price_levels_for_side</a>(
+    order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a>,
+    side: bool,
+    n_price_levels_max: u64
+): <a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_PriceLevel">PriceLevel</a>&gt; {
+    // Initialize empty price levels <a href="">vector</a>.
+    <b>let</b> price_levels = <a href="">vector</a>[];
+    // Get mutable reference <b>to</b> orders AVL queue for given side.
+    <b>let</b> avlq_ref_mut = <b>if</b> (side == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>) &<b>mut</b> order_book_ref_mut.asks <b>else</b>
+        &<b>mut</b> order_book_ref_mut.bids;
+    // While more price levels can be indexed:
+    <b>while</b> (<a href="_length">vector::length</a>(&price_levels) &lt; n_price_levels_max) {
+        <b>let</b> size = 0; // Initialize price level size <b>to</b> 0.
+        // Get optional price of order at head of queue.
+        <b>let</b> optional_head_price = <a href="avl_queue.md#0xc0deb00c_avl_queue_get_head_key">avl_queue::get_head_key</a>(avlq_ref_mut);
+        // If there is an order at the head of the queue:
+        <b>if</b> (<a href="_is_some">option::is_some</a>(&optional_head_price)) {
+            // Unpack its price <b>as</b> the price tracker for the level.
+            <b>let</b> price = <a href="_destroy_some">option::destroy_some</a>(optional_head_price);
+            // While orders still left on book:
+            <b>while</b> (!<a href="avl_queue.md#0xc0deb00c_avl_queue_is_empty">avl_queue::is_empty</a>(avlq_ref_mut)) {
+                // If order at head of the queue is in price level:
+                <b>if</b> (<a href="_contains">option::contains</a>(
+                        &<a href="avl_queue.md#0xc0deb00c_avl_queue_get_head_key">avl_queue::get_head_key</a>(avlq_ref_mut), &price)) {
+                    // Pop order, storing only its size.
+                    <b>let</b> <a href="market.md#0xc0deb00c_market_Order">Order</a>{size: order_size, price: _, <a href="user.md#0xc0deb00c_user">user</a>: _,
+                              custodian_id: _, order_access_key: _} =
+                        <a href="avl_queue.md#0xc0deb00c_avl_queue_pop_head">avl_queue::pop_head</a>(avlq_ref_mut);
+                    // Increment tracker for price level size. Note
+                    // that no overflow is checked because an open
+                    // order's size is a u64, and an AVL queue can
+                    // hold at most 2 ^ 14 - 1 open orders.
+                    size = size + (order_size <b>as</b> u128);
+                } <b>else</b> { // If order at head of queue not in level:
+                    <b>break</b> // Break of out <b>loop</b> over head of queue.
+                }
+            };
+            // Push back price level <b>to</b> price levels <a href="">vector</a>.
+            <a href="_push_back">vector::push_back</a>(&<b>mut</b> price_levels, <a href="market.md#0xc0deb00c_market_PriceLevel">PriceLevel</a>{price, size});
+        } <b>else</b> { // If no order at the head of the queue:
+            <b>break</b> // Break of out <b>loop</b> on price level <a href="">vector</a> length.
+        }
+    };
+    price_levels // Return <a href="">vector</a> of price levels.
+}
+</code></pre>
+
+
+
 <a name="0xc0deb00c_market_init_module"></a>
 
 ## Function `init_module`
@@ -4159,7 +4938,7 @@ assesses taker fees. Matches up until the point of a self match,
 then proceeds according to specified self match behavior.
 
 
-<a name="@Type_Parameters_92"></a>
+<a name="@Type_Parameters_107"></a>
 
 ### Type Parameters
 
@@ -4169,7 +4948,7 @@ then proceeds according to specified self match behavior.
 * <code>QuoteType</code>: Quote coin type for market.
 
 
-<a name="@Parameters_93"></a>
+<a name="@Parameters_108"></a>
 
 ### Parameters
 
@@ -4214,7 +4993,7 @@ decremented if <code>direction</code> is <code><a href="market.md#0xc0deb00c_mar
 <code>direction</code> is <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>.
 
 
-<a name="@Returns_94"></a>
+<a name="@Returns_109"></a>
 
 ### Returns
 
@@ -4232,7 +5011,7 @@ net change in taker's quote coin holdings.
 * <code>bool</code>: <code><b>true</b></code> if a self match that results in a taker cancel.
 
 
-<a name="@Emits_95"></a>
+<a name="@Emits_110"></a>
 
 ### Emits
 
@@ -4241,7 +5020,7 @@ net change in taker's quote coin holdings.
 emitted for each separate maker order that is filled against.
 
 
-<a name="@Aborts_96"></a>
+<a name="@Aborts_111"></a>
 
 ### Aborts
 
@@ -4260,7 +5039,7 @@ requirement not met.
 requirement not met.
 
 
-<a name="@Expected_value_testing_97"></a>
+<a name="@Expected_value_testing_112"></a>
 
 ### Expected value testing
 
@@ -4279,7 +5058,7 @@ requirement not met.
 * <code>test_match_self_match_cancel_taker()</code>
 
 
-<a name="@Failure_testing_98"></a>
+<a name="@Failure_testing_113"></a>
 
 ### Failure testing
 
@@ -4495,7 +5274,7 @@ requirement not met.
 Place limit order against order book from user market account.
 
 
-<a name="@Type_Parameters_99"></a>
+<a name="@Type_Parameters_114"></a>
 
 ### Type Parameters
 
@@ -4504,7 +5283,7 @@ Place limit order against order book from user market account.
 * <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Parameters_100"></a>
+<a name="@Parameters_115"></a>
 
 ### Parameters
 
@@ -4526,7 +5305,7 @@ may take place. Should only be passed as <code><a href="market.md#0xc0deb00c_mar
 Accepted as an argument to simplify testing.
 
 
-<a name="@Returns_101"></a>
+<a name="@Returns_116"></a>
 
 ### Returns
 
@@ -4541,7 +5320,7 @@ was placed. Else <code><a href="market.md#0xc0deb00c_market_NIL">NIL</a></code>.
 if order fills across the spread.
 
 
-<a name="@Aborts_102"></a>
+<a name="@Aborts_117"></a>
 
 ### Aborts
 
@@ -4570,7 +5349,7 @@ price-time priority if inserted to AVL queue, but AVL queue
 does not have room for any more orders.
 
 
-<a name="@Emits_103"></a>
+<a name="@Emits_118"></a>
 
 ### Emits
 
@@ -4582,7 +5361,7 @@ the order book, if required to fit user's maker order on the
 book.
 
 
-<a name="@Restrictions_104"></a>
+<a name="@Restrictions_119"></a>
 
 ### Restrictions
 
@@ -4596,7 +5375,7 @@ amount is not filled.
 then returns.
 
 
-<a name="@Minimum_size_105"></a>
+<a name="@Minimum_size_120"></a>
 
 ### Minimum size
 
@@ -4606,7 +5385,7 @@ left as a maker, minimum order size condition must be met
 again for the maker portion.
 
 
-<a name="@Self_matching_106"></a>
+<a name="@Self_matching_121"></a>
 
 ### Self matching
 
@@ -4620,7 +5399,7 @@ restriction, and
 3. Self match behavior indicates taker cancellation.
 
 
-<a name="@Expected_value_testing_107"></a>
+<a name="@Expected_value_testing_122"></a>
 
 ### Expected value testing
 
@@ -4639,7 +5418,7 @@ restriction, and
 * <code>test_place_limit_order_still_crosses_bid()</code>
 
 
-<a name="@Failure_testing_108"></a>
+<a name="@Failure_testing_123"></a>
 
 ### Failure testing
 
@@ -4909,7 +5688,7 @@ order that aborts for a self match. Advance price is then
 range-checked by <code><a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>()</code>.
 
 
-<a name="@Price_calculations_109"></a>
+<a name="@Price_calculations_124"></a>
 
 ### Price calculations
 
@@ -4921,7 +5700,7 @@ operation during the advance amount calculation for the percent
 case.
 
 
-<a name="@Type_Parameters_110"></a>
+<a name="@Type_Parameters_125"></a>
 
 ### Type Parameters
 
@@ -4930,7 +5709,7 @@ case.
 * <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Parameters_111"></a>
+<a name="@Parameters_126"></a>
 
 ### Parameters
 
@@ -4949,7 +5728,7 @@ percent of the spread to advance, else the number of ticks to
 advance.
 
 
-<a name="@Returns_112"></a>
+<a name="@Returns_127"></a>
 
 ### Returns
 
@@ -4957,7 +5736,7 @@ advance.
 * <code>u128</code>: Market order ID, same as for <code><a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>()</code>.
 
 
-<a name="@Aborts_113"></a>
+<a name="@Aborts_128"></a>
 
 ### Aborts
 
@@ -4969,7 +5748,7 @@ advance.
 <code>target_advance_amount</code> is not less than or equal to 100.
 
 
-<a name="@Expected_value_testing_114"></a>
+<a name="@Expected_value_testing_129"></a>
 
 ### Expected value testing
 
@@ -4985,7 +5764,7 @@ advance.
 * <code>test_place_limit_order_passive_advance_ticks_bid()</code>
 
 
-<a name="@Failure_testing_115"></a>
+<a name="@Failure_testing_130"></a>
 
 ### Failure testing
 
@@ -5122,7 +5901,7 @@ advance.
 Place market order against order book from user market account.
 
 
-<a name="@Type_Parameters_116"></a>
+<a name="@Type_Parameters_131"></a>
 
 ### Type Parameters
 
@@ -5131,7 +5910,7 @@ Place market order against order book from user market account.
 * <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Parameters_117"></a>
+<a name="@Parameters_132"></a>
 
 ### Parameters
 
@@ -5145,7 +5924,7 @@ Place market order against order book from user market account.
 * <code>self_match_behavior</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Returns_118"></a>
+<a name="@Returns_133"></a>
 
 ### Returns
 
@@ -5155,7 +5934,7 @@ Place market order against order book from user market account.
 * <code>u64</code>: Quote coin fees paid, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Aborts_119"></a>
+<a name="@Aborts_134"></a>
 
 ### Aborts
 
@@ -5166,7 +5945,7 @@ Place market order against order book from user market account.
 size for market.
 
 
-<a name="@Expected_value_testing_120"></a>
+<a name="@Expected_value_testing_135"></a>
 
 ### Expected value testing
 
@@ -5178,7 +5957,7 @@ size for market.
 * <code>test_place_market_order_max_quote_sell_user()</code>
 
 
-<a name="@Failure_testing_121"></a>
+<a name="@Failure_testing_136"></a>
 
 ### Failure testing
 
@@ -5237,11 +6016,12 @@ size for market.
     <b>let</b> max_base = <b>if</b> (direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>)
         (<a href="market.md#0xc0deb00c_market_HI_64">HI_64</a> - base_ceiling) <b>else</b> base_available;
     // Get max lots that can be traded by <a href="user.md#0xc0deb00c_user">user</a>.
-    <b>let</b> max_lots = max_base / order_book_ref_mut.lot_size;
+    <b>let</b> max_lots_user_can_trade = max_base / order_book_ref_mut.lot_size;
     // If <a href="market.md#0xc0deb00c_market">market</a> order size is less than number of lots <a href="user.md#0xc0deb00c_user">user</a> can
     // trade based on <a href="">account</a> limits, adjust the max base trade
     // amount <b>to</b> correspond <b>with</b> the <a href="market.md#0xc0deb00c_market">market</a> order size.
-    <b>if</b> (size &lt; max_lots) max_base = size * order_book_ref_mut.lot_size;
+    <b>if</b> (size &lt; max_lots_user_can_trade)
+        max_base = size * order_book_ref_mut.lot_size;
     // Calculate max quote that can be traded: <b>if</b> a buy, quote
     // available in <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>. If a sell, max quote that can
     // fit in <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
@@ -5298,7 +6078,7 @@ Range check minimum and maximum asset trade amounts.
 Should be called before <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Terminology_122"></a>
+<a name="@Terminology_137"></a>
 
 ### Terminology
 
@@ -5321,7 +6101,7 @@ user's <code>aptos_framework::coin::CoinStore</code> or from standalone
 coins, is the same as available amount.
 
 
-<a name="@Parameters_123"></a>
+<a name="@Parameters_138"></a>
 
 ### Parameters
 
@@ -5342,7 +6122,7 @@ trade.
 <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>.
 
 
-<a name="@Aborts_124"></a>
+<a name="@Aborts_139"></a>
 
 ### Aborts
 
@@ -5358,7 +6138,7 @@ received from trade.
 * <code><a href="market.md#0xc0deb00c_market_E_NOT_ENOUGH_ASSET_OUT">E_NOT_ENOUGH_ASSET_OUT</a></code>: Not enough asset to trade away.
 
 
-<a name="@Failure_testing_125"></a>
+<a name="@Failure_testing_140"></a>
 
 ### Failure testing
 
@@ -5432,7 +6212,7 @@ See <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketI
 size, minimum size, and 32-bit prices.
 
 
-<a name="@Type_parameters_126"></a>
+<a name="@Type_parameters_141"></a>
 
 ### Type parameters
 
@@ -5441,7 +6221,7 @@ size, minimum size, and 32-bit prices.
 * <code>QuoteType</code>: Quote coin type for market.
 
 
-<a name="@Parameters_127"></a>
+<a name="@Parameters_142"></a>
 
 ### Parameters
 
@@ -5455,7 +6235,7 @@ for market.
 * <code>underwriter_id</code>: <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>.min_size</code> for market.
 
 
-<a name="@Returns_128"></a>
+<a name="@Returns_143"></a>
 
 ### Returns
 
@@ -5463,7 +6243,7 @@ for market.
 * <code>u64</code>: Market ID for new market.
 
 
-<a name="@Testing_129"></a>
+<a name="@Testing_144"></a>
 
 ### Testing
 
@@ -5528,7 +6308,7 @@ for market.
 Match a taker's swap order against order book for given market.
 
 
-<a name="@Type_Parameters_130"></a>
+<a name="@Type_Parameters_145"></a>
 
 ### Type Parameters
 
@@ -5537,7 +6317,7 @@ Match a taker's swap order against order book for given market.
 * <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Parameters_131"></a>
+<a name="@Parameters_146"></a>
 
 ### Parameters
 
@@ -5557,7 +6337,7 @@ is <code><a href="registry.md#0xc0deb00c_registry_GenericAsset">registry::Generi
 * <code>quote_coins</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Returns_132"></a>
+<a name="@Returns_147"></a>
 
 ### Returns
 
@@ -5571,7 +6351,7 @@ same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>
 * <code>u64</code>: Quote coin fees paid, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Aborts_133"></a>
+<a name="@Aborts_148"></a>
 
 ### Aborts
 
@@ -5582,7 +6362,7 @@ same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>
 * <code><a href="market.md#0xc0deb00c_market_E_INVALID_QUOTE">E_INVALID_QUOTE</a></code>: Quote asset type is invalid.
 
 
-<a name="@Expected_value_testing_134"></a>
+<a name="@Expected_value_testing_149"></a>
 
 ### Expected value testing
 
@@ -5591,7 +6371,7 @@ same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>
 <code><a href="market.md#0xc0deb00c_market_swap_generic">swap_generic</a>()</code> testing.
 
 
-<a name="@Failure_testing_135"></a>
+<a name="@Failure_testing_150"></a>
 
 ### Failure testing
 
@@ -5668,28 +6448,18 @@ same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>
 
 ## Function `index_orders_sdk`
 
-Index order book for given market ID into ask and bid vectors.
-
-Only for <code><b>move</b>-<b>to</b>-ts</code> SDK generation.
-
-Requires <code>@econia</code> as a signer, which can be generated during
-transaction simulation.
-
-May have to be run on a full node with a high gas limit and low
-gas unit price that allows the simulation to process all orders
-on the order book.
+Deprecated function retained for backwards compatibility.
 
 
-<a name="@Testing_136"></a>
+<a name="@Coverage_testing_151"></a>
 
-### Testing
-
-
-* <code>test_index_orders_sdk()</code>
-* <code>test_index_orders_sdk_not_sim_account()</code>
+### Coverage testing
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_index_orders_sdk">index_orders_sdk</a>(<a href="">account</a>: &<a href="">signer</a>, market_id: u64)
+* <code>test_index_orders_sdk_coverage()</code>
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_index_orders_sdk">index_orders_sdk</a>(_0: &<a href="">signer</a>, _1: u64)
 </code></pre>
 
 
@@ -5697,66 +6467,5 @@ on the order book.
 ##### Implementation
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_index_orders_sdk">index_orders_sdk</a>(
-    <a href="">account</a>: &<a href="">signer</a>,
-    market_id: u64,
-) <b>acquires</b>
-    <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>,
-    <a href="market.md#0xc0deb00c_market_Orders">Orders</a>
-{
-    // Assert <a href="">account</a> <a href="">signer</a> passed appropriately during simulation.
-    <b>assert</b>!(address_of(<a href="">account</a>) == @econia, <a href="market.md#0xc0deb00c_market_E_NOT_SIMULATION_ACCOUNT">E_NOT_SIMULATION_ACCOUNT</a>);
-    // Get <b>address</b> of resource <a href="">account</a> <b>where</b> order books are stored.
-    <b>let</b> resource_address = resource_account::get_address();
-    <b>let</b> order_books_map_ref_mut = // Mutably borrow order books map.
-        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>&gt;(resource_address).map;
-    <b>let</b> order_book_ref_mut = // Mutably borrow <a href="market.md#0xc0deb00c_market">market</a> order book.
-        <a href="tablist.md#0xc0deb00c_tablist_borrow_mut">tablist::borrow_mut</a>(order_books_map_ref_mut, market_id);
-    // Declare orders resource. If an orders resource <b>exists</b> at
-    // simulation <a href="">account</a>:
-    <b>let</b> orders = <b>if</b> (<b>exists</b>&lt;<a href="market.md#0xc0deb00c_market_Orders">Orders</a>&gt;(@econia)) {
-        // Move extant orders resource from <a href="">account</a>.
-        <b>let</b> orders = <b>move_from</b>&lt;<a href="market.md#0xc0deb00c_market_Orders">Orders</a>&gt;(@econia);
-        // Get number of asks and bids from previous query.
-        <b>let</b> (n_asks, n_bids) =
-            (<a href="_length">vector::length</a>(&orders.asks), <a href="_length">vector::length</a>(&orders.bids));
-        <b>let</b> i = 0; // Initialize <b>loop</b> counter.
-        <b>while</b> (i &lt; n_asks) { // Loop over all asks.
-            // Unpack ask at back of <a href="">vector</a>.
-            <b>let</b> <a href="market.md#0xc0deb00c_market_Order">Order</a>{size: _, price: _, <a href="user.md#0xc0deb00c_user">user</a>: _, custodian_id: _,
-                      order_access_key: _} =
-                        <a href="_pop_back">vector::pop_back</a>(&<b>mut</b> orders.asks);
-            i = i + 1; // Increment <b>loop</b> variable.
-        };
-        i = 0; // Re-init <b>loop</b> counter for bids.
-        <b>while</b> (i &lt; n_bids) { // Loop over all bids.
-            // Unpack bid at back of <a href="">vector</a>.
-            <b>let</b> <a href="market.md#0xc0deb00c_market_Order">Order</a>{size: _, price: _, <a href="user.md#0xc0deb00c_user">user</a>: _, custodian_id: _,
-                      order_access_key: _} =
-                        <a href="_pop_back">vector::pop_back</a>(&<b>mut</b> orders.bids);
-            i = i + 1; // Increment <b>loop</b> variable.
-        };
-        orders // <a href="market.md#0xc0deb00c_market_Orders">Orders</a> resource now <b>local</b> and vectors empty.
-    } <b>else</b> { // If no orders resource at simulation <a href="">account</a>:
-        // Declare empty orders resource.
-        <a href="market.md#0xc0deb00c_market_Orders">Orders</a>{asks: <a href="_empty">vector::empty</a>(), bids: <a href="_empty">vector::empty</a>()}
-    };
-    // While asks <b>to</b> index:
-    <b>while</b>(!<a href="avl_queue.md#0xc0deb00c_avl_queue_is_empty">avl_queue::is_empty</a>(&order_book_ref_mut.asks)) {
-        // Push back onto asks <a href="">vector</a> the ask nearest the spread.
-        <a href="_push_back">vector::push_back</a>(
-            &<b>mut</b> orders.asks,
-            <a href="avl_queue.md#0xc0deb00c_avl_queue_pop_head">avl_queue::pop_head</a>(&<b>mut</b> order_book_ref_mut.asks));
-    };
-    // While bids <b>to</b> index:
-    <b>while</b>(!<a href="avl_queue.md#0xc0deb00c_avl_queue_is_empty">avl_queue::is_empty</a>(&order_book_ref_mut.bids)) {
-        // Push back onto bids <a href="">vector</a> the bid nearest the spread.
-        <a href="_push_back">vector::push_back</a>(
-            &<b>mut</b> orders.bids,
-            <a href="avl_queue.md#0xc0deb00c_avl_queue_pop_head">avl_queue::pop_head</a>(&<b>mut</b> order_book_ref_mut.bids));
-    };
-    // Move orders resource <b>to</b> SDK <a href="">account</a>, marking the query value
-    // that should be returned.
-    <b>move_to</b>&lt;<a href="market.md#0xc0deb00c_market_Orders">Orders</a>&gt;(<a href="">account</a>, orders)
-}
+<pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_index_orders_sdk">index_orders_sdk</a>(_0: &<a href="">signer</a>, _1: u64) {}
 </code></pre>

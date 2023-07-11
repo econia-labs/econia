@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use axum::{routing::get, Router};
 use tower::ServiceBuilder;
 use tower_http::{
@@ -11,7 +13,7 @@ use crate::{ws::ws_handler, AppState};
 mod account;
 mod market;
 
-pub fn router(state: AppState) -> Router {
+pub fn router(state: Arc<AppState>) -> Router {
     let cors_layer = CorsLayer::new()
         .allow_methods(Any)
         .allow_headers(Any)
@@ -25,9 +27,18 @@ pub fn router(state: AppState) -> Router {
     Router::new()
         .route("/", get(index))
         .route("/markets", get(market::get_markets))
-        .route("/market/:market_id", get(market::get_market_by_id))
-        .route("/stats", get(market::get_stats))
-        .route("/market/:market_id/stats", get(market::get_stats_by_id))
+        .route("/markets/:market_id", get(market::get_market_by_id))
+        .route("/markets/:market_id/orderbook", get(market::get_orderbook))
+        .route("/markets/:market_id/stats", get(market::get_stats_by_id))
+        .route("/markets/:market_id/fills", get(market::get_fills))
+        .route(
+            "/markets/:market_id/order/:market_order_id",
+            get(market::get_order_by_market_order_id),
+        )
+        .route(
+            "/markets/:market_id/history",
+            get(market::get_market_history),
+        )
         .route(
             "/account/:account_address/order-history",
             get(account::order_history_by_account),
@@ -36,12 +47,11 @@ pub fn router(state: AppState) -> Router {
             "/account/:account_address/open-orders",
             get(account::open_orders_by_account),
         )
-        .route("/market/:market_id/orderbook", get(market::get_orderbook))
+        .route("/stats", get(market::get_stats))
         .route(
-            "/market/:market_id/history",
-            get(market::get_market_history),
+            "/account/:account_address/markets/:market_id/fills",
+            get(account::fills_by_account_and_market),
         )
-        .route("/market/:market_id/fills", get(market::get_fills))
         .route("/ws", get(ws_handler))
         .with_state(state)
         .layer(middleware_stack)

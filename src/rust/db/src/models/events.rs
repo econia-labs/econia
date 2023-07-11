@@ -5,7 +5,7 @@ use diesel_derive_enum::DbEnum;
 use field_count::FieldCount;
 use types::{error::TypeError, events};
 
-use super::{order::Side, IntoInsertable};
+use super::{bigdecimal_from_u128, bigdecimal_to_u128, order::Side, ToInsertable};
 use crate::schema::{maker_events, taker_events};
 
 #[derive(Debug, DbEnum, Clone, Copy, PartialEq, Eq)]
@@ -68,19 +68,25 @@ pub struct MakerEvent {
     pub time: DateTime<Utc>,
 }
 
-impl From<events::MakerEvent> for MakerEvent {
-    fn from(value: events::MakerEvent) -> Self {
-        Self {
+impl TryFrom<events::MakerEvent> for MakerEvent {
+    type Error = TypeError;
+
+    fn try_from(value: events::MakerEvent) -> Result<Self, Self::Error> {
+        Ok(Self {
             market_id: value.market_id.into(),
             side: value.side.into(),
-            market_order_id: value.market_order_id.into(),
+            market_order_id: bigdecimal_from_u128(value.market_order_id).ok_or_else(|| {
+                TypeError::ConversionError {
+                    name: "market_order_id".to_string(),
+                }
+            })?,
             user_address: value.user_address,
             custodian_id: value.custodian_id.map(|id| id.into()),
             event_type: value.event_type.into(),
             size: value.size.into(),
             price: value.price.into(),
             time: value.time,
-        }
+        })
     }
 }
 
@@ -96,7 +102,7 @@ impl TryFrom<MakerEvent> for events::MakerEvent {
                     name: "market_id".to_string(),
                 })?,
             side: value.side.into(),
-            market_order_id: value.market_order_id.to_u64().ok_or_else(|| {
+            market_order_id: bigdecimal_to_u128(&value.market_order_id).ok_or_else(|| {
                 TypeError::ConversionError {
                     name: "market_order_id".to_string(),
                 }
@@ -142,11 +148,11 @@ pub struct NewMakerEvent<'a> {
     pub time: DateTime<Utc>,
 }
 
-impl<'a> IntoInsertable for &'a MakerEvent {
-    type Insertable = NewMakerEvent<'a>;
+impl ToInsertable for MakerEvent {
+    type Insertable<'a> = NewMakerEvent<'a>;
 
-    fn into_insertable(self) -> Self::Insertable {
-        NewMakerEvent::<'a> {
+    fn to_insertable(&self) -> Self::Insertable<'_> {
+        NewMakerEvent {
             market_id: &self.market_id,
             side: self.side,
             market_order_id: &self.market_order_id,
@@ -172,18 +178,24 @@ pub struct TakerEvent {
     pub time: DateTime<Utc>,
 }
 
-impl From<events::TakerEvent> for TakerEvent {
-    fn from(value: events::TakerEvent) -> Self {
-        Self {
+impl TryFrom<events::TakerEvent> for TakerEvent {
+    type Error = TypeError;
+
+    fn try_from(value: events::TakerEvent) -> Result<Self, Self::Error> {
+        Ok(Self {
             market_id: value.market_id.into(),
             side: value.side.into(),
-            market_order_id: value.market_order_id.into(),
+            market_order_id: bigdecimal_from_u128(value.market_order_id).ok_or_else(|| {
+                TypeError::ConversionError {
+                    name: "market_order_id".to_string(),
+                }
+            })?,
             maker: value.maker,
             custodian_id: value.custodian_id.map(|id| id.into()),
             size: value.size.into(),
             price: value.price.into(),
             time: value.time,
-        }
+        })
     }
 }
 
@@ -199,7 +211,7 @@ impl TryFrom<TakerEvent> for events::TakerEvent {
                     name: "market_id".to_string(),
                 })?,
             side: value.side.into(),
-            market_order_id: value.market_order_id.to_u64().ok_or_else(|| {
+            market_order_id: bigdecimal_to_u128(&value.market_order_id).ok_or_else(|| {
                 TypeError::ConversionError {
                     name: "market_order_id".to_string(),
                 }
@@ -243,11 +255,11 @@ pub struct NewTakerEvent<'a> {
     pub time: DateTime<Utc>,
 }
 
-impl<'a> IntoInsertable for &'a TakerEvent {
-    type Insertable = NewTakerEvent<'a>;
+impl ToInsertable for TakerEvent {
+    type Insertable<'a> = NewTakerEvent<'a>;
 
-    fn into_insertable(self) -> Self::Insertable {
-        NewTakerEvent::<'a> {
+    fn to_insertable(&self) -> Self::Insertable<'_> {
+        NewTakerEvent {
             market_id: &self.market_id,
             side: self.side,
             market_order_id: &self.market_order_id,

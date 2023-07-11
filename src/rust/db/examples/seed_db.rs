@@ -14,7 +14,7 @@ use db::{
     },
     register_market,
 };
-use diesel::{PgConnection, RunQueryDsl};
+use diesel::{prelude::*, PgConnection};
 use helpers::{load_config, reset_tables};
 use indicatif::ProgressBar;
 use rand::{rngs::ThreadRng, Rng};
@@ -74,6 +74,12 @@ fn add_random_bars(
         .timestamp_opt((end_date.timestamp() / 60) * 60, 0)
         .unwrap();
 
+    // println!(
+    //     "start time: {}",
+    //     (end_date - Duration::minutes(num_bars as i64)).timestamp()
+    // );
+    // println!("end time: {}", end_date.timestamp());
+
     let mut price = 10000;
     let mut bars = vec![];
 
@@ -105,6 +111,14 @@ fn add_random_bars(
             volume: BigDecimal::from(rng.gen_range(1..10000)),
         });
 
+        if (i + 1) % 400 == 0 {
+            let _: Vec<Bar> = diesel::insert_into(db::schema::bars_1m::table)
+                .values(&bars)
+                .get_results(conn)
+                .unwrap();
+            bars = vec![];
+        }
+
         if i % 400 == 0 {
             let _: Vec<Bar> = diesel::insert_into(db::schema::bars_1m::table)
                 .values(bars)
@@ -115,6 +129,10 @@ fn add_random_bars(
         }
         pb.inc(1);
     }
+    let _: Vec<Bar> = diesel::insert_into(db::schema::bars_1m::table)
+        .values(&bars)
+        .get_results(conn)
+        .unwrap();
 }
 
 fn main() {
@@ -249,12 +267,16 @@ fn main() {
     )
     .unwrap();
 
-    let now = Utc::now() + Duration::days(30);
-    for market_id in 1..5 {
-        println!("adding entries for market_id {}", market_id);
+    let now = Utc::now() + Duration::days(7);
+    for market_id in 0..4 {
+        println!(
+            "Initializing entries for market with market_id {}",
+            market_id + 1
+        );
+
         place_random_orders(conn, market_id, Side::Bid, 100_000, 20, &mut rng);
         place_random_orders(conn, market_id, Side::Ask, 100_000, 20, &mut rng);
 
-        add_random_bars(conn, market_id, now, 60 * 24 * 60, &mut rng);
+        add_random_bars(conn, market_id, now, 14 * 24 * 60, &mut rng);
     }
 }

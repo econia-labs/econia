@@ -1,14 +1,17 @@
 import { entryFunctions, type order } from "@econia-labs/sdk";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/Button";
 import { ConnectedButton } from "@/components/ConnectedButton";
 import { useAptos } from "@/contexts/AptosContext";
+import { useOrderEntry } from "@/contexts/OrderEntryContext";
 import { ECONIA_ADDR } from "@/env";
-import { useCoinBalance } from "@/hooks/useCoinBalance";
+import { useMarketAccountBalance } from "@/hooks/useMarketAccountBalance";
 import { type ApiMarket } from "@/types/api";
 import { type Side } from "@/types/global";
-import { TypeTag } from "@/types/move";
+import { fromDecimalPrice, fromDecimalSize } from "@/utils/econia";
+import { TypeTag } from "@/utils/TypeTag";
 
 import { OrderEntryInfo } from "./OrderEntryInfo";
 import { OrderEntryInputWrapper } from "./OrderEntryInputWrapper";
@@ -23,6 +26,7 @@ export const LimitOrderEntry: React.FC<{
   marketData: ApiMarket;
   side: Side;
 }> = ({ marketData, side }) => {
+  const { price } = useOrderEntry();
   const { signAndSubmitTransaction, account } = useAptos();
   const {
     handleSubmit,
@@ -31,13 +35,20 @@ export const LimitOrderEntry: React.FC<{
     getValues,
     setValue,
   } = useForm<LimitFormValues>();
-  const baseBalance = useCoinBalance(
-    marketData.base ? TypeTag.fromApiCoin(marketData.base) : null,
-    account?.address
+
+  useEffect(() => {
+    setValue("price", price);
+  }, [price, setValue]);
+
+  const baseBalance = useMarketAccountBalance(
+    account?.address,
+    marketData.market_id,
+    marketData.base
   );
-  const quoteBalance = useCoinBalance(
-    TypeTag.fromApiCoin(marketData.quote),
-    account?.address
+  const quoteBalance = useMarketAccountBalance(
+    account?.address,
+    marketData.market_id,
+    marketData.quote
   );
 
   const onSubmit = async (values: LimitFormValues) => {
@@ -57,8 +68,22 @@ export const LimitOrderEntry: React.FC<{
         BigInt(marketData.market_id), // market id
         "0x1", // TODO get integrator ID
         orderSide,
-        BigInt(values.price),
-        BigInt(values.size),
+        BigInt(
+          fromDecimalSize({
+            size: values.size,
+            lotSize: marketData.lot_size,
+            baseCoinDecimals: marketData.base.decimals,
+          }).toString()
+        ),
+        BigInt(
+          fromDecimalPrice({
+            price: values.price,
+            lotSize: marketData.lot_size,
+            tickSize: marketData.tick_size,
+            baseCoinDecimals: marketData.base.decimals,
+            quoteCoinDecimals: marketData.quote.decimals,
+          }).toString()
+        ),
         "immediateOrCancel", // TODO don't hardcode
         "abort" // don't hardcode this either
       );
@@ -74,12 +99,15 @@ export const LimitOrderEntry: React.FC<{
     <form onSubmit={handleSubmit(onSubmit)}>
       <div className="mx-4">
         <OrderEntryInputWrapper
-          startAdornment="LIMIT PRICE"
+          startAdornment="Price"
           endAdornment={marketData.quote.symbol}
+          labelFor="price"
+          className="mb-4"
         >
           <input
             type="number"
             step="any"
+            placeholder="0.00"
             {...register("price", {
               required: "required",
               min: 0,
@@ -95,22 +123,27 @@ export const LimitOrderEntry: React.FC<{
                 }
               },
             })}
-            className="h-full w-[100px] flex-1 bg-transparent text-right font-roboto-mono font-light text-neutral-400 outline-none"
+            className="z-30 w-full bg-transparent pb-3 pl-14 pr-14 pt-3 text-right font-roboto-mono text-xs font-light text-neutral-400 outline-none"
           />
         </OrderEntryInputWrapper>
-        <p className="text-red">
-          {errors.price != null && errors.price.message}
-        </p>
+        <div className="relative">
+          <p className="absolute text-xs uppercase text-red">
+            {errors.price != null && errors.price.message}
+          </p>
+        </div>
       </div>
-      <hr className="my-4 border-neutral-600" />
-      <div className="mx-4 flex flex-col gap-4">
+      <hr className="border-neutral-600" />
+      <div className="mx-4 mt-4">
         <OrderEntryInputWrapper
-          startAdornment="AMOUNT"
+          startAdornment="Amount"
           endAdornment={marketData.base?.symbol}
+          labelFor="size"
+          className="mb-4"
         >
           <input
             type="number"
             step="any"
+            placeholder="0.00"
             {...register("size", {
               required: "required",
               min: 0,
@@ -125,19 +158,24 @@ export const LimitOrderEntry: React.FC<{
                 }
               },
             })}
-            className="h-full w-[100px] flex-1 bg-transparent text-right font-roboto-mono font-light text-neutral-400 outline-none"
+            className="z-30 w-full bg-transparent pb-3 pl-14 pr-14 pt-3 text-right font-roboto-mono text-xs font-light text-neutral-400 outline-none"
           />
         </OrderEntryInputWrapper>
-        <p className="text-red">{errors.size != null && errors.size.message}</p>
+        <div className="relative">
+          <p className="absolute text-xs uppercase text-red">
+            {errors.size != null && errors.size.message}
+          </p>
+        </div>
         <OrderEntryInputWrapper
-          startAdornment="TOTAL"
+          startAdornment="Total"
           endAdornment={marketData.quote?.symbol}
         >
           <input
             type="number"
             step="any"
+            placeholder="0.00"
             {...register("totalSize", { disabled: true })}
-            className="h-full w-[100px] flex-1 bg-transparent text-right font-roboto-mono font-light text-neutral-400 outline-none"
+            className="z-30 w-full bg-transparent pb-3 pl-14 pr-14 pt-3 text-right font-roboto-mono text-xs font-light text-neutral-400 outline-none"
           />
         </OrderEntryInputWrapper>
       </div>
@@ -154,11 +192,18 @@ export const LimitOrderEntry: React.FC<{
           </Button>
         </ConnectedButton>
         <OrderEntryInfo
-          label={`${marketData.base?.symbol} AVAIABLE`}
+          label={`${marketData.base?.symbol} AVAILABLE`}
           value={`${baseBalance.data ?? "--"} ${marketData.base?.symbol}`}
+          className="cursor-pointer"
+          onClick={() => {
+            setValue(
+              "size",
+              baseBalance.data ? baseBalance.data.toString() : ""
+            );
+          }}
         />
         <OrderEntryInfo
-          label={`${marketData.quote?.symbol} AVAIABLE`}
+          label={`${marketData.quote?.symbol} AVAILABLE`}
           value={`${quoteBalance.data ?? "--"} ${marketData.quote?.symbol}`}
         />
       </div>

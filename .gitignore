@@ -21,10 +21,6 @@ doc/litepaper/main.pdf
 *.pyc
 *.egg-info
 
-# Jupyter
-*.ipynb_checkpoints/*
-*-checkpoint.ipynb*
-
 # Move
 *.abi
 *.trace
@@ -33,26 +29,13 @@ doc/litepaper/main.pdf
 *.mv
 *.mvsm
 
-# Sample Move projects
-src/move/move-cli-readme/*
-src/move/TestExample/*
-src/move/tutorials/*
-
-# Econia Move project ignores
-src/move/econia/build/dependencies/*
-src/move/econia/build/Econia/sources/*
-src/move/econia/build/Econia/*.yaml
+# Econia Move projects
+src/move/*/build/*
+src/move/governance_scripts/*/build/*
 
 # Cargo
 src/move/econia/target/*
-
-# Sphinx
-doc/sphinx/build/*
+**/target
 
 # Temporary markdown file for prototyping
 temp.md
-
-# IntelliJ settings
-.idea/
-
-**/target

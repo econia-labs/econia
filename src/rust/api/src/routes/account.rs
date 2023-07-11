@@ -1,7 +1,10 @@
+use std::sync::Arc;
+
 use axum::{
     extract::{Path, Query, State},
     Json,
 };
+use bigdecimal::BigDecimal;
 use serde::Deserialize;
 use types::error::TypeError;
 
@@ -16,7 +19,7 @@ pub struct AccountOrderParams {
 pub async fn order_history_by_account(
     Query(params): Query<AccountOrderParams>,
     Path(account_address): Path<String>,
-    State(state): State<AppState>,
+    State(state): State<Arc<AppState>>,
 ) -> Result<Json<Vec<types::order::Order>>, ApiError> {
     check_addr(&account_address)?;
 
@@ -60,7 +63,7 @@ pub async fn order_history_by_account(
 pub async fn open_orders_by_account(
     Query(params): Query<AccountOrderParams>,
     Path(account_address): Path<String>,
-    State(state): State<AppState>,
+    State(state): State<Arc<AppState>>,
 ) -> Result<Json<Vec<types::order::Order>>, ApiError> {
     check_addr(&account_address)?;
 
@@ -102,6 +105,41 @@ pub async fn open_orders_by_account(
     Ok(Json(open_orders))
 }
 
+pub async fn fills_by_account_and_market(
+    Path((account_address, market_id)): Path<(String, u64)>,
+    State(state): State<Arc<AppState>>,
+) -> Result<Json<Vec<types::order::Fill>>, ApiError> {
+    check_addr(&account_address)?;
+    let market_id = BigDecimal::from(market_id);
+
+    let fills_query = sqlx::query_as!(
+        db::models::fill::Fill,
+        r#"
+        select
+            market_id,
+            maker_order_id,
+            maker,
+            maker_side as "maker_side: db::models::order::Side",
+            custodian_id,
+            size,
+            price,
+            time
+        from fills where maker = $1 and market_id = $2 order by time;
+        "#,
+        account_address,
+        market_id,
+    )
+    .fetch_all(&state.pool)
+    .await?;
+
+    let fills = fills_query
+        .into_iter()
+        .map(|v| v.try_into())
+        .collect::<Result<Vec<types::order::Fill>, TypeError>>()?;
+
+    Ok(Json(fills))
+}
+
 #[cfg(test)]
 mod tests {
     use axum::{
@@ -115,21 +153,21 @@ mod tests {
     /// Test that the order history by account endpoint returns order history
     /// for the specified user.
     ///
-    /// This test sends a GET request to the `/accounts/{account_id}/order-history`
-    /// endpoint with the `account_id` parameter set to `0x123`. The response is
+    /// This test sends a GET request to the `/account/{account_address}/order-history`
+    /// endpoint with the `account_address` parameter set to `0x123`. The response is
     /// then checked to ensure that it has a `200 OK` status code, and the
     /// response body is checked to ensure that it is a JSON response in the
     /// correct format.
     #[tokio::test]
     async fn test_order_history_by_account() {
-        let account_id = "0x123";
+        let account_address = "0x123";
         let config = load_config();
         let app = make_test_server(config).await;
 
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri(format!("/account/{}/order-history", account_id))
+                    .uri(format!("/account/{}/order-history", account_address))
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -189,19 +227,19 @@ mod tests {
     /// Test that the order history by account endpoint returns a `400 Bad Request`
     /// error when an invalid account address is sent.
     ///
-    /// This test sends a GET request to the `/accounts/{account_id}/order-history`
-    /// endpoint with the `account_id` parameter set to `hello`. The response is
+    /// This test sends a GET request to the `/account/{account_address}/order-history`
+    /// endpoint with the `account_address` parameter set to `hello`. The response is
     /// checked to ensure that it has a `400 Bad Request` status code.
     #[tokio::test]
     async fn test_order_history_for_invalid_address() {
-        let account_id = "hello";
+        let account_address = "hello";
         let config = load_config();
         let app = make_test_server(config).await;
 
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri(format!("/account/{}/order-history", account_id))
+                    .uri(format!("/account/{}/order-history", account_address))
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -214,21 +252,21 @@ mod tests {
     /// Test that the open orders by account endpoint returns open orders
     /// for the specified user.
     ///
-    /// This test sends a GET request to the `/accounts/{account_id}/open-orders`
-    /// endpoint with the `account_id` parameter set to `0x123`. The response is
+    /// This test sends a GET request to the `/account/{account_address}/open-orders`
+    /// endpoint with the `account_address` parameter set to `0x123`. The response is
     /// then checked to ensure that it has a `200 OK` status code, and the
     /// response body is checked to ensure that it is a JSON response in the
     /// correct format.
     #[tokio::test]
-    async fn test_open_orders_by_account_with_limit_offset() {
-        let account_id = "0x123";
+    async fn test_open_orders_by_account() {
+        let account_address = "0x123";
         let config = load_config();
         let app = make_test_server(config).await;
 
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri(format!("/account/{}/open-orders", account_id))
+                    .uri(format!("/account/{}/open-orders", account_address))
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -288,12 +326,12 @@ mod tests {
     /// Test that the open orders by account endpoint returns a `400 Bad Request`
     /// error when an invalid account address is sent.
     ///
-    /// This test sends a GET request to the `/accounts/{account_id}/open-orders`
-    /// endpoint with the `account_id` parameter set to `hello`. The response is
+    /// This test sends a GET request to the `/account/{account_address}/open-orders`
+    /// endpoint with the `account_address` parameter set to `hello`. The response is
     /// checked to ensure that it has a `400 Bad Request` status code.
     #[tokio::test]
     async fn test_open_orders_for_invalid_address() {
-        let account_id = "hello";
+        let account_address = "hello";
 
         let config = load_config();
         let app = make_test_server(config).await;
@@ -301,7 +339,71 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri(format!("/account/{}/open-orders", account_id))
+                    .uri(format!("/account/{}/open-orders", account_address))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    }
+
+    /// Test that the fills by accoutn and market endpoint returns a `400 Bad Request`
+    /// error when an invalid account address is sent.
+    ///
+    /// This test sends a GET request to the `/account/{account_address}/markets/{market_id}/fills`
+    /// endpoint with the `account_address` parameter set to `hello`. The response is
+    /// checked to ensure that it has a `400 Bad Request` status code.
+    #[tokio::test]
+    async fn test_fills_by_account_and_market() {
+        let account_address = "0x123";
+        let market_id = 1;
+        let config = load_config();
+        let app = make_test_server(config).await;
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri(format!(
+                        "/account/{}/markets/{}/fills",
+                        account_address, market_id
+                    ))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
+        let res = serde_json::from_slice::<Vec<types::order::Fill>>(&body);
+        assert!(res.is_ok());
+    }
+
+    /// Test that the fills by account and market endpoint returns fills for the
+    /// specified user and market.
+    ///
+    /// This test sends a GET request to the `/account/{account_address}/markets/{market_id}/fills`
+    /// endpoint with the `account_address` parameter set to `0x123`, and the
+    /// `market_id` parameter set to `1`. The response is checked to ensure that
+    /// it has a `200 OK` status code, and the response body is checked to ensure
+    /// that it is a JSON response in the correct format.
+    #[tokio::test]
+    async fn test_fills_by_account_and_market_for_invalid_address() {
+        let account_address = "hello";
+        let market_id = 1;
+        let config = load_config();
+        let app = make_test_server(config).await;
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri(format!(
+                        "/account/{}/markets/{}/fills",
+                        account_address, market_id
+                    ))
                     .body(Body::empty())
                     .unwrap(),
             )

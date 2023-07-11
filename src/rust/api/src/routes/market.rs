@@ -1,9 +1,12 @@
+use std::sync::Arc;
+
 use axum::{
     extract::{Path, Query, State},
     Json,
 };
 use bigdecimal::BigDecimal;
 use chrono::{DateTime, Duration, NaiveDateTime, Utc};
+use db::query::{market::QueryMarket, stats::QueryStats};
 use serde::{Deserialize, Serialize};
 use sqlx::postgres::types::PgInterval;
 use types::{bar::Resolution, book::PriceLevel, error::TypeError, stats::Stats, Market};
@@ -11,10 +14,10 @@ use types::{bar::Resolution, book::PriceLevel, error::TypeError, stats::Stats, M
 use crate::{error::ApiError, AppState};
 
 pub async fn get_markets(
-    State(state): State<AppState>,
+    State(state): State<Arc<AppState>>,
 ) -> Result<Json<Vec<types::Market>>, ApiError> {
     let query_markets = sqlx::query_as!(
-        types::query::QueryMarket,
+        QueryMarket,
         r#"
         select
             market_id,
@@ -60,12 +63,12 @@ pub async fn get_markets(
 
 pub async fn get_market_by_id(
     Path(market_id): Path<u64>,
-    State(state): State<AppState>,
+    State(state): State<Arc<AppState>>,
 ) -> Result<Json<Market>, ApiError> {
     let market_id = BigDecimal::from(market_id);
 
     let query_markets = sqlx::query_as!(
-        types::query::QueryMarket,
+        QueryMarket,
         r#"
         select
             market_id,
@@ -119,7 +122,7 @@ pub struct TickerParams {
 
 pub async fn get_stats(
     Query(params): Query<TickerParams>,
-    State(state): State<AppState>,
+    State(state): State<Arc<AppState>>,
 ) -> Result<Json<Vec<Stats>>, ApiError> {
     let resolution: Duration = params.resolution.into();
     let interval: PgInterval = resolution
@@ -127,19 +130,21 @@ pub async fn get_stats(
         .expect("never fails because Duration resolution can only be member of enum Resolution");
 
     let query_tickers = sqlx::query_as!(
-        types::query::QueryStats,
+        QueryStats,
         r#"
         with bars as (
             select * from bars_1m
             where start_time >= now() - $1::interval and start_time < now()
         ),
         first as (
-            select start_time, first_value(open) over (order by start_time) as open
-            from bars
+            select market_id, start_time, first_value(open) over (
+                partition by market_id order by start_time
+            ) as open from bars
         ),
         last as (
-            select start_time, first_value(close) over (order by start_time desc) as close
-            from bars
+            select market_id, start_time, first_value(close) over (
+                partition by market_id order by start_time desc
+            ) as close from bars
         )
         select
             bars.market_id,
@@ -152,7 +157,9 @@ pub async fn get_stats(
         from
             bars
             inner join first on bars.start_time = first.start_time
+                and bars.market_id = first.market_id
             inner join last on bars.start_time = last.start_time
+                and bars.market_id = last.market_id
         group by bars.market_id order by market_id;
         "#,
         interval
@@ -172,7 +179,7 @@ pub async fn get_stats(
 pub async fn get_stats_by_id(
     Query(params): Query<TickerParams>,
     Path(market_id): Path<u64>,
-    State(state): State<AppState>,
+    State(state): State<Arc<AppState>>,
 ) -> Result<Json<Stats>, ApiError> {
     let resolution: Duration = params.resolution.into();
     let interval: PgInterval = resolution
@@ -182,7 +189,7 @@ pub async fn get_stats_by_id(
     let market_id = BigDecimal::from(market_id);
 
     let query_tickers = sqlx::query_as!(
-        types::query::QueryStats,
+        QueryStats,
         r#"
         with bars as (
             select * from bars_1m
@@ -241,7 +248,7 @@ pub struct OrderbookResponse {
 pub async fn get_orderbook(
     Path(market_id): Path<u64>,
     Query(params): Query<OrderbookParams>,
-    State(state): State<AppState>,
+    State(state): State<Arc<AppState>>,
 ) -> Result<Json<OrderbookResponse>, ApiError> {
     if params.depth < 1 {
         return Err(ApiError::InvalidDepth);
@@ -316,7 +323,7 @@ pub struct MarketHistoryParams {
 pub async fn get_market_history(
     Path(market_id): Path<u64>,
     Query(params): Query<MarketHistoryParams>,
-    State(state): State<AppState>,
+    State(state): State<Arc<AppState>>,
 ) -> Result<Json<Vec<types::bar::Bar>>, ApiError> {
     if params.from > params.to {
         return Err(ApiError::InvalidTimeRange);
@@ -471,7 +478,7 @@ pub struct FillsParams {
 pub async fn get_fills(
     Path(market_id): Path<u64>,
     Query(params): Query<FillsParams>,
-    State(state): State<AppState>,
+    State(state): State<Arc<AppState>>,
 ) -> Result<Json<Vec<types::order::Fill>>, ApiError> {
     if params.from > params.to {
         return Err(ApiError::InvalidTimeRange);
@@ -517,6 +524,42 @@ pub async fn get_fills(
     Ok(Json(fills))
 }
 
+pub async fn get_order_by_market_order_id(
+    Path((market_id, market_order_id)): Path<(u64, u64)>,
+    State(state): State<Arc<AppState>>,
+) -> Result<Json<types::order::Order>, ApiError> {
+    let market_id = BigDecimal::from(market_id);
+    let market_order_id = BigDecimal::from(market_order_id);
+
+    let order_query = sqlx::query_as!(
+        db::models::order::Order,
+        r#"
+        select
+            market_order_id,
+            market_id,
+            side as "side: db::models::order::Side",
+            size,
+            price,
+            user_address,
+            custodian_id,
+            order_state as "order_state: db::models::order::OrderState",
+            created_at
+        from orders where market_id = $1 and market_order_id = $2;
+        "#,
+        market_id,
+        market_order_id
+    )
+    .fetch_all(&state.pool)
+    .await?;
+
+    if let Some(order) = order_query.into_iter().next() {
+        let order: types::order::Order = order.try_into()?;
+        Ok(Json(order))
+    } else {
+        Err(ApiError::NotFound)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::collections::HashSet;
@@ -547,11 +590,11 @@ mod tests {
 
         let (tx, _) = broadcast::channel(16);
 
-        let state = AppState {
+        let state = Arc::new(AppState {
             pool,
             sender: tx,
             market_ids: HashSet::new(),
-        };
+        });
 
         let app = Router::new()
             .route("/markets", get(get_markets))
@@ -590,22 +633,22 @@ mod tests {
     /// Test that the market history endpoint returns market data with a
     /// resolution of 1 minute.
     ///
-    /// This test sends a GET request to the `/market/{market_id}/history`
+    /// This test sends a GET request to the `/markets/{market_id}/history`
     /// endpoint with the `resolution` parameter set to `1h`. The response is
     /// then checked to ensure that it has a `200 OK` status code, and the
     /// response body is checked to ensure that it is a JSON response in the
     /// correct format.
     #[tokio::test]
     async fn test_get_market_history_1m_resolution() {
-        let market_id = "0";
+        let market_id = 1;
         let resolution = Resolution::R1m;
 
         let from = Utc
-            .with_ymd_and_hms(2023, 4, 5, 0, 0, 0)
+            .with_ymd_and_hms(2023, 6, 20, 0, 0, 0)
             .unwrap()
             .timestamp();
         let to = Utc
-            .with_ymd_and_hms(2023, 4, 5, 0, 10, 0)
+            .with_ymd_and_hms(2023, 6, 20, 0, 10, 0)
             .unwrap()
             .timestamp();
 
@@ -623,18 +666,18 @@ mod tests {
         let (btx, _brx) = broadcast::channel(16);
         let _conn = start_redis_channels(config.redis_url, market_ids.clone(), btx.clone()).await;
 
-        let state = AppState {
+        let state = Arc::new(AppState {
             pool,
             sender: btx,
             market_ids: HashSet::from_iter(market_ids.into_iter()),
-        };
+        });
         let app = router(state);
 
         let response = app
             .oneshot(
                 Request::builder()
                     .uri(format!(
-                        "/market/{}/history?resolution={}&from={}&to={}",
+                        "/markets/{}/history?resolution={}&from={}&to={}",
                         market_id, resolution, from, to
                     ))
                     .body(Body::empty())
@@ -656,22 +699,22 @@ mod tests {
     /// Test that the market history endpoint returns market data with a
     /// resolution of 1 hour.
     ///
-    /// This test sends a GET request to the `/market/{market_id}/history`
+    /// This test sends a GET request to the `/markets/{market_id}/history`
     /// endpoint with the `resolution` parameter set to `1h`. The response is
     /// then checked to ensure that it has a `200 OK` status code, and the
     /// response body is checked to ensure that it is a JSON response in the
     /// correct format.
     #[tokio::test]
     async fn test_get_market_history_1h_resolution() {
-        let market_id = "0";
+        let market_id = 1;
         let resolution = Resolution::R1h;
 
         let from = Utc
-            .with_ymd_and_hms(2023, 4, 5, 0, 0, 0)
+            .with_ymd_and_hms(2023, 6, 20, 0, 0, 0)
             .unwrap()
             .timestamp();
         let to = Utc
-            .with_ymd_and_hms(2023, 4, 5, 1, 0, 0)
+            .with_ymd_and_hms(2023, 6, 20, 1, 0, 0)
             .unwrap()
             .timestamp();
 
@@ -689,18 +732,18 @@ mod tests {
         let (btx, _brx) = broadcast::channel(16);
         let _conn = start_redis_channels(config.redis_url, market_ids.clone(), btx.clone()).await;
 
-        let state = AppState {
+        let state = Arc::new(AppState {
             pool,
             sender: btx,
             market_ids: HashSet::from_iter(market_ids.into_iter()),
-        };
+        });
         let app = router(state);
 
         let response = app
             .oneshot(
                 Request::builder()
                     .uri(format!(
-                        "/market/{}/history?resolution={}&from={}&to={}",
+                        "/markets/{}/history?resolution={}&from={}&to={}",
                         market_id, resolution, from, to
                     ))
                     .body(Body::empty())
@@ -722,20 +765,20 @@ mod tests {
     /// Test that the market history endpoint returns a `400 Bad Request` error
     /// when the resolution parameter is set to an unsupported value.
     ///
-    /// This test sends a GET request to the `/market/{market_id}/history`
+    /// This test sends a GET request to the `/markets/{market_id}/history`
     /// endpoint with the `resolution` parameter set to `3m`, which is not
     /// supported by the API. The response is then checked to ensure that it
     /// has a `400 Bad Request` status code.
     #[tokio::test]
     async fn test_get_market_history_invalid_resolution() {
-        let market_id = "0";
+        let market_id = 1;
 
         let from = Utc
-            .with_ymd_and_hms(2023, 4, 5, 0, 0, 0)
+            .with_ymd_and_hms(2023, 6, 20, 0, 0, 0)
             .unwrap()
             .timestamp();
         let to = Utc
-            .with_ymd_and_hms(2023, 4, 5, 1, 0, 0)
+            .with_ymd_and_hms(2023, 6, 20, 1, 0, 0)
             .unwrap()
             .timestamp();
 
@@ -753,18 +796,18 @@ mod tests {
         let (btx, _brx) = broadcast::channel(16);
         let _conn = start_redis_channels(config.redis_url, market_ids.clone(), btx.clone()).await;
 
-        let state = AppState {
+        let state = Arc::new(AppState {
             pool,
             sender: btx,
             market_ids: HashSet::from_iter(market_ids.into_iter()),
-        };
+        });
         let app = router(state);
 
         let response = app
             .oneshot(
                 Request::builder()
                     .uri(format!(
-                        "/market/{}/history?resolution=3m&from={}&to={}",
+                        "/markets/{}/history?resolution=3m&from={}&to={}",
                         market_id, from, to
                     ))
                     .body(Body::empty())
@@ -779,14 +822,14 @@ mod tests {
     /// Test that the market history endpoint returns a `400 Bad Request` error
     /// when the `to` timestamp comes before the `from` timestamp.
     ///
-    /// This test sends a GET request to the `/market/{market_id}/history`
+    /// This test sends a GET request to the `/markets/{market_id}/history`
     /// endpoint with the `resolution` parameter set to `1m`, and with the `to`
     /// timestamp set to a value that is before the `from` timestamp. The
     /// response is then checked to ensure that it has a `400 Bad Request`
     /// status code.
     #[tokio::test]
     async fn test_get_market_history_to_before_from() {
-        let market_id = "0";
+        let market_id = 1;
         let resolution = Resolution::R1m;
 
         let from = Utc
@@ -812,18 +855,18 @@ mod tests {
         let (btx, _brx) = broadcast::channel(16);
         let _conn = start_redis_channels(config.redis_url, market_ids.clone(), btx.clone()).await;
 
-        let state = AppState {
+        let state = Arc::new(AppState {
             pool,
             sender: btx,
             market_ids: HashSet::from_iter(market_ids.into_iter()),
-        };
+        });
         let app = router(state);
 
         let response = app
             .oneshot(
                 Request::builder()
                     .uri(format!(
-                        "/market/{}/history?resolution={}&from={}&to={}",
+                        "/markets/{}/history?resolution={}&from={}&to={}",
                         market_id, resolution, from, to
                     ))
                     .body(Body::empty())
@@ -839,14 +882,14 @@ mod tests {
     /// with depth set to 1 is sent. Only the best bid and ask prices and the
     /// size available at those prices should be returned.
     ///
-    /// This test sends a GET request to the `/market/{market_id}/orderbook`
+    /// This test sends a GET request to the `/markets/{market_id}/orderbook`
     /// endpoint with the `depth` parameter set to `1`. The response is
     /// then checked to ensure that it has a `200 OK` status code, and the
     /// response body is checked to ensure that it is a JSON response in the
     /// correct format.
     #[tokio::test]
     async fn test_get_l1_orderbook() {
-        let market_id = 0;
+        let market_id = 1;
         let depth = 1;
 
         let config = load_config();
@@ -855,7 +898,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri(format!("/market/{}/orderbook?depth={}", market_id, depth))
+                    .uri(format!("/markets/{}/orderbook?depth={}", market_id, depth))
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -876,14 +919,14 @@ mod tests {
     /// Test that the orderbook endpoint returns L2 market data when a request
     /// with depth set to 10 is sent.
     ///
-    /// This test sends a GET request to the `/market/{market_id}/orderbook`
+    /// This test sends a GET request to the `/markets/{market_id}/orderbook`
     /// endpoint with the `depth` parameter set to `10`. The response is
     /// then checked to ensure that it has a `200 OK` status code, and the
     /// response body is checked to ensure that it is a JSON response in the
     /// correct format.
     #[tokio::test]
     async fn test_get_l2_orderbook() {
-        let market_id = 0;
+        let market_id = 1;
         let depth = 10;
 
         let config = load_config();
@@ -892,7 +935,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri(format!("/market/{}/orderbook?depth={}", market_id, depth))
+                    .uri(format!("/markets/{}/orderbook?depth={}", market_id, depth))
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -909,19 +952,19 @@ mod tests {
     /// Test that the orderbook endpoint returns a `400 Bad Request` error
     /// when the depth parameter is not set.
     ///
-    /// This test sends a GET request to the `/market/{market_id}/orderbook`
+    /// This test sends a GET request to the `/markets/{market_id}/orderbook`
     /// endpoint without the `depth` parameter. The response is then checked to
     /// ensure that it has a `400 Bad Request` status code.
     #[tokio::test]
     async fn test_get_orderbook_no_depth_param() {
-        let market_id = 0;
+        let market_id = 1;
         let config = load_config();
         let app = make_test_server(config).await;
 
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri(format!("/market/{}/orderbook", market_id))
+                    .uri(format!("/markets/{}/orderbook", market_id))
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -934,12 +977,12 @@ mod tests {
     /// Test that the orderbook endpoint returns a `400 Bad Request` error
     /// when the depth parameter is set to a negative number.
     ///
-    /// This test sends a GET request to the `/market/{market_id}/orderbook`
+    /// This test sends a GET request to the `/markets/{market_id}/orderbook`
     /// endpoint with the `depth` parameter of `-1`. The response is then
     /// checked to ensure that it has a `400 Bad Request` status code.
     #[tokio::test]
     async fn test_get_orderbook_negative_depth_param() {
-        let market_id = 0;
+        let market_id = 1;
         let depth = -1;
 
         let config = load_config();
@@ -948,7 +991,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri(format!("/market/{}/orderbook?depth={}", market_id, depth))
+                    .uri(format!("/markets/{}/orderbook?depth={}", market_id, depth))
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -956,5 +999,67 @@ mod tests {
             .unwrap();
 
         assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    }
+
+    /// Test that the order by market ID and market order ID returns values
+    /// representing the current status of the order when a request is sent.
+    ///
+    /// This test sends a GET request to the `/markets/{market_id}/order/{order_id}`
+    /// endpoint with the `market_id` path parameter set to `1` and the
+    /// `market_order_id` path parameter set to `1000`. The response is
+    /// then checked to ensure that it has a `200 OK` status code, and the
+    /// response body is checked to ensure that it is a JSON response in the
+    /// correct format.
+    #[tokio::test]
+    async fn test_get_order_by_market_order_id() {
+        let market_id = 1;
+        let market_order_id = 1000;
+
+        let config = load_config();
+        let app = make_test_server(config).await;
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri(format!("/markets/{}/order/{}", market_id, market_order_id))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
+        let res = serde_json::from_slice::<types::order::Order>(&body);
+        assert!(res.is_ok());
+    }
+
+    /// Test that the order by market ID and market order ID returns a
+    /// `404 Not Found` error when a request is sent for a nonexistent order.
+    ///
+    /// This test sends a GET request to the `/markets/{market_id}/order/{order_id}`
+    /// endpoint with the `market_id` path parameter set to `1` and the
+    /// `market_order_id` path parameter set to `999999`. The response is
+    /// then checked to ensure that it has a `404 Not Found` status code.
+    #[tokio::test]
+    async fn test_get_order_by_market_order_id_not_found() {
+        let market_id = 1;
+        let market_order_id = 999999;
+
+        let config = load_config();
+        let app = make_test_server(config).await;
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri(format!("/markets/{}/order/{}", market_id, market_order_id))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
     }
 }

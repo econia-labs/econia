@@ -1,43 +1,102 @@
-import { useWallet } from "@manahippo/aptos-wallet-adapter";
-import { useState } from "react";
+import { entryFunctions, type order } from "@econia-labs/sdk";
+import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/Button";
 import { ConnectedButton } from "@/components/ConnectedButton";
-import { Input } from "@/components/Input";
-import { useCoinBalance } from "@/hooks/useCoinBalance";
+import { useAptos } from "@/contexts/AptosContext";
+import { ECONIA_ADDR } from "@/env";
+import { useMarketAccountBalance } from "@/hooks/useMarketAccountBalance";
 import { type ApiMarket } from "@/types/api";
 import { type Side } from "@/types/global";
-import { TypeTag } from "@/types/move";
+import { fromDecimalSize } from "@/utils/econia";
+import { TypeTag } from "@/utils/TypeTag";
 
 import { OrderEntryInfo } from "./OrderEntryInfo";
+import { OrderEntryInputWrapper } from "./OrderEntryInputWrapper";
+
+type MarketFormValues = {
+  size: string;
+};
 
 export const MarketOrderEntry: React.FC<{
   marketData: ApiMarket;
   side: Side;
 }> = ({ marketData, side }) => {
-  const { account } = useWallet();
-  // TODO: Replace with real market price
-  const [amount, setAmount] = useState<string>("");
-  const baseBalance = useCoinBalance(
-    marketData.base ? TypeTag.fromApiCoin(marketData.base) : null,
-    account?.address
+  const { signAndSubmitTransaction, account } = useAptos();
+  const {
+    handleSubmit,
+    register,
+    setValue,
+    formState: { errors },
+  } = useForm<MarketFormValues>();
+  const baseBalance = useMarketAccountBalance(
+    account?.address,
+    marketData.market_id,
+    marketData.base
   );
-  const quoteBalance = useCoinBalance(
-    TypeTag.fromApiCoin(marketData.quote),
-    account?.address
+  const quoteBalance = useMarketAccountBalance(
+    account?.address,
+    marketData.market_id,
+    marketData.quote
   );
 
+  const onSubmit = async (values: MarketFormValues) => {
+    const orderSideMap: Record<Side, order.Side> = {
+      buy: "bid",
+      sell: "ask",
+    };
+    const orderSide = orderSideMap[side];
+
+    if (marketData.base == null) {
+      // TODO: handle generic markets
+    } else {
+      const payload = entryFunctions.placeMarketOrderUserEntry(
+        ECONIA_ADDR,
+        TypeTag.fromApiCoin(marketData.base).toString(),
+        TypeTag.fromApiCoin(marketData.quote).toString(),
+        BigInt(marketData.market_id), // market id
+        "0x1", // TODO get integrator ID
+        orderSide,
+        BigInt(
+          fromDecimalSize({
+            size: values.size,
+            lotSize: marketData.lot_size,
+            baseCoinDecimals: marketData.base.decimals,
+          }).toString()
+        ),
+        "abort" // TODO don't hardcode this either
+      );
+
+      await signAndSubmitTransaction({
+        type: "entry_function_payload",
+        ...payload,
+      });
+    }
+  };
+
   return (
-    <>
-      <div className="mx-4 flex flex-col gap-4">
-        <Input
-          value={amount}
-          onChange={setAmount}
-          startAdornment="AMOUNT"
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <div className="mx-4 flex flex-col">
+        <OrderEntryInputWrapper
+          startAdornment="Amount"
           endAdornment={marketData.base?.symbol}
-          type="number"
-          placeholder="0.00"
-        />
+        >
+          <input
+            type="number"
+            step="any"
+            placeholder="0.00"
+            {...register("size", {
+              required: "REQUIRED",
+              min: 0,
+            })}
+            className="z-30 w-full bg-transparent pb-3 pl-14 pr-14 pt-3 text-right font-roboto-mono text-xs font-light text-neutral-400 outline-none"
+          />
+        </OrderEntryInputWrapper>
+        <div className="relative mb-4">
+          <p className="absolute text-xs text-red">
+            {errors.size != null && errors.size.message}
+          </p>
+        </div>
       </div>
       <hr className="my-4 border-neutral-600" />
       <div className="mx-4 mb-4 flex flex-col gap-4">
@@ -53,12 +112,19 @@ export const MarketOrderEntry: React.FC<{
         <OrderEntryInfo
           label={`${marketData.base?.symbol} AVAIABLE`}
           value={`${baseBalance.data ?? "--"} ${marketData.base?.symbol}`}
+          className="cursor-pointer"
+          onClick={() => {
+            setValue(
+              "size",
+              baseBalance.data ? baseBalance.data.toString() : ""
+            );
+          }}
         />
         <OrderEntryInfo
           label={`${marketData.quote?.symbol} AVAIABLE`}
           value={`${quoteBalance.data ?? "--"} ${marketData.quote?.symbol}`}
         />
       </div>
-    </>
+    </form>
   );
 };

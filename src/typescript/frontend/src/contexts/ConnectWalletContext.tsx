@@ -7,6 +7,7 @@ import {
 } from "react";
 
 import { BaseModal } from "@/components/BaseModal";
+import { ArrowIcon } from "@/components/icons/ArrowIcon";
 
 export type ConnectWalletContextState = {
   connectWallet: () => void;
@@ -42,7 +43,7 @@ export function ConnectWalletContextProvider({ children }: PropsWithChildren) {
           {wallets.map((wallet) => (
             <div
               key={wallet.adapter.name}
-              className="flex w-full cursor-pointer items-center gap-2 border border-neutral-600 p-4 font-jost text-lg font-medium text-neutral-500 hover:text-white"
+              className="relative flex w-full cursor-pointer items-center gap-2 border border-neutral-600 p-4 font-jost text-lg font-medium  text-neutral-500 transition-all hover:border-blue [&:hover>#arrow-wrapper]:border-blue [&:hover>#arrow-wrapper]:bg-blue [&:hover>#token-icon]:border-blue [&:hover>div>#arrow]:rotate-[-45deg]"
               onClick={() => {
                 select(wallet.adapter.name);
                 setOpen(false);
@@ -53,12 +54,22 @@ export function ConnectWalletContextProvider({ children }: PropsWithChildren) {
                 height={36}
                 width={36}
                 className=""
+                alt={"Wallet Icon"}
+                id={"token-icon"}
               />
               <p>
                 {wallet.readyState === WalletReadyState.NotDetected
                   ? `Install ${wallet.adapter.name} Wallet`
                   : `${wallet.adapter.name} Wallet`}
               </p>
+              <div
+                className={
+                  "absolute bottom-[-1px] right-[-1px] border border-neutral-600 p-[7px] transition-all"
+                }
+                id={"arrow-wrapper"}
+              >
+                <ArrowIcon id={"arrow"} className={"transition-all"} />
+              </div>
             </div>
           ))}
         </div>

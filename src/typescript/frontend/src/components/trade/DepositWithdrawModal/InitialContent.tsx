@@ -1,44 +1,15 @@
+import { entryFunctions } from "@econia-labs/sdk";
+import { ChevronDownIcon } from "@heroicons/react/20/solid";
+import { useQuery } from "@tanstack/react-query";
+
 import { Button } from "@/components/Button";
 import { NO_CUSTODIAN } from "@/constants";
 import { useAptos } from "@/contexts/AptosContext";
 import { ECONIA_ADDR } from "@/env";
-import { ApiMarket } from "@/types/api";
-import {
-  MarketAccountId,
-  MoveTableHandle,
-  MoveTypeInfo,
-  TabList,
-  TypeTag,
-} from "@/types/move";
-import { entryFunctions } from "@econia-labs/sdk";
-import { ChevronDownIcon } from "@heroicons/react/20/solid";
-import { useQuery } from "@tanstack/react-query";
-import { U64 } from "aptos/src/generated";
-
-type MarketAccounts = {
-  map: MoveTableHandle;
-  custodians: TabList<U64>;
-};
-
-type MarketAccount = {
-  base_type: MoveTypeInfo;
-  base_name_generic: string;
-  quote_type: MoveTypeInfo;
-  lot_size: U64;
-  tick_size: U64;
-  min_size: U64;
-  underwriter_id: U64;
-  asks: TabList<U64>;
-  bids: TabList<U64>;
-  asks_stack_top: U64;
-  bids_stack_top: U64;
-  base_total: U64;
-  base_available: U64;
-  base_ceiling: U64;
-  quote_total: U64;
-  quote_available: U64;
-  quote_ceiling: U64;
-};
+import { type ApiMarket } from "@/types/api";
+import { type MarketAccount, type MarketAccounts } from "@/types/econia";
+import { makeMarketAccountId } from "@/utils/econia";
+import { TypeTag } from "@/utils/TypeTag";
 
 export const InitialContent: React.FC<{
   selectedMarket?: ApiMarket;
@@ -72,10 +43,7 @@ export const InitialContent: React.FC<{
           {
             key_type: "u128",
             value_type: `${ECONIA_ADDR}::user::MarketAccount`,
-            key: new MarketAccountId(
-              selectedMarket.market_id,
-              NO_CUSTODIAN
-            ).toString(),
+            key: makeMarketAccountId(selectedMarket.market_id, NO_CUSTODIAN),
           }
         );
         return marketAccount as MarketAccount;
@@ -113,7 +81,6 @@ export const InitialContent: React.FC<{
               BigInt(selectedMarket.market_id),
               BigInt(NO_CUSTODIAN)
             );
-            console.log({ type: "entry_function_payload", ...payload });
             await signAndSubmitTransaction({
               ...payload,
               type: "entry_function_payload",

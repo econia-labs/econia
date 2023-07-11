@@ -544,12 +544,7 @@ module econia::market {
         Self, CustodianCapability, GenericAsset, UnderwriterCapability};
     use econia::resource_account;
     use econia::tablist::{Self, Tablist};
-    use econia::user::{
-        Self,
-        FillEvent,
-        PlaceLimitOrderEvent,
-        PlaceMarketOrderEvent
-    };
+    use econia::user::{Self, FillEvent};
     use std::option::{Self, Option};
     use std::signer::address_of;
     use std::string::{Self, String};
@@ -625,13 +620,16 @@ module econia::market {
     /// affected user/custodian ID tuple (affected signer in the case of
     /// a swap, which is is not affiliated with a market account).
     struct MarketEventHandles has key {
+        /// Not emitted at user level when swapper doesn't sign.
+        place_swap_order_events:
+            Tablist<u64, EventHandle<PlaceSwapOrderEvent>>
+        /*
         fill_events: Tablist<u64, EventHandle<FillEvent>>,
         place_limit_order_events:
             Tablist<u64, EventHandle<PlaceLimitOrderEvent>>,
         place_market_order_events:
             Tablist<u64, EventHandle<PlaceMarketOrderEvent>>,
-        place_swap_order_events:
-            Tablist<u64, EventHandle<PlaceSwapOrderEvent>>
+        */
         /*
         /// change_order_size()
         change_order_size_events: EventHandle<ChangeOrderSizeEvent>,
@@ -2569,10 +2567,10 @@ module econia::market {
             size: new_size, price});
     }
 
-    fun emit_fill_events_for_market_and_market_accounts(
-        market_id: u64,
+    fun emit_fill_events_for_market_accounts(
+        _market_id: u64,
         fill_event_queue_ref: &vector<FillEvent>,
-        handles_ref_mut: &mut MarketEventHandles,
+        _handles_ref_mut: &mut MarketEventHandles,
         taker_is_swapper: bool,
         new_taker_order_id: u128,
     ) {
@@ -2588,6 +2586,7 @@ module econia::market {
             } else {
                 user::emit_fill_event_for_maker_and_taker(event);
             };
+            /* Commented-out algorithm to emit at market level:
             // Emit event for market, creating handle as needed.
             let has_handle = tablist::contains(
                 &handles_ref_mut.fill_events, market_id);
@@ -2602,6 +2601,7 @@ module econia::market {
                 &mut handles_ref_mut.fill_events,
                 market_id);
             event::emit_event(handle_ref_mut, event);
+            */
         });
     }
 
@@ -2720,9 +2720,11 @@ module econia::market {
             move_to<MarketEventHandles>(
                 &resource_account::get_signer(),
                 MarketEventHandles{
+                    /*
                     fill_events: tablist::new(),
                     place_limit_order_events: tablist::new(),
                     place_market_order_events: tablist::new(),
+                    */
                     place_swap_order_events: tablist::new()
                 }
             );
@@ -3415,6 +3417,7 @@ module econia::market {
             self_match_behavior,
             size_posted,
             market_order_id);
+        /* Commented-out algorithm to emit at market level:
         let has_place_limit_order_event_handle = tablist::contains(
             &market_event_handles_ref_mut.place_limit_order_events, market_id);
         if (!has_place_limit_order_event_handle) tablist::add(
@@ -3426,8 +3429,9 @@ module econia::market {
             market_id);
         event::emit_event(place_limit_order_event_handle_ref_mut,
                           place_limit_order_event);
+        */
         user::emit_place_limit_order_event(place_limit_order_event);
-        emit_fill_events_for_market_and_market_accounts(
+        emit_fill_events_for_market_accounts(
             market_id, &mut fill_event_queue, market_event_handles_ref_mut,
             false, market_order_id);
         // Return market order ID and taker trade amounts.
@@ -3789,6 +3793,7 @@ module econia::market {
             size,
             self_match_behavior,
             market_order_id);
+        /* Commented-out algorithm to emit at market level:
         let has_place_market_order_event_handle = tablist::contains(
             &market_event_handles_ref_mut.place_market_order_events, market_id);
         if (!has_place_market_order_event_handle) tablist::add(
@@ -3800,8 +3805,9 @@ module econia::market {
             market_id);
         event::emit_event(place_market_order_event_handle_ref_mut,
                           place_market_order_event);
+        */
         user::emit_place_market_order_event(place_market_order_event);
-        emit_fill_events_for_market_and_market_accounts(
+        emit_fill_events_for_market_accounts(
             market_id, &mut fill_event_queue, market_event_handles_ref_mut,
             false, (NIL as u128));
         // Return base and quote traded by user, fees paid.
@@ -4119,7 +4125,7 @@ module econia::market {
                 market_id);
         event::emit_event(place_swap_order_event_handle_for_market_ref_mut,
                           place_swap_order_event);
-        emit_fill_events_for_market_and_market_accounts(
+        emit_fill_events_for_market_accounts(
             market_id, fill_event_queue_ref_mut, market_event_handles_ref_mut,
             true, (NIL as u128));
         // TODO: ensure trade events emitted to swapper/market account holder.

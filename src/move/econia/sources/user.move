@@ -428,8 +428,7 @@ module econia::user {
         user: address,
         custodian_id: u64,
         side: bool,
-        is_eviction: bool,
-        is_self_match_cancel: bool
+        reason: u8
     }
 
     struct ChangeOrderSizeEvent has copy, drop, store {
@@ -553,10 +552,28 @@ module econia::user {
     const NO_MARKET_ACCOUNT: address = @0x0;
     /// Number of bits market ID is shifted in market account ID.
     const SHIFT_MARKET_ID: u8 = 64;
+    const CANCEL_REASON_DIRECT_CANCEL: u8 = 0;
+    const CANCEL_REASON_EVICTION: u8 = 1;
+    const CANCEL_REASON_SELF_MATCH_CANCEL: u8 = 2;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // View functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[view]
+    public fun get_CANCEL_REASON_DIRECT_CANCEL(): u8 {
+        CANCEL_REASON_DIRECT_CANCEL
+    }
+
+    #[view]
+    public fun get_CANCEL_REASON_EVICTION(): u8 {
+        CANCEL_REASON_EVICTION
+    }
+
+    #[view]
+    public fun get_CANCEL_REASON_SELF_MATCH_CANCEL(): u8 {
+        CANCEL_REASON_SELF_MATCH_CANCEL
+    }
 
     #[view]
     /// Public constant getter for `ASK`.
@@ -1692,8 +1709,7 @@ module econia::user {
         user: address,
         custodian_id: u64,
         side: bool,
-        is_eviction: bool,
-        is_self_match_cancel: bool
+        reason: u8
     ): CancelPostedOrderEvent {
         CancelPostedOrderEvent{
             market_id,
@@ -1701,8 +1717,7 @@ module econia::user {
             user,
             custodian_id,
             side,
-            is_eviction,
-            is_self_match_cancel
+            reason
         }
     }
 

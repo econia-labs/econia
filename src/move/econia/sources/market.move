@@ -762,6 +762,9 @@ module econia::market {
     const E_SIZE_CHANGE_INSERTION_ERROR: u64 = 30;
     /// Market order ID corresponds to an order that did not post.
     const E_ORDER_DID_NOT_POST: u64 = 31;
+    const CANCEL_REASON_DIRECT_CANCEL: u8 = 0;
+    const CANCEL_REASON_EVICTION: u8 = 1;
+    const CANCEL_REASON_SELF_MATCH_CANCEL: u8 = 2;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -2422,8 +2425,7 @@ module econia::market {
                 user,
                 custodian_id,
                 side,
-                false,
-                false
+                CANCEL_REASON_DIRECT_CANCEL
             )
         );
     }
@@ -2970,8 +2972,7 @@ module econia::market {
                             maker,
                             maker_custodian_id,
                             side,
-                            false,
-                            true
+                            CANCEL_REASON_SELF_MATCH_CANCEL
                         )
                     );
                 }; // Optional maker order cancellation complete.
@@ -3403,8 +3404,7 @@ module econia::market {
                         user,
                         custodian_id,
                         side,
-                        true,
-                        false
+                        CANCEL_REASON_EVICTION
                     )
                 );
             };
@@ -4867,6 +4867,17 @@ module econia::market {
             self_match_behavior);
         cancel_order_user( // Attempt invalid cancel.
             &attacker, market_id, side, market_order_id);
+    }
+
+    #[test]
+    /// Verify cancel reasons are constant across modules.
+    fun test_cancel_reasons() {
+        assert!(user::get_CANCEL_REASON_DIRECT_CANCEL() ==
+                CANCEL_REASON_DIRECT_CANCEL, 0);
+        assert!(user::get_CANCEL_REASON_EVICTION() ==
+                CANCEL_REASON_EVICTION, 0);
+        assert!(user::get_CANCEL_REASON_SELF_MATCH_CANCEL() ==
+                CANCEL_REASON_SELF_MATCH_CANCEL, 0);
     }
 
     #[test]

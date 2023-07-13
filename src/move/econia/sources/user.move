@@ -411,8 +411,8 @@ module econia::user {
 
     /// Table keys are market account IDs.
     struct MarketEventHandles has key {
-        cancel_posted_order_events:
-            Tablist<u128, EventHandle<CancelPostedOrderEvent>>,
+        cancel_order_events:
+            Tablist<u128, EventHandle<CancelOrderEvent>>,
         change_order_size_events:
             Tablist<u128, EventHandle<ChangeOrderSizeEvent>>,
         fill_events: Tablist<u128, EventHandle<FillEvent>>,
@@ -422,12 +422,11 @@ module econia::user {
             Tablist<u128, EventHandle<PlaceMarketOrderEvent>>
     }
 
-    struct CancelPostedOrderEvent has copy, drop, store {
+    struct CancelOrderEvent has copy, drop, store {
         market_id: u64,
         order_id: u128,
         user: address,
         custodian_id: u64,
-        side: bool,
         reason: u8
     }
 
@@ -552,17 +551,21 @@ module econia::user {
     const NO_MARKET_ACCOUNT: address = @0x0;
     /// Number of bits market ID is shifted in market account ID.
     const SHIFT_MARKET_ID: u8 = 64;
-    const CANCEL_REASON_DIRECT_CANCEL: u8 = 0;
+    const CANCEL_REASON_MANUAL_CANCEL: u8 = 0;
     const CANCEL_REASON_EVICTION: u8 = 1;
-    const CANCEL_REASON_SELF_MATCH_CANCEL: u8 = 2;
+    const CANCEL_REASON_NO_LIQUIDITY: u8 = 2;
+    const CANCEL_REASON_SELF_MATCH_MAKER: u8 = 3;
+    const CANCEL_REASON_SELF_MATCH_TAKER: u8 = 4;
+    const CANCEL_REASON_IMMEDIATE_OR_CANCEL: u8 = 5;
+    const CANCEL_REASON_TOO_SMALL_AFTER_MATCHING: u8 = 6;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // View functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[view]
-    public fun get_CANCEL_REASON_DIRECT_CANCEL(): u8 {
-        CANCEL_REASON_DIRECT_CANCEL
+    public fun get_CANCEL_REASON_MANUAL_CANCEL(): u8 {
+        CANCEL_REASON_MANUAL_CANCEL
     }
 
     #[view]
@@ -571,8 +574,28 @@ module econia::user {
     }
 
     #[view]
-    public fun get_CANCEL_REASON_SELF_MATCH_CANCEL(): u8 {
-        CANCEL_REASON_SELF_MATCH_CANCEL
+    public fun get_CANCEL_REASON_NO_LIQUIDITY(): u8 {
+        CANCEL_REASON_NO_LIQUIDITY
+    }
+
+    #[view]
+    public fun get_CANCEL_REASON_SELF_MATCH_MAKER(): u8 {
+        CANCEL_REASON_SELF_MATCH_MAKER
+    }
+
+    #[view]
+    public fun get_CANCEL_REASON_SELF_MATCH_TAKER(): u8 {
+        CANCEL_REASON_SELF_MATCH_TAKER
+    }
+
+    #[view]
+    public fun get_CANCEL_REASON_IMMEDIATE_OR_CANCEL(): u8 {
+        CANCEL_REASON_IMMEDIATE_OR_CANCEL
+    }
+
+    #[view]
+    public fun get_CANCEL_REASON_TOO_SMALL_AFTER_MATCHING(): u8 {
+        CANCEL_REASON_TOO_SMALL_AFTER_MATCHING
     }
 
     #[view]
@@ -1182,7 +1205,7 @@ module econia::user {
                 E_NO_MARKET_ACCOUNT);
         if (!exists<MarketEventHandles>(address_of(user)))
             move_to(user, MarketEventHandles{
-                cancel_posted_order_events: tablist::new(),
+                cancel_order_events: tablist::new(),
                 change_order_size_events: tablist::new(),
                 fill_events: tablist::new(),
                 place_limit_order_events: tablist::new(),
@@ -1196,13 +1219,13 @@ module econia::user {
         let market_account_id =
             get_market_account_id(market_id, custodian_id);
 
-        let cancel_posted_order_events_ref_mut =
-            &mut market_event_handles_ref_mut.cancel_posted_order_events;
-        let has_cancel_posted_order_events_handle =
-            tablist::contains(cancel_posted_order_events_ref_mut,
+        let cancel_order_events_ref_mut =
+            &mut market_event_handles_ref_mut.cancel_order_events;
+        let has_cancel_order_events_handle =
+            tablist::contains(cancel_order_events_ref_mut,
                               market_account_id);
-        if (!has_cancel_posted_order_events_handle) {
-            tablist::add(cancel_posted_order_events_ref_mut, market_account_id,
+        if (!has_cancel_order_events_handle) {
+            tablist::add(cancel_order_events_ref_mut, market_account_id,
                          account::new_event_handle(user));
         };
 
@@ -1624,8 +1647,8 @@ module econia::user {
         emit_fill_event(event, true);
     }
 
-    public(friend) fun emit_cancel_posted_order_event(
-        event: CancelPostedOrderEvent
+    public(friend) fun emit_cancel_order_event(
+        event: CancelOrderEvent
     ) acquires MarketEventHandles {
         let user_address = event.user;
         if (!exists<MarketEventHandles>(user_address)) return;
@@ -1633,15 +1656,15 @@ module econia::user {
             borrow_global_mut<MarketEventHandles>(user_address);
         let market_account_id =
             get_market_account_id(event.market_id, event.custodian_id);
-        let cancel_posted_order_events_ref_mut =
-            &mut market_event_handles_ref_mut.cancel_posted_order_events;
+        let cancel_order_events_ref_mut =
+            &mut market_event_handles_ref_mut.cancel_order_events;
         let has_handle = tablist::contains(
-            cancel_posted_order_events_ref_mut, market_account_id);
+            cancel_order_events_ref_mut, market_account_id);
         if (!has_handle) return;
-        let cancel_posted_order_event_handle_ref_mut = tablist::borrow_mut(
-            cancel_posted_order_events_ref_mut, market_account_id);
+        let cancel_order_event_handle_ref_mut = tablist::borrow_mut(
+            cancel_order_events_ref_mut, market_account_id);
         event::emit_event(
-            cancel_posted_order_event_handle_ref_mut, event)
+            cancel_order_event_handle_ref_mut, event)
     }
     public(friend) fun emit_change_order_size_event(
         event: ChangeOrderSizeEvent
@@ -1703,20 +1726,18 @@ module econia::user {
             place_market_order_event_handle_ref_mut, event)
     }
 
-    public(friend) fun create_cancel_posted_order_event(
+    public(friend) fun create_cancel_order_event(
         market_id: u64,
         order_id: u128,
         user: address,
         custodian_id: u64,
-        side: bool,
         reason: u8
-    ): CancelPostedOrderEvent {
-        CancelPostedOrderEvent{
+    ): CancelOrderEvent {
+        CancelOrderEvent{
             market_id,
             order_id,
             user,
             custodian_id,
-            side,
             reason
         }
     }

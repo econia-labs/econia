@@ -544,7 +544,7 @@ module econia::market {
         Self, CustodianCapability, GenericAsset, UnderwriterCapability};
     use econia::resource_account;
     use econia::tablist::{Self, Tablist};
-    use econia::user::{Self, FillEvent};
+    use econia::user::{Self, CancelOrderEvent, FillEvent};
     use std::option::{Self, Option};
     use std::signer::address_of;
     use std::string::{Self, String};
@@ -623,9 +623,10 @@ module econia::market {
     /// since swaps are processed outside of a market account and do not
     /// always require a signature.
     struct SwapperEventHandles has key {
+        cancel_order_events: Tablist<u64, EventHandle<CancelOrderEvent>>,
+        fill_events: Tablist<u64, EventHandle<FillEvent>>,
         place_swap_order_events:
-            Tablist<u64, EventHandle<PlaceSwapOrderEvent>>,
-        fill_events: Tablist<u64, EventHandle<FillEvent>>
+            Tablist<u64, EventHandle<PlaceSwapOrderEvent>>
     }
 
     struct PlaceSwapOrderEvent has copy, drop, store {
@@ -762,9 +763,13 @@ module econia::market {
     const E_SIZE_CHANGE_INSERTION_ERROR: u64 = 30;
     /// Market order ID corresponds to an order that did not post.
     const E_ORDER_DID_NOT_POST: u64 = 31;
-    const CANCEL_REASON_DIRECT_CANCEL: u8 = 0;
+    const CANCEL_REASON_MANUAL_CANCEL: u8 = 0;
     const CANCEL_REASON_EVICTION: u8 = 1;
-    const CANCEL_REASON_SELF_MATCH_CANCEL: u8 = 2;
+    const CANCEL_REASON_NO_LIQUIDITY: u8 = 2;
+    const CANCEL_REASON_SELF_MATCH_MAKER: u8 = 3;
+    const CANCEL_REASON_SELF_MATCH_TAKER: u8 = 4;
+    const CANCEL_REASON_IMMEDIATE_OR_CANCEL: u8 = 5;
+    const CANCEL_REASON_TOO_SMALL_AFTER_MATCHING: u8 = 6;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -1816,8 +1821,9 @@ module econia::market {
                 quote_coins);
         if (!exists<SwapperEventHandles>(user_address))
             move_to(user, SwapperEventHandles{
-                place_swap_order_events: tablist::new(),
-                fill_events: tablist::new()});
+                cancel_order_events: tablist::new(),
+                fill_events: tablist::new(),
+                place_swap_order_events: tablist::new()});
         let swapper_event_handles_ref_mut =
             borrow_global_mut<SwapperEventHandles>(user_address);
         // Emit place swap order event, initting handle as needed.
@@ -2418,14 +2424,13 @@ module econia::market {
         // Cancel order user-side, thus verifying market order ID.
         user::cancel_order_internal(user, market_id, custodian_id, side, size,
                                     price, order_access_key, market_order_id);
-        user::emit_cancel_posted_order_event(
-            user::create_cancel_posted_order_event(
+        user::emit_cancel_order_event(
+            user::create_cancel_order_event(
                 market_id,
                 market_order_id,
                 user,
                 custodian_id,
-                side,
-                CANCEL_REASON_DIRECT_CANCEL
+                CANCEL_REASON_MANUAL_CANCEL
             )
         );
     }
@@ -2965,14 +2970,13 @@ module econia::market {
                     let Order{size: _, price: _, user: _, custodian_id: _,
                               order_access_key: _} = avl_queue::remove(
                         orders_ref_mut, avlq_access_key);
-                    user::emit_cancel_posted_order_event(
-                        user::create_cancel_posted_order_event(
+                    user::emit_cancel_order_event(
+                        user::create_cancel_order_event(
                             market_id,
                             market_order_id,
                             maker,
                             maker_custodian_id,
-                            side,
-                            CANCEL_REASON_SELF_MATCH_CANCEL
+                            CANCEL_REASON_SELF_MATCH_MAKER
                         )
                     );
                 }; // Optional maker order cancellation complete.
@@ -3397,13 +3401,12 @@ module econia::market {
                 let market_order_id_cancel = user::cancel_order_internal(
                     user, market_id, custodian_id, side, size, price,
                     order_access_key, (NIL as u128));
-                user::emit_cancel_posted_order_event(
-                    user::create_cancel_posted_order_event(
+                user::emit_cancel_order_event(
+                    user::create_cancel_order_event(
                         market_id,
                         market_order_id_cancel,
                         user,
                         custodian_id,
-                        side,
                         CANCEL_REASON_EVICTION
                     )
                 );
@@ -4872,12 +4875,20 @@ module econia::market {
     #[test]
     /// Verify cancel reasons are constant across modules.
     fun test_cancel_reasons() {
-        assert!(user::get_CANCEL_REASON_DIRECT_CANCEL() ==
-                CANCEL_REASON_DIRECT_CANCEL, 0);
+        assert!(user::get_CANCEL_REASON_MANUAL_CANCEL() ==
+                CANCEL_REASON_MANUAL_CANCEL, 0);
         assert!(user::get_CANCEL_REASON_EVICTION() ==
                 CANCEL_REASON_EVICTION, 0);
-        assert!(user::get_CANCEL_REASON_SELF_MATCH_CANCEL() ==
-                CANCEL_REASON_SELF_MATCH_CANCEL, 0);
+        assert!(user::get_CANCEL_REASON_NO_LIQUIDITY() ==
+                CANCEL_REASON_NO_LIQUIDITY, 0);
+        assert!(user::get_CANCEL_REASON_SELF_MATCH_MAKER() ==
+                CANCEL_REASON_SELF_MATCH_MAKER, 0);
+        assert!(user::get_CANCEL_REASON_SELF_MATCH_TAKER() ==
+                CANCEL_REASON_SELF_MATCH_TAKER, 0);
+        assert!(user::get_CANCEL_REASON_IMMEDIATE_OR_CANCEL() ==
+                CANCEL_REASON_IMMEDIATE_OR_CANCEL, 0);
+        assert!(user::get_CANCEL_REASON_TOO_SMALL_AFTER_MATCHING() ==
+                CANCEL_REASON_TOO_SMALL_AFTER_MATCHING, 0);
     }
 
     #[test]

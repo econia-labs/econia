@@ -59,6 +59,7 @@ jobs:
         with:
           name: image
           path: /tmp/image.tar
+        if: github.event_name != 'pull_request'
 
   deploy:
     name: Deploy API Docker image

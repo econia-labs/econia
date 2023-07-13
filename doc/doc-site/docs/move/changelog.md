@@ -13,6 +13,7 @@ Econia Move source code adheres to [Semantic Versioning] and [Keep a Changelog] 
 
 - Fee assessment updated to be processed per fill, rather than per trade ([#321]).
 - Market order size is no longer automatically adjusted based on available market account holdings ([#321]).
+- Default self match behavior for swaps (signing swapper self match against signing market account) changed from `ABORT` to `CANCEL_TAKER` ([#321]).
 
 ### Deprecated
 

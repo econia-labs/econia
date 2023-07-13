@@ -20,6 +20,11 @@ class EconiaClient:
             self.user_account, payload
         )
         return self.aptos_client.submit_bcs_transaction(signed_tx)
+    
+    def submit_tx_wait(self, entry: EntryFunction) -> str:
+        txn_hash = self.submit_tx(entry)
+        self.aptos_client.wait_for_transaction(txn_hash)
+        return txn_hash
 
 class EconiaViewer:
     econia_address: AccountAddress

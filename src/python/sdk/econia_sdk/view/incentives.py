@@ -1,4 +1,4 @@
-from aptos_sdk.bcs import Serializer
+from aptos_sdk.bcs import Serializer, encoder
 from aptos_sdk.account_address import AccountAddress
 from typing import Any
 from econia_sdk.lib import EconiaViewer
@@ -16,9 +16,9 @@ def get_cost_to_upgrade_integrator_fee_store_view(
         "get_cost_to_upgrade_integrator_fee_store_view",
         [quote_coin_type, utility_coin_type],
         [
-            Serializer.fixed_bytes(integrator_address.address),
-            Serializer.u64(market_id),
-            Serializer.u8(new_tier)
+            integrator_address.address.hex(),
+            str(market_id),
+            str(new_tier)
         ]
     )
     return int(returns[0])
@@ -35,7 +35,7 @@ def get_fee_share_divisor(view: EconiaViewer, tier: int) -> int:
         "incentives",
         "get_fee_share_divisor",
         [],
-        [Serializer.u8(tier)]
+        [str(tier)]
     )
     return int(returns[0])
 
@@ -50,7 +50,7 @@ def get_integrator_withdrawal_fee_view(
         "get_integrator_withdrawal_fee_view",
         [quote_coin_type],
         [
-            Serializer.fixed_bytes(integrator_address.address),
+           integrator_address.address.hex(),
         ]
     )
     return int(returns[0])
@@ -81,7 +81,7 @@ def get_tier_activation_fee(view: EconiaViewer, tier: int) -> int:
       "incentives",
       "get_tier_activation_fee",
       [],
-      [Serializer.u8(tier)]
+      [str(tier)]
   )
   return int(returns[0])
 
@@ -90,7 +90,7 @@ def get_tier_withdrawal_fee(view: EconiaViewer, tier: int) -> int:
       "incentives",
       "get_tier_withdrawal_fee",
       [],
-      [Serializer.u8(tier)]
+      [str(tier)]
   )
   return int(returns[0])
 

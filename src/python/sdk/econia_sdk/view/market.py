@@ -1,6 +1,6 @@
 from typing import Any
 from econia_sdk.lib import EconiaViewer
-from aptos_sdk.bcs import Serializer
+from aptos_sdk.bcs import Serializer, encoder
 
 def get_ABORT(view: EconiaViewer) -> int:
     result = int(view.get_returns("market", "get_ABORT")[0])
@@ -79,7 +79,7 @@ def get_market_order_id_counter(view: EconiaViewer, market_order_id: int) -> int
         "market",
         "get_market_order_id_counter",
         [],
-        [Serializer.u128(market_order_id)]
+        [str(market_order_id)]
     )
     return int(returns[0])
 
@@ -88,7 +88,7 @@ def get_market_order_id_price(view: EconiaViewer, market_order_id: int) -> int:
         "market",
         "get_market_order_id_price",
         [],
-        [Serializer.u128(market_order_id)]
+        [str(market_order_id)]
     )
     return int(returns[0])
 
@@ -97,7 +97,7 @@ def get_market_order_id_side(view: EconiaViewer, market_order_id: int) -> bool:
         "market",
         "get_market_order_id_side",
         [],
-        [Serializer.u128(market_order_id)]
+        [str(market_order_id)]
     )
     return bool(returns[0])
 
@@ -107,8 +107,8 @@ def get_open_order(view: EconiaViewer, market_id: int, market_order_id: int) -> 
         "get_open_order",
         [],
         [
-          Serializer.u64(market_id),
-          Serializer.u128(market_order_id)
+          str(market_id),
+          str(market_order_id)
         ]
     )
     return returns[0]
@@ -124,9 +124,9 @@ def get_open_orders(
         "get_open_orders",
         [],
         [
-            Serializer.u64(market_id),
-            Serializer.u64(n_asks_max),
-            Serializer.u64(n_bids_max),
+            str(market_id),
+            str(n_asks_max),
+            str(n_bids_max),
         ]
     )
     return returns[0]
@@ -144,9 +144,9 @@ def get_price_levels(
         "get_price_levels",
         [],
         [
-            Serializer.u64(market_id),
-            Serializer.u64(n_ask_levels_max),
-            Serializer.u64(n_bid_levels_max),
+            str(market_id),
+            str(n_ask_levels_max),
+            str(n_bid_levels_max),
         ]
     )
     return returns[0]
@@ -159,8 +159,8 @@ def has_open_order(view: EconiaViewer, market_id: int, market_order_id: int) -> 
         "has_open_order",
         [],
         [
-            Serializer.u64(market_id),
-            Serializer.u128(market_order_id)
+            str(market_id),
+            str(market_order_id)
         ]
     )
     return bool(returns[0])

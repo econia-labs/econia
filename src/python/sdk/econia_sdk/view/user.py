@@ -1,5 +1,5 @@
 from aptos_sdk.account_address import AccountAddress
-from aptos_sdk.bcs import Serializer
+from aptos_sdk.bcs import Serializer, encoder
 from typing import Any
 from econia_sdk.lib import EconiaViewer
 
@@ -16,7 +16,7 @@ def get_NO_CUSTODIAN(view: EconiaViewer) -> int:
     return int(returns[0])
 
 def serialize_address(addr: AccountAddress) -> Any:
-    Serializer.fixed_bytes(addr.address)
+    return addr.address.hex()
 
 def get_all_market_account_ids_for_market_id(
     view: EconiaViewer,
@@ -27,7 +27,10 @@ def get_all_market_account_ids_for_market_id(
         "user",
         "get_all_market_account_ids_for_market_id",
         [],
-        [serialize_address(user), Serializer.u64(market_id)]
+        [
+            serialize_address(user),
+            str(market_id)
+        ]
     )
     return returns[0]
 
@@ -51,7 +54,7 @@ def get_custodian_id(
         "user",
         "get_custodian_id",
         [],
-        [Serializer.u128(market_account_id)]
+        [str(market_account_id)]
     )
     return int(returns[0])
 
@@ -67,8 +70,8 @@ def get_market_account(
         [],
         [
             serialize_address(user),
-            Serializer.u64(market_id),
-            Serializer.u64(custodian_id)
+            str(market_id),
+            str(custodian_id)
         ]
     )
     return returns[0]
@@ -83,8 +86,8 @@ def get_market_account_id(
         "get_market_account_id",
         [],
         [
-            Serializer.u64(market_id),
-            Serializer.u64(custodian_id),
+            str(market_id),
+            str(custodian_id),
         ]
     )
     return int(returns[0])
@@ -108,8 +111,8 @@ def get_market_id(
     returns = view.get_returns(
         "user",
         "get_market_id",
-        []
-        [Serializer.u128(market_account_id)]
+        [],
+        [str(market_account_id)],
     )
     return int(returns[0])
 
@@ -125,8 +128,8 @@ def has_market_account(
         [],
         [
             serialize_address(user),
-            Serializer.u64(market_id),
-            Serializer.u64(custodian_id)
+            str(market_id),
+            str(custodian_id)
         ]
     )
     return bool(returns[0])
@@ -142,7 +145,7 @@ def has_market_account_by_market_account_id(
         [],
         [
             serialize_address(user),
-            Serializer.u128(market_account_id),
+            str(market_account_id),
         ]
     )
     return bool(returns[0])
@@ -158,7 +161,7 @@ def has_market_account_by_market_id(
         [],
         [
             serialize_address(user),
-            Serializer.u64(market_id),
+            str(market_id),
         ]
     )
     return bool(returns[0])

@@ -411,15 +411,14 @@ module econia::user {
 
     /// Table keys are market account IDs.
     struct MarketEventHandles has key {
-        cancel_order_events:
-            Tablist<u128, EventHandle<CancelOrderEvent>>,
+        cancel_order_events: Table<u128, EventHandle<CancelOrderEvent>>,
         change_order_size_events:
-            Tablist<u128, EventHandle<ChangeOrderSizeEvent>>,
-        fill_events: Tablist<u128, EventHandle<FillEvent>>,
+            Table<u128, EventHandle<ChangeOrderSizeEvent>>,
+        fill_events: Table<u128, EventHandle<FillEvent>>,
         place_limit_order_events:
-            Tablist<u128, EventHandle<PlaceLimitOrderEvent>>,
+            Table<u128, EventHandle<PlaceLimitOrderEvent>>,
         place_market_order_events:
-            Tablist<u128, EventHandle<PlaceMarketOrderEvent>>
+            Table<u128, EventHandle<PlaceMarketOrderEvent>>
     }
 
     struct CancelOrderEvent has copy, drop, store {
@@ -1211,11 +1210,11 @@ module econia::user {
                 E_NO_MARKET_ACCOUNT);
         if (!exists<MarketEventHandles>(address_of(user)))
             move_to(user, MarketEventHandles{
-                cancel_order_events: tablist::new(),
-                change_order_size_events: tablist::new(),
-                fill_events: tablist::new(),
-                place_limit_order_events: tablist::new(),
-                place_market_order_events: tablist::new()
+                cancel_order_events: table::new(),
+                change_order_size_events: table::new(),
+                fill_events: table::new(),
+                place_limit_order_events: table::new(),
+                place_market_order_events: table::new()
             });
 
         /////////// Also init handle below if no handle:
@@ -1228,50 +1227,50 @@ module econia::user {
         let cancel_order_events_ref_mut =
             &mut market_event_handles_ref_mut.cancel_order_events;
         let has_cancel_order_events_handle =
-            tablist::contains(cancel_order_events_ref_mut,
-                              market_account_id);
+            table::contains(cancel_order_events_ref_mut,
+                            market_account_id);
         if (!has_cancel_order_events_handle) {
-            tablist::add(cancel_order_events_ref_mut, market_account_id,
-                         account::new_event_handle(user));
+            table::add(cancel_order_events_ref_mut, market_account_id,
+                       account::new_event_handle(user));
         };
 
         let change_order_size_events_ref_mut =
             &mut market_event_handles_ref_mut.change_order_size_events;
         let has_change_order_size_events_handle =
-            tablist::contains(change_order_size_events_ref_mut,
-                              market_account_id);
+            table::contains(change_order_size_events_ref_mut,
+                            market_account_id);
         if (!has_change_order_size_events_handle) {
-            tablist::add(change_order_size_events_ref_mut, market_account_id,
-                         account::new_event_handle(user));
+            table::add(change_order_size_events_ref_mut, market_account_id,
+                       account::new_event_handle(user));
         };
 
         let fill_events_ref_mut =
             &mut market_event_handles_ref_mut.fill_events;
         let has_fill_events_handle =
-            tablist::contains(fill_events_ref_mut, market_account_id);
+            table::contains(fill_events_ref_mut, market_account_id);
         if (!has_fill_events_handle) {
-            tablist::add(fill_events_ref_mut, market_account_id,
-                         account::new_event_handle(user));
+            table::add(fill_events_ref_mut, market_account_id,
+                       account::new_event_handle(user));
         };
 
         let place_limit_order_events_ref_mut =
             &mut market_event_handles_ref_mut.place_limit_order_events;
         let has_place_limit_order_events_handle =
-            tablist::contains(place_limit_order_events_ref_mut,
-                              market_account_id);
+            table::contains(place_limit_order_events_ref_mut,
+                            market_account_id);
         if (!has_place_limit_order_events_handle) {
-            tablist::add(place_limit_order_events_ref_mut, market_account_id,
-                         account::new_event_handle(user));
+            table::add(place_limit_order_events_ref_mut, market_account_id,
+                       account::new_event_handle(user));
         };
 
         let place_market_order_events_ref_mut =
             &mut market_event_handles_ref_mut.place_market_order_events;
         let has_place_market_order_events_handle =
-            tablist::contains(place_market_order_events_ref_mut,
-                              market_account_id);
+            table::contains(place_market_order_events_ref_mut,
+                            market_account_id);
         if (!has_place_market_order_events_handle) {
-            tablist::add(place_market_order_events_ref_mut, market_account_id,
-                         account::new_event_handle(user));
+            table::add(place_market_order_events_ref_mut, market_account_id,
+                       account::new_event_handle(user));
         };
     }
 
@@ -1664,10 +1663,10 @@ module econia::user {
             get_market_account_id(event.market_id, event.custodian_id);
         let cancel_order_events_ref_mut =
             &mut market_event_handles_ref_mut.cancel_order_events;
-        let has_handle = tablist::contains(
+        let has_handle = table::contains(
             cancel_order_events_ref_mut, market_account_id);
         if (!has_handle) return;
-        let cancel_order_event_handle_ref_mut = tablist::borrow_mut(
+        let cancel_order_event_handle_ref_mut = table::borrow_mut(
             cancel_order_events_ref_mut, market_account_id);
         event::emit_event(
             cancel_order_event_handle_ref_mut, event)
@@ -1683,10 +1682,10 @@ module econia::user {
             get_market_account_id(event.market_id, event.custodian_id);
         let change_order_size_events_ref_mut =
             &mut market_event_handles_ref_mut.change_order_size_events;
-        let has_handle = tablist::contains(
+        let has_handle = table::contains(
             change_order_size_events_ref_mut, market_account_id);
         if (!has_handle) return;
-        let change_order_size_event_handle_ref_mut = tablist::borrow_mut(
+        let change_order_size_event_handle_ref_mut = table::borrow_mut(
             change_order_size_events_ref_mut, market_account_id);
         event::emit_event(
             change_order_size_event_handle_ref_mut, event)
@@ -1703,10 +1702,10 @@ module econia::user {
             get_market_account_id(event.market_id, event.custodian_id);
         let place_limit_order_events_ref_mut =
             &mut market_event_handles_ref_mut.place_limit_order_events;
-        let has_handle = tablist::contains(
+        let has_handle = table::contains(
             place_limit_order_events_ref_mut, market_account_id);
         if (!has_handle) return;
-        let place_limit_order_event_handle_ref_mut = tablist::borrow_mut(
+        let place_limit_order_event_handle_ref_mut = table::borrow_mut(
             place_limit_order_events_ref_mut, market_account_id);
         event::emit_event(
             place_limit_order_event_handle_ref_mut, event)
@@ -1723,10 +1722,10 @@ module econia::user {
             get_market_account_id(event.market_id, event.custodian_id);
         let place_market_order_events_ref_mut =
             &mut market_event_handles_ref_mut.place_market_order_events;
-        let has_handle = tablist::contains(
+        let has_handle = table::contains(
             place_market_order_events_ref_mut, market_account_id);
         if (!has_handle) return;
-        let place_market_order_event_handle_ref_mut = tablist::borrow_mut(
+        let place_market_order_event_handle_ref_mut = table::borrow_mut(
             place_market_order_events_ref_mut, market_account_id);
         event::emit_event(
             place_market_order_event_handle_ref_mut, event)
@@ -2590,8 +2589,8 @@ module econia::user {
                 &mut market_event_handles_ref_mut.fill_events;
             let market_account_id =
                 get_market_account_id(event.market_id, custodian_id);
-            if (tablist::contains(fill_events_ref_mut, market_account_id)) {
-                let fill_event_handle_ref_mut = tablist::borrow_mut(
+            if (table::contains(fill_events_ref_mut, market_account_id)) {
+                let fill_event_handle_ref_mut = table::borrow_mut(
                     fill_events_ref_mut, market_account_id);
                 event::emit_event(fill_event_handle_ref_mut, event)
             }

@@ -537,6 +537,7 @@ module econia::market {
     use aptos_framework::account;
     use aptos_framework::coin::{Self, Coin};
     use aptos_framework::event::{Self, EventHandle};
+    use aptos_framework::table::{Self, Table};
     use aptos_framework::type_info::{Self, TypeInfo};
     use econia::avl_queue::{Self, AVLqueue};
     use econia::incentives;
@@ -616,19 +617,17 @@ module econia::market {
     /// Not emitted at market account level when a swap order is placed
     /// by a non-signing swapper.
     struct MarketEventHandles has key {
-        place_swap_order_events:
-            Tablist<u64, EventHandle<PlaceSwapOrderEvent>>,
-        cancel_order_events: Tablist<u64, EventHandle<CancelOrderEvent>>,
+        place_swap_order_events: Table<u64, EventHandle<PlaceSwapOrderEvent>>,
+        cancel_order_events: Table<u64, EventHandle<CancelOrderEvent>>,
     }
 
     /// Stored under a signing user's account (not market account),
     /// since swaps are processed outside of a market account and do not
     /// always require a signature.
     struct SwapperEventHandles has key {
-        cancel_order_events: Tablist<u64, EventHandle<CancelOrderEvent>>,
-        fill_events: Tablist<u64, EventHandle<FillEvent>>,
-        place_swap_order_events:
-            Tablist<u64, EventHandle<PlaceSwapOrderEvent>>
+        cancel_order_events: Table<u64, EventHandle<CancelOrderEvent>>,
+        fill_events: Table<u64, EventHandle<FillEvent>>,
+        place_swap_order_events: Table<u64, EventHandle<PlaceSwapOrderEvent>>
     }
 
     struct PlaceSwapOrderEvent has copy, drop, store {
@@ -1833,32 +1832,32 @@ module econia::market {
         );
         if (!exists<SwapperEventHandles>(user_address))
             move_to(user, SwapperEventHandles{
-                cancel_order_events: tablist::new(),
-                fill_events: tablist::new(),
-                place_swap_order_events: tablist::new()});
+                cancel_order_events: table::new(),
+                fill_events: table::new(),
+                place_swap_order_events: table::new()});
         let swapper_event_handles_ref_mut =
             borrow_global_mut<SwapperEventHandles>(user_address);
         // Emit place swap order event, initting handle as needed.
         let place_swap_order_events_ref_mut =
             &mut swapper_event_handles_ref_mut.place_swap_order_events;
-        if (!tablist::contains(place_swap_order_events_ref_mut, market_id))
-            tablist::add(
+        if (!table::contains(place_swap_order_events_ref_mut, market_id))
+            table::add(
                 place_swap_order_events_ref_mut,
                 market_id,
                 account::new_event_handle(user));
-        let place_swap_order_event_handle_ref_mut = tablist::borrow_mut(
+        let place_swap_order_event_handle_ref_mut = table::borrow_mut(
             place_swap_order_events_ref_mut, market_id);
         event::emit_event(place_swap_order_event_handle_ref_mut,
                           place_swap_order_event);
         // Emit fill events, initting handle as needed.
         let fill_events_ref_mut =
             &mut swapper_event_handles_ref_mut.fill_events;
-        if (!tablist::contains(fill_events_ref_mut, market_id))
-            tablist::add(
+        if (!table::contains(fill_events_ref_mut, market_id))
+            table::add(
                 fill_events_ref_mut,
                 market_id,
                 account::new_event_handle(user));
-        let fill_events_handle_ref_mut = tablist::borrow_mut(
+        let fill_events_handle_ref_mut = table::borrow_mut(
             fill_events_ref_mut, market_id);
         vector::for_each_ref(&fill_event_queue, |fill_event_ref| {
             let fill_event: FillEvent = *fill_event_ref;
@@ -1869,12 +1868,12 @@ module econia::market {
         if (option::is_some(&cancel_order_event_option)) {
             let cancel_order_events_ref_mut =
                 &mut swapper_event_handles_ref_mut.cancel_order_events;
-            if (!tablist::contains(cancel_order_events_ref_mut, market_id))
-                tablist::add(
+            if (!table::contains(cancel_order_events_ref_mut, market_id))
+                table::add(
                     cancel_order_events_ref_mut,
                     market_id,
                     account::new_event_handle(user));
-            let cancel_order_events_handle_ref_mut = tablist::borrow_mut(
+            let cancel_order_events_handle_ref_mut = table::borrow_mut(
                 cancel_order_events_ref_mut, market_id);
             event::emit_event(cancel_order_events_handle_ref_mut,
                               option::destroy_some(cancel_order_event_option));
@@ -2747,13 +2746,8 @@ module econia::market {
             move_to<MarketEventHandles>(
                 &resource_account::get_signer(),
                 MarketEventHandles{
-                    /*
-                    fill_events: tablist::new(),
-                    place_limit_order_events: tablist::new(),
-                    place_market_order_events: tablist::new(),
-                    */
-                    cancel_order_events: tablist::new(),
-                    place_swap_order_events: tablist::new()
+                    cancel_order_events: table::new(),
+                    place_swap_order_events: table::new()
                 }
             );
         borrow_global_mut<MarketEventHandles>(resource_address)
@@ -4227,15 +4221,15 @@ module econia::market {
             max_quote,
             limit_price,
             order_id: market_order_id};
-        let has_place_swap_order_event_handle_for_market = tablist::contains(
+        let has_place_swap_order_event_handle_for_market = table::contains(
             &market_event_handles_ref_mut.place_swap_order_events,
             market_id);
-        if (!has_place_swap_order_event_handle_for_market) tablist::add(
+        if (!has_place_swap_order_event_handle_for_market) table::add(
             &mut market_event_handles_ref_mut.place_swap_order_events,
             market_id,
             account::new_event_handle(&resource_account::get_signer()));
         let place_swap_order_event_handle_for_market_ref_mut =
-            tablist::borrow_mut(
+            table::borrow_mut(
                 &mut market_event_handles_ref_mut.place_swap_order_events,
                 market_id);
         event::emit_event(place_swap_order_event_handle_for_market_ref_mut,
@@ -4260,15 +4254,15 @@ module econia::market {
                 NO_CUSTODIAN,
                 cancel_reason
             );
-            let has_cancel_order_event_handle_for_market = tablist::contains(
+            let has_cancel_order_event_handle_for_market = table::contains(
                 &market_event_handles_ref_mut.cancel_order_events,
                 market_id);
-            if (!has_cancel_order_event_handle_for_market) tablist::add(
+            if (!has_cancel_order_event_handle_for_market) table::add(
                 &mut market_event_handles_ref_mut.cancel_order_events,
                 market_id,
                 account::new_event_handle(&resource_account::get_signer()));
             let cancel_order_event_handle_for_market_ref_mut =
-                tablist::borrow_mut(
+                table::borrow_mut(
                     &mut market_event_handles_ref_mut.cancel_order_events,
                     market_id);
             event::emit_event(cancel_order_event_handle_for_market_ref_mut,

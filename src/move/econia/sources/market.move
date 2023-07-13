@@ -839,7 +839,7 @@ module econia::market {
 
     const CANCEL_REASON_MANUAL_CANCEL: u8 = 0;
     const CANCEL_REASON_EVICTION: u8 = 1;
-    const CANCEL_REASON_NO_LIQUIDITY: u8 = 2;
+    const CANCEL_REASON_NOT_ENOUGH_LIQUIDITY: u8 = 2;
     const CANCEL_REASON_SELF_MATCH_MAKER: u8 = 3;
     const CANCEL_REASON_SELF_MATCH_TAKER: u8 = 4;
     const CANCEL_REASON_IMMEDIATE_OR_CANCEL: u8 = 5;
@@ -2784,7 +2784,8 @@ module econia::market {
     ///   of fills.
     /// * `order_book_ref_mut`: Mutable reference to market order book.
     /// * `taker`: Address of taker whose order is matched. Passed as
-    ///   `NO_MARKET_ACCOUNT` when taker order originates from a swap.
+    ///   `NO_MARKET_ACCOUNT` when taker order originates from a swap
+    ///   without a signature.
     /// * `custodian_id`: Custodian ID associated with a taker market
     ///   account, if any. Should be passed as `NO_CUSTODIAN` if `taker`
     ///   is `NO_MARKET_ACCOUNT`.
@@ -3332,6 +3333,8 @@ module econia::market {
             (0, 0, 0, vector[]);
         let market_event_handles_ref_mut =
             market_event_handles_borrow_mut(resource_address);
+        let cancel_reason_option = option::none();
+        let remaining_size = size;
         if (crosses_spread) {
             // Calculate max base and quote to withdraw. If a buy:
             let (base_withdraw, quote_withdraw) = if (direction == BUY)
@@ -3343,8 +3346,8 @@ module econia::market {
                 user::withdraw_assets_internal<BaseType, QuoteType>(
                     user_address, market_id, custodian_id, base_withdraw,
                     quote_withdraw, underwriter_id);
-            // Declare return assignment variable.
-            let self_match_cancel;
+            // Declare return assignment variables.
+            let self_match_taker_cancel;
             // Match against order book, storing optionally modified
             // asset inputs, base and quote trade amounts, quote fees
             // paid, and if a self match requires canceling the rest of
@@ -3355,7 +3358,7 @@ module econia::market {
                 base_traded,
                 quote_traded,
                 fees,
-                self_match_cancel,
+                self_match_taker_cancel,
                 _,
             ) = match(
                 market_id,
@@ -3391,21 +3394,40 @@ module econia::market {
                 !avl_queue::would_update_head(&order_book_ref_mut.bids, price)
                 else
                 !avl_queue::would_update_head(&order_book_ref_mut.asks, price);
+            remaining_size =
+                size - (base_traded / order_book_ref_mut.lot_size);
+            if (self_match_taker_cancel) {
+                option::fill(&mut cancel_reason_option,
+                             CANCEL_REASON_SELF_MATCH_TAKER);
+            } else if ((remaining_size > 0) &&
+                       (restriction == IMMEDIATE_OR_CANCEL)) {
+                option::fill(&mut cancel_reason_option,
+                             CANCEL_REASON_IMMEDIATE_OR_CANCEL);
+            } else if (still_crosses_spread) {
+                option::fill(&mut cancel_reason_option,
+                             CANCEL_REASON_MAX_QUOTE_TRADED);
+            } else {
+                if (remaining_size < order_book_ref_mut.min_size) {
+                    option::fill(&mut cancel_reason_option,
+                                 CANCEL_REASON_TOO_SMALL_AFTER_MATCHING);
+                }
+            };
+            /*
             // If matching engine halted but order still crosses spread,
             // or if a self match that requires canceling the rest of
             // of the order, then mark no size left to post as a maker.
             size = if (still_crosses_spread || self_match_cancel) 0 else
-                // Else update size to amount left to fill post-match.
-                size - (base_traded / order_book_ref_mut.lot_size);
+            */
         } else { // If spread not crossed (matching engine not called):
             order_book_ref_mut.counter = order_book_ref_mut.counter + 1;
+            if (restriction == IMMEDIATE_OR_CANCEL) {
+                option::fill(&mut cancel_reason_option,
+                             CANCEL_REASON_IMMEDIATE_OR_CANCEL);
+            };
         };
-        // Assume no size posted to book.
-        let (size_posted, market_order_id) =
-            (0, order_id_no_post(order_book_ref_mut.counter));
-        // If size big enough to post and not immediate-or-cancel:
-        if ((size >= order_book_ref_mut.min_size) &&
-                (restriction != IMMEDIATE_OR_CANCEL)) {
+        let market_order_id = order_id_no_post(order_book_ref_mut.counter);
+        // If order still eligible to post:
+        if (option::is_none(&cancel_reason_option)) {
             // Get next order access key for user-side order placement.
             let order_access_key = user::get_next_order_access_key_internal(
                 user_address, market_id, custodian_id, side);
@@ -3413,8 +3435,13 @@ module econia::market {
             let orders_ref_mut = if (side == ASK)
                 &mut order_book_ref_mut.asks else &mut order_book_ref_mut.bids;
             // Declare order to insert to book.
-            let order = Order{size, price, user: user_address, custodian_id,
-                              order_access_key};
+            let order = Order{
+                size: remaining_size,
+                price,
+                user: user_address,
+                custodian_id,
+                order_access_key
+            };
             // Get new AVL queue access key, evictee access key, and evictee
             // value by attempting to insert for given critical height.
             let (avlq_access_key, evictee_access_key, evictee_value) =
@@ -3425,9 +3452,8 @@ module econia::market {
             // Encode AVL queue access key in market order ID.
             market_order_id = market_order_id | (avlq_access_key as u128);
             user::place_order_internal( // Place order user-side.
-                user_address, market_id, custodian_id, side, size, price,
-                market_order_id, order_access_key);
-            size_posted = size; // Mark size posted as maker.
+                user_address, market_id, custodian_id, side, remaining_size,
+                price, market_order_id, order_access_key);
             if (evictee_access_key == NIL) { // If no eviction required:
                 // Destroy empty evictee value option.
                 option::destroy_none(evictee_value);
@@ -3449,20 +3475,9 @@ module econia::market {
                     )
                 );
             };
+        } else {
+            remaining_size = 0;
         };
-        // Emit a place limit order event, creating handle as needed.
-        let place_limit_order_event = user::create_place_limit_order_event(
-            market_id,
-            user_address,
-            custodian_id,
-            integrator,
-            side,
-            size,
-            price,
-            restriction,
-            self_match_behavior,
-            size_posted,
-            market_order_id);
         /* Commented-out algorithm to emit at market level:
         let has_place_limit_order_event_handle = tablist::contains(
             &market_event_handles_ref_mut.place_limit_order_events, market_id);
@@ -3476,10 +3491,36 @@ module econia::market {
         event::emit_event(place_limit_order_event_handle_ref_mut,
                           place_limit_order_event);
         */
-        user::emit_place_limit_order_event(place_limit_order_event);
+        // Emit a place limit order event, creating handle as needed.
+        user::emit_place_limit_order_event(
+            user::create_place_limit_order_event(
+                market_id,
+                user_address,
+                custodian_id,
+                integrator,
+                side,
+                size,
+                price,
+                restriction,
+                self_match_behavior,
+                remaining_size,
+                market_order_id
+            )
+        );
         emit_fill_events_for_market_accounts(
             market_id, &mut fill_event_queue, market_event_handles_ref_mut,
             false, market_order_id);
+        if (option::is_some(&cancel_reason_option)) {
+            user::emit_cancel_order_event(
+                user::create_cancel_order_event(
+                    market_id,
+                    market_order_id,
+                    user_address,
+                    custodian_id,
+                    option::destroy_some(cancel_reason_option)
+                )
+            );
+        };
         // Return market order ID and taker trade amounts.
         return (market_order_id, base_traded, quote_traded, fees)
     }
@@ -3860,7 +3901,7 @@ module econia::market {
             let cancel_reason = if (self_match_taker_cancel) {
                 CANCEL_REASON_SELF_MATCH_TAKER
             } else if (liquidity_gone) {
-                CANCEL_REASON_NO_LIQUIDITY
+                CANCEL_REASON_NOT_ENOUGH_LIQUIDITY
             } else {
                 CANCEL_REASON_MAX_QUOTE_TRADED
             };
@@ -4208,7 +4249,7 @@ module econia::market {
             let cancel_reason = if (self_match_taker_cancel) {
                 CANCEL_REASON_SELF_MATCH_TAKER
             } else if (liquidity_gone) {
-                CANCEL_REASON_NO_LIQUIDITY
+                CANCEL_REASON_NOT_ENOUGH_LIQUIDITY
             } else {
                 CANCEL_REASON_MAX_QUOTE_TRADED
             };
@@ -4979,8 +5020,8 @@ module econia::market {
                 CANCEL_REASON_MANUAL_CANCEL, 0);
         assert!(user::get_CANCEL_REASON_EVICTION() ==
                 CANCEL_REASON_EVICTION, 0);
-        assert!(user::get_CANCEL_REASON_NO_LIQUIDITY() ==
-                CANCEL_REASON_NO_LIQUIDITY, 0);
+        assert!(user::get_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY() ==
+                CANCEL_REASON_NOT_ENOUGH_LIQUIDITY, 0);
         assert!(user::get_CANCEL_REASON_SELF_MATCH_MAKER() ==
                 CANCEL_REASON_SELF_MATCH_MAKER, 0);
         assert!(user::get_CANCEL_REASON_SELF_MATCH_TAKER() ==

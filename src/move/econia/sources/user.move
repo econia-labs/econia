@@ -464,7 +464,7 @@ module econia::user {
         price: u64,
         restriction: u8,
         self_match_behavior: u8,
-        size_posted: u64,
+        remaining_size: u64,
         order_id: u128
     }
 
@@ -553,7 +553,7 @@ module econia::user {
     const SHIFT_MARKET_ID: u8 = 64;
     const CANCEL_REASON_MANUAL_CANCEL: u8 = 0;
     const CANCEL_REASON_EVICTION: u8 = 1;
-    const CANCEL_REASON_NO_LIQUIDITY: u8 = 2;
+    const CANCEL_REASON_NOT_ENOUGH_LIQUIDITY: u8 = 2;
     const CANCEL_REASON_SELF_MATCH_MAKER: u8 = 3;
     const CANCEL_REASON_SELF_MATCH_TAKER: u8 = 4;
     const CANCEL_REASON_IMMEDIATE_OR_CANCEL: u8 = 5;
@@ -575,8 +575,8 @@ module econia::user {
     }
 
     #[view]
-    public fun get_CANCEL_REASON_NO_LIQUIDITY(): u8 {
-        CANCEL_REASON_NO_LIQUIDITY
+    public fun get_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY(): u8 {
+        CANCEL_REASON_NOT_ENOUGH_LIQUIDITY
     }
 
     #[view]
@@ -1819,7 +1819,7 @@ module econia::user {
         price: u64,
         restriction: u8,
         self_match_behavior: u8,
-        size_posted: u64,
+        remaining_size: u64,
         order_id: u128
     ): PlaceLimitOrderEvent {
         PlaceLimitOrderEvent {
@@ -1832,7 +1832,7 @@ module econia::user {
             price,
             restriction,
             self_match_behavior,
-            size_posted,
+            remaining_size,
             order_id
         }
     }

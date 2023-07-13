@@ -11,7 +11,8 @@ Econia Move source code adheres to [Semantic Versioning] and [Keep a Changelog] 
 
 ### Changed
 
-- Fee assessment updated to be processed per fill, rather than per trade ([#321])
+- Fee assessment updated to be processed per fill, rather than per trade ([#321]).
+- Market order size is no longer automatically adjusted based on available market account holdings ([#321]).
 
 ### Deprecated
 

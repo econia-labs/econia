@@ -34,10 +34,14 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
+
+      - name: Configure Docker driver
+        run: docker buildx create --use --driver=docker-container
 
       - name: Build Docker image
         uses: docker/build-push-action@v4
@@ -46,6 +50,8 @@ jobs:
           tags: asia-northeast1-docker.pkg.dev/econia-0/econia-backend/api:latest
           file: ./src/rust/api/Dockerfile
           outputs: type=docker,dest=/tmp/image.tar
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           push: false
 
       - name: Upload artifact

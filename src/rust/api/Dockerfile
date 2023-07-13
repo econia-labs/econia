@@ -6,15 +6,14 @@ COPY . .
 RUN cargo chef prepare --recipe-path recipe.json
 
 FROM chef AS builder
-COPY --from=planner /app/recipe.json recipe.json
 RUN apt-get update && apt-get install mold -y
 ARG RUSTFLAGS="-C link-arg=-fuse-ld=mold"
+COPY --from=planner /app/recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
 COPY . .
 RUN cargo build --release --bin api
 
 FROM debian:bookworm-slim AS runtime
-RUN apt-get update
-RUN apt-get install ca-certificates libpq-dev -y
+RUN apt-get update && apt-get install ca-certificates libpq-dev -y
 COPY --from=builder /app/target/release/api /usr/local/bin
 ENTRYPOINT ["/usr/local/bin/api"]

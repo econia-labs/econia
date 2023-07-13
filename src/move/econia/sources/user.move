@@ -558,6 +558,7 @@ module econia::user {
     const CANCEL_REASON_SELF_MATCH_TAKER: u8 = 4;
     const CANCEL_REASON_IMMEDIATE_OR_CANCEL: u8 = 5;
     const CANCEL_REASON_TOO_SMALL_AFTER_MATCHING: u8 = 6;
+    const CANCEL_REASON_MAX_QUOTE_TRADED: u8 = 7;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -596,6 +597,11 @@ module econia::user {
     #[view]
     public fun get_CANCEL_REASON_TOO_SMALL_AFTER_MATCHING(): u8 {
         CANCEL_REASON_TOO_SMALL_AFTER_MATCHING
+    }
+
+    #[view]
+    public fun get_CANCEL_REASON_MAX_QUOTE_TRADED(): u8 {
+        CANCEL_REASON_MAX_QUOTE_TRADED
     }
 
     #[view]

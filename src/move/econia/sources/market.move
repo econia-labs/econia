@@ -613,10 +613,12 @@ module econia::market {
         map: Tablist<u64, OrderBook>
     }
 
+    /// Not emitted at market account level when a swap order is placed
+    /// by a non-signing swapper.
     struct MarketEventHandles has key {
-        /// Not emitted at user level when swapper doesn't sign.
         place_swap_order_events:
-            Tablist<u64, EventHandle<PlaceSwapOrderEvent>>
+            Tablist<u64, EventHandle<PlaceSwapOrderEvent>>,
+        cancel_order_events: Tablist<u64, EventHandle<CancelOrderEvent>>,
     }
 
     /// Stored under a signing user's account (not market account),
@@ -763,13 +765,6 @@ module econia::market {
     const E_SIZE_CHANGE_INSERTION_ERROR: u64 = 30;
     /// Market order ID corresponds to an order that did not post.
     const E_ORDER_DID_NOT_POST: u64 = 31;
-    const CANCEL_REASON_MANUAL_CANCEL: u8 = 0;
-    const CANCEL_REASON_EVICTION: u8 = 1;
-    const CANCEL_REASON_NO_LIQUIDITY: u8 = 2;
-    const CANCEL_REASON_SELF_MATCH_MAKER: u8 = 3;
-    const CANCEL_REASON_SELF_MATCH_TAKER: u8 = 4;
-    const CANCEL_REASON_IMMEDIATE_OR_CANCEL: u8 = 5;
-    const CANCEL_REASON_TOO_SMALL_AFTER_MATCHING: u8 = 6;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -841,6 +836,15 @@ module econia::market {
     const SHIFT_COUNTER: u8 = 64;
     /// Flag for passive order specified by advance in ticks.
     const TICKS: bool = false;
+
+    const CANCEL_REASON_MANUAL_CANCEL: u8 = 0;
+    const CANCEL_REASON_EVICTION: u8 = 1;
+    const CANCEL_REASON_NO_LIQUIDITY: u8 = 2;
+    const CANCEL_REASON_SELF_MATCH_MAKER: u8 = 3;
+    const CANCEL_REASON_SELF_MATCH_TAKER: u8 = 4;
+    const CANCEL_REASON_IMMEDIATE_OR_CANCEL: u8 = 5;
+    const CANCEL_REASON_TOO_SMALL_AFTER_MATCHING: u8 = 6;
+    const CANCEL_REASON_MAX_QUOTE_TRADED: u8 = 7;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -1804,21 +1808,29 @@ module econia::market {
         // Swap against order book, storing optionally modified coin
         // inputs, base and quote trade amounts, quote fees paid, and
         // place swap order event.
-        let (optional_base_coins, quote_coins, base_traded, quote_traded, fees,
-             place_swap_order_event, ) = swap(
-                &mut fill_event_queue,
-                user_address,
-                market_id,
-                NO_UNDERWRITER,
-                integrator,
-                direction,
-                min_base,
-                max_base,
-                min_quote,
-                max_quote,
-                limit_price,
-                optional_base_coins,
-                quote_coins);
+        let (
+            optional_base_coins,
+            quote_coins,
+            base_traded,
+            quote_traded,
+            fees,
+            place_swap_order_event,
+            cancel_order_event_option
+        ) = swap(
+            &mut fill_event_queue,
+            user_address,
+            market_id,
+            NO_UNDERWRITER,
+            integrator,
+            direction,
+            min_base,
+            max_base,
+            min_quote,
+            max_quote,
+            limit_price,
+            optional_base_coins,
+            quote_coins
+        );
         if (!exists<SwapperEventHandles>(user_address))
             move_to(user, SwapperEventHandles{
                 cancel_order_events: tablist::new(),
@@ -1853,6 +1865,20 @@ module econia::market {
             event::emit_event(fill_events_handle_ref_mut,
                               fill_event);
         });
+        // Optionally emit cancel event, initting handle as needed.
+        if (option::is_some(&cancel_order_event_option)) {
+            let cancel_order_events_ref_mut =
+                &mut swapper_event_handles_ref_mut.cancel_order_events;
+            if (!tablist::contains(cancel_order_events_ref_mut, market_id))
+                tablist::add(
+                    cancel_order_events_ref_mut,
+                    market_id,
+                    account::new_event_handle(user));
+            let cancel_order_events_handle_ref_mut = tablist::borrow_mut(
+                cancel_order_events_ref_mut, market_id);
+            event::emit_event(cancel_order_events_handle_ref_mut,
+                              option::destroy_some(cancel_order_event_option));
+        };
         // Deposit base coins back to user's coin store.
         coin::deposit(user_address, option::destroy_some(optional_base_coins));
         // Deposit quote coins back to user's coin store.
@@ -1972,7 +1998,7 @@ module econia::market {
         // Swap against order book, storing optionally modified coin
         // inputs, base and quote trade amounts, and quote fees paid.
         let (optional_base_coins, quote_coins_matched, base_traded,
-             quote_traded, fees, _) = swap(
+             quote_traded, fees, _, _) = swap(
                 &mut vector[],
                 NO_MARKET_ACCOUNT,
                 market_id,
@@ -2086,7 +2112,7 @@ module econia::market {
         // Swap against order book, storing optionally modified quote
         // coin input, base and quote trade amounts, quote fees paid.
         let (optional_base_coins, quote_coins_matched, base_traded,
-             quote_traded, fees, _) = swap(
+             quote_traded, fees, _, _) = swap(
                 &mut vector[],
                 NO_MARKET_ACCOUNT,
                 market_id,
@@ -2726,6 +2752,7 @@ module econia::market {
                     place_limit_order_events: tablist::new(),
                     place_market_order_events: tablist::new(),
                     */
+                    cancel_order_events: tablist::new(),
                     place_swap_order_events: tablist::new()
                 }
             );
@@ -2806,6 +2833,8 @@ module econia::market {
     ///   net change in taker's quote coin holdings.
     /// * `u64`: Amount of quote coin fees paid.
     /// * `bool`: `true` if a self match that results in a taker cancel.
+    /// * `bool`: `true` if liquidity is gone from order book on
+    ///   corresponding side after matching.
     ///
     /// # Emits
     ///
@@ -2876,6 +2905,7 @@ module econia::market {
         u64,
         u64,
         u64,
+        bool,
         bool
     ) {
         // Assert price is not too high.
@@ -3050,7 +3080,7 @@ module econia::market {
         // Return optional base coin, quote coins, trade amounts, and
         // self match taker cancel flag.
         (optional_base_coins, quote_coins, base_fill, quote_traded, fees_paid,
-         self_match_taker_cancel)
+         self_match_taker_cancel, avl_queue::is_empty(orders_ref_mut))
     }
 
     /// Return order ID derived solely from order book counter for an
@@ -3319,8 +3349,15 @@ module econia::market {
             // asset inputs, base and quote trade amounts, quote fees
             // paid, and if a self match requires canceling the rest of
             // the order. (Increments order book counter).
-            (optional_base_coins, quote_coins, base_traded, quote_traded, fees,
-             self_match_cancel) = match(
+            (
+                optional_base_coins,
+                quote_coins,
+                base_traded,
+                quote_traded,
+                fees,
+                self_match_cancel,
+                _,
+            ) = match(
                 market_id,
                 market_event_handles_ref_mut,
                 &mut fill_event_queue,
@@ -3336,7 +3373,8 @@ module econia::market {
                 price,
                 self_match_behavior,
                 optional_base_coins,
-                quote_coins);
+                quote_coins
+            );
             // Calculate amount of base deposited back to market account.
             let base_deposit = if (direction == BUY) base_traded else
                 base_withdraw - base_traded;
@@ -3756,10 +3794,15 @@ module econia::market {
         let market_event_handles_ref_mut =
             market_event_handles_borrow_mut(resource_address);
         let fill_event_queue = vector[];
-        // Match against order book, storing optionally modified asset
-        // inputs, base and quote trade amounts, and quote fees paid.
-        let (optional_base_coins, quote_coins, base_traded, quote_traded, fees,
-             _) = match(
+        let (
+            optional_base_coins,
+            quote_coins,
+            base_traded,
+            quote_traded,
+            fees,
+            self_match_taker_cancel,
+            liquidity_gone
+        ) = match(
             market_id,
             market_event_handles_ref_mut,
             &mut fill_event_queue,
@@ -3775,7 +3818,8 @@ module econia::market {
             limit_price,
             self_match_behavior,
             optional_base_coins,
-            quote_coins);
+            quote_coins
+        );
         let market_order_id = order_id_no_post(order_book_ref_mut.counter);
         // Calculate amount of base deposited back to market account.
         let base_deposit = if (direction == BUY) base_traded else
@@ -3784,16 +3828,6 @@ module econia::market {
         user::deposit_assets_internal<BaseType, QuoteType>(
             user_address, market_id, custodian_id, base_deposit,
             optional_base_coins, quote_coins, underwriter_id);
-        // Emit a place market order event, creating handle as needed.
-        let place_market_order_event = user::create_place_market_order_event(
-            market_id,
-            user_address,
-            custodian_id,
-            integrator,
-            direction,
-            size,
-            self_match_behavior,
-            market_order_id);
         /* Commented-out algorithm to emit at market level:
         let has_place_market_order_event_handle = tablist::contains(
             &market_event_handles_ref_mut.place_market_order_events, market_id);
@@ -3807,10 +3841,39 @@ module econia::market {
         event::emit_event(place_market_order_event_handle_ref_mut,
                           place_market_order_event);
         */
-        user::emit_place_market_order_event(place_market_order_event);
+        user::emit_place_market_order_event(
+            user::create_place_market_order_event(
+                market_id,
+                user_address,
+                custodian_id,
+                integrator,
+                direction,
+                size,
+                self_match_behavior,
+                market_order_id)
+        );
         emit_fill_events_for_market_accounts(
             market_id, &mut fill_event_queue, market_event_handles_ref_mut,
             false, (NIL as u128));
+        // If order needs to be cancelled:
+        if ((self_match_taker_cancel) || (base_traded < max_base)) {
+            let cancel_reason = if (self_match_taker_cancel) {
+                CANCEL_REASON_SELF_MATCH_TAKER
+            } else if (liquidity_gone) {
+                CANCEL_REASON_NO_LIQUIDITY
+            } else {
+                CANCEL_REASON_MAX_QUOTE_TRADED
+            };
+            user::emit_cancel_order_event(
+                user::create_cancel_order_event(
+                    market_id,
+                    market_order_id,
+                    user_address,
+                    custodian_id,
+                    cancel_reason
+                )
+            );
+        };
         // Return base and quote traded by user, fees paid.
         (base_traded, quote_traded, fees)
     }
@@ -4057,7 +4120,8 @@ module econia::market {
         u64,
         u64,
         u64,
-        PlaceSwapOrderEvent
+        PlaceSwapOrderEvent,
+        Option<CancelOrderEvent>
     ) acquires
         MarketEventHandles,
         OrderBooks
@@ -4080,27 +4144,36 @@ module econia::market {
         assert!(type_info::type_of<QuoteType>() // Assert quote type.
                 == order_book_ref_mut.quote_type, E_INVALID_QUOTE);
         // Declare return assignment variables.
-        let (base_traded, quote_traded, fees);
+        let (base_traded, quote_traded, fees, self_match_taker_cancel,
+             liquidity_gone);
         let market_event_handles_ref_mut =
             market_event_handles_borrow_mut(resource_address);
-        (optional_base_coins, quote_coins, base_traded, quote_traded, fees, _)
-            = match( // Match against order book.
-                market_id,
-                market_event_handles_ref_mut,
-                fill_event_queue_ref_mut,
-                order_book_ref_mut,
-                signer_address,
-                NO_CUSTODIAN,
-                integrator,
-                direction,
-                min_base,
-                max_base,
-                min_quote,
-                max_quote,
-                limit_price,
-                ABORT,
-                optional_base_coins,
-                quote_coins);
+        (
+            optional_base_coins,
+            quote_coins,
+            base_traded,
+            quote_traded,
+            fees,
+            self_match_taker_cancel,
+            liquidity_gone
+        ) = match( // Match against order book.
+            market_id,
+            market_event_handles_ref_mut,
+            fill_event_queue_ref_mut,
+            order_book_ref_mut,
+            signer_address,
+            NO_CUSTODIAN,
+            integrator,
+            direction,
+            min_base,
+            max_base,
+            min_quote,
+            max_quote,
+            limit_price,
+            CANCEL_TAKER,
+            optional_base_coins,
+            quote_coins
+        );
         let market_order_id = order_id_no_post(order_book_ref_mut.counter);
         let place_swap_order_event = PlaceSwapOrderEvent{
             market_id,
@@ -4129,11 +4202,45 @@ module econia::market {
         emit_fill_events_for_market_accounts(
             market_id, fill_event_queue_ref_mut, market_event_handles_ref_mut,
             true, (NIL as u128));
+        let need_to_cancel_order =
+            (self_match_taker_cancel) || (base_traded < max_base);
+        let cancel_order_event_option = if (need_to_cancel_order) {
+            let cancel_reason = if (self_match_taker_cancel) {
+                CANCEL_REASON_SELF_MATCH_TAKER
+            } else if (liquidity_gone) {
+                CANCEL_REASON_NO_LIQUIDITY
+            } else {
+                CANCEL_REASON_MAX_QUOTE_TRADED
+            };
+            let cancel_order_event = user::create_cancel_order_event(
+                market_id,
+                market_order_id,
+                signer_address,
+                NO_CUSTODIAN,
+                cancel_reason
+            );
+            let has_cancel_order_event_handle_for_market = tablist::contains(
+                &market_event_handles_ref_mut.cancel_order_events,
+                market_id);
+            if (!has_cancel_order_event_handle_for_market) tablist::add(
+                &mut market_event_handles_ref_mut.cancel_order_events,
+                market_id,
+                account::new_event_handle(&resource_account::get_signer()));
+            let cancel_order_event_handle_for_market_ref_mut =
+                tablist::borrow_mut(
+                    &mut market_event_handles_ref_mut.cancel_order_events,
+                    market_id);
+            event::emit_event(cancel_order_event_handle_for_market_ref_mut,
+                             cancel_order_event);
+            option::some(cancel_order_event)
+        } else {
+            option::none()
+        };
         // TODO: ensure trade events emitted to swapper/market account holder.
         // Return optionally modified asset inputs, trade amounts, fees,
         // and place swap order event.
         (optional_base_coins, quote_coins, base_traded, quote_traded, fees,
-         place_swap_order_event)
+         place_swap_order_event, cancel_order_event_option)
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -4882,6 +4989,8 @@ module econia::market {
                 CANCEL_REASON_IMMEDIATE_OR_CANCEL, 0);
         assert!(user::get_CANCEL_REASON_TOO_SMALL_AFTER_MATCHING() ==
                 CANCEL_REASON_TOO_SMALL_AFTER_MATCHING, 0);
+        assert!(user::get_CANCEL_REASON_MAX_QUOTE_TRADED() ==
+                CANCEL_REASON_MAX_QUOTE_TRADED, 0);
     }
 
     #[test]

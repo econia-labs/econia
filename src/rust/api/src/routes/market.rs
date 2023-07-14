@@ -580,6 +580,13 @@ mod tests {
         get_market_ids, load_config, routes::router, start_redis_channels, tests::make_test_server,
     };
 
+    /// Test that the markets endpoint returns information about all available
+    /// markets.
+    ///
+    /// This test sends a GET request to the `/markets` endpoint. The response
+    /// is then checked to ensure that it has a `200 OK` status code, and the
+    /// response body is checked to ensure that it is a JSON response in the
+    /// correct format.
     #[tokio::test]
     async fn test_markets() {
         let config = load_config();
@@ -616,6 +623,55 @@ mod tests {
         let s = String::from_utf8(body.to_vec()).unwrap();
         let result: Result<Vec<types::Market>, serde_json::Error> =
             serde_json::from_str(s.as_str());
+
+        assert!(result.is_ok());
+    }
+
+    /// Test that the market by market ID endpoint returns information about
+    /// the specified market.
+    ///
+    /// This test sends a GET request to the `/markets/{market_id}` endpoint
+    /// with the `market_id` path parameter set to `1`. The response is then
+    /// checked to ensure that it has a `200 OK` status code, and the response
+    /// body is checked to ensure that it is a JSON response in the correct
+    /// format.
+    #[tokio::test]
+    async fn test_market_by_market_id() {
+        let market_id = 1;
+
+        let config = load_config();
+
+        let pool = PgPool::connect(&config.database_url)
+            .await
+            .expect("Could not connect to DATABASE_URL");
+
+        let (tx, _) = broadcast::channel(16);
+
+        let state = Arc::new(AppState {
+            pool,
+            sender: tx,
+            market_ids: HashSet::new(),
+        });
+
+        let app = Router::new()
+            .route("/markets/:market_id", get(get_market_by_id))
+            .with_state(state);
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri(format!("/markets/{}", market_id))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
+        let s = String::from_utf8(body.to_vec()).unwrap();
+        let result: Result<types::Market, serde_json::Error> = serde_json::from_str(s.as_str());
 
         assert!(result.is_ok());
     }

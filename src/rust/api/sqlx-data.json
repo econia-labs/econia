@@ -158,7 +158,7 @@
     },
     "query": "\n                select\n                    market_id,\n                    start_time,\n                    open,\n                    high,\n                    low,\n                    close,\n                    volume\n                from bars_30m where market_id = $1 and start_time >= $2 and start_time < $3\n                order by start_time;\n                "
   },
-  "30cd7a70a416616a09ecd5565d6c76c945a3c6875bbcc236a4b8f0c4569bb513": {
+  "4369cf7d1a48f8eff2d3c66e731981879e1eb3a88e51ca0bc97340b1e1aa8625": {
     "describe": {
       "columns": [
         {
@@ -242,11 +242,13 @@
       ],
       "parameters": {
         "Left": [
-          "Text"
+          "Text",
+          "Int8",
+          "Int8"
         ]
       }
     },
-    "query": "\n        select\n            market_order_id,\n            market_id,\n            side as \"side: db::models::order::Side\",\n            size,\n            price,\n            user_address,\n            custodian_id,\n            order_state as \"order_state: db::models::order::OrderState\",\n            created_at\n        from orders where user_address = $1 and order_state = 'open'\n        order by created_at;\n        "
+    "query": "\n        select\n            market_order_id,\n            market_id,\n            side as \"side: db::models::order::Side\",\n            size,\n            price,\n            user_address,\n            custodian_id,\n            order_state as \"order_state: db::models::order::OrderState\",\n            created_at\n        from orders where user_address = $1 and order_state = 'open'\n        order by created_at limit $2 offset $3;\n        "
   },
   "5119c4623801ae6ef9e2c0ff01d77882bb44cb883f12bc9bb0c00f296df3a773": {
     "describe": {
@@ -656,6 +658,98 @@
     },
     "query": "\n                select\n                    market_id,\n                    start_time,\n                    open,\n                    high,\n                    low,\n                    close,\n                    volume\n                from bars_1h where market_id = $1 and start_time >= $2 and start_time < $3\n                order by start_time;\n                "
   },
+  "ae7dfc63269447a5b6df5c7c60f02f677b11ebf4adc5d0d89d3b509267bf2eed": {
+    "describe": {
+      "columns": [
+        {
+          "name": "market_order_id",
+          "ordinal": 0,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "market_id",
+          "ordinal": 1,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "side: db::models::order::Side",
+          "ordinal": 2,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "bid",
+                  "ask"
+                ]
+              },
+              "name": "side"
+            }
+          }
+        },
+        {
+          "name": "size",
+          "ordinal": 3,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "price",
+          "ordinal": 4,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "user_address",
+          "ordinal": 5,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "custodian_id",
+          "ordinal": 6,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "order_state: db::models::order::OrderState",
+          "ordinal": 7,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "open",
+                  "filled",
+                  "cancelled",
+                  "evicted"
+                ]
+              },
+              "name": "order_state"
+            }
+          }
+        },
+        {
+          "name": "created_at",
+          "ordinal": 8,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Int8",
+          "Int8"
+        ]
+      }
+    },
+    "query": "\n        select\n            market_order_id,\n            market_id,\n            side as \"side: db::models::order::Side\",\n            size,\n            price,\n            user_address,\n            custodian_id,\n            order_state as \"order_state: db::models::order::OrderState\",\n            created_at\n        from orders where user_address = $1 order by created_at limit $2 offset $3;\n        "
+  },
   "b4109cc796a1f78a5db4dc529677a99b28b468c5a1a470686367fd900c62e4c9": {
     "describe": {
       "columns": [
@@ -804,96 +898,6 @@
       }
     },
     "query": "\n                select\n                    market_id,\n                    start_time,\n                    open,\n                    high,\n                    low,\n                    close,\n                    volume\n                from bars_5m where market_id = $1 and start_time >= $2 and start_time < $3\n                order by start_time;;\n                "
-  },
-  "d2281b8cf774e2357abc187626bcd150c7cdd7d54edb1d1d5ecb5c29f90eb0e8": {
-    "describe": {
-      "columns": [
-        {
-          "name": "market_order_id",
-          "ordinal": 0,
-          "type_info": "Numeric"
-        },
-        {
-          "name": "market_id",
-          "ordinal": 1,
-          "type_info": "Numeric"
-        },
-        {
-          "name": "side: db::models::order::Side",
-          "ordinal": 2,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "bid",
-                  "ask"
-                ]
-              },
-              "name": "side"
-            }
-          }
-        },
-        {
-          "name": "size",
-          "ordinal": 3,
-          "type_info": "Numeric"
-        },
-        {
-          "name": "price",
-          "ordinal": 4,
-          "type_info": "Numeric"
-        },
-        {
-          "name": "user_address",
-          "ordinal": 5,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "custodian_id",
-          "ordinal": 6,
-          "type_info": "Numeric"
-        },
-        {
-          "name": "order_state: db::models::order::OrderState",
-          "ordinal": 7,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "open",
-                  "filled",
-                  "cancelled",
-                  "evicted"
-                ]
-              },
-              "name": "order_state"
-            }
-          }
-        },
-        {
-          "name": "created_at",
-          "ordinal": 8,
-          "type_info": "Timestamptz"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        true,
-        false,
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Text"
-        ]
-      }
-    },
-    "query": "\n        select\n            market_order_id,\n            market_id,\n            side as \"side: db::models::order::Side\",\n            size,\n            price,\n            user_address,\n            custodian_id,\n            order_state as \"order_state: db::models::order::OrderState\",\n            created_at\n        from orders where user_address = $1 order by created_at;\n        "
   },
   "d49006409169708b35213dcc1d0bcd20a0d385618ba5fc3b6f8c6e67f578703f": {
     "describe": {

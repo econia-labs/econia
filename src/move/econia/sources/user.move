@@ -283,6 +283,7 @@ module econia::user {
 
     use aptos_framework::account;
     use aptos_framework::coin::{Self, Coin};
+    use aptos_framework::guid;
     use aptos_framework::table::{Self, Table};
     use aptos_framework::event::{Self, EventHandle};
     use aptos_framework::type_info::{Self, TypeInfo};
@@ -419,6 +420,15 @@ module econia::user {
             Table<u128, EventHandle<PlaceLimitOrderEvent>>,
         place_market_order_events:
             Table<u128, EventHandle<PlaceMarketOrderEvent>>
+    }
+
+    /// View function return for getting event handle creation numbers.
+    struct MarketEventHandleCreationNumbers has copy, drop {
+        cancel_order_events_handle_creation_num: u64,
+        change_order_size_events_handle_creation_num: u64,
+        fill_events_handle_creation_num: u64,
+        place_limit_order_events_handle_creation_num: u64,
+        place_market_order_events_handle_creation_num: u64
     }
 
     struct CancelOrderEvent has copy, drop, store {
@@ -562,6 +572,51 @@ module econia::user {
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // View functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[view]
+    /// Private view function to reduce runtime handle contention.
+    fun get_market_event_handle_creation_numbers(
+        user: address,
+        market_id: u64,
+        custodian_id: u64
+    ): Option<MarketEventHandleCreationNumbers>
+    acquires MarketEventHandles {
+        if (!exists<MarketEventHandles>(user)) return option::none();
+        let market_event_handles_ref = borrow_global<MarketEventHandles>(user);
+        let market_account_id = get_market_account_id(market_id, custodian_id);
+        // Handles for market account initialized at the same time, so
+        // assume if one exist that all exist.
+        let handles_exist_for_market_account = table::contains(
+            &market_event_handles_ref.cancel_order_events, market_account_id);
+        if (!handles_exist_for_market_account) return option::none();
+        option::some(MarketEventHandleCreationNumbers{
+            cancel_order_events_handle_creation_num:
+                guid::creation_num(event::guid(table::borrow(
+                    &market_event_handles_ref.cancel_order_events,
+                    market_account_id
+                ))),
+            change_order_size_events_handle_creation_num:
+                guid::creation_num(event::guid(table::borrow(
+                    &market_event_handles_ref.change_order_size_events,
+                    market_account_id
+                ))),
+            fill_events_handle_creation_num:
+                guid::creation_num(event::guid(table::borrow(
+                    &market_event_handles_ref.fill_events,
+                    market_account_id
+                ))),
+            place_limit_order_events_handle_creation_num:
+                guid::creation_num(event::guid(table::borrow(
+                    &market_event_handles_ref.place_limit_order_events,
+                    market_account_id
+                ))),
+            place_market_order_events_handle_creation_num:
+                guid::creation_num(event::guid(table::borrow(
+                    &market_event_handles_ref.place_market_order_events,
+                    market_account_id
+                ))),
+        })
+    }
 
     #[view]
     public fun get_CANCEL_REASON_MANUAL_CANCEL(): u8 {

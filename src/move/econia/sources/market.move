@@ -1085,24 +1085,18 @@ module econia::market {
     ///
     /// Mutates state, so kept as a private view function.
     ///
-    /// # Aborts
-    ///
-    /// * `E_INVALID_MARKET_ORDER_ID`: No market order with given ID for
-    ///   indicated market.
-    ///
     /// # Testing
     ///
     /// * `test_change_order_size_ask_custodian()`
     /// * `test_change_order_size_bid_user()`
-    /// * `test_get_open_order_invalid_market_order_id()`
+    /// * `test_get_open_order_no_such_order()`
     fun get_open_order(
         market_id: u64,
         market_order_id: u128
-    ): OrderView
+    ): Option<OrderView>
     acquires OrderBooks {
-        // Assert market has an open order with given market order ID.
-        assert!(has_open_order(market_id, market_order_id),
-                E_INVALID_MARKET_ORDER_ID);
+        // Return empty option if no such order.
+        if (!has_open_order(market_id, market_order_id)) return option::none();
         // Get address of resource account where order books are stored.
         let resource_address = resource_account::get_address();
         // Mutably borrow order books map.
@@ -1122,8 +1116,9 @@ module econia::market {
         // order access key.
         let Order{size, price, user, custodian_id, order_access_key: _} =
             avl_queue::remove(orders_ref_mut, avlq_access_key);
-        OrderView{market_id, side, market_order_id, size, price, user,
-                  custodian_id} // Pack and return an order view.
+        // Pack and return an order view in an option.
+        option::some(OrderView{market_id, side, market_order_id, size, price,
+                               user, custodian_id})
     }
 
     #[view]
@@ -1251,9 +1246,9 @@ module econia::market {
     ///
     /// # Testing
     ///
-    /// * `test_has_open_order_no_market()`
     /// * `test_change_order_size_ask_custodian()`
     /// * `test_change_order_size_bid_user()`
+    /// * `test_has_open_order_no_market()`
     fun has_open_order(
         market_id: u64,
         market_order_id: u128
@@ -5165,7 +5160,7 @@ module econia::market {
             price: price_r,
             user: user_r,
             custodian_id: custodian_id_r,
-        } = get_open_order(market_id, market_order_id);
+        } = option::destroy_some(get_open_order(market_id, market_order_id));
         // Assert field returns.
         assert!(market_id_r        == market_id, 0);
         assert!(side_r             == side, 0);
@@ -5265,7 +5260,7 @@ module econia::market {
             price: price_r,
             user: user_r,
             custodian_id: custodian_id_r,
-        } = get_open_order(market_id, market_order_id);
+        } = option::destroy_some(get_open_order(market_id, market_order_id));
         // Assert field returns.
         assert!(market_id_r        == market_id, 0);
         assert!(side_r             == side, 0);
@@ -5722,11 +5717,11 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = E_INVALID_MARKET_ORDER_ID)]
-    /// Verify failure for unregistered market.
-    fun test_get_open_order_invalid_market_order_id() acquires OrderBooks {
+    /// Verify return for no such order.
+    fun test_get_open_order_no_such_order() acquires OrderBooks {
         init_test(); // Initialize for testing.
-        get_open_order(0, 0); // Attempt invalid lookup.
+        // Assert empty option return.
+        assert!(get_open_order(0, 0) == option::none(), 0);
     }
 
     #[test]

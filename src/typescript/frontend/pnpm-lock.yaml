@@ -71,9 +71,6 @@ dependencies:
   typescript:
     specifier: 5.1.6
     version: 5.1.6
-  wallet-adapter-react:
-    specifier: link:@@aptos-labs/wallet-adapter-react
-    version: link:@@aptos-labs/wallet-adapter-react
 
 devDependencies:
   '@tanstack/react-query-devtools':

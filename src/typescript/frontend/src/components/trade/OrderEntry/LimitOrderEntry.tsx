@@ -72,7 +72,7 @@ export const LimitOrderEntry: React.FC<{
           TypeTag.fromApiCoin(marketData.quote).toString(),
         ],
         arguments: [
-          marketData.market_id, // market id
+          marketData.market_id,
           "0x1", // TODO get integrator ID
           orderSide === "ask",
           BigInt(
@@ -96,7 +96,7 @@ export const LimitOrderEntry: React.FC<{
         ],
       });
 
-      submitTransaction(payload, { nodeUrl: RPC_NODE_URL });
+      await submitTransaction(payload, { nodeUrl: RPC_NODE_URL });
     }
   };
 

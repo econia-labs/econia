@@ -1,13 +1,16 @@
-import { entryFunctions, type order } from "@econia-labs/sdk";
+import { type order } from "@econia-labs/sdk";
+import { createEntryPayload } from "@thalalabs/surf";
+import { useSubmitTransaction } from "@thalalabs/surf/hooks";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/Button";
 import { ConnectedButton } from "@/components/ConnectedButton";
 import { useAptos } from "@/contexts/AptosContext";
-import { ECONIA_ADDR } from "@/env";
+import { RPC_NODE_URL } from "@/env";
 import { useMarketAccountBalance } from "@/hooks/useMarketAccountBalance";
 import { type ApiMarket } from "@/types/api";
 import { type Side } from "@/types/global";
+import { MARKET_ABI } from "@/utils/abi/market";
 import { fromDecimalSize } from "@/utils/econia";
 import { TypeTag } from "@/utils/TypeTag";
 
@@ -22,13 +25,15 @@ export const MarketOrderEntry: React.FC<{
   marketData: ApiMarket;
   side: Side;
 }> = ({ marketData, side }) => {
-  const { signAndSubmitTransaction, account } = useAptos();
+  const { account } = useAptos();
   const {
     handleSubmit,
     register,
     setValue,
     formState: { errors },
   } = useForm<MarketFormValues>();
+  const { submitTransaction } = useSubmitTransaction();
+
   const baseBalance = useMarketAccountBalance(
     account?.address,
     marketData.market_id,
@@ -50,27 +55,27 @@ export const MarketOrderEntry: React.FC<{
     if (marketData.base == null) {
       // TODO: handle generic markets
     } else {
-      const payload = entryFunctions.placeMarketOrderUserEntry(
-        ECONIA_ADDR,
-        TypeTag.fromApiCoin(marketData.base).toString(),
-        TypeTag.fromApiCoin(marketData.quote).toString(),
-        BigInt(marketData.market_id), // market id
-        "0x1", // TODO get integrator ID
-        orderSide,
-        BigInt(
-          fromDecimalSize({
-            size: values.size,
-            lotSize: marketData.lot_size,
-            baseCoinDecimals: marketData.base.decimals,
-          }).toString(),
-        ),
-        "abort", // TODO don't hardcode this either
-      );
-
-      await signAndSubmitTransaction({
-        type: "entry_function_payload",
-        ...payload,
+      const payload = createEntryPayload(MARKET_ABI, {
+        function: "place_market_order_user_entry",
+        type_arguments: [
+          TypeTag.fromApiCoin(marketData.base).toString(),
+          TypeTag.fromApiCoin(marketData.quote).toString(),
+        ],
+        arguments: [
+          marketData.market_id,
+          "0x1", // TODO get integrator ID
+          orderSide === "ask",
+          BigInt(
+            fromDecimalSize({
+              size: values.size,
+              lotSize: marketData.lot_size,
+              baseCoinDecimals: marketData.base.decimals,
+            }).toString(),
+          ),
+          0, // abort
+        ],
       });
+      await submitTransaction(payload, { nodeUrl: RPC_NODE_URL });
     }
   };
 

@@ -6,7 +6,6 @@ from aptos_sdk.transactions import EntryFunction, ModuleId
 from aptos_sdk.type_tag import TypeTag
 from econia_sdk.types import AdvanceStyle, Restriction, SelfMatchBehavior, Side
 
-
 def get_module_id(econia_address: AccountAddress) -> ModuleId:
     return ModuleId.from_str("{}::market".format(econia_address))
 
@@ -244,4 +243,27 @@ def swap_between_coinstores_entry(
             encoder(max_quote, Serializer.u64),
             encoder(limit_price, Serializer.u64),
         ],
+    )
+
+def place_market_order_user_entry(
+    econia_address: AccountAddress,
+    base: TypeTag,
+    quote: TypeTag,
+    market_id: int,
+    integrator: AccountAddress,
+    side: Side,
+    size: int,
+    self_match_behavior: SelfMatchBehavior
+) -> EntryFunction:
+    return EntryFunction(
+        get_module_id(econia_address),
+        "place_market_order_user_entry",
+        [base, quote],
+        [
+            encoder(market_id, Serializer.u64),
+            encoder(integrator.address, Serializer.fixed_bytes),
+            encoder(side, Serializer.u8),
+            encoder(size, Serializer.u64),
+            encoder(self_match_behavior, Serializer.u8)
+        ]
     )

@@ -410,16 +410,17 @@ module econia::user {
         size: u64
     }
 
+    struct MarketEventHandlesForMarketAccount has store {
+        cancel_order_events: EventHandle<CancelOrderEvent>,
+        change_order_size_events: EventHandle<ChangeOrderSizeEvent>,
+        fill_events: EventHandle<FillEvent>,
+        place_limit_order_events: EventHandle<PlaceLimitOrderEvent>,
+        place_market_order_events: EventHandle<PlaceMarketOrderEvent>
+    }
+
     /// Table keys are market account IDs.
     struct MarketEventHandles has key {
-        cancel_order_events: Table<u128, EventHandle<CancelOrderEvent>>,
-        change_order_size_events:
-            Table<u128, EventHandle<ChangeOrderSizeEvent>>,
-        fill_events: Table<u128, EventHandle<FillEvent>>,
-        place_limit_order_events:
-            Table<u128, EventHandle<PlaceLimitOrderEvent>>,
-        place_market_order_events:
-            Table<u128, EventHandle<PlaceMarketOrderEvent>>
+        map: Table<u128, MarketEventHandlesForMarketAccount>
     }
 
     /// View function return for getting event handle creation numbers.
@@ -582,39 +583,30 @@ module econia::user {
     ): Option<MarketEventHandleCreationNumbers>
     acquires MarketEventHandles {
         if (!exists<MarketEventHandles>(user)) return option::none();
-        let market_event_handles_ref = borrow_global<MarketEventHandles>(user);
+        let market_event_handles_map_ref =
+            &borrow_global<MarketEventHandles>(user).map;
         let market_account_id = get_market_account_id(market_id, custodian_id);
-        // Handles for market account initialized at the same time, so
-        // assume if one exist that all exist.
-        let handles_exist_for_market_account = table::contains(
-            &market_event_handles_ref.cancel_order_events, market_account_id);
-        if (!handles_exist_for_market_account) return option::none();
+        let has_handles = table::contains(
+            market_event_handles_map_ref, market_account_id);
+        if (!has_handles) return option::none();
+        let market_account_handles_ref = table::borrow(
+            market_event_handles_map_ref, market_account_id);
         option::some(MarketEventHandleCreationNumbers{
             cancel_order_events_handle_creation_num:
-                guid::creation_num(event::guid(table::borrow(
-                    &market_event_handles_ref.cancel_order_events,
-                    market_account_id
-                ))),
+                guid::creation_num(event::guid(
+                    &market_account_handles_ref.cancel_order_events)),
             change_order_size_events_handle_creation_num:
-                guid::creation_num(event::guid(table::borrow(
-                    &market_event_handles_ref.change_order_size_events,
-                    market_account_id
-                ))),
+                guid::creation_num(event::guid(
+                    &market_account_handles_ref.change_order_size_events)),
             fill_events_handle_creation_num:
-                guid::creation_num(event::guid(table::borrow(
-                    &market_event_handles_ref.fill_events,
-                    market_account_id
-                ))),
+                guid::creation_num(event::guid(
+                    &market_account_handles_ref.fill_events)),
             place_limit_order_events_handle_creation_num:
-                guid::creation_num(event::guid(table::borrow(
-                    &market_event_handles_ref.place_limit_order_events,
-                    market_account_id
-                ))),
+                guid::creation_num(event::guid(
+                    &market_account_handles_ref.place_limit_order_events)),
             place_market_order_events_handle_creation_num:
-                guid::creation_num(event::guid(table::borrow(
-                    &market_event_handles_ref.place_market_order_events,
-                    market_account_id
-                ))),
+                guid::creation_num(event::guid(
+                    &market_account_handles_ref.place_market_order_events)),
         })
     }
 
@@ -1264,68 +1256,22 @@ module econia::user {
         assert!(has_market_account(user_address, market_id, custodian_id),
                 E_NO_MARKET_ACCOUNT);
         if (!exists<MarketEventHandles>(address_of(user)))
-            move_to(user, MarketEventHandles{
-                cancel_order_events: table::new(),
-                change_order_size_events: table::new(),
-                fill_events: table::new(),
-                place_limit_order_events: table::new(),
-                place_market_order_events: table::new()
-            });
-
-        /////////// Also init handle below if no handle:
-
-        let market_event_handles_ref_mut =
-            borrow_global_mut<MarketEventHandles>(user_address);
-        let market_account_id =
-            get_market_account_id(market_id, custodian_id);
-
-        let cancel_order_events_ref_mut =
-            &mut market_event_handles_ref_mut.cancel_order_events;
-        let has_cancel_order_events_handle =
-            table::contains(cancel_order_events_ref_mut,
-                            market_account_id);
-        if (!has_cancel_order_events_handle) {
-            table::add(cancel_order_events_ref_mut, market_account_id,
-                       account::new_event_handle(user));
-        };
-
-        let change_order_size_events_ref_mut =
-            &mut market_event_handles_ref_mut.change_order_size_events;
-        let has_change_order_size_events_handle =
-            table::contains(change_order_size_events_ref_mut,
-                            market_account_id);
-        if (!has_change_order_size_events_handle) {
-            table::add(change_order_size_events_ref_mut, market_account_id,
-                       account::new_event_handle(user));
-        };
-
-        let fill_events_ref_mut =
-            &mut market_event_handles_ref_mut.fill_events;
-        let has_fill_events_handle =
-            table::contains(fill_events_ref_mut, market_account_id);
-        if (!has_fill_events_handle) {
-            table::add(fill_events_ref_mut, market_account_id,
-                       account::new_event_handle(user));
-        };
-
-        let place_limit_order_events_ref_mut =
-            &mut market_event_handles_ref_mut.place_limit_order_events;
-        let has_place_limit_order_events_handle =
-            table::contains(place_limit_order_events_ref_mut,
-                            market_account_id);
-        if (!has_place_limit_order_events_handle) {
-            table::add(place_limit_order_events_ref_mut, market_account_id,
-                       account::new_event_handle(user));
-        };
-
-        let place_market_order_events_ref_mut =
-            &mut market_event_handles_ref_mut.place_market_order_events;
-        let has_place_market_order_events_handle =
-            table::contains(place_market_order_events_ref_mut,
-                            market_account_id);
-        if (!has_place_market_order_events_handle) {
-            table::add(place_market_order_events_ref_mut, market_account_id,
-                       account::new_event_handle(user));
+            move_to(user, MarketEventHandles{map: table::new()});
+        let market_event_handles_map_ref_mut =
+            &mut borrow_global_mut<MarketEventHandles>(user_address).map;
+        let market_account_id = get_market_account_id(market_id, custodian_id);
+        let has_handles = table::contains(
+            market_event_handles_map_ref_mut, market_account_id);
+        if (!has_handles) {
+            let handles = MarketEventHandlesForMarketAccount{
+                cancel_order_events: account::new_event_handle(user),
+                change_order_size_events: account::new_event_handle(user),
+                fill_events: account::new_event_handle(user),
+                place_limit_order_events: account::new_event_handle(user),
+                place_market_order_events: account::new_event_handle(user)
+            };
+            table::add(
+                market_event_handles_map_ref_mut, market_account_id, handles);
         };
     }
 
@@ -1693,6 +1639,47 @@ module econia::user {
             user_address, market_id, custodian_id, quote_coins);
     }
 
+/* TODO:
+    public(friend) fun emit_limit_order_events(
+        market_id: u64,
+        user: address,
+        custodian_id: u64,
+        integrator: address,
+        side: bool,
+        size: u64,
+        price: u64,
+        restriction: u8,
+        self_match_behavior: u8,
+        remaining_size: u64,
+        order_id: u128,
+        fill_event_queue_ref_mut: &mut vector<FillEvent>,
+        cancel_reason_option_ref: &Option<u8>
+    ) acquires MarketEventHandles {
+        if (exists<MarketEventHandles>(user_address)) {
+            let market_event_handles_ref_mut_mut =
+                borrow_global_mut<MarketEventHandles>(user);
+            let market_account_id =
+                get_market_account_id(market_id, custodian_id);
+            // Handles for market account initialized at the same time, so
+            // assume if one exist that all exist.
+            let handles_exist_for_market_account = table::contains(
+                &market_event_handles_ref_mut.cancel_order_events,
+                market_account_id);
+            if (handles_exist_for_market_account) {
+                let cancel_order_events_table_ref_mut =
+                    &mut market_event_handles_ref_mut.cancel_order_events;
+                let fill_events_table_ref_mut =
+                    &mut market_event_handles_ref_mut.fill_events;
+                let place_limit_order_events_table_ref_mut =
+                    &mut market_event_handles_ref_mut.place_limit_order_events;
+            }
+        }
+
+        // Then loop over fill events again and emit for each maker.
+    }
+
+*/
+
     /// Emit fill event to specified handle, if handle exists.
     public(friend) fun emit_fill_event_for_maker_and_taker(
         event: FillEvent
@@ -1712,17 +1699,17 @@ module econia::user {
     ) acquires MarketEventHandles {
         let user_address = event.user;
         if (!exists<MarketEventHandles>(user_address)) return;
-        let market_event_handles_ref_mut =
-            borrow_global_mut<MarketEventHandles>(user_address);
+        let market_event_handles_map_ref_mut =
+            &mut borrow_global_mut<MarketEventHandles>(user_address).map;
         let market_account_id =
             get_market_account_id(event.market_id, event.custodian_id);
-        let cancel_order_events_ref_mut =
-            &mut market_event_handles_ref_mut.cancel_order_events;
         let has_handle = table::contains(
-            cancel_order_events_ref_mut, market_account_id);
+            market_event_handles_map_ref_mut, market_account_id);
         if (!has_handle) return;
-        let cancel_order_event_handle_ref_mut = table::borrow_mut(
-            cancel_order_events_ref_mut, market_account_id);
+        let cancel_order_event_handle_ref_mut = &mut table::borrow_mut(
+                market_event_handles_map_ref_mut,
+                market_account_id
+        ).cancel_order_events;
         event::emit_event(
             cancel_order_event_handle_ref_mut, event)
     }
@@ -1731,17 +1718,17 @@ module econia::user {
     ) acquires MarketEventHandles {
         let user_address = event.user;
         if (!exists<MarketEventHandles>(user_address)) return;
-        let market_event_handles_ref_mut =
-            borrow_global_mut<MarketEventHandles>(user_address);
+        let market_event_handles_map_ref_mut =
+            &mut borrow_global_mut<MarketEventHandles>(user_address).map;
         let market_account_id =
             get_market_account_id(event.market_id, event.custodian_id);
-        let change_order_size_events_ref_mut =
-            &mut market_event_handles_ref_mut.change_order_size_events;
         let has_handle = table::contains(
-            change_order_size_events_ref_mut, market_account_id);
+            market_event_handles_map_ref_mut, market_account_id);
         if (!has_handle) return;
-        let change_order_size_event_handle_ref_mut = table::borrow_mut(
-            change_order_size_events_ref_mut, market_account_id);
+        let change_order_size_event_handle_ref_mut = &mut table::borrow_mut(
+                market_event_handles_map_ref_mut,
+                market_account_id
+        ).change_order_size_events;
         event::emit_event(
             change_order_size_event_handle_ref_mut, event)
     }
@@ -1751,17 +1738,17 @@ module econia::user {
     ) acquires MarketEventHandles {
         let user_address = event.user;
         if (!exists<MarketEventHandles>(user_address)) return;
-        let market_event_handles_ref_mut =
-            borrow_global_mut<MarketEventHandles>(user_address);
+        let market_event_handles_map_ref_mut =
+            &mut borrow_global_mut<MarketEventHandles>(user_address).map;
         let market_account_id =
             get_market_account_id(event.market_id, event.custodian_id);
-        let place_limit_order_events_ref_mut =
-            &mut market_event_handles_ref_mut.place_limit_order_events;
         let has_handle = table::contains(
-            place_limit_order_events_ref_mut, market_account_id);
+            market_event_handles_map_ref_mut, market_account_id);
         if (!has_handle) return;
-        let place_limit_order_event_handle_ref_mut = table::borrow_mut(
-            place_limit_order_events_ref_mut, market_account_id);
+        let place_limit_order_event_handle_ref_mut = &mut table::borrow_mut(
+                market_event_handles_map_ref_mut,
+                market_account_id
+        ).place_limit_order_events;
         event::emit_event(
             place_limit_order_event_handle_ref_mut, event)
     }
@@ -1771,17 +1758,17 @@ module econia::user {
     ) acquires MarketEventHandles {
         let user_address = event.user;
         if (!exists<MarketEventHandles>(user_address)) return;
-        let market_event_handles_ref_mut =
-            borrow_global_mut<MarketEventHandles>(user_address);
+        let market_event_handles_map_ref_mut =
+            &mut borrow_global_mut<MarketEventHandles>(user_address).map;
         let market_account_id =
             get_market_account_id(event.market_id, event.custodian_id);
-        let place_market_order_events_ref_mut =
-            &mut market_event_handles_ref_mut.place_market_order_events;
         let has_handle = table::contains(
-            place_market_order_events_ref_mut, market_account_id);
+            market_event_handles_map_ref_mut, market_account_id);
         if (!has_handle) return;
-        let place_market_order_event_handle_ref_mut = table::borrow_mut(
-            place_market_order_events_ref_mut, market_account_id);
+        let place_market_order_event_handle_ref_mut = &mut table::borrow_mut(
+                market_event_handles_map_ref_mut,
+                market_account_id
+        ).place_market_order_events;
         event::emit_event(
             place_market_order_event_handle_ref_mut, event)
     }
@@ -2638,15 +2625,17 @@ module econia::user {
             (event.taker, event.taker_custodian_id);
         if ((exists<MarketEventHandles>(user_address)) &&
                 (user_address != NO_MARKET_ACCOUNT)) {
-            let market_event_handles_ref_mut =
-                borrow_global_mut<MarketEventHandles>(user_address);
-            let fill_events_ref_mut =
-                &mut market_event_handles_ref_mut.fill_events;
+            let market_event_handles_map_ref_mut =
+                &mut borrow_global_mut<MarketEventHandles>(user_address).map;
             let market_account_id =
                 get_market_account_id(event.market_id, custodian_id);
-            if (table::contains(fill_events_ref_mut, market_account_id)) {
-                let fill_event_handle_ref_mut = table::borrow_mut(
-                    fill_events_ref_mut, market_account_id);
+            let has_handle = table::contains(market_event_handles_map_ref_mut,
+                                             market_account_id);
+            if (has_handle) {
+                let fill_event_handle_ref_mut = &mut table::borrow_mut(
+                    market_event_handles_map_ref_mut,
+                    market_account_id
+                ).fill_events;
                 event::emit_event(fill_event_handle_ref_mut, event)
             }
         }

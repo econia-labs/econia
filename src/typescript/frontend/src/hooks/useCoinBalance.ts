@@ -1,5 +1,6 @@
-import { type Address } from "@manahippo/aptos-wallet-adapter";
+// import { type Address } from "@aptos-labs/wallet-adapter-react";
 import { useQuery } from "@tanstack/react-query";
+import { type MaybeHexString } from "aptos";
 
 import { useAptos } from "@/contexts/AptosContext";
 import { fromRawCoinAmount } from "@/utils/coin";
@@ -15,12 +16,12 @@ type CoinStore = {
 
 export const CoinBalanceQueryKey = (
   coinTypeTag?: TypeTag | null,
-  userAddr?: Address | null,
+  userAddr?: MaybeHexString | null,
 ) => ["useCoinBalance", coinTypeTag?.toString(), userAddr];
 
 export const useCoinBalance = (
   coinTypeTag?: TypeTag | null,
-  userAddr?: Address | null,
+  userAddr?: MaybeHexString | null,
 ) => {
   const { aptosClient } = useAptos();
   const coinInfo = useCoinInfo(coinTypeTag);

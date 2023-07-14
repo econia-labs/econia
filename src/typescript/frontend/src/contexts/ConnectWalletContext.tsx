@@ -1,4 +1,4 @@
-import { useWallet, WalletReadyState } from "@manahippo/aptos-wallet-adapter";
+import { useWallet, WalletReadyState } from "@aptos-labs/wallet-adapter-react";
 import {
   createContext,
   type PropsWithChildren,
@@ -18,7 +18,7 @@ export const ConnectWalletContext = createContext<
 >(undefined);
 
 export function ConnectWalletContextProvider({ children }: PropsWithChildren) {
-  const { select, wallets } = useWallet();
+  const { connect, wallets } = useWallet();
   const [open, setOpen] = useState<boolean>(false);
   const value: ConnectWalletContextState = {
     connectWallet: () => setOpen(true),
@@ -42,15 +42,15 @@ export function ConnectWalletContextProvider({ children }: PropsWithChildren) {
         <div className="mt-8 flex flex-col gap-4">
           {wallets.map((wallet) => (
             <div
-              key={wallet.adapter.name}
+              key={wallet.name}
               className="relative flex w-full cursor-pointer items-center gap-2 border border-neutral-600 p-4 font-jost text-lg font-medium  text-neutral-500 transition-all hover:border-blue [&:hover>#arrow-wrapper]:border-blue [&:hover>#arrow-wrapper]:bg-blue [&:hover>#token-icon]:border-blue [&:hover>div>#arrow]:rotate-[-45deg]"
               onClick={() => {
-                select(wallet.adapter.name);
+                connect(wallet.name);
                 setOpen(false);
               }}
             >
               <img
-                src={wallet.adapter.icon}
+                src={wallet.icon}
                 height={36}
                 width={36}
                 className=""
@@ -59,8 +59,8 @@ export function ConnectWalletContextProvider({ children }: PropsWithChildren) {
               />
               <p>
                 {wallet.readyState === WalletReadyState.NotDetected
-                  ? `Install ${wallet.adapter.name} Wallet`
-                  : `${wallet.adapter.name} Wallet`}
+                  ? `Install ${wallet.name} Wallet`
+                  : `${wallet.name} Wallet`}
               </p>
               <div
                 className={

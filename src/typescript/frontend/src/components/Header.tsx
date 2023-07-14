@@ -1,5 +1,5 @@
+import { useWallet } from "@aptos-labs/wallet-adapter-react";
 import { ArrowRightIcon } from "@heroicons/react/20/solid";
-import { useWallet } from "@manahippo/aptos-wallet-adapter";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";

@@ -1,5 +1,5 @@
-import { type Address } from "@manahippo/aptos-wallet-adapter";
 import { useQuery } from "@tanstack/react-query";
+import { type MaybeHexString } from "aptos";
 import { type U128 } from "aptos/src/generated";
 
 import { NO_CUSTODIAN } from "@/constants";
@@ -13,7 +13,7 @@ import { makeMarketAccountId } from "@/utils/econia";
 import { TypeTag } from "@/utils/TypeTag";
 
 export const useMarketAccountBalance = (
-  addr: Address | undefined | null,
+  addr: MaybeHexString | undefined | null,
   marketId: number | undefined | null,
   coin: ApiCoin | undefined | null,
 ) => {

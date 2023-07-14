@@ -15,12 +15,12 @@ type CoinStore = {
 
 export const CoinBalanceQueryKey = (
   coinTypeTag?: TypeTag | null,
-  userAddr?: Address | null
+  userAddr?: Address | null,
 ) => ["useCoinBalance", coinTypeTag?.toString(), userAddr];
 
 export const useCoinBalance = (
   coinTypeTag?: TypeTag | null,
-  userAddr?: Address | null
+  userAddr?: Address | null,
 ) => {
   const { aptosClient } = useAptos();
   const coinInfo = useCoinInfo(coinTypeTag);
@@ -31,13 +31,13 @@ export const useCoinBalance = (
       const coinStore = await aptosClient
         .getAccountResource(
           userAddr,
-          `0x1::coin::CoinStore<${coinTypeTag.toString()}>`
+          `0x1::coin::CoinStore<${coinTypeTag.toString()}>`,
         )
         .then(({ data }) => data as CoinStore);
       return fromRawCoinAmount(coinStore.coin.value, coinInfo.data!.decimals);
     },
     {
       enabled: !!coinInfo.data,
-    }
+    },
   );
 };

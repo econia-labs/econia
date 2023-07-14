@@ -37,7 +37,7 @@ export const TradeHistoryTable: React.FC<{
       //     marketData.market_id
       //   }/fills?from=${0}&to=${Math.floor(Date.now() / 1000)}`
       // ).then((res) => res.json());
-    }
+    },
   );
   const table = useReactTable({
     columns: [
@@ -88,7 +88,7 @@ export const TradeHistoryTable: React.FC<{
                     ? null
                     : flexRender(
                         header.column.columnDef.header,
-                        header.getContext()
+                        header.getContext(),
                       )}
                 </th>
               ))}

@@ -51,7 +51,7 @@ export const OrdersTable: React.FC<{
       // return await fetch(
       //   `${API_URL}/account/${account.address.toString()}/open-orders`
       // ).then((res) => res.json());
-    }
+    },
   );
   const marketById = React.useMemo(() => {
     const map = new Map<number, ApiMarket>();
@@ -130,7 +130,7 @@ export const OrdersTable: React.FC<{
                     ? null
                     : flexRender(
                         header.column.columnDef.header,
-                        header.getContext()
+                        header.getContext(),
                       )}
                 </th>
               ))}

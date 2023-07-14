@@ -24,12 +24,12 @@ export type AptosContextState = {
 };
 
 export const AptosContext = createContext<AptosContextState | undefined>(
-  undefined
+  undefined,
 );
 
 // Type guard for EntryFunctionPayload
 const isEntryFunctionPayload = (
-  transaction: Types.TransactionPayload
+  transaction: Types.TransactionPayload,
 ): transaction is Types.TransactionPayload_EntryFunctionPayload => {
   return transaction.type === "entry_function_payload";
 };
@@ -60,13 +60,13 @@ export function AptosContextProvider({ children }: PropsWithChildren) {
       toast.success("Transaction confirmed");
       return res;
     },
-    [hippoSignAndSubmitTransaction, aptosClient]
+    [hippoSignAndSubmitTransaction, aptosClient],
   );
   const coinListClient = useMemo(() => {
     return new CoinListClient(
       true,
       (NETWORK_NAME as NetworkType) || "testnet",
-      NETWORK_NAME === "mainnet" ? MAINNET_TOKEN_LIST : TESTNET_TOKEN_LIST
+      NETWORK_NAME === "mainnet" ? MAINNET_TOKEN_LIST : TESTNET_TOKEN_LIST,
     );
   }, []);
 
@@ -86,7 +86,7 @@ export const useAptos = (): AptosContextState => {
   const context = useContext(AptosContext);
   if (context == null) {
     throw new Error(
-      "useAccountContext must be used within a AccountContextProvider."
+      "useAccountContext must be used within a AccountContextProvider.",
     );
   }
   return context;

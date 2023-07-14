@@ -37,7 +37,7 @@ Chart.register(
   Title,
   Tooltip,
   Filler,
-  Legend
+  Legend,
 );
 
 Chart.defaults.font.family = "Roboto Mono";
@@ -58,7 +58,7 @@ const queryClient = new QueryClient();
 export default function App({ Component, pageProps }: AppProps) {
   const wallets = useMemo(
     () => [new AptosWalletAdapter(), new PontemWalletAdapter()],
-    []
+    [],
   );
   return (
     <QueryClientProvider client={queryClient}>

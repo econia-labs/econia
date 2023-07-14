@@ -6,17 +6,17 @@ import { type Orderbook, type Precision } from "@/types/global";
 export const useOrderBook = (
   market_id: number,
   precision: Precision = "0.01",
-  depth = 60
+  depth = 60,
 ): UseQueryResult<Orderbook> => {
   return useQuery(
     ["orderBook", market_id, precision],
     async () => {
       const response = await fetch(
-        `${API_URL}/markets/${market_id}/orderbook?depth=${depth}`
+        `${API_URL}/markets/${market_id}/orderbook?depth=${depth}`,
       );
       const data = await response.json();
       return data as Orderbook;
     },
-    { keepPreviousData: true, refetchOnWindowFocus: false }
+    { keepPreviousData: true, refetchOnWindowFocus: false },
   );
 };

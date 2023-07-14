@@ -289,11 +289,11 @@
 /// get_price_levels_all --> get_price_levels
 /// get_open_order --> has_open_order
 /// get_open_order --> get_market_order_id_side
-/// get_open_order --> get_market_order_id_avl_queue_access_key
+/// get_open_order --> get_order_id_avl_queue_access_key
 /// get_market_order_id_side -->
-///     get_market_order_id_avl_queue_access_key
+///     get_order_id_avl_queue_access_key
 /// has_open_order --> get_market_order_id_side
-/// has_open_order --> get_market_order_id_avl_queue_access_key
+/// has_open_order --> get_order_id_avl_queue_access_key
 /// get_open_orders --> get_open_orders_for_side
 /// get_open_orders_all --> get_open_orders
 /// get_market_order_id_price --> did_order_post
@@ -643,23 +643,22 @@ module econia::market {
         order_id: u128
     }
 
-    /// User-friendly representation of an open order on the order book,
-    /// combining fields from `Order` and the corresponding
-    /// `MakerEvent` emitted when order was first placed.
+    /// User-friendly representation of an open order on the order book.
     struct OrderView has copy, drop {
-        /// `MakerEvent.market_id`.
+        /// Market ID for open order.
         market_id: u64,
-        /// `MakerEvent.side`.
+        /// `ASK` or `BID`.
         side: bool,
-        /// `MakerEvent.market_order_id`.
-        market_order_id: u128,
-        /// `Order.size`.
-        size: u64,
-        /// `Order.price`.
+        /// The order ID for the posted order.
+        order_id: u128,
+        /// Remaining number of lots to be filled.
+        remaining_size: u64,
+        /// Order price, in ticks per lot.
         price: u64,
-        /// `Order.user`.
+        /// Address of user holding order.
         user: address,
-        /// `Order.custodian_id`.
+        /// For given user, ID of custodian required to approve order
+        /// operations and withdrawals on given market account.
         custodian_id: u64
     }
 
@@ -762,7 +761,7 @@ module econia::market {
     /// Order size change requiring insertion resulted in an AVL queue
     /// access key mismatch.
     const E_SIZE_CHANGE_INSERTION_ERROR: u64 = 30;
-    /// Market order ID corresponds to an order that did not post.
+    /// Order ID corresponds to an order that did not post.
     const E_ORDER_DID_NOT_POST: u64 = 31;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -850,7 +849,7 @@ module econia::market {
     // View functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[view]
-    /// Return true if the market order ID corresponds to an order that
+    /// Return true if the order ID corresponds to an order that
     /// resulted in a post to the order book (including an order that
     /// filled across the spread as a taker before posting as a maker).
     ///
@@ -861,9 +860,9 @@ module econia::market {
     /// * `test_place_limit_order_no_cross_ask_user()`
     /// * `test_place_limit_order_no_cross_bid_custodian()`
     public fun did_order_post(
-        market_order_id: u128
+        order_id: u128
     ): bool {
-        (market_order_id & (HI_64 as u128)) != (NIL as u128)
+        (order_id & (HI_64 as u128)) != (NIL as u128)
     }
 
     #[view]
@@ -1035,8 +1034,8 @@ module econia::market {
     ///
     /// # Aborts
     ///
-    /// * `E_ORDER_DID_NOT_POST`: market order ID corresponds to an
-    ///   order that did not post to the book.
+    /// * `E_ORDER_DID_NOT_POST`: Order ID corresponds to an order that
+    ///   did not post to the book.
     ///
     /// # Testing
     ///
@@ -1054,34 +1053,33 @@ module econia::market {
 
     #[view]
     /// For an order that resulted in a post to the order book, return
-    /// the order side encoded in its market order ID, corresponding to
-    /// the side that the maker portion of the order posted to the book
-    /// at.
+    /// the order side encoded in its order ID, corresponding to the
+    /// side that the maker portion of the order posted to the book at.
     ///
     /// # Aborts
     ///
-    /// * `E_ORDER_DID_NOT_POST`: market order ID corresponds to an
-    ///   order that did not post to the book.
+    /// * `E_ORDER_DID_NOT_POST`: Order ID corresponds to an order that
+    ///   did not post to the book.
     ///
     /// # Testing
     ///
     /// * `test_get_market_order_id_side_did_not_post()`
     /// * `test_place_limit_order_no_cross_ask_user()`
     /// * `test_place_limit_order_no_cross_bid_custodian()`
-    public fun get_market_order_id_side(
-        market_order_id: u128
+    public fun get_posted_order_id_side(
+        order_id: u128
     ): bool {
         // Assert order posted to the order book.
-        assert!(did_order_post(market_order_id), E_ORDER_DID_NOT_POST);
-        // Get AVL queue access key encoded in market order ID.
+        assert!(did_order_post(order_id), E_ORDER_DID_NOT_POST);
+        // Get AVL queue access key encoded in order ID.
         let avlq_access_key =
-            get_market_order_id_avl_queue_access_key(market_order_id);
+            get_order_id_avl_queue_access_key(order_id);
         // If ascending AVL queue indicated is an ask, else a bid.
         if (avl_queue::is_ascending_access_key(avlq_access_key)) ASK else BID
     }
 
     #[view]
-    /// Return `OrderView` for `market_id` and `market_order_id`.
+    /// Return `OrderView` for `market_id` and `order_id`.
     ///
     /// Mutates state, so kept as a private view function.
     ///
@@ -1092,11 +1090,11 @@ module econia::market {
     /// * `test_get_open_order_no_such_order()`
     fun get_open_order(
         market_id: u64,
-        market_order_id: u128
+        order_id: u128
     ): Option<OrderView>
     acquires OrderBooks {
         // Return empty option if no such order.
-        if (!has_open_order(market_id, market_order_id)) return option::none();
+        if (!has_open_order(market_id, order_id)) return option::none();
         // Get address of resource account where order books are stored.
         let resource_address = resource_account::get_address();
         // Mutably borrow order books map.
@@ -1105,20 +1103,20 @@ module econia::market {
         // Mutably borrow market order book.
         let order_book_ref_mut = tablist::borrow_mut(
             order_books_map_ref_mut, market_id);
-        // Get market order ID side.
-        let side = get_market_order_id_side(market_order_id);
+        // Get order ID side.
+        let side = get_posted_order_id_side(order_id);
         // Get open orders for given side.
         let orders_ref_mut = if (side == ASK) &mut order_book_ref_mut.asks else
             &mut order_book_ref_mut.bids;
         let avlq_access_key = // Get AVL queue access key.
-            get_market_order_id_avl_queue_access_key(market_order_id);
+            get_order_id_avl_queue_access_key(order_id);
         // Remove and unpack order with given access key, discarding
         // order access key.
         let Order{size, price, user, custodian_id, order_access_key: _} =
             avl_queue::remove(orders_ref_mut, avlq_access_key);
         // Pack and return an order view in an option.
-        option::some(OrderView{market_id, side, market_order_id, size, price,
-                               user, custodian_id})
+        option::some(OrderView{market_id, side, order_id, remaining_size: size,
+                               price, user, custodian_id})
     }
 
     #[view]
@@ -1239,8 +1237,8 @@ module econia::market {
     }
 
     #[view]
-    /// Return `true` if `market_order_id` corresponds to open order for
-    /// given `market_id`.
+    /// Return `true` if `order_id` corresponds to open order for given
+    /// `market_id`.
     ///
     /// Kept private to prevent runtime order book state contention.
     ///
@@ -1251,7 +1249,7 @@ module econia::market {
     /// * `test_has_open_order_no_market()`
     fun has_open_order(
         market_id: u64,
-        market_order_id: u128
+        order_id: u128
     ): bool
     acquires OrderBooks {
         // Get address of resource account where order books are stored.
@@ -1262,14 +1260,14 @@ module econia::market {
             return false; // Return false if no market with market ID.
         // Immutably borrow order book for given market ID.
         let order_book_ref = tablist::borrow(order_books_map_ref, market_id);
-        // Determine side indicated by market order ID.
-        let side = get_market_order_id_side(market_order_id);
+        // Determine side indicated by order ID.
+        let side = get_posted_order_id_side(order_id);
         // Get open orders for given side.
         let orders_ref = if (side == ASK) &order_book_ref.asks
             else &order_book_ref.bids;
-        // Get AVL queue access key from market order ID.
+        // Get AVL queue access key from order ID.
         let avlq_access_key =
-            get_market_order_id_avl_queue_access_key(market_order_id);
+            get_order_id_avl_queue_access_key(order_id);
         // Check if borrowing from the AVL queue is even possible.
         let borrow_possible = avl_queue::contains_active_list_node_id(
             orders_ref, avlq_access_key);
@@ -1277,16 +1275,16 @@ module econia::market {
         if (!borrow_possible) return false;
         // Immutably borrow order having list node ID.
         let order_ref = avl_queue::borrow(orders_ref, avlq_access_key);
-        // Check if user has corresponding open order market order ID.
-        let optional_market_order_id = user::get_open_order_id_internal(
+        // Check if user has corresponding open order order ID.
+        let optional_order_id = user::get_open_order_id_internal(
             order_ref.user, market_id, order_ref.custodian_id, side,
             order_ref.order_access_key);
-        // If user has no corresponding market order ID return false.
-        if (option::is_none(&optional_market_order_id)) return false;
-        let user_market_order_id = // Get user's market order ID.
-            option::destroy_some(optional_market_order_id);
-        // Return if user-indicated market order ID matches passed one.
-        user_market_order_id == market_order_id
+        // If user has no corresponding order ID return false.
+        if (option::is_none(&optional_order_id)) return false;
+        let user_order_id = // Get user's order ID.
+            option::destroy_some(optional_order_id);
+        // Return if user-indicated order ID matches passed one.
+        user_order_id == order_id
     }
 
     // View functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -2626,15 +2624,15 @@ module econia::market {
         });
     }
 
-    /// Get AVL queue access key encoded in `market_order_id`.
+    /// Get AVL queue access key encoded in `order_id`.
     ///
     /// # Testing
     ///
     /// * `test_get_market_order_id_avl_queue_access_key()`
-    inline fun get_market_order_id_avl_queue_access_key(
-        market_order_id: u128
+    inline fun get_order_id_avl_queue_access_key(
+        order_id: u128
     ): u64 {
-        ((market_order_id & (HI_64 as u128)) as u64)
+        ((order_id & (HI_64 as u128)) as u64)
     }
 
     /// Index specified number of open orders for given side of order
@@ -2659,13 +2657,13 @@ module econia::market {
             // Remove and unpack order at head of queue.
             let Order{size, price, user, custodian_id, order_access_key} =
                 avl_queue::pop_head(avlq_ref_mut);
-            // Get market order ID from user-side order memory.
-            let market_order_id = option::destroy_some(
+            // Get order ID from user-side order memory.
+            let order_id = option::destroy_some(
                 user::get_open_order_id_internal(user, market_id, custodian_id,
                                                  side, order_access_key));
             // Push back an order view to orders view vector.
             vector::push_back(&mut orders, OrderView{
-                market_id, side, market_order_id, size, price, user,
+                market_id, side, order_id, remaining_size: size, price, user,
                 custodian_id});
         };
         orders // Return vector of view-friendly orders.
@@ -5136,7 +5134,7 @@ module econia::market {
             order_books_map_ref_mut, market_id).asks;
         // Get AVL queue access key encoded in market order ID.
         let avl_queue_access_key =
-            get_market_order_id_avl_queue_access_key(market_order_id);
+            get_order_id_avl_queue_access_key(market_order_id);
         avl_queue::borrow_mut(asks_ref_mut, avl_queue_access_key).user =
             @econia; // Manually doctor book-side user field.
         // Assert order marked as not open due to user market order ID
@@ -5155,8 +5153,8 @@ module econia::market {
         let OrderView{
             market_id: market_id_r,
             side: side_r,
-            market_order_id: market_order_id_r,
-            size: size_r,
+            order_id: market_order_id_r,
+            remaining_size: size_r,
             price: price_r,
             user: user_r,
             custodian_id: custodian_id_r,
@@ -5255,8 +5253,8 @@ module econia::market {
         let OrderView{
             market_id: market_id_r,
             side: side_r,
-            market_order_id: market_order_id_r,
-            size: size_r,
+            order_id: market_order_id_r,
+            remaining_size: size_r,
             price: price_r,
             user: user_r,
             custodian_id: custodian_id_r,
@@ -5698,7 +5696,7 @@ module econia::market {
         let market_order_id =
             (avlq_access_key as u128) | ((counter as u128) << SHIFT_COUNTER);
         // Assert AVL queue access key lookup.
-        assert!(get_market_order_id_avl_queue_access_key(market_order_id) ==
+        assert!(get_order_id_avl_queue_access_key(market_order_id) ==
                 avlq_access_key, 0);
     }
 
@@ -5713,7 +5711,7 @@ module econia::market {
     #[expected_failure(abort_code = E_ORDER_DID_NOT_POST)]
     /// Verify failure for market order ID corresponding to fills only.
     fun test_get_market_order_id_side_did_not_post() {
-        get_market_order_id_side((1 as u128) << SHIFT_COUNTER);
+        get_posted_order_id_side((1 as u128) << SHIFT_COUNTER);
     }
 
     #[test]
@@ -5775,28 +5773,28 @@ module econia::market {
         let order_ref = vector::borrow(&orders.asks, 1);
         assert!(order_ref.market_id       == market_id, 0);
         assert!(order_ref.side            == ASK, 0);
-        assert!(order_ref.market_order_id == market_order_id_ask_1, 0);
+        assert!(order_ref.order_id        == market_order_id_ask_1, 0);
         assert!(order_ref.price           == ask_1_price, 0);
         assert!(order_ref.user            == maker_address, 0);
         assert!(order_ref.custodian_id    == custodian_id, 0);
         order_ref = vector::borrow(&orders.asks, 0);
         assert!(order_ref.market_id       == market_id, 0);
         assert!(order_ref.side            == ASK, 0);
-        assert!(order_ref.market_order_id == market_order_id_ask_0, 0);
+        assert!(order_ref.order_id        == market_order_id_ask_0, 0);
         assert!(order_ref.price           == ask_0_price, 0);
         assert!(order_ref.user            == maker_address, 0);
         assert!(order_ref.custodian_id    == custodian_id, 0);
         order_ref = vector::borrow(&orders.bids, 0);
         assert!(order_ref.market_id       == market_id, 0);
         assert!(order_ref.side            == BID, 0);
-        assert!(order_ref.market_order_id == market_order_id_bid_0, 0);
+        assert!(order_ref.order_id        == market_order_id_bid_0, 0);
         assert!(order_ref.price           == bid_0_price, 0);
         assert!(order_ref.user            == maker_address, 0);
         assert!(order_ref.custodian_id    == custodian_id, 0);
         order_ref = vector::borrow(&orders.bids, 1);
         assert!(order_ref.market_id       == market_id, 0);
         assert!(order_ref.side            == BID, 0);
-        assert!(order_ref.market_order_id == market_order_id_bid_1, 0);
+        assert!(order_ref.order_id        == market_order_id_bid_1, 0);
         assert!(order_ref.price           == bid_1_price, 0);
         assert!(order_ref.user            == maker_address, 0);
         assert!(order_ref.custodian_id    == custodian_id, 0);
@@ -5821,7 +5819,7 @@ module econia::market {
         order_ref = vector::borrow(&orders.asks, 0);
         assert!(order_ref.market_id       == market_id, 0);
         assert!(order_ref.side            == ASK, 0);
-        assert!(order_ref.market_order_id == market_order_id_ask_0, 0);
+        assert!(order_ref.order_id        == market_order_id_ask_0, 0);
         assert!(order_ref.price           == ask_0_price, 0);
         assert!(order_ref.user            == maker_address, 0);
         assert!(order_ref.custodian_id    == custodian_id, 0);
@@ -5833,14 +5831,14 @@ module econia::market {
         order_ref = vector::borrow(&orders.bids, 0);
         assert!(order_ref.market_id       == market_id, 0);
         assert!(order_ref.side            == BID, 0);
-        assert!(order_ref.market_order_id == market_order_id_bid_0, 0);
+        assert!(order_ref.order_id        == market_order_id_bid_0, 0);
         assert!(order_ref.price           == bid_0_price, 0);
         assert!(order_ref.user            == maker_address, 0);
         assert!(order_ref.custodian_id    == custodian_id, 0);
         order_ref = vector::borrow(&orders.bids, 1);
         assert!(order_ref.market_id       == market_id, 0);
         assert!(order_ref.side            == BID, 0);
-        assert!(order_ref.market_order_id == market_order_id_bid_1, 0);
+        assert!(order_ref.order_id        == market_order_id_bid_1, 0);
         assert!(order_ref.price           == bid_1_price, 0);
         assert!(order_ref.user            == maker_address, 0);
         assert!(order_ref.custodian_id    == custodian_id, 0);
@@ -8674,7 +8672,7 @@ module econia::market {
         // Assert price encoded in order ID.
         assert!(get_market_order_id_price(market_order_id) == price, 0);
         // Assert side encoded in order ID.
-        assert!(get_market_order_id_side(market_order_id) == side, 0);
+        assert!(get_posted_order_id_side(market_order_id) == side, 0);
         // Assert order book counter.
         assert!(get_order_book_counter(MARKET_ID_COIN) == 1, 0);
         // Get order fields.
@@ -8755,7 +8753,7 @@ module econia::market {
         // Assert price encoded in order ID.
         assert!(get_market_order_id_price(market_order_id) == price, 0);
         // Assert side encoded in order ID.
-        assert!(get_market_order_id_side(market_order_id) == side, 0);
+        assert!(get_posted_order_id_side(market_order_id) == side, 0);
         // Assert trade amount returns.
         assert!(base_trade == 0, 0);
         assert!(quote_trade == 0, 0);

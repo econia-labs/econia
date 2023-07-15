@@ -556,9 +556,6 @@ module econia::user {
     const NO_CUSTODIAN: u64 = 0;
     /// Underwriter ID flag for no underwriter.
     const NO_UNDERWRITER: u64 = 0;
-    /// Taker address flag for when taker order does not originate from
-    /// a market account.
-    const NO_MARKET_ACCOUNT: address = @0x0;
     /// Number of bits market ID is shifted in market account ID.
     const SHIFT_MARKET_ID: u8 = 64;
     const CANCEL_REASON_MANUAL_CANCEL: u8 = 0;
@@ -606,7 +603,7 @@ module econia::user {
                     &market_account_handles_ref.place_limit_order_events)),
             place_market_order_events_handle_creation_num:
                 guid::creation_num(event::guid(
-                    &market_account_handles_ref.place_market_order_events)),
+                    &market_account_handles_ref.place_market_order_events))
         })
     }
 
@@ -2623,8 +2620,7 @@ module econia::user {
         let (user_address, custodian_id) = if (is_maker)
             (event.maker, event.maker_custodian_id) else
             (event.taker, event.taker_custodian_id);
-        if ((exists<MarketEventHandles>(user_address)) &&
-                (user_address != NO_MARKET_ACCOUNT)) {
+        if (exists<MarketEventHandles>(user_address)) {
             let market_event_handles_map_ref_mut =
                 &mut borrow_global_mut<MarketEventHandles>(user_address).map;
             let market_account_id =
@@ -3059,11 +3055,6 @@ module econia::user {
     /// Return `HI_PRICE`, for testing synchronization with
     /// `market.move`.
     public fun get_HI_PRICE_test(): u64 {HI_PRICE}
-
-    #[test_only]
-    /// Return `NO_MARKET_ACCOUNT`, for testing synchronization with
-    /// `market.move`.
-    public fun get_NO_MARKET_ACCOUNT_test(): address {NO_MARKET_ACCOUNT}
 
     #[test_only]
     /// Like `get_collateral_value_test()`, but accepts market id and

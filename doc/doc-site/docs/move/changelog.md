@@ -15,6 +15,7 @@ Econia Move source code adheres to [Semantic Versioning] and [Keep a Changelog] 
 - Market order size is no longer automatically adjusted based on available market account holdings ([#321]).
 - Default self match behavior for swaps (signing swapper self match against signing market account) changed from `ABORT` to `CANCEL_TAKER` ([#321]).
 - Started using `order_id` instead of `market_order_id` for new implementations ([#321]).
+- Replaced `market::NO_MARKET_ACCOUNT` with `market::NO_TAKER_ADDRESS` to account for signing swappers ([#321]).
 
 ### Deprecated
 

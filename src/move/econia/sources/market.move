@@ -626,7 +626,7 @@ module econia::market {
         map: Table<u64, MarketEventHandlesForMarket>
     }
 
-    /// View function return for getting event handle creation numbers.
+    /// View function return for getting event handle creation info.
     struct MarketEventHandleCreationInfo has copy, drop {
         resource_account_address: address,
         cancel_order_events_handle_creation_num: u64,
@@ -650,7 +650,7 @@ module econia::market {
     struct SwapperEventHandleCreationNumbers has copy, drop {
         cancel_order_events_handle_creation_num: u64,
         fill_events_handle_creation_num: u64,
-        place_swap_order_events_handle_creation_num: u64,
+        place_swap_order_events_handle_creation_num: u64
     }
 
     struct PlaceSwapOrderEvent has copy, drop, store {
@@ -3413,12 +3413,6 @@ module econia::market {
                                  CANCEL_REASON_TOO_SMALL_AFTER_MATCHING);
                 }
             };
-            /*
-            // If matching engine halted but order still crosses spread,
-            // or if a self match that requires canceling the rest of
-            // of the order, then mark no size left to post as a maker.
-            size = if (still_crosses_spread || self_match_cancel) 0 else
-            */
         } else { // If spread not crossed (matching engine not called):
             order_book_ref_mut.counter = order_book_ref_mut.counter + 1;
             if (restriction == IMMEDIATE_OR_CANCEL) {
@@ -3479,35 +3473,21 @@ module econia::market {
         } else {
             remaining_size = 0;
         };
-        // Emit a place limit order event, creating handle as needed.
-        user::emit_place_limit_order_event(
-            user::create_place_limit_order_event(
-                market_id,
-                user_address,
-                custodian_id,
-                integrator,
-                side,
-                size,
-                price,
-                restriction,
-                self_match_behavior,
-                remaining_size,
-                market_order_id
-            )
+        user::emit_limit_order_events(
+            market_id,
+            user_address,
+            custodian_id,
+            integrator,
+            side,
+            size,
+            price,
+            restriction,
+            self_match_behavior,
+            remaining_size,
+            market_order_id,
+            &fill_event_queue,
+            &cancel_reason_option
         );
-        emit_fill_events_for_market_accounts(
-            &mut fill_event_queue, false, market_order_id);
-        if (option::is_some(&cancel_reason_option)) {
-            user::emit_cancel_order_event(
-                user::create_cancel_order_event(
-                    market_id,
-                    market_order_id,
-                    user_address,
-                    custodian_id,
-                    option::destroy_some(cancel_reason_option)
-                )
-            );
-        };
         // Return market order ID and taker trade amounts.
         return (market_order_id, base_traded, quote_traded, fees)
     }

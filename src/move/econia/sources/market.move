@@ -836,11 +836,11 @@ module econia::market {
     const NIL: u64 = 0;
     /// Custodian ID flag for no custodian.
     const NO_CUSTODIAN: u64 = 0;
-    /// Taker address flag for when taker order does not originate from
-    /// a market account.
-    const NO_MARKET_ACCOUNT: address = @0x0;
     /// Flag for no order restriction.
     const NO_RESTRICTION: u8 = 0;
+    /// Taker address flag for when taker order does not originate from
+    /// a market account or a signing swapper.
+    const NO_TAKER_ADDRESS: address = @0x0;
     /// Underwriter ID flag for no underwriter.
     const NO_UNDERWRITER: u64 = 0;
     /// Flag for passive order specified by percent advance.
@@ -2047,7 +2047,7 @@ module econia::market {
         let (optional_base_coins, quote_coins_matched, base_traded,
              quote_traded, fees, _, _) = swap(
                 &mut vector[],
-                NO_MARKET_ACCOUNT,
+                NO_TAKER_ADDRESS,
                 market_id,
                 NO_UNDERWRITER,
                 integrator,
@@ -2161,7 +2161,7 @@ module econia::market {
         let (optional_base_coins, quote_coins_matched, base_traded,
              quote_traded, fees, _, _) = swap(
                 &mut vector[],
-                NO_MARKET_ACCOUNT,
+                NO_TAKER_ADDRESS,
                 market_id,
                 underwriter_id,
                 integrator,
@@ -2790,11 +2790,11 @@ module econia::market {
     ///   of fills.
     /// * `order_book_ref_mut`: Mutable reference to market order book.
     /// * `taker`: Address of taker whose order is matched. Passed as
-    ///   `NO_MARKET_ACCOUNT` when taker order originates from a swap
+    ///   `NO_TAKER_ADDRESS` when taker order originates from a swap
     ///   without a signature.
     /// * `custodian_id`: Custodian ID associated with a taker market
     ///   account, if any. Should be passed as `NO_CUSTODIAN` if `taker`
-    ///   is `NO_MARKET_ACCOUNT`.
+    ///   is `NO_TAKER_ADDRESS`.
     /// * `integrator`: The integrator for the taker order, who collects
     ///   a portion of taker fees at their
     ///   `incentives::IntegratorFeeStore` for the given market. May be
@@ -4063,7 +4063,7 @@ module econia::market {
     /// # Parameters
     ///
     /// * `signer_address`: Address of signing user if applicable, else
-    ///   `NO_MARKET_ACCOUNT`.
+    ///   `NO_TAKER_ADDRESS`.
     /// * `market_id`: Same as for `match()`.
     /// * `underwriter_id`: ID of underwriter to verify if `BaseType`
     ///   is `registry::GenericAsset`, else may be passed as
@@ -4152,10 +4152,7 @@ module econia::market {
                 == order_book_ref_mut.base_type, E_INVALID_BASE);
         assert!(type_info::type_of<QuoteType>() // Assert quote type.
                 == order_book_ref_mut.quote_type, E_INVALID_QUOTE);
-        // Declare return assignment variables.
-        let (base_traded, quote_traded, fees, self_match_taker_cancel,
-             liquidity_gone);
-        (
+        let (
             optional_base_coins,
             quote_coins,
             base_traded,
@@ -4214,10 +4211,11 @@ module econia::market {
         };
         let handles_ref_mut =
             table::borrow_mut(market_event_handles_map_ref_mut, market_id);
-        // Emit place swap order event.
-        event::emit_event(
-            &mut handles_ref_mut.place_swap_order_events,
-            place_swap_order_event);
+        // Emit place swap order event if unable to emit for swapper.
+        if (signer_address == NO_TAKER_ADDRESS) {
+            event::emit_event(&mut handles_ref_mut.place_swap_order_events,
+                              place_swap_order_event);
+        };
         emit_fill_events_for_market_accounts(
             fill_event_queue_ref_mut, true, (NIL as u128));
         let need_to_cancel_order =
@@ -4237,14 +4235,16 @@ module econia::market {
                 NO_CUSTODIAN,
                 cancel_reason
             );
-            event::emit_event(
-                &mut handles_ref_mut.cancel_order_events,
-                cancel_order_event);
+            // Emit cancel order event if unable to emit for swapper.
+            if (signer_address == NO_TAKER_ADDRESS) {
+                event::emit_event(
+                    &mut handles_ref_mut.cancel_order_events,
+                    cancel_order_event);
+            };
             option::some(cancel_order_event)
         } else {
             option::none()
         };
-        // TODO: ensure trade events emitted to swapper/market account holder.
         // Return optionally modified asset inputs, trade amounts, fees,
         // and place swap order event.
         (optional_base_coins, quote_coins, base_traded, quote_traded, fees,
@@ -5610,12 +5610,6 @@ module econia::market {
         assert!(get_NO_CUSTODIAN() == NO_CUSTODIAN, 0);
         assert!(get_NO_CUSTODIAN() == user::get_NO_CUSTODIAN(), 0);
         assert!(get_NO_CUSTODIAN() == registry::get_NO_CUSTODIAN(), 0);
-    }
-
-    #[test]
-    /// Verify constant is same across modules.
-    fun test_get_NO_MARKET_ACCOUNT() {
-        assert!(user::get_NO_MARKET_ACCOUNT_test() == NO_MARKET_ACCOUNT, 0)
     }
 
     #[test]

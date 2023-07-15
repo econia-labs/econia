@@ -1636,7 +1636,6 @@ module econia::user {
             user_address, market_id, custodian_id, quote_coins);
     }
 
-/* TODO:
     public(friend) fun emit_limit_order_events(
         market_id: u64,
         user: address,
@@ -1649,33 +1648,69 @@ module econia::user {
         self_match_behavior: u8,
         remaining_size: u64,
         order_id: u128,
-        fill_event_queue_ref_mut: &mut vector<FillEvent>,
+        fill_event_queue_ref: &vector<FillEvent>,
         cancel_reason_option_ref: &Option<u8>
     ) acquires MarketEventHandles {
-        if (exists<MarketEventHandles>(user_address)) {
-            let market_event_handles_ref_mut_mut =
-                borrow_global_mut<MarketEventHandles>(user);
+        if (exists<MarketEventHandles>(user)) {
+            let market_event_handles_map_ref_mut =
+                &mut borrow_global_mut<MarketEventHandles>(user).map;
             let market_account_id =
                 get_market_account_id(market_id, custodian_id);
-            // Handles for market account initialized at the same time, so
-            // assume if one exist that all exist.
-            let handles_exist_for_market_account = table::contains(
-                &market_event_handles_ref_mut.cancel_order_events,
-                market_account_id);
-            if (handles_exist_for_market_account) {
-                let cancel_order_events_table_ref_mut =
-                    &mut market_event_handles_ref_mut.cancel_order_events;
-                let fill_events_table_ref_mut =
-                    &mut market_event_handles_ref_mut.fill_events;
-                let place_limit_order_events_table_ref_mut =
-                    &mut market_event_handles_ref_mut.place_limit_order_events;
-            }
-        }
-
-        // Then loop over fill events again and emit for each maker.
+            let has_handles_for_market_account = table::contains(
+                market_event_handles_map_ref_mut, market_account_id);
+            if (has_handles_for_market_account) {
+                let handles_ref_mut = table::borrow_mut(
+                    market_event_handles_map_ref_mut, market_account_id);
+                // Emit place limit order event.
+                event::emit_event(
+                    &mut handles_ref_mut.place_limit_order_events,
+                    PlaceLimitOrderEvent{
+                        market_id,
+                        user,
+                        custodian_id,
+                        integrator,
+                        side,
+                        size,
+                        price,
+                        restriction,
+                        self_match_behavior,
+                        remaining_size,
+                        order_id
+                    }
+                );
+                // Loop over fill events, substituting order ID in case
+                // order posted after fill event creation. Looping here
+                // minimizes borrows from the user's account, but will
+                // require looping again later to emit maker fill events
+                // because the borrow checker prohibits simultaneous
+                // borrowing of the same resource from two addresses.
+                vector::for_each_ref(fill_event_queue_ref, |event_ref| {
+                    let event: FillEvent = *event_ref;
+                    event.taker_order_id = order_id;
+                    event::emit_event(&mut handles_ref_mut.fill_events, event);
+                });
+                // Optionally emit cancel order event.
+                if (option::is_some(cancel_reason_option_ref)) {
+                    event::emit_event(
+                        &mut handles_ref_mut.cancel_order_events,
+                        CancelOrderEvent{
+                            market_id,
+                            order_id,
+                            user,
+                            custodian_id,
+                            reason: *option::borrow(cancel_reason_option_ref)
+                        }
+                    );
+                };
+            };
+        };
+        // Emit fill events for all makers.
+        vector::for_each_ref(fill_event_queue_ref, |event_ref| {
+            let event: FillEvent = *event_ref;
+            event.taker_order_id = order_id;
+            emit_maker_fill_event(&event);
+        });
     }
-
-*/
 
     /// Emit fill event to specified handle, if handle exists.
     public(friend) fun emit_fill_event_for_maker_and_taker(
@@ -2609,6 +2644,26 @@ module econia::user {
                 collateral_map_ref_mut, market_account_id);
             // Merge coins into collateral.
             coin::merge(collateral_ref_mut, coins);
+        };
+    }
+
+    inline fun emit_maker_fill_event(
+        event_ref: &FillEvent
+    ) acquires MarketEventHandles {
+        let maker = event_ref.maker;
+        if (exists<MarketEventHandles>(maker)) {
+            let market_event_handles_map_ref_mut =
+                &mut borrow_global_mut<MarketEventHandles>(maker).map;
+            let market_account_id = get_market_account_id(
+                event_ref.market_id, event_ref.maker_custodian_id);
+            let has_handles_for_market_account = table::contains(
+                market_event_handles_map_ref_mut, market_account_id);
+            if (has_handles_for_market_account) {
+                let handles_ref_mut = table::borrow_mut(
+                    market_event_handles_map_ref_mut, market_account_id);
+                event::emit_event(
+                    &mut handles_ref_mut.fill_events, *event_ref);
+            };
         };
     }
 

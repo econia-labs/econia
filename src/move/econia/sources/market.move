@@ -2922,7 +2922,6 @@ module econia::market {
         order_book_ref_mut.counter = order_book_ref_mut.counter + 1;
         let fill_count = 0;
         let fees_paid = 0;
-        let fees_paid_for_fill;
         // While there are orders to match against:
         while (!avl_queue::is_empty(orders_ref_mut)) {
             let price = // Get price of order at head of AVL queue.
@@ -3001,18 +3000,15 @@ module econia::market {
                 ticks_until_max = ticks_until_max - ticks_filled;
                 // Declare return assignment variable.
                 let market_order_id;
+                let quote_filled = ticks_filled * tick_size;
                 // Fill matched order user side, store market order ID.
                 (optional_base_coins, quote_coins, market_order_id) =
                     user::fill_order_internal<BaseType, QuoteType>(
                         maker, market_id, maker_custodian_id, side,
                         order_ref_mut.order_access_key, order_ref_mut.size,
                         fill_size, complete_fill, optional_base_coins,
-                        quote_coins, fill_size * lot_size,
-                        ticks_filled * tick_size);
-                (quote_coins, fees_paid_for_fill) =
-                    incentives::assess_taker_fees<QuoteType>(
-                        market_id, integrator, taker_fee_divisor,
-                        ticks_filled * tick_size, quote_coins);
+                        quote_coins, fill_size * lot_size, quote_filled);
+                let fees_paid_for_fill = quote_filled / taker_fee_divisor;
                 vector::push_back(
                     event_queue_ref_mut, user::create_fill_event_internal(
                         market_id,
@@ -3049,6 +3045,9 @@ module econia::market {
         let (base_fill, quote_fill) = // Calculate base and quote fills.
             (((max_lots  - lots_until_max ) * lot_size),
              ((max_ticks - ticks_until_max) * tick_size));
+        let (quote_coins, _) = incentives::assess_taker_fees<QuoteType>(
+                market_id, integrator, taker_fee_divisor,
+                fees_paid * taker_fee_divisor, quote_coins);
         // If a buy, taker pays quote required for fills, and additional
         // fee assessed after matching. If a sell, taker receives quote
         // from fills, then has a portion assessed as fees.

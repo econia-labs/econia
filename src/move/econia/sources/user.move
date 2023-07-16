@@ -1568,7 +1568,10 @@ module econia::user {
         price: u64,
         order_access_key: u64,
         market_order_id: u128
-    ) acquires MarketAccounts {
+    ) acquires
+        MarketAccounts,
+        MarketEventHandles
+    {
         // Mutably borrow market accounts map.
         let market_accounts_map_ref_mut =
             &mut borrow_global_mut<MarketAccounts>(user_address).map;
@@ -1589,6 +1592,27 @@ module econia::user {
         place_order_internal( // Place order with new size.
             user_address, market_id, custodian_id, side, new_size, price,
             market_order_id, order_access_key);
+        if (exists<MarketEventHandles>(user_address)) {
+            let market_event_handles_map_ref_mut =
+                &mut borrow_global_mut<MarketEventHandles>(user_address).map;
+            let has_handles_for_market_account = table::contains(
+                market_event_handles_map_ref_mut, market_account_id);
+            if (has_handles_for_market_account) {
+                let handles_ref_mut = table::borrow_mut(
+                    market_event_handles_map_ref_mut, market_account_id);
+                event::emit_event(
+                    &mut handles_ref_mut.change_order_size_events,
+                    ChangeOrderSizeEvent{
+                        market_id,
+                        order_id: market_order_id,
+                        user: user_address,
+                        custodian_id,
+                        side,
+                        new_size
+                    }
+                );
+            }
+        }
     }
 
     /// Deposit base asset and quote coins when matching.
@@ -1636,7 +1660,7 @@ module econia::user {
             user_address, market_id, custodian_id, quote_coins);
     }
 
-    public(friend) fun emit_limit_order_events(
+    public(friend) fun emit_limit_order_events_internal(
         market_id: u64,
         user: address,
         custodian_id: u64,
@@ -1712,100 +1736,112 @@ module econia::user {
         });
     }
 
-    /// Emit fill event to specified handle, if handle exists.
-    public(friend) fun emit_fill_event_for_maker_and_taker(
-        event: FillEvent
+    public(friend) fun emit_market_order_events_internal(
+        market_id: u64,
+        user: address,
+        custodian_id: u64,
+        integrator: address,
+        direction: bool,
+        size: u64,
+        self_match_behavior: u8,
+        order_id: u128,
+        fill_event_queue_ref: &vector<FillEvent>,
+        cancel_reason_option_ref: &Option<u8>
     ) acquires MarketEventHandles {
-        emit_fill_event(event, true);
-        emit_fill_event(event, false);
+        if (exists<MarketEventHandles>(user)) {
+            let market_event_handles_map_ref_mut =
+                &mut borrow_global_mut<MarketEventHandles>(user).map;
+            let market_account_id =
+                get_market_account_id(market_id, custodian_id);
+            let has_handles_for_market_account = table::contains(
+                market_event_handles_map_ref_mut, market_account_id);
+            if (has_handles_for_market_account) {
+                let handles_ref_mut = table::borrow_mut(
+                    market_event_handles_map_ref_mut, market_account_id);
+                // Emit place market order event.
+                event::emit_event(
+                    &mut handles_ref_mut.place_market_order_events,
+                    PlaceMarketOrderEvent{
+                        market_id,
+                        user,
+                        custodian_id,
+                        integrator,
+                        direction,
+                        size,
+                        self_match_behavior,
+                        order_id
+                    }
+                );
+                // Loop over fill events. Looping here minimizes borrows
+                // from the user's account, but will require looping
+                // again later to emit maker fill events because the
+                // borrow checker prohibits simultaneous borrowing of
+                // the same resource from two addresses.
+                vector::for_each_ref(fill_event_queue_ref, |event_ref| {
+                    event::emit_event(
+                        &mut handles_ref_mut.fill_events, *event_ref);
+                });
+                // Optionally emit cancel order event.
+                if (option::is_some(cancel_reason_option_ref)) {
+                    event::emit_event(
+                        &mut handles_ref_mut.cancel_order_events,
+                        CancelOrderEvent{
+                            market_id,
+                            order_id,
+                            user,
+                            custodian_id,
+                            reason: *option::borrow(cancel_reason_option_ref)
+                        }
+                    );
+                };
+            };
+        };
+        // Emit fill events for all makers.
+        vector::for_each_ref(fill_event_queue_ref, |event_ref| {
+            emit_maker_fill_event(event_ref);
+        });
     }
 
-    public(friend) fun emit_fill_event_for_maker(
-        event: FillEvent
+    public(friend) fun emit_swap_maker_fill_events_internal(
+        fill_event_queue_ref: &vector<FillEvent>
     ) acquires MarketEventHandles {
-        emit_fill_event(event, true);
+        vector::for_each_ref(fill_event_queue_ref, |event_ref| {
+            emit_maker_fill_event(event_ref);
+        });
     }
 
-    public(friend) fun emit_cancel_order_event(
-        event: CancelOrderEvent
+    public(friend) fun emit_cancel_order_event_internal(
+        market_id: u64,
+        order_id: u128,
+        user: address,
+        custodian_id: u64,
+        reason: u8
     ) acquires MarketEventHandles {
-        let user_address = event.user;
-        if (!exists<MarketEventHandles>(user_address)) return;
-        let market_event_handles_map_ref_mut =
-            &mut borrow_global_mut<MarketEventHandles>(user_address).map;
-        let market_account_id =
-            get_market_account_id(event.market_id, event.custodian_id);
-        let has_handle = table::contains(
-            market_event_handles_map_ref_mut, market_account_id);
-        if (!has_handle) return;
-        let cancel_order_event_handle_ref_mut = &mut table::borrow_mut(
-                market_event_handles_map_ref_mut,
-                market_account_id
-        ).cancel_order_events;
-        event::emit_event(
-            cancel_order_event_handle_ref_mut, event)
-    }
-    public(friend) fun emit_change_order_size_event(
-        event: ChangeOrderSizeEvent
-    ) acquires MarketEventHandles {
-        let user_address = event.user;
-        if (!exists<MarketEventHandles>(user_address)) return;
-        let market_event_handles_map_ref_mut =
-            &mut borrow_global_mut<MarketEventHandles>(user_address).map;
-        let market_account_id =
-            get_market_account_id(event.market_id, event.custodian_id);
-        let has_handle = table::contains(
-            market_event_handles_map_ref_mut, market_account_id);
-        if (!has_handle) return;
-        let change_order_size_event_handle_ref_mut = &mut table::borrow_mut(
-                market_event_handles_map_ref_mut,
-                market_account_id
-        ).change_order_size_events;
-        event::emit_event(
-            change_order_size_event_handle_ref_mut, event)
+        if (exists<MarketEventHandles>(user)) {
+            let market_event_handles_map_ref_mut =
+                &mut borrow_global_mut<MarketEventHandles>(user).map;
+            let market_account_id =
+                get_market_account_id(market_id, custodian_id);
+            let has_handles_for_market_account = table::contains(
+                market_event_handles_map_ref_mut, market_account_id);
+            if (has_handles_for_market_account) {
+                let handles_ref_mut = table::borrow_mut(
+                    market_event_handles_map_ref_mut, market_account_id);
+                event::emit_event(
+                    &mut handles_ref_mut.cancel_order_events,
+                    CancelOrderEvent{
+                        market_id,
+                        order_id,
+                        user,
+                        custodian_id,
+                        reason
+                    }
+                );
+            }
+        }
     }
 
-    public(friend) fun emit_place_limit_order_event(
-        event: PlaceLimitOrderEvent
-    ) acquires MarketEventHandles {
-        let user_address = event.user;
-        if (!exists<MarketEventHandles>(user_address)) return;
-        let market_event_handles_map_ref_mut =
-            &mut borrow_global_mut<MarketEventHandles>(user_address).map;
-        let market_account_id =
-            get_market_account_id(event.market_id, event.custodian_id);
-        let has_handle = table::contains(
-            market_event_handles_map_ref_mut, market_account_id);
-        if (!has_handle) return;
-        let place_limit_order_event_handle_ref_mut = &mut table::borrow_mut(
-                market_event_handles_map_ref_mut,
-                market_account_id
-        ).place_limit_order_events;
-        event::emit_event(
-            place_limit_order_event_handle_ref_mut, event)
-    }
-
-    public(friend) fun emit_place_market_order_event(
-        event: PlaceMarketOrderEvent
-    ) acquires MarketEventHandles {
-        let user_address = event.user;
-        if (!exists<MarketEventHandles>(user_address)) return;
-        let market_event_handles_map_ref_mut =
-            &mut borrow_global_mut<MarketEventHandles>(user_address).map;
-        let market_account_id =
-            get_market_account_id(event.market_id, event.custodian_id);
-        let has_handle = table::contains(
-            market_event_handles_map_ref_mut, market_account_id);
-        if (!has_handle) return;
-        let place_market_order_event_handle_ref_mut = &mut table::borrow_mut(
-                market_event_handles_map_ref_mut,
-                market_account_id
-        ).place_market_order_events;
-        event::emit_event(
-            place_market_order_event_handle_ref_mut, event)
-    }
-
-    public(friend) fun create_cancel_order_event(
+    public(friend) fun create_cancel_order_event_internal(
         market_id: u64,
         order_id: u128,
         user: address,
@@ -1821,25 +1857,7 @@ module econia::user {
         }
     }
 
-    public(friend) fun create_change_order_size_event(
-        market_id: u64,
-        order_id: u128,
-        user: address,
-        custodian_id: u64,
-        side: bool,
-        new_size: u64
-    ): ChangeOrderSizeEvent {
-        ChangeOrderSizeEvent{
-            market_id,
-            order_id,
-            user,
-            custodian_id,
-            side,
-            new_size
-        }
-    }
-
-    public(friend) fun create_fill_event(
+    public(friend) fun create_fill_event_internal(
         market_id: u64,
         size: u64,
         price: u64,
@@ -1866,69 +1884,6 @@ module econia::user {
             taker_order_id,
             taker_quote_fees_paid,
             sequence_number_for_trade
-        }
-    }
-
-    public(friend) fun get_fill_event_taker_order_id(
-        fill_event_ref: &FillEvent,
-    ): u128 {
-        fill_event_ref.taker_order_id
-    }
-
-    public(friend) fun set_fill_event_taker_order_id(
-        fill_event_ref_mut: &mut FillEvent,
-        taker_order_id: u128
-    ) {
-        fill_event_ref_mut.taker_order_id = taker_order_id
-    }
-
-    public(friend) fun create_place_limit_order_event(
-        market_id: u64,
-        user: address,
-        custodian_id: u64,
-        integrator: address,
-        side: bool,
-        size: u64,
-        price: u64,
-        restriction: u8,
-        self_match_behavior: u8,
-        remaining_size: u64,
-        order_id: u128
-    ): PlaceLimitOrderEvent {
-        PlaceLimitOrderEvent {
-            market_id,
-            user,
-            custodian_id,
-            integrator,
-            side,
-            size,
-            price,
-            restriction,
-            self_match_behavior,
-            remaining_size,
-            order_id
-        }
-    }
-
-    public(friend) fun create_place_market_order_event(
-        market_id: u64,
-        user: address,
-        custodian_id: u64,
-        integrator: address,
-        direction: bool,
-        size: u64,
-        self_match_behavior: u8,
-        order_id: u128
-    ): PlaceMarketOrderEvent {
-        PlaceMarketOrderEvent {
-            market_id,
-            user,
-            custodian_id,
-            integrator,
-            direction,
-            size,
-            self_match_behavior,
-            order_id
         }
     }
 

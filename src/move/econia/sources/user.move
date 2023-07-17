@@ -1257,7 +1257,8 @@ module econia::user {
             move_to(user, MarketEventHandles{map: table::new()});
         let market_event_handles_map_ref_mut =
             &mut borrow_global_mut<MarketEventHandles>(user_address).map;
-        let market_account_id = get_market_account_id(market_id, custodian_id);
+        let market_account_id = // Get market account ID.
+            ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128);
         let has_handles = table::contains(
             market_event_handles_map_ref_mut, market_account_id);
         if (!has_handles) {
@@ -1707,8 +1708,9 @@ module econia::user {
         if (exists<MarketEventHandles>(user)) {
             let market_event_handles_map_ref_mut =
                 &mut borrow_global_mut<MarketEventHandles>(user).map;
-            let market_account_id =
-                get_market_account_id(market_id, custodian_id);
+            // Get market account ID.
+            let market_account_id = (((market_id as u128) << SHIFT_MARKET_ID) |
+                                     (custodian_id as u128));
             let has_handles_for_market_account = table::contains(
                 market_event_handles_map_ref_mut, market_account_id);
             if (has_handles_for_market_account) {
@@ -1780,8 +1782,9 @@ module econia::user {
         if (exists<MarketEventHandles>(user)) {
             let market_event_handles_map_ref_mut =
                 &mut borrow_global_mut<MarketEventHandles>(user).map;
-            let market_account_id =
-                get_market_account_id(market_id, custodian_id);
+            // Get market account ID.
+            let market_account_id = (((market_id as u128) << SHIFT_MARKET_ID) |
+                                     (custodian_id as u128));
             let has_handles_for_market_account = table::contains(
                 market_event_handles_map_ref_mut, market_account_id);
             if (has_handles_for_market_account) {
@@ -2607,8 +2610,11 @@ module econia::user {
         if (exists<MarketEventHandles>(maker)) {
             let market_event_handles_map_ref_mut =
                 &mut borrow_global_mut<MarketEventHandles>(maker).map;
-            let market_account_id = get_market_account_id(
-                event_ref.market_id, event_ref.maker_custodian_id);
+            let market_id = event_ref.market_id;
+            let custodian_id = event_ref.maker_custodian_id;
+            // Get market account ID.
+            let market_account_id = (((market_id as u128) << SHIFT_MARKET_ID) |
+                                     (custodian_id as u128));
             let has_handles_for_market_account = table::contains(
                 market_event_handles_map_ref_mut, market_account_id);
             if (has_handles_for_market_account) {
@@ -2618,31 +2624,6 @@ module econia::user {
                     &mut handles_ref_mut.fill_events, *event_ref);
             };
         };
-    }
-
-    /// Emit fill event for either maker or taker, if handle exists.
-    inline fun emit_fill_event(
-        event: FillEvent,
-        is_maker: bool
-    ) acquires MarketEventHandles {
-        let (user_address, custodian_id) = if (is_maker)
-            (event.maker, event.maker_custodian_id) else
-            (event.taker, event.taker_custodian_id);
-        if (exists<MarketEventHandles>(user_address)) {
-            let market_event_handles_map_ref_mut =
-                &mut borrow_global_mut<MarketEventHandles>(user_address).map;
-            let market_account_id =
-                get_market_account_id(event.market_id, custodian_id);
-            let has_handle = table::contains(market_event_handles_map_ref_mut,
-                                             market_account_id);
-            if (has_handle) {
-                let fill_event_handle_ref_mut = &mut table::borrow_mut(
-                    market_event_handles_map_ref_mut,
-                    market_account_id
-                ).fill_events;
-                event::emit_event(fill_event_handle_ref_mut, event)
-            }
-        }
     }
 
     /// Return `registry::MarketInfo` fields stored in market account.

@@ -58,8 +58,8 @@ export function Header() {
   const [depositWithdrawOpen, setDepositWithdrawOpen] = useState(false);
 
   return (
-    <header className="flex flex-col border-b border-neutral-600">
-      <nav className="flex items-center justify-between px-8 py-6">
+    <header className="border-b border-neutral-600">
+      <nav className="flex items-center justify-between px-8 py-4">
         <div className="my-auto flex-1 items-center">
           <Link href="/">
             <Image
@@ -99,7 +99,7 @@ export function Header() {
           </NavItem>
         </div>
         <div className="flex flex-1 justify-end">
-          <ConnectedButton>
+          <ConnectedButton className="py-1">
             <div className="flex items-center gap-4">
               <Button
                 variant="secondary"

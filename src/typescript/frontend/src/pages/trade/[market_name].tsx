@@ -2,13 +2,14 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type MaybeHexString } from "aptos";
 import type { GetStaticPaths, GetStaticProps } from "next";
 import dynamic from "next/dynamic";
+import Head from "next/head";
 import Script from "next/script";
 import { type PropsWithChildren, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 
 import { DepthChart } from "@/components/DepthChart";
+import { Header } from "@/components/Header";
 import { OrderbookTable } from "@/components/OrderbookTable";
-import { Page } from "@/components/Page";
 import { StatsBar } from "@/components/StatsBar";
 import { OrderEntry } from "@/components/trade/OrderEntry";
 import { OrdersTable } from "@/components/trade/OrdersTable";
@@ -302,7 +303,7 @@ export default function Market({ allMarketData, marketData }: Props) {
     { keepPreviousData: true, refetchOnWindowFocus: false },
   );
 
-  if (!marketData) return <Page>Market not found.</Page>;
+  if (!marketData) return <div>Market not found.</div>;
 
   const defaultTVChartProps = {
     symbol: marketData.name,
@@ -321,11 +322,15 @@ export default function Market({ allMarketData, marketData }: Props) {
 
   return (
     <OrderEntryContextProvider>
-      <Page>
+      <Head>
+        <title>{`${marketData.name} | Econia`}</title>
+      </Head>
+      <div className="flex h-screen flex-col overflow-hidden">
+        <Header />
         <StatsBar selectedMarket={marketData} />
-        <main className="flex w-full space-x-3 px-3 py-3">
-          <div className="flex flex-1 flex-col space-y-3">
-            <ChartCard className="flex min-h-[590px] flex-1 flex-col">
+        <main className="flex h-full w-full">
+          <div className="flex flex-1 flex-col">
+            <ChartCard className="flex flex-1 flex-col">
               {isScriptReady && <TVChartContainer {...defaultTVChartProps} />}
               <DepthChart marketData={marketData} />
             </ChartCard>
@@ -358,14 +363,14 @@ export default function Market({ allMarketData, marketData }: Props) {
             </div>
           </div>
         </main>
-        <Script
-          src="/static/datafeeds/udf/dist/bundle.js"
-          strategy="lazyOnload"
-          onReady={() => {
-            setIsScriptReady(true);
-          }}
-        />
-      </Page>
+      </div>
+      <Script
+        src="/static/datafeeds/udf/dist/bundle.js"
+        strategy="lazyOnload"
+        onReady={() => {
+          setIsScriptReady(true);
+        }}
+      />
     </OrderEntryContextProvider>
   );
 }

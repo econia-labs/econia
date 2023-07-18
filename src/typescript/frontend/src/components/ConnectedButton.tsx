@@ -15,7 +15,7 @@ export const ConnectedButton: React.FC<
     <>
       {!connected ? (
         <Button
-          className={`whitespace-nowrap py-1.5 text-[14px] ${className}`}
+          className={`whitespace-nowrap text-base ${className}`}
           variant="primary"
           onClick={connectWallet}
         >

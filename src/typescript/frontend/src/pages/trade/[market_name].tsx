@@ -4,7 +4,7 @@ import type { GetStaticPaths, GetStaticProps } from "next";
 import dynamic from "next/dynamic";
 import Head from "next/head";
 import Script from "next/script";
-import { type PropsWithChildren, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 
 import { DepthChart } from "@/components/DepthChart";
@@ -44,31 +44,6 @@ type Props = {
 type PathParams = {
   market_name: string;
 };
-
-const ChartCard: React.FC<PropsWithChildren<{ className?: string }>> = ({
-  className,
-  children,
-}) => (
-  <div
-    className={"border border-neutral-600" + (className ? ` ${className}` : "")}
-  >
-    {children}
-  </div>
-);
-
-const ChartName: React.FC<PropsWithChildren<{ className?: string }>> = ({
-  className,
-  children,
-}) => (
-  <p
-    className={
-      "ml-4 mt-2 font-jost font-bold text-white" +
-      (className ? ` ${className}` : "")
-    }
-  >
-    {children}
-  </p>
-);
 
 export default function Market({ allMarketData, marketData }: Props) {
   const { account } = useAptos();
@@ -325,41 +300,41 @@ export default function Market({ allMarketData, marketData }: Props) {
       <Head>
         <title>{`${marketData.name} | Econia`}</title>
       </Head>
-      <div className="flex h-screen flex-col overflow-hidden">
+      <div className="flex h-screen flex-col">
         <Header href={`${allMarketData[0].name}`} />
         <StatsBar selectedMarket={marketData} />
         <main className="flex h-full w-full">
-          <div className="flex flex-1 flex-col">
-            <ChartCard className="flex flex-1 flex-col">
+          <div className="flex grow flex-col p-3">
+            <div className="mb-3 flex grow flex-col border border-neutral-600">
               {isScriptReady && <TVChartContainer {...defaultTVChartProps} />}
               <DepthChart marketData={marketData} />
-            </ChartCard>
-            <ChartCard>
-              <ChartName className="mb-4">Orders</ChartName>
+            </div>
+            <div className="border border-neutral-600">
+              <p className="mb-4 ml-4 mt-2 font-jost font-bold text-white">
+                Orders
+              </p>
               <OrdersTable allMarketData={allMarketData} />
-            </ChartCard>
+            </div>
           </div>
-          <div className="flex min-w-[268px] flex-initial flex-col border-neutral-600">
-            <ChartCard className="flex flex-1 flex-col">
+          <div className="flex min-w-[268px] py-3 pr-3">
+            <div className="flex w-full flex-col border border-neutral-600">
               <OrderbookTable
                 marketData={marketData}
                 data={orderbookData}
                 isFetching={orderbookIsFetching}
                 isLoading={orderbookIsLoading}
               />
-            </ChartCard>
+            </div>
           </div>
-          <div className="flex min-w-[268px] flex-initial flex-col gap-4 border-neutral-600">
-            <div className="flex flex-1 flex-col space-y-3">
-              <ChartCard>
-                <OrderEntry marketData={marketData} />
-              </ChartCard>
-              <ChartCard className="flex-1">
-                <ChartName className="mb-3 mt-3 font-bold">
-                  Trade History
-                </ChartName>
-                <TradeHistoryTable marketData={marketData} />
-              </ChartCard>
+          <div className="flex min-w-[268px] flex-col py-3 pr-3">
+            <div className="border border-neutral-600">
+              <OrderEntry marketData={marketData} />
+            </div>
+            <div className="mt-3 h-full min-h-[160px] border border-neutral-600">
+              <p className="my-3 ml-4 font-jost font-bold text-white">
+                Trade History
+              </p>
+              <TradeHistoryTable marketData={marketData} />
             </div>
           </div>
         </main>

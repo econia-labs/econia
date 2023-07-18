@@ -590,7 +590,7 @@ module econia::market {
     // Structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// View function return for getting event handle creation info of a
-    /// particular `MarkeEventHandlesForMarket`.
+    /// particular `MarketEventHandlesForMarket`.
     struct MarketEventHandleCreationInfo has copy, drop {
         /// Econia resource account address, corresponding to event
         /// handle creator address.
@@ -714,13 +714,13 @@ module econia::market {
         integrator: address,
         /// Either `BUY` or `SELL`.
         direction: bool,
-        /// Inidicated minimum base subunits to trade.
+        /// Indicated minimum base subunits to trade.
         min_base: u64,
-        /// Inidicated maximum base subunits to trade.
+        /// Indicated maximum base subunits to trade.
         max_base: u64,
-        /// Inidicated minimum quote subunits to trade.
+        /// Indicated minimum quote subunits to trade.
         min_quote: u64,
-        /// Inidicated maximum quote subunits to trade.
+        /// Indicated maximum quote subunits to trade.
         max_quote: u64,
         /// Indicated limit price.
         limit_price: u64,
@@ -891,7 +891,7 @@ module econia::market {
     /// where self match behavior indicated cancelling the taker order.
     const CANCEL_REASON_SELF_MATCH_TAKER: u8 = 7;
     /// Order cancelled because after matching across the spread the
-    /// remaining order size was too smal for the market.
+    /// remaining order size was too small for the market.
     const CANCEL_REASON_TOO_SMALL_AFTER_MATCHING: u8 = 8;
     /// Flag to cancel taker order only during a self match.
     const CANCEL_TAKER: u8 = 3;
@@ -3460,7 +3460,7 @@ module econia::market {
         } else { // If spread not crossed (matching engine not called):
             // Order book counter needs to be updated for new order ID.
             order_book_ref_mut.counter = order_book_ref_mut.counter + 1;
-            // Order neeeds to be cancelled if no fills took place.
+            // Order needs to be cancelled if no fills took place.
             if (restriction == IMMEDIATE_OR_CANCEL) {
                 option::fill(&mut cancel_reason_option,
                              CANCEL_REASON_IMMEDIATE_OR_CANCEL);

@@ -679,7 +679,7 @@ module econia::user {
     /// as part of a size change.
     const CANCEL_REASON_SIZE_CHANGE_INTERNAL: u8 = 0;
     /// Order cancelled because after matching across the spread the
-    /// remaining order size was too smal for the market.
+    /// remaining order size was too small for the market.
     const CANCEL_REASON_TOO_SMALL_AFTER_MATCHING: u8 = 8;
     /// `u64` bitmask with all bits set, generated in Python via
     /// `hex(int('1' * 64, 2))`.

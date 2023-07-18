@@ -82,7 +82,7 @@ export const useConnectWallet = (): ConnectWalletContextState => {
   const context = useContext(ConnectWalletContext);
   if (context == null) {
     throw new Error(
-      "useAccountContext must be used within a AccountContextProvider."
+      "useAccountContext must be used within a AccountContextProvider.",
     );
   }
   return context;

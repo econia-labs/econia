@@ -171,7 +171,7 @@ export const TVChartContainer: React.FC<
         userInput,
         exchange,
         symbolType,
-        onResultReadyCallback
+        onResultReadyCallback,
       ) => {
         if (exchange !== "Econia" || symbolType !== "crypto") {
           throw new Error("Parameters not supported.");
@@ -184,17 +184,17 @@ export const TVChartContainer: React.FC<
           (symbol) =>
             symbol.full_name.toLowerCase().indexOf(userInput.toLowerCase()) !==
               -1 ||
-            symbol.symbol.toLowerCase().indexOf(userInput.toLowerCase()) !== -1
+            symbol.symbol.toLowerCase().indexOf(userInput.toLowerCase()) !== -1,
         );
         onResultReadyCallback(searchResults);
       },
       resolveSymbol: async (
         symbolName,
         onSymbolResolvedCallback,
-        onResolveErrorCallback
+        onResolveErrorCallback,
       ) => {
         const marketInfo: ApiMarket | undefined = props.allMarketData.find(
-          ({ name }) => name === symbolName
+          ({ name }) => name === symbolName,
         );
 
         if (marketInfo != null) {
@@ -209,11 +209,11 @@ export const TVChartContainer: React.FC<
         resolution,
         periodParams,
         onHistoryCallback,
-        onErrorCallback
+        onErrorCallback,
       ) => {
         // TODO find a better way to pass market ID
         const market = props.allMarketData.find(
-          ({ name }) => name === symbolInfo.name
+          ({ name }) => name === symbolInfo.name,
         );
         if (market == null) {
           throw new Error("market not found.");
@@ -228,8 +228,8 @@ export const TVChartContainer: React.FC<
                 from: from.toString(),
                 to: to.toString(),
               })}`,
-              API_URL
-            ).href
+              API_URL,
+            ).href,
           );
           const data = await res.json();
 
@@ -237,7 +237,7 @@ export const TVChartContainer: React.FC<
             (bar: ApiBar): Bar => ({
               time: new Date(bar.start_time).getTime(),
               ...bar,
-            })
+            }),
           );
 
           onHistoryCallback(bars, { noData: bars.length === 0 });
@@ -252,7 +252,7 @@ export const TVChartContainer: React.FC<
         _resolution,
         _onRealtimeCallback,
         _subscribeUID,
-        _onResetCacheNeededCallback
+        _onResetCacheNeededCallback,
       ) => {
         // TODO
       },
@@ -260,7 +260,7 @@ export const TVChartContainer: React.FC<
         // TODO
       },
     }),
-    [props.allMarketData]
+    [props.allMarketData],
   );
 
   useEffect(() => {

@@ -88,6 +88,14 @@
 /// * `get_ASK()`
 /// * `get_BID()`
 /// * `get_NO_CUSTODIAN()`
+/// * `get_CANCEL_REASON_EVICTION()`
+/// * `get_CANCEL_REASON_IMMEDIATE_OR_CANCEL()`
+/// * `get_CANCEL_REASON_MANUAL_CANCEL()`
+/// * `get_CANCEL_REASON_MAX_QUOTE_TRADED()`
+/// * `get_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY()`
+/// * `get_CANCEL_REASON_SELF_MATCH_MAKER()`
+/// * `get_CANCEL_REASON_SELF_MATCH_TAKER()`
+/// * `get_CANCEL_REASON_TOO_SMALL_AFTER_MATCHING()`
 ///
 /// Market account lookup:
 ///
@@ -95,6 +103,7 @@
 /// * `get_all_market_account_ids_for_user()`
 /// * `get_market_account()`
 /// * `get_market_accounts()`
+/// * `get_market_event_handle_creation_numbers()`
 /// * `has_market_account()`
 /// * `has_market_account_by_market_account_id()`
 /// * `has_market_account_by_market_id()`
@@ -132,6 +141,7 @@
 ///
 /// Account registration:
 ///
+/// * `init_market_event_handles_if_missing()`
 /// * `register_market_account()`
 /// * `register_market_account_generic_base()`
 ///
@@ -155,6 +165,14 @@
 ///
 /// * `get_next_order_access_key_internal()`
 /// * `get_active_market_order_ids_internal()`
+///
+/// Market events:
+///
+/// * `create_cancel_order_event_internal()`
+/// * `create_fill_event_internal()`
+/// * `emit_limit_order_events_internal()`
+/// * `emit_market_order_events_internal()`
+/// * `emit_swap_maker_fill_events_internal()`
 ///
 /// ## Dependency charts
 ///
@@ -239,10 +257,13 @@
 /// get_market_account --> vectorize_open_orders
 ///
 /// get_open_order_id_internal --> get_market_account_id
-/// get_open_order_id_internal --> has_market_account_by_market_account_id
+/// get_open_order_id_internal -->
+///     has_market_account_by_market_account_id
 ///
 /// has_market_account --> has_market_account_by_market_account_id
 /// has_market_account --> get_market_account_id
+///
+/// get_market_event_handle_creation_numbers --> get_market_account_id
 ///
 /// ```
 ///
@@ -255,11 +276,14 @@
 /// register_market_account --> registry::is_registered_custodian_id
 /// register_market_account --> register_market_account_account_entries
 /// register_market_account --> register_market_account_collateral_entry
+/// register_market_account --> init_market_event_handles_if_missing
 ///
 /// register_market_account_generic_base --> register_market_account
 ///
 /// register_market_account_account_entries -->
 ///     registry::get_market_info_for_market_account
+///
+/// init_market_event_handles_if_missing --> has_market_account
 ///
 /// ```
 ///
@@ -273,6 +297,12 @@
 /// change_order_size_internal --> place_order_internal
 ///
 /// ```
+///
+/// Market events:
+///
+/// emit_limit_order_events_internal --> emit_maker_fill_event
+/// emit_market_order_events_internal --> emit_maker_fill_event
+/// emit_swap_maker_fill_events_internal --> emit_maker_fill_event
 ///
 /// # Complete DocGen index
 ///

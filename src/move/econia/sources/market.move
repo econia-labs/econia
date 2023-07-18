@@ -91,7 +91,12 @@
 /// * `did_order_post()`
 /// * `get_market_order_id_counter()`
 /// * `get_market_order_id_price()`
-/// * `get_market_order_id_side()`
+/// * `get_posted_order_id_side()`
+///
+/// ## Event handle lookup
+///
+/// * `get_market_event_handle_creation_info()`
+/// * `get_swapper_event_handle_creation_numbers()`
 ///
 /// ## Order lookup
 ///
@@ -248,6 +253,18 @@
 ///
 /// ```
 ///
+/// Cancel reasons:
+///
+/// ```mermaid
+///
+/// flowchart LR
+///
+/// place_market_order -->
+///     get_cancel_reason_option_for_market_order_or_swap
+/// swap --> get_cancel_reason_option_for_market_order_or_swap
+///
+/// ```
+///
 /// Changing order size:
 ///
 /// ```mermaid
@@ -288,16 +305,15 @@
 /// get_price_levels --> get_price_levels_for_side
 /// get_price_levels_all --> get_price_levels
 /// get_open_order --> has_open_order
-/// get_open_order --> get_market_order_id_side
+/// get_open_order --> get_posted_order_id_side
 /// get_open_order --> get_order_id_avl_queue_access_key
-/// get_market_order_id_side -->
-///     get_order_id_avl_queue_access_key
-/// has_open_order --> get_market_order_id_side
+/// get_posted_order_id_side --> did_order_post
+/// get_posted_order_id_side --> get_order_id_avl_queue_access_key
+/// has_open_order --> get_posted_order_id_side
 /// has_open_order --> get_order_id_avl_queue_access_key
 /// get_open_orders --> get_open_orders_for_side
 /// get_open_orders_all --> get_open_orders
 /// get_market_order_id_price --> did_order_post
-/// get_market_order_id_side --> did_order_post
 ///
 /// ```
 ///
@@ -367,6 +383,7 @@
 /// place_market_order --> resource_account::get_address
 ///
 /// swap --> resource_account::get_address
+/// swap --> resource_account::get_signer
 ///
 /// change_order_size --> resource_account::get_address
 ///
@@ -379,6 +396,9 @@
 /// has_open_order --> resource_account::get_address
 ///
 /// get_price_levels --> resource_account::get_address
+///
+/// get_market_event_handle_creation_info -->
+///     resource_account::get_address
 ///
 /// ```
 ///
@@ -394,12 +414,15 @@
 /// place_limit_order --> user::get_next_order_access_key_internal
 /// place_limit_order --> user::place_order_internal
 /// place_limit_order --> user::cancel_order_internal
+/// place_limit_order --> user::emit_limit_order_events_internal
 ///
 /// place_market_order --> user::get_asset_counts_internal
 /// place_market_order --> user::withdraw_assets_internal
 /// place_market_order --> user::deposit_assets_internal
+/// place_market_order --> user::emit_market_order_events_internal
 ///
 /// match --> user::fill_order_internal
+/// match --> user::create_fill_event_internal
 ///
 /// change_order_size --> user::change_order_size_internal
 ///
@@ -410,6 +433,9 @@
 /// has_open_order --> user::get_open_order_id_internal
 ///
 /// get_open_orders_for_side --> user::get_open_order_id_internal
+///
+/// swap --> user::create_cancel_order_event_internal
+/// swap --> user::emit_swap_maker_fill_events_internal
 ///
 /// ```
 ///

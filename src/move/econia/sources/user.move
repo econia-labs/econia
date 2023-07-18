@@ -1405,6 +1405,11 @@ module econia::user {
     /// # Aborts
     ///
     /// * `E_NO_MARKET_ACCOUNT`: No such specified market account.
+    ///
+    /// # Testing
+    ///
+    /// * `test_init_market_event_handles_if_missing_no_account()`
+    /// * `test_register_market_accounts()`
     public entry fun init_market_event_handles_if_missing(
         user: &signer,
         market_id: u64,
@@ -3475,6 +3480,37 @@ module econia::user {
     }
 
     #[test_only]
+    public fun remove_market_event_handles_for_market_account_test(
+        user: address,
+        market_id: u64,
+        custodian_id: u64
+    ) acquires MarketEventHandles {
+        let market_account_id = get_market_account_id(market_id, custodian_id);
+        let market_event_handles_map_ref_mut =
+            &mut borrow_global_mut<MarketEventHandles>(user).map;
+        let MarketEventHandlesForMarketAccount{
+            cancel_order_events,
+            change_order_size_events,
+            fill_events,
+            place_limit_order_events,
+            place_market_order_events
+        } = table::remove(market_event_handles_map_ref_mut, market_account_id);
+        event::destroy_handle(cancel_order_events);
+        event::destroy_handle(change_order_size_events);
+        event::destroy_handle(fill_events);
+        event::destroy_handle(place_limit_order_events);
+        event::destroy_handle(place_market_order_events);
+    }
+
+    #[test_only]
+    public fun remove_market_event_handles_test(
+        user: address
+    ) acquires MarketEventHandles {
+        let MarketEventHandles{map} = move_from(user);
+        table::drop_unchecked(map);
+    }
+
+    #[test_only]
     /// Return `true` if order is active.
     public fun is_order_active_test(
         user_address: address,
@@ -3606,6 +3642,9 @@ module econia::user {
         // Place order.
         place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
                              size_old, price, market_order_id, 1);
+        // Remove market event handles.
+        remove_market_event_handles_for_market_account_test(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID);
         change_order_size_internal( // Change order size.
             @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, size_old, size,
             price, order_access_key, market_order_id);
@@ -4662,6 +4701,18 @@ module econia::user {
         assert!(get_NO_CUSTODIAN() == registry::get_NO_CUSTODIAN(), 0)
     }
 
+    #[test(user = @user)]
+    #[expected_failure(abort_code = E_NO_MARKET_ACCOUNT)]
+    /// Verify abort for user has no market account.
+    fun test_init_market_event_handles_if_missing_no_account(
+        user: &signer
+    ) acquires
+        MarketAccounts,
+        MarketEventHandles
+    {
+        init_market_event_handles_if_missing(user, 0, 0);
+    }
+
     #[test]
     /// Verify valid returns.
     fun test_market_account_getters()
@@ -4847,6 +4898,9 @@ module econia::user {
             @user, market_account_id, side, order_access_key);
         assert!(market_order_id_r == market_order_id, 0);
         assert!(size_r == size, 0);
+        // Remove market event handles.
+        remove_market_event_handles_for_market_account_test(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID);
         // Evict order, storing returned market order ID.
         market_order_id_r = cancel_order_internal(
             @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, size, price,
@@ -5240,6 +5294,8 @@ module econia::user {
     ///
     /// Exercises all non-assert conditional branches for:
     ///
+    /// * `get_market_event_handle_creation_numbers()`
+    /// * `init_market_event_handles_if_missing()`
     /// * `register_market_account()`
     /// * `register_market_account_account_entries()`
     /// * `register_market_account_collateral_entry()`
@@ -5258,13 +5314,37 @@ module econia::user {
              base_name_generic_generic, lot_size_generic, tick_size_generic,
              min_size_generic, underwriter_id_generic) =
              registry::register_markets_test();
+        // Verify no event handle creation numbers.
+        assert!(get_market_event_handle_creation_numbers(
+            @user, market_id_pure_coin, NO_CUSTODIAN) == option::none(), 0);
         // Set custodian ID as registered.
         registry::set_registered_custodian_test(CUSTODIAN_ID);
         // Register pure coin market account.
         register_market_account<BC, QC>(
             user, market_id_pure_coin, NO_CUSTODIAN);
+        assert!(get_market_event_handle_creation_numbers(
+            @user, market_id_pure_coin, NO_CUSTODIAN) == option::some(
+                MarketEventHandleCreationNumbers{
+                    cancel_order_events_handle_creation_num: 2,
+                    change_order_size_events_handle_creation_num: 3,
+                    fill_events_handle_creation_num: 4,
+                    place_limit_order_events_handle_creation_num: 5,
+                    place_market_order_events_handle_creation_num: 6}), 0);
+        // Invoke init call for handles already initialized.
+        init_market_event_handles_if_missing(
+            user, market_id_pure_coin, NO_CUSTODIAN);
+        assert!(get_market_event_handle_creation_numbers(
+            @user, market_id_pure_coin, CUSTODIAN_ID) == option::none(), 0);
         register_market_account<BC, QC>( // Register delegated account.
             user, market_id_pure_coin, CUSTODIAN_ID);
+        assert!(get_market_event_handle_creation_numbers(
+            @user, market_id_pure_coin, CUSTODIAN_ID) == option::some(
+                MarketEventHandleCreationNumbers{
+                    cancel_order_events_handle_creation_num: 7,
+                    change_order_size_events_handle_creation_num: 8,
+                    fill_events_handle_creation_num: 9,
+                    place_limit_order_events_handle_creation_num: 10,
+                    place_market_order_events_handle_creation_num: 11}), 0);
         // Register generic asset account.
         register_market_account_generic_base<QC>(
             user, market_id_generic, NO_CUSTODIAN);

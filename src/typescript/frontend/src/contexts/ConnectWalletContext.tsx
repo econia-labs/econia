@@ -5,6 +5,7 @@ import {
   useContext,
   useState,
 } from "react";
+import { toast } from "react-toastify";
 
 import { BaseModal } from "@/components/BaseModal";
 import { ArrowIcon } from "@/components/icons/ArrowIcon";
@@ -45,8 +46,15 @@ export function ConnectWalletContextProvider({ children }: PropsWithChildren) {
               key={wallet.name}
               className="relative flex w-full cursor-pointer items-center gap-2 border border-neutral-600 p-4 font-jost text-lg font-medium  text-neutral-500 transition-all hover:border-blue [&:hover>#arrow-wrapper]:border-blue [&:hover>#arrow-wrapper]:bg-blue [&:hover>#token-icon]:border-blue [&:hover>div>#arrow]:rotate-[-45deg]"
               onClick={() => {
-                connect(wallet.name);
-                setOpen(false);
+                try {
+                  connect(wallet.name);
+                } catch (e) {
+                  if (e instanceof Error) {
+                    toast.error(e.message);
+                  }
+                } finally {
+                  setOpen(false);
+                }
               }}
             >
               <img

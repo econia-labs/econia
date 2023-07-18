@@ -1025,7 +1025,7 @@ by a non-signing swapper.
 <code>place_swap_order_events: <a href="_EventHandle">event::EventHandle</a>&lt;<a href="market.md#0xc0deb00c_market_PlaceSwapOrderEvent">market::PlaceSwapOrderEvent</a>&gt;</code>
 </dt>
 <dd>
- Event handle for <code>user::PlaceSwapOrderEvent</code>s.
+ Event handle for <code><a href="market.md#0xc0deb00c_market_PlaceSwapOrderEvent">PlaceSwapOrderEvent</a></code>s.
 </dd>
 </dl>
 
@@ -1548,7 +1548,7 @@ of an Econia-style market account.
 <code>place_swap_order_events: <a href="_EventHandle">event::EventHandle</a>&lt;<a href="market.md#0xc0deb00c_market_PlaceSwapOrderEvent">market::PlaceSwapOrderEvent</a>&gt;</code>
 </dt>
 <dd>
- Event handle for <code>user::PlaceSwapOrderEvent</code>s.
+ Event handle for <code><a href="market.md#0xc0deb00c_market_PlaceSwapOrderEvent">PlaceSwapOrderEvent</a></code>s.
 </dd>
 </dl>
 
@@ -4240,10 +4240,10 @@ for coin store.
 
 
 * <code><a href="market.md#0xc0deb00c_market_PlaceSwapOrderEvent">PlaceSwapOrderEvent</a></code>: Information about the swap order.
-* <code>FillEvent</code>(s): Information about fill(s) associated with the
-swap.
-* <code>CancelOrderEvent</code>: Optionally, information about why the swap
-was cancelled without completely filling.
+* <code><a href="user.md#0xc0deb00c_user_FillEvent">user::FillEvent</a></code>(s): Information about fill(s) associated
+with the swap.
+* <code><a href="user.md#0xc0deb00c_user_CancelOrderEvent">user::CancelOrderEvent</a></code>: Optionally, information about why
+the swap was cancelled without completely filling.
 
 
 <a name="@Testing_80"></a>
@@ -5673,7 +5673,7 @@ then proceeds according to specified self match behavior.
 
 * <code>market_id</code>: Market ID of market.
 * <code>fill_event_queue_ref_mut</code>: Mutable reference to vector for
-enqueueing deferred <code>FillEvent</code>(s).
+enqueueing deferred <code><a href="user.md#0xc0deb00c_user_FillEvent">user::FillEvent</a></code>(s).
 * <code>order_book_ref_mut</code>: Mutable reference to market order book.
 * <code>taker</code>: Address of taker whose order is matched. Passed as
 <code><a href="market.md#0xc0deb00c_market_NO_TAKER_ADDRESS">NO_TAKER_ADDRESS</a></code> when taker order originates from a swap
@@ -7095,7 +7095,7 @@ Match a taker's swap order against order book for given market.
 
 
 * <code>fill_event_queue_ref_mut</code>: Mutable reference to vector for
-enqueueing deferred <code>FillEvent</code>(s).
+enqueueing deferred <code><a href="user.md#0xc0deb00c_user_FillEvent">user::FillEvent</a></code>(s).
 * <code>signer_address</code>: Address of signing user if applicable, else
 <code><a href="market.md#0xc0deb00c_market_NO_TAKER_ADDRESS">NO_TAKER_ADDRESS</a></code>.
 * <code>market_id</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
@@ -7127,8 +7127,9 @@ same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>
 * <code>u64</code>: Quote coin fees paid, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 * <code>Option&lt;<a href="market.md#0xc0deb00c_market_PlaceSwapOrderEvent">PlaceSwapOrderEvent</a>&gt;</code>: <code><a href="market.md#0xc0deb00c_market_PlaceSwapOrderEvent">PlaceSwapOrderEvent</a></code> to emit
 if swap is from a signing swapper.
-* <code>Option&lt;CancelOrderEvent&gt;</code>: Optional <code>CancelOrderEvent</code> to
-emit if swap is from a signing swapper.
+* <code>Option&lt;<a href="user.md#0xc0deb00c_user_CancelOrderEvent">user::CancelOrderEvent</a>&gt;</code>: Optional
+<code><a href="user.md#0xc0deb00c_user_CancelOrderEvent">user::CancelOrderEvent</a></code> to emit if swap is from a signing
+swapper.
 
 
 <a name="@Emits_152"></a>
@@ -7138,9 +7139,9 @@ emit if swap is from a signing swapper.
 
 * <code><a href="market.md#0xc0deb00c_market_PlaceSwapOrderEvent">PlaceSwapOrderEvent</a></code>: Information about swap order, emitted
 when swap is from a non-signing swapper.
-* <code>CancelOrderEvent</code>: Information about order cancellation, if
-order was cancelled without completely filling, when swap is
-from non-signing swapper.
+* <code><a href="user.md#0xc0deb00c_user_CancelOrderEvent">user::CancelOrderEvent</a></code>: Information about order
+cancellation, if order was cancelled without completely
+filling, when swap is from non-signing swapper.
 
 
 <a name="@Aborts_153"></a>

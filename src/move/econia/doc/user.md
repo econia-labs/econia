@@ -353,9 +353,15 @@ change_order_size_internal --> place_order_internal
 
 Market events:
 
+```mermaid
+
+flowchart LR
+
 emit_limit_order_events_internal --> emit_maker_fill_event
 emit_market_order_events_internal --> emit_maker_fill_event
 emit_swap_maker_fill_events_internal --> emit_maker_fill_event
+
+```
 
 
 <a name="@Complete_DocGen_index_12"></a>
@@ -1299,7 +1305,7 @@ Emitted when a limit order is placed.
 <dd>
  Restriction indicated during limit order placement, either
  <code><a href="market.md#0xc0deb00c_market_FILL_OR_ABORT">market::FILL_OR_ABORT</a></code>, <code><a href="market.md#0xc0deb00c_market_IMMEDIATE_OR_CANCEL">market::IMMEDIATE_OR_CANCEL</a></code>,
- <code><a href="market.md#0xc0deb00c_market_POST_OR_ABORT">market::POST_OR_ABORT</a></code>, or <code><a href="market.md#0xc0deb00c_market">market</a>:NO_RESTRICTION</code>.
+ <code><a href="market.md#0xc0deb00c_market_POST_OR_ABORT">market::POST_OR_ABORT</a></code>, or <code><a href="market.md#0xc0deb00c_market_NO_RESTRICTION">market::NO_RESTRICTION</a></code>.
 </dd>
 <dt>
 <code>self_match_behavior: u8</code>
@@ -4004,7 +4010,7 @@ Emit limit order events to a user's market event handles.
 <code><a href="user.md#0xc0deb00c_user_FillEvent">FillEvent</a></code>s to emit as part of a limit order that filled
 across the spread, may be empty.
 * <code>cancel_reason_option_ref</code>: Immutable reference to an optional
-cancel reason associated with a <code>CancelEvent</code>.
+cancel reason associated with a <code><a href="user.md#0xc0deb00c_user_CancelOrderEvent">CancelOrderEvent</a></code>.
 
 
 <a name="@Emits_81"></a>
@@ -4118,7 +4124,7 @@ Emit market order events to a user's market event handles.
 * <code>fill_event_queue_ref</code>: Immutable reference to a vector of
 <code><a href="user.md#0xc0deb00c_user_FillEvent">FillEvent</a></code>s to emit, may be empty.
 * <code>cancel_reason_option_ref</code>: Immutable reference to an optional
-cancel reason associated with a <code>CancelEvent</code>.
+cancel reason associated with a <code><a href="user.md#0xc0deb00c_user_CancelOrderEvent">CancelOrderEvent</a></code>.
 
 
 <a name="@Emits_83"></a>

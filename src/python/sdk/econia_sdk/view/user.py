@@ -1,5 +1,5 @@
 from aptos_sdk.account_address import AccountAddress
-from typing import Any
+from typing import Any, Optional
 from econia_sdk.lib import EconiaViewer
 
 def get_ASK(view: EconiaViewer) -> bool:
@@ -14,6 +14,59 @@ def get_NO_CUSTODIAN(view: EconiaViewer) -> int:
     returns = view.get_returns("user", "get_NO_CUSTODIAN")
     return int(returns[0])
 
+def get_CANCEL_REASON_EVICTION(view: EconiaViewer) -> int:
+    returns = view.get_returns("user", "get_CANCEL_REASON_EVICTION")
+    return int(returns[0])
+
+def get_CANCEL_REASON_IMMEDIATE_OR_CANCEL(view: EconiaViewer) -> int:
+    returns = view.get_returns("user", "get_CANCEL_REASON_IMMEDIATE_OR_CANCEL")
+    return int(returns[0]) 
+
+def get_CANCEL_REASON_MANUAL_CANCEL(view: EconiaViewer) -> int:
+    returns = view.get_returns("user", "get_CANCEL_REASON_MANUAL_CANCEL")
+    return int(returns[0])
+
+def get_CANCEL_REASON_MAX_QUOTE_TRADED(view: EconiaViewer) -> int:
+    returns = view.get_returns("user", "get_CANCEL_REASON_MAX_QUOTE_TRADED")
+    return int(returns[0])
+
+def get_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY(view: EconiaViewer) -> int:
+    returns = view.get_returns("user", "get_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY")
+    return int(returns[0])
+
+def get_CANCEL_REASON_SELF_MATCH_TAKER(view: EconiaViewer) -> int:
+    returns = view.get_returns("user", "get_CANCEL_REASON_SELF_MATCH_TAKER")
+    return int(returns[0])
+
+def get_CANCEL_REASON_TOO_SMALL_AFTER_MATCHING(view: EconiaViewer) -> int:
+    returns = view.get_returns("user", "get_CANCEL_REASON_TOO_SMALL_AFTER_MATCHING")
+    return int(returns[0])
+
+def get_market_event_handle_creation_numbers(
+    view: EconiaViewer,
+    user: AccountAddress,
+    market_id: int,
+    custodian_id: int,
+) -> Optional[Any]:
+    returns = view.get_returns(
+        "user",
+        "get_market_event_handle_creation_numbers",
+        [],
+        [serialize_address(user), str(market_id), str(custodian_id)]
+    )
+    opt_val = returns[0]['vec']
+    if len(opt_val) == 0:
+        return None
+    else:
+        val = opt_val[0]
+        return {
+            "cancel_order_events_handle_creation_num": int(val["cancel_order_events_handle_creation_num"]),
+            "change_order_size_events_handle_creation_num": int(val["change_order_size_events_handle_creation_num"]),
+            "fill_events_handle_creation_num": int(val["fill_events_handle_creation_num"]),
+            "place_limit_order_events_handle_creation_num": int(val["place_limit_order_events_handle_creation_num"]),
+            "place_market_order_events_handle_creation_num": int(val["place_market_order_events_handle_creation_num"]),
+        }
+    
 def serialize_address(addr: AccountAddress) -> str:
     return addr.address.hex()
 
@@ -81,7 +134,6 @@ def get_market_account(
     )
     return _convert_market_account_value(returns[0])
     
-
 def _convert_market_account_value(value) -> dict:
     asks = []
     for ask in value["asks"]:

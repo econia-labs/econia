@@ -1,5 +1,6 @@
 from econia_sdk.lib import EconiaViewer
 from econia_sdk.types import Side
+from typing import Optional, Any
 from aptos_sdk.account_address import AccountAddress
 
 def get_ABORT(view: EconiaViewer) -> int:
@@ -92,16 +93,16 @@ def get_market_order_id_price(view: EconiaViewer, market_order_id: int) -> int:
     )
     return int(returns[0])
 
-def get_market_order_id_side(view: EconiaViewer, market_order_id: int) -> bool:
+def get_posted_order_id_side(view: EconiaViewer, market_order_id: int) -> bool:
     returns = view.get_returns(
         "market",
-        "get_market_order_id_side",
+        "get_posted_order_id_side",
         [],
         [str(market_order_id)]
     )
     return bool(returns[0])
 
-def get_open_order(view: EconiaViewer, market_id: int, market_order_id: int) -> dict:
+def get_open_order(view: EconiaViewer, market_id: int, market_order_id: int) -> Optional[dict]:
     returns = view.get_returns(
         "market",
         "get_open_order",
@@ -111,13 +112,19 @@ def get_open_order(view: EconiaViewer, market_id: int, market_order_id: int) -> 
           str(market_order_id)
         ]
     )
-    return _convert_open_order_value(returns[0])
+    opt_val = returns[0]['vec']
+    if len(opt_val) == 0:
+        return None
+    else:
+        return _convert_open_order_value(opt_val[0])
+
+HI_64 = 18446744073709551615
 
 def get_open_orders(
     view: EconiaViewer,
     market_id: int,
-    n_asks_max: int = 18446744073709551615,
-    n_bids_max: int = 18446744073709551615
+    n_asks_max: int = HI_64,
+    n_bids_max: int = HI_64
 ) -> dict:
     returns = view.get_returns(
         "market",
@@ -152,13 +159,14 @@ def _convert_open_order_value(value) -> dict:
         "user": AccountAddress.from_hex(value["user"])
     }
 
-# get_open_orders_all skipped in lieu of above
+def get_open_orders_all(view: EconiaViewer, market_id: int) -> dict:
+    return get_open_orders(view, market_id)
 
 def get_price_levels(
     view: EconiaViewer,
     market_id: int,
-    n_ask_levels_max: int = 18446744073709551615,
-    n_bid_levels_max: int = 18446744073709551615
+    n_ask_levels_max: int = HI_64,
+    n_bid_levels_max: int = HI_64
 ) -> dict:
     returns = view.get_returns(
         "market",
@@ -189,7 +197,8 @@ def get_price_levels(
         "market_id": int(value["market_id"])
     }
 
-# get_price_levels_all skipped in lieu of above
+def get_price_levels_all(view: EconiaViewer, market_id: int) -> dict:
+    return get_price_levels(view, market_id)
 
 def has_open_order(view: EconiaViewer, market_id: int, market_order_id: int) -> bool:
     returns = view.get_returns(
@@ -202,3 +211,45 @@ def has_open_order(view: EconiaViewer, market_id: int, market_order_id: int) -> 
         ]
     )
     return bool(returns[0])
+
+def did_order_post(view: EconiaViewer, order_id: int) -> bool:
+    returns = view.get_returns(
+        "market",
+        "did_order_post",
+        [],
+        [str(order_id)]
+    )
+    return bool(returns[0])
+
+def get_market_event_handle_creation_info(
+    view: EconiaViewer,
+    market_id: int
+) -> Optional[Any]:
+    returns = view.get_returns(
+        "market",
+        "get_market_event_handle_creation_info",
+        [],
+        [str(market_id)]
+    )
+    opt_val = returns[0]['vec']
+    if len(opt_val) == 0:
+        return None
+    else:
+        return opt_val[0]
+
+def get_swapper_event_handle_creation_numbers(
+    view: EconiaViewer,
+    swapper: AccountAddress,
+    market_id: int
+) -> Optional[Any]:
+    returns = view.get_returns(
+        "market",
+        "get_swapper_event_handle_creation_numbers",
+        [],
+        [swapper.address.hex(), str(market_id)]
+    )
+    opt_val = returns[0]['vec']
+    if len(opt_val) == 0:
+        return None
+    else:
+        return opt_val[0]

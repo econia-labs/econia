@@ -1,3 +1,5 @@
+from os import environ
+
 from aptos_sdk.account_address import AccountAddress
 from aptos_sdk.account import Account
 from aptos_sdk.client import RestClient, FaucetClient
@@ -6,25 +8,66 @@ from aptos_sdk.bcs import Serializer, encoder
 from aptos_sdk.type_tag import TypeTag, StructTag
 
 from econia_sdk.lib import EconiaViewer, EconiaClient;
-from econia_sdk.types import *
-from econia_sdk.entry.market import *
-from econia_sdk.entry.user import *
-from econia_sdk.view.incentives import *
-from econia_sdk.view.market import *
-from econia_sdk.view.registry import *
-from econia_sdk.view.resource_account import *
-from econia_sdk.view.user import *
+from econia_sdk.types import Side, SelfMatchBehavior, Restriction
+from econia_sdk.entry.market import place_market_order_user_entry, place_limit_order_user_entry, register_market_base_coin_from_coinstore
+from econia_sdk.entry.user import register_market_account, deposit_from_coinstore
+from econia_sdk.view.market import get_price_levels, get_market_event_handle_creation_info, get_swapper_event_handle_creation_numbers
+from econia_sdk.view.registry import get_market_id_base_coin
+from econia_sdk.view.resource_account import get_address
+from econia_sdk.view.user import get_market_event_handle_creation_numbers
 
-# mainnet: 0xc0deb00c405f84c85dc13442e305df75d1288100cdd82675695f6148c7ece51c
-# testnet: 0x40b119411c6a975fca28f1ba5800a8a418bba1e16a3f13b1de92f731e023d135
-# devnet: 0xc0de0000fe693e08f668613c502360dc48508197401d2ac1ae79571498cd8b74
-ECONIA_ADDR = AccountAddress.from_hex("0xc0de0000fe693e08f668613c502360dc48508197401d2ac1ae79571498cd8b74")
-FAUCET_ADDR = AccountAddress.from_hex("0x260d1327643a17897a8f28ac7279f93b49bef390fb70007b6a7d4456a6a32f29")
+"""
+If using a custom deployment...
+1. Run: cd /econia/src/move/econia (or whatever its full path is)
+2. Run: aptos init (recommended: press enter for all prompts, uses devnet)
+3. Run: export ECONIA_ADDR=<ADDR-FROM-ABOVE>
+4. Run: aptos move publish --override-size-check --included-artifacts none --named-addresses econia=$ECONIA_ADDR
+"""
+def get_econia_address() -> AccountAddress:
+    addr = environ.get("ECONIA_ADDR")
+    if addr == None:
+        # devnet default
+        return AccountAddress.from_hex("0xc0de0000fe693e08f668613c502360dc48508197401d2ac1ae79571498cd8b74")
+    else:
+        return AccountAddress.from_hex(addr)
+
+"""
+1. Run: cd /econia/src/move/faucet (or whatever its full path is)
+2. Run: aptos init (recommended: press enter for all prompts, uses devnet)
+3. Run: export FAUCET_ADDR=<ADDR-FROM-ABOVE>
+4. Run: aptos move publish --named-addresses econia_faucet=$FAUCET_ADDR
+
+"""
+def get_faucet_address() -> AccountAddress:
+    addr = environ.get("FAUCET_ADDR")
+    if addr == None:
+        print("Please provide the address of an Econia faucet as the FAUCET_ADDR environment variable.")
+        exit()
+    else:
+        return AccountAddress.from_hex(addr)
+    
+def get_aptos_node_url() -> str:
+    url = environ.get("APTOS_NODE_URL")
+    if url == None:
+        return "https://fullnode.devnet.aptoslabs.com/v1" # devnet default
+    else:
+        return url
+    
+def get_aptos_faucet_url() -> str:
+    url = environ.get("APTOS_FAUCET_URL")
+    if url == None:
+        return "https://faucet.devnet.aptoslabs.com" # devnet default
+    else:
+        return url
+
+
+ECONIA_ADDR = get_econia_address() # See https://econia.dev/ for up-to-date per-chain addresses
+FAUCET_ADDR = get_faucet_address() # See (and deploy): /econia/src/move/faucet
 COIN_TYPE_ETH = f"{FAUCET_ADDR}::test_eth::TestETH"
 COIN_TYPE_USDC = f"{FAUCET_ADDR}::test_usdc::TestUSDC"
 COIN_TYPE_APT = "0x1::aptos_coin::AptosCoin"
-NODE_URL = "https://fullnode.devnet.aptoslabs.com/v1"
-FAUCET_URL = "https://faucet.devnet.aptoslabs.com"
+NODE_URL = get_aptos_node_url()
+FAUCET_URL = get_aptos_faucet_url()
 
 def start():
     rest_client = RestClient(NODE_URL)
@@ -57,6 +100,13 @@ def start():
     print(f"Account B has finished taking!")
 
     report_best_price_levels(viewer, market_id)
+
+    mkt_ev_handle_info = get_market_event_handle_creation_info(viewer, market_id)
+    print(mkt_ev_handle_info)
+    swap_ev_handle_info = get_swapper_event_handle_creation_numbers(viewer, account_B.account_address, market_id)
+    print(swap_ev_handle_info)
+    mkt_ev_handle_user_info = get_market_event_handle_creation_numbers(viewer, account_B.account_address, market_id, 0)
+    print(mkt_ev_handle_user_info)
 
 def place_market_order(
     direction: Side,

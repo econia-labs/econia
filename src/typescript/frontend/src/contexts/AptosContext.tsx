@@ -1,7 +1,4 @@
-import {
-  useWallet,
-  type WalletContextState,
-} from "@manahippo/aptos-wallet-adapter";
+import { useWallet } from "@aptos-labs/wallet-adapter-react";
 import { CoinListClient, type NetworkType } from "@manahippo/coin-list";
 import { AptosClient, type Types } from "aptos";
 import {
@@ -15,6 +12,8 @@ import { toast } from "react-toastify";
 
 import { MAINNET_TOKEN_LIST, TESTNET_TOKEN_LIST } from "@/constants";
 import { NETWORK_NAME, RPC_NODE_URL } from "@/env";
+
+type WalletContextState = ReturnType<typeof useWallet>;
 
 export type AptosContextState = {
   aptosClient: AptosClient;
@@ -35,7 +34,7 @@ const isEntryFunctionPayload = (
 };
 
 export function AptosContextProvider({ children }: PropsWithChildren) {
-  const { signAndSubmitTransaction: hippoSignAndSubmitTransaction, account } =
+  const { signAndSubmitTransaction: aptosSignAndSubmitTransaction, account } =
     useWallet();
   const aptosClient = useMemo(() => new AptosClient(RPC_NODE_URL), []);
   const signAndSubmitTransaction = useCallback(
@@ -55,12 +54,12 @@ export function AptosContextProvider({ children }: PropsWithChildren) {
           }),
         };
       }
-      const res = await hippoSignAndSubmitTransaction(transaction, options);
+      const res = await aptosSignAndSubmitTransaction(transaction, options);
       await aptosClient.waitForTransaction(res.hash, { checkSuccess: true });
       toast.success("Transaction confirmed");
       return res;
     },
-    [hippoSignAndSubmitTransaction, aptosClient],
+    [aptosSignAndSubmitTransaction, aptosClient],
   );
   const coinListClient = useMemo(() => {
     return new CoinListClient(

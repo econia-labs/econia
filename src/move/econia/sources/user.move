@@ -995,6 +995,10 @@ module econia::user {
     ///
     /// Restricted to private view function to prevent runtime handle
     /// contention.
+    ///
+    /// # Testing
+    ///
+    /// * `test_register_market_accounts()`
     fun get_market_event_handle_creation_numbers(
         user: address,
         market_id: u64,

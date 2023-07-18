@@ -7694,12 +7694,17 @@ module econia::market {
                                 assets::mint_test(base));
         user::deposit_coins<QC>(@user_1, MARKET_ID_COIN, NO_CUSTODIAN,
                                 assets::mint_test(HI_64 - quote_total));
+        // Remove all event handles for user.
+        user::remove_market_event_handles_test(@user_0);
         // Place first maker order.
         let (market_order_id_0, _, _, _) = place_limit_order_user<BC, QC>(
             &user_0, MARKET_ID_COIN, @integrator, !side, size_match, price,
             restriction, self_match_behavior);
         assert!(is_list_node_order_active( // Assert order is active.
             MARKET_ID_COIN, !side, market_order_id_0), 0);
+        // Remove only event handles for market account for user.
+        user::remove_market_event_handles_for_market_account_test(
+            @user_1, MARKET_ID_COIN, NO_CUSTODIAN);
         // Place partial maker, partial taker order.
         let (market_order_id_1, base_trade_r, quote_trade_r, fee_r) =
             place_limit_order_user<BC, QC>(
@@ -9689,6 +9694,10 @@ module econia::market {
         let (market_order_id_0, _, _, _) = place_limit_order_user<BC, QC>(
             &user_0, MARKET_ID_COIN, @integrator, side, size_post, price,
             NO_RESTRICTION, self_match_behavior);
+        // Remove all event handles for maker.
+        user::remove_market_event_handles_test(@user_1);
+        // Remove all event handles for taker.
+        user::remove_market_event_handles_test(@user_0);
         // Place taker order.
         let (base_trade_r, quote_trade_r, fee_r) = place_market_order_user<
             BC, QC>(&user_1, MARKET_ID_COIN, @integrator, BUY, size_match,
@@ -9794,6 +9803,12 @@ module econia::market {
         let (market_order_id_0, _, _, _) = place_limit_order_user<BC, QC>(
             &user_0, MARKET_ID_COIN, @integrator, side, size_post, price,
             NO_RESTRICTION, self_match_behavior);
+        // Remove only event handles for market account for maker.
+        user::remove_market_event_handles_for_market_account_test(
+            @user_0, MARKET_ID_COIN, NO_CUSTODIAN);
+        // Remove only event handles for market account for taker.
+        user::remove_market_event_handles_for_market_account_test(
+            @user_1, MARKET_ID_COIN, NO_CUSTODIAN);
         // Place taker order.
         let (base_trade_r, quote_trade_r, fee_r) = place_market_order_user<
             BC, QC>(&user_1, MARKET_ID_COIN, @integrator, BUY, size_taker,

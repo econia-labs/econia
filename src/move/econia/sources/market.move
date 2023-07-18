@@ -6,30 +6,30 @@
 /// ID.
 ///
 /// Once a market is registered, signing users and delegated custodians
-/// can place limit orders on the book as makers and/or as takers,
-/// takers can place market orders or swaps against the order book, and
-/// makers can cancel or change the size of any outstanding orders they
-/// have on the book.
+/// can place limit orders and market orders, and cancel or change the
+/// size of any open orders. Swaps can be placed permissionlessly
+/// without a market account.
 ///
-/// Econia implements an atomic matching engine for processing taker
-/// fills against maker orders on the book, and emits events in response
-/// to changes in order book state. Notably, Econia evicts the ask or
-/// bid with the lowest price-time priority when inserting a limit order
-/// to a binary search tree that exceeds a critical height.
+/// Econia implements an atomic matching engine, and emits events in
+/// response to changes in order book state as well as assorted market
+/// operations. Notably, Econia evicts the ask or bid with the lowest
+/// price-time priority when inserting a limit order to a binary search
+/// tree that exceeds a critical height.
 ///
 /// Multiple API variants are supported for market registration and
 /// order management function, to enable diagnostic function returns,
 /// public entry calls, etc.
 ///
-/// When someone places an order that result in one or more fills and/or
-/// a post to the book, they are issued a "market order ID" that is
-/// unique to the given market but not necessarily across different
-/// markets. Each market order ID encodes a counter for the number of
+/// All orders are issued an order ID upon placement, which is unique to
+/// the given market. The order ID encodes a counter fo the number of
 /// orders that have been placed on the corresponding market. For orders
 /// that result in a post to the book, the market order ID additionally
 /// encodes an "AVL queue access key" (essentially a pointer into
 /// order book memory), which is required for order lookup during order
 /// size change and/or order cancellation operations.
+///
+/// Note that the terms "order ID" and "market order ID" are used
+/// interchangeably.
 ///
 /// # General overview sections
 ///
@@ -840,8 +840,6 @@ module econia::market {
     const BID: bool = false;
     /// Flag for buy direction.
     const BUY: bool = false;
-    /// Flag for `MakerEvent.type` when order is cancelled.
-    const CANCEL: u8 = 0;
     /// Flag to cancel maker and taker order during a self match.
     const CANCEL_BOTH: u8 = 1;
     /// Flag to cancel maker order only during a self match.
@@ -871,14 +869,10 @@ module econia::market {
     const CANCEL_REASON_TOO_SMALL_AFTER_MATCHING: u8 = 8;
     /// Flag to cancel taker order only during a self match.
     const CANCEL_TAKER: u8 = 3;
-    /// Flag for `MakerEvent.type` when order size is changed.
-    const CHANGE: u8 = 1;
     /// Critical tree height above which evictions may take place.
     const CRITICAL_HEIGHT: u8 = 18;
     /// Descending AVL queue flag, for bids AVL queue.
     const DESCENDING: bool = false;
-    /// Flag for `MakerEvent.type` when order is evicted.
-    const EVICT: u8 = 2;
     /// Flag for fill-or-abort order restriction.
     const FILL_OR_ABORT: u8 = 1;
     /// `u64` bitmask with all bits set, generated in Python via
@@ -909,8 +903,6 @@ module econia::market {
     const PERCENT: bool = true;
     /// Maximum percentage passive advance.
     const PERCENT_100: u64 = 100;
-    /// Flag for `MakerEvent.type` when order is placed.
-    const PLACE: u8 = 3;
     /// Flag for post-or-abort order restriction.
     const POST_OR_ABORT: u8 = 3;
     /// Flag for sell direction.

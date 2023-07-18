@@ -546,7 +546,7 @@ module econia::user {
         order_id: u128
     }
 
-    /// Emitted when a limit order is placed.
+    /// Emitted when a market order is placed.
     struct PlaceMarketOrderEvent has copy, drop, store {
         /// Market ID for order.
         market_id: u64,
@@ -990,7 +990,11 @@ module econia::user {
 
     #[view]
     /// Return a `MarketEventHandleCreationNumbers` for `market_id` and
-    /// `custodian_id`, if `user` has one for indicated market account.
+    /// `custodian_id`, if `user` has event handles for indicated market
+    /// account.
+    ///
+    /// Restricted to private view function to prevent runtime handle
+    /// contention.
     fun get_market_event_handle_creation_numbers(
         user: address,
         market_id: u64,

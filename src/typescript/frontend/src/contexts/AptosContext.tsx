@@ -34,7 +34,7 @@ const isEntryFunctionPayload = (
 };
 
 export function AptosContextProvider({ children }: PropsWithChildren) {
-  const { signAndSubmitTransaction: hippoSignAndSubmitTransaction, account } =
+  const { signAndSubmitTransaction: aptosSignAndSubmitTransaction, account } =
     useWallet();
   const aptosClient = useMemo(() => new AptosClient(RPC_NODE_URL), []);
   const signAndSubmitTransaction = useCallback(
@@ -54,12 +54,12 @@ export function AptosContextProvider({ children }: PropsWithChildren) {
           }),
         };
       }
-      const res = await hippoSignAndSubmitTransaction(transaction, options);
+      const res = await aptosSignAndSubmitTransaction(transaction, options);
       await aptosClient.waitForTransaction(res.hash, { checkSuccess: true });
       toast.success("Transaction confirmed");
       return res;
     },
-    [hippoSignAndSubmitTransaction, aptosClient],
+    [aptosSignAndSubmitTransaction, aptosClient],
   );
   const coinListClient = useMemo(() => {
     return new CoinListClient(

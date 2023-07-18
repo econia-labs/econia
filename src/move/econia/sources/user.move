@@ -300,9 +300,15 @@
 ///
 /// Market events:
 ///
+/// ```mermaid
+///
+/// flowchart LR
+///
 /// emit_limit_order_events_internal --> emit_maker_fill_event
 /// emit_market_order_events_internal --> emit_maker_fill_event
 /// emit_swap_maker_fill_events_internal --> emit_maker_fill_event
+///
+/// ```
 ///
 /// # Complete DocGen index
 ///
@@ -563,7 +569,7 @@ module econia::user {
         price: u64,
         /// Restriction indicated during limit order placement, either
         /// `market::FILL_OR_ABORT`, `market::IMMEDIATE_OR_CANCEL`,
-        /// `market::POST_OR_ABORT`, or `market:NO_RESTRICTION`.
+        /// `market::POST_OR_ABORT`, or `market::NO_RESTRICTION`.
         restriction: u8,
         /// Self match behavior indicated during limit order placement,
         /// either `market::ABORT`, `market::CANCEL_BOTH`,
@@ -1969,7 +1975,7 @@ module econia::user {
     ///   `FillEvent`s to emit as part of a limit order that filled
     ///   across the spread, may be empty.
     /// * `cancel_reason_option_ref`: Immutable reference to an optional
-    ///   cancel reason associated with a `CancelEvent`.
+    ///   cancel reason associated with a `CancelOrderEvent`.
     ///
     /// # Emits
     ///
@@ -2058,7 +2064,7 @@ module econia::user {
     /// * `fill_event_queue_ref`: Immutable reference to a vector of
     ///   `FillEvent`s to emit, may be empty.
     /// * `cancel_reason_option_ref`: Immutable reference to an optional
-    ///   cancel reason associated with a `CancelEvent`.
+    ///   cancel reason associated with a `CancelOrderEvent`.
     ///
     /// # Emits
     ///

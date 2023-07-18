@@ -616,7 +616,7 @@ module econia::market {
     struct MarketEventHandlesForMarket has store {
         /// Event handle for `user::CancelOrderEvent`s.
         cancel_order_events: EventHandle<CancelOrderEvent>,
-        /// Event handle for `user::PlaceSwapOrderEvent`s.
+        /// Event handle for `PlaceSwapOrderEvent`s.
         place_swap_order_events: EventHandle<PlaceSwapOrderEvent>
     }
 
@@ -778,7 +778,7 @@ module econia::market {
         cancel_order_events: EventHandle<CancelOrderEvent>,
         /// Event handle for `user::FillEvent`s.
         fill_events: EventHandle<FillEvent>,
-        /// Event handle for `user::PlaceSwapOrderEvent`s.
+        /// Event handle for `PlaceSwapOrderEvent`s.
         place_swap_order_events: EventHandle<PlaceSwapOrderEvent>
     }
 
@@ -1892,10 +1892,10 @@ module econia::market {
     /// # Emits
     ///
     /// * `PlaceSwapOrderEvent`: Information about the swap order.
-    /// * `FillEvent`(s): Information about fill(s) associated with the
-    ///   swap.
-    /// * `CancelOrderEvent`: Optionally, information about why the swap
-    ///   was cancelled without completely filling.
+    /// * `user::FillEvent`(s): Information about fill(s) associated
+    ///   with the swap.
+    /// * `user::CancelOrderEvent`: Optionally, information about why
+    ///   the swap was cancelled without completely filling.
     ///
     /// # Testing
     ///
@@ -2870,7 +2870,7 @@ module econia::market {
     ///
     /// * `market_id`: Market ID of market.
     /// * `fill_event_queue_ref_mut`: Mutable reference to vector for
-    ///   enqueueing deferred `FillEvent`(s).
+    ///   enqueueing deferred `user::FillEvent`(s).
     /// * `order_book_ref_mut`: Mutable reference to market order book.
     /// * `taker`: Address of taker whose order is matched. Passed as
     ///   `NO_TAKER_ADDRESS` when taker order originates from a swap
@@ -4046,7 +4046,7 @@ module econia::market {
     /// # Parameters
     ///
     /// * `fill_event_queue_ref_mut`: Mutable reference to vector for
-    ///   enqueueing deferred `FillEvent`(s).
+    ///   enqueueing deferred `user::FillEvent`(s).
     /// * `signer_address`: Address of signing user if applicable, else
     ///   `NO_TAKER_ADDRESS`.
     /// * `market_id`: Same as for `match()`.
@@ -4074,16 +4074,17 @@ module econia::market {
     /// * `u64`: Quote coin fees paid, same as for `match()`.
     /// * `Option<PlaceSwapOrderEvent>`: `PlaceSwapOrderEvent` to emit
     ///   if swap is from a signing swapper.
-    /// * `Option<CancelOrderEvent>`: Optional `CancelOrderEvent` to
-    ///   emit if swap is from a signing swapper.
+    /// * `Option<user::CancelOrderEvent>`: Optional
+    ///   `user::CancelOrderEvent` to emit if swap is from a signing
+    ///   swapper.
     ///
     /// # Emits
     ///
     /// * `PlaceSwapOrderEvent`: Information about swap order, emitted
     ///   when swap is from a non-signing swapper.
-    /// * `CancelOrderEvent`: Information about order cancellation, if
-    ///   order was cancelled without completely filling, when swap is
-    ///   from non-signing swapper.
+    /// * `user::CancelOrderEvent`: Information about order
+    ///   cancellation, if order was cancelled without completely
+    ///   filling, when swap is from non-signing swapper.
     ///
     /// # Aborts
     ///

@@ -907,7 +907,7 @@ module econia::market {
     const POST_OR_ABORT: u8 = 3;
     /// Flag for sell direction.
     const SELL: bool = true;
-    /// Number of bits order counter is shifted in a market order ID.
+    /// Number of bits order counter is shifted in an order ID.
     const SHIFT_COUNTER: u8 = 64;
     /// Flag for passive order specified by advance in ticks.
     const TICKS: bool = false;
@@ -2749,7 +2749,7 @@ module econia::market {
     /// # Testing
     ///
     /// * `test_get_market_order_id_avl_queue_access_key()`
-    /*inline*/ fun get_order_id_avl_queue_access_key(
+    fun get_order_id_avl_queue_access_key(
         order_id: u128
     ): u64 {
         ((order_id & (HI_64 as u128)) as u64)
@@ -2977,8 +2977,9 @@ module econia::market {
         // Assume it is not the case that a self match led to a taker
         // order cancellation.
         let self_match_taker_cancel = false;
-        // Increment order book counter before any potential fills.
+        // Get new order ID before any potential fills.
         order_book_ref_mut.counter = order_book_ref_mut.counter + 1;
+        let order_id = ((order_book_ref_mut.counter as u128) << SHIFT_COUNTER);
         // Initialize counters for fill iteration.
         let (fill_count, fees_paid) = (0, 0);
         // While there are orders to match against:
@@ -3072,8 +3073,7 @@ module econia::market {
                 let fill_event = user::create_fill_event_internal(
                     market_id, fill_size, price, side, maker,
                     maker_custodian_id, market_order_id, taker, custodian_id,
-                    order_id_no_post(order_book_ref_mut.counter),
-                    fees_paid_for_fill, fill_count);
+                    order_id, fees_paid_for_fill, fill_count);
                 vector::push_back(fill_event_queue_ref_mut, fill_event);
                 // Update fill iteration counters.
                 fill_count = fill_count + 1;
@@ -3115,14 +3115,6 @@ module econia::market {
         // self match taker cancel flag, and if liquidity is gone.
         (optional_base_coins, quote_coins, base_fill, quote_traded, fees_paid,
          self_match_taker_cancel, avl_queue::is_empty(orders_ref_mut))
-    }
-
-    /// Return order ID derived solely from order book counter for an
-    /// order that did not post.
-    /*inline*/ fun order_id_no_post(
-        counter: u64
-    ): u128 {
-        (counter as u128) << SHIFT_COUNTER
     }
 
     /// Place limit order against order book from user market account.
@@ -3437,7 +3429,8 @@ module econia::market {
             };
         };
         // Assume that limit order will not post.
-        let market_order_id = order_id_no_post(order_book_ref_mut.counter);
+        let market_order_id =
+            ((order_book_ref_mut.counter as u128) << SHIFT_COUNTER);
         // If order eligible to post:
         if (option::is_none(&cancel_reason_option)) {
             // Get next order access key for user-side order placement.
@@ -3815,7 +3808,8 @@ module econia::market {
             quote_coins
         );
         // Get order ID from order book counter updated during matching.
-        let market_order_id = order_id_no_post(order_book_ref_mut.counter);
+        let market_order_id =
+            ((order_book_ref_mut.counter as u128) << SHIFT_COUNTER);
         // Calculate amount of base deposited back to market account.
         let base_deposit = if (direction == BUY) base_traded else
             (base_withdraw - base_traded);
@@ -4143,7 +4137,8 @@ module econia::market {
             quote_coins
         );
         // Get order ID from order book counter updated during matching.
-        let market_order_id = order_id_no_post(order_book_ref_mut.counter);
+        let market_order_id =
+            ((order_book_ref_mut.counter as u128) << SHIFT_COUNTER);
         // Create market event handles for market as needed.
         if (!exists<MarketEventHandles>(resource_address))
             move_to(&resource_account::get_signer(),
@@ -4470,6 +4465,15 @@ module econia::market {
         let avlq_access_key = ((market_order_id & (HI_64 as u128)) as u64);
         // Return if corresponding order is tail of local price queue.
         avl_queue::is_local_tail(orders_ref, avlq_access_key)
+    }
+
+    #[test_only]
+    /// Return order ID derived solely from order book counter for an
+    /// order that did not post.
+    public fun order_id_no_post(
+        counter: u64
+    ): u128 {
+        (counter as u128) << SHIFT_COUNTER
     }
 
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

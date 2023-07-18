@@ -326,7 +326,7 @@ export default function Market({ allMarketData, marketData }: Props) {
         <title>{`${marketData.name} | Econia`}</title>
       </Head>
       <div className="flex h-screen flex-col overflow-hidden">
-        <Header />
+        <Header href={`${allMarketData[0].name}`} />
         <StatsBar selectedMarket={marketData} />
         <main className="flex h-full w-full">
           <div className="flex flex-1 flex-col">
@@ -376,7 +376,7 @@ export default function Market({ allMarketData, marketData }: Props) {
 }
 
 export const getStaticPaths: GetStaticPaths<PathParams> = async () => {
-  const res = await fetch(new URL("markets", API_URL).href);
+  // const res = await fetch(new URL("markets", API_URL).href);
   // const allMarketData: ApiMarket[] = await res.json();
   // TODO: Working API
   const allMarketData = MOCK_MARKETS;

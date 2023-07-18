@@ -691,7 +691,7 @@ module econia::user {
     ///
     /// # Testing
     ///
-    /// * `test_get_cancel_reasons()` TODO
+    /// * `test_get_cancel_reasons()`
     public fun get_CANCEL_REASON_EVICTION(): u8 {
         CANCEL_REASON_EVICTION
     }
@@ -701,7 +701,7 @@ module econia::user {
     ///
     /// # Testing
     ///
-    /// * `test_get_cancel_reasons()` TODO
+    /// * `test_get_cancel_reasons()`
     public fun get_CANCEL_REASON_IMMEDIATE_OR_CANCEL(): u8 {
         CANCEL_REASON_IMMEDIATE_OR_CANCEL
     }
@@ -711,7 +711,7 @@ module econia::user {
     ///
     /// # Testing
     ///
-    /// * `test_get_cancel_reasons()` TODO
+    /// * `test_get_cancel_reasons()`
     public fun get_CANCEL_REASON_MANUAL_CANCEL(): u8 {
         CANCEL_REASON_MANUAL_CANCEL
     }
@@ -721,7 +721,7 @@ module econia::user {
     ///
     /// # Testing
     ///
-    /// * `test_get_cancel_reasons()` TODO
+    /// * `test_get_cancel_reasons()`
     public fun get_CANCEL_REASON_MAX_QUOTE_TRADED(): u8 {
         CANCEL_REASON_MAX_QUOTE_TRADED
     }
@@ -731,7 +731,7 @@ module econia::user {
     ///
     /// # Testing
     ///
-    /// * `test_get_cancel_reasons()` TODO
+    /// * `test_get_cancel_reasons()`
     public fun get_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY(): u8 {
         CANCEL_REASON_NOT_ENOUGH_LIQUIDITY
     }
@@ -741,7 +741,7 @@ module econia::user {
     ///
     /// # Testing
     ///
-    /// * `test_get_cancel_reasons()` TODO
+    /// * `test_get_cancel_reasons()`
     public fun get_CANCEL_REASON_SELF_MATCH_MAKER(): u8 {
         CANCEL_REASON_SELF_MATCH_MAKER
     }
@@ -751,7 +751,7 @@ module econia::user {
     ///
     /// # Testing
     ///
-    /// * `test_get_cancel_reasons()` TODO
+    /// * `test_get_cancel_reasons()`
     public fun get_CANCEL_REASON_SELF_MATCH_TAKER(): u8 {
         CANCEL_REASON_SELF_MATCH_TAKER
     }
@@ -762,7 +762,7 @@ module econia::user {
     ///
     /// # Testing
     ///
-    /// * `test_get_cancel_reasons()` TODO
+    /// * `test_get_cancel_reasons()`
     public fun get_CANCEL_REASON_TOO_SMALL_AFTER_MATCHING(): u8 {
         CANCEL_REASON_TOO_SMALL_AFTER_MATCHING
     }
@@ -4465,6 +4465,27 @@ module econia::user {
     #[test]
     /// Verify constant getter return.
     fun test_get_BID() {assert!(get_BID() == BID, 0)}
+
+    #[test]
+    /// Verify constant getter returns.
+    fun test_get_cancel_reasons() {
+        assert!(get_CANCEL_REASON_EVICTION() ==
+                    CANCEL_REASON_EVICTION, 0);
+        assert!(get_CANCEL_REASON_IMMEDIATE_OR_CANCEL() ==
+                    CANCEL_REASON_IMMEDIATE_OR_CANCEL, 0);
+        assert!(get_CANCEL_REASON_MANUAL_CANCEL() ==
+                    CANCEL_REASON_MANUAL_CANCEL, 0);
+        assert!(get_CANCEL_REASON_MAX_QUOTE_TRADED() ==
+                    CANCEL_REASON_MAX_QUOTE_TRADED, 0);
+        assert!(get_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY() ==
+                    CANCEL_REASON_NOT_ENOUGH_LIQUIDITY, 0);
+        assert!(get_CANCEL_REASON_SELF_MATCH_MAKER() ==
+                    CANCEL_REASON_SELF_MATCH_MAKER, 0);
+        assert!(get_CANCEL_REASON_SELF_MATCH_TAKER() ==
+                    CANCEL_REASON_SELF_MATCH_TAKER, 0);
+        assert!(get_CANCEL_REASON_TOO_SMALL_AFTER_MATCHING() ==
+                    CANCEL_REASON_TOO_SMALL_AFTER_MATCHING, 0);
+    }
 
     #[test]
     #[expected_failure(abort_code = E_NO_MARKET_ACCOUNT)]

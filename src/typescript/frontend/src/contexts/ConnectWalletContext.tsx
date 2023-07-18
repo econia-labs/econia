@@ -5,10 +5,10 @@ import {
   useContext,
   useState,
 } from "react";
+import { toast } from "react-toastify";
 
 import { BaseModal } from "@/components/BaseModal";
 import { ArrowIcon } from "@/components/icons/ArrowIcon";
-import { toast } from "react-toastify";
 
 export type ConnectWalletContextState = {
   connectWallet: () => void;

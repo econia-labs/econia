@@ -1074,7 +1074,7 @@ the connection.
 
 ```json
 {
-  "method": "subscribe",
+  "method": "unsubscribe",
   "channel": "orders",
   "params": {
     "market_id": 1,
@@ -1147,7 +1147,7 @@ them that this is the case.
 
 ```json
 {
-  "method": "subscribe",
+  "method": "unsubscribe",
   "channel": "fills",
   "params": {
     "market_id": 1,
@@ -1212,7 +1212,7 @@ them that this is the case.
 
 ```json
 {
-  "method": "subscribe",
+  "method": "unsubscribe",
   "channel": "price_levels",
   "params": {
     "market_id": 1

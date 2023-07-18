@@ -2689,7 +2689,7 @@ module econia::market {
     ///
     /// * `Option<u8>`: An optional cancel reason, if the order needs
     ///   to be cancelled.
-    inline fun get_cancel_reason_option_for_market_order_or_swap(
+    /*inline*/ fun get_cancel_reason_option_for_market_order_or_swap(
         self_match_taker_cancel: bool,
         base_traded: u64,
         max_base: u64,
@@ -2749,7 +2749,7 @@ module econia::market {
     /// # Testing
     ///
     /// * `test_get_market_order_id_avl_queue_access_key()`
-    inline fun get_order_id_avl_queue_access_key(
+    /*inline*/ fun get_order_id_avl_queue_access_key(
         order_id: u128
     ): u64 {
         ((order_id & (HI_64 as u128)) as u64)
@@ -3119,7 +3119,7 @@ module econia::market {
 
     /// Return order ID derived solely from order book counter for an
     /// order that did not post.
-    inline fun order_id_no_post(
+    /*inline*/ fun order_id_no_post(
         counter: u64
     ): u128 {
         (counter as u128) << SHIFT_COUNTER

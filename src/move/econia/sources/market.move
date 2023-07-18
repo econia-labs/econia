@@ -11025,6 +11025,17 @@ module econia::market {
         let (market_order_id_0, _, _, _) = place_limit_order_user<BC, QC>(
             &user_0, MARKET_ID_COIN, @integrator, side_maker, size_maker,
             price, NO_RESTRICTION, self_match_behavior);
+        // Create swapper event handles for market.
+        move_to(&user_1, SwapperEventHandles{map: table::new()});
+        let swapper_event_handles_map_ref_mut =
+            &mut borrow_global_mut<SwapperEventHandles>(@user_1).map;
+        let handles = SwapperEventHandlesForMarket{
+            cancel_order_events: account::new_event_handle(&user_1),
+            fill_events: account::new_event_handle(&user_1),
+            place_swap_order_events: account::new_event_handle(&user_1)
+        };
+        table::add(
+            swapper_event_handles_map_ref_mut, MARKET_ID_COIN, handles);
         let (base_trade_r, quote_trade_r, fee_r) = // Place taker order.
             swap_between_coinstores<BC, QC>(
                 &user_1, MARKET_ID_COIN, @integrator, direction, min_base,

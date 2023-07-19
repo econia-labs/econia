@@ -7,10 +7,10 @@ COPY ./src/rust/ .
 RUN cargo chef prepare --recipe-path recipe.json
 
 FROM chef AS builder
+RUN apt-get update && apt-get install build-essential libclang-dev lld -y 
 COPY --from=planner /src/recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
 COPY ./src/rust .
-RUN apt-get update && apt-get install build-essential libclang-dev lld -y 
 WORKDIR /src/dependencies/aptos-core/aptos-node
 RUN cargo build --release --features indexer
 RUN strip -s /src/dependencies/aptos-core/target/release/aptos-node

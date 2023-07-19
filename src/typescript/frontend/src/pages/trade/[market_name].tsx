@@ -310,9 +310,7 @@ export default function Market({ allMarketData, marketData }: Props) {
               <DepthChart marketData={marketData} />
             </div>
             <div className="border border-neutral-600">
-              <p className="mb-4 ml-4 mt-2 font-jost font-bold text-white">
-                Orders
-              </p>
+              <p className="my-3 ml-4 font-jost font-bold text-white">Orders</p>
               <OrdersTable allMarketData={allMarketData} />
             </div>
           </div>

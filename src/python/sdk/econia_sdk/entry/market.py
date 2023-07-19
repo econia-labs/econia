@@ -166,7 +166,6 @@ def place_limit_order_user_entry(
             encoder(side, Serializer.u8),
             encoder(size, Serializer.u64),
             encoder(price, Serializer.u64),
-            encoder(size, Serializer.u64),
             encoder(restriction, Serializer.u8),
             encoder(self_match_behavior, Serializer.u8),
         ],

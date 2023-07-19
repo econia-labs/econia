@@ -28,6 +28,7 @@ const config = {
       "warn",
       { argsIgnorePattern: "^_", destructuredArrayIgnorePattern: "^_" },
     ],
+    "@typescript-eslint/no-explicit-any": "warn",
     "@typescript-eslint/consistent-type-imports": [
       "warn",
       { prefer: "type-imports", fixStyle: "inline-type-imports" },

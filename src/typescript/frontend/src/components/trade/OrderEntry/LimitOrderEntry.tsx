@@ -43,12 +43,12 @@ export const LimitOrderEntry: React.FC<{
   const baseBalance = useMarketAccountBalance(
     account?.address,
     marketData.market_id,
-    marketData.base
+    marketData.base,
   );
   const quoteBalance = useMarketAccountBalance(
     account?.address,
     marketData.market_id,
-    marketData.quote
+    marketData.quote,
   );
 
   const onSubmit = async (values: LimitFormValues) => {
@@ -73,7 +73,7 @@ export const LimitOrderEntry: React.FC<{
             size: values.size,
             lotSize: marketData.lot_size,
             baseCoinDecimals: marketData.base.decimals,
-          }).toString()
+          }).toString(),
         ),
         BigInt(
           fromDecimalPrice({
@@ -82,10 +82,10 @@ export const LimitOrderEntry: React.FC<{
             tickSize: marketData.tick_size,
             baseCoinDecimals: marketData.base.decimals,
             quoteCoinDecimals: marketData.quote.decimals,
-          }).toString()
+          }).toString(),
         ),
         "immediateOrCancel", // TODO don't hardcode
-        "abort" // don't hardcode this either
+        "abort", // don't hardcode this either
       );
 
       await signAndSubmitTransaction({
@@ -198,7 +198,7 @@ export const LimitOrderEntry: React.FC<{
           onClick={() => {
             setValue(
               "size",
-              baseBalance.data ? baseBalance.data.toString() : ""
+              baseBalance.data ? baseBalance.data.toString() : "",
             );
           }}
         />

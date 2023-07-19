@@ -95,7 +95,7 @@ export function OrderbookTable({
     }
     return averageOrOtherPriceLevel(
       data.asks ? data.asks[0] : undefined,
-      data.bids ? data.bids[0] : undefined
+      data.bids ? data.bids[0] : undefined,
     );
   }, [data]);
 
@@ -105,7 +105,7 @@ export function OrderbookTable({
     }
     return Math.max(
       ...data.asks.map((order) => order.size),
-      ...data.bids.map((order) => order.size)
+      ...data.bids.map((order) => order.size),
     );
   }, [data]);
 

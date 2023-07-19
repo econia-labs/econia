@@ -196,7 +196,7 @@ export const SelectMarketContent: React.FC<{
                             ? null
                             : flexRender(
                                 header.column.columnDef.header,
-                                header.getContext()
+                                header.getContext(),
                               )}
                         </th>
                       );
@@ -248,7 +248,7 @@ export const SelectMarketContent: React.FC<{
                         >
                           {flexRender(
                             cell.column.columnDef.cell,
-                            cell.getContext()
+                            cell.getContext(),
                           )}
                         </td>
                       ))}
@@ -272,12 +272,12 @@ const MarketNameCell = ({ name }: { name: ApiMarket }) => {
   const { coinListClient } = useAptos();
   const baseAssetIcon = name.base
     ? coinListClient.getCoinInfoByFullName(
-        TypeTag.fromApiCoin(name.base).toString()
+        TypeTag.fromApiCoin(name.base).toString(),
       )?.logo_url
     : DEFAULT_TOKEN_ICON;
   const quoteAssetIcon =
     coinListClient.getCoinInfoByFullName(
-      TypeTag.fromApiCoin(name.quote).toString()
+      TypeTag.fromApiCoin(name.quote).toString(),
     )?.logo_url ?? DEFAULT_TOKEN_ICON;
   return (
     <div className={`flex items-center text-base ${TABLE_SPACING.paddingLeft}`}>
@@ -370,7 +370,7 @@ const RecognizedCell = ({ isRecognized }: { isRecognized: boolean }) => {
 // util
 const getStatsByMarketId = (
   marketId: number,
-  marketStats: ApiStats[] | undefined
+  marketStats: ApiStats[] | undefined,
 ) => {
   if (!marketStats) return undefined;
   return marketStats.find((stats) => stats.market_id === marketId);
@@ -378,7 +378,7 @@ const getStatsByMarketId = (
 
 const getMarketByMarketId = (
   marketId: number,
-  markets: ApiMarket[] | undefined
+  markets: ApiMarket[] | undefined,
 ) => {
   if (!markets) return undefined;
   return markets.find((market) => market.market_id === marketId);
@@ -387,7 +387,7 @@ const getMarketByMarketId = (
 // very hacky type definition, need to think about where to put it
 const getPriceByMarketId = (
   marketId: number,
-  prices: { market_id: number; price: number }[] | undefined
+  prices: { market_id: number; price: number }[] | undefined,
 ) => {
   if (!prices) return undefined;
   return prices.find((price) => price.market_id === marketId);

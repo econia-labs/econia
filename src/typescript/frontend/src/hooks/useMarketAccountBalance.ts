@@ -15,7 +15,7 @@ import { TypeTag } from "@/utils/TypeTag";
 export const useMarketAccountBalance = (
   addr: Address | undefined | null,
   marketId: number | undefined | null,
-  coin: ApiCoin | undefined | null
+  coin: ApiCoin | undefined | null,
 ) => {
   const { aptosClient } = useAptos();
   return useQuery(
@@ -26,7 +26,7 @@ export const useMarketAccountBalance = (
       const collateral = await aptosClient
         .getAccountResource(
           addr,
-          `${ECONIA_ADDR}::user::Collateral<${selectedCoinTypeTag}>`
+          `${ECONIA_ADDR}::user::Collateral<${selectedCoinTypeTag}>`,
         )
         .then(({ data }) => data as Collateral);
       return await aptosClient
@@ -39,8 +39,8 @@ export const useMarketAccountBalance = (
           key: makeMarketAccountId(marketId, NO_CUSTODIAN),
         })
         .then((node: TabListNode<U128, MoveCoin>) =>
-          fromRawCoinAmount(node.value.value, coin.decimals)
+          fromRawCoinAmount(node.value.value, coin.decimals),
         );
-    }
+    },
   );
 };

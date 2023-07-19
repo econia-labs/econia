@@ -6,7 +6,7 @@ Econia Move source code adheres to [Semantic Versioning] and [Keep a Changelog] 
 
 ### Added
 
-- Assorted view functions ([#287], [#301]).
+- Assorted view functions ([#287], [#301], [#334]).
 
 ### Deprecated
 
@@ -17,6 +17,7 @@ Econia Move source code adheres to [Semantic Versioning] and [Keep a Changelog] 
 [#287]: https://github.com/econia-labs/econia/pull/287
 [#292]: https://github.com/econia-labs/econia/pull/292
 [#301]: https://github.com/econia-labs/econia/pull/301
+[#334]: https://github.com/econia-labs/econia/pull/334
 [keep a changelog]: https://keepachangelog.com/en/1.0.0/
 [semantic versioning]: https://semver.org/spec/v2.0.0.html
 [unreleased]: https://github.com/econia-labs/econia/compare/v4.0.2-audited...HEAD

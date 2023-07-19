@@ -82,28 +82,28 @@ export const StatsBar: React.FC<{
     ["marketStats", selectedMarket],
     async () => {
       const resProm = fetch(
-        `${API_URL}/market/${selectedMarket.market_id}/stats?resolution=1d`
+        `${API_URL}/markets/${selectedMarket.market_id}/stats?resolution=1d`,
       ).then((res) => res.json());
       const priceProm = fetch(
-        `${API_URL}/market/${selectedMarket.market_id}/orderbook?depth=1`
+        `${API_URL}/markets/${selectedMarket.market_id}/orderbook?depth=1`,
       ).then((res) => res.json());
       const res = await resProm;
       const priceRes = await priceProm;
 
       const baseAssetIcon = selectedMarket.base
         ? coinListClient.getCoinInfoByFullName(
-            TypeTag.fromApiCoin(selectedMarket.base).toString()
+            TypeTag.fromApiCoin(selectedMarket.base).toString(),
           )?.logo_url
         : DEFAULT_TOKEN_ICON;
       const quoteAssetIcon =
         coinListClient.getCoinInfoByFullName(
-          TypeTag.fromApiCoin(selectedMarket.quote).toString()
+          TypeTag.fromApiCoin(selectedMarket.quote).toString(),
         )?.logo_url ?? DEFAULT_TOKEN_ICON;
 
       return {
         lastPrice: toDecimalPrice({
           price: new BigNumber(
-            averageOrOther(priceRes.asks[0].price, priceRes.bids[0].price) || 0
+            averageOrOther(priceRes.asks[0].price, priceRes.bids[0].price) || 0,
           ),
           lotSize: BigNumber(selectedMarket.lot_size),
           tickSize: BigNumber(selectedMarket.tick_size),
@@ -131,7 +131,7 @@ export const StatsBar: React.FC<{
       keepPreviousData: true,
       refetchOnWindowFocus: false,
       refetchInterval: 10 * 1000,
-    }
+    },
   );
 
   return (

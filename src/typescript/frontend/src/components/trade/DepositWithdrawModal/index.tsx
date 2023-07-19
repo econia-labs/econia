@@ -26,10 +26,10 @@ export const useAllMarketPrices = (allMarketData: ApiMarket[]) => {
         data.push(
           fetch(
             new URL(`market/${market.market_id}/orderbook?depth=1`, API_URL)
-              .href
+              .href,
           ).then((res) => {
             return res.json();
-          })
+          }),
         );
       });
       const orderBooks = await Promise.all(data);
@@ -39,7 +39,7 @@ export const useAllMarketPrices = (allMarketData: ApiMarket[]) => {
           price: (orderBook.asks[0].price + orderBook.bids[0].price) / 2,
         };
       });
-    }
+    },
   );
 };
 

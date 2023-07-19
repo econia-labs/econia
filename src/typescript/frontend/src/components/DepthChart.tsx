@@ -166,7 +166,7 @@ export const DepthChart: React.FC<{
                         (labels[labels.length / 2] +
                           labels[labels.length / 2 - 1]) /
                           2,
-                        2
+                        2,
                       )
                     : formatNumber(labels[labels.length / 2], 2)
                 }`,
@@ -221,7 +221,7 @@ export const DepthChart: React.FC<{
                 position: "right",
                 max: Math.max(
                   bidData[0] || 0,
-                  askData[askData.length - 1] || 0
+                  askData[askData.length - 1] || 0,
                 ),
                 ticks: {
                   padding: 5,
@@ -292,7 +292,7 @@ const plugin = {
   afterInit: (
     chart: { corsair: { x: number; y: number } },
     args: any,
-    opts: any
+    opts: any,
   ) => {
     chart.corsair = {
       x: 0,
@@ -301,7 +301,7 @@ const plugin = {
   },
   afterEvent: (
     chart: { corsair: { x: any; y: any; draw: any }; draw: () => void },
-    args: { event?: any; inChartArea?: any }
+    args: { event?: any; inChartArea?: any },
   ) => {
     const { inChartArea } = args;
     const { type, x, y } = args.event;
@@ -317,7 +317,7 @@ const plugin = {
       ctx?: any;
     },
     args: any,
-    opts: { width: any; color: any; dash: any }
+    opts: { width: any; color: any; dash: any },
   ) => {
     const { ctx } = chart;
     const { top, bottom, left, right } = chart.chartArea;

@@ -30,9 +30,9 @@ const ORDERBOOK_DEPTH = 60;
 const TVChartContainer = dynamic(
   () =>
     import("@/components/trade/TVChartContainer").then(
-      (mod) => mod.TVChartContainer
+      (mod) => mod.TVChartContainer,
     ),
-  { ssr: false }
+  { ssr: false },
 );
 
 type Props = {
@@ -92,7 +92,7 @@ export default function Market({ allMarketData, marketData }: Props) {
           params: {
             market_id: marketData.market_id,
           },
-        })
+        }),
       );
     };
 
@@ -129,7 +129,7 @@ export default function Market({ allMarketData, marketData }: Props) {
             market_id: marketData.market_id,
             user_address: account.address,
           },
-        })
+        }),
       );
 
       // Subscribe to fills by account channel
@@ -141,7 +141,7 @@ export default function Market({ allMarketData, marketData }: Props) {
             market_id: marketData.market_id,
             user_address: account.address,
           },
-        })
+        }),
       );
 
       // Store address for unsubscribing when wallet is disconnected.
@@ -157,7 +157,7 @@ export default function Market({ allMarketData, marketData }: Props) {
               market_id: marketData.market_id,
               user_address: prevAddress.current,
             },
-          })
+          }),
         );
 
         // Unsubscribe to fills by account channel
@@ -169,7 +169,7 @@ export default function Market({ allMarketData, marketData }: Props) {
               market_id: marketData.market_id,
               user_address: prevAddress.current,
             },
-          })
+          }),
         );
 
         // Clear saved address
@@ -194,7 +194,7 @@ export default function Market({ allMarketData, marketData }: Props) {
             // TODO further discuss what toast text should be
             case "open":
               toast.success(
-                `Order with order ID ${market_order_id} placed successfully.`
+                `Order with order ID ${market_order_id} placed successfully.`,
               );
               break;
             case "filled":
@@ -274,7 +274,7 @@ export default function Market({ allMarketData, marketData }: Props) {
                   ],
                 };
               }
-            }
+            },
           );
         } else {
           // TODO
@@ -294,12 +294,12 @@ export default function Market({ allMarketData, marketData }: Props) {
     ["orderbook", marketData?.market_id],
     async () => {
       const res = await fetch(
-        `${API_URL}/market/${marketData?.market_id}/orderbook?depth=${ORDERBOOK_DEPTH}`
+        `${API_URL}/markets/${marketData?.market_id}/orderbook?depth=${ORDERBOOK_DEPTH}`,
       );
       const data: Orderbook = await res.json();
       return data;
     },
-    { keepPreviousData: true, refetchOnWindowFocus: false }
+    { keepPreviousData: true, refetchOnWindowFocus: false },
   );
 
   if (!marketData) return <Page>Market not found.</Page>;
@@ -391,7 +391,7 @@ export const getStaticProps: GetStaticProps<Props, PathParams> = async ({
   // TODO: Working API
   const allMarketData = MOCK_MARKETS;
   const marketData = allMarketData.find(
-    (market) => market.name === params.market_name
+    (market) => market.name === params.market_name,
   );
 
   return {

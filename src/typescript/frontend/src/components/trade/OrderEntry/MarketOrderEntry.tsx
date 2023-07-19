@@ -32,12 +32,12 @@ export const MarketOrderEntry: React.FC<{
   const baseBalance = useMarketAccountBalance(
     account?.address,
     marketData.market_id,
-    marketData.base
+    marketData.base,
   );
   const quoteBalance = useMarketAccountBalance(
     account?.address,
     marketData.market_id,
-    marketData.quote
+    marketData.quote,
   );
 
   const onSubmit = async (values: MarketFormValues) => {
@@ -62,9 +62,9 @@ export const MarketOrderEntry: React.FC<{
             size: values.size,
             lotSize: marketData.lot_size,
             baseCoinDecimals: marketData.base.decimals,
-          }).toString()
+          }).toString(),
         ),
-        "abort" // TODO don't hardcode this either
+        "abort", // TODO don't hardcode this either
       );
 
       await signAndSubmitTransaction({
@@ -116,7 +116,7 @@ export const MarketOrderEntry: React.FC<{
           onClick={() => {
             setValue(
               "size",
-              baseBalance.data ? baseBalance.data.toString() : ""
+              baseBalance.data ? baseBalance.data.toString() : "",
             );
           }}
         />

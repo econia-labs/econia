@@ -33,11 +33,11 @@ export const TradeHistoryTable: React.FC<{
       ] as ApiOrder[];
       // TODO: Endpoint needs to return data
       // return await fetch(
-      //   `${API_URL}/market/${
+      //   `${API_URL}/markets/${
       //     marketData.market_id
       //   }/fills?from=${0}&to=${Math.floor(Date.now() / 1000)}`
       // ).then((res) => res.json());
-    }
+    },
   );
   const table = useReactTable({
     columns: [
@@ -88,7 +88,7 @@ export const TradeHistoryTable: React.FC<{
                     ? null
                     : flexRender(
                         header.column.columnDef.header,
-                        header.getContext()
+                        header.getContext(),
                       )}
                 </th>
               ))}

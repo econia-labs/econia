@@ -155,7 +155,7 @@ export function OrderbookTable({
             PRICE ({marketData.quote.symbol})
           </p>
           <p className="font-roboto-mono text-xs text-neutral-500">
-            Size ({marketData.base?.symbol})
+            SIZE ({marketData.base?.symbol})
           </p>
         </div>
       </div>

@@ -2726,7 +2726,7 @@ module econia::market {
     ///
     /// * `Option<u8>`: An optional cancel reason, if the order needs
     ///   to be cancelled.
-    inline fun get_cancel_reason_option_for_market_order_or_swap(
+    /*inline*/ fun get_cancel_reason_option_for_market_order_or_swap(
         self_match_taker_cancel: bool,
         base_traded: u64,
         max_base: u64,
@@ -3451,11 +3451,10 @@ module econia::market {
             } else if (still_crosses_spread) {
                 option::fill(&mut cancel_reason_option,
                              CANCEL_REASON_MAX_QUOTE_TRADED);
-            } else {
-                if (remaining_size < order_book_ref_mut.min_size) {
-                    option::fill(&mut cancel_reason_option,
-                                 CANCEL_REASON_TOO_SMALL_AFTER_MATCHING);
-                }
+            } else if ((remaining_size > 0) &&
+                       (remaining_size < order_book_ref_mut.min_size)) {
+                option::fill(&mut cancel_reason_option,
+                             CANCEL_REASON_TOO_SMALL_AFTER_MATCHING);
             };
         } else { // If spread not crossed (matching engine not called):
             // Order book counter needs to be updated for new order ID.
@@ -3470,7 +3469,7 @@ module econia::market {
         let market_order_id =
             ((order_book_ref_mut.counter as u128) << SHIFT_COUNTER);
         // If order eligible to post:
-        if (option::is_none(&cancel_reason_option)) {
+        if (option::is_none(&cancel_reason_option) && (remaining_size > 0)) {
             // Get next order access key for user-side order placement.
             let order_access_key = user::get_next_order_access_key_internal(
                 user_address, market_id, custodian_id, side);

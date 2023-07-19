@@ -6333,11 +6333,10 @@ restriction, and
         } <b>else</b> <b>if</b> (still_crosses_spread) {
             <a href="_fill">option::fill</a>(&<b>mut</b> cancel_reason_option,
                          <a href="market.md#0xc0deb00c_market_CANCEL_REASON_MAX_QUOTE_TRADED">CANCEL_REASON_MAX_QUOTE_TRADED</a>);
-        } <b>else</b> {
-            <b>if</b> (remaining_size &lt; order_book_ref_mut.min_size) {
-                <a href="_fill">option::fill</a>(&<b>mut</b> cancel_reason_option,
-                             <a href="market.md#0xc0deb00c_market_CANCEL_REASON_TOO_SMALL_AFTER_MATCHING">CANCEL_REASON_TOO_SMALL_AFTER_MATCHING</a>);
-            }
+        } <b>else</b> <b>if</b> ((remaining_size &gt; 0) &&
+                   (remaining_size &lt; order_book_ref_mut.min_size)) {
+            <a href="_fill">option::fill</a>(&<b>mut</b> cancel_reason_option,
+                         <a href="market.md#0xc0deb00c_market_CANCEL_REASON_TOO_SMALL_AFTER_MATCHING">CANCEL_REASON_TOO_SMALL_AFTER_MATCHING</a>);
         };
     } <b>else</b> { // If spread not crossed (matching engine not called):
         // <a href="market.md#0xc0deb00c_market_Order">Order</a> book counter needs <b>to</b> be updated for new order ID.
@@ -6352,7 +6351,7 @@ restriction, and
     <b>let</b> market_order_id =
         ((order_book_ref_mut.counter <b>as</b> u128) &lt;&lt; <a href="market.md#0xc0deb00c_market_SHIFT_COUNTER">SHIFT_COUNTER</a>);
     // If order eligible <b>to</b> <b>post</b>:
-    <b>if</b> (<a href="_is_none">option::is_none</a>(&cancel_reason_option)) {
+    <b>if</b> (<a href="_is_none">option::is_none</a>(&cancel_reason_option) && (remaining_size &gt; 0)) {
         // Get next order access key for <a href="user.md#0xc0deb00c_user">user</a>-side order placement.
         <b>let</b> order_access_key = <a href="user.md#0xc0deb00c_user_get_next_order_access_key_internal">user::get_next_order_access_key_internal</a>(
             user_address, market_id, custodian_id, side);

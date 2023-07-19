@@ -80,13 +80,13 @@ module econia::template {
 
     // Deprecated structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Deprecated struct retained for backwards compatibility.
+    /// Deprecated struct retained for compatible upgrade policy.
 
     // Deprecated structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Deprecated functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Deprecated function retained for backwards compatibility.
+    /// Deprecated function retained for compatible upgrade policy.
     ///
     /// # Coverage testing
     ///

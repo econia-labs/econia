@@ -10,6 +10,7 @@ import { toast } from "react-toastify";
 import { DepthChart } from "@/components/DepthChart";
 import { Header } from "@/components/Header";
 import { OrderbookTable } from "@/components/OrderbookTable";
+import { Page } from "@/components/Page";
 import { StatsBar } from "@/components/StatsBar";
 import { OrderEntry } from "@/components/trade/OrderEntry";
 import { OrdersTable } from "@/components/trade/OrdersTable";
@@ -278,7 +279,7 @@ export default function Market({ allMarketData, marketData }: Props) {
     { keepPreviousData: true, refetchOnWindowFocus: false },
   );
 
-  if (!marketData) return <div>Market not found.</div>;
+  if (!marketData) return <Page>Market not found.</Page>;
 
   const defaultTVChartProps = {
     symbol: marketData.name,

@@ -2835,7 +2835,7 @@ module econia::user {
     /// Emit a `FillEvent` for the market account of the maker
     /// associated with a fill, if market event handles exist for the
     /// indicated market account.
-    inline fun emit_maker_fill_event(
+    /*inline*/ fun emit_maker_fill_event(
         event_ref: &FillEvent
     ) acquires MarketEventHandles {
         let maker = event_ref.maker;

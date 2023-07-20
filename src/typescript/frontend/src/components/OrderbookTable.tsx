@@ -42,7 +42,7 @@ const Row: React.FC<{
 
   return (
     <div
-      className="relative flex h-6 items-center justify-between py-[1px] hover:ring-1 hover:ring-neutral-600"
+      className="relative flex h-6 cursor-pointer items-center justify-between py-[1px] hover:ring-1 hover:ring-neutral-600"
       onClick={() => {
         setType(type === "ask" ? "buy" : "sell");
         setPrice(price.toString());

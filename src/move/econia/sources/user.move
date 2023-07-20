@@ -95,7 +95,6 @@
 /// * `get_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY()`
 /// * `get_CANCEL_REASON_SELF_MATCH_MAKER()`
 /// * `get_CANCEL_REASON_SELF_MATCH_TAKER()`
-/// * `get_CANCEL_REASON_TOO_SMALL_AFTER_MATCHING()`
 ///
 /// Market account lookup:
 ///
@@ -575,8 +574,11 @@ module econia::user {
         /// either `market::ABORT`, `market::CANCEL_BOTH`,
         /// `market::CANCEL_MAKER`, or `market::CANCEL_TAKER`.
         self_match_behavior: u8,
-        /// Size posted to order book after optional fills across the
-        /// spread.
+        /// Order size remaining after the function call in which the
+        /// order was placed, which may include fills across the spread.
+        /// For example if an order of size 10 and restriction
+        /// `market::IMMEDIATE_OR_CANCEL` fills 6 lots across the
+        /// spread, the order will be cancelled and remaining size is 4.
         remaining_size: u64,
         /// Unique ID for order within market.
         order_id: u128
@@ -629,8 +631,6 @@ module econia::user {
     const E_PRICE_0: u64 = 8;
     /// Price exceeds maximum possible price.
     const E_PRICE_TOO_HIGH: u64 = 9;
-    /// Size is below minimum size for market.
-    const E_SIZE_TOO_LOW: u64 = 10;
     /// Ticks to fill an order overflows a `u64`.
     const E_TICKS_OVERFLOW: u64 = 11;
     /// Filling order would overflow asset received from trade.
@@ -684,9 +684,6 @@ module econia::user {
     /// market account memory because it will be subsequently re-placed
     /// as part of a size change.
     const CANCEL_REASON_SIZE_CHANGE_INTERNAL: u8 = 0;
-    /// Order cancelled because after matching across the spread the
-    /// remaining order size was too small for the market.
-    const CANCEL_REASON_TOO_SMALL_AFTER_MATCHING: u8 = 8;
     /// `u64` bitmask with all bits set, generated in Python via
     /// `hex(int('1' * 64, 2))`.
     const HI_64: u64 = 0xffffffffffffffff;
@@ -790,17 +787,6 @@ module econia::user {
     /// * `test_get_cancel_reasons()`
     public fun get_CANCEL_REASON_SELF_MATCH_TAKER(): u8 {
         CANCEL_REASON_SELF_MATCH_TAKER
-    }
-
-    #[view]
-    /// Public constant getter for
-    /// `CANCEL_REASON_TOO_SMALL_AFTER_MATCHING`.
-    ///
-    /// # Testing
-    ///
-    /// * `test_get_cancel_reasons()`
-    public fun get_CANCEL_REASON_TOO_SMALL_AFTER_MATCHING(): u8 {
-        CANCEL_REASON_TOO_SMALL_AFTER_MATCHING
     }
 
     #[view]
@@ -2576,7 +2562,6 @@ module econia::user {
     ///
     /// * `E_PRICE_0`: Price is zero.
     /// * `E_PRICE_TOO_HIGH`: Price exceeds maximum possible price.
-    /// * `E_SIZE_TOO_LOW`: Size is below minimum size for market.
     /// * `E_TICKS_OVERFLOW`: Ticks to fill order overflows a `u64`.
     /// * `E_OVERFLOW_ASSET_IN`: Filling order would overflow asset
     ///   received from trade.
@@ -2597,7 +2582,6 @@ module econia::user {
     /// * `test_place_order_internal_out_underflow()`
     /// * `test_place_order_internal_price_0()`
     /// * `test_place_order_internal_price_hi()`
-    /// * `test_place_order_internal_size_lo()`
     /// * `test_place_order_internal_ticks_overflow()`
     public(friend) fun place_order_internal(
         user_address: address,
@@ -2619,8 +2603,6 @@ module econia::user {
             ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128);
         let market_account_ref_mut = // Mutably borrow market account.
             table::borrow_mut(market_accounts_map_ref_mut, market_account_id);
-        // Assert order size is greater than or equal to market minimum.
-        assert!(size >= market_account_ref_mut.min_size, E_SIZE_TOO_LOW);
         let base_fill = // Calculate base units needed to fill order.
             (size as u128) * (market_account_ref_mut.lot_size as u128);
         // Calculate ticks to fill order.
@@ -4562,8 +4544,6 @@ module econia::user {
                     CANCEL_REASON_SELF_MATCH_MAKER, 0);
         assert!(get_CANCEL_REASON_SELF_MATCH_TAKER() ==
                     CANCEL_REASON_SELF_MATCH_TAKER, 0);
-        assert!(get_CANCEL_REASON_TOO_SMALL_AFTER_MATCHING() ==
-                    CANCEL_REASON_TOO_SMALL_AFTER_MATCHING, 0);
     }
 
     #[test]
@@ -5246,26 +5226,6 @@ module econia::user {
         let market_order_id  = 123;
         let size             = MIN_SIZE_PURE_COIN;
         let price            = HI_PRICE + 1;
-        let side             = ASK;
-        // Attempt invalid invocation.
-        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
-                             size, price, market_order_id, 1);
-    }
-
-    #[test]
-    #[expected_failure(abort_code = E_SIZE_TOO_LOW)]
-    /// Verify failure for size too low.
-    fun test_place_order_internal_size_lo()
-    acquires
-        Collateral,
-        MarketAccounts,
-        MarketEventHandles
-    {
-        register_market_accounts_test(); // Register market accounts.
-        // Declare order parameters
-        let market_order_id  = 123;
-        let size             = MIN_SIZE_PURE_COIN - 1;
-        let price            = HI_PRICE;
         let side             = ASK;
         // Attempt invalid invocation.
         place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,

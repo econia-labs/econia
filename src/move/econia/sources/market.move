@@ -890,9 +890,6 @@ module econia::market {
     /// Order cancelled because it was on the taker side of an fill
     /// where self match behavior indicated cancelling the taker order.
     const CANCEL_REASON_SELF_MATCH_TAKER: u8 = 7;
-    /// Order cancelled because after matching across the spread the
-    /// remaining order size was too small for the market.
-    const CANCEL_REASON_TOO_SMALL_AFTER_MATCHING: u8 = 8;
     /// Flag to cancel taker order only during a self match.
     const CANCEL_TAKER: u8 = 3;
     /// Critical tree height above which evictions may take place.
@@ -3248,7 +3245,7 @@ module econia::market {
     /// * `test_place_limit_order_crosses_ask_self_match_cancel()`
     /// * `test_place_limit_order_crosses_bid_exact()`
     /// * `test_place_limit_order_crosses_bid_partial()`
-    /// * `test_place_limit_order_crosses_bid_partial_cancel()`
+    /// * `test_place_limit_order_crosses_bid_partial_post_under_min()`
     /// * `test_place_limit_order_evict()`
     /// * `test_place_limit_order_no_cross_ask_user()`
     /// * `test_place_limit_order_no_cross_ask_user_ioc()`
@@ -3451,15 +3448,11 @@ module econia::market {
             } else if (still_crosses_spread) {
                 option::fill(&mut cancel_reason_option,
                              CANCEL_REASON_MAX_QUOTE_TRADED);
-            } else if ((remaining_size > 0) &&
-                       (remaining_size < order_book_ref_mut.min_size)) {
-                option::fill(&mut cancel_reason_option,
-                             CANCEL_REASON_TOO_SMALL_AFTER_MATCHING);
             };
         } else { // If spread not crossed (matching engine not called):
             // Order book counter needs to be updated for new order ID.
             order_book_ref_mut.counter = order_book_ref_mut.counter + 1;
-            // Order needs to be cancelled if no fills took place.
+            // IOC order needs to be cancelled if no fills took place.
             if (restriction == IMMEDIATE_OR_CANCEL) {
                 option::fill(&mut cancel_reason_option,
                              CANCEL_REASON_IMMEDIATE_OR_CANCEL);
@@ -3503,9 +3496,6 @@ module econia::market {
                     user, market_id, custodian_id, side, size, price,
                     order_access_key, (NIL as u128), CANCEL_REASON_EVICTION);
             };
-        } else {
-            // If not eligible to post, no remaining size.
-            remaining_size = 0;
         };
         // Emit relevant events to user event handles.
         user::emit_limit_order_events_internal(
@@ -4975,8 +4965,6 @@ module econia::market {
                 CANCEL_REASON_SELF_MATCH_TAKER, 0);
         assert!(user::get_CANCEL_REASON_IMMEDIATE_OR_CANCEL() ==
                 CANCEL_REASON_IMMEDIATE_OR_CANCEL, 0);
-        assert!(user::get_CANCEL_REASON_TOO_SMALL_AFTER_MATCHING() ==
-                CANCEL_REASON_TOO_SMALL_AFTER_MATCHING, 0);
         assert!(user::get_CANCEL_REASON_MAX_QUOTE_TRADED() ==
                 CANCEL_REASON_MAX_QUOTE_TRADED, 0);
     }
@@ -8160,10 +8148,10 @@ module econia::market {
 
     #[test]
     /// Verify state updates, returns for placing bid that fills
-    /// partially across the spread, then returns because there is not
-    /// enough remaining size to meet minimum size requirement. Based on
+    /// partially across the spread, then posts amount less than minimum
+    /// order size for market. Based on
     /// `test_place_limit_order_crosses_bid_partial()`.
-    fun test_place_limit_order_crosses_bid_partial_cancel()
+    fun test_place_limit_order_crosses_bid_partial_post_under_min()
     acquires OrderBooks {
         // Initialize markets, users, and an integrator.
         let (user_0, user_1) = init_markets_users_integrator_test();
@@ -8210,19 +8198,27 @@ module econia::market {
             restriction, self_match_behavior);
         assert!(is_list_node_order_active( // Assert order is active.
             MARKET_ID_COIN, !side, market_order_id_0), 0);
-        // Place partial taker order that returns without making.
+        // Place partial maker, partial taker order.
         let (market_order_id_1, base_trade_r, quote_trade_r, fee_r) =
             place_limit_order_user<BC, QC>(
                 &user_1, MARKET_ID_COIN, @integrator, side, size, price,
                 restriction, self_match_behavior);
         // Assert returns
-        assert!(market_order_id_1 == order_id_no_post(2), 0);
+        assert!(did_order_post(market_order_id_1), 0);
         assert!(base_trade_r      == base_match, 0);
         assert!(quote_trade_r     == quote_trade, 0);
         assert!(fee_r             == fee, 0);
         // Assert filled order inactive.
         assert!(!is_list_node_order_active(
             MARKET_ID_COIN, !side, market_order_id_0), 0);
+        // Get fields for new order on book.
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
+            get_order_fields_test(MARKET_ID_COIN, side, market_order_id_1);
+        // Assert field returns except access key, used for user lookup.
+        assert!(size_r         == size_post, 0);
+        assert!(price_r        == price, 0);
+        assert!(user_r         == @user_1, 0);
+        assert!(custodian_id_r == NO_CUSTODIAN, 0);
         // Assert first maker's asset counts.
         let (base_total , base_available , base_ceiling,
              quote_total, quote_available, quote_ceiling) =
@@ -8239,16 +8235,16 @@ module econia::market {
             @user_0, MARKET_ID_COIN, NO_CUSTODIAN) == 0, 0);
         assert!(user::get_collateral_value_simple_test<QC>(
             @user_0, MARKET_ID_COIN, NO_CUSTODIAN) == HI_64, 0);
-        // Assert asset counts of partial taker.
+        // Assert asset counts of partial maker/taker.
         let (base_total , base_available , base_ceiling,
              quote_total, quote_available, quote_ceiling) =
             user::get_asset_counts_internal(
                 @user_1, MARKET_ID_COIN, NO_CUSTODIAN);
-        assert!(base_total      == HI_64 - base + base_match, 0);
-        assert!(base_available  == HI_64 - base + base_match, 0);
-        assert!(base_ceiling    == HI_64 - base + base_match, 0);
+        assert!(base_total      == HI_64 - base_post, 0);
+        assert!(base_available  == HI_64 - base_post, 0);
+        assert!(base_ceiling    == HI_64, 0);
         assert!(quote_total     == quote_max - quote_trade, 0);
-        assert!(quote_available == quote_max - quote_trade, 0);
+        assert!(quote_available == quote_max - quote_trade - quote_post, 0);
         assert!(quote_ceiling   == quote_max - quote_trade, 0);
         // Assert collateral amounts.
         assert!(user::get_collateral_value_simple_test<BC>(
@@ -8256,6 +8252,11 @@ module econia::market {
         assert!(user::get_collateral_value_simple_test<QC>(
             @user_1, MARKET_ID_COIN, NO_CUSTODIAN)
             == quote_max - quote_trade, 0);
+        // Assert user-side order fields.
+        let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
+            @user_1, MARKET_ID_COIN, NO_CUSTODIAN, side, order_access_key);
+        assert!(market_order_id_r == market_order_id_1, 0);
+        assert!(size_r == size_post, 0);
     }
 
     #[test]

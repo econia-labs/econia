@@ -53,10 +53,10 @@ const NavItemDivider: React.FC = () => {
 };
 
 type HeaderProps = {
-  href: string;
+  logoHref: string;
 };
 
-export function Header({ href }: HeaderProps) {
+export function Header({ logoHref }: HeaderProps) {
   const { disconnect } = useWallet();
   const router = useRouter();
   const [depositWithdrawOpen, setDepositWithdrawOpen] = useState(false);
@@ -65,7 +65,7 @@ export function Header({ href }: HeaderProps) {
     <header className="border-b border-neutral-600">
       <nav className="flex items-center justify-between px-8 py-4">
         <div className="my-auto flex-1 items-center">
-          <Link href={href}>
+          <Link href={logoHref}>
             <Image
               className=""
               alt="Econia Logo"

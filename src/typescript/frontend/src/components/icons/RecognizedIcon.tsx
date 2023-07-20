@@ -10,12 +10,12 @@ export const RecognizedIcon: React.FC<React.SVGProps<SVGSVGElement>> = ({
       className={className}
     >
       <circle cx="11.744" cy="12.2256" r="11.3778" fill="#086CD9" />
-      <g clip-path="url(#clip0_5188_11736)">
+      <g clipPath="url(#clip0_5188_11736)">
         <path
           d="M6.49902 13.0746L9.54479 16.1204L17.1592 8.50598"
           stroke="white"
-          stroke-width="1.5"
-          stroke-linecap="square"
+          strokeWidth="1.5"
+          strokeLinecap="square"
         />
       </g>
       <defs>

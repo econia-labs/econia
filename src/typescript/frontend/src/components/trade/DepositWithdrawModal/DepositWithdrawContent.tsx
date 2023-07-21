@@ -68,7 +68,7 @@ const DepositWithdrawForm: React.FC<{
   selectedMarket: ApiMarket;
   mode: "deposit" | "withdraw";
 }> = ({ selectedMarket, mode }) => {
-  const { account, aptosClient, signAndSubmitTransaction } = useAptos();
+  const { account, signAndSubmitTransaction } = useAptos();
   const [selectedCoin, setSelectedCoin] = useState<ApiCoin>(
     selectedMarket.base ?? selectedMarket.quote,
   );

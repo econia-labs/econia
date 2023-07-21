@@ -4,7 +4,6 @@ import React, { useEffect } from "react";
 import { API_URL } from "@/env";
 import { MOCK_MARKETS } from "@/mockdata/markets";
 import { type ApiMarket, type ApiStats } from "@/types/api";
-import { type Orderbook } from "@/types/global";
 
 import { BaseModal } from "../../BaseModal";
 import { DepositWithdrawContent } from "./DepositWithdrawContent";
@@ -16,30 +15,6 @@ enum Step {
   SelectMarket,
   DepositWithdraw,
 }
-
-export const useAllMarketPrices = (allMarketData: ApiMarket[]) => {
-  type OrderbookWithId = Orderbook & {
-    market_id: number;
-  };
-  return useQuery<{ market_id: number; price: number }[]>(
-    ["allMarketPrices", allMarketData],
-    async () => {
-      const orderbooks = await Promise.all(
-        allMarketData.map(async ({ market_id }) => {
-          const res = await fetch(
-            new URL(`markets/${market_id}/orderbook?depth=1`, API_URL).href,
-          );
-          const data = await res.json();
-          return { ...data, market_id } as OrderbookWithId;
-        }),
-      );
-      return orderbooks.map((orderbook) => ({
-        market_id: orderbook.market_id,
-        price: (orderbook.asks[0].price + orderbook.bids[0].price) / 2,
-      }));
-    },
-  );
-};
 
 export const useAllMarketStats = () => {
   return useQuery<ApiStats[]>(["allMarketStats"], async () => {

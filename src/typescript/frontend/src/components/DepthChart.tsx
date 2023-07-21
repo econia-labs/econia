@@ -122,7 +122,7 @@ export const DepthChart: React.FC<{
   }, [marketData, baseCoinInfo, quoteCoinInfo, data, isFetching]);
 
   return (
-    <div className="relative h-1/5 flex-[1_1_0%]">
+    <>
       <p className={"absolute ml-4 mt-2 font-jost font-bold text-white"}>
         Depth
       </p>
@@ -273,7 +273,7 @@ export const DepthChart: React.FC<{
           }}
         />
       </div>
-    </div>
+    </>
   );
 };
 

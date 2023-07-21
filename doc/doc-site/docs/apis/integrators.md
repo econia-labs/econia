@@ -10,8 +10,10 @@
 
 ## Integrator-specific getters
 
-- [`get_cost_to_upgrade_integrator_fee_store()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/incentives.md#0xc0deb00c_incentives_get_cost_to_upgrade_integrator_fee_store)
+- [`get_cost_to_upgrade_integrator_fee_store()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/incentives.md#function-get_cost_to_upgrade_integrator_fee_store)
+- [`get_cost_to_upgrade_integrator_fee_store_view()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/incentives.md#function-get_cost_to_upgrade_integrator_fee_store_view)
 - [`get_integrator_withdrawal_fee()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/incentives.md#function-get_integrator_withdrawal_fee)
+- [`get_integrator_withdrawal_fee_view()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/incentives.md#function-get_integrator_withdrawal_fee_view)
 
 ## Integrator fee store management
 

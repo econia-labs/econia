@@ -1924,17 +1924,6 @@ where self match behavior indicated cancelling the taker order.
 
 
 
-<a name="0xc0deb00c_market_CANCEL_REASON_TOO_SMALL_AFTER_MATCHING"></a>
-
-Order cancelled because after matching across the spread the
-remaining order size was too small for the market.
-
-
-<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_CANCEL_REASON_TOO_SMALL_AFTER_MATCHING">CANCEL_REASON_TOO_SMALL_AFTER_MATCHING</a>: u8 = 8;
-</code></pre>
-
-
-
 <a name="0xc0deb00c_market_E_INVALID_MARKET_ORDER_ID"></a>
 
 Market order ID invalid.
@@ -6116,7 +6105,7 @@ restriction, and
 * <code>test_place_limit_order_crosses_ask_self_match_cancel()</code>
 * <code>test_place_limit_order_crosses_bid_exact()</code>
 * <code>test_place_limit_order_crosses_bid_partial()</code>
-* <code>test_place_limit_order_crosses_bid_partial_cancel()</code>
+* <code>test_place_limit_order_crosses_bid_partial_post_under_min()</code>
 * <code>test_place_limit_order_evict()</code>
 * <code>test_place_limit_order_no_cross_ask_user()</code>
 * <code>test_place_limit_order_no_cross_ask_user_ioc()</code>
@@ -6333,16 +6322,11 @@ restriction, and
         } <b>else</b> <b>if</b> (still_crosses_spread) {
             <a href="_fill">option::fill</a>(&<b>mut</b> cancel_reason_option,
                          <a href="market.md#0xc0deb00c_market_CANCEL_REASON_MAX_QUOTE_TRADED">CANCEL_REASON_MAX_QUOTE_TRADED</a>);
-        } <b>else</b> {
-            <b>if</b> (remaining_size &lt; order_book_ref_mut.min_size) {
-                <a href="_fill">option::fill</a>(&<b>mut</b> cancel_reason_option,
-                             <a href="market.md#0xc0deb00c_market_CANCEL_REASON_TOO_SMALL_AFTER_MATCHING">CANCEL_REASON_TOO_SMALL_AFTER_MATCHING</a>);
-            }
         };
     } <b>else</b> { // If spread not crossed (matching engine not called):
         // <a href="market.md#0xc0deb00c_market_Order">Order</a> book counter needs <b>to</b> be updated for new order ID.
         order_book_ref_mut.counter = order_book_ref_mut.counter + 1;
-        // <a href="market.md#0xc0deb00c_market_Order">Order</a> needs <b>to</b> be cancelled <b>if</b> no fills took place.
+        // IOC order needs <b>to</b> be cancelled <b>if</b> no fills took place.
         <b>if</b> (restriction == <a href="market.md#0xc0deb00c_market_IMMEDIATE_OR_CANCEL">IMMEDIATE_OR_CANCEL</a>) {
             <a href="_fill">option::fill</a>(&<b>mut</b> cancel_reason_option,
                          <a href="market.md#0xc0deb00c_market_CANCEL_REASON_IMMEDIATE_OR_CANCEL">CANCEL_REASON_IMMEDIATE_OR_CANCEL</a>);
@@ -6352,7 +6336,7 @@ restriction, and
     <b>let</b> market_order_id =
         ((order_book_ref_mut.counter <b>as</b> u128) &lt;&lt; <a href="market.md#0xc0deb00c_market_SHIFT_COUNTER">SHIFT_COUNTER</a>);
     // If order eligible <b>to</b> <b>post</b>:
-    <b>if</b> (<a href="_is_none">option::is_none</a>(&cancel_reason_option)) {
+    <b>if</b> (<a href="_is_none">option::is_none</a>(&cancel_reason_option) && (remaining_size &gt; 0)) {
         // Get next order access key for <a href="user.md#0xc0deb00c_user">user</a>-side order placement.
         <b>let</b> order_access_key = <a href="user.md#0xc0deb00c_user_get_next_order_access_key_internal">user::get_next_order_access_key_internal</a>(
             user_address, market_id, custodian_id, side);
@@ -6386,9 +6370,6 @@ restriction, and
                 <a href="user.md#0xc0deb00c_user">user</a>, market_id, custodian_id, side, size, price,
                 order_access_key, (<a href="market.md#0xc0deb00c_market_NIL">NIL</a> <b>as</b> u128), <a href="market.md#0xc0deb00c_market_CANCEL_REASON_EVICTION">CANCEL_REASON_EVICTION</a>);
         };
-    } <b>else</b> {
-        // If not eligible <b>to</b> <b>post</b>, no remaining size.
-        remaining_size = 0;
     };
     // Emit relevant events <b>to</b> <a href="user.md#0xc0deb00c_user">user</a> <a href="">event</a> handles.
     <a href="user.md#0xc0deb00c_user_emit_limit_order_events_internal">user::emit_limit_order_events_internal</a>(

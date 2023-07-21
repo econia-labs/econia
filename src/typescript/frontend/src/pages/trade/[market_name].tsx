@@ -307,8 +307,13 @@ export default function Market({ allMarketData, marketData }: Props) {
         <main className="flex h-full w-full">
           <div className="flex grow flex-col p-3">
             <div className="mb-3 flex grow flex-col border border-neutral-600">
-              {isScriptReady && <TVChartContainer {...defaultTVChartProps} />}
-              <DepthChart marketData={marketData} />
+              <div className="flex h-full">
+                {isScriptReady && <TVChartContainer {...defaultTVChartProps} />}
+              </div>
+
+              <div className="hidden h-[140px] tall:block">
+                <DepthChart marketData={marketData} />
+              </div>
             </div>
             <div className="border border-neutral-600">
               <p className="my-3 ml-4 font-jost font-bold text-white">Orders</p>

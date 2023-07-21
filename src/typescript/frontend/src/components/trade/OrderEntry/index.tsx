@@ -21,7 +21,7 @@ export const OrderEntry: React.FC<{ marketData: ApiMarket }> = ({
   }, [type]);
 
   return (
-    <div>
+    <div className="min-h-[480px]">
       <div className="m-4 flex gap-2">
         <button
           onClick={() => setSide("buy")}

@@ -136,7 +136,7 @@ export const DepthChart: React.FC<{
             // responsive: true,
             maintainAspectRatio: false,
             layout: {
-              padding: { top: 0, right: 0, bottom: 0, left: -10 },
+              padding: 0,
             },
             elements: {
               line: { stepped: true, borderWidth: 1 },

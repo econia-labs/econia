@@ -124,7 +124,6 @@ Constant getters:
 
 * <code><a href="user.md#0xc0deb00c_user_get_ASK">get_ASK</a>()</code>
 * <code><a href="user.md#0xc0deb00c_user_get_BID">get_BID</a>()</code>
-* <code><a href="user.md#0xc0deb00c_user_get_NO_CUSTODIAN">get_NO_CUSTODIAN</a>()</code>
 * <code><a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_EVICTION">get_CANCEL_REASON_EVICTION</a>()</code>
 * <code><a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_IMMEDIATE_OR_CANCEL">get_CANCEL_REASON_IMMEDIATE_OR_CANCEL</a>()</code>
 * <code><a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_MANUAL_CANCEL">get_CANCEL_REASON_MANUAL_CANCEL</a>()</code>
@@ -132,6 +131,7 @@ Constant getters:
 * <code><a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY">get_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY</a>()</code>
 * <code><a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_SELF_MATCH_MAKER">get_CANCEL_REASON_SELF_MATCH_MAKER</a>()</code>
 * <code><a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_SELF_MATCH_TAKER">get_CANCEL_REASON_SELF_MATCH_TAKER</a>()</code>
+* <code><a href="user.md#0xc0deb00c_user_get_NO_CUSTODIAN">get_NO_CUSTODIAN</a>()</code>
 
 Market account lookup:
 

@@ -87,7 +87,6 @@
 ///
 /// * `get_ASK()`
 /// * `get_BID()`
-/// * `get_NO_CUSTODIAN()`
 /// * `get_CANCEL_REASON_EVICTION()`
 /// * `get_CANCEL_REASON_IMMEDIATE_OR_CANCEL()`
 /// * `get_CANCEL_REASON_MANUAL_CANCEL()`
@@ -95,6 +94,7 @@
 /// * `get_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY()`
 /// * `get_CANCEL_REASON_SELF_MATCH_MAKER()`
 /// * `get_CANCEL_REASON_SELF_MATCH_TAKER()`
+/// * `get_NO_CUSTODIAN()`
 ///
 /// Market account lookup:
 ///

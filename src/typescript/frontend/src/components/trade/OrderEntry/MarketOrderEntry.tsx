@@ -110,7 +110,7 @@ export const MarketOrderEntry: React.FC<{
           </Button>
         </ConnectedButton>
         <OrderEntryInfo
-          label={`${marketData.base?.symbol} AVAIABLE`}
+          label={`${marketData.base?.symbol} AVAILABLE`}
           value={`${baseBalance.data ?? "--"} ${marketData.base?.symbol}`}
           className="cursor-pointer"
           onClick={() => {
@@ -121,7 +121,7 @@ export const MarketOrderEntry: React.FC<{
           }}
         />
         <OrderEntryInfo
-          label={`${marketData.quote?.symbol} AVAIABLE`}
+          label={`${marketData.quote?.symbol} AVAILABLE`}
           value={`${quoteBalance.data ?? "--"} ${marketData.quote?.symbol}`}
         />
       </div>

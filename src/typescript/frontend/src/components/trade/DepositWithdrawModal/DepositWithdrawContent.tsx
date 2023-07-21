@@ -70,18 +70,18 @@ const DepositWithdrawForm: React.FC<{
 }> = ({ selectedMarket, mode }) => {
   const { account, aptosClient, signAndSubmitTransaction } = useAptos();
   const [selectedCoin, setSelectedCoin] = useState<ApiCoin>(
-    selectedMarket.base ?? selectedMarket.quote
+    selectedMarket.base ?? selectedMarket.quote,
   );
   const { data: marketAccountBalance } = useMarketAccountBalance(
     account?.address,
     selectedMarket.market_id,
-    selectedCoin
+    selectedCoin,
   );
 
   const [amount, setAmount] = useState<string>("");
   const { data: balance } = useCoinBalance(
     TypeTag.fromApiCoin(selectedCoin),
-    account?.address
+    account?.address,
   );
 
   const disabledReason =
@@ -134,14 +134,14 @@ const DepositWithdrawForm: React.FC<{
               TypeTag.fromApiCoin(selectedCoin).toString(),
               BigInt(selectedMarket.market_id),
               BigInt(NO_CUSTODIAN),
-              BigInt(toRawCoinAmount(amount, selectedCoin.decimals))
+              BigInt(toRawCoinAmount(amount, selectedCoin.decimals)),
             );
           } else {
             payload = entryFunctions.withdrawToCoinstore(
               ECONIA_ADDR,
               TypeTag.fromApiCoin(selectedCoin).toString(),
               BigInt(selectedMarket.market_id),
-              BigInt(toRawCoinAmount(amount, selectedCoin.decimals))
+              BigInt(toRawCoinAmount(amount, selectedCoin.decimals)),
             );
           }
           await signAndSubmitTransaction({

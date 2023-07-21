@@ -1,33 +1,33 @@
 import BigNumber from "bignumber.js";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
 import { useOrderEntry } from "@/contexts/OrderEntryContext";
 import { type ApiMarket } from "@/types/api";
-import { type Precision } from "@/types/global";
+// import { type Precision } from "@/types/global";
 import { type Orderbook, type PriceLevel } from "@/types/global";
 import { toDecimalPrice, toDecimalSize } from "@/utils/econia";
 import { averageOrOtherPriceLevel } from "@/utils/formatter";
 
-const precisionOptions: Precision[] = [
-  "0.01",
-  "0.05",
-  "0.1",
-  "0.5",
-  "1",
-  "2.5",
-  "5",
-  "10",
-];
+// const precisionOptions: Precision[] = [
+//   "0.01",
+//   "0.05",
+//   "0.1",
+//   "0.5",
+//   "1",
+//   "2.5",
+//   "5",
+//   "10",
+// ];
 
 const Row: React.FC<{
-  order: PriceLevel;
+  level: PriceLevel;
   type: "bid" | "ask";
   highestSize: number;
   marketData: ApiMarket;
-}> = ({ order, type, highestSize, marketData }) => {
+}> = ({ level, type, highestSize, marketData }) => {
   const { setType, setPrice } = useOrderEntry();
   const price = toDecimalPrice({
-    price: new BigNumber(order.price),
+    price: new BigNumber(level.price),
     lotSize: BigNumber(marketData.lot_size),
     tickSize: BigNumber(marketData.tick_size),
     baseCoinDecimals: BigNumber(marketData.base?.decimals || 0),
@@ -35,34 +35,36 @@ const Row: React.FC<{
   }).toNumber();
 
   const size = toDecimalSize({
-    size: new BigNumber(order.size),
+    size: new BigNumber(level.size),
     lotSize: BigNumber(marketData.lot_size),
     baseCoinDecimals: BigNumber(marketData.base?.decimals || 0),
   });
 
   return (
     <div
-      className="relative my-[1px] flex min-h-[16px] min-w-full items-center justify-between hover:font-bold hover:outline hover:outline-neutral-600"
+      className="relative flex h-6 cursor-pointer items-center justify-between py-[1px] hover:ring-1 hover:ring-neutral-600"
       onClick={() => {
         setType(type === "ask" ? "buy" : "sell");
         setPrice(price.toString());
       }}
     >
       <div
-        className={`z-10 ml-4 text-right ${
+        className={`z-10 ml-4 text-right font-roboto-mono text-xs ${
           type === "ask" ? "text-red" : "text-green"
         }`}
       >
         {price}
       </div>
-      <div className="z-10 mr-4 text-white">{size.toPrecision(4)}</div>
+      <div className="z-10 mr-4 py-0.5 font-roboto-mono text-xs text-white">
+        {size.toPrecision(4)}
+      </div>
       <div
         className={`absolute right-0 z-0 h-full opacity-30 ${
           type === "ask" ? "bg-red" : "bg-green"
         }`}
         // dynamic taillwind?
 
-        style={{ width: `${(100 * order.size) / highestSize}%` }}
+        style={{ width: `${(100 * level.size) / highestSize}%` }}
       ></div>
     </div>
   );
@@ -79,7 +81,7 @@ export function OrderbookTable({
   isFetching: boolean;
   isLoading: boolean;
 }) {
-  const [precision, setPrecision] = useState<Precision>(precisionOptions[0]);
+  // const [precision, setPrecision] = useState<Precision>(precisionOptions[0]);
 
   const centerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -95,7 +97,7 @@ export function OrderbookTable({
     }
     return averageOrOtherPriceLevel(
       data.asks ? data.asks[0] : undefined,
-      data.bids ? data.bids[0] : undefined
+      data.bids ? data.bids[0] : undefined,
     );
   }, [data]);
 
@@ -105,7 +107,7 @@ export function OrderbookTable({
     }
     return Math.max(
       ...data.asks.map((order) => order.size),
-      ...data.bids.map((order) => order.size)
+      ...data.bids.map((order) => order.size),
     );
   }, [data]);
 
@@ -118,11 +120,11 @@ export function OrderbookTable({
   }
 
   return (
-    <div className="flex grow flex-col divide-y divide-solid divide-neutral-600">
+    <div className="flex grow flex-col">
       {/* title row */}
-      <div className={"mx-4 my-3"}>
-        <div className={"flex justify-between"}>
-          <p className={"font-jost text-sm font-bold text-white"}>Order Book</p>
+      <div className="border-b border-neutral-600 px-4 py-3">
+        <div className="flex justify-between">
+          <p className="font-jost text-sm font-bold text-white">Orderbook</p>
           {/* select */}
           {/* TODO: SHOW WHEN API IS UP */}
           {/* <Listbox value={precision} onChange={setPrecision}>
@@ -148,30 +150,34 @@ export function OrderbookTable({
             </div>
           </Listbox> */}
         </div>
-        <div className={`mt-3 flex justify-between text-xs text-neutral-500`}>
-          <div className={``}>PRICE ({marketData.quote.symbol})</div>
-          <div>Size ({marketData.base?.symbol})</div>
+        <div className="mt-3 flex justify-between">
+          <p className="font-roboto-mono text-xs text-neutral-500">
+            PRICE ({marketData.quote.symbol})
+          </p>
+          <p className="font-roboto-mono text-xs text-neutral-500">
+            SIZE ({marketData.base?.symbol})
+          </p>
         </div>
       </div>
       {/* bids ask spread scrollable container */}
-      <div className="scrollbar-none relative grow overflow-y-auto text-xs/[22px]">
+      <div className="scrollbar-none relative grow overflow-y-auto">
         <div className="absolute w-full">
           {/* ASK */}
-          {data?.asks.map((order) => (
+          {data?.asks.map((level) => (
             <Row
-              order={order}
+              level={level}
               type={"ask"}
-              key={`ask-${order.price}-${order.size}`}
+              key={`ask-${level.price}-${level.size}`}
               highestSize={highestSize}
               marketData={marketData}
             />
           ))}
           {/* SPREAD */}
           <div
-            className="flex min-h-[25px] items-center justify-between border-y border-neutral-600"
+            className="flex items-center justify-between border-y border-neutral-600"
             ref={centerRef}
           >
-            <div className={`z-10 ml-4 text-right text-white`}>
+            <div className="z-10 ml-4 text-right font-roboto-mono text-xs text-white">
               {toDecimalPrice({
                 price: new BigNumber(midPrice?.price || 0),
                 lotSize: BigNumber(marketData.lot_size),
@@ -180,14 +186,16 @@ export function OrderbookTable({
                 quoteCoinDecimals: BigNumber(marketData.quote?.decimals || 0),
               }).toNumber()}
             </div>
-            <div className="z-10 mr-4 text-white">{midPrice?.size || "-"}</div>
+            <div className="mr-4 font-roboto-mono text-white">
+              {midPrice?.size || "-"}
+            </div>
           </div>
           {/* BID */}
-          {data?.bids.map((order) => (
+          {data?.bids.map((level) => (
             <Row
-              order={order}
+              level={level}
               type={"bid"}
-              key={`bid-${order.price}-${order.size}`}
+              key={`bid-${level.price}-${level.size}`}
               highestSize={highestSize}
               marketData={marketData}
             />

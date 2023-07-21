@@ -15,7 +15,7 @@ export const plusMinus = (num: number | undefined): string => {
 export const formatNumber = (
   num: number | undefined,
   digits: number,
-  signDisplay: Intl.NumberFormatOptions["signDisplay"] = "never"
+  signDisplay: Intl.NumberFormatOptions["signDisplay"] = "never",
 ): string => {
   if (!num) return "-";
   const lang =
@@ -31,7 +31,7 @@ export const formatNumber = (
 
 export const averageOrOther = (
   price1: number | undefined,
-  price2: number | undefined
+  price2: number | undefined,
 ): number | undefined => {
   if (price1 !== undefined && price2 !== undefined) {
     return (price1 + price2) / 2;
@@ -48,7 +48,7 @@ export const averageOrOther = (
 
 export const averageOrOtherPriceLevel = (
   price1: PriceLevel | undefined,
-  price2: PriceLevel | undefined
+  price2: PriceLevel | undefined,
 ): PriceLevel | undefined => {
   if (price1 !== undefined && price2 !== undefined) {
     return { price: (price1.price + price2.price) / 2, size: 0 };

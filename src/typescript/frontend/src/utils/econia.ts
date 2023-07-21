@@ -97,8 +97,8 @@ export const fromDecimalQuote = ({
       quote
         .multipliedBy(TEN.exponentiatedBy(quoteCoinDecimals))
         .div(tickSize)
-        .toNumber()
-    )
+        .toNumber(),
+    ),
   );
 };
 

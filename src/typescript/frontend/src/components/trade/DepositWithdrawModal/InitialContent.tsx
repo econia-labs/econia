@@ -24,14 +24,14 @@ export const InitialContent: React.FC<{
       try {
         const resource = await aptosClient.getAccountResource(
           account.address,
-          `${ECONIA_ADDR}::user::MarketAccounts`
+          `${ECONIA_ADDR}::user::MarketAccounts`,
         );
         return resource.data as MarketAccounts;
       } catch (e) {
         console.log(e);
         return null;
       }
-    }
+    },
   );
   const { data: marketAccount } = useQuery(
     ["useMarketAccount", account?.address, selectedMarket?.market_id],
@@ -44,7 +44,7 @@ export const InitialContent: React.FC<{
             key_type: "u128",
             value_type: `${ECONIA_ADDR}::user::MarketAccount`,
             key: makeMarketAccountId(selectedMarket.market_id, NO_CUSTODIAN),
-          }
+          },
         );
         return marketAccount as MarketAccount;
       } catch (e) {
@@ -54,7 +54,7 @@ export const InitialContent: React.FC<{
     },
     {
       enabled: !!marketAccounts,
-    }
+    },
   );
 
   return (
@@ -79,7 +79,7 @@ export const InitialContent: React.FC<{
               TypeTag.fromApiCoin(selectedMarket.base).toString(),
               TypeTag.fromApiCoin(selectedMarket.quote).toString(),
               BigInt(selectedMarket.market_id),
-              BigInt(NO_CUSTODIAN)
+              BigInt(NO_CUSTODIAN),
             );
             await signAndSubmitTransaction({
               ...payload,

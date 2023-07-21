@@ -42,7 +42,7 @@ export const useOrderEntry = (): OrderEntryContextState => {
   const context = useContext(OrderEntryContext);
   if (context == null) {
     throw new Error(
-      "useOrderEntry must be used within a OrderEntryContextProvider."
+      "useOrderEntry must be used within a OrderEntryContextProvider.",
     );
   }
   return context;

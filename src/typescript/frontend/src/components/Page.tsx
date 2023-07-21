@@ -14,7 +14,7 @@ export const Page: React.FC<PropsWithChildren<{ title?: string }>> = ({
         <title>{title ?? "Econia"}</title>
       </Head>
       <div className="flex min-h-screen w-full flex-col font-roboto-mono">
-        <Header />
+        <Header logoHref="/" />
         {children}
       </div>
     </>

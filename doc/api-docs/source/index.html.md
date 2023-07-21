@@ -791,11 +791,30 @@ main();
 | --------------- | ------ | ------------------------------------------------- |
 | account_address | String | The ID of the account to retrieve open orders for |
 
+### Query Parameters
+
+| Parameter       | Type           | Description                                  |
+| --------------- | -------------- | -------------------------------------------- |
+| limit           | u32 (optional) | The number of orders to retrieve             |
+| offset          | u32 (optional) | The position to start retrieving record from |
+
 ### Errors
 
 | Error Code | Description                                           |
 | ---------- | ----------------------------------------------------- |
+| 400        | Bad Request: invalid parameters                       |
 | 404        | Not Found: no account with the specified ID was found |
+
+### Notes
+
+- Open orders are sorted by the `created_at` timestamp, starting from the most
+  recent order.
+- Offset is zero-based, so in order to retrieve orders starting at the second
+  most recent order, send a request with `offset` set to `1`.
+- Both `limit` and `offset` are optional parameters, and it is possible to set
+  one without the other.
+- When a request is sent without a `limit` query parameter, the endpoint returns all open orders under the
+  specified account. When `offset` is not set, the results start at the most recent order.
 
 ## Get order history
 
@@ -869,11 +888,31 @@ main();
 | --------------- | ------ | --------------------------------------------------- |
 | account_address | String | The ID of the account to retrieve order history for |
 
+### Query Parameters
+
+| Parameter       | Type           | Description                                  |
+| --------------- | -------------- | -------------------------------------------- |
+| limit           | u32 (optional) | The number of orders to retrieve             |
+| offset          | u32 (optional) | The position to start retrieving record from |
+
 ### Errors
 
 | Error Code | Description                                           |
 | ---------- | ----------------------------------------------------- |
+| 400        | Bad Request: invalid parameters                       |
 | 404        | Not Found: no account with the specified ID was found |
+
+### Notes
+
+- Orders are sorted by the `created_at` timestamp, starting from the most
+  recent order.
+- Offset is zero-based, so in order to retrieve orders starting at the second
+  most recent order, send a request with `offset` set to `1`.
+- Both `limit` and `offset` are optional parameters, and it is possible to set
+  one without the other.
+- When a request is sent without a `limit` query parameter, the endpoint returns
+  the complete order history under the specified account. When `offset` is not set,
+  the results start at the most recent order.
 
 ## Get fills by account and market
 
@@ -1035,7 +1074,7 @@ the connection.
 
 ```json
 {
-  "method": "subscribe",
+  "method": "unsubscribe",
   "channel": "orders",
   "params": {
     "market_id": 1,
@@ -1108,7 +1147,7 @@ them that this is the case.
 
 ```json
 {
-  "method": "subscribe",
+  "method": "unsubscribe",
   "channel": "fills",
   "params": {
     "market_id": 1,
@@ -1173,7 +1212,7 @@ them that this is the case.
 
 ```json
 {
-  "method": "subscribe",
+  "method": "unsubscribe",
   "channel": "price_levels",
   "params": {
     "market_id": 1

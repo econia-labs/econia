@@ -100,8 +100,12 @@ Also consider deleting `~/.move` from time to time.
 ### Move
 
 Move source code is at [`src/move/econia`].
-In the absence of a formal style guide, Move code is formatted similarly to PEP8-style Python code.
+
 Auto-generated module documentation files are at [`src/move/econia/doc`].
+
+When Econia development began, the initial developer of the Econia v4 protocol had not yet programmed in Rust (Move is implemented in Rust).
+Hence, in the absence of a formal style guide, Move code was formatted according to the opinionated PEP8 Python style guide.
+For future projects it is suggested that Move be formatted according to Rust guidelines, or ideally per a Move linter, and that format be consistent *within* a single codebase.
 
 ### Markdown
 

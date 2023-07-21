@@ -128,7 +128,7 @@ export const DepthChart: React.FC<{
       </p>
       <div
         className={
-          "relative h-full min-w-0 [&>canvas]:!h-full [&>canvas]:!w-full"
+          "relative h-full min-w-0 py-2 pr-2 [&>canvas]:!h-full [&>canvas]:!w-full"
         }
       >
         <Line
@@ -136,7 +136,7 @@ export const DepthChart: React.FC<{
             // responsive: true,
             maintainAspectRatio: false,
             layout: {
-              padding: 0,
+              padding: { top: 0, right: 0, bottom: 0, left: -10 },
             },
             elements: {
               line: { stepped: true, borderWidth: 1 },
@@ -204,7 +204,7 @@ export const DepthChart: React.FC<{
                   maxRotation: 0,
                   color: "white",
                   autoSkip: false,
-                  padding: 8,
+                  padding: 0,
                   minRotation: 0,
                   callback: function (value, index, values) {
                     // show 1/3 and 2/3 of the way through

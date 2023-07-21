@@ -202,6 +202,7 @@ export default function Market({ allMarketData, marketData }: Props) {
                         ...prevData.bids.slice(i + 1),
                       ],
                       asks: prevData.asks,
+                      updatedLevel: { ...priceLevel },
                     };
                   } else if (priceLevel.price > lvl.price) {
                     return {
@@ -211,6 +212,7 @@ export default function Market({ allMarketData, marketData }: Props) {
                         ...prevData.bids.slice(i),
                       ],
                       asks: prevData.asks,
+                      updatedLevel: { ...priceLevel },
                     };
                   }
                 }
@@ -220,6 +222,7 @@ export default function Market({ allMarketData, marketData }: Props) {
                     { price: priceLevel.price, size: priceLevel.size },
                   ],
                   asks: prevData.asks,
+                  updatedLevel: { ...priceLevel },
                 };
               } else {
                 for (const [i, lvl] of prevData.asks.entries()) {
@@ -231,6 +234,7 @@ export default function Market({ allMarketData, marketData }: Props) {
                         { price: priceLevel.price, size: priceLevel.size },
                         ...prevData.asks.slice(i + 1),
                       ],
+                      updatedLevel: { ...priceLevel },
                     };
                   } else if (priceLevel.price < lvl.price) {
                     return {
@@ -240,6 +244,7 @@ export default function Market({ allMarketData, marketData }: Props) {
                         { price: priceLevel.price, size: priceLevel.size },
                         ...prevData.asks.slice(i),
                       ],
+                      updatedLevel: { ...priceLevel },
                     };
                   }
                 }
@@ -249,6 +254,7 @@ export default function Market({ allMarketData, marketData }: Props) {
                     ...prevData.asks,
                     { price: priceLevel.price, size: priceLevel.size },
                   ],
+                  updatedLevel: { ...priceLevel },
                 };
               }
             },

@@ -19,7 +19,7 @@ Market events were recently incorporated per [#321] and will soon be deployed un
 Stand by for more docs, coming soon!
 
 [#321]: https://github.com/econia-labs/econia/pull/321
-[events by event handle api]: https://fullnode.mainnet.aptoslabs.com/v1/spec#/operations/get_events_by_event_handletestnet
+[events by event handle api]: https://fullnode.mainnet.aptoslabs.com/v1/spec#/operations/get_events_by_event_handle
 [`marketregistrationevent`]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/registry.md#struct-marketregistrationevent
 [`recognizedmarketevent`]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/registry.md#struct-recognizedmarketevent
 [`recognizedmarkets`]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/registry.md#resource-recognizedmarkets

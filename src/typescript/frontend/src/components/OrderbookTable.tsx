@@ -1,5 +1,5 @@
 import BigNumber from "bignumber.js";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useOrderEntry } from "@/contexts/OrderEntryContext";
 import { type ApiMarket } from "@/types/api";
@@ -24,8 +24,23 @@ const Row: React.FC<{
   type: "bid" | "ask";
   highestSize: number;
   marketData: ApiMarket;
-}> = ({ level, type, highestSize, marketData }) => {
+  updatedLevel: PriceLevel | undefined;
+}> = ({ level, type, highestSize, marketData, updatedLevel }) => {
   const { setType, setPrice } = useOrderEntry();
+  const [flash, setFlash] = useState<string>("");
+
+  useEffect(() => {
+    if (updatedLevel == undefined) {
+      return;
+    }
+    if (updatedLevel.price == level.price) {
+      setFlash(type === "ask" ? "flash-red" : "flash-green");
+      setTimeout(() => {
+        setFlash("");
+      }, 100);
+    }
+  }, [type, updatedLevel, level.price]);
+
   const price = toDecimalPrice({
     price: new BigNumber(level.price),
     lotSize: BigNumber(marketData.lot_size),
@@ -42,7 +57,7 @@ const Row: React.FC<{
 
   return (
     <div
-      className="relative flex h-6 cursor-pointer items-center justify-between py-[1px] hover:ring-1 hover:ring-neutral-600"
+      className={`flash-bg-once ${flash} relative flex h-6 cursor-pointer items-center justify-between py-[1px] hover:ring-1 hover:ring-neutral-600`}
       onClick={() => {
         setType(type === "ask" ? "buy" : "sell");
         setPrice(price.toString());
@@ -59,8 +74,8 @@ const Row: React.FC<{
         {size.toPrecision(4)}
       </div>
       <div
-        className={`absolute right-0 z-0 h-full opacity-30 ${
-          type === "ask" ? "bg-red" : "bg-green"
+        className={`absolute right-0 z-0 h-full ${
+          type === "ask" ? "bg-red/30" : "bg-green/30"
         }`}
         // dynamic taillwind?
 
@@ -170,6 +185,7 @@ export function OrderbookTable({
               key={`ask-${level.price}-${level.size}`}
               highestSize={highestSize}
               marketData={marketData}
+              updatedLevel={data.updatedLevel}
             />
           ))}
           {/* SPREAD */}
@@ -198,6 +214,7 @@ export function OrderbookTable({
               key={`bid-${level.price}-${level.size}`}
               highestSize={highestSize}
               marketData={marketData}
+              updatedLevel={data.updatedLevel}
             />
           ))}
         </div>

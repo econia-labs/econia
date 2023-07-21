@@ -6,6 +6,24 @@
   .scrollbar-none::-webkit-scrollbar {
     width: 0px;
   }
+
+  .flash-bg-once {
+    background-color: transparent;
+    transition: 0.5s linear background-color;
+  }
+  .flash-green {
+    transition: none;
+    @apply bg-green/50;
+  }
+  .flash-red {
+    transition: none;
+    @apply bg-red/50;
+  }
+  @keyframes flash-bg {
+    to {
+      background-color: transparent;
+    }
+  }
 }
 @layer base {
   input[type="number"]::-webkit-outer-spin-button,

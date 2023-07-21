@@ -27,6 +27,7 @@ custodian.
 
 [Function index](#function-index)
 
+* [View functions](#view-functions)
 * [Public functions](#public-functions)
 * [Public entry functions](#public-entry-functions)
 * [Public friend functions](#public-friend-functions)
@@ -114,9 +115,9 @@ order ID is a unique identifier for an order on a given order book.
 
 
 
-<a name="@Public_functions_7"></a>
+<a name="@View_functions_7"></a>
 
-### Public functions
+### View functions
 
 
 Constant getters:
@@ -124,24 +125,23 @@ Constant getters:
 * <code><a href="user.md#0xc0deb00c_user_get_ASK">get_ASK</a>()</code>
 * <code><a href="user.md#0xc0deb00c_user_get_BID">get_BID</a>()</code>
 * <code><a href="user.md#0xc0deb00c_user_get_NO_CUSTODIAN">get_NO_CUSTODIAN</a>()</code>
-
-Asset transfer:
-
-* <code><a href="user.md#0xc0deb00c_user_deposit_coins">deposit_coins</a>()</code>
-* <code><a href="user.md#0xc0deb00c_user_deposit_generic_asset">deposit_generic_asset</a>()</code>
-* <code><a href="user.md#0xc0deb00c_user_withdraw_coins_custodian">withdraw_coins_custodian</a>()</code>
-* <code><a href="user.md#0xc0deb00c_user_withdraw_coins_user">withdraw_coins_user</a>()</code>
-* <code><a href="user.md#0xc0deb00c_user_withdraw_generic_asset_custodian">withdraw_generic_asset_custodian</a>()</code>
-* <code><a href="user.md#0xc0deb00c_user_withdraw_generic_asset_user">withdraw_generic_asset_user</a>()</code>
+* <code><a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_EVICTION">get_CANCEL_REASON_EVICTION</a>()</code>
+* <code><a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_IMMEDIATE_OR_CANCEL">get_CANCEL_REASON_IMMEDIATE_OR_CANCEL</a>()</code>
+* <code><a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_MANUAL_CANCEL">get_CANCEL_REASON_MANUAL_CANCEL</a>()</code>
+* <code><a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_MAX_QUOTE_TRADED">get_CANCEL_REASON_MAX_QUOTE_TRADED</a>()</code>
+* <code><a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY">get_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY</a>()</code>
+* <code><a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_SELF_MATCH_MAKER">get_CANCEL_REASON_SELF_MATCH_MAKER</a>()</code>
+* <code><a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_SELF_MATCH_TAKER">get_CANCEL_REASON_SELF_MATCH_TAKER</a>()</code>
+* <code><a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_TOO_SMALL_AFTER_MATCHING">get_CANCEL_REASON_TOO_SMALL_AFTER_MATCHING</a>()</code>
 
 Market account lookup:
 
 * <code><a href="user.md#0xc0deb00c_user_get_all_market_account_ids_for_market_id">get_all_market_account_ids_for_market_id</a>()</code>
 * <code><a href="user.md#0xc0deb00c_user_get_all_market_account_ids_for_user">get_all_market_account_ids_for_user</a>()</code>
-* <code><a href="user.md#0xc0deb00c_user_get_asset_counts_custodian">get_asset_counts_custodian</a>()</code>
-* <code><a href="user.md#0xc0deb00c_user_get_asset_counts_user">get_asset_counts_user</a>()</code>
-* <code><a href="user.md#0xc0deb00c_user_get_market_account_market_info_custodian">get_market_account_market_info_custodian</a>()</code>
-* <code><a href="user.md#0xc0deb00c_user_get_market_account_market_info_user">get_market_account_market_info_user</a>()</code>
+* <code><a href="user.md#0xc0deb00c_user_get_market_account">get_market_account</a>()</code>
+* <code><a href="user.md#0xc0deb00c_user_get_market_accounts">get_market_accounts</a>()</code>
+* <code><a href="user.md#0xc0deb00c_user_get_market_event_handle_creation_numbers">get_market_event_handle_creation_numbers</a>()</code>
+* <code><a href="user.md#0xc0deb00c_user_has_market_account">has_market_account</a>()</code>
 * <code><a href="user.md#0xc0deb00c_user_has_market_account_by_market_account_id">has_market_account_by_market_account_id</a>()</code>
 * <code><a href="user.md#0xc0deb00c_user_has_market_account_by_market_id">has_market_account_by_market_id</a>()</code>
 
@@ -152,7 +152,29 @@ Market account ID lookup:
 * <code><a href="user.md#0xc0deb00c_user_get_market_id">get_market_id</a>()</code>
 
 
-<a name="@Public_entry_functions_8"></a>
+<a name="@Public_functions_8"></a>
+
+### Public functions
+
+
+Market account lookup
+
+* <code><a href="user.md#0xc0deb00c_user_get_asset_counts_custodian">get_asset_counts_custodian</a>()</code>
+* <code><a href="user.md#0xc0deb00c_user_get_asset_counts_user">get_asset_counts_user</a>()</code>
+* <code><a href="user.md#0xc0deb00c_user_get_market_account_market_info_custodian">get_market_account_market_info_custodian</a>()</code>
+* <code><a href="user.md#0xc0deb00c_user_get_market_account_market_info_user">get_market_account_market_info_user</a>()</code>
+
+Asset transfer:
+
+* <code><a href="user.md#0xc0deb00c_user_deposit_coins">deposit_coins</a>()</code>
+* <code><a href="user.md#0xc0deb00c_user_deposit_generic_asset">deposit_generic_asset</a>()</code>
+* <code><a href="user.md#0xc0deb00c_user_withdraw_coins_custodian">withdraw_coins_custodian</a>()</code>
+* <code><a href="user.md#0xc0deb00c_user_withdraw_coins_user">withdraw_coins_user</a>()</code>
+* <code><a href="user.md#0xc0deb00c_user_withdraw_generic_asset_custodian">withdraw_generic_asset_custodian</a>()</code>
+* <code><a href="user.md#0xc0deb00c_user_withdraw_generic_asset_user">withdraw_generic_asset_user</a>()</code>
+
+
+<a name="@Public_entry_functions_9"></a>
 
 ### Public entry functions
 
@@ -164,11 +186,12 @@ Asset transfer:
 
 Account registration:
 
+* <code><a href="user.md#0xc0deb00c_user_init_market_event_handles_if_missing">init_market_event_handles_if_missing</a>()</code>
 * <code><a href="user.md#0xc0deb00c_user_register_market_account">register_market_account</a>()</code>
 * <code><a href="user.md#0xc0deb00c_user_register_market_account_generic_base">register_market_account_generic_base</a>()</code>
 
 
-<a name="@Public_friend_functions_9"></a>
+<a name="@Public_friend_functions_10"></a>
 
 ### Public friend functions
 
@@ -177,6 +200,7 @@ Order management:
 
 * <code><a href="user.md#0xc0deb00c_user_cancel_order_internal">cancel_order_internal</a>()</code>
 * <code><a href="user.md#0xc0deb00c_user_change_order_size_internal">change_order_size_internal</a>()</code>
+* <code><a href="user.md#0xc0deb00c_user_get_open_order_id_internal">get_open_order_id_internal</a>()</code>
 * <code><a href="user.md#0xc0deb00c_user_fill_order_internal">fill_order_internal</a>()</code>
 * <code><a href="user.md#0xc0deb00c_user_place_order_internal">place_order_internal</a>()</code>
 
@@ -191,8 +215,16 @@ Order identifiers:
 * <code><a href="user.md#0xc0deb00c_user_get_next_order_access_key_internal">get_next_order_access_key_internal</a>()</code>
 * <code><a href="user.md#0xc0deb00c_user_get_active_market_order_ids_internal">get_active_market_order_ids_internal</a>()</code>
 
+Market events:
 
-<a name="@Dependency_charts_10"></a>
+* <code><a href="user.md#0xc0deb00c_user_create_cancel_order_event_internal">create_cancel_order_event_internal</a>()</code>
+* <code><a href="user.md#0xc0deb00c_user_create_fill_event_internal">create_fill_event_internal</a>()</code>
+* <code><a href="user.md#0xc0deb00c_user_emit_limit_order_events_internal">emit_limit_order_events_internal</a>()</code>
+* <code><a href="user.md#0xc0deb00c_user_emit_market_order_events_internal">emit_market_order_events_internal</a>()</code>
+* <code><a href="user.md#0xc0deb00c_user_emit_swap_maker_fill_events_internal">emit_swap_maker_fill_events_internal</a>()</code>
+
+
+<a name="@Dependency_charts_11"></a>
 
 ### Dependency charts
 
@@ -260,7 +292,6 @@ get_asset_counts_user --> get_asset_counts_internal
 get_asset_counts_custodian --> get_asset_counts_internal
 get_asset_counts_custodian --> registry::get_custodian_id
 
-
 get_market_account_market_info_custodian -->
 get_market_account_market_info
 get_market_account_market_info_custodian -->
@@ -268,6 +299,24 @@ registry::get_custodian_id
 
 get_market_account_market_info_user -->
 get_market_account_market_info
+
+get_market_accounts --> get_all_market_account_ids_for_user
+get_market_accounts --> get_market_id
+get_market_accounts --> get_custodian_id
+get_market_accounts --> get_market_account
+
+get_market_account --> get_market_account_id
+get_market_account --> has_market_account_by_market_account_id
+get_market_account --> vectorize_open_orders
+
+get_open_order_id_internal --> get_market_account_id
+get_open_order_id_internal -->
+has_market_account_by_market_account_id
+
+has_market_account --> has_market_account_by_market_account_id
+has_market_account --> get_market_account_id
+
+get_market_event_handle_creation_numbers --> get_market_account_id
 
 ```
 
@@ -280,11 +329,14 @@ flowchart LR
 register_market_account --> registry::is_registered_custodian_id
 register_market_account --> register_market_account_account_entries
 register_market_account --> register_market_account_collateral_entry
+register_market_account --> init_market_event_handles_if_missing
 
 register_market_account_generic_base --> register_market_account
 
 register_market_account_account_entries -->
 registry::get_market_info_for_market_account
+
+init_market_event_handles_if_missing --> has_market_account
 
 ```
 
@@ -299,8 +351,20 @@ change_order_size_internal --> place_order_internal
 
 ```
 
+Market events:
 
-<a name="@Complete_DocGen_index_11"></a>
+```mermaid
+
+flowchart LR
+
+emit_limit_order_events_internal --> emit_maker_fill_event
+emit_market_order_events_internal --> emit_maker_fill_event
+emit_swap_maker_fill_events_internal --> emit_maker_fill_event
+
+```
+
+
+<a name="@Complete_DocGen_index_12"></a>
 
 ## Complete DocGen index
 
@@ -315,158 +379,216 @@ The below index is automatically generated from source code:
     -  [Orders and access keys](#@Orders_and_access_keys_4)
     -  [Market order IDs](#@Market_order_IDs_5)
 -  [Function index](#@Function_index_6)
-    -  [Public functions](#@Public_functions_7)
-    -  [Public entry functions](#@Public_entry_functions_8)
-    -  [Public friend functions](#@Public_friend_functions_9)
-    -  [Dependency charts](#@Dependency_charts_10)
--  [Complete DocGen index](#@Complete_DocGen_index_11)
+    -  [View functions](#@View_functions_7)
+    -  [Public functions](#@Public_functions_8)
+    -  [Public entry functions](#@Public_entry_functions_9)
+    -  [Public friend functions](#@Public_friend_functions_10)
+    -  [Dependency charts](#@Dependency_charts_11)
+-  [Complete DocGen index](#@Complete_DocGen_index_12)
+-  [Struct `CancelOrderEvent`](#0xc0deb00c_user_CancelOrderEvent)
+-  [Struct `ChangeOrderSizeEvent`](#0xc0deb00c_user_ChangeOrderSizeEvent)
 -  [Resource `Collateral`](#0xc0deb00c_user_Collateral)
+-  [Struct `FillEvent`](#0xc0deb00c_user_FillEvent)
 -  [Struct `MarketAccount`](#0xc0deb00c_user_MarketAccount)
+-  [Struct `MarketAccountView`](#0xc0deb00c_user_MarketAccountView)
 -  [Resource `MarketAccounts`](#0xc0deb00c_user_MarketAccounts)
+-  [Struct `MarketEventHandleCreationNumbers`](#0xc0deb00c_user_MarketEventHandleCreationNumbers)
+-  [Resource `MarketEventHandles`](#0xc0deb00c_user_MarketEventHandles)
+-  [Struct `MarketEventHandlesForMarketAccount`](#0xc0deb00c_user_MarketEventHandlesForMarketAccount)
 -  [Struct `Order`](#0xc0deb00c_user_Order)
--  [Constants](#@Constants_12)
--  [Function `deposit_coins`](#0xc0deb00c_user_deposit_coins)
-    -  [Aborts](#@Aborts_13)
-    -  [Testing](#@Testing_14)
--  [Function `deposit_generic_asset`](#0xc0deb00c_user_deposit_generic_asset)
-    -  [Testing](#@Testing_15)
--  [Function `get_all_market_account_ids_for_market_id`](#0xc0deb00c_user_get_all_market_account_ids_for_market_id)
-    -  [Parameters](#@Parameters_16)
-    -  [Returns](#@Returns_17)
-    -  [Gas considerations](#@Gas_considerations_18)
-    -  [Testing](#@Testing_19)
--  [Function `get_all_market_account_ids_for_user`](#0xc0deb00c_user_get_all_market_account_ids_for_user)
-    -  [Parameters](#@Parameters_20)
-    -  [Returns](#@Returns_21)
-    -  [Gas considerations](#@Gas_considerations_22)
-    -  [Testing](#@Testing_23)
+-  [Struct `PlaceLimitOrderEvent`](#0xc0deb00c_user_PlaceLimitOrderEvent)
+-  [Struct `PlaceMarketOrderEvent`](#0xc0deb00c_user_PlaceMarketOrderEvent)
+-  [Constants](#@Constants_13)
 -  [Function `get_ASK`](#0xc0deb00c_user_get_ASK)
-    -  [Testing](#@Testing_24)
--  [Function `get_asset_counts_custodian`](#0xc0deb00c_user_get_asset_counts_custodian)
-    -  [Testing](#@Testing_25)
--  [Function `get_asset_counts_user`](#0xc0deb00c_user_get_asset_counts_user)
-    -  [Testing](#@Testing_26)
+    -  [Testing](#@Testing_14)
 -  [Function `get_BID`](#0xc0deb00c_user_get_BID)
-    -  [Testing](#@Testing_27)
--  [Function `get_custodian_id`](#0xc0deb00c_user_get_custodian_id)
-    -  [Testing](#@Testing_28)
--  [Function `get_market_account_id`](#0xc0deb00c_user_get_market_account_id)
-    -  [Testing](#@Testing_29)
--  [Function `get_market_account_market_info_custodian`](#0xc0deb00c_user_get_market_account_market_info_custodian)
-    -  [Testing](#@Testing_30)
--  [Function `get_market_account_market_info_user`](#0xc0deb00c_user_get_market_account_market_info_user)
-    -  [Testing](#@Testing_31)
--  [Function `get_market_id`](#0xc0deb00c_user_get_market_id)
-    -  [Testing](#@Testing_32)
+    -  [Testing](#@Testing_15)
+-  [Function `get_CANCEL_REASON_EVICTION`](#0xc0deb00c_user_get_CANCEL_REASON_EVICTION)
+    -  [Testing](#@Testing_16)
+-  [Function `get_CANCEL_REASON_IMMEDIATE_OR_CANCEL`](#0xc0deb00c_user_get_CANCEL_REASON_IMMEDIATE_OR_CANCEL)
+    -  [Testing](#@Testing_17)
+-  [Function `get_CANCEL_REASON_MANUAL_CANCEL`](#0xc0deb00c_user_get_CANCEL_REASON_MANUAL_CANCEL)
+    -  [Testing](#@Testing_18)
+-  [Function `get_CANCEL_REASON_MAX_QUOTE_TRADED`](#0xc0deb00c_user_get_CANCEL_REASON_MAX_QUOTE_TRADED)
+    -  [Testing](#@Testing_19)
+-  [Function `get_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY`](#0xc0deb00c_user_get_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY)
+    -  [Testing](#@Testing_20)
+-  [Function `get_CANCEL_REASON_SELF_MATCH_MAKER`](#0xc0deb00c_user_get_CANCEL_REASON_SELF_MATCH_MAKER)
+    -  [Testing](#@Testing_21)
+-  [Function `get_CANCEL_REASON_SELF_MATCH_TAKER`](#0xc0deb00c_user_get_CANCEL_REASON_SELF_MATCH_TAKER)
+    -  [Testing](#@Testing_22)
+-  [Function `get_CANCEL_REASON_TOO_SMALL_AFTER_MATCHING`](#0xc0deb00c_user_get_CANCEL_REASON_TOO_SMALL_AFTER_MATCHING)
+    -  [Testing](#@Testing_23)
 -  [Function `get_NO_CUSTODIAN`](#0xc0deb00c_user_get_NO_CUSTODIAN)
+    -  [Testing](#@Testing_24)
+-  [Function `get_all_market_account_ids_for_market_id`](#0xc0deb00c_user_get_all_market_account_ids_for_market_id)
+    -  [Parameters](#@Parameters_25)
+    -  [Returns](#@Returns_26)
+    -  [Gas considerations](#@Gas_considerations_27)
+    -  [Testing](#@Testing_28)
+-  [Function `get_all_market_account_ids_for_user`](#0xc0deb00c_user_get_all_market_account_ids_for_user)
+    -  [Parameters](#@Parameters_29)
+    -  [Returns](#@Returns_30)
+    -  [Gas considerations](#@Gas_considerations_31)
+    -  [Testing](#@Testing_32)
+-  [Function `get_custodian_id`](#0xc0deb00c_user_get_custodian_id)
     -  [Testing](#@Testing_33)
--  [Function `has_market_account_by_market_account_id`](#0xc0deb00c_user_has_market_account_by_market_account_id)
-    -  [Testing](#@Testing_34)
--  [Function `has_market_account_by_market_id`](#0xc0deb00c_user_has_market_account_by_market_id)
+-  [Function `get_market_account`](#0xc0deb00c_user_get_market_account)
+    -  [Aborts](#@Aborts_34)
     -  [Testing](#@Testing_35)
--  [Function `withdraw_coins_custodian`](#0xc0deb00c_user_withdraw_coins_custodian)
+-  [Function `get_market_account_id`](#0xc0deb00c_user_get_market_account_id)
     -  [Testing](#@Testing_36)
--  [Function `withdraw_coins_user`](#0xc0deb00c_user_withdraw_coins_user)
+-  [Function `get_market_accounts`](#0xc0deb00c_user_get_market_accounts)
     -  [Testing](#@Testing_37)
--  [Function `withdraw_generic_asset_custodian`](#0xc0deb00c_user_withdraw_generic_asset_custodian)
+-  [Function `get_market_event_handle_creation_numbers`](#0xc0deb00c_user_get_market_event_handle_creation_numbers)
     -  [Testing](#@Testing_38)
--  [Function `withdraw_generic_asset_user`](#0xc0deb00c_user_withdraw_generic_asset_user)
+-  [Function `get_market_id`](#0xc0deb00c_user_get_market_id)
     -  [Testing](#@Testing_39)
--  [Function `deposit_from_coinstore`](#0xc0deb00c_user_deposit_from_coinstore)
+-  [Function `has_market_account`](#0xc0deb00c_user_has_market_account)
     -  [Testing](#@Testing_40)
--  [Function `register_market_account`](#0xc0deb00c_user_register_market_account)
-    -  [Type parameters](#@Type_parameters_41)
-    -  [Parameters](#@Parameters_42)
+-  [Function `has_market_account_by_market_account_id`](#0xc0deb00c_user_has_market_account_by_market_account_id)
+    -  [Testing](#@Testing_41)
+-  [Function `has_market_account_by_market_id`](#0xc0deb00c_user_has_market_account_by_market_id)
+    -  [Testing](#@Testing_42)
+-  [Function `deposit_coins`](#0xc0deb00c_user_deposit_coins)
     -  [Aborts](#@Aborts_43)
     -  [Testing](#@Testing_44)
--  [Function `register_market_account_generic_base`](#0xc0deb00c_user_register_market_account_generic_base)
+-  [Function `deposit_generic_asset`](#0xc0deb00c_user_deposit_generic_asset)
     -  [Testing](#@Testing_45)
--  [Function `withdraw_to_coinstore`](#0xc0deb00c_user_withdraw_to_coinstore)
+-  [Function `get_asset_counts_custodian`](#0xc0deb00c_user_get_asset_counts_custodian)
     -  [Testing](#@Testing_46)
--  [Function `cancel_order_internal`](#0xc0deb00c_user_cancel_order_internal)
-    -  [Parameters](#@Parameters_47)
-    -  [Returns](#@Returns_48)
-    -  [Terminology](#@Terminology_49)
-    -  [Aborts](#@Aborts_50)
-    -  [Assumptions](#@Assumptions_51)
-    -  [Expected value testing](#@Expected_value_testing_52)
-    -  [Failure testing](#@Failure_testing_53)
--  [Function `change_order_size_internal`](#0xc0deb00c_user_change_order_size_internal)
-    -  [Parameters](#@Parameters_54)
-    -  [Aborts](#@Aborts_55)
-    -  [Assumptions](#@Assumptions_56)
+-  [Function `get_asset_counts_user`](#0xc0deb00c_user_get_asset_counts_user)
+    -  [Testing](#@Testing_47)
+-  [Function `get_market_account_market_info_custodian`](#0xc0deb00c_user_get_market_account_market_info_custodian)
+    -  [Testing](#@Testing_48)
+-  [Function `get_market_account_market_info_user`](#0xc0deb00c_user_get_market_account_market_info_user)
+    -  [Testing](#@Testing_49)
+-  [Function `withdraw_coins_custodian`](#0xc0deb00c_user_withdraw_coins_custodian)
+    -  [Testing](#@Testing_50)
+-  [Function `withdraw_coins_user`](#0xc0deb00c_user_withdraw_coins_user)
+    -  [Testing](#@Testing_51)
+-  [Function `withdraw_generic_asset_custodian`](#0xc0deb00c_user_withdraw_generic_asset_custodian)
+    -  [Testing](#@Testing_52)
+-  [Function `withdraw_generic_asset_user`](#0xc0deb00c_user_withdraw_generic_asset_user)
+    -  [Testing](#@Testing_53)
+-  [Function `deposit_from_coinstore`](#0xc0deb00c_user_deposit_from_coinstore)
+    -  [Testing](#@Testing_54)
+-  [Function `init_market_event_handles_if_missing`](#0xc0deb00c_user_init_market_event_handles_if_missing)
+    -  [Parameters](#@Parameters_55)
+    -  [Aborts](#@Aborts_56)
     -  [Testing](#@Testing_57)
--  [Function `deposit_assets_internal`](#0xc0deb00c_user_deposit_assets_internal)
+-  [Function `register_market_account`](#0xc0deb00c_user_register_market_account)
     -  [Type parameters](#@Type_parameters_58)
     -  [Parameters](#@Parameters_59)
-    -  [Testing](#@Testing_60)
--  [Function `fill_order_internal`](#0xc0deb00c_user_fill_order_internal)
-    -  [Type parameters](#@Type_parameters_61)
-    -  [Parameters](#@Parameters_62)
-    -  [Returns](#@Returns_63)
-    -  [Aborts](#@Aborts_64)
-    -  [Assumptions](#@Assumptions_65)
-    -  [Testing](#@Testing_66)
--  [Function `get_asset_counts_internal`](#0xc0deb00c_user_get_asset_counts_internal)
-    -  [Parameters](#@Parameters_67)
-    -  [Returns](#@Returns_68)
-    -  [Aborts](#@Aborts_69)
-    -  [Testing](#@Testing_70)
--  [Function `get_active_market_order_ids_internal`](#0xc0deb00c_user_get_active_market_order_ids_internal)
-    -  [Parameters](#@Parameters_71)
-    -  [Returns](#@Returns_72)
+    -  [Aborts](#@Aborts_60)
+    -  [Testing](#@Testing_61)
+-  [Function `register_market_account_generic_base`](#0xc0deb00c_user_register_market_account_generic_base)
+    -  [Testing](#@Testing_62)
+-  [Function `withdraw_to_coinstore`](#0xc0deb00c_user_withdraw_to_coinstore)
+    -  [Testing](#@Testing_63)
+-  [Function `cancel_order_internal`](#0xc0deb00c_user_cancel_order_internal)
+    -  [Parameters](#@Parameters_64)
+    -  [Returns](#@Returns_65)
+    -  [Terminology](#@Terminology_66)
+    -  [Aborts](#@Aborts_67)
+    -  [Emits](#@Emits_68)
+    -  [Assumptions](#@Assumptions_69)
+    -  [Expected value testing](#@Expected_value_testing_70)
+    -  [Failure testing](#@Failure_testing_71)
+-  [Function `change_order_size_internal`](#0xc0deb00c_user_change_order_size_internal)
+    -  [Parameters](#@Parameters_72)
     -  [Aborts](#@Aborts_73)
-    -  [Testing](#@Testing_74)
--  [Function `get_next_order_access_key_internal`](#0xc0deb00c_user_get_next_order_access_key_internal)
-    -  [Parameters](#@Parameters_75)
-    -  [Returns](#@Returns_76)
-    -  [Aborts](#@Aborts_77)
-    -  [Testing](#@Testing_78)
--  [Function `place_order_internal`](#0xc0deb00c_user_place_order_internal)
-    -  [Parameters](#@Parameters_79)
-    -  [Terminology](#@Terminology_80)
-    -  [Assumptions](#@Assumptions_81)
-    -  [Aborts](#@Aborts_82)
-    -  [Expected value testing](#@Expected_value_testing_83)
-    -  [Failure testing](#@Failure_testing_84)
--  [Function `withdraw_assets_internal`](#0xc0deb00c_user_withdraw_assets_internal)
-    -  [Type parameters](#@Type_parameters_85)
-    -  [Parameters](#@Parameters_86)
-    -  [Returns](#@Returns_87)
-    -  [Testing](#@Testing_88)
--  [Function `deposit_asset`](#0xc0deb00c_user_deposit_asset)
-    -  [Type parameters](#@Type_parameters_89)
+    -  [Emits](#@Emits_74)
+    -  [Assumptions](#@Assumptions_75)
+    -  [Testing](#@Testing_76)
+-  [Function `create_cancel_order_event_internal`](#0xc0deb00c_user_create_cancel_order_event_internal)
+-  [Function `create_fill_event_internal`](#0xc0deb00c_user_create_fill_event_internal)
+-  [Function `deposit_assets_internal`](#0xc0deb00c_user_deposit_assets_internal)
+    -  [Type parameters](#@Type_parameters_77)
+    -  [Parameters](#@Parameters_78)
+    -  [Testing](#@Testing_79)
+-  [Function `emit_limit_order_events_internal`](#0xc0deb00c_user_emit_limit_order_events_internal)
+    -  [Parameters](#@Parameters_80)
+    -  [Emits](#@Emits_81)
+-  [Function `emit_market_order_events_internal`](#0xc0deb00c_user_emit_market_order_events_internal)
+    -  [Parameters](#@Parameters_82)
+    -  [Emits](#@Emits_83)
+-  [Function `emit_swap_maker_fill_events_internal`](#0xc0deb00c_user_emit_swap_maker_fill_events_internal)
+-  [Function `fill_order_internal`](#0xc0deb00c_user_fill_order_internal)
+    -  [Type parameters](#@Type_parameters_84)
+    -  [Parameters](#@Parameters_85)
+    -  [Returns](#@Returns_86)
+    -  [Aborts](#@Aborts_87)
+    -  [Assumptions](#@Assumptions_88)
+    -  [Testing](#@Testing_89)
+-  [Function `get_asset_counts_internal`](#0xc0deb00c_user_get_asset_counts_internal)
     -  [Parameters](#@Parameters_90)
-    -  [Aborts](#@Aborts_91)
-    -  [Assumptions](#@Assumptions_92)
+    -  [Returns](#@Returns_91)
+    -  [Aborts](#@Aborts_92)
     -  [Testing](#@Testing_93)
--  [Function `get_market_account_market_info`](#0xc0deb00c_user_get_market_account_market_info)
+-  [Function `get_active_market_order_ids_internal`](#0xc0deb00c_user_get_active_market_order_ids_internal)
     -  [Parameters](#@Parameters_94)
     -  [Returns](#@Returns_95)
     -  [Aborts](#@Aborts_96)
     -  [Testing](#@Testing_97)
--  [Function `register_market_account_account_entries`](#0xc0deb00c_user_register_market_account_account_entries)
-    -  [Type parameters](#@Type_parameters_98)
-    -  [Parameters](#@Parameters_99)
+-  [Function `get_next_order_access_key_internal`](#0xc0deb00c_user_get_next_order_access_key_internal)
+    -  [Parameters](#@Parameters_98)
+    -  [Returns](#@Returns_99)
     -  [Aborts](#@Aborts_100)
     -  [Testing](#@Testing_101)
--  [Function `register_market_account_collateral_entry`](#0xc0deb00c_user_register_market_account_collateral_entry)
-    -  [Type parameters](#@Type_parameters_102)
+-  [Function `get_open_order_id_internal`](#0xc0deb00c_user_get_open_order_id_internal)
+    -  [Testing](#@Testing_102)
+-  [Function `place_order_internal`](#0xc0deb00c_user_place_order_internal)
     -  [Parameters](#@Parameters_103)
-    -  [Testing](#@Testing_104)
+    -  [Terminology](#@Terminology_104)
+    -  [Assumptions](#@Assumptions_105)
+    -  [Aborts](#@Aborts_106)
+    -  [Expected value testing](#@Expected_value_testing_107)
+    -  [Failure testing](#@Failure_testing_108)
+-  [Function `withdraw_assets_internal`](#0xc0deb00c_user_withdraw_assets_internal)
+    -  [Type parameters](#@Type_parameters_109)
+    -  [Parameters](#@Parameters_110)
+    -  [Returns](#@Returns_111)
+    -  [Testing](#@Testing_112)
+-  [Function `deposit_asset`](#0xc0deb00c_user_deposit_asset)
+    -  [Type parameters](#@Type_parameters_113)
+    -  [Parameters](#@Parameters_114)
+    -  [Aborts](#@Aborts_115)
+    -  [Assumptions](#@Assumptions_116)
+    -  [Testing](#@Testing_117)
+-  [Function `emit_maker_fill_event`](#0xc0deb00c_user_emit_maker_fill_event)
+-  [Function `get_market_account_market_info`](#0xc0deb00c_user_get_market_account_market_info)
+    -  [Parameters](#@Parameters_118)
+    -  [Returns](#@Returns_119)
+    -  [Aborts](#@Aborts_120)
+    -  [Testing](#@Testing_121)
+-  [Function `register_market_account_account_entries`](#0xc0deb00c_user_register_market_account_account_entries)
+    -  [Type parameters](#@Type_parameters_122)
+    -  [Parameters](#@Parameters_123)
+    -  [Aborts](#@Aborts_124)
+    -  [Testing](#@Testing_125)
+-  [Function `register_market_account_collateral_entry`](#0xc0deb00c_user_register_market_account_collateral_entry)
+    -  [Type parameters](#@Type_parameters_126)
+    -  [Parameters](#@Parameters_127)
+    -  [Testing](#@Testing_128)
+-  [Function `vectorize_open_orders`](#0xc0deb00c_user_vectorize_open_orders)
+    -  [Testing](#@Testing_129)
 -  [Function `withdraw_asset`](#0xc0deb00c_user_withdraw_asset)
-    -  [Type parameters](#@Type_parameters_105)
-    -  [Parameters](#@Parameters_106)
-    -  [Returns](#@Returns_107)
-    -  [Aborts](#@Aborts_108)
-    -  [Testing](#@Testing_109)
+    -  [Type parameters](#@Type_parameters_130)
+    -  [Parameters](#@Parameters_131)
+    -  [Returns](#@Returns_132)
+    -  [Aborts](#@Aborts_133)
+    -  [Testing](#@Testing_134)
 -  [Function `withdraw_coins`](#0xc0deb00c_user_withdraw_coins)
-    -  [Testing](#@Testing_110)
+    -  [Testing](#@Testing_135)
 -  [Function `withdraw_generic_asset`](#0xc0deb00c_user_withdraw_generic_asset)
-    -  [Testing](#@Testing_111)
+    -  [Testing](#@Testing_136)
 
 
-<pre><code><b>use</b> <a href="">0x1::coin</a>;
+<pre><code><b>use</b> <a href="">0x1::account</a>;
+<b>use</b> <a href="">0x1::coin</a>;
+<b>use</b> <a href="">0x1::event</a>;
+<b>use</b> <a href="">0x1::guid</a>;
 <b>use</b> <a href="">0x1::option</a>;
 <b>use</b> <a href="">0x1::signer</a>;
 <b>use</b> <a href="">0x1::string</a>;
@@ -489,6 +611,111 @@ The below index is automatically generated from source code:
 
 
 ![](img/user_backward_dep.svg)
+
+
+<a name="0xc0deb00c_user_CancelOrderEvent"></a>
+
+## Struct `CancelOrderEvent`
+
+Emitted when an order is cancelled.
+
+
+<pre><code><b>struct</b> <a href="user.md#0xc0deb00c_user_CancelOrderEvent">CancelOrderEvent</a> <b>has</b> <b>copy</b>, drop, store
+</code></pre>
+
+
+
+##### Fields
+
+
+<dl>
+<dt>
+<code>market_id: u64</code>
+</dt>
+<dd>
+ Market ID for order.
+</dd>
+<dt>
+<code>order_id: u128</code>
+</dt>
+<dd>
+ Unique ID for order within market.
+</dd>
+<dt>
+<code><a href="user.md#0xc0deb00c_user">user</a>: <b>address</b></code>
+</dt>
+<dd>
+ User for market account that placed order.
+</dd>
+<dt>
+<code>custodian_id: u64</code>
+</dt>
+<dd>
+ Custodian ID for market account that placed order.
+</dd>
+<dt>
+<code>reason: u8</code>
+</dt>
+<dd>
+ Reason for the cancel, for example
+ <code><a href="user.md#0xc0deb00c_user_CANCEL_REASON_MANUAL_CANCEL">CANCEL_REASON_MANUAL_CANCEL</a></code>.
+</dd>
+</dl>
+
+
+<a name="0xc0deb00c_user_ChangeOrderSizeEvent"></a>
+
+## Struct `ChangeOrderSizeEvent`
+
+Emitted when the size of an open order is manually changed.
+
+
+<pre><code><b>struct</b> <a href="user.md#0xc0deb00c_user_ChangeOrderSizeEvent">ChangeOrderSizeEvent</a> <b>has</b> <b>copy</b>, drop, store
+</code></pre>
+
+
+
+##### Fields
+
+
+<dl>
+<dt>
+<code>market_id: u64</code>
+</dt>
+<dd>
+ Market ID for order.
+</dd>
+<dt>
+<code>order_id: u128</code>
+</dt>
+<dd>
+ Unique ID for order within market.
+</dd>
+<dt>
+<code><a href="user.md#0xc0deb00c_user">user</a>: <b>address</b></code>
+</dt>
+<dd>
+ User for market account that placed order.
+</dd>
+<dt>
+<code>custodian_id: u64</code>
+</dt>
+<dd>
+ Custodian ID for market account that placed order.
+</dd>
+<dt>
+<code>side: bool</code>
+</dt>
+<dd>
+ <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code> or <code><a href="user.md#0xc0deb00c_user_BID">BID</a></code>.
+</dd>
+<dt>
+<code>new_size: u64</code>
+</dt>
+<dd>
+ Order size after manual size change operation.
+</dd>
+</dl>
 
 
 <a name="0xc0deb00c_user_Collateral"></a>
@@ -515,6 +742,101 @@ All of a user's collateral across all market accounts.
  Separated into different table entries to reduce transaction
  collisions across markets. Enables off-chain iterated
  indexing by market account ID.
+</dd>
+</dl>
+
+
+<a name="0xc0deb00c_user_FillEvent"></a>
+
+## Struct `FillEvent`
+
+Emitted when one order fills against another.
+
+
+<pre><code><b>struct</b> <a href="user.md#0xc0deb00c_user_FillEvent">FillEvent</a> <b>has</b> <b>copy</b>, drop, store
+</code></pre>
+
+
+
+##### Fields
+
+
+<dl>
+<dt>
+<code>market_id: u64</code>
+</dt>
+<dd>
+ Market ID for fill.
+</dd>
+<dt>
+<code>size: u64</code>
+</dt>
+<dd>
+ Amount filled, in lots.
+</dd>
+<dt>
+<code>price: u64</code>
+</dt>
+<dd>
+ Fill price, in ticks per lot.
+</dd>
+<dt>
+<code>maker_side: bool</code>
+</dt>
+<dd>
+ <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code> or <code><a href="user.md#0xc0deb00c_user_BID">BID</a></code>, the side of the maker order.
+</dd>
+<dt>
+<code>maker: <b>address</b></code>
+</dt>
+<dd>
+ User address associated with market account for maker.
+</dd>
+<dt>
+<code>maker_custodian_id: u64</code>
+</dt>
+<dd>
+ Custodian ID associated with market account for maker.
+</dd>
+<dt>
+<code>maker_order_id: u128</code>
+</dt>
+<dd>
+ Order ID for maker, unique within the market.
+</dd>
+<dt>
+<code>taker: <b>address</b></code>
+</dt>
+<dd>
+ User address associated with market account for taker.
+</dd>
+<dt>
+<code>taker_custodian_id: u64</code>
+</dt>
+<dd>
+ Custodian ID associated with market account for taker.
+</dd>
+<dt>
+<code>taker_order_id: u128</code>
+</dt>
+<dd>
+ Order ID for taker, unique within the market.
+</dd>
+<dt>
+<code>taker_quote_fees_paid: u64</code>
+</dt>
+<dd>
+ Amount of fees paid by taker on the fill, in indivisible
+ quote subunits.
+</dd>
+<dt>
+<code>sequence_number_for_trade: u64</code>
+</dt>
+<dd>
+ Sequence number (0-indexed) of fill within a single trade,
+ which may have more than one fill. For example if a market
+ order results in two fills, the first will have sequence
+ number 0 and the second will have sequence number 1.
 </dd>
 </dl>
 
@@ -643,6 +965,85 @@ registry.
 </dl>
 
 
+<a name="0xc0deb00c_user_MarketAccountView"></a>
+
+## Struct `MarketAccountView`
+
+User-friendly market account view function return.
+
+
+<pre><code><b>struct</b> <a href="user.md#0xc0deb00c_user_MarketAccountView">MarketAccountView</a> <b>has</b> store
+</code></pre>
+
+
+
+##### Fields
+
+
+<dl>
+<dt>
+<code>market_id: u64</code>
+</dt>
+<dd>
+ Market ID for given market account.
+</dd>
+<dt>
+<code>custodian_id: u64</code>
+</dt>
+<dd>
+ Custodian ID for given market account.
+</dd>
+<dt>
+<code>asks: <a href="">vector</a>&lt;<a href="user.md#0xc0deb00c_user_Order">user::Order</a>&gt;</code>
+</dt>
+<dd>
+ All open asks.
+</dd>
+<dt>
+<code>bids: <a href="">vector</a>&lt;<a href="user.md#0xc0deb00c_user_Order">user::Order</a>&gt;</code>
+</dt>
+<dd>
+ All open bids.
+</dd>
+<dt>
+<code>base_total: u64</code>
+</dt>
+<dd>
+ <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>.base_total</code>.
+</dd>
+<dt>
+<code>base_available: u64</code>
+</dt>
+<dd>
+ <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>.base_available</code>.
+</dd>
+<dt>
+<code>base_ceiling: u64</code>
+</dt>
+<dd>
+ <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>.base_ceiling</code>.
+</dd>
+<dt>
+<code>quote_total: u64</code>
+</dt>
+<dd>
+ <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>.quote_total</code>.
+</dd>
+<dt>
+<code>quote_available: u64</code>
+</dt>
+<dd>
+ <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>.quote_available</code>.
+</dd>
+<dt>
+<code>quote_ceiling: u64</code>
+</dt>
+<dd>
+ <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>.quote_ceiling</code>.
+</dd>
+</dl>
+
+
 <a name="0xc0deb00c_user_MarketAccounts"></a>
 
 ## Resource `MarketAccounts`
@@ -673,6 +1074,136 @@ All of a user's market accounts.
  a market account has been registered on the given market.
  Enables off-chain iterated indexing by market account ID and
  assorted on-chain queries.
+</dd>
+</dl>
+
+
+<a name="0xc0deb00c_user_MarketEventHandleCreationNumbers"></a>
+
+## Struct `MarketEventHandleCreationNumbers`
+
+View function return for getting event handle creation numbers
+of a particular <code><a href="user.md#0xc0deb00c_user_MarketEventHandlesForMarketAccount">MarketEventHandlesForMarketAccount</a></code>.
+
+
+<pre><code><b>struct</b> <a href="user.md#0xc0deb00c_user_MarketEventHandleCreationNumbers">MarketEventHandleCreationNumbers</a> <b>has</b> <b>copy</b>, drop
+</code></pre>
+
+
+
+##### Fields
+
+
+<dl>
+<dt>
+<code>cancel_order_events_handle_creation_num: u64</code>
+</dt>
+<dd>
+ Creation number of <code>cancel_order_events</code> handle in a
+ <code><a href="user.md#0xc0deb00c_user_MarketEventHandlesForMarketAccount">MarketEventHandlesForMarketAccount</a></code>.
+</dd>
+<dt>
+<code>change_order_size_events_handle_creation_num: u64</code>
+</dt>
+<dd>
+ Creation number of <code>change_order_size_events</code> handle in a
+ <code><a href="user.md#0xc0deb00c_user_MarketEventHandlesForMarketAccount">MarketEventHandlesForMarketAccount</a></code>.
+</dd>
+<dt>
+<code>fill_events_handle_creation_num: u64</code>
+</dt>
+<dd>
+ Creation number of <code>fill_events</code> handle in a
+ <code><a href="user.md#0xc0deb00c_user_MarketEventHandlesForMarketAccount">MarketEventHandlesForMarketAccount</a></code>.
+</dd>
+<dt>
+<code>place_limit_order_events_handle_creation_num: u64</code>
+</dt>
+<dd>
+ Creation number of <code>place_limit_order_events</code> handle in a
+ <code><a href="user.md#0xc0deb00c_user_MarketEventHandlesForMarketAccount">MarketEventHandlesForMarketAccount</a></code>.
+</dd>
+<dt>
+<code>place_market_order_events_handle_creation_num: u64</code>
+</dt>
+<dd>
+ Creation number of <code>place_market_order_events</code> handle in a
+ <code><a href="user.md#0xc0deb00c_user_MarketEventHandlesForMarketAccount">MarketEventHandlesForMarketAccount</a></code>.
+</dd>
+</dl>
+
+
+<a name="0xc0deb00c_user_MarketEventHandles"></a>
+
+## Resource `MarketEventHandles`
+
+All of a user's <code><a href="user.md#0xc0deb00c_user_MarketEventHandlesForMarketAccount">MarketEventHandlesForMarketAccount</a></code>.
+
+
+<pre><code><b>struct</b> <a href="user.md#0xc0deb00c_user_MarketEventHandles">MarketEventHandles</a> <b>has</b> key
+</code></pre>
+
+
+
+##### Fields
+
+
+<dl>
+<dt>
+<code>map: <a href="_Table">table::Table</a>&lt;u128, <a href="user.md#0xc0deb00c_user_MarketEventHandlesForMarketAccount">user::MarketEventHandlesForMarketAccount</a>&gt;</code>
+</dt>
+<dd>
+ Map from market account ID to
+ <code><a href="user.md#0xc0deb00c_user_MarketEventHandlesForMarketAccount">MarketEventHandlesForMarketAccount</a></code>.
+</dd>
+</dl>
+
+
+<a name="0xc0deb00c_user_MarketEventHandlesForMarketAccount"></a>
+
+## Struct `MarketEventHandlesForMarketAccount`
+
+Event handles for market events within a unique market account.
+
+
+<pre><code><b>struct</b> <a href="user.md#0xc0deb00c_user_MarketEventHandlesForMarketAccount">MarketEventHandlesForMarketAccount</a> <b>has</b> store
+</code></pre>
+
+
+
+##### Fields
+
+
+<dl>
+<dt>
+<code>cancel_order_events: <a href="_EventHandle">event::EventHandle</a>&lt;<a href="user.md#0xc0deb00c_user_CancelOrderEvent">user::CancelOrderEvent</a>&gt;</code>
+</dt>
+<dd>
+ Event handle for <code><a href="user.md#0xc0deb00c_user_CancelOrderEvent">CancelOrderEvent</a></code>s.
+</dd>
+<dt>
+<code>change_order_size_events: <a href="_EventHandle">event::EventHandle</a>&lt;<a href="user.md#0xc0deb00c_user_ChangeOrderSizeEvent">user::ChangeOrderSizeEvent</a>&gt;</code>
+</dt>
+<dd>
+ Event handle for <code><a href="user.md#0xc0deb00c_user_ChangeOrderSizeEvent">ChangeOrderSizeEvent</a></code>s.
+</dd>
+<dt>
+<code>fill_events: <a href="_EventHandle">event::EventHandle</a>&lt;<a href="user.md#0xc0deb00c_user_FillEvent">user::FillEvent</a>&gt;</code>
+</dt>
+<dd>
+ Event handle for <code><a href="user.md#0xc0deb00c_user_FillEvent">FillEvent</a></code>s.
+</dd>
+<dt>
+<code>place_limit_order_events: <a href="_EventHandle">event::EventHandle</a>&lt;<a href="user.md#0xc0deb00c_user_PlaceLimitOrderEvent">user::PlaceLimitOrderEvent</a>&gt;</code>
+</dt>
+<dd>
+ Event handle for <code><a href="user.md#0xc0deb00c_user_PlaceLimitOrderEvent">PlaceLimitOrderEvent</a></code>s.
+</dd>
+<dt>
+<code>place_market_order_events: <a href="_EventHandle">event::EventHandle</a>&lt;<a href="user.md#0xc0deb00c_user_PlaceMarketOrderEvent">user::PlaceMarketOrderEvent</a>&gt;</code>
+</dt>
+<dd>
+ Event handle for <code><a href="user.md#0xc0deb00c_user_PlaceMarketOrderEvent">PlaceMarketOrderEvent</a></code>s.
 </dd>
 </dl>
 
@@ -709,7 +1240,168 @@ An open order, either ask or bid.
 </dl>
 
 
-<a name="@Constants_12"></a>
+<a name="0xc0deb00c_user_PlaceLimitOrderEvent"></a>
+
+## Struct `PlaceLimitOrderEvent`
+
+Emitted when a limit order is placed.
+
+
+<pre><code><b>struct</b> <a href="user.md#0xc0deb00c_user_PlaceLimitOrderEvent">PlaceLimitOrderEvent</a> <b>has</b> <b>copy</b>, drop, store
+</code></pre>
+
+
+
+##### Fields
+
+
+<dl>
+<dt>
+<code>market_id: u64</code>
+</dt>
+<dd>
+ Market ID for order.
+</dd>
+<dt>
+<code><a href="user.md#0xc0deb00c_user">user</a>: <b>address</b></code>
+</dt>
+<dd>
+ User for market account that placed order.
+</dd>
+<dt>
+<code>custodian_id: u64</code>
+</dt>
+<dd>
+ Custodian ID for market account that placed order.
+</dd>
+<dt>
+<code>integrator: <b>address</b></code>
+</dt>
+<dd>
+ Integrator address passed during limit order placement,
+ eligible for a portion of any generated taker fees.
+</dd>
+<dt>
+<code>side: bool</code>
+</dt>
+<dd>
+ <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code> or <code><a href="user.md#0xc0deb00c_user_BID">BID</a></code>.
+</dd>
+<dt>
+<code>size: u64</code>
+</dt>
+<dd>
+ Size indicated during limit order placement.
+</dd>
+<dt>
+<code>price: u64</code>
+</dt>
+<dd>
+ Order limit price.
+</dd>
+<dt>
+<code>restriction: u8</code>
+</dt>
+<dd>
+ Restriction indicated during limit order placement, either
+ <code><a href="market.md#0xc0deb00c_market_FILL_OR_ABORT">market::FILL_OR_ABORT</a></code>, <code><a href="market.md#0xc0deb00c_market_IMMEDIATE_OR_CANCEL">market::IMMEDIATE_OR_CANCEL</a></code>,
+ <code><a href="market.md#0xc0deb00c_market_POST_OR_ABORT">market::POST_OR_ABORT</a></code>, or <code><a href="market.md#0xc0deb00c_market_NO_RESTRICTION">market::NO_RESTRICTION</a></code>.
+</dd>
+<dt>
+<code>self_match_behavior: u8</code>
+</dt>
+<dd>
+ Self match behavior indicated during limit order placement,
+ either <code><a href="market.md#0xc0deb00c_market_ABORT">market::ABORT</a></code>, <code><a href="market.md#0xc0deb00c_market_CANCEL_BOTH">market::CANCEL_BOTH</a></code>,
+ <code><a href="market.md#0xc0deb00c_market_CANCEL_MAKER">market::CANCEL_MAKER</a></code>, or <code><a href="market.md#0xc0deb00c_market_CANCEL_TAKER">market::CANCEL_TAKER</a></code>.
+</dd>
+<dt>
+<code>remaining_size: u64</code>
+</dt>
+<dd>
+ Size posted to order book after optional fills across the
+ spread.
+</dd>
+<dt>
+<code>order_id: u128</code>
+</dt>
+<dd>
+ Unique ID for order within market.
+</dd>
+</dl>
+
+
+<a name="0xc0deb00c_user_PlaceMarketOrderEvent"></a>
+
+## Struct `PlaceMarketOrderEvent`
+
+Emitted when a market order is placed.
+
+
+<pre><code><b>struct</b> <a href="user.md#0xc0deb00c_user_PlaceMarketOrderEvent">PlaceMarketOrderEvent</a> <b>has</b> <b>copy</b>, drop, store
+</code></pre>
+
+
+
+##### Fields
+
+
+<dl>
+<dt>
+<code>market_id: u64</code>
+</dt>
+<dd>
+ Market ID for order.
+</dd>
+<dt>
+<code><a href="user.md#0xc0deb00c_user">user</a>: <b>address</b></code>
+</dt>
+<dd>
+ User for market account that placed order.
+</dd>
+<dt>
+<code>custodian_id: u64</code>
+</dt>
+<dd>
+ Custodian ID for market account that placed order.
+</dd>
+<dt>
+<code>integrator: <b>address</b></code>
+</dt>
+<dd>
+ Integrator address passed during market order placement,
+ eligible for a portion of any generated taker fees.
+</dd>
+<dt>
+<code>direction: bool</code>
+</dt>
+<dd>
+ Either <code><a href="market.md#0xc0deb00c_market_BUY">market::BUY</a></code> or <code><a href="market.md#0xc0deb00c_market_SELL">market::SELL</a></code>.
+</dd>
+<dt>
+<code>size: u64</code>
+</dt>
+<dd>
+ Size indicated during market order placement.
+</dd>
+<dt>
+<code>self_match_behavior: u8</code>
+</dt>
+<dd>
+ Self match behavior indicated during market order placement,
+ either <code><a href="market.md#0xc0deb00c_market_ABORT">market::ABORT</a></code>, <code><a href="market.md#0xc0deb00c_market_CANCEL_BOTH">market::CANCEL_BOTH</a></code>,
+ <code><a href="market.md#0xc0deb00c_market_CANCEL_MAKER">market::CANCEL_MAKER</a></code>, or <code><a href="market.md#0xc0deb00c_market_CANCEL_TAKER">market::CANCEL_TAKER</a></code>.
+</dd>
+<dt>
+<code>order_id: u128</code>
+</dt>
+<dd>
+ Unique ID for order within market.
+</dd>
+</dl>
+
+
+<a name="@Constants_13"></a>
 
 ## Constants
 
@@ -771,6 +1463,105 @@ Flag for bid side
 
 
 <pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_BID">BID</a>: bool = <b>false</b>;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_CANCEL_REASON_EVICTION"></a>
+
+Order cancelled because it was evicted from the price-time
+priority queue.
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_CANCEL_REASON_EVICTION">CANCEL_REASON_EVICTION</a>: u8 = 1;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_CANCEL_REASON_IMMEDIATE_OR_CANCEL"></a>
+
+Order cancelled because it was an immediate-or-cancel order
+that did not immediately fill.
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_CANCEL_REASON_IMMEDIATE_OR_CANCEL">CANCEL_REASON_IMMEDIATE_OR_CANCEL</a>: u8 = 2;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_CANCEL_REASON_MANUAL_CANCEL"></a>
+
+Order cancelled because it was manually cancelled by either
+signing user or custodian.
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_CANCEL_REASON_MANUAL_CANCEL">CANCEL_REASON_MANUAL_CANCEL</a>: u8 = 3;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_CANCEL_REASON_MAX_QUOTE_TRADED"></a>
+
+Order cancelled because no more quote asset could be traded.
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_CANCEL_REASON_MAX_QUOTE_TRADED">CANCEL_REASON_MAX_QUOTE_TRADED</a>: u8 = 4;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY"></a>
+
+Order cancelled because there was not enough liquidity to take
+from.
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY">CANCEL_REASON_NOT_ENOUGH_LIQUIDITY</a>: u8 = 5;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_CANCEL_REASON_SELF_MATCH_MAKER"></a>
+
+Order cancelled because it was on the maker side of an fill
+where self match behavior indicated cancelling the maker order.
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_CANCEL_REASON_SELF_MATCH_MAKER">CANCEL_REASON_SELF_MATCH_MAKER</a>: u8 = 6;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_CANCEL_REASON_SELF_MATCH_TAKER"></a>
+
+Order cancelled because it was on the taker side of an fill
+where self match behavior indicated cancelling the taker order.
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_CANCEL_REASON_SELF_MATCH_TAKER">CANCEL_REASON_SELF_MATCH_TAKER</a>: u8 = 7;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_CANCEL_REASON_SIZE_CHANGE_INTERNAL"></a>
+
+Flag to indicate that order is only temporarily cancelled from
+market account memory because it will be subsequently re-placed
+as part of a size change.
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_CANCEL_REASON_SIZE_CHANGE_INTERNAL">CANCEL_REASON_SIZE_CHANGE_INTERNAL</a>: u8 = 0;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_CANCEL_REASON_TOO_SMALL_AFTER_MATCHING"></a>
+
+Order cancelled because after matching across the spread the
+remaining order size was too small for the market.
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_CANCEL_REASON_TOO_SMALL_AFTER_MATCHING">CANCEL_REASON_TOO_SMALL_AFTER_MATCHING</a>: u8 = 8;
 </code></pre>
 
 
@@ -998,21 +1789,11 @@ Number of bits market ID is shifted in market account ID.
 
 
 
-<a name="0xc0deb00c_user_deposit_coins"></a>
+<a name="0xc0deb00c_user_get_ASK"></a>
 
-## Function `deposit_coins`
+## Function `get_ASK`
 
-Wrapped call to <code><a href="user.md#0xc0deb00c_user_deposit_asset">deposit_asset</a>()</code> for depositing coins.
-
-
-<a name="@Aborts_13"></a>
-
-### Aborts
-
-
-* <code><a href="user.md#0xc0deb00c_user_E_COIN_TYPE_IS_GENERIC_ASSET">E_COIN_TYPE_IS_GENERIC_ASSET</a></code>: Coin type is generic asset,
-corresponding to the Econia account having initialized a coin
-of type <code>GenericAsset</code>.
+Public constant getter for <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code>.
 
 
 <a name="@Testing_14"></a>
@@ -1020,11 +1801,10 @@ of type <code>GenericAsset</code>.
 ### Testing
 
 
-* <code>test_deposit_coins_generic()</code>
-* <code>test_deposits()</code>
+* <code>test_get_ASK()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_deposit_coins">deposit_coins</a>&lt;CoinType&gt;(user_address: <b>address</b>, market_id: u64, custodian_id: u64, coins: <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;)
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_ASK">get_ASK</a>(): bool
 </code></pre>
 
 
@@ -1032,39 +1812,16 @@ of type <code>GenericAsset</code>.
 ##### Implementation
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_deposit_coins">deposit_coins</a>&lt;
-    CoinType
-&gt;(
-    user_address: <b>address</b>,
-    market_id: u64,
-    custodian_id: u64,
-    coins: Coin&lt;CoinType&gt;
-) <b>acquires</b>
-    <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
-    <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
-{
-    // Check <b>if</b> <a href="">coin</a> type is generic asset.
-    <b>let</b> coin_type_is_generic_asset = <a href="_type_of">type_info::type_of</a>&lt;CoinType&gt;() ==
-                                     <a href="_type_of">type_info::type_of</a>&lt;GenericAsset&gt;();
-    // Assert <a href="">coin</a> type is not generic asset.
-    <b>assert</b>!(!coin_type_is_generic_asset, <a href="user.md#0xc0deb00c_user_E_COIN_TYPE_IS_GENERIC_ASSET">E_COIN_TYPE_IS_GENERIC_ASSET</a>);
-    <a href="user.md#0xc0deb00c_user_deposit_asset">deposit_asset</a>&lt;CoinType&gt;( // Deposit asset.
-        user_address,
-        market_id,
-        custodian_id,
-        <a href="_value">coin::value</a>(&coins),
-        <a href="_some">option::some</a>(coins),
-        <a href="user.md#0xc0deb00c_user_NO_UNDERWRITER">NO_UNDERWRITER</a>);
-}
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_ASK">get_ASK</a>(): bool {<a href="user.md#0xc0deb00c_user_ASK">ASK</a>}
 </code></pre>
 
 
 
-<a name="0xc0deb00c_user_deposit_generic_asset"></a>
+<a name="0xc0deb00c_user_get_BID"></a>
 
-## Function `deposit_generic_asset`
+## Function `get_BID`
 
-Wrapped call to <code><a href="user.md#0xc0deb00c_user_deposit_asset">deposit_asset</a>()</code> for depositing generic asset.
+Public constant getter for <code><a href="user.md#0xc0deb00c_user_BID">BID</a></code>.
 
 
 <a name="@Testing_15"></a>
@@ -1072,10 +1829,10 @@ Wrapped call to <code><a href="user.md#0xc0deb00c_user_deposit_asset">deposit_as
 ### Testing
 
 
-* <code>test_deposits()</code>
+* <code>test_get_BID()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_deposit_generic_asset">deposit_generic_asset</a>(user_address: <b>address</b>, market_id: u64, custodian_id: u64, amount: u64, underwriter_capability_ref: &<a href="registry.md#0xc0deb00c_registry_UnderwriterCapability">registry::UnderwriterCapability</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_BID">get_BID</a>(): bool
 </code></pre>
 
 
@@ -1083,24 +1840,276 @@ Wrapped call to <code><a href="user.md#0xc0deb00c_user_deposit_asset">deposit_as
 ##### Implementation
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_deposit_generic_asset">deposit_generic_asset</a>(
-    user_address: <b>address</b>,
-    market_id: u64,
-    custodian_id: u64,
-    amount: u64,
-    underwriter_capability_ref: &UnderwriterCapability
-) <b>acquires</b>
-    <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
-    <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
-{
-    <a href="user.md#0xc0deb00c_user_deposit_asset">deposit_asset</a>&lt;GenericAsset&gt;(
-        user_address,
-        market_id,
-        custodian_id,
-        amount,
-        <a href="_none">option::none</a>(),
-        <a href="registry.md#0xc0deb00c_registry_get_underwriter_id">registry::get_underwriter_id</a>(underwriter_capability_ref));
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_BID">get_BID</a>(): bool {<a href="user.md#0xc0deb00c_user_BID">BID</a>}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_get_CANCEL_REASON_EVICTION"></a>
+
+## Function `get_CANCEL_REASON_EVICTION`
+
+Public constant getter for <code><a href="user.md#0xc0deb00c_user_CANCEL_REASON_EVICTION">CANCEL_REASON_EVICTION</a></code>.
+
+
+<a name="@Testing_16"></a>
+
+### Testing
+
+
+* <code>test_get_cancel_reasons()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_EVICTION">get_CANCEL_REASON_EVICTION</a>(): u8
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_EVICTION">get_CANCEL_REASON_EVICTION</a>(): u8 {
+    <a href="user.md#0xc0deb00c_user_CANCEL_REASON_EVICTION">CANCEL_REASON_EVICTION</a>
 }
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_get_CANCEL_REASON_IMMEDIATE_OR_CANCEL"></a>
+
+## Function `get_CANCEL_REASON_IMMEDIATE_OR_CANCEL`
+
+Public constant getter for <code><a href="user.md#0xc0deb00c_user_CANCEL_REASON_IMMEDIATE_OR_CANCEL">CANCEL_REASON_IMMEDIATE_OR_CANCEL</a></code>.
+
+
+<a name="@Testing_17"></a>
+
+### Testing
+
+
+* <code>test_get_cancel_reasons()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_IMMEDIATE_OR_CANCEL">get_CANCEL_REASON_IMMEDIATE_OR_CANCEL</a>(): u8
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_IMMEDIATE_OR_CANCEL">get_CANCEL_REASON_IMMEDIATE_OR_CANCEL</a>(): u8 {
+    <a href="user.md#0xc0deb00c_user_CANCEL_REASON_IMMEDIATE_OR_CANCEL">CANCEL_REASON_IMMEDIATE_OR_CANCEL</a>
+}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_get_CANCEL_REASON_MANUAL_CANCEL"></a>
+
+## Function `get_CANCEL_REASON_MANUAL_CANCEL`
+
+Public constant getter for <code><a href="user.md#0xc0deb00c_user_CANCEL_REASON_MANUAL_CANCEL">CANCEL_REASON_MANUAL_CANCEL</a></code>.
+
+
+<a name="@Testing_18"></a>
+
+### Testing
+
+
+* <code>test_get_cancel_reasons()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_MANUAL_CANCEL">get_CANCEL_REASON_MANUAL_CANCEL</a>(): u8
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_MANUAL_CANCEL">get_CANCEL_REASON_MANUAL_CANCEL</a>(): u8 {
+    <a href="user.md#0xc0deb00c_user_CANCEL_REASON_MANUAL_CANCEL">CANCEL_REASON_MANUAL_CANCEL</a>
+}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_get_CANCEL_REASON_MAX_QUOTE_TRADED"></a>
+
+## Function `get_CANCEL_REASON_MAX_QUOTE_TRADED`
+
+Public constant getter for <code><a href="user.md#0xc0deb00c_user_CANCEL_REASON_MAX_QUOTE_TRADED">CANCEL_REASON_MAX_QUOTE_TRADED</a></code>.
+
+
+<a name="@Testing_19"></a>
+
+### Testing
+
+
+* <code>test_get_cancel_reasons()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_MAX_QUOTE_TRADED">get_CANCEL_REASON_MAX_QUOTE_TRADED</a>(): u8
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_MAX_QUOTE_TRADED">get_CANCEL_REASON_MAX_QUOTE_TRADED</a>(): u8 {
+    <a href="user.md#0xc0deb00c_user_CANCEL_REASON_MAX_QUOTE_TRADED">CANCEL_REASON_MAX_QUOTE_TRADED</a>
+}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_get_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY"></a>
+
+## Function `get_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY`
+
+Public constant getter for <code><a href="user.md#0xc0deb00c_user_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY">CANCEL_REASON_NOT_ENOUGH_LIQUIDITY</a></code>.
+
+
+<a name="@Testing_20"></a>
+
+### Testing
+
+
+* <code>test_get_cancel_reasons()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY">get_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY</a>(): u8
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY">get_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY</a>(): u8 {
+    <a href="user.md#0xc0deb00c_user_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY">CANCEL_REASON_NOT_ENOUGH_LIQUIDITY</a>
+}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_get_CANCEL_REASON_SELF_MATCH_MAKER"></a>
+
+## Function `get_CANCEL_REASON_SELF_MATCH_MAKER`
+
+Public constant getter for <code><a href="user.md#0xc0deb00c_user_CANCEL_REASON_SELF_MATCH_MAKER">CANCEL_REASON_SELF_MATCH_MAKER</a></code>.
+
+
+<a name="@Testing_21"></a>
+
+### Testing
+
+
+* <code>test_get_cancel_reasons()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_SELF_MATCH_MAKER">get_CANCEL_REASON_SELF_MATCH_MAKER</a>(): u8
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_SELF_MATCH_MAKER">get_CANCEL_REASON_SELF_MATCH_MAKER</a>(): u8 {
+    <a href="user.md#0xc0deb00c_user_CANCEL_REASON_SELF_MATCH_MAKER">CANCEL_REASON_SELF_MATCH_MAKER</a>
+}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_get_CANCEL_REASON_SELF_MATCH_TAKER"></a>
+
+## Function `get_CANCEL_REASON_SELF_MATCH_TAKER`
+
+Public constant getter for <code><a href="user.md#0xc0deb00c_user_CANCEL_REASON_SELF_MATCH_TAKER">CANCEL_REASON_SELF_MATCH_TAKER</a></code>.
+
+
+<a name="@Testing_22"></a>
+
+### Testing
+
+
+* <code>test_get_cancel_reasons()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_SELF_MATCH_TAKER">get_CANCEL_REASON_SELF_MATCH_TAKER</a>(): u8
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_SELF_MATCH_TAKER">get_CANCEL_REASON_SELF_MATCH_TAKER</a>(): u8 {
+    <a href="user.md#0xc0deb00c_user_CANCEL_REASON_SELF_MATCH_TAKER">CANCEL_REASON_SELF_MATCH_TAKER</a>
+}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_get_CANCEL_REASON_TOO_SMALL_AFTER_MATCHING"></a>
+
+## Function `get_CANCEL_REASON_TOO_SMALL_AFTER_MATCHING`
+
+Public constant getter for
+<code><a href="user.md#0xc0deb00c_user_CANCEL_REASON_TOO_SMALL_AFTER_MATCHING">CANCEL_REASON_TOO_SMALL_AFTER_MATCHING</a></code>.
+
+
+<a name="@Testing_23"></a>
+
+### Testing
+
+
+* <code>test_get_cancel_reasons()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_TOO_SMALL_AFTER_MATCHING">get_CANCEL_REASON_TOO_SMALL_AFTER_MATCHING</a>(): u8
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_TOO_SMALL_AFTER_MATCHING">get_CANCEL_REASON_TOO_SMALL_AFTER_MATCHING</a>(): u8 {
+    <a href="user.md#0xc0deb00c_user_CANCEL_REASON_TOO_SMALL_AFTER_MATCHING">CANCEL_REASON_TOO_SMALL_AFTER_MATCHING</a>
+}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_get_NO_CUSTODIAN"></a>
+
+## Function `get_NO_CUSTODIAN`
+
+Public constant getter for <code><a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a></code>.
+
+
+<a name="@Testing_24"></a>
+
+### Testing
+
+
+* <code>test_get_NO_CUSTODIAN()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_NO_CUSTODIAN">get_NO_CUSTODIAN</a>(): u64
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_NO_CUSTODIAN">get_NO_CUSTODIAN</a>(): u64 {<a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a>}
 </code></pre>
 
 
@@ -1112,7 +2121,7 @@ Wrapped call to <code><a href="user.md#0xc0deb00c_user_deposit_asset">deposit_as
 Return all market account IDs associated with market ID.
 
 
-<a name="@Parameters_16"></a>
+<a name="@Parameters_25"></a>
 
 ### Parameters
 
@@ -1121,7 +2130,7 @@ Return all market account IDs associated with market ID.
 * <code>market_id</code>: Market ID to check market accounts for.
 
 
-<a name="@Returns_17"></a>
+<a name="@Returns_26"></a>
 
 ### Returns
 
@@ -1130,7 +2139,7 @@ Return all market account IDs associated with market ID.
 market, empty if no market accounts.
 
 
-<a name="@Gas_considerations_18"></a>
+<a name="@Gas_considerations_27"></a>
 
 ### Gas considerations
 
@@ -1139,7 +2148,7 @@ Loops over all elements within a vector that is itself a single
 item in global storage, and returns a vector via pass-by-value.
 
 
-<a name="@Testing_19"></a>
+<a name="@Testing_28"></a>
 
 ### Testing
 
@@ -1195,7 +2204,7 @@ item in global storage, and returns a vector via pass-by-value.
 Return all of a user's market account IDs.
 
 
-<a name="@Parameters_20"></a>
+<a name="@Parameters_29"></a>
 
 ### Parameters
 
@@ -1203,7 +2212,7 @@ Return all of a user's market account IDs.
 * <code><a href="user.md#0xc0deb00c_user">user</a></code>: Address of user to check market account IDs for.
 
 
-<a name="@Returns_21"></a>
+<a name="@Returns_30"></a>
 
 ### Returns
 
@@ -1212,7 +2221,7 @@ Return all of a user's market account IDs.
 no market accounts.
 
 
-<a name="@Gas_considerations_22"></a>
+<a name="@Gas_considerations_31"></a>
 
 ### Gas considerations
 
@@ -1224,7 +2233,7 @@ read, incurring linearly-scaled vector operation costs. Returns
 a vector via pass-by-value.
 
 
-<a name="@Testing_23"></a>
+<a name="@Testing_32"></a>
 
 ### Testing
 
@@ -1280,22 +2289,22 @@ a vector via pass-by-value.
 
 
 
-<a name="0xc0deb00c_user_get_ASK"></a>
+<a name="0xc0deb00c_user_get_custodian_id"></a>
 
-## Function `get_ASK`
+## Function `get_custodian_id`
 
-Public constant getter for <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code>.
+Return custodian ID encoded in market account ID.
 
 
-<a name="@Testing_24"></a>
+<a name="@Testing_33"></a>
 
 ### Testing
 
 
-* <code>test_get_ASK()</code>
+* <code>test_market_account_id_getters()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_ASK">get_ASK</a>(): bool
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_custodian_id">get_custodian_id</a>(market_account_id: u128): u64
 </code></pre>
 
 
@@ -1303,7 +2312,489 @@ Public constant getter for <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></
 ##### Implementation
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_ASK">get_ASK</a>(): bool {<a href="user.md#0xc0deb00c_user_ASK">ASK</a>}
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_custodian_id">get_custodian_id</a>(
+    market_account_id: u128
+): u64 {
+    ((market_account_id & (<a href="user.md#0xc0deb00c_user_HI_64">HI_64</a> <b>as</b> u128)) <b>as</b> u64)
+}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_get_market_account"></a>
+
+## Function `get_market_account`
+
+Return human-readable <code><a href="user.md#0xc0deb00c_user_MarketAccountView">MarketAccountView</a></code>.
+
+Mutates state, so kept as a private view function.
+
+
+<a name="@Aborts_34"></a>
+
+### Aborts
+
+
+* <code><a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a></code>: No such specified market account.
+
+
+<a name="@Testing_35"></a>
+
+### Testing
+
+
+* <code>test_deposits()</code>
+* <code>test_get_market_account_no_market_account()</code>
+* <code>test_get_market_accounts_open_orders()</code>
+
+
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_get_market_account">get_market_account</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_id: u64, custodian_id: u64): <a href="user.md#0xc0deb00c_user_MarketAccountView">user::MarketAccountView</a>
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_get_market_account">get_market_account</a>(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    market_id: u64,
+    custodian_id: u64
+): <a href="user.md#0xc0deb00c_user_MarketAccountView">MarketAccountView</a>
+<b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+    // Get <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> ID from <a href="market.md#0xc0deb00c_market">market</a> ID, custodian ID.
+    <b>let</b> market_account_id = <a href="user.md#0xc0deb00c_user_get_market_account_id">get_market_account_id</a>(market_id, custodian_id);
+    // Verify <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
+    <b>assert</b>!(<a href="user.md#0xc0deb00c_user_has_market_account_by_market_account_id">has_market_account_by_market_account_id</a>(
+        <a href="user.md#0xc0deb00c_user">user</a>, market_account_id), <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a>);
+    // Mutably borrow <a href="market.md#0xc0deb00c_market">market</a> accounts map.
+    <b>let</b> market_accounts_map_ref_mut =
+        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>).map;
+    // Mutably borrow <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
+    <b>let</b> market_account_ref_mut = <a href="_borrow_mut">table::borrow_mut</a>(
+        market_accounts_map_ref_mut, market_account_id);
+    // Return <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> view <b>with</b> parsed fields.
+    <a href="user.md#0xc0deb00c_user_MarketAccountView">MarketAccountView</a>{
+        market_id,
+        custodian_id,
+        asks: <a href="user.md#0xc0deb00c_user_vectorize_open_orders">vectorize_open_orders</a>(&<b>mut</b> market_account_ref_mut.asks),
+        bids: <a href="user.md#0xc0deb00c_user_vectorize_open_orders">vectorize_open_orders</a>(&<b>mut</b> market_account_ref_mut.bids),
+        base_total: market_account_ref_mut.base_total,
+        base_available: market_account_ref_mut.base_available,
+        base_ceiling: market_account_ref_mut.base_ceiling,
+        quote_total: market_account_ref_mut.quote_total,
+        quote_available: market_account_ref_mut.quote_available,
+        quote_ceiling: market_account_ref_mut.quote_ceiling
+    }
+}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_get_market_account_id"></a>
+
+## Function `get_market_account_id`
+
+Return market account ID with encoded market and custodian IDs.
+
+
+<a name="@Testing_36"></a>
+
+### Testing
+
+
+* <code>test_market_account_id_getters()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_market_account_id">get_market_account_id</a>(market_id: u64, custodian_id: u64): u128
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_market_account_id">get_market_account_id</a>(
+    market_id: u64,
+    custodian_id: u64
+): u128 {
+    ((market_id <b>as</b> u128) &lt;&lt; <a href="user.md#0xc0deb00c_user_SHIFT_MARKET_ID">SHIFT_MARKET_ID</a>) | (custodian_id <b>as</b> u128)
+}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_get_market_accounts"></a>
+
+## Function `get_market_accounts`
+
+Get user-friendly views of all of a <code><a href="user.md#0xc0deb00c_user">user</a></code>'s market accounts.
+
+Mutates state, so kept as a private view function.
+
+
+<a name="@Testing_37"></a>
+
+### Testing
+
+
+* <code>test_get_market_accounts_open_orders()</code>
+
+
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_get_market_accounts">get_market_accounts</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>): <a href="">vector</a>&lt;<a href="user.md#0xc0deb00c_user_MarketAccountView">user::MarketAccountView</a>&gt;
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_get_market_accounts">get_market_accounts</a>(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>
+): <a href="">vector</a>&lt;<a href="user.md#0xc0deb00c_user_MarketAccountView">MarketAccountView</a>&gt;
+<b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+    // Get all of <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> IDs.
+    <b>let</b> market_account_ids = <a href="user.md#0xc0deb00c_user_get_all_market_account_ids_for_user">get_all_market_account_ids_for_user</a>(<a href="user.md#0xc0deb00c_user">user</a>);
+    // Initialize empty <a href="">vector</a> for open order IDs.
+    <b>let</b> market_accounts = <a href="_empty">vector::empty</a>();
+    // If no <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> IDs, <b>return</b> empty <a href="">vector</a>.
+    <b>if</b> (<a href="_is_empty">vector::is_empty</a>(&market_account_ids)) <b>return</b> market_accounts;
+    // For each <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> ID:
+    <a href="_for_each">vector::for_each</a>(market_account_ids, |market_account_id| {
+        // Get encoded <a href="market.md#0xc0deb00c_market">market</a> ID.
+        <b>let</b> market_id = <a href="user.md#0xc0deb00c_user_get_market_id">get_market_id</a>(market_account_id);
+        // Get encoded custodian ID.
+        <b>let</b> custodian_id = <a href="user.md#0xc0deb00c_user_get_custodian_id">get_custodian_id</a>(market_account_id);
+        // Push back <b>struct</b> onto <a href="">vector</a> of ongoing structs.
+        <a href="_push_back">vector::push_back</a>(&<b>mut</b> market_accounts, <a href="user.md#0xc0deb00c_user_get_market_account">get_market_account</a>(
+            <a href="user.md#0xc0deb00c_user">user</a>, market_id, custodian_id));
+    });
+    market_accounts // Return <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> views.
+}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_get_market_event_handle_creation_numbers"></a>
+
+## Function `get_market_event_handle_creation_numbers`
+
+Return a <code><a href="user.md#0xc0deb00c_user_MarketEventHandleCreationNumbers">MarketEventHandleCreationNumbers</a></code> for <code>market_id</code> and
+<code>custodian_id</code>, if <code><a href="user.md#0xc0deb00c_user">user</a></code> has event handles for indicated market
+account.
+
+Restricted to private view function to prevent runtime handle
+contention.
+
+
+<a name="@Testing_38"></a>
+
+### Testing
+
+
+* <code>test_register_market_accounts()</code>
+
+
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_get_market_event_handle_creation_numbers">get_market_event_handle_creation_numbers</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_id: u64, custodian_id: u64): <a href="_Option">option::Option</a>&lt;<a href="user.md#0xc0deb00c_user_MarketEventHandleCreationNumbers">user::MarketEventHandleCreationNumbers</a>&gt;
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_get_market_event_handle_creation_numbers">get_market_event_handle_creation_numbers</a>(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    market_id: u64,
+    custodian_id: u64
+): Option&lt;<a href="user.md#0xc0deb00c_user_MarketEventHandleCreationNumbers">MarketEventHandleCreationNumbers</a>&gt;
+<b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketEventHandles">MarketEventHandles</a> {
+    // Return none <b>if</b> <a href="user.md#0xc0deb00c_user">user</a> does not have <a href="market.md#0xc0deb00c_market">market</a> <a href="">event</a> handles map,
+    <b>if</b> (!<b>exists</b>&lt;<a href="user.md#0xc0deb00c_user_MarketEventHandles">MarketEventHandles</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>)) <b>return</b> <a href="_none">option::none</a>();
+    // Return none <b>if</b> <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> no handles for <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
+    <b>let</b> market_event_handles_map_ref =
+        &<b>borrow_global</b>&lt;<a href="user.md#0xc0deb00c_user_MarketEventHandles">MarketEventHandles</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>).map;
+    <b>let</b> market_account_id = <a href="user.md#0xc0deb00c_user_get_market_account_id">get_market_account_id</a>(market_id, custodian_id);
+    <b>let</b> has_handles = <a href="_contains">table::contains</a>(
+        market_event_handles_map_ref, market_account_id);
+    <b>if</b> (!has_handles) <b>return</b> <a href="_none">option::none</a>();
+    // Return <a href="">option</a>-packed creation numbers for all <a href="">event</a> handles.
+    <b>let</b> market_account_handles_ref = <a href="_borrow">table::borrow</a>(
+        market_event_handles_map_ref, market_account_id);
+    <a href="_some">option::some</a>(<a href="user.md#0xc0deb00c_user_MarketEventHandleCreationNumbers">MarketEventHandleCreationNumbers</a>{
+        cancel_order_events_handle_creation_num:
+            <a href="_creation_num">guid::creation_num</a>(<a href="_guid">event::guid</a>(
+                &market_account_handles_ref.cancel_order_events)),
+        change_order_size_events_handle_creation_num:
+            <a href="_creation_num">guid::creation_num</a>(<a href="_guid">event::guid</a>(
+                &market_account_handles_ref.change_order_size_events)),
+        fill_events_handle_creation_num:
+            <a href="_creation_num">guid::creation_num</a>(<a href="_guid">event::guid</a>(
+                &market_account_handles_ref.fill_events)),
+        place_limit_order_events_handle_creation_num:
+            <a href="_creation_num">guid::creation_num</a>(<a href="_guid">event::guid</a>(
+                &market_account_handles_ref.place_limit_order_events)),
+        place_market_order_events_handle_creation_num:
+            <a href="_creation_num">guid::creation_num</a>(<a href="_guid">event::guid</a>(
+                &market_account_handles_ref.place_market_order_events))
+    })
+}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_get_market_id"></a>
+
+## Function `get_market_id`
+
+Return market ID encoded in market account ID.
+
+
+<a name="@Testing_39"></a>
+
+### Testing
+
+
+* <code>test_market_account_id_getters()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_market_id">get_market_id</a>(market_account_id: u128): u64
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_market_id">get_market_id</a>(
+    market_account_id: u128
+): u64 {
+    (market_account_id &gt;&gt; <a href="user.md#0xc0deb00c_user_SHIFT_MARKET_ID">SHIFT_MARKET_ID</a> <b>as</b> u64)
+}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_has_market_account"></a>
+
+## Function `has_market_account`
+
+Return <code><b>true</b></code> if <code><a href="user.md#0xc0deb00c_user">user</a></code> has market account registered with
+given <code>market_id</code> and <code>custodian_id</code>.
+
+
+<a name="@Testing_40"></a>
+
+### Testing
+
+
+* <code>test_market_account_getters()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_has_market_account">has_market_account</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_id: u64, custodian_id: u64): bool
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_has_market_account">has_market_account</a>(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    market_id: u64,
+    custodian_id: u64
+): bool
+<b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+    <a href="user.md#0xc0deb00c_user_has_market_account_by_market_account_id">has_market_account_by_market_account_id</a>(
+        <a href="user.md#0xc0deb00c_user">user</a>, <a href="user.md#0xc0deb00c_user_get_market_account_id">get_market_account_id</a>(market_id, custodian_id))
+}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_has_market_account_by_market_account_id"></a>
+
+## Function `has_market_account_by_market_account_id`
+
+Return <code><b>true</b></code> if <code><a href="user.md#0xc0deb00c_user">user</a></code> has market account registered with
+given <code>market_account_id</code>.
+
+
+<a name="@Testing_41"></a>
+
+### Testing
+
+
+* <code>test_market_account_getters()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_has_market_account_by_market_account_id">has_market_account_by_market_account_id</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_account_id: u128): bool
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_has_market_account_by_market_account_id">has_market_account_by_market_account_id</a>(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    market_account_id: u128
+): bool
+<b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+    // Return <b>false</b> <b>if</b> <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> no <a href="market.md#0xc0deb00c_market">market</a> accounts resource.
+    <b>if</b> (!<b>exists</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>)) <b>return</b> <b>false</b>;
+    // Immutably borrow <a href="market.md#0xc0deb00c_market">market</a> accounts map.
+    <b>let</b> market_accounts_map_ref = &<b>borrow_global</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>).map;
+    // Return <b>if</b> map <b>has</b> entry for given <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> ID.
+    <a href="_contains">table::contains</a>(market_accounts_map_ref, market_account_id)
+}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_has_market_account_by_market_id"></a>
+
+## Function `has_market_account_by_market_id`
+
+Return <code><b>true</b></code> if <code><a href="user.md#0xc0deb00c_user">user</a></code> has at least one market account
+registered with given <code>market_id</code>.
+
+
+<a name="@Testing_42"></a>
+
+### Testing
+
+
+* <code>test_market_account_getters()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_has_market_account_by_market_id">has_market_account_by_market_id</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_id: u64): bool
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_has_market_account_by_market_id">has_market_account_by_market_id</a>(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    market_id: u64
+): bool
+<b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+    // Return <b>false</b> <b>if</b> <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> no <a href="market.md#0xc0deb00c_market">market</a> accounts resource.
+    <b>if</b> (!<b>exists</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>)) <b>return</b> <b>false</b>;
+    <b>let</b> custodians_map_ref = // Immutably borrow custodians map.
+        &<b>borrow_global</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>).custodians;
+    // Return <b>if</b> custodians map <b>has</b> entry for given <a href="market.md#0xc0deb00c_market">market</a> ID.
+    <a href="tablist.md#0xc0deb00c_tablist_contains">tablist::contains</a>(custodians_map_ref, market_id)
+}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_deposit_coins"></a>
+
+## Function `deposit_coins`
+
+Wrapped call to <code><a href="user.md#0xc0deb00c_user_deposit_asset">deposit_asset</a>()</code> for depositing coins.
+
+
+<a name="@Aborts_43"></a>
+
+### Aborts
+
+
+* <code><a href="user.md#0xc0deb00c_user_E_COIN_TYPE_IS_GENERIC_ASSET">E_COIN_TYPE_IS_GENERIC_ASSET</a></code>: Coin type is generic asset,
+corresponding to the Econia account having initialized a coin
+of type <code>GenericAsset</code>.
+
+
+<a name="@Testing_44"></a>
+
+### Testing
+
+
+* <code>test_deposit_coins_generic()</code>
+* <code>test_deposits()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_deposit_coins">deposit_coins</a>&lt;CoinType&gt;(user_address: <b>address</b>, market_id: u64, custodian_id: u64, coins: <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;)
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_deposit_coins">deposit_coins</a>&lt;
+    CoinType
+&gt;(
+    user_address: <b>address</b>,
+    market_id: u64,
+    custodian_id: u64,
+    coins: Coin&lt;CoinType&gt;
+) <b>acquires</b>
+    <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
+    <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
+{
+    // Check <b>if</b> <a href="">coin</a> type is generic asset.
+    <b>let</b> coin_type_is_generic_asset = <a href="_type_of">type_info::type_of</a>&lt;CoinType&gt;() ==
+                                     <a href="_type_of">type_info::type_of</a>&lt;GenericAsset&gt;();
+    // Assert <a href="">coin</a> type is not generic asset.
+    <b>assert</b>!(!coin_type_is_generic_asset, <a href="user.md#0xc0deb00c_user_E_COIN_TYPE_IS_GENERIC_ASSET">E_COIN_TYPE_IS_GENERIC_ASSET</a>);
+    <a href="user.md#0xc0deb00c_user_deposit_asset">deposit_asset</a>&lt;CoinType&gt;( // Deposit asset.
+        user_address,
+        market_id,
+        custodian_id,
+        <a href="_value">coin::value</a>(&coins),
+        <a href="_some">option::some</a>(coins),
+        <a href="user.md#0xc0deb00c_user_NO_UNDERWRITER">NO_UNDERWRITER</a>);
+}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_deposit_generic_asset"></a>
+
+## Function `deposit_generic_asset`
+
+Wrapped call to <code><a href="user.md#0xc0deb00c_user_deposit_asset">deposit_asset</a>()</code> for depositing generic asset.
+
+
+<a name="@Testing_45"></a>
+
+### Testing
+
+
+* <code>test_deposits()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_deposit_generic_asset">deposit_generic_asset</a>(user_address: <b>address</b>, market_id: u64, custodian_id: u64, amount: u64, underwriter_capability_ref: &<a href="registry.md#0xc0deb00c_registry_UnderwriterCapability">registry::UnderwriterCapability</a>)
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_deposit_generic_asset">deposit_generic_asset</a>(
+    user_address: <b>address</b>,
+    market_id: u64,
+    custodian_id: u64,
+    amount: u64,
+    underwriter_capability_ref: &UnderwriterCapability
+) <b>acquires</b>
+    <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
+    <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
+{
+    <a href="user.md#0xc0deb00c_user_deposit_asset">deposit_asset</a>&lt;GenericAsset&gt;(
+        user_address,
+        market_id,
+        custodian_id,
+        amount,
+        <a href="_none">option::none</a>(),
+        <a href="registry.md#0xc0deb00c_registry_get_underwriter_id">registry::get_underwriter_id</a>(underwriter_capability_ref));
+}
 </code></pre>
 
 
@@ -1318,7 +2809,7 @@ Restricted to custodian for given market account to prevent
 excessive public queries and thus transaction collisions.
 
 
-<a name="@Testing_25"></a>
+<a name="@Testing_46"></a>
 
 ### Testing
 
@@ -1364,7 +2855,7 @@ Restricted to signing user for given market account to prevent
 excessive public queries and thus transaction collisions.
 
 
-<a name="@Testing_26"></a>
+<a name="@Testing_47"></a>
 
 ### Testing
 
@@ -1397,99 +2888,6 @@ excessive public queries and thus transaction collisions.
 
 
 
-<a name="0xc0deb00c_user_get_BID"></a>
-
-## Function `get_BID`
-
-Public constant getter for <code><a href="user.md#0xc0deb00c_user_BID">BID</a></code>.
-
-
-<a name="@Testing_27"></a>
-
-### Testing
-
-
-* <code>test_get_BID()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_BID">get_BID</a>(): bool
-</code></pre>
-
-
-
-##### Implementation
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_BID">get_BID</a>(): bool {<a href="user.md#0xc0deb00c_user_BID">BID</a>}
-</code></pre>
-
-
-
-<a name="0xc0deb00c_user_get_custodian_id"></a>
-
-## Function `get_custodian_id`
-
-Return custodian ID encoded in market account ID.
-
-
-<a name="@Testing_28"></a>
-
-### Testing
-
-
-* <code>test_market_account_id_getters()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_custodian_id">get_custodian_id</a>(market_account_id: u128): u64
-</code></pre>
-
-
-
-##### Implementation
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_custodian_id">get_custodian_id</a>(
-    market_account_id: u128
-): u64 {
-    ((market_account_id & (<a href="user.md#0xc0deb00c_user_HI_64">HI_64</a> <b>as</b> u128)) <b>as</b> u64)
-}
-</code></pre>
-
-
-
-<a name="0xc0deb00c_user_get_market_account_id"></a>
-
-## Function `get_market_account_id`
-
-Return market account ID with encoded market and custodian IDs.
-
-
-<a name="@Testing_29"></a>
-
-### Testing
-
-
-* <code>test_market_account_id_getters()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_market_account_id">get_market_account_id</a>(market_id: u64, custodian_id: u64): u128
-</code></pre>
-
-
-
-##### Implementation
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_market_account_id">get_market_account_id</a>(
-    market_id: u64,
-    custodian_id: u64
-): u128 {
-    ((market_id <b>as</b> u128) &lt;&lt; <a href="user.md#0xc0deb00c_user_SHIFT_MARKET_ID">SHIFT_MARKET_ID</a>) | (custodian_id <b>as</b> u128)
-}
-</code></pre>
-
-
-
 <a name="0xc0deb00c_user_get_market_account_market_info_custodian"></a>
 
 ## Function `get_market_account_market_info_custodian`
@@ -1501,7 +2899,7 @@ Restricted to custodian for given market account to prevent
 excessive public queries and thus transaction collisions.
 
 
-<a name="@Testing_30"></a>
+<a name="@Testing_48"></a>
 
 ### Testing
 
@@ -1549,7 +2947,7 @@ Restricted to signing user for given market account to prevent
 excessive public queries and thus transaction collisions.
 
 
-<a name="@Testing_31"></a>
+<a name="@Testing_49"></a>
 
 ### Testing
 
@@ -1584,147 +2982,6 @@ excessive public queries and thus transaction collisions.
 
 
 
-<a name="0xc0deb00c_user_get_market_id"></a>
-
-## Function `get_market_id`
-
-Return market ID encoded in market account ID.
-
-
-<a name="@Testing_32"></a>
-
-### Testing
-
-
-* <code>test_market_account_id_getters()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_market_id">get_market_id</a>(market_account_id: u128): u64
-</code></pre>
-
-
-
-##### Implementation
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_market_id">get_market_id</a>(
-    market_account_id: u128
-): u64 {
-    (market_account_id &gt;&gt; <a href="user.md#0xc0deb00c_user_SHIFT_MARKET_ID">SHIFT_MARKET_ID</a> <b>as</b> u64)
-}
-</code></pre>
-
-
-
-<a name="0xc0deb00c_user_get_NO_CUSTODIAN"></a>
-
-## Function `get_NO_CUSTODIAN`
-
-Public constant getter for <code><a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a></code>.
-
-
-<a name="@Testing_33"></a>
-
-### Testing
-
-
-* <code>test_get_NO_CUSTODIAN()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_NO_CUSTODIAN">get_NO_CUSTODIAN</a>(): u64
-</code></pre>
-
-
-
-##### Implementation
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_NO_CUSTODIAN">get_NO_CUSTODIAN</a>(): u64 {<a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a>}
-</code></pre>
-
-
-
-<a name="0xc0deb00c_user_has_market_account_by_market_account_id"></a>
-
-## Function `has_market_account_by_market_account_id`
-
-Return <code><b>true</b></code> if <code><a href="user.md#0xc0deb00c_user">user</a></code> has market account registered with
-given <code>market_account_id</code>.
-
-
-<a name="@Testing_34"></a>
-
-### Testing
-
-
-* <code>test_market_account_getters()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_has_market_account_by_market_account_id">has_market_account_by_market_account_id</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_account_id: u128): bool
-</code></pre>
-
-
-
-##### Implementation
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_has_market_account_by_market_account_id">has_market_account_by_market_account_id</a>(
-    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
-    market_account_id: u128
-): bool
-<b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
-    // Return <b>false</b> <b>if</b> <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> no <a href="market.md#0xc0deb00c_market">market</a> accounts resource.
-    <b>if</b> (!<b>exists</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>)) <b>return</b> <b>false</b>;
-    // Immutably borrow <a href="market.md#0xc0deb00c_market">market</a> accounts map.
-    <b>let</b> market_accounts_map =
-        &<b>borrow_global</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>).map;
-    // Return <b>if</b> map <b>has</b> entry for given <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> ID.
-    <a href="_contains">table::contains</a>(market_accounts_map, market_account_id)
-}
-</code></pre>
-
-
-
-<a name="0xc0deb00c_user_has_market_account_by_market_id"></a>
-
-## Function `has_market_account_by_market_id`
-
-Return <code><b>true</b></code> if <code><a href="user.md#0xc0deb00c_user">user</a></code> has at least one market account
-registered with given <code>market_id</code>.
-
-
-<a name="@Testing_35"></a>
-
-### Testing
-
-
-* <code>test_market_account_getters()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_has_market_account_by_market_id">has_market_account_by_market_id</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_id: u64): bool
-</code></pre>
-
-
-
-##### Implementation
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_has_market_account_by_market_id">has_market_account_by_market_id</a>(
-    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
-    market_id: u64
-): bool
-<b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
-    // Return <b>false</b> <b>if</b> <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> no <a href="market.md#0xc0deb00c_market">market</a> accounts resource.
-    <b>if</b> (!<b>exists</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>)) <b>return</b> <b>false</b>;
-    <b>let</b> custodians_map_ref = // Immutably borrow custodians map.
-        &<b>borrow_global</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>).custodians;
-    // Return <b>if</b> custodians map <b>has</b> entry for given <a href="market.md#0xc0deb00c_market">market</a> ID.
-    <a href="tablist.md#0xc0deb00c_tablist_contains">tablist::contains</a>(custodians_map_ref, market_id)
-}
-</code></pre>
-
-
-
 <a name="0xc0deb00c_user_withdraw_coins_custodian"></a>
 
 ## Function `withdraw_coins_custodian`
@@ -1733,7 +2990,7 @@ Wrapped call to <code><a href="user.md#0xc0deb00c_user_withdraw_coins">withdraw_
 authority of delegated custodian.
 
 
-<a name="@Testing_36"></a>
+<a name="@Testing_50"></a>
 
 ### Testing
 
@@ -1779,7 +3036,7 @@ Wrapped call to <code><a href="user.md#0xc0deb00c_user_withdraw_coins">withdraw_
 authority of signing user.
 
 
-<a name="@Testing_37"></a>
+<a name="@Testing_51"></a>
 
 ### Testing
 
@@ -1824,7 +3081,7 @@ Wrapped call to <code><a href="user.md#0xc0deb00c_user_withdraw_generic_asset">w
 authority of delegated custodian.
 
 
-<a name="@Testing_38"></a>
+<a name="@Testing_52"></a>
 
 ### Testing
 
@@ -1869,7 +3126,7 @@ Wrapped call to <code><a href="user.md#0xc0deb00c_user_withdraw_generic_asset">w
 authority of signing user.
 
 
-<a name="@Testing_39"></a>
+<a name="@Testing_53"></a>
 
 ### Testing
 
@@ -1913,7 +3170,7 @@ Wrapped call to <code><a href="user.md#0xc0deb00c_user_deposit_coins">deposit_co
 <code>aptos_framework::coin::CoinStore</code>.
 
 
-<a name="@Testing_40"></a>
+<a name="@Testing_54"></a>
 
 ### Testing
 
@@ -1950,6 +3207,91 @@ Wrapped call to <code><a href="user.md#0xc0deb00c_user_deposit_coins">deposit_co
 
 
 
+<a name="0xc0deb00c_user_init_market_event_handles_if_missing"></a>
+
+## Function `init_market_event_handles_if_missing`
+
+Initialize market event handles for a market account if missing.
+
+Since market event handles were implemented as part of a
+compatible upgrade policy, it is possible for a user to have a
+market account without associated market event handles, if they
+registered a market account before an on-chain upgrade.
+
+
+<a name="@Parameters_55"></a>
+
+### Parameters
+
+
+* <code><a href="user.md#0xc0deb00c_user">user</a></code>: User for market account.
+* <code>market_id</code>: Market ID for market account.
+* <code>custodian_id</code>: Custodian ID for market account.
+
+
+<a name="@Aborts_56"></a>
+
+### Aborts
+
+
+* <code><a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a></code>: No such specified market account.
+
+
+<a name="@Testing_57"></a>
+
+### Testing
+
+
+* <code>test_init_market_event_handles_if_missing_no_account()</code>
+* <code>test_register_market_accounts()</code>
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="user.md#0xc0deb00c_user_init_market_event_handles_if_missing">init_market_event_handles_if_missing</a>(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, custodian_id: u64)
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="user.md#0xc0deb00c_user_init_market_event_handles_if_missing">init_market_event_handles_if_missing</a>(
+    <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
+    market_id: u64,
+    custodian_id: u64
+) <b>acquires</b>
+    <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>,
+    <a href="user.md#0xc0deb00c_user_MarketEventHandles">MarketEventHandles</a>
+{
+    // Verify <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> specified <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
+    <b>let</b> user_address = address_of(<a href="user.md#0xc0deb00c_user">user</a>);
+    <b>assert</b>!(<a href="user.md#0xc0deb00c_user_has_market_account">has_market_account</a>(user_address, market_id, custodian_id),
+            <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a>);
+    // Create <a href="market.md#0xc0deb00c_market">market</a> <a href="">event</a> handles map <b>if</b> <a href="user.md#0xc0deb00c_user">user</a> doesn't have one,
+    // and fill <b>with</b> handles for <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> <b>as</b> needed.
+    <b>if</b> (!<b>exists</b>&lt;<a href="user.md#0xc0deb00c_user_MarketEventHandles">MarketEventHandles</a>&gt;(address_of(<a href="user.md#0xc0deb00c_user">user</a>)))
+        <b>move_to</b>(<a href="user.md#0xc0deb00c_user">user</a>, <a href="user.md#0xc0deb00c_user_MarketEventHandles">MarketEventHandles</a>{map: <a href="_new">table::new</a>()});
+    <b>let</b> market_event_handles_map_ref_mut =
+        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketEventHandles">MarketEventHandles</a>&gt;(user_address).map;
+    <b>let</b> market_account_id =
+        ((market_id <b>as</b> u128) &lt;&lt; <a href="user.md#0xc0deb00c_user_SHIFT_MARKET_ID">SHIFT_MARKET_ID</a>) | (custodian_id <b>as</b> u128);
+    <b>let</b> has_handles = <a href="_contains">table::contains</a>(
+        market_event_handles_map_ref_mut, market_account_id);
+    <b>if</b> (!has_handles) {
+        <b>let</b> handles = <a href="user.md#0xc0deb00c_user_MarketEventHandlesForMarketAccount">MarketEventHandlesForMarketAccount</a>{
+            cancel_order_events: <a href="_new_event_handle">account::new_event_handle</a>(<a href="user.md#0xc0deb00c_user">user</a>),
+            change_order_size_events: <a href="_new_event_handle">account::new_event_handle</a>(<a href="user.md#0xc0deb00c_user">user</a>),
+            fill_events: <a href="_new_event_handle">account::new_event_handle</a>(<a href="user.md#0xc0deb00c_user">user</a>),
+            place_limit_order_events: <a href="_new_event_handle">account::new_event_handle</a>(<a href="user.md#0xc0deb00c_user">user</a>),
+            place_market_order_events: <a href="_new_event_handle">account::new_event_handle</a>(<a href="user.md#0xc0deb00c_user">user</a>)
+        };
+        <a href="_add">table::add</a>(
+            market_event_handles_map_ref_mut, market_account_id, handles);
+    };
+}
+</code></pre>
+
+
+
 <a name="0xc0deb00c_user_register_market_account"></a>
 
 ## Function `register_market_account`
@@ -1960,7 +3302,7 @@ Verifies market ID and asset types via internal call to
 <code><a href="user.md#0xc0deb00c_user_register_market_account_account_entries">register_market_account_account_entries</a>()</code>.
 
 
-<a name="@Type_parameters_41"></a>
+<a name="@Type_parameters_58"></a>
 
 ### Type parameters
 
@@ -1971,7 +3313,7 @@ a generic asset, must be passed as <code><a href="registry.md#0xc0deb00c_registr
 * <code>QuoteType</code>: Quote type for indicated market.
 
 
-<a name="@Parameters_42"></a>
+<a name="@Parameters_59"></a>
 
 ### Parameters
 
@@ -1982,7 +3324,7 @@ a generic asset, must be passed as <code><a href="registry.md#0xc0deb00c_registr
 <code><a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a></code>.
 
 
-<a name="@Aborts_43"></a>
+<a name="@Aborts_60"></a>
 
 ### Aborts
 
@@ -1991,7 +3333,7 @@ a generic asset, must be passed as <code><a href="registry.md#0xc0deb00c_registr
 registered.
 
 
-<a name="@Testing_44"></a>
+<a name="@Testing_61"></a>
 
 ### Testing
 
@@ -2017,7 +3359,8 @@ registered.
     custodian_id: u64
 ) <b>acquires</b>
     <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
-    <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
+    <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>,
+    <a href="user.md#0xc0deb00c_user_MarketEventHandles">MarketEventHandles</a>
 {
     // If custodian ID indicated, <b>assert</b> it is registered.
     <b>if</b> (custodian_id != <a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a>) <b>assert</b>!(
@@ -2038,6 +3381,7 @@ registered.
     // (quote type for a verified <a href="market.md#0xc0deb00c_market">market</a> must be a <a href="">coin</a>).
     <a href="user.md#0xc0deb00c_user_register_market_account_collateral_entry">register_market_account_collateral_entry</a>&lt;QuoteType&gt;(
         <a href="user.md#0xc0deb00c_user">user</a>, market_account_id);
+    <a href="user.md#0xc0deb00c_user_init_market_event_handles_if_missing">init_market_event_handles_if_missing</a>(<a href="user.md#0xc0deb00c_user">user</a>, market_id, custodian_id);
 }
 </code></pre>
 
@@ -2050,7 +3394,7 @@ registered.
 Wrapped <code><a href="user.md#0xc0deb00c_user_register_market_account">register_market_account</a>()</code> call for generic base asset.
 
 
-<a name="@Testing_45"></a>
+<a name="@Testing_62"></a>
 
 ### Testing
 
@@ -2074,7 +3418,8 @@ Wrapped <code><a href="user.md#0xc0deb00c_user_register_market_account">register
     custodian_id: u64
 ) <b>acquires</b>
     <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
-    <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
+    <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>,
+    <a href="user.md#0xc0deb00c_user_MarketEventHandles">MarketEventHandles</a>
 {
     <a href="user.md#0xc0deb00c_user_register_market_account">register_market_account</a>&lt;GenericAsset, QuoteType&gt;(
         <a href="user.md#0xc0deb00c_user">user</a>, market_id, custodian_id);
@@ -2091,7 +3436,7 @@ Wrapped call to <code><a href="user.md#0xc0deb00c_user_withdraw_coins_user">with
 market account to user's <code>aptos_framework::coin::CoinStore</code>.
 
 
-<a name="@Testing_46"></a>
+<a name="@Testing_63"></a>
 
 ### Testing
 
@@ -2151,7 +3496,7 @@ malicious market order ID (portions of which essentially
 function as pointers into AVL queue state).
 
 
-<a name="@Parameters_47"></a>
+<a name="@Parameters_64"></a>
 
 ### Parameters
 
@@ -2166,9 +3511,15 @@ function as pointers into AVL queue state).
 * <code>market_order_id</code>: <code><a href="user.md#0xc0deb00c_user_NIL">NIL</a></code> if order cancellation originates from
 an eviction or a self match cancel, otherwise the market order
 ID encoded in the user's <code><a href="user.md#0xc0deb00c_user_Order">Order</a></code>.
+* <code>cancel_reason</code>: The reason for the cancel. Note that
+user-side open order size changes are processed via
+<code><a href="user.md#0xc0deb00c_user_change_order_size_internal">change_order_size_internal</a>()</code> as a cancellation followed by
+immediate re-placement, corresponding to the cancel reason
+<code><a href="user.md#0xc0deb00c_user_CANCEL_REASON_SIZE_CHANGE_INTERNAL">CANCEL_REASON_SIZE_CHANGE_INTERNAL</a></code>. When this is the case
+no cancel event is emitted.
 
 
-<a name="@Returns_48"></a>
+<a name="@Returns_65"></a>
 
 ### Returns
 
@@ -2176,7 +3527,7 @@ ID encoded in the user's <code><a href="user.md#0xc0deb00c_user_Order">Order</a>
 * <code>u128</code>: Market order ID for corresponding order.
 
 
-<a name="@Terminology_49"></a>
+<a name="@Terminology_66"></a>
 
 ### Terminology
 
@@ -2187,7 +3538,7 @@ from a trade if the cancelled order had been filled.
 away if the cancelled order had been filled.
 
 
-<a name="@Aborts_50"></a>
+<a name="@Aborts_67"></a>
 
 ### Aborts
 
@@ -2198,7 +3549,15 @@ operation and actual size before operation.
 user's open order, when market order ID not passed as <code><a href="user.md#0xc0deb00c_user_NIL">NIL</a></code>.
 
 
-<a name="@Assumptions_51"></a>
+<a name="@Emits_68"></a>
+
+### Emits
+
+
+* <code><a href="user.md#0xc0deb00c_user_CancelOrderEvent">CancelOrderEvent</a></code>: Information about a cancelled order.
+
+
+<a name="@Assumptions_69"></a>
 
 ### Assumptions
 
@@ -2219,7 +3578,7 @@ or a self match cancel.
 order if market order ID is not <code><a href="user.md#0xc0deb00c_user_NIL">NIL</a></code>.
 
 
-<a name="@Expected_value_testing_52"></a>
+<a name="@Expected_value_testing_70"></a>
 
 ### Expected value testing
 
@@ -2229,7 +3588,7 @@ order if market order ID is not <code><a href="user.md#0xc0deb00c_user_NIL">NIL<
 * <code>test_place_cancel_order_stack()</code>
 
 
-<a name="@Failure_testing_53"></a>
+<a name="@Failure_testing_71"></a>
 
 ### Failure testing
 
@@ -2238,7 +3597,7 @@ order if market order ID is not <code><a href="user.md#0xc0deb00c_user_NIL">NIL<
 * <code>test_cancel_order_internal_start_size_mismatch()</code>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_cancel_order_internal">cancel_order_internal</a>(user_address: <b>address</b>, market_id: u64, custodian_id: u64, side: bool, start_size: u64, price: u64, order_access_key: u64, market_order_id: u128): u128
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_cancel_order_internal">cancel_order_internal</a>(user_address: <b>address</b>, market_id: u64, custodian_id: u64, side: bool, start_size: u64, price: u64, order_access_key: u64, market_order_id: u128, reason: u8): u128
 </code></pre>
 
 
@@ -2254,9 +3613,13 @@ order if market order ID is not <code><a href="user.md#0xc0deb00c_user_NIL">NIL<
     start_size: u64,
     price: u64,
     order_access_key: u64,
-    market_order_id: u128
+    market_order_id: u128,
+    reason: u8
 ): u128
-<b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+<b>acquires</b>
+    <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>,
+    <a href="user.md#0xc0deb00c_user_MarketEventHandles">MarketEventHandles</a>
+{
     // Mutably borrow <a href="market.md#0xc0deb00c_market">market</a> accounts map.
     <b>let</b> market_accounts_map_ref_mut =
         &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(user_address).map;
@@ -2310,6 +3673,24 @@ order if market order ID is not <code><a href="user.md#0xc0deb00c_user_NIL">NIL<
     <b>let</b> ceiling_decrement_amount = size * size_multiplier_ceiling;
     *in_ceiling_ref_mut = // Decrement ceiling field.
         *in_ceiling_ref_mut - ceiling_decrement_amount;
+    // If order is actually being cancelled and <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> <a href="market.md#0xc0deb00c_market">market</a>
+    // <a href="">event</a> handles for the <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>, emit a cancel <a href="">event</a>.
+    <b>let</b> changing_size = reason != <a href="user.md#0xc0deb00c_user_CANCEL_REASON_SIZE_CHANGE_INTERNAL">CANCEL_REASON_SIZE_CHANGE_INTERNAL</a>;
+    <b>if</b> (!changing_size && <b>exists</b>&lt;<a href="user.md#0xc0deb00c_user_MarketEventHandles">MarketEventHandles</a>&gt;(user_address)) {
+        <b>let</b> market_event_handles_map_ref_mut =
+            &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketEventHandles">MarketEventHandles</a>&gt;(user_address).map;
+        <b>let</b> has_handles_for_market_account = <a href="_contains">table::contains</a>(
+            market_event_handles_map_ref_mut, market_account_id);
+        <b>if</b> (has_handles_for_market_account) {
+            <b>let</b> handles_ref_mut = <a href="_borrow_mut">table::borrow_mut</a>(
+                market_event_handles_map_ref_mut, market_account_id);
+            <a href="_emit_event">event::emit_event</a>(
+                &<b>mut</b> handles_ref_mut.cancel_order_events,
+                <a href="user.md#0xc0deb00c_user_CancelOrderEvent">CancelOrderEvent</a>{
+                    market_id, order_id: market_order_id,
+                    <a href="user.md#0xc0deb00c_user">user</a>: user_address, custodian_id, reason});
+        }
+    };
     market_order_id // Return <a href="market.md#0xc0deb00c_market">market</a> order ID.
 }
 </code></pre>
@@ -2323,7 +3704,7 @@ order if market order ID is not <code><a href="user.md#0xc0deb00c_user_NIL">NIL<
 Change the size of a user's open order on given side.
 
 
-<a name="@Parameters_54"></a>
+<a name="@Parameters_72"></a>
 
 ### Parameters
 
@@ -2340,7 +3721,7 @@ to <code><a href="user.md#0xc0deb00c_user_place_order_internal">place_order_inte
 * <code>market_order_id</code>: Market order ID for order book lookup.
 
 
-<a name="@Aborts_55"></a>
+<a name="@Aborts_73"></a>
 
 ### Aborts
 
@@ -2348,7 +3729,16 @@ to <code><a href="user.md#0xc0deb00c_user_place_order_internal">place_order_inte
 * <code><a href="user.md#0xc0deb00c_user_E_CHANGE_ORDER_NO_CHANGE">E_CHANGE_ORDER_NO_CHANGE</a></code>: No change in order size.
 
 
-<a name="@Assumptions_56"></a>
+<a name="@Emits_74"></a>
+
+### Emits
+
+
+* <code><a href="user.md#0xc0deb00c_user_ChangeOrderSizeEvent">ChangeOrderSizeEvent</a></code>: Information about an order that had a
+manual size change.
+
+
+<a name="@Assumptions_75"></a>
 
 ### Assumptions
 
@@ -2361,7 +3751,7 @@ order ID, which is checked in <code><a href="user.md#0xc0deb00c_user_cancel_orde
 order.
 
 
-<a name="@Testing_57"></a>
+<a name="@Testing_76"></a>
 
 ### Testing
 
@@ -2389,7 +3779,10 @@ order.
     price: u64,
     order_access_key: u64,
     market_order_id: u128
-) <b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+) <b>acquires</b>
+    <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>,
+    <a href="user.md#0xc0deb00c_user_MarketEventHandles">MarketEventHandles</a>
+{
     // Mutably borrow <a href="market.md#0xc0deb00c_market">market</a> accounts map.
     <b>let</b> market_accounts_map_ref_mut =
         &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(user_address).map;
@@ -2406,10 +3799,110 @@ order.
     <b>assert</b>!(order_ref.size != new_size, <a href="user.md#0xc0deb00c_user_E_CHANGE_ORDER_NO_CHANGE">E_CHANGE_ORDER_NO_CHANGE</a>);
     <a href="user.md#0xc0deb00c_user_cancel_order_internal">cancel_order_internal</a>( // Cancel order <b>with</b> size <b>to</b> be changed.
         user_address, market_id, custodian_id, side, start_size, price,
-        order_access_key, market_order_id);
+        order_access_key, market_order_id,
+        <a href="user.md#0xc0deb00c_user_CANCEL_REASON_SIZE_CHANGE_INTERNAL">CANCEL_REASON_SIZE_CHANGE_INTERNAL</a>);
     <a href="user.md#0xc0deb00c_user_place_order_internal">place_order_internal</a>( // Place order <b>with</b> new size.
         user_address, market_id, custodian_id, side, new_size, price,
         market_order_id, order_access_key);
+    // If <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> <a href="market.md#0xc0deb00c_market">market</a> <a href="">event</a> handles for the <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>, emit
+    // a change order size <a href="">event</a>.
+    <b>if</b> (<b>exists</b>&lt;<a href="user.md#0xc0deb00c_user_MarketEventHandles">MarketEventHandles</a>&gt;(user_address)) {
+        <b>let</b> market_event_handles_map_ref_mut =
+            &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketEventHandles">MarketEventHandles</a>&gt;(user_address).map;
+        <b>let</b> has_handles_for_market_account = <a href="_contains">table::contains</a>(
+            market_event_handles_map_ref_mut, market_account_id);
+        <b>if</b> (has_handles_for_market_account) {
+            <b>let</b> handles_ref_mut = <a href="_borrow_mut">table::borrow_mut</a>(
+                market_event_handles_map_ref_mut, market_account_id);
+            <a href="_emit_event">event::emit_event</a>(
+                &<b>mut</b> handles_ref_mut.change_order_size_events,
+                <a href="user.md#0xc0deb00c_user_ChangeOrderSizeEvent">ChangeOrderSizeEvent</a>{
+                    market_id, order_id: market_order_id,
+                    <a href="user.md#0xc0deb00c_user">user</a>: user_address, custodian_id, side, new_size});
+        }
+    }
+}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_create_cancel_order_event_internal"></a>
+
+## Function `create_cancel_order_event_internal`
+
+Return a <code><a href="user.md#0xc0deb00c_user_CancelOrderEvent">CancelOrderEvent</a></code> with the indicated fields.
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_create_cancel_order_event_internal">create_cancel_order_event_internal</a>(market_id: u64, order_id: u128, <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, custodian_id: u64, reason: u8): <a href="user.md#0xc0deb00c_user_CancelOrderEvent">user::CancelOrderEvent</a>
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_create_cancel_order_event_internal">create_cancel_order_event_internal</a>(
+    market_id: u64,
+    order_id: u128,
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    custodian_id: u64,
+    reason: u8
+): <a href="user.md#0xc0deb00c_user_CancelOrderEvent">CancelOrderEvent</a> {
+    <a href="user.md#0xc0deb00c_user_CancelOrderEvent">CancelOrderEvent</a>{
+        market_id,
+        order_id,
+        <a href="user.md#0xc0deb00c_user">user</a>,
+        custodian_id,
+        reason
+    }
+}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_create_fill_event_internal"></a>
+
+## Function `create_fill_event_internal`
+
+Return a <code><a href="user.md#0xc0deb00c_user_FillEvent">FillEvent</a></code> with the indicated fields.
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_create_fill_event_internal">create_fill_event_internal</a>(market_id: u64, size: u64, price: u64, maker_side: bool, maker: <b>address</b>, maker_custodian_id: u64, maker_order_id: u128, taker: <b>address</b>, taker_custodian_id: u64, taker_order_id: u128, taker_quote_fees_paid: u64, sequence_number_for_trade: u64): <a href="user.md#0xc0deb00c_user_FillEvent">user::FillEvent</a>
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_create_fill_event_internal">create_fill_event_internal</a>(
+    market_id: u64,
+    size: u64,
+    price: u64,
+    maker_side: bool,
+    maker: <b>address</b>,
+    maker_custodian_id: u64,
+    maker_order_id: u128,
+    taker: <b>address</b>,
+    taker_custodian_id: u64,
+    taker_order_id: u128,
+    taker_quote_fees_paid: u64,
+    sequence_number_for_trade: u64
+): <a href="user.md#0xc0deb00c_user_FillEvent">FillEvent</a> {
+    <a href="user.md#0xc0deb00c_user_FillEvent">FillEvent</a>{
+        market_id,
+        size,
+        price,
+        maker_side,
+        maker,
+        maker_custodian_id,
+        maker_order_id,
+        taker,
+        taker_custodian_id,
+        taker_order_id,
+        taker_quote_fees_paid,
+        sequence_number_for_trade
+    }
 }
 </code></pre>
 
@@ -2425,7 +3918,7 @@ Should only be called by the matching engine when matching from
 a user's market account.
 
 
-<a name="@Type_parameters_58"></a>
+<a name="@Type_parameters_77"></a>
 
 ### Type parameters
 
@@ -2434,7 +3927,7 @@ a user's market account.
 * <code>QuoteType</code>: Quote type for market.
 
 
-<a name="@Parameters_59"></a>
+<a name="@Parameters_78"></a>
 
 ### Parameters
 
@@ -2448,7 +3941,7 @@ a user's market account.
 * <code>underwriter_id</code>: Underwriter ID for market.
 
 
-<a name="@Testing_60"></a>
+<a name="@Testing_79"></a>
 
 ### Testing
 
@@ -2489,6 +3982,253 @@ a user's market account.
 
 
 
+<a name="0xc0deb00c_user_emit_limit_order_events_internal"></a>
+
+## Function `emit_limit_order_events_internal`
+
+Emit limit order events to a user's market event handles.
+
+
+<a name="@Parameters_80"></a>
+
+### Parameters
+
+
+* <code>market_id</code>: <code><a href="user.md#0xc0deb00c_user_PlaceLimitOrderEvent">PlaceLimitOrderEvent</a>.market_id</code>.
+* <code><a href="user.md#0xc0deb00c_user">user</a></code>: <code><a href="user.md#0xc0deb00c_user_PlaceLimitOrderEvent">PlaceLimitOrderEvent</a>.<a href="user.md#0xc0deb00c_user">user</a></code>.
+* <code>custodian_id</code>: <code><a href="user.md#0xc0deb00c_user_PlaceLimitOrderEvent">PlaceLimitOrderEvent</a>.custodian_id</code>.
+* <code>integrator</code>: <code><a href="user.md#0xc0deb00c_user_PlaceLimitOrderEvent">PlaceLimitOrderEvent</a>.integrator</code>.
+* <code>side</code>: <code><a href="user.md#0xc0deb00c_user_PlaceLimitOrderEvent">PlaceLimitOrderEvent</a>.side</code>.
+* <code>size</code>: <code><a href="user.md#0xc0deb00c_user_PlaceLimitOrderEvent">PlaceLimitOrderEvent</a>.size</code>.
+* <code>price</code>: <code><a href="user.md#0xc0deb00c_user_PlaceLimitOrderEvent">PlaceLimitOrderEvent</a>.price</code>.
+* <code>restriction</code>: <code><a href="user.md#0xc0deb00c_user_PlaceLimitOrderEvent">PlaceLimitOrderEvent</a>.restriction</code>.
+* <code>self_match_behavior</code>:
+<code><a href="user.md#0xc0deb00c_user_PlaceLimitOrderEvent">PlaceLimitOrderEvent</a>.self_match_behavior</code>.
+* <code>remaining_size</code>: <code><a href="user.md#0xc0deb00c_user_PlaceLimitOrderEvent">PlaceLimitOrderEvent</a>.remaining_size</code>.
+* <code>order_id</code>: <code><a href="user.md#0xc0deb00c_user_PlaceLimitOrderEvent">PlaceLimitOrderEvent</a>.order_id</code>.
+* <code>fill_event_queue_ref</code>: Immutable reference to a vector of
+<code><a href="user.md#0xc0deb00c_user_FillEvent">FillEvent</a></code>s to emit as part of a limit order that filled
+across the spread, may be empty.
+* <code>cancel_reason_option_ref</code>: Immutable reference to an optional
+cancel reason associated with a <code><a href="user.md#0xc0deb00c_user_CancelOrderEvent">CancelOrderEvent</a></code>.
+
+
+<a name="@Emits_81"></a>
+
+### Emits
+
+
+* <code><a href="user.md#0xc0deb00c_user_PlaceLimitOrderEvent">PlaceLimitOrderEvent</a></code>: Information about the limit order that
+was placed.
+* <code><a href="user.md#0xc0deb00c_user_FillEvent">FillEvent</a></code>(s): Information about fill(s) across the spread as
+a taker.
+* <code><a href="user.md#0xc0deb00c_user_CancelOrderEvent">CancelOrderEvent</a></code>: Optionally, information about why the
+limit order may have had to be cancelled during the
+transaction in which it was placed.
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_emit_limit_order_events_internal">emit_limit_order_events_internal</a>(market_id: u64, <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, custodian_id: u64, integrator: <b>address</b>, side: bool, size: u64, price: u64, restriction: u8, self_match_behavior: u8, remaining_size: u64, order_id: u128, fill_event_queue_ref: &<a href="">vector</a>&lt;<a href="user.md#0xc0deb00c_user_FillEvent">user::FillEvent</a>&gt;, cancel_reason_option_ref: &<a href="_Option">option::Option</a>&lt;u8&gt;)
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_emit_limit_order_events_internal">emit_limit_order_events_internal</a>(
+    market_id: u64,
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    custodian_id: u64,
+    integrator: <b>address</b>,
+    side: bool,
+    size: u64,
+    price: u64,
+    restriction: u8,
+    self_match_behavior: u8,
+    remaining_size: u64,
+    order_id: u128,
+    fill_event_queue_ref: &<a href="">vector</a>&lt;<a href="user.md#0xc0deb00c_user_FillEvent">FillEvent</a>&gt;,
+    cancel_reason_option_ref: &Option&lt;u8&gt;
+) <b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketEventHandles">MarketEventHandles</a> {
+    // Only emit events <b>to</b> handles for the <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> that
+    // placed the order <b>if</b> they have been initialized.
+    <b>if</b> (<b>exists</b>&lt;<a href="user.md#0xc0deb00c_user_MarketEventHandles">MarketEventHandles</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>)) {
+        <b>let</b> market_event_handles_map_ref_mut =
+            &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketEventHandles">MarketEventHandles</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>).map;
+        <b>let</b> market_account_id = (((market_id <b>as</b> u128) &lt;&lt; <a href="user.md#0xc0deb00c_user_SHIFT_MARKET_ID">SHIFT_MARKET_ID</a>) |
+                                 (custodian_id <b>as</b> u128));
+        <b>let</b> has_handles_for_market_account = <a href="_contains">table::contains</a>(
+            market_event_handles_map_ref_mut, market_account_id);
+        <b>if</b> (has_handles_for_market_account) {
+            <b>let</b> handles_ref_mut = <a href="_borrow_mut">table::borrow_mut</a>(
+                market_event_handles_map_ref_mut, market_account_id);
+            <a href="_emit_event">event::emit_event</a>(
+                &<b>mut</b> handles_ref_mut.place_limit_order_events,
+                <a href="user.md#0xc0deb00c_user_PlaceLimitOrderEvent">PlaceLimitOrderEvent</a>{
+                    market_id, <a href="user.md#0xc0deb00c_user">user</a>, custodian_id, integrator, side, size,
+                    price, restriction, self_match_behavior,
+                    remaining_size, order_id});
+            // Loop over fill events, substituting order ID in case
+            // order posted after fill <a href="">event</a> creation. Looping here
+            // minimizes borrows from the <a href="user.md#0xc0deb00c_user">user</a>'s <a href="">account</a>, but will
+            // require looping again later <b>to</b> emit maker fill events
+            // because the borrow checker prohibits simultaneous
+            // borrowing of the same resource from two addresses.
+            <a href="_for_each_ref">vector::for_each_ref</a>(fill_event_queue_ref, |event_ref| {
+                <b>let</b> <a href="">event</a>: <a href="user.md#0xc0deb00c_user_FillEvent">FillEvent</a> = *event_ref;
+                <a href="">event</a>.taker_order_id = order_id;
+                <a href="_emit_event">event::emit_event</a>(&<b>mut</b> handles_ref_mut.fill_events, <a href="">event</a>);
+            });
+            <b>if</b> (<a href="_is_some">option::is_some</a>(cancel_reason_option_ref)) {
+                <b>let</b> <a href="">event</a> = <a href="user.md#0xc0deb00c_user_CancelOrderEvent">CancelOrderEvent</a>{
+                    market_id, order_id, <a href="user.md#0xc0deb00c_user">user</a>, custodian_id,
+                    reason: *<a href="_borrow">option::borrow</a>(cancel_reason_option_ref)};
+                <a href="_emit_event">event::emit_event</a>(
+                    &<b>mut</b> handles_ref_mut.cancel_order_events, <a href="">event</a>);
+            };
+        };
+    };
+    // Emit fill events for all makers, similarly substituting
+    // order ID in case order posted after fill <a href="">event</a> creation.
+    <a href="_for_each_ref">vector::for_each_ref</a>(fill_event_queue_ref, |event_ref| {
+        <b>let</b> <a href="">event</a>: <a href="user.md#0xc0deb00c_user_FillEvent">FillEvent</a> = *event_ref;
+        <a href="">event</a>.taker_order_id = order_id;
+        <a href="user.md#0xc0deb00c_user_emit_maker_fill_event">emit_maker_fill_event</a>(&<a href="">event</a>);
+    });
+}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_emit_market_order_events_internal"></a>
+
+## Function `emit_market_order_events_internal`
+
+Emit market order events to a user's market event handles.
+
+
+<a name="@Parameters_82"></a>
+
+### Parameters
+
+
+* <code>market_id</code>: <code><a href="user.md#0xc0deb00c_user_PlaceMarketOrderEvent">PlaceMarketOrderEvent</a>.market_id</code>.
+* <code><a href="user.md#0xc0deb00c_user">user</a></code>: <code><a href="user.md#0xc0deb00c_user_PlaceMarketOrderEvent">PlaceMarketOrderEvent</a>.<a href="user.md#0xc0deb00c_user">user</a></code>.
+* <code>custodian_id</code>: <code><a href="user.md#0xc0deb00c_user_PlaceMarketOrderEvent">PlaceMarketOrderEvent</a>.custodian_id</code>.
+* <code>integrator</code>: <code><a href="user.md#0xc0deb00c_user_PlaceMarketOrderEvent">PlaceMarketOrderEvent</a>.integrator</code>.
+* <code>direction</code>: <code><a href="user.md#0xc0deb00c_user_PlaceMarketOrderEvent">PlaceMarketOrderEvent</a>.direction</code>.
+* <code>size</code>: <code><a href="user.md#0xc0deb00c_user_PlaceMarketOrderEvent">PlaceMarketOrderEvent</a>.size</code>.
+* <code>self_match_behavior</code>:
+<code><a href="user.md#0xc0deb00c_user_PlaceMarketOrderEvent">PlaceMarketOrderEvent</a>.self_match_behavior</code>.
+* <code>order_id</code>: <code><a href="user.md#0xc0deb00c_user_PlaceMarketOrderEvent">PlaceMarketOrderEvent</a>.order_id</code>.
+* <code>fill_event_queue_ref</code>: Immutable reference to a vector of
+<code><a href="user.md#0xc0deb00c_user_FillEvent">FillEvent</a></code>s to emit, may be empty.
+* <code>cancel_reason_option_ref</code>: Immutable reference to an optional
+cancel reason associated with a <code><a href="user.md#0xc0deb00c_user_CancelOrderEvent">CancelOrderEvent</a></code>.
+
+
+<a name="@Emits_83"></a>
+
+### Emits
+
+
+* <code><a href="user.md#0xc0deb00c_user_PlaceMarketOrderEvent">PlaceMarketOrderEvent</a></code>: Information about the market order
+that was placed.
+* <code><a href="user.md#0xc0deb00c_user_FillEvent">FillEvent</a></code>(s): Information about fill(s).
+* <code><a href="user.md#0xc0deb00c_user_CancelOrderEvent">CancelOrderEvent</a></code>: Optionally, information about why the
+market order was cancelled without completely filling.
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_emit_market_order_events_internal">emit_market_order_events_internal</a>(market_id: u64, <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, custodian_id: u64, integrator: <b>address</b>, direction: bool, size: u64, self_match_behavior: u8, order_id: u128, fill_event_queue_ref: &<a href="">vector</a>&lt;<a href="user.md#0xc0deb00c_user_FillEvent">user::FillEvent</a>&gt;, cancel_reason_option_ref: &<a href="_Option">option::Option</a>&lt;u8&gt;)
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_emit_market_order_events_internal">emit_market_order_events_internal</a>(
+    market_id: u64,
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    custodian_id: u64,
+    integrator: <b>address</b>,
+    direction: bool,
+    size: u64,
+    self_match_behavior: u8,
+    order_id: u128,
+    fill_event_queue_ref: &<a href="">vector</a>&lt;<a href="user.md#0xc0deb00c_user_FillEvent">FillEvent</a>&gt;,
+    cancel_reason_option_ref: &Option&lt;u8&gt;
+) <b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketEventHandles">MarketEventHandles</a> {
+    // Only emit events <b>to</b> handles for the <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> that
+    // placed the order <b>if</b> they have been initialized.
+    <b>if</b> (<b>exists</b>&lt;<a href="user.md#0xc0deb00c_user_MarketEventHandles">MarketEventHandles</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>)) {
+        <b>let</b> market_event_handles_map_ref_mut =
+            &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketEventHandles">MarketEventHandles</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>).map;
+        <b>let</b> market_account_id = (((market_id <b>as</b> u128) &lt;&lt; <a href="user.md#0xc0deb00c_user_SHIFT_MARKET_ID">SHIFT_MARKET_ID</a>) |
+                                 (custodian_id <b>as</b> u128));
+        <b>let</b> has_handles_for_market_account = <a href="_contains">table::contains</a>(
+            market_event_handles_map_ref_mut, market_account_id);
+        <b>if</b> (has_handles_for_market_account) {
+            <b>let</b> handles_ref_mut = <a href="_borrow_mut">table::borrow_mut</a>(
+                market_event_handles_map_ref_mut, market_account_id);
+            <a href="_emit_event">event::emit_event</a>(
+                &<b>mut</b> handles_ref_mut.place_market_order_events,
+                <a href="user.md#0xc0deb00c_user_PlaceMarketOrderEvent">PlaceMarketOrderEvent</a>{
+                    market_id, <a href="user.md#0xc0deb00c_user">user</a>, custodian_id, integrator, direction,
+                    size, self_match_behavior, order_id});
+            // Loop over fill events. Looping here minimizes borrows
+            // from the <a href="user.md#0xc0deb00c_user">user</a>'s <a href="">account</a>, but will require looping
+            // again later <b>to</b> emit maker fill events because the
+            // borrow checker prohibits simultaneous borrowing of
+            // the same resource from two addresses.
+            <a href="_for_each_ref">vector::for_each_ref</a>(fill_event_queue_ref, |event_ref| {
+                <a href="_emit_event">event::emit_event</a>(
+                    &<b>mut</b> handles_ref_mut.fill_events, *event_ref);
+            });
+            <b>if</b> (<a href="_is_some">option::is_some</a>(cancel_reason_option_ref)) {
+                <b>let</b> <a href="">event</a> = <a href="user.md#0xc0deb00c_user_CancelOrderEvent">CancelOrderEvent</a>{
+                    market_id, order_id, <a href="user.md#0xc0deb00c_user">user</a>, custodian_id,
+                    reason: *<a href="_borrow">option::borrow</a>(cancel_reason_option_ref)};
+                <a href="_emit_event">event::emit_event</a>(
+                    &<b>mut</b> handles_ref_mut.cancel_order_events, <a href="">event</a>);
+            };
+        };
+    };
+    // Emit fill events for all makers.
+    <a href="_for_each_ref">vector::for_each_ref</a>(fill_event_queue_ref, |event_ref| {
+        <a href="user.md#0xc0deb00c_user_emit_maker_fill_event">emit_maker_fill_event</a>(event_ref);
+    });
+}
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_emit_swap_maker_fill_events_internal"></a>
+
+## Function `emit_swap_maker_fill_events_internal`
+
+Emit a <code><a href="user.md#0xc0deb00c_user_FillEvent">FillEvent</a></code> for each maker associated with a swap.
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_emit_swap_maker_fill_events_internal">emit_swap_maker_fill_events_internal</a>(fill_event_queue_ref: &<a href="">vector</a>&lt;<a href="user.md#0xc0deb00c_user_FillEvent">user::FillEvent</a>&gt;)
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_emit_swap_maker_fill_events_internal">emit_swap_maker_fill_events_internal</a>(
+    fill_event_queue_ref: &<a href="">vector</a>&lt;<a href="user.md#0xc0deb00c_user_FillEvent">FillEvent</a>&gt;
+) <b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketEventHandles">MarketEventHandles</a> {
+    <a href="_for_each_ref">vector::for_each_ref</a>(fill_event_queue_ref, |event_ref| {
+        <a href="user.md#0xc0deb00c_user_emit_maker_fill_event">emit_maker_fill_event</a>(event_ref);
+    });
+}
+</code></pre>
+
+
+
 <a name="0xc0deb00c_user_fill_order_internal"></a>
 
 ## Function `fill_order_internal`
@@ -2508,7 +4248,7 @@ order as indicated with sufficient assets to fill it. Hence no
 error checking.
 
 
-<a name="@Type_parameters_61"></a>
+<a name="@Type_parameters_84"></a>
 
 ### Type parameters
 
@@ -2517,7 +4257,7 @@ error checking.
 * <code>QuoteType</code>: Quote type for indicated market.
 
 
-<a name="@Parameters_62"></a>
+<a name="@Parameters_85"></a>
 
 ### Parameters
 
@@ -2538,7 +4278,7 @@ matching engine.
 * <code>quote_to_route</code>: Amount of quote asset filled.
 
 
-<a name="@Returns_63"></a>
+<a name="@Returns_86"></a>
 
 ### Returns
 
@@ -2550,7 +4290,7 @@ matching engine.
 * <code>u128</code>: Market order ID just filled against.
 
 
-<a name="@Aborts_64"></a>
+<a name="@Aborts_87"></a>
 
 ### Aborts
 
@@ -2559,7 +4299,7 @@ matching engine.
 operation and actual size before operation.
 
 
-<a name="@Assumptions_65"></a>
+<a name="@Assumptions_88"></a>
 
 ### Assumptions
 
@@ -2567,7 +4307,7 @@ operation and actual size before operation.
 * Only called by the matching engine as described above.
 
 
-<a name="@Testing_66"></a>
+<a name="@Testing_89"></a>
 
 ### Testing
 
@@ -2715,7 +4455,7 @@ operation and actual size before operation.
 Return asset counts for specified market account.
 
 
-<a name="@Parameters_67"></a>
+<a name="@Parameters_90"></a>
 
 ### Parameters
 
@@ -2725,7 +4465,7 @@ Return asset counts for specified market account.
 * <code>custodian_id</code>: Custodian ID for market account.
 
 
-<a name="@Returns_68"></a>
+<a name="@Returns_91"></a>
 
 ### Returns
 
@@ -2738,7 +4478,7 @@ Return asset counts for specified market account.
 * <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>.quote_ceiling</code>
 
 
-<a name="@Aborts_69"></a>
+<a name="@Aborts_92"></a>
 
 ### Aborts
 
@@ -2747,7 +4487,7 @@ Return asset counts for specified market account.
 * <code><a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a></code>: No market account resource found.
 
 
-<a name="@Testing_70"></a>
+<a name="@Testing_93"></a>
 
 ### Testing
 
@@ -2807,7 +4547,7 @@ Return asset counts for specified market account.
 Return all active market order IDs for given market account.
 
 
-<a name="@Parameters_71"></a>
+<a name="@Parameters_94"></a>
 
 ### Parameters
 
@@ -2818,7 +4558,7 @@ Return all active market order IDs for given market account.
 * <code>side</code>: <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code> or <code><a href="user.md#0xc0deb00c_user_BID">BID</a></code>, the side on which to check.
 
 
-<a name="@Returns_72"></a>
+<a name="@Returns_95"></a>
 
 ### Returns
 
@@ -2827,7 +4567,7 @@ Return all active market order IDs for given market account.
 given market account and side, empty if none.
 
 
-<a name="@Aborts_73"></a>
+<a name="@Aborts_96"></a>
 
 ### Aborts
 
@@ -2836,7 +4576,7 @@ given market account and side, empty if none.
 * <code><a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a></code>: No market account resource found.
 
 
-<a name="@Testing_74"></a>
+<a name="@Testing_97"></a>
 
 ### Testing
 
@@ -2905,7 +4645,7 @@ order access key to be allocated. Otherwise is order access key
 at top of inactive order stack.
 
 
-<a name="@Parameters_75"></a>
+<a name="@Parameters_98"></a>
 
 ### Parameters
 
@@ -2917,7 +4657,7 @@ at top of inactive order stack.
 placed.
 
 
-<a name="@Returns_76"></a>
+<a name="@Returns_99"></a>
 
 ### Returns
 
@@ -2925,7 +4665,7 @@ placed.
 * <code>u64</code>: Order access key of next order to be placed.
 
 
-<a name="@Aborts_77"></a>
+<a name="@Aborts_100"></a>
 
 ### Aborts
 
@@ -2934,7 +4674,7 @@ placed.
 * <code><a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a></code>: No market account resource found.
 
 
-<a name="@Testing_78"></a>
+<a name="@Testing_101"></a>
 
 ### Testing
 
@@ -2986,6 +4726,67 @@ placed.
 
 
 
+<a name="0xc0deb00c_user_get_open_order_id_internal"></a>
+
+## Function `get_open_order_id_internal`
+
+Return optional market order ID corresponding to open order for
+<code><a href="user.md#0xc0deb00c_user">user</a></code>, <code>market_id</code>, <code>custodian_id</code>, <code>side</code>, and
+<code>order_access_key</code>, if one exists.
+
+Restricted to public friend to prevent runtime user state
+contention.
+
+
+<a name="@Testing_102"></a>
+
+### Testing
+
+
+* <code>test_market_account_getters()</code>
+* <code>test_change_order_size_internal_ask()</code>
+* <code>test_change_order_size_internal_bid()</code>
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_get_open_order_id_internal">get_open_order_id_internal</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_id: u64, custodian_id: u64, side: bool, order_access_key: u64): <a href="_Option">option::Option</a>&lt;u128&gt;
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_get_open_order_id_internal">get_open_order_id_internal</a>(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    market_id: u64,
+    custodian_id: u64,
+    side: bool,
+    order_access_key: u64
+): Option&lt;u128&gt;
+<b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+    // Get <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> ID.
+    <b>let</b> market_account_id = <a href="user.md#0xc0deb00c_user_get_market_account_id">get_market_account_id</a>(market_id, custodian_id);
+    // Return empty <a href="">option</a> <b>if</b> no corresponding <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
+    <b>if</b> (!<a href="user.md#0xc0deb00c_user_has_market_account_by_market_account_id">has_market_account_by_market_account_id</a>(<a href="user.md#0xc0deb00c_user">user</a>, market_account_id))
+        <b>return</b> <a href="_none">option::none</a>();
+    // Immutably borrow <a href="market.md#0xc0deb00c_market">market</a> accounts map.
+    <b>let</b> market_accounts_map_ref = &<b>borrow_global</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>).map;
+    // Immutably borrow <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
+    <b>let</b> market_account_ref = <a href="_borrow">table::borrow</a>(
+        market_accounts_map_ref, market_account_id);
+    // Immutably borrow open orders for given side.
+    <b>let</b> open_orders_ref = <b>if</b> (side == <a href="user.md#0xc0deb00c_user_ASK">ASK</a>) &market_account_ref.asks <b>else</b>
+        &market_account_ref.bids;
+    // Return empty <a href="">option</a> <b>if</b> no open order <b>with</b> given access key.
+    <b>if</b> (!<a href="tablist.md#0xc0deb00c_tablist_contains">tablist::contains</a>(open_orders_ref, order_access_key))
+        <b>return</b> <a href="_none">option::none</a>();
+    <a href="_some">option::some</a>( // Return <a href="">option</a>-packed <a href="market.md#0xc0deb00c_market">market</a> order ID.
+        <a href="tablist.md#0xc0deb00c_tablist_borrow">tablist::borrow</a>(open_orders_ref, order_access_key).market_order_id)
+}
+</code></pre>
+
+
+
 <a name="0xc0deb00c_user_place_order_internal"></a>
 
 ## Function `place_order_internal`
@@ -3007,7 +4808,7 @@ required. Once an order book entry has been created, a market
 order ID will then be made available.
 
 
-<a name="@Parameters_79"></a>
+<a name="@Parameters_103"></a>
 
 ### Parameters
 
@@ -3023,7 +4824,7 @@ order ID will then be made available.
 assigned to order.
 
 
-<a name="@Terminology_80"></a>
+<a name="@Terminology_104"></a>
 
 ### Terminology
 
@@ -3032,7 +4833,7 @@ assigned to order.
 * The "outbound" asset is the asset traded away.
 
 
-<a name="@Assumptions_81"></a>
+<a name="@Assumptions_105"></a>
 
 ### Assumptions
 
@@ -3043,7 +4844,7 @@ assigned to order.
 verified by <code><a href="user.md#0xc0deb00c_user_get_next_order_access_key_internal">get_next_order_access_key_internal</a>()</code>.
 
 
-<a name="@Aborts_82"></a>
+<a name="@Aborts_106"></a>
 
 ### Aborts
 
@@ -3059,7 +4860,7 @@ received from trade.
 match assigned order access key.
 
 
-<a name="@Expected_value_testing_83"></a>
+<a name="@Expected_value_testing_107"></a>
 
 ### Expected value testing
 
@@ -3069,7 +4870,7 @@ match assigned order access key.
 * <code>test_place_cancel_order_stack()</code>
 
 
-<a name="@Failure_testing_84"></a>
+<a name="@Failure_testing_108"></a>
 
 ### Failure testing
 
@@ -3186,7 +4987,7 @@ Should only be called by the matching engine when matching from
 a user's market account.
 
 
-<a name="@Type_parameters_85"></a>
+<a name="@Type_parameters_109"></a>
 
 ### Type parameters
 
@@ -3195,7 +4996,7 @@ a user's market account.
 * <code>QuoteType</code>: Quote type for market.
 
 
-<a name="@Parameters_86"></a>
+<a name="@Parameters_110"></a>
 
 ### Parameters
 
@@ -3208,7 +5009,7 @@ a user's market account.
 * <code>underwriter_id</code>: Underwriter ID for market.
 
 
-<a name="@Returns_87"></a>
+<a name="@Returns_111"></a>
 
 ### Returns
 
@@ -3218,7 +5019,7 @@ market account.
 * <code>&lt;Coin&lt;QuoteType&gt;</code>: Quote coins from user's market account.
 
 
-<a name="@Testing_88"></a>
+<a name="@Testing_112"></a>
 
 ### Testing
 
@@ -3271,7 +5072,7 @@ Deposit an asset to a user's market account.
 Update asset counts, deposit optional coins as collateral.
 
 
-<a name="@Type_parameters_89"></a>
+<a name="@Type_parameters_113"></a>
 
 ### Type parameters
 
@@ -3280,7 +5081,7 @@ Update asset counts, deposit optional coins as collateral.
 if a generic asset.
 
 
-<a name="@Parameters_90"></a>
+<a name="@Parameters_114"></a>
 
 ### Parameters
 
@@ -3294,7 +5095,7 @@ if a generic asset.
 depositing coins.
 
 
-<a name="@Aborts_91"></a>
+<a name="@Aborts_115"></a>
 
 ### Aborts
 
@@ -3309,7 +5110,7 @@ asset ceiling.
 indicated market, in the case of a generic asset deposit.
 
 
-<a name="@Assumptions_92"></a>
+<a name="@Assumptions_116"></a>
 
 ### Assumptions
 
@@ -3318,7 +5119,7 @@ indicated market, in the case of a generic asset deposit.
 does a corresponding collateral map entry.
 
 
-<a name="@Testing_93"></a>
+<a name="@Testing_117"></a>
 
 ### Testing
 
@@ -3411,6 +5212,48 @@ does a corresponding collateral map entry.
 
 
 
+<a name="0xc0deb00c_user_emit_maker_fill_event"></a>
+
+## Function `emit_maker_fill_event`
+
+Emit a <code><a href="user.md#0xc0deb00c_user_FillEvent">FillEvent</a></code> for the market account of the maker
+associated with a fill, if market event handles exist for the
+indicated market account.
+
+
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_emit_maker_fill_event">emit_maker_fill_event</a>(event_ref: &<a href="user.md#0xc0deb00c_user_FillEvent">user::FillEvent</a>)
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code>inline <b>fun</b> <a href="user.md#0xc0deb00c_user_emit_maker_fill_event">emit_maker_fill_event</a>(
+    event_ref: &<a href="user.md#0xc0deb00c_user_FillEvent">FillEvent</a>
+) <b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketEventHandles">MarketEventHandles</a> {
+    <b>let</b> maker = event_ref.maker;
+    <b>if</b> (<b>exists</b>&lt;<a href="user.md#0xc0deb00c_user_MarketEventHandles">MarketEventHandles</a>&gt;(maker)) {
+        <b>let</b> market_event_handles_map_ref_mut =
+            &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketEventHandles">MarketEventHandles</a>&gt;(maker).map;
+        <b>let</b> market_id = event_ref.market_id;
+        <b>let</b> custodian_id = event_ref.maker_custodian_id;
+        <b>let</b> market_account_id = (((market_id <b>as</b> u128) &lt;&lt; <a href="user.md#0xc0deb00c_user_SHIFT_MARKET_ID">SHIFT_MARKET_ID</a>) |
+                                 (custodian_id <b>as</b> u128));
+        <b>let</b> has_handles_for_market_account = <a href="_contains">table::contains</a>(
+            market_event_handles_map_ref_mut, market_account_id);
+        <b>if</b> (has_handles_for_market_account) {
+            <b>let</b> handles_ref_mut = <a href="_borrow_mut">table::borrow_mut</a>(
+                market_event_handles_map_ref_mut, market_account_id);
+            <a href="_emit_event">event::emit_event</a>(
+                &<b>mut</b> handles_ref_mut.fill_events, *event_ref);
+        };
+    };
+}
+</code></pre>
+
+
+
 <a name="0xc0deb00c_user_get_market_account_market_info"></a>
 
 ## Function `get_market_account_market_info`
@@ -3418,7 +5261,7 @@ does a corresponding collateral map entry.
 Return <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a></code> fields stored in market account.
 
 
-<a name="@Parameters_94"></a>
+<a name="@Parameters_118"></a>
 
 ### Parameters
 
@@ -3428,7 +5271,7 @@ Return <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::Mark
 * <code>custodian_id</code>: Custodian ID for market account.
 
 
-<a name="@Returns_95"></a>
+<a name="@Returns_119"></a>
 
 ### Returns
 
@@ -3442,7 +5285,7 @@ Return <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::Mark
 * <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>.underwriter_id</code>
 
 
-<a name="@Aborts_96"></a>
+<a name="@Aborts_120"></a>
 
 ### Aborts
 
@@ -3451,7 +5294,7 @@ Return <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::Mark
 * <code><a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a></code>: No market account resource found.
 
 
-<a name="@Testing_97"></a>
+<a name="@Testing_121"></a>
 
 ### Testing
 
@@ -3520,7 +5363,7 @@ registered market, via call to
 <code><a href="registry.md#0xc0deb00c_registry_get_market_info_for_market_account">registry::get_market_info_for_market_account</a>()</code>.
 
 
-<a name="@Type_parameters_98"></a>
+<a name="@Type_parameters_122"></a>
 
 ### Type parameters
 
@@ -3529,7 +5372,7 @@ registered market, via call to
 * <code>QuoteType</code>: Quote type for indicated market.
 
 
-<a name="@Parameters_99"></a>
+<a name="@Parameters_123"></a>
 
 ### Parameters
 
@@ -3541,7 +5384,7 @@ registered market, via call to
 <code><a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a></code>.
 
 
-<a name="@Aborts_100"></a>
+<a name="@Aborts_124"></a>
 
 ### Aborts
 
@@ -3549,7 +5392,7 @@ registered market, via call to
 * <code><a href="user.md#0xc0deb00c_user_E_EXISTS_MARKET_ACCOUNT">E_EXISTS_MARKET_ACCOUNT</a></code>: Market account already exists.
 
 
-<a name="@Testing_101"></a>
+<a name="@Testing_125"></a>
 
 ### Testing
 
@@ -3633,7 +5476,7 @@ performed by <code>register_market_account_accounts_entries()</code> in
 <code><a href="user.md#0xc0deb00c_user_register_market_account">register_market_account</a>()</code>.
 
 
-<a name="@Type_parameters_102"></a>
+<a name="@Type_parameters_126"></a>
 
 ### Type parameters
 
@@ -3641,7 +5484,7 @@ performed by <code>register_market_account_accounts_entries()</code> in
 * <code>CoinType</code>: Phantom coin type for indicated market.
 
 
-<a name="@Parameters_103"></a>
+<a name="@Parameters_127"></a>
 
 ### Parameters
 
@@ -3650,7 +5493,7 @@ performed by <code>register_market_account_accounts_entries()</code> in
 * <code>market_account_id</code>: Market account ID for given market.
 
 
-<a name="@Testing_104"></a>
+<a name="@Testing_128"></a>
 
 ### Testing
 
@@ -3688,6 +5531,57 @@ performed by <code>register_market_account_accounts_entries()</code> in
 
 
 
+<a name="0xc0deb00c_user_vectorize_open_orders"></a>
+
+## Function `vectorize_open_orders`
+
+Convert a tablist of <code><a href="user.md#0xc0deb00c_user_Order">Order</a></code> into a vector of only open orders.
+
+
+<a name="@Testing_129"></a>
+
+### Testing
+
+
+* <code>test_get_market_accounts_open_orders()</code>
+
+
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_vectorize_open_orders">vectorize_open_orders</a>(tablist_ref_mut: &<b>mut</b> <a href="tablist.md#0xc0deb00c_tablist_Tablist">tablist::Tablist</a>&lt;u64, <a href="user.md#0xc0deb00c_user_Order">user::Order</a>&gt;): <a href="">vector</a>&lt;<a href="user.md#0xc0deb00c_user_Order">user::Order</a>&gt;
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_vectorize_open_orders">vectorize_open_orders</a>(
+    tablist_ref_mut: &<b>mut</b> Tablist&lt;u64, <a href="user.md#0xc0deb00c_user_Order">Order</a>&gt;,
+): <a href="">vector</a>&lt;<a href="user.md#0xc0deb00c_user_Order">Order</a>&gt; {
+    <b>let</b> open_orders = <a href="_empty">vector::empty</a>(); // Get empty orders <a href="">vector</a>.
+    // Get optional head key.
+    <b>let</b> optional_access_key = <a href="tablist.md#0xc0deb00c_tablist_get_head_key">tablist::get_head_key</a>(tablist_ref_mut);
+    // While keys left <b>to</b> iterate on:
+    <b>while</b> (<a href="_is_some">option::is_some</a>(&optional_access_key)) {
+        // Get open order and next optional access key in <a href="tablist.md#0xc0deb00c_tablist">tablist</a>.
+        <b>let</b> (order, _, next) = <a href="tablist.md#0xc0deb00c_tablist_remove_iterable">tablist::remove_iterable</a>(
+            tablist_ref_mut, *<a href="_borrow">option::borrow</a>(&optional_access_key));
+        // If <a href="market.md#0xc0deb00c_market">market</a> order ID flagged <b>as</b> null:
+        <b>if</b> (order.market_order_id == (<a href="user.md#0xc0deb00c_user_NIL">NIL</a> <b>as</b> u128)) {
+            // Unpack order and drop fields.
+            <b>let</b> <a href="user.md#0xc0deb00c_user_Order">Order</a>{market_order_id: _, size: _} = order;
+        } <b>else</b> { // Otherwise, <b>if</b> order is active:
+            // Push back onto <a href="">vector</a> of open orders.
+            <a href="_push_back">vector::push_back</a>(&<b>mut</b> open_orders, order);
+        };
+        // Review next optional access key.
+        optional_access_key = next;
+    };
+    open_orders // Return vectorized open orders.
+}
+</code></pre>
+
+
+
 <a name="0xc0deb00c_user_withdraw_asset"></a>
 
 ## Function `withdraw_asset`
@@ -3697,7 +5591,7 @@ Withdraw an asset from a user's market account.
 Update asset counts, withdraw optional collateral coins.
 
 
-<a name="@Type_parameters_105"></a>
+<a name="@Type_parameters_130"></a>
 
 ### Type parameters
 
@@ -3706,7 +5600,7 @@ Update asset counts, withdraw optional collateral coins.
 if a generic asset.
 
 
-<a name="@Parameters_106"></a>
+<a name="@Parameters_131"></a>
 
 ### Parameters
 
@@ -3719,7 +5613,7 @@ if a generic asset.
 withdrawing coins.
 
 
-<a name="@Returns_107"></a>
+<a name="@Returns_132"></a>
 
 ### Returns
 
@@ -3727,7 +5621,7 @@ withdrawing coins.
 * <code>Option&lt;Coin&lt;AssetType&gt;&gt;</code>: Optional collateral coins.
 
 
-<a name="@Aborts_108"></a>
+<a name="@Aborts_133"></a>
 
 ### Aborts
 
@@ -3742,7 +5636,7 @@ withdrawal.
 indicated market, in the case of a generic asset withdrawal.
 
 
-<a name="@Testing_109"></a>
+<a name="@Testing_134"></a>
 
 ### Testing
 
@@ -3837,7 +5731,7 @@ indicated market, in the case of a generic asset withdrawal.
 Wrapped call to <code><a href="user.md#0xc0deb00c_user_withdraw_asset">withdraw_asset</a>()</code> for withdrawing coins.
 
 
-<a name="@Testing_110"></a>
+<a name="@Testing_135"></a>
 
 ### Testing
 
@@ -3884,7 +5778,7 @@ Wrapped call to <code><a href="user.md#0xc0deb00c_user_withdraw_asset">withdraw_
 asset.
 
 
-<a name="@Testing_111"></a>
+<a name="@Testing_136"></a>
 
 ### Testing
 

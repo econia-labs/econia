@@ -1,14 +1,15 @@
+import { entryFunctions } from "@econia-labs/sdk";
+import { ChevronDownIcon } from "@heroicons/react/20/solid";
+import { useQuery } from "@tanstack/react-query";
+
 import { Button } from "@/components/Button";
 import { NO_CUSTODIAN } from "@/constants";
 import { useAptos } from "@/contexts/AptosContext";
 import { ECONIA_ADDR } from "@/env";
-import { ApiMarket } from "@/types/api";
-import { MarketAccount, MarketAccounts } from "@/types/econia";
-import { TypeTag } from "@/utils/TypeTag";
+import { type ApiMarket } from "@/types/api";
+import { type MarketAccount, type MarketAccounts } from "@/types/econia";
 import { makeMarketAccountId } from "@/utils/econia";
-import { entryFunctions } from "@econia-labs/sdk";
-import { ChevronDownIcon } from "@heroicons/react/20/solid";
-import { useQuery } from "@tanstack/react-query";
+import { TypeTag } from "@/utils/TypeTag";
 
 export const InitialContent: React.FC<{
   selectedMarket?: ApiMarket;
@@ -23,14 +24,14 @@ export const InitialContent: React.FC<{
       try {
         const resource = await aptosClient.getAccountResource(
           account.address,
-          `${ECONIA_ADDR}::user::MarketAccounts`
+          `${ECONIA_ADDR}::user::MarketAccounts`,
         );
         return resource.data as MarketAccounts;
       } catch (e) {
         console.log(e);
         return null;
       }
-    }
+    },
   );
   const { data: marketAccount } = useQuery(
     ["useMarketAccount", account?.address, selectedMarket?.market_id],
@@ -43,7 +44,7 @@ export const InitialContent: React.FC<{
             key_type: "u128",
             value_type: `${ECONIA_ADDR}::user::MarketAccount`,
             key: makeMarketAccountId(selectedMarket.market_id, NO_CUSTODIAN),
-          }
+          },
         );
         return marketAccount as MarketAccount;
       } catch (e) {
@@ -53,7 +54,7 @@ export const InitialContent: React.FC<{
     },
     {
       enabled: !!marketAccounts,
-    }
+    },
   );
 
   return (
@@ -78,7 +79,7 @@ export const InitialContent: React.FC<{
               TypeTag.fromApiCoin(selectedMarket.base).toString(),
               TypeTag.fromApiCoin(selectedMarket.quote).toString(),
               BigInt(selectedMarket.market_id),
-              BigInt(NO_CUSTODIAN)
+              BigInt(NO_CUSTODIAN),
             );
             await signAndSubmitTransaction({
               ...payload,

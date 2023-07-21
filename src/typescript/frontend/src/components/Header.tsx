@@ -1,5 +1,5 @@
+import { useWallet } from "@aptos-labs/wallet-adapter-react";
 import { ArrowRightIcon } from "@heroicons/react/20/solid";
-import { useWallet } from "@manahippo/aptos-wallet-adapter";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -24,7 +24,7 @@ const NavItem: React.FC<
         target="_blank"
         rel="noreferrer"
         className={`cursor-pointer font-roboto-mono text-lg font-medium uppercase tracking-wide transition-all ${
-          active ? "text-neutral-100" : "text-neutral-500 hover:text-purple"
+          active ? "text-neutral-100" : "text-neutral-500 hover:text-blue"
         } ${className ? className : ""}`}
       >
         {children}
@@ -36,7 +36,7 @@ const NavItem: React.FC<
     <Link
       href={href}
       className={`cursor-pointer font-roboto-mono text-lg font-medium uppercase tracking-wide transition-all ${
-        active ? "text-neutral-100" : "text-neutral-500 hover:text-purple"
+        active ? "text-neutral-100" : "text-neutral-500 hover:text-blue"
       }`}
     >
       {children}
@@ -52,16 +52,20 @@ const NavItemDivider: React.FC = () => {
   );
 };
 
-export function Header() {
+type HeaderProps = {
+  logoHref: string;
+};
+
+export function Header({ logoHref }: HeaderProps) {
   const { disconnect } = useWallet();
   const router = useRouter();
   const [depositWithdrawOpen, setDepositWithdrawOpen] = useState(false);
 
   return (
-    <header className="flex flex-col border-b border-neutral-600">
-      <nav className="flex items-center justify-between px-8 py-6">
+    <header className="border-b border-neutral-600">
+      <nav className="flex items-center justify-between px-8 py-4">
         <div className="my-auto flex-1 items-center">
-          <Link href="/">
+          <Link href={logoHref}>
             <Image
               className=""
               alt="Econia Logo"
@@ -99,11 +103,12 @@ export function Header() {
           </NavItem>
         </div>
         <div className="flex flex-1 justify-end">
-          <ConnectedButton>
+          <ConnectedButton className="py-1">
             <div className="flex items-center gap-4">
               <Button
                 variant="secondary"
                 onClick={() => setDepositWithdrawOpen(true)}
+                className="whitespace-nowrap"
               >
                 Deposit / Withdraw
               </Button>

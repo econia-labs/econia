@@ -1,18 +1,18 @@
+import { entryFunctions } from "@econia-labs/sdk";
 import { Menu, Tab } from "@headlessui/react";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import React, { useState } from "react";
 
 import { Button } from "@/components/Button";
 import { Input } from "@/components/Input";
-import { useCoinBalance } from "@/hooks/useCoinBalance";
-import { type ApiCoin, type ApiMarket } from "@/types/api";
+import { NO_CUSTODIAN } from "@/constants";
 import { useAptos } from "@/contexts/AptosContext";
 import { ECONIA_ADDR } from "@/env";
-import { NO_CUSTODIAN } from "@/constants";
-import { TypeTag } from "@/utils/TypeTag";
-import { entryFunctions } from "@econia-labs/sdk";
-import { toRawCoinAmount } from "@/utils/coin";
+import { useCoinBalance } from "@/hooks/useCoinBalance";
 import { useMarketAccountBalance } from "@/hooks/useMarketAccountBalance";
+import { type ApiCoin, type ApiMarket } from "@/types/api";
+import { toRawCoinAmount } from "@/utils/coin";
+import { TypeTag } from "@/utils/TypeTag";
 
 const SelectCoinInput: React.FC<{
   coins: ApiCoin[];
@@ -70,18 +70,18 @@ const DepositWithdrawForm: React.FC<{
 }> = ({ selectedMarket, mode }) => {
   const { account, aptosClient, signAndSubmitTransaction } = useAptos();
   const [selectedCoin, setSelectedCoin] = useState<ApiCoin>(
-    selectedMarket.base ?? selectedMarket.quote
+    selectedMarket.base ?? selectedMarket.quote,
   );
   const { data: marketAccountBalance } = useMarketAccountBalance(
     account?.address,
     selectedMarket.market_id,
-    selectedCoin
+    selectedCoin,
   );
 
   const [amount, setAmount] = useState<string>("");
   const { data: balance } = useCoinBalance(
     TypeTag.fromApiCoin(selectedCoin),
-    account?.address
+    account?.address,
   );
 
   const disabledReason =
@@ -134,14 +134,14 @@ const DepositWithdrawForm: React.FC<{
               TypeTag.fromApiCoin(selectedCoin).toString(),
               BigInt(selectedMarket.market_id),
               BigInt(NO_CUSTODIAN),
-              BigInt(toRawCoinAmount(amount, selectedCoin.decimals))
+              BigInt(toRawCoinAmount(amount, selectedCoin.decimals)),
             );
           } else {
             payload = entryFunctions.withdrawToCoinstore(
               ECONIA_ADDR,
               TypeTag.fromApiCoin(selectedCoin).toString(),
               BigInt(selectedMarket.market_id),
-              BigInt(toRawCoinAmount(amount, selectedCoin.decimals))
+              BigInt(toRawCoinAmount(amount, selectedCoin.decimals)),
             );
           }
           await signAndSubmitTransaction({

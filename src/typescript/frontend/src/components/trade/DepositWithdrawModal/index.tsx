@@ -2,14 +2,14 @@ import { useQuery } from "@tanstack/react-query";
 import React, { useEffect } from "react";
 
 import { API_URL } from "@/env";
+import { MOCK_MARKETS } from "@/mockdata/markets";
 import { type ApiMarket, type ApiStats } from "@/types/api";
-import { type OrderBook } from "@/types/global";
+import { type Orderbook } from "@/types/global";
 
 import { BaseModal } from "../../BaseModal";
 import { DepositWithdrawContent } from "./DepositWithdrawContent";
 import { InitialContent } from "./InitialContent";
 import { SelectMarketContent } from "./SelectMarketContent";
-import { MOCK_MARKETS } from "@/mockdata/markets";
 
 enum Step {
   Initial,
@@ -21,15 +21,15 @@ export const useAllMarketPrices = (allMarketData: ApiMarket[]) => {
   return useQuery<{ market_id: number; price: number }[]>(
     ["allMarketPrices", allMarketData],
     async () => {
-      const data: Promise<OrderBook>[] = [];
+      const data: Promise<Orderbook>[] = [];
       allMarketData.forEach((market) => {
         data.push(
           fetch(
             new URL(`market/${market.market_id}/orderbook?depth=1`, API_URL)
-              .href
+              .href,
           ).then((res) => {
             return res.json();
-          })
+          }),
         );
       });
       const orderBooks = await Promise.all(data);
@@ -39,7 +39,7 @@ export const useAllMarketPrices = (allMarketData: ApiMarket[]) => {
           price: (orderBook.asks[0].price + orderBook.bids[0].price) / 2,
         };
       });
-    }
+    },
   );
 };
 

@@ -50,7 +50,7 @@ const FaucetCard: React.FC<{ coinTypeTag: TypeTag; amount: number }> = ({
             try {
               await faucetFunds();
               await queryClient.invalidateQueries(
-                CoinBalanceQueryKey(coinTypeTag, account?.address)
+                CoinBalanceQueryKey(coinTypeTag, account?.address),
               );
             } catch (e) {
               console.log(e);
@@ -73,13 +73,13 @@ export default function Faucet({ marketData: _ }: { marketData: ApiMarket[] }) {
       <main className="mt-96 flex items-center justify-center gap-8">
         <FaucetCard
           coinTypeTag={TypeTag.fromString(
-            "0x7c36a610d1cde8853a692c057e7bd2479ba9d5eeaeceafa24f125c23d2abf942::test_eth::TestETHCoin"
+            "0x7c36a610d1cde8853a692c057e7bd2479ba9d5eeaeceafa24f125c23d2abf942::test_eth::TestETHCoin",
           )}
           amount={0.1}
         />
         <FaucetCard
           coinTypeTag={TypeTag.fromString(
-            "0x7c36a610d1cde8853a692c057e7bd2479ba9d5eeaeceafa24f125c23d2abf942::test_usdc::TestUSDCoin"
+            "0x7c36a610d1cde8853a692c057e7bd2479ba9d5eeaeceafa24f125c23d2abf942::test_usdc::TestUSDCoin",
           )}
           amount={1000}
         />

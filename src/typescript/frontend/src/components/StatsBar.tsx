@@ -1,23 +1,22 @@
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import { useQuery } from "@tanstack/react-query";
-import Image from "next/image";
+import BigNumber from "bignumber.js";
 import { useRouter } from "next/router";
 import React, { useState } from "react";
 
 import { useAptos } from "@/contexts/AptosContext";
 import { API_URL } from "@/env";
 import { type ApiMarket } from "@/types/api";
+import { toDecimalPrice } from "@/utils/econia";
+import { averageOrOther, formatNumber } from "@/utils/formatter";
 import { TypeTag } from "@/utils/TypeTag";
 
 import { BaseModal } from "./BaseModal";
 import { DiscordIcon } from "./icons/DiscordIcon";
 import { MediumIcon } from "./icons/MediumIcon";
 import { TwitterIcon } from "./icons/TwitterIcon";
-import { SelectMarketContent } from "./trade/DepositWithdrawModal/SelectMarketContent";
 import { MarketIconPair } from "./MarketIconPair";
-import { averageOrOther, formatNumber } from "@/utils/formatter";
-import BigNumber from "bignumber.js";
-import { toDecimalPrice } from "@/utils/econia";
+import { SelectMarketContent } from "./trade/DepositWithdrawModal/SelectMarketContent";
 
 const DEFAULT_TOKEN_ICON = "/tokenImages/default.png";
 
@@ -83,28 +82,28 @@ export const StatsBar: React.FC<{
     ["marketStats", selectedMarket],
     async () => {
       const resProm = fetch(
-        `${API_URL}/market/${selectedMarket.market_id}/stats?resolution=1d`
+        `${API_URL}/markets/${selectedMarket.market_id}/stats?resolution=1d`,
       ).then((res) => res.json());
       const priceProm = fetch(
-        `${API_URL}/market/${selectedMarket.market_id}/orderbook?depth=1`
+        `${API_URL}/markets/${selectedMarket.market_id}/orderbook?depth=1`,
       ).then((res) => res.json());
       const res = await resProm;
       const priceRes = await priceProm;
 
       const baseAssetIcon = selectedMarket.base
         ? coinListClient.getCoinInfoByFullName(
-            TypeTag.fromApiCoin(selectedMarket.base).toString()
+            TypeTag.fromApiCoin(selectedMarket.base).toString(),
           )?.logo_url
         : DEFAULT_TOKEN_ICON;
       const quoteAssetIcon =
         coinListClient.getCoinInfoByFullName(
-          TypeTag.fromApiCoin(selectedMarket.quote).toString()
+          TypeTag.fromApiCoin(selectedMarket.quote).toString(),
         )?.logo_url ?? DEFAULT_TOKEN_ICON;
 
       return {
         lastPrice: toDecimalPrice({
           price: new BigNumber(
-            averageOrOther(priceRes.asks[0].price, priceRes.bids[0].price) || 0
+            averageOrOther(priceRes.asks[0].price, priceRes.bids[0].price) || 0,
           ),
           lotSize: BigNumber(selectedMarket.lot_size),
           tickSize: BigNumber(selectedMarket.tick_size),
@@ -132,7 +131,7 @@ export const StatsBar: React.FC<{
       keepPreviousData: true,
       refetchOnWindowFocus: false,
       refetchInterval: 10 * 1000,
-    }
+    },
   );
 
   return (
@@ -153,7 +152,7 @@ export const StatsBar: React.FC<{
           }}
         />
       </BaseModal>
-      <div className="flex justify-between border-b border-neutral-600 bg-black px-9 py-3">
+      <div className="flex justify-between border-b border-neutral-600 px-9 py-3">
         <div className="flex overflow-x-clip whitespace-nowrap">
           <div className="flex items-center">
             <MarketIconPair

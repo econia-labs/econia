@@ -143,7 +143,7 @@ fn get_response_message(
                         ref market_id,
                         ref user_address,
                     } => {
-                        if is_valid_addr(user_address) {
+                        if !is_valid_addr(user_address) {
                             return Ok(OutboundMessage::Error {
                                 message: format!("user address `{}` is not valid", user_address),
                             });
@@ -158,7 +158,7 @@ fn get_response_message(
                         ref market_id,
                         ref user_address,
                     } => {
-                        if is_valid_addr(user_address) {
+                        if !is_valid_addr(user_address) {
                             return Ok(OutboundMessage::Error {
                                 message: format!("user address `{}` is not valid", user_address),
                             });
@@ -463,7 +463,7 @@ mod tests {
         let (mut ws_stream, _) = connect_async(ws_url).await.unwrap();
 
         let sub_msg = InboundMessage::Subscribe(Channel::Orders {
-            market_id: 0,
+            market_id: 1,
             user_address: "0x1".into(),
         });
 
@@ -475,7 +475,7 @@ mod tests {
         if let Some(Ok(msg)) = ws_stream.next().await {
             assert_eq!(
                 msg.to_string(),
-                r#"{"event":"confirm","channel":"orders","params":{"market_id":0,"user_address":"0x1"},"method":"subscribe"}"#
+                r#"{"event":"confirm","channel":"orders","params":{"market_id":1,"user_address":"0x1"},"method":"subscribe"}"#
             );
         } else {
             panic!("did not receive response from websocket");
@@ -496,7 +496,7 @@ mod tests {
         let ws_url = Url::parse(&format!("ws://{}/ws", addr)).unwrap();
         let (mut ws_stream, _) = connect_async(ws_url).await.unwrap();
 
-        let market_id = 0;
+        let market_id = 1;
         let user_address = "0x1".to_string();
 
         let sub_msg = InboundMessage::Subscribe(Channel::Orders {
@@ -535,13 +535,13 @@ mod tests {
                 0 => {
                     assert_eq!(
                         msg.to_string(),
-                        r#"{"event":"confirm","channel":"orders","params":{"market_id":0,"user_address":"0x1"},"method":"subscribe"}"#
+                        r#"{"event":"confirm","channel":"orders","params":{"market_id":1,"user_address":"0x1"},"method":"subscribe"}"#
                     );
                 }
                 1 => {
                     assert_eq!(
                         msg.to_string(),
-                        r#"{"event":"update","channel":"orders","data":{"market_order_id":100,"market_id":0,"side":"bid","size":1000,"price":1000,"user_address":"0x1","custodian_id":null,"order_state":"open","created_at":"2023-03-01T00:00:00Z"}}"#
+                        r#"{"event":"update","channel":"orders","data":{"market_order_id":100,"market_id":1,"side":"bid","size":1000,"price":1000,"user_address":"0x1","custodian_id":null,"order_state":"open","created_at":"2023-03-01T00:00:00Z"}}"#
                     );
                     return;
                 }
@@ -567,7 +567,7 @@ mod tests {
         let ws_url = Url::parse(&format!("ws://{}/ws", addr)).unwrap();
         let (mut ws_stream, _) = connect_async(ws_url).await.unwrap();
 
-        let market_id = 0;
+        let market_id = 1;
         let user_address = "0x1".to_string();
 
         let sub_msg = InboundMessage::Subscribe(Channel::Fills {
@@ -605,13 +605,13 @@ mod tests {
                 0 => {
                     assert_eq!(
                         msg.to_string(),
-                        r#"{"event":"confirm","channel":"fills","params":{"market_id":0,"user_address":"0x1"},"method":"subscribe"}"#
+                        r#"{"event":"confirm","channel":"fills","params":{"market_id":1,"user_address":"0x1"},"method":"subscribe"}"#
                     );
                 }
                 1 => {
                     assert_eq!(
                         msg.to_string(),
-                        r#"{"event":"update","channel":"fills","data":{"market_id":0,"maker_order_id":100,"maker":"0x1","maker_side":"bid","custodian_id":null,"size":1000,"price":1000,"time":"2023-03-01T00:00:00Z"}}"#
+                        r#"{"event":"update","channel":"fills","data":{"market_id":1,"maker_order_id":100,"maker":"0x1","maker_side":"bid","custodian_id":null,"size":1000,"price":1000,"time":"2023-03-01T00:00:00Z"}}"#
                     );
                     return;
                 }
@@ -671,7 +671,7 @@ mod tests {
         let ws_url = Url::parse(&format!("ws://{}/ws", addr)).unwrap();
         let (mut ws_stream, _) = connect_async(ws_url).await.unwrap();
 
-        let market_id = 0;
+        let market_id = 1;
         let user_address = "0x1".to_string();
 
         let sub_msg = InboundMessage::Subscribe(Channel::Orders {
@@ -730,19 +730,87 @@ mod tests {
                 0 => {
                     assert_eq!(
                         msg.to_string(),
-                        r#"{"event":"confirm","channel":"orders","params":{"market_id":0,"user_address":"0x1"},"method":"subscribe"}"#
+                        r#"{"event":"confirm","channel":"orders","params":{"market_id":1,"user_address":"0x1"},"method":"subscribe"}"#
                     );
                 }
                 1 => {
                     assert_eq!(
                         msg.to_string(),
-                        r#"{"event":"update","channel":"orders","data":{"market_order_id":100,"market_id":0,"side":"bid","size":1000,"price":1000,"user_address":"0x1","custodian_id":null,"order_state":"open","created_at":"2023-03-01T00:00:00Z"}}"#
+                        r#"{"event":"update","channel":"orders","data":{"market_order_id":100,"market_id":1,"side":"bid","size":1000,"price":1000,"user_address":"0x1","custodian_id":null,"order_state":"open","created_at":"2023-03-01T00:00:00Z"}}"#
                     );
                 }
                 2 => {
                     assert_eq!(
                         msg.to_string(),
-                        r#"{"event":"update","channel":"orders","data":{"market_order_id":100,"market_id":0,"side":"bid","size":1000,"price":1000,"user_address":"0x1","custodian_id":null,"order_state":"cancelled","created_at":"2023-03-01T00:00:00Z"}}"#
+                        r#"{"event":"update","channel":"orders","data":{"market_order_id":100,"market_id":1,"side":"bid","size":1000,"price":1000,"user_address":"0x1","custodian_id":null,"order_state":"cancelled","created_at":"2023-03-01T00:00:00Z"}}"#
+                    );
+                    return;
+                }
+                _ => {
+                    panic!("received more messages than expected");
+                }
+            }
+            i += 1;
+        }
+    }
+
+    /// Test to send a subscribe message for the price levels channel on the
+    /// WebSocket API and first checks that the correct confirmation message is
+    /// returned. Then, it sends a price level update to the corresponding Redis
+    /// pubsub channel, and checks that the correct price level update is sent
+    /// to the client.
+    #[tokio::test]
+    async fn test_websocket_price_level_update() {
+        let config = load_config();
+        let client = redis::Client::open(config.redis_url.clone()).unwrap();
+        let mut conn = client.get_tokio_connection().await.unwrap();
+        let addr = spawn_test_server(config).await;
+
+        let ws_url = Url::parse(&format!("ws://{}/ws", addr)).unwrap();
+        let (mut ws_stream, _) = connect_async(ws_url).await.unwrap();
+
+        let market_id = 1;
+
+        let sub_msg = InboundMessage::Subscribe(Channel::PriceLevels { market_id });
+
+        ws_stream
+            .send(Message::Text(serde_json::to_string(&sub_msg).unwrap()))
+            .await
+            .unwrap();
+
+        tokio::spawn(async move {
+            // Send message for price level update.
+            let price_level = types::book::PriceLevelWithId {
+                market_id,
+                side: types::order::Side::Bid,
+                price: 1000,
+                size: 1000,
+                timestamp: Utc.with_ymd_and_hms(2023, 3, 1, 0, 0, 0).unwrap(),
+            };
+            let update = Update::PriceLevels(price_level);
+            let s = serde_json::to_string(&update).unwrap();
+
+            conn.publish::<&str, String, i32>(
+                format!("price_levels:{}", market_id).as_str(),
+                s.clone(),
+            )
+            .await
+            .unwrap();
+        });
+
+        let mut i = 0;
+        while let Some(Ok(msg)) = ws_stream.next().await {
+            match i {
+                0 => {
+                    assert_eq!(
+                        msg.to_string(),
+                        r#"{"event":"confirm","channel":"price_levels","params":{"market_id":1},"method":"subscribe"}"#
+                    );
+                }
+                1 => {
+                    assert_eq!(
+                        msg.to_string(),
+                        r#"{"event":"update","channel":"price_levels","data":{"market_id":1,"side":"bid","price":1000,"size":1000,"timestamp":"2023-03-01T00:00:00Z"}}"#
                     );
                     return;
                 }

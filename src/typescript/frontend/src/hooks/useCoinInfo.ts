@@ -15,7 +15,7 @@ export const useCoinInfo = (coinTypeTag?: TypeTag | null) => {
     if (!coinTypeTag) return null;
     const coinInfo = await aptosClient.getAccountResource(
       coinTypeTag.addr,
-      `0x1::coin::CoinInfo<${coinTypeTag.toString()}>`
+      `0x1::coin::CoinInfo<${coinTypeTag.toString()}>`,
     );
     return coinInfo.data as CoinInfo;
   });

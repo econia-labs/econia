@@ -119,6 +119,14 @@ fn add_random_bars(
             bars = vec![];
         }
 
+        if i % 400 == 0 {
+            let _: Vec<Bar> = diesel::insert_into(db::schema::bars_1m::table)
+                .values(bars)
+                .get_results(conn)
+                .unwrap();
+
+            bars = vec![];
+        }
         pb.inc(1);
     }
     let _: Vec<Bar> = diesel::insert_into(db::schema::bars_1m::table)
@@ -179,7 +187,7 @@ fn main() {
     register_market(
         conn,
         &NewMarketRegistrationEvent {
-            market_id: &0.into(),
+            market_id: &1.into(),
             time: Utc::now(),
             base_account_address: Some(&aptos_coin.account_address),
             base_module_name: Some(&aptos_coin.module_name),
@@ -200,7 +208,7 @@ fn main() {
     register_market(
         conn,
         &NewMarketRegistrationEvent {
-            market_id: &1.into(),
+            market_id: &2.into(),
             time: Utc::now(),
             base_account_address: Some(&teth_coin.account_address),
             base_module_name: Some(&teth_coin.module_name),
@@ -221,7 +229,7 @@ fn main() {
     register_market(
         conn,
         &NewMarketRegistrationEvent {
-            market_id: &2.into(),
+            market_id: &3.into(),
             time: Utc::now(),
             base_account_address: Some(&aptos_coin.account_address),
             base_module_name: Some(&aptos_coin.module_name),
@@ -242,7 +250,7 @@ fn main() {
     register_market(
         conn,
         &NewMarketRegistrationEvent {
-            market_id: &3.into(),
+            market_id: &4.into(),
             time: Utc::now(),
             base_account_address: None,
             base_module_name: None,

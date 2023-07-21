@@ -1,17 +1,17 @@
 import { entryFunctions, type order } from "@econia-labs/sdk";
+import { useForm } from "react-hook-form";
+
 import { Button } from "@/components/Button";
 import { ConnectedButton } from "@/components/ConnectedButton";
-import { Input } from "@/components/Input";
+import { useAptos } from "@/contexts/AptosContext";
+import { ECONIA_ADDR } from "@/env";
+import { useMarketAccountBalance } from "@/hooks/useMarketAccountBalance";
 import { type ApiMarket } from "@/types/api";
 import { type Side } from "@/types/global";
+import { fromDecimalSize } from "@/utils/econia";
+import { TypeTag } from "@/utils/TypeTag";
 
 import { OrderEntryInfo } from "./OrderEntryInfo";
-import { useMarketAccountBalance } from "@/hooks/useMarketAccountBalance";
-import { useAptos } from "@/contexts/AptosContext";
-import { useForm } from "react-hook-form";
-import { ECONIA_ADDR } from "@/env";
-import { TypeTag } from "@/utils/TypeTag";
-import { fromDecimalSize, fromDecimalPrice } from "@/utils/econia";
 import { OrderEntryInputWrapper } from "./OrderEntryInputWrapper";
 
 type MarketFormValues = {
@@ -32,12 +32,12 @@ export const MarketOrderEntry: React.FC<{
   const baseBalance = useMarketAccountBalance(
     account?.address,
     marketData.market_id,
-    marketData.base
+    marketData.base,
   );
   const quoteBalance = useMarketAccountBalance(
     account?.address,
     marketData.market_id,
-    marketData.quote
+    marketData.quote,
   );
 
   const onSubmit = async (values: MarketFormValues) => {
@@ -62,9 +62,9 @@ export const MarketOrderEntry: React.FC<{
             size: values.size,
             lotSize: marketData.lot_size,
             baseCoinDecimals: marketData.base.decimals,
-          }).toString()
+          }).toString(),
         ),
-        "abort" // TODO don't hardcode this either
+        "abort", // TODO don't hardcode this either
       );
 
       await signAndSubmitTransaction({
@@ -76,9 +76,9 @@ export const MarketOrderEntry: React.FC<{
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <div className="mx-4 flex flex-col gap-4">
+      <div className="mx-4 flex flex-col">
         <OrderEntryInputWrapper
-          startAdornment="AMOUNT"
+          startAdornment="Amount"
           endAdornment={marketData.base?.symbol}
         >
           <input
@@ -86,15 +86,17 @@ export const MarketOrderEntry: React.FC<{
             step="any"
             placeholder="0.00"
             {...register("size", {
-              required: "required",
+              required: "REQUIRED",
               min: 0,
             })}
-            className="h-full w-[100px] flex-1 bg-transparent text-right font-roboto-mono text-xs font-light text-neutral-400 outline-none"
+            className="z-30 w-full bg-transparent pb-3 pl-14 pr-14 pt-3 text-right font-roboto-mono text-xs font-light text-neutral-400 outline-none"
           />
         </OrderEntryInputWrapper>
-        <p className="text-xs uppercase text-red">
-          {errors.size != null && errors.size.message}
-        </p>
+        <div className="relative mb-4">
+          <p className="absolute text-xs text-red">
+            {errors.size != null && errors.size.message}
+          </p>
+        </div>
       </div>
       <hr className="my-4 border-neutral-600" />
       <div className="mx-4 mb-4 flex flex-col gap-4">
@@ -114,7 +116,7 @@ export const MarketOrderEntry: React.FC<{
           onClick={() => {
             setValue(
               "size",
-              baseBalance.data ? baseBalance.data.toString() : ""
+              baseBalance.data ? baseBalance.data.toString() : "",
             );
           }}
         />

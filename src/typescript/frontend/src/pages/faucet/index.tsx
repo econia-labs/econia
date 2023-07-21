@@ -39,7 +39,7 @@ const FaucetCard: React.FC<{ coinTypeTag: TypeTag; amount: number }> = ({
         {coinInfo.data?.symbol}
       </h1>
       <p className="mt-2 font-roboto-mono uppercase text-gray-400">
-        Balance: {coinBalance.data || "-"} {coinInfo.data?.symbol}
+        Balance: {coinBalance.data ?? "-"} {coinInfo.data?.symbol}
       </p>
       <ConnectedButton className="mt-5 w-full">
         <Button

@@ -123,7 +123,9 @@ export const DepthChart: React.FC<{
 
   return (
     <div className="relative h-1/5 flex-[1_1_0%]">
-      <p className={"absolute ml-4 mt-2 font-jost text-white"}>Depth</p>
+      <p className={"absolute ml-4 mt-2 font-jost font-bold text-white"}>
+        Depth
+      </p>
       <div
         className={
           "relative h-full min-w-0 [&>canvas]:!h-full [&>canvas]:!w-full"

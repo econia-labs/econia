@@ -543,9 +543,9 @@ main();
 
 ### Errors
 
-| Error Code | Description                                          |
-| ---------- | ---------------------------------------------------- |
-| 400        | Bad Request: invalid parameters                      |
+| Error Code | Description                                         |
+| ---------- | --------------------------------------------------- |
+| 400        | Bad Request: invalid parameters                     |
 | 404        | Not Found: no order with the specified ID was found |
 
 ## Get stats
@@ -793,10 +793,10 @@ main();
 
 ### Query Parameters
 
-| Parameter       | Type           | Description                                  |
-| --------------- | -------------- | -------------------------------------------- |
-| limit           | u32 (optional) | The number of orders to retrieve             |
-| offset          | u32 (optional) | The position to start retrieving record from |
+| Parameter | Type           | Description                                  |
+| --------- | -------------- | -------------------------------------------- |
+| limit     | u32 (optional) | The number of orders to retrieve             |
+| offset    | u32 (optional) | The position to start retrieving record from |
 
 ### Errors
 
@@ -890,10 +890,10 @@ main();
 
 ### Query Parameters
 
-| Parameter       | Type           | Description                                  |
-| --------------- | -------------- | -------------------------------------------- |
-| limit           | u32 (optional) | The number of orders to retrieve             |
-| offset          | u32 (optional) | The position to start retrieving record from |
+| Parameter | Type           | Description                                  |
+| --------- | -------------- | -------------------------------------------- |
+| limit     | u32 (optional) | The number of orders to retrieve             |
+| offset    | u32 (optional) | The position to start retrieving record from |
 
 ### Errors
 

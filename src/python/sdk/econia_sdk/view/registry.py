@@ -1,5 +1,5 @@
 from aptos_sdk.account_address import AccountAddress
-from typing import Optional
+from typing import Optional, List
 from econia_sdk.lib import EconiaViewer
 
 def get_MAX_CHARACTERS_GENERIC(view: EconiaViewer) -> int:
@@ -142,13 +142,13 @@ def get_market_id_base_coin(
         return int(opt_val[0])
 
 def get_market_id_base_generic(
-        view: EconiaViewer,
-        quote_type: str,
-        base_name_generic: str,
-        lot_size: int,
-        tick_size: int,
-        min_size: int,
-        underwriter_id: int = 0,
+    view: EconiaViewer,
+    quote_type: str,
+    base_name_generic: str,
+    lot_size: int,
+    tick_size: int,
+    min_size: int,
+    underwriter_id: int = 0,
 ) -> Optional[int]:
     returns = view.get_returns(
         "registry",
@@ -167,4 +167,68 @@ def get_market_id_base_generic(
         return None
     else:
         return int(opt_val[0])
+    
 
+"""
+[
+    {
+        'version': '5394683',
+        'guid': {
+            'creation_number': '4',
+            'account_address': '0xd834296710253be37ac065b3de75943968e544002b682d1904ff7a2dd20d6328'
+        },
+        'sequence_number': '0',
+        'type': '0xd834296710253be37ac065b3de75943968e544002b682d1904ff7a2dd20d6328::registry::MarketRegistrationEvent',
+        'data': {
+            'base_name_generic': '',
+            'base_type': {
+                'account_address': '0x420fcef6f75f0f8d6e1de1177455bf28901b58b5661ae66b34093e1b13bda507',
+                'module_name': '0x746573745f657468',
+                'struct_name': '0x54657374455448'
+            },
+            'lot_size': '1000000000000000',
+            'market_id': '1',
+            'min_size': '1',
+            'quote_type': {
+                'account_address': '0x420fcef6f75f0f8d6e1de1177455bf28901b58b5661ae66b34093e1b13bda507',
+                'module_name': '0x746573745f75736463',
+                'struct_name': '0x5465737455534443'
+            },
+            'tick_size': '1000',
+            'underwriter_id': '0'
+        }
+    }, {'version': '6654265', 'guid': {'creation_number': '4', 'account_address': '0xd834296710253be37ac065b3de75943968e544002b682d1904ff7a2dd20d6328'}, 'sequence_number': '1', 'type': '0xd834296710253be37ac065b3de75943968e544002b682d1904ff7a2dd20d6328::registry::MarketRegistrationEvent', 'data': {'base_name_generic': '', 'base_type': {'account_address': '0x420fcef6f75f0f8d6e1de1177455bf28901b58b5661ae66b34093e1b13bda507', 'module_name': '0x746573745f657468', 'struct_name': '0x54657374455448'}, 'lot_size': '1000000000000000', 'market_id': '2', 'min_size': '2', 'quote_type': {'account_address': '0x420fcef6f75f0f8d6e1de1177455bf28901b58b5661ae66b34093e1b13bda507', 'module_name': '0x746573745f75736463', 'struct_name': '0x5465737455534443'}, 'tick_size': '1000', 'underwriter_id': '0'}}, {'version': '6684921', 'guid': {'creation_number': '4', 'account_address': '0xd834296710253be37ac065b3de75943968e544002b682d1904ff7a2dd20d6328'}, 'sequence_number': '2', 'type': '0xd834296710253be37ac065b3de75943968e544002b682d1904ff7a2dd20d6328::registry::MarketRegistrationEvent', 'data': {'base_name_generic': '', 'base_type': {'account_address': '0x420fcef6f75f0f8d6e1de1177455bf28901b58b5661ae66b34093e1b13bda507', 'module_name': '0x746573745f657468', 'struct_name': '0x54657374455448'}, 'lot_size': '1000000000000000', 'market_id': '3', 'min_size': '3', 'quote_type': {'account_address': '0x420fcef6f75f0f8d6e1de1177455bf28901b58b5661ae66b34093e1b13bda507', 'module_name': '0x746573745f75736463', 'struct_name': '0x5465737455534443'}, 'tick_size': '1000', 'underwriter_id': '0'}}]
+"""
+def get_market_registration_events(view: EconiaViewer, limit: int = -1) -> List[dict]:
+    events = view.get_events_by_handle(f"{view.econia_address}::registry::Registry", "market_registration_events", limit)
+    events_parsed = []
+    for event in events:
+        event_parsed = {
+            "version": int(event["version"]),
+            "guid": {
+                "creation_number": int(event["guid"]["creation_number"]),
+                "account_address": AccountAddress.from_hex(event["guid"]["account_address"])
+            },
+            "sequence_number": int(event["sequence_number"]),
+            "type": event["type"],
+            "data": {
+                "base_name_generic": event["data"]["base_name_generic"],
+                "base_type": {
+                    "account_address": AccountAddress.from_hex(event["data"]["base_type"]["account_address"]),
+                    "module_name": bytes.fromhex(event["data"]["base_type"]["module_name"][2:]).decode("ascii"),
+                    "struct_name": bytes.fromhex(event["data"]["base_type"]["struct_name"][2:]).decode("ascii")
+                },
+                "lot_size": int(event["data"]["lot_size"]),
+                "market_id": int(event["data"]["market_id"]),
+                "min_size": int(event["data"]["min_size"]),
+                "quote_type": {
+                    "account_address": AccountAddress.from_hex(event["data"]["quote_type"]["account_address"]),
+                    "module_name": bytes.fromhex(event["data"]["quote_type"]["module_name"][2:]).decode("ascii"),
+                    "struct_name": bytes.fromhex(event["data"]["quote_type"]["struct_name"][2:]).decode("ascii")
+                },
+                "tick_size": int(event["data"]["tick_size"]),
+                "underwriter_id": int(event["data"]["underwriter_id"])
+            }
+        }
+        events_parsed.append(event_parsed)
+    return events_parsed

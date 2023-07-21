@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Any
 from aptos_sdk.account import Account
 from aptos_sdk.account_address import AccountAddress
 from aptos_sdk.client import RestClient
@@ -56,6 +56,21 @@ class EconiaViewer:
             }
         )
 
+        if response.status_code >= 400:
+            raise Exception(response.text, response.status_code)
+        return response.json()
+    
+    def get_events_by_handle(
+        self,
+        struct_type: str, # i.e 0x1::account::Account
+        field_name: str,
+        limit: int = -1,
+    ) -> Any:
+        request = f"{self.aptos_client.base_url}/accounts/{self.econia_address.hex()}/events/{struct_type}/{field_name}"
+        if limit > 0:
+            request = f"{request}?limit={limit}"
+
+        response = self.aptos_client.client.get(request)
         if response.status_code >= 400:
             raise Exception(response.text, response.status_code)
         return response.json()

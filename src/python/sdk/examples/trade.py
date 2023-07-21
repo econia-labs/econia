@@ -11,10 +11,10 @@ from econia_sdk.lib import EconiaViewer, EconiaClient;
 from econia_sdk.types import Side, SelfMatchBehavior, Restriction
 from econia_sdk.entry.market import place_market_order_user_entry, place_limit_order_user_entry, register_market_base_coin_from_coinstore
 from econia_sdk.entry.user import register_market_account, deposit_from_coinstore
-from econia_sdk.view.market import get_price_levels, get_market_event_handle_creation_info, get_swapper_event_handle_creation_numbers
-from econia_sdk.view.registry import get_market_id_base_coin
+from econia_sdk.view.market import get_price_levels
+from econia_sdk.view.registry import get_market_id_base_coin, get_market_registration_events
 from econia_sdk.view.resource_account import get_address
-from econia_sdk.view.user import get_market_event_handle_creation_numbers
+from econia_sdk.view.user import get_market_event_handle_creation_numbers, get_market_account
 
 """
 If using a custom deployment...
@@ -36,7 +36,6 @@ def get_econia_address() -> AccountAddress:
 2. Run: aptos init (recommended: press enter for all prompts, uses devnet)
 3. Run: export FAUCET_ADDR=<ADDR-FROM-ABOVE>
 4. Run: aptos move publish --named-addresses econia_faucet=$FAUCET_ADDR
-
 """
 def get_faucet_address() -> AccountAddress:
     addr = environ.get("FAUCET_ADDR")
@@ -76,9 +75,8 @@ def start():
     print(f"Econia address (from view function): {get_address(viewer)}")
 
     market_id = setup_market(faucet_client, viewer)
-    print(f"Market ID: {market_id}")
 
-    account_A = setup_new_account(faucet_client, market_id)
+    account_A = setup_new_account(viewer, faucet_client, market_id)
     print(f"Account A was set-up: {account_A.account_address}")
     # Bid to purchase 1 whole ETH at a price of 1 whole USDC per lot!
     # = $1000/ETH since there are 1000 lots in a whole ETH & 1 tick = 0.001 USDC
@@ -93,20 +91,13 @@ def start():
     print(f"Account A has finished making!")
     report_best_price_levels(viewer, market_id)
 
-    account_B = setup_new_account(faucet_client, market_id)
+    account_B = setup_new_account(viewer, faucet_client, market_id)
     print(f"Account B was set-up: {account_B.account_address}")
     place_market_order(Side.BID, account_B, market_id, 500) # Buy 0.5 ETH
     place_market_order(Side.ASK, account_B, market_id, 500) # Sell 0.5 ETH
     print(f"Account B has finished taking!")
 
     report_best_price_levels(viewer, market_id)
-
-    mkt_ev_handle_info = get_market_event_handle_creation_info(viewer, market_id)
-    print(mkt_ev_handle_info)
-    swap_ev_handle_info = get_swapper_event_handle_creation_numbers(viewer, account_B.account_address, market_id)
-    print(swap_ev_handle_info)
-    mkt_ev_handle_user_info = get_market_event_handle_creation_numbers(viewer, account_B.account_address, market_id, 0)
-    print(mkt_ev_handle_user_info)
 
 def place_market_order(
     direction: Side,
@@ -148,9 +139,10 @@ def place_limit_order(
     EconiaClient(NODE_URL, ECONIA_ADDR, account).submit_tx_wait(calldata)
     
 
-def setup_new_account(faucet: FaucetClient, market_id: int):
+def setup_new_account(viewer: EconiaViewer, faucet: FaucetClient, market_id: int):
+    print("\nCreating new account...")
     account = Account.generate()
-    client_A = EconiaClient(NODE_URL, ECONIA_ADDR, account)
+    client = EconiaClient(NODE_URL, ECONIA_ADDR, account)
 
     # Fund with APT, "ETH" and "USDC"
     faucet.fund_account(account.address(), 1 * (10**8))
@@ -165,7 +157,14 @@ def setup_new_account(faucet: FaucetClient, market_id: int):
         market_id,
         0
     )
-    client_A.submit_tx_wait(calldata)
+    client.submit_tx_wait(calldata)
+
+    mkt_account = get_market_account(viewer, account.account_address, market_id, 0)
+    print("Market account before deposit:")
+    account_eth = mkt_account["base_available"] // 10**18
+    account_usdc = mkt_account["quote_available"] // 10**6
+    print(f"  ETH: {account_eth}")
+    print(f"  USDC: {account_usdc}")
 
     # Deposit "ETH"
     calldata = deposit_from_coinstore(
@@ -175,8 +174,7 @@ def setup_new_account(faucet: FaucetClient, market_id: int):
         0,
         5 * (10**18)
     )
-    client_A.submit_tx_wait(calldata)
-
+    client.submit_tx_wait(calldata)
     # Deposit "USDC"
     calldata = deposit_from_coinstore(
         ECONIA_ADDR,
@@ -185,8 +183,14 @@ def setup_new_account(faucet: FaucetClient, market_id: int):
         0,
         5_000 * (10**6)
     )
-    client_A.submit_tx_wait(calldata)
+    client.submit_tx_wait(calldata)
 
+    mkt_account = get_market_account(viewer, account.account_address, market_id, 0)
+    print("Market account after deposit:")
+    account_eth = mkt_account["base_available"] / 10**18
+    account_usdc = mkt_account["quote_available"] / 10**6
+    print(f"  ETH: {account_eth}")
+    print(f"  USDC: {account_usdc}")
     return account
 
 # NOTE: `wholes` must be 18 or under due to u64 sizing restrictions
@@ -258,7 +262,11 @@ def setup_market(faucet_client: FaucetClient, viewer: EconiaViewer) -> int:
           tick_size,
           min_size
         )
+        events = get_market_registration_events(viewer)
+        print("Market creation event emitted:")
+        print(list(filter(lambda e: e["data"]["market_id"] == market_id, events))[0])
     if market_id == None: exit()
+    print(f"Market ID: {market_id}")
     return market_id
 
 def report_best_price_levels(viewer: EconiaViewer, market_id: int):

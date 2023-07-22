@@ -18,6 +18,8 @@ import { TwitterIcon } from "./icons/TwitterIcon";
 import { MarketIconPair } from "./MarketIconPair";
 import { SelectMarketContent } from "./trade/DepositWithdrawModal/SelectMarketContent";
 
+import Skeleton from "react-loading-skeleton";
+
 const DEFAULT_TOKEN_ICON = "/tokenImages/default.png";
 
 type MarketStats = {

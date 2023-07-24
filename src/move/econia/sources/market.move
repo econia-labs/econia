@@ -3221,12 +3221,6 @@ module econia::market {
     /// * An immediate-or-cancel order fills as a taker if possible,
     ///   then returns.
     ///
-    /// # Minimum size
-    ///
-    /// * If order partially fills as a taker and there is still size
-    ///   left as a maker, minimum order size condition must be met
-    ///   again for the maker portion.
-    ///
     /// # Self matching
     ///
     /// Fills up until the point of a self match, cancelling remaining

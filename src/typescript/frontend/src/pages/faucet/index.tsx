@@ -9,16 +9,13 @@ import { Button } from "@/components/Button";
 import { ConnectedButton } from "@/components/ConnectedButton";
 import { Header } from "@/components/Header";
 import { useAptos } from "@/contexts/AptosContext";
-import { RPC_NODE_URL } from "@/env";
+import { FAUCET_ADDR, RPC_NODE_URL } from "@/env";
 import { type CoinStore } from "@/hooks/useCoinBalance";
 import { type CoinInfo } from "@/hooks/useCoinInfo";
 import { MOCK_MARKETS } from "@/mockdata/markets";
 import { type ApiMarket } from "@/types/api";
 import { fromRawCoinAmount } from "@/utils/coin";
 import { TypeTag } from "@/utils/TypeTag";
-
-const FAUCET_ADDR =
-  "0x7c36a610d1cde8853a692c057e7bd2479ba9d5eeaeceafa24f125c23d2abf942";
 
 const TYPE_TAGS = [
   TypeTag.fromString(`${FAUCET_ADDR}::test_eth::TestETHCoin`),

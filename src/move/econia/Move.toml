@@ -14,5 +14,7 @@ integrator = "0x4567"
 
 [dependencies.AptosFramework]
 git = "https://github.com/aptos-labs/aptos-core.git"
+# You may need to change this to `main` to run event unit tests per
+# https://github.com/aptos-labs/aptos-core/pull/9181
 rev = "main"
 subdir = "aptos-move/framework/aptos-framework"

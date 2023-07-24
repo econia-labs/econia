@@ -4274,6 +4274,30 @@ module econia::market {
     // Test-only functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
+    /// Immutably borrow market event handles for a market.
+    inline fun borrow_market_event_handles_for_market(
+        market_id: u64
+    ): &MarketEventHandlesForMarket
+    acquires MarketEventHandles {
+        let market_event_handles_map_ref =
+            &borrow_global<MarketEventHandles>(
+                resource_account::get_address()).map;
+        table::borrow(market_event_handles_map_ref, market_id)
+    }
+
+    #[test_only]
+    /// Immutably borrow swapper event handles for a market.
+    inline fun borrow_swapper_event_handles_for_market(
+        market_id: u64,
+        swapper: address
+    ): &SwapperEventHandlesForMarket
+    acquires SwapperEventHandles {
+        let swapper_event_handles_map_ref =
+            &borrow_global<SwapperEventHandles>(swapper).map;
+        table::borrow(swapper_event_handles_map_ref, market_id)
+    }
+
+    #[test_only]
     /// Assuming order placed by `@user_0` on `MARKET_ID_COIN`, verify
     /// order fields.
     public fun check_order_fields_test(
@@ -4326,6 +4350,64 @@ module econia::market {
                 &user, MARKET_ID_COIN, @integrator, ASK, MIN_SIZE_COIN,
                 min_ask_price, NO_RESTRICTION, ABORT);};
         user // Return user signature.
+    }
+
+    #[test_only]
+    /// Get `CancelOrderEvent`s at market level.
+    public fun get_cancel_order_events_market(
+        market_id: u64
+    ): vector<CancelOrderEvent>
+    acquires MarketEventHandles {
+        event::emitted_events(
+            &(borrow_market_event_handles_for_market(market_id).
+                cancel_order_events))
+    }
+
+    #[test_only]
+    /// Get `CancelOrderEvent`s at swapper level.
+    public fun get_cancel_order_events_swapper(
+        market_id: u64,
+        swapper: address
+    ): vector<CancelOrderEvent>
+    acquires SwapperEventHandles {
+        event::emitted_events(
+            &(borrow_swapper_event_handles_for_market(market_id, swapper).
+                cancel_order_events))
+    }
+
+    #[test_only]
+    /// Get `FillEvent`s at swapper level.
+    public fun get_fill_events_swapper(
+        market_id: u64,
+        swapper: address
+    ): vector<FillEvent>
+    acquires SwapperEventHandles {
+        event::emitted_events(
+            &(borrow_swapper_event_handles_for_market(market_id, swapper).
+                fill_events))
+    }
+
+    #[test_only]
+    /// Get `PlaceSwapOrderEvent`s at market level.
+    public fun get_place_swap_order_events_market(
+        market_id: u64
+    ): vector<PlaceSwapOrderEvent>
+    acquires MarketEventHandles {
+        event::emitted_events(
+            &(borrow_market_event_handles_for_market(market_id).
+                place_swap_order_events))
+    }
+
+    #[test_only]
+    /// Get `PlaceSwapOrderEvent`s at swapper level.
+    public fun get_place_swap_order_events_swapper(
+        market_id: u64,
+        swapper: address
+    ): vector<PlaceSwapOrderEvent>
+    acquires SwapperEventHandles {
+        event::emitted_events(
+            &(borrow_swapper_event_handles_for_market(market_id, swapper).
+                place_swap_order_events))
     }
 
     #[test_only]

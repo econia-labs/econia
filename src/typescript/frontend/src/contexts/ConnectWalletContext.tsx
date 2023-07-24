@@ -45,7 +45,7 @@ export function ConnectWalletContextProvider({ children }: PropsWithChildren) {
           {wallets.map((wallet) => (
             <div
               key={wallet.name}
-              className="relative flex w-full cursor-pointer items-center border border-neutral-600 p-4 transition-all hover:border-blue [&:hover>.arrow-wrapper]:border-blue [&:hover>.arrow-wrapper]:bg-blue [&:hover>div>.arrow]:rotate-[-45deg]"
+              className="relative flex w-full cursor-pointer items-center p-4 ring-1 ring-neutral-600 transition-all hover:ring-blue [&:hover>.arrow-wrapper]:bg-blue [&:hover>.arrow-wrapper]:ring-blue [&:hover>div>.arrow]:-rotate-45"
               onClick={() => {
                 try {
                   connect(wallet.name);
@@ -69,11 +69,7 @@ export function ConnectWalletContextProvider({ children }: PropsWithChildren) {
                   ? `Install ${wallet.name} Wallet`
                   : `${wallet.name} Wallet`}
               </p>
-              <div
-                className={
-                  "arrow-wrapper absolute bottom-[-1px] right-[-1px] border border-neutral-600 p-[7px] transition-all"
-                }
-              >
+              <div className="arrow-wrapper absolute bottom-0 right-0 p-[7px] ring-1 ring-neutral-600 transition-all">
                 <ArrowIcon className="arrow transition-all" />
               </div>
             </div>

@@ -168,7 +168,7 @@ def get_market_id_base_generic(
     else:
         return int(opt_val[0])
     
-def get_market_registration_events(view: EconiaViewer, limit: int = -1) -> List[dict]:
+def get_market_registration_events(view: EconiaViewer, limit: Optional[int] = None) -> List[dict]:
     events = view.get_events_by_handle(f"{view.econia_address.hex()}::registry::Registry", "market_registration_events", limit)
     events_parsed = []
     for event in events:

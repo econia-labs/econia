@@ -17,7 +17,7 @@ import { type ApiMarket, type ApiStats } from "@/types/api";
 import { formatNumber, plusMinus } from "@/utils/formatter";
 import { TypeTag } from "@/utils/TypeTag";
 
-import { useAllMarketData, useAllMarketPrices, useAllMarketStats } from ".";
+import { useAllMarketData, useAllMarketStats } from ".";
 const columnHelper = createColumnHelper<ApiMarket>();
 
 const TABLE_SPACING = {
@@ -31,7 +31,6 @@ export const SelectMarketContent: React.FC<{
 }> = ({ onSelectMarket }) => {
   const { data, isLoading } = useAllMarketData();
   const { data: marketStats } = useAllMarketStats();
-  const { data: marketPrices } = useAllMarketPrices(data || []);
   const [filter, setFilter] = useState("");
 
   const [selectedTab, setSelectedTab] = useState(0);
@@ -48,9 +47,7 @@ export const SelectMarketContent: React.FC<{
       columnHelper.accessor("market_id", {
         cell: (info) => (
           <PriceCell
-            price={
-              getPriceByMarketId(info.getValue(), marketPrices)?.price || 0
-            }
+            price={getStatsByMarketId(info.getValue(), marketStats)?.close || 0}
             quoteAsset={
               getMarketByMarketId(info.getValue(), data)?.name.split("-")[1] ||
               "?"
@@ -95,7 +92,7 @@ export const SelectMarketContent: React.FC<{
         id: "recognized",
       }),
     ];
-  }, [data, marketStats, marketPrices]);
+  }, [data, marketStats]);
 
   const table = useReactTable({
     columns,
@@ -382,13 +379,4 @@ const getMarketByMarketId = (
 ) => {
   if (!markets) return undefined;
   return markets.find((market) => market.market_id === marketId);
-};
-
-// very hacky type definition, need to think about where to put it
-const getPriceByMarketId = (
-  marketId: number,
-  prices: { market_id: number; price: number }[] | undefined,
-) => {
-  if (!prices) return undefined;
-  return prices.find((price) => price.market_id === marketId);
 };

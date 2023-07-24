@@ -68,27 +68,6 @@ def get_market_event_handle_creation_numbers(
             "place_market_order_events_handle_creation_num": int(val["place_market_order_events_handle_creation_num"]),
         }
 
-"""
-[
-    {
-        'version': 24005270,
-        'guid': {
-            'creation_number': 9,
-            'account_address': <aptos_sdk.account_address.AccountAddress object at 0x1047138d0>
-        },
-        'sequence_number': 0,
-        'type': '0x22c091db350dbdc26707ef6b54de493e95e635917b0927f8191e552a96c7ef42::user::ChangeOrderSizeEvent',
-        'data': {
-            'custodian_id': '0',
-            'market_id': '1', 
-            'new_size': '1000', 
-            'order_id': '3154397740483133573041', 
-            'side': True, 
-            'user': '0x7d427b9e1f954fa9da0771e37a696e17768ee9f04c2695922facc1490d0c4bc0'
-        }
-    }
-]
-"""
 def get_change_order_size_events(
     view: EconiaViewer,
     user: AccountAddress,
@@ -127,6 +106,24 @@ def get_change_order_size_events(
         return returns
     else:
         return []
+    
+def _convert_cancel_order_event(event: dict) -> dict:
+    return {
+        "version": int(event["version"]),
+        "guid": {
+            "creation_number": int(event["guid"]["creation_number"]),
+            "account_address": AccountAddress.from_hex(event["guid"]["account_address"])
+        },
+        "sequence_number": int(event["sequence_number"]),
+        "type": event["type"],
+        "data": {
+            "custodian_id": int(event["data"]["custodian_id"]),
+            "market_id": int(event["data"]["market_id"]),
+            "order_id": int(event["data"]["order_id"]),
+            "reason": CancelReason(int(event["data"]["reason"])),
+            "user": AccountAddress.from_hex(event["data"]["user"]),
+        }
+    }
 
 def get_cancel_order_events(
     view: EconiaViewer,
@@ -146,25 +143,35 @@ def get_cancel_order_events(
         )
         returns = []
         for event in events:
-            returns.append({
-                "version": int(event["version"]),
-                "guid": {
-                    "creation_number": int(event["guid"]["creation_number"]),
-                    "account_address": AccountAddress.from_hex(event["guid"]["account_address"])
-                },
-                "sequence_number": int(event["sequence_number"]),
-                "type": event["type"],
-                "data": {
-                    "custodian_id": int(event["data"]["custodian_id"]),
-                    "market_id": int(event["data"]["market_id"]),
-                    "order_id": int(event["data"]["order_id"]),
-                    "reason": CancelReason(int(event["data"]["reason"])),
-                    "user": AccountAddress.from_hex(event["data"]["user"]),
-                }
-            })
+            returns.append(_convert_cancel_order_event(event))
         return returns
     else:
         return []
+    
+def _convert_fill_order_event(event: dict) -> dict:
+    return {
+        "version": int(event["version"]),
+        "guid": {
+            "creation_number": int(event["guid"]["creation_number"]),
+            "account_address": AccountAddress.from_hex(event["guid"]["account_address"])
+        },
+        "sequence_number": int(event["sequence_number"]),
+        "type": event["type"],
+        "data": {
+            "maker": AccountAddress.from_hex(event["data"]["maker"]),
+            "maker_custodian_id": int(event["data"]["maker_custodian_id"]),
+            "maker_order_id": int(event["data"]["maker_order_id"]),
+            "maker_side": Side.ASK if event["data"]["maker_side"] else Side.BID,
+            "market_id": int(event["data"]["market_id"]),
+            "price": int(event["data"]["price"]),
+            "sequence_number_for_trade": int(event["data"]["sequence_number_for_trade"]),
+            "size": int(event["data"]["size"]),
+            "taker": AccountAddress.from_hex(event["data"]["taker"]),
+            "taker_custodian_id": int(event["data"]["taker_custodian_id"]),
+            "taker_order_id": int(event["data"]["taker_order_id"]),
+            "taker_quote_fees_paid": int(event["data"]["taker_quote_fees_paid"]),
+        }
+    }
     
 def get_fill_events(
     view: EconiaViewer,
@@ -184,29 +191,7 @@ def get_fill_events(
         )
         returns = []
         for event in events:
-            returns.append({
-                "version": int(event["version"]),
-                "guid": {
-                    "creation_number": int(event["guid"]["creation_number"]),
-                    "account_address": AccountAddress.from_hex(event["guid"]["account_address"])
-                },
-                "sequence_number": int(event["sequence_number"]),
-                "type": event["type"],
-                "data": {
-                    "maker": AccountAddress.from_hex(event["data"]["maker"]),
-                    "maker_custodian_id": int(event["data"]["maker_custodian_id"]),
-                    "maker_order_id": int(event["data"]["maker_order_id"]),
-                    "maker_side": Side.ASK if event["data"]["maker_side"] else Side.BID,
-                    "market_id": int(event["data"]["market_id"]),
-                    "price": int(event["data"]["price"]),
-                    "sequence_number_for_trade": int(event["data"]["sequence_number_for_trade"]),
-                    "size": int(event["data"]["size"]),
-                    "taker": AccountAddress.from_hex(event["data"]["taker"]),
-                    "taker_custodian_id": int(event["data"]["taker_custodian_id"]),
-                    "taker_order_id": int(event["data"]["taker_order_id"]),
-                    "taker_quote_fees_paid": int(event["data"]["taker_quote_fees_paid"]),
-                }
-            })
+            returns.append(_convert_fill_order_event(event))
         return returns
     else:
         return []

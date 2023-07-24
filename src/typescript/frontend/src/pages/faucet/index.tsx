@@ -34,14 +34,14 @@ const FaucetCard: React.FC<{ coinTypeTag: TypeTag; amount: number }> = ({
   }, [account, signAndSubmitTransaction]);
 
   return (
-    <div className="flex h-48 w-96 flex-col items-center justify-center border p-8">
-      <h1 className="font-jost text-xl font-bold text-white">
+    <div className="m-3 flex h-60 w-96 flex-col items-center  justify-center border border-neutral-600 p-8">
+      <h1 className="font-jost text-6xl font-bold text-white">
         {coinInfo.data?.symbol}
       </h1>
-      <p className="font-jost text-gray-400">
-        Balance: {coinBalance.data} {coinInfo.data?.symbol}
+      <p className="mt-2 font-roboto-mono uppercase text-gray-400">
+        Balance: {coinBalance.data ?? "-"} {coinInfo.data?.symbol}
       </p>
-      <ConnectedButton className="mt-4 w-full">
+      <ConnectedButton className="mt-5 w-full">
         <Button
           variant="primary"
           className="mt-4 w-full"
@@ -70,7 +70,7 @@ const FaucetCard: React.FC<{ coinTypeTag: TypeTag; amount: number }> = ({
 export default function Faucet({ marketData: _ }: { marketData: ApiMarket[] }) {
   return (
     <Page>
-      <main className="mt-96 flex items-center justify-center gap-8">
+      <main className="flex h-full items-center justify-center gap-8">
         <FaucetCard
           coinTypeTag={TypeTag.fromString(
             "0x7c36a610d1cde8853a692c057e7bd2479ba9d5eeaeceafa24f125c23d2abf942::test_eth::TestETHCoin",

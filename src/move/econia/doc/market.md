@@ -858,45 +858,44 @@ The below index is automatically generated from source code:
     -  [Returns](#@Returns_121)
     -  [Aborts](#@Aborts_122)
     -  [Restrictions](#@Restrictions_123)
-    -  [Minimum size](#@Minimum_size_124)
-    -  [Self matching](#@Self_matching_125)
-    -  [Expected value testing](#@Expected_value_testing_126)
-    -  [Failure testing](#@Failure_testing_127)
+    -  [Self matching](#@Self_matching_124)
+    -  [Expected value testing](#@Expected_value_testing_125)
+    -  [Failure testing](#@Failure_testing_126)
 -  [Function `place_limit_order_passive_advance`](#0xc0deb00c_market_place_limit_order_passive_advance)
-    -  [Price calculations](#@Price_calculations_128)
-    -  [Type Parameters](#@Type_Parameters_129)
-    -  [Parameters](#@Parameters_130)
-    -  [Returns](#@Returns_131)
-    -  [Aborts](#@Aborts_132)
-    -  [Expected value testing](#@Expected_value_testing_133)
-    -  [Failure testing](#@Failure_testing_134)
+    -  [Price calculations](#@Price_calculations_127)
+    -  [Type Parameters](#@Type_Parameters_128)
+    -  [Parameters](#@Parameters_129)
+    -  [Returns](#@Returns_130)
+    -  [Aborts](#@Aborts_131)
+    -  [Expected value testing](#@Expected_value_testing_132)
+    -  [Failure testing](#@Failure_testing_133)
 -  [Function `place_market_order`](#0xc0deb00c_market_place_market_order)
-    -  [Type Parameters](#@Type_Parameters_135)
-    -  [Parameters](#@Parameters_136)
-    -  [Returns](#@Returns_137)
-    -  [Aborts](#@Aborts_138)
-    -  [Expected value testing](#@Expected_value_testing_139)
-    -  [Failure testing](#@Failure_testing_140)
+    -  [Type Parameters](#@Type_Parameters_134)
+    -  [Parameters](#@Parameters_135)
+    -  [Returns](#@Returns_136)
+    -  [Aborts](#@Aborts_137)
+    -  [Expected value testing](#@Expected_value_testing_138)
+    -  [Failure testing](#@Failure_testing_139)
 -  [Function `range_check_trade`](#0xc0deb00c_market_range_check_trade)
-    -  [Terminology](#@Terminology_141)
-    -  [Parameters](#@Parameters_142)
-    -  [Aborts](#@Aborts_143)
-    -  [Failure testing](#@Failure_testing_144)
+    -  [Terminology](#@Terminology_140)
+    -  [Parameters](#@Parameters_141)
+    -  [Aborts](#@Aborts_142)
+    -  [Failure testing](#@Failure_testing_143)
 -  [Function `register_market`](#0xc0deb00c_market_register_market)
-    -  [Type parameters](#@Type_parameters_145)
-    -  [Parameters](#@Parameters_146)
-    -  [Returns](#@Returns_147)
-    -  [Testing](#@Testing_148)
+    -  [Type parameters](#@Type_parameters_144)
+    -  [Parameters](#@Parameters_145)
+    -  [Returns](#@Returns_146)
+    -  [Testing](#@Testing_147)
 -  [Function `swap`](#0xc0deb00c_market_swap)
-    -  [Type Parameters](#@Type_Parameters_149)
-    -  [Parameters](#@Parameters_150)
-    -  [Returns](#@Returns_151)
-    -  [Emits](#@Emits_152)
-    -  [Aborts](#@Aborts_153)
-    -  [Expected value testing](#@Expected_value_testing_154)
-    -  [Failure testing](#@Failure_testing_155)
+    -  [Type Parameters](#@Type_Parameters_148)
+    -  [Parameters](#@Parameters_149)
+    -  [Returns](#@Returns_150)
+    -  [Emits](#@Emits_151)
+    -  [Aborts](#@Aborts_152)
+    -  [Expected value testing](#@Expected_value_testing_153)
+    -  [Failure testing](#@Failure_testing_154)
 -  [Function `index_orders_sdk`](#0xc0deb00c_market_index_orders_sdk)
-    -  [Coverage testing](#@Coverage_testing_156)
+    -  [Coverage testing](#@Coverage_testing_155)
 
 
 <pre><code><b>use</b> <a href="">0x1::account</a>;
@@ -6070,17 +6069,7 @@ amount is not filled.
 then returns.
 
 
-<a name="@Minimum_size_124"></a>
-
-### Minimum size
-
-
-* If order partially fills as a taker and there is still size
-left as a maker, minimum order size condition must be met
-again for the maker portion.
-
-
-<a name="@Self_matching_125"></a>
+<a name="@Self_matching_124"></a>
 
 ### Self matching
 
@@ -6094,7 +6083,7 @@ restriction, and
 3. Self match behavior indicates taker cancellation.
 
 
-<a name="@Expected_value_testing_126"></a>
+<a name="@Expected_value_testing_125"></a>
 
 ### Expected value testing
 
@@ -6114,7 +6103,7 @@ restriction, and
 * <code>test_place_limit_order_still_crosses_bid()</code>
 
 
-<a name="@Failure_testing_127"></a>
+<a name="@Failure_testing_126"></a>
 
 ### Failure testing
 
@@ -6414,7 +6403,7 @@ order that aborts for a self match. Advance price is then
 range-checked by <code><a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>()</code>.
 
 
-<a name="@Price_calculations_128"></a>
+<a name="@Price_calculations_127"></a>
 
 ### Price calculations
 
@@ -6426,7 +6415,7 @@ operation during the advance amount calculation for the percent
 case.
 
 
-<a name="@Type_Parameters_129"></a>
+<a name="@Type_Parameters_128"></a>
 
 ### Type Parameters
 
@@ -6435,7 +6424,7 @@ case.
 * <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Parameters_130"></a>
+<a name="@Parameters_129"></a>
 
 ### Parameters
 
@@ -6454,7 +6443,7 @@ percent of the spread to advance, else the number of ticks to
 advance.
 
 
-<a name="@Returns_131"></a>
+<a name="@Returns_130"></a>
 
 ### Returns
 
@@ -6462,7 +6451,7 @@ advance.
 * <code>u128</code>: Market order ID, same as for <code><a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>()</code>.
 
 
-<a name="@Aborts_132"></a>
+<a name="@Aborts_131"></a>
 
 ### Aborts
 
@@ -6474,7 +6463,7 @@ advance.
 <code>target_advance_amount</code> is not less than or equal to 100.
 
 
-<a name="@Expected_value_testing_133"></a>
+<a name="@Expected_value_testing_132"></a>
 
 ### Expected value testing
 
@@ -6490,7 +6479,7 @@ advance.
 * <code>test_place_limit_order_passive_advance_ticks_bid()</code>
 
 
-<a name="@Failure_testing_134"></a>
+<a name="@Failure_testing_133"></a>
 
 ### Failure testing
 
@@ -6627,7 +6616,7 @@ advance.
 Place market order against order book from user market account.
 
 
-<a name="@Type_Parameters_135"></a>
+<a name="@Type_Parameters_134"></a>
 
 ### Type Parameters
 
@@ -6636,7 +6625,7 @@ Place market order against order book from user market account.
 * <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Parameters_136"></a>
+<a name="@Parameters_135"></a>
 
 ### Parameters
 
@@ -6650,7 +6639,7 @@ Place market order against order book from user market account.
 * <code>self_match_behavior</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Returns_137"></a>
+<a name="@Returns_136"></a>
 
 ### Returns
 
@@ -6660,7 +6649,7 @@ Place market order against order book from user market account.
 * <code>u64</code>: Quote coin fees paid, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Aborts_138"></a>
+<a name="@Aborts_137"></a>
 
 ### Aborts
 
@@ -6673,7 +6662,7 @@ size for market.
 lot size results in a base asset unit overflow.
 
 
-<a name="@Expected_value_testing_139"></a>
+<a name="@Expected_value_testing_138"></a>
 
 ### Expected value testing
 
@@ -6685,7 +6674,7 @@ lot size results in a base asset unit overflow.
 * <code>test_place_market_order_max_quote_sell_user()</code>
 
 
-<a name="@Failure_testing_140"></a>
+<a name="@Failure_testing_139"></a>
 
 ### Failure testing
 
@@ -6831,7 +6820,7 @@ Range check minimum and maximum asset trade amounts.
 Should be called before <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Terminology_141"></a>
+<a name="@Terminology_140"></a>
 
 ### Terminology
 
@@ -6854,7 +6843,7 @@ user's <code>aptos_framework::coin::CoinStore</code> or from standalone
 coins, is the same as available amount.
 
 
-<a name="@Parameters_142"></a>
+<a name="@Parameters_141"></a>
 
 ### Parameters
 
@@ -6875,7 +6864,7 @@ trade.
 <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>.
 
 
-<a name="@Aborts_143"></a>
+<a name="@Aborts_142"></a>
 
 ### Aborts
 
@@ -6891,7 +6880,7 @@ received from trade.
 * <code><a href="market.md#0xc0deb00c_market_E_NOT_ENOUGH_ASSET_OUT">E_NOT_ENOUGH_ASSET_OUT</a></code>: Not enough asset to trade away.
 
 
-<a name="@Failure_testing_144"></a>
+<a name="@Failure_testing_143"></a>
 
 ### Failure testing
 
@@ -6965,7 +6954,7 @@ See <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketI
 size, minimum size, and 32-bit prices.
 
 
-<a name="@Type_parameters_145"></a>
+<a name="@Type_parameters_144"></a>
 
 ### Type parameters
 
@@ -6974,7 +6963,7 @@ size, minimum size, and 32-bit prices.
 * <code>QuoteType</code>: Quote coin type for market.
 
 
-<a name="@Parameters_146"></a>
+<a name="@Parameters_145"></a>
 
 ### Parameters
 
@@ -6988,7 +6977,7 @@ for market.
 * <code>underwriter_id</code>: <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>.min_size</code> for market.
 
 
-<a name="@Returns_147"></a>
+<a name="@Returns_146"></a>
 
 ### Returns
 
@@ -6996,7 +6985,7 @@ for market.
 * <code>u64</code>: Market ID for new market.
 
 
-<a name="@Testing_148"></a>
+<a name="@Testing_147"></a>
 
 ### Testing
 
@@ -7061,7 +7050,7 @@ for market.
 Match a taker's swap order against order book for given market.
 
 
-<a name="@Type_Parameters_149"></a>
+<a name="@Type_Parameters_148"></a>
 
 ### Type Parameters
 
@@ -7070,7 +7059,7 @@ Match a taker's swap order against order book for given market.
 * <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Parameters_150"></a>
+<a name="@Parameters_149"></a>
 
 ### Parameters
 
@@ -7094,7 +7083,7 @@ is <code><a href="registry.md#0xc0deb00c_registry_GenericAsset">registry::Generi
 * <code>quote_coins</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Returns_151"></a>
+<a name="@Returns_150"></a>
 
 ### Returns
 
@@ -7113,7 +7102,7 @@ if swap is from a signing swapper.
 swapper.
 
 
-<a name="@Emits_152"></a>
+<a name="@Emits_151"></a>
 
 ### Emits
 
@@ -7125,7 +7114,7 @@ cancellation, if order was cancelled without completely
 filling, when swap is from non-signing swapper.
 
 
-<a name="@Aborts_153"></a>
+<a name="@Aborts_152"></a>
 
 ### Aborts
 
@@ -7136,7 +7125,7 @@ filling, when swap is from non-signing swapper.
 * <code><a href="market.md#0xc0deb00c_market_E_INVALID_QUOTE">E_INVALID_QUOTE</a></code>: Quote asset type is invalid.
 
 
-<a name="@Expected_value_testing_154"></a>
+<a name="@Expected_value_testing_153"></a>
 
 ### Expected value testing
 
@@ -7145,7 +7134,7 @@ filling, when swap is from non-signing swapper.
 <code><a href="market.md#0xc0deb00c_market_swap_generic">swap_generic</a>()</code> testing.
 
 
-<a name="@Failure_testing_155"></a>
+<a name="@Failure_testing_154"></a>
 
 ### Failure testing
 
@@ -7313,7 +7302,7 @@ filling, when swap is from non-signing swapper.
 Deprecated function retained for compatible upgrade policy.
 
 
-<a name="@Coverage_testing_156"></a>
+<a name="@Coverage_testing_155"></a>
 
 ### Coverage testing
 

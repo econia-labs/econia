@@ -108,11 +108,15 @@ export function Header({ logoHref }: HeaderProps) {
               <Button
                 variant="secondary"
                 onClick={() => setDepositWithdrawOpen(true)}
-                className="whitespace-nowrap"
+                className="whitespace-nowrap text-[16px]/6"
               >
                 Deposit / Withdraw
               </Button>
-              <Button variant="outlined" onClick={() => disconnect()}>
+              <Button
+                variant="outlined"
+                onClick={() => disconnect()}
+                className="whitespace-nowrap text-[16px]/6"
+              >
                 Disconnect
               </Button>
             </div>

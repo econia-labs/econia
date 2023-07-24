@@ -168,39 +168,8 @@ def get_market_id_base_generic(
     else:
         return int(opt_val[0])
     
-
-"""
-[
-    {
-        'version': '5394683',
-        'guid': {
-            'creation_number': '4',
-            'account_address': '0xd834296710253be37ac065b3de75943968e544002b682d1904ff7a2dd20d6328'
-        },
-        'sequence_number': '0',
-        'type': '0xd834296710253be37ac065b3de75943968e544002b682d1904ff7a2dd20d6328::registry::MarketRegistrationEvent',
-        'data': {
-            'base_name_generic': '',
-            'base_type': {
-                'account_address': '0x420fcef6f75f0f8d6e1de1177455bf28901b58b5661ae66b34093e1b13bda507',
-                'module_name': '0x746573745f657468',
-                'struct_name': '0x54657374455448'
-            },
-            'lot_size': '1000000000000000',
-            'market_id': '1',
-            'min_size': '1',
-            'quote_type': {
-                'account_address': '0x420fcef6f75f0f8d6e1de1177455bf28901b58b5661ae66b34093e1b13bda507',
-                'module_name': '0x746573745f75736463',
-                'struct_name': '0x5465737455534443'
-            },
-            'tick_size': '1000',
-            'underwriter_id': '0'
-        }
-    }, {'version': '6654265', 'guid': {'creation_number': '4', 'account_address': '0xd834296710253be37ac065b3de75943968e544002b682d1904ff7a2dd20d6328'}, 'sequence_number': '1', 'type': '0xd834296710253be37ac065b3de75943968e544002b682d1904ff7a2dd20d6328::registry::MarketRegistrationEvent', 'data': {'base_name_generic': '', 'base_type': {'account_address': '0x420fcef6f75f0f8d6e1de1177455bf28901b58b5661ae66b34093e1b13bda507', 'module_name': '0x746573745f657468', 'struct_name': '0x54657374455448'}, 'lot_size': '1000000000000000', 'market_id': '2', 'min_size': '2', 'quote_type': {'account_address': '0x420fcef6f75f0f8d6e1de1177455bf28901b58b5661ae66b34093e1b13bda507', 'module_name': '0x746573745f75736463', 'struct_name': '0x5465737455534443'}, 'tick_size': '1000', 'underwriter_id': '0'}}, {'version': '6684921', 'guid': {'creation_number': '4', 'account_address': '0xd834296710253be37ac065b3de75943968e544002b682d1904ff7a2dd20d6328'}, 'sequence_number': '2', 'type': '0xd834296710253be37ac065b3de75943968e544002b682d1904ff7a2dd20d6328::registry::MarketRegistrationEvent', 'data': {'base_name_generic': '', 'base_type': {'account_address': '0x420fcef6f75f0f8d6e1de1177455bf28901b58b5661ae66b34093e1b13bda507', 'module_name': '0x746573745f657468', 'struct_name': '0x54657374455448'}, 'lot_size': '1000000000000000', 'market_id': '3', 'min_size': '3', 'quote_type': {'account_address': '0x420fcef6f75f0f8d6e1de1177455bf28901b58b5661ae66b34093e1b13bda507', 'module_name': '0x746573745f75736463', 'struct_name': '0x5465737455534443'}, 'tick_size': '1000', 'underwriter_id': '0'}}]
-"""
 def get_market_registration_events(view: EconiaViewer, limit: int = -1) -> List[dict]:
-    events = view.get_events_by_handle(f"{view.econia_address}::registry::Registry", "market_registration_events", limit)
+    events = view.get_events_by_handle(f"{view.econia_address.hex()}::registry::Registry", "market_registration_events", limit)
     events_parsed = []
     for event in events:
         event_parsed = {

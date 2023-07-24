@@ -1,4 +1,5 @@
 from os import environ
+from typing import Tuple, Optional
 
 from aptos_sdk.account_address import AccountAddress
 from aptos_sdk.account import Account
@@ -9,12 +10,12 @@ from aptos_sdk.type_tag import TypeTag, StructTag
 
 from econia_sdk.lib import EconiaViewer, EconiaClient;
 from econia_sdk.types import Side, SelfMatchBehavior, Restriction
-from econia_sdk.entry.market import cancel_all_orders_user, place_market_order_user_entry, place_limit_order_user_entry, register_market_base_coin_from_coinstore
+from econia_sdk.entry.market import change_order_size_user, cancel_all_orders_user, place_market_order_user_entry, place_limit_order_user_entry, register_market_base_coin_from_coinstore
 from econia_sdk.entry.user import register_market_account, deposit_from_coinstore
 from econia_sdk.view.market import get_price_levels
 from econia_sdk.view.registry import get_market_id_base_coin, get_market_registration_events
 from econia_sdk.view.resource_account import get_address
-from econia_sdk.view.user import get_cancel_order_events, get_place_limit_order_events, get_market_account
+from econia_sdk.view.user import get_change_order_size_events, get_market_account, get_place_limit_order_events, get_market_account
 
 """
 If using a custom deployment...
@@ -116,11 +117,21 @@ def start():
     client_A.submit_tx_wait(calldata1)
     calldata2 = cancel_all_orders_user(ECONIA_ADDR, market_id, Side.BID)
     client_A.submit_tx_wait(calldata2)
-
-    print(get_cancel_order_events(viewer, account_A.account_address, market_id, 0))
-    print(f"Account A has cancelled all of their orders!")
+    print(f"\nAccount A has cancelled all of their orders!")
 
     report_best_price_levels(viewer, market_id)
+
+    place_limit_orders_at_market(viewer, account_A, market_id, 100, buy_ticks_per_lot, sell_ticks_per_lot)
+    place_limit_orders_at_market(viewer, account_A, market_id, 200, buy_ticks_per_lot, sell_ticks_per_lot)
+    place_limit_orders_at_market(viewer, account_A, market_id, 300, buy_ticks_per_lot, sell_ticks_per_lot)
+    place_limit_orders_at_market(viewer, account_A, market_id, 400, buy_ticks_per_lot, sell_ticks_per_lot)
+    place_limit_orders_at_market(viewer, account_A, market_id, 500, buy_ticks_per_lot, sell_ticks_per_lot)
+    print("\nAccount A has created multiple competitive limit orders!")
+    
+
+    report_best_price_levels(viewer, market_id)
+
+    volume = 100 + 200 + 300 + 400 + 500
 
 def place_market_order(
     direction: Side,
@@ -160,6 +171,25 @@ def place_limit_order(
         SelfMatchBehavior.CancelMaker,
     )
     EconiaClient(NODE_URL, ECONIA_ADDR, account).submit_tx_wait(calldata)
+
+def place_limit_orders_at_market(
+    viewer: EconiaViewer,
+    account: Account,
+    market_id: int,
+    size_lots_of_base: int,
+    min_bid_price_ticks_of_quote: int,
+    max_ask_price_ticks_of_quote: int,
+    narrowing_tick_count: int = 1,
+):
+    best_bid_price, best_ask_price = get_best_prices(viewer, market_id)
+    if best_bid_price is None:
+        place_limit_order(Side.BID, account, market_id, size_lots_of_base, min_bid_price_ticks_of_quote)
+    else:
+        place_limit_order(Side.BID, account, market_id, size_lots_of_base, best_bid_price + narrowing_tick_count)
+    if best_ask_price is None:
+        place_limit_order(Side.ASK, account, market_id, size_lots_of_base, max_ask_price_ticks_of_quote)
+    else:
+        place_limit_order(Side.ASK, account, market_id, size_lots_of_base, best_ask_price - narrowing_tick_count)
     
 
 def setup_new_account(viewer: EconiaViewer, faucet: FaucetClient, market_id: int):
@@ -183,11 +213,8 @@ def setup_new_account(viewer: EconiaViewer, faucet: FaucetClient, market_id: int
     client.submit_tx_wait(calldata)
 
     mkt_account = get_market_account(viewer, account.account_address, market_id, 0)
-    print("Market account before deposit:")
-    account_eth = mkt_account["base_available"] // 10**18
-    account_usdc = mkt_account["quote_available"] // 10**6
-    print(f"  ETH: {account_eth}")
-    print(f"  USDC: {account_usdc}")
+    account_eth_pre = mkt_account["base_available"] // 10**18
+    account_usdc_pre = mkt_account["quote_available"] // 10**6
 
     # Deposit "ETH"
     calldata = deposit_from_coinstore(
@@ -195,7 +222,7 @@ def setup_new_account(viewer: EconiaViewer, faucet: FaucetClient, market_id: int
         TypeTag(StructTag.from_str(COIN_TYPE_ETH)),
         market_id,
         0,
-        5 * (10**18)
+        10 * (10**18)
     )
     client.submit_tx_wait(calldata)
     # Deposit "USDC"
@@ -204,7 +231,7 @@ def setup_new_account(viewer: EconiaViewer, faucet: FaucetClient, market_id: int
         TypeTag(StructTag.from_str(COIN_TYPE_USDC)),
         market_id,
         0,
-        5_000 * (10**6)
+        10_000 * (10**6)
     )
     client.submit_tx_wait(calldata)
 
@@ -212,8 +239,8 @@ def setup_new_account(viewer: EconiaViewer, faucet: FaucetClient, market_id: int
     print("Market account after deposit:")
     account_eth = mkt_account["base_available"] / 10**18
     account_usdc = mkt_account["quote_available"] / 10**6
-    print(f"  ETH: {account_eth}")
-    print(f"  USDC: {account_usdc}")
+    print(f"  * tETH: {account_eth_pre} -> {account_eth}")
+    print(f"  * tUSDC: {account_usdc_pre} -> {account_usdc}")
     return account
 
 # NOTE: `wholes` must be 18 or under due to u64 sizing restrictions
@@ -292,20 +319,40 @@ def setup_market(faucet_client: FaucetClient, viewer: EconiaViewer) -> int:
     print(f"Market ID: {market_id}")
     return market_id
 
+def get_best_prices(viewer: EconiaViewer, market_id: int) -> Tuple[Optional[int], Optional[int]]:
+    price_levels = get_price_levels(viewer, market_id)
+
+    price_bid = None
+    if len(price_levels["bids"]) != 0:
+        price_bid = price_levels["bids"][0]["price"]
+
+    price_ask = None
+    if len(price_levels["asks"]) != 0:
+        price_ask = price_levels["asks"][0]["price"]
+
+    return price_bid, price_ask
+
 def report_best_price_levels(viewer: EconiaViewer, market_id: int):
     price_levels = get_price_levels(viewer, market_id)
     if len(price_levels["bids"]) == 0 and len(price_levels["asks"]) == 0:
         print("There is no tETH being bought or sold right now!")
+        return
+    
+    if len(price_levels["bids"]) != 0:
+        best_bid_level = price_levels["bids"][0]
+        best_bid_level_price = best_bid_level["price"] # in ticks
+        best_bid_level_volume = best_bid_level["size"] # in lots
+        print(f"There are {best_bid_level_volume} lots of tETH being BOUGHT for a price of {best_bid_level_price} ticks (of USDC) per lot")
+    else:
+        print("There are no lots of tETH being BOUGHT right now")
 
-    best_bid_level = price_levels["bids"][0]
-    best_bid_level_price = best_bid_level["price"] # in ticks
-    best_bid_level_volume = best_bid_level["size"] # in lots
-    print(f"There are {best_bid_level_volume} lots (of ETH) being BOUGHT for a price of {best_bid_level_price} ticks (of USDC) per lot")
-
-    best_ask_level = price_levels["asks"][0]
-    best_ask_level_price = best_ask_level["price"] # in ticks
-    best_ask_level_volume = best_ask_level["size"] # in lots
-    print(f"There are {best_ask_level_volume} lots (of ETH) being SOLD for a price of {best_ask_level_price} ticks (of USDC) per lot")
+    if len(price_levels["asks"]) != 0:
+        best_ask_level = price_levels["asks"][0]
+        best_ask_level_price = best_ask_level["price"] # in ticks
+        best_ask_level_volume = best_ask_level["size"] # in lots
+        print(f"There are {best_ask_level_volume} lots of tETH being SOLD for a price of {best_ask_level_price} ticks (of USDC) per lot")
+    else:
+        print("There are no lots of tETH being SOLD right now")
 
 def report_place_limit_order_event(event: dict):
     print(f"EVENT SUMMARY: PlaceLimitOrderEvent")
@@ -321,5 +368,5 @@ def report_place_limit_order_event(event: dict):
     print(f"  * Order ID: {order_id}")
     print(f"  * Position: {positioning} {positioning_tip}")
     print(f"  * Price: {ticks_price} tUSDC ticks per tETH lot")
-    print(f"  * Size: {size_available} available / {size_original}")
+    print(f"  * Size: {size_available} available tETH lots / {size_original}")
     

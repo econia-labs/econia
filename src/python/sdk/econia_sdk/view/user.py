@@ -1,7 +1,7 @@
 from aptos_sdk.account_address import AccountAddress
 from typing import Any, Optional, List
 from econia_sdk.lib import EconiaViewer
-from econia_sdk.types import Restriction, Side, SelfMatchBehavior
+from econia_sdk.types import Restriction, Side, SelfMatchBehavior, CancelReason
 
 def get_ASK(view: EconiaViewer) -> bool:
     returns = view.get_returns("user", "get_ASK")
@@ -68,6 +68,66 @@ def get_market_event_handle_creation_numbers(
             "place_market_order_events_handle_creation_num": int(val["place_market_order_events_handle_creation_num"]),
         }
 
+"""
+[
+    {
+        'version': 24005270,
+        'guid': {
+            'creation_number': 9,
+            'account_address': <aptos_sdk.account_address.AccountAddress object at 0x1047138d0>
+        },
+        'sequence_number': 0,
+        'type': '0x22c091db350dbdc26707ef6b54de493e95e635917b0927f8191e552a96c7ef42::user::ChangeOrderSizeEvent',
+        'data': {
+            'custodian_id': '0',
+            'market_id': '1', 
+            'new_size': '1000', 
+            'order_id': '3154397740483133573041', 
+            'side': True, 
+            'user': '0x7d427b9e1f954fa9da0771e37a696e17768ee9f04c2695922facc1490d0c4bc0'
+        }
+    }
+]
+"""
+def get_change_order_size_events(
+    view: EconiaViewer,
+    user: AccountAddress,
+    market_id: int,
+    custodian_id: int,
+    limit: Optional[int] = None,
+    start: Optional[int] = None, 
+) -> List[dict]:
+    creation_numbers = get_market_event_handle_creation_numbers(view, user, market_id, custodian_id)
+    if creation_numbers is not None:
+        events = view.get_events_by_creation_number(
+            user,
+            creation_numbers["change_order_size_events_handle_creation_num"],
+            limit,
+            start
+        )
+        returns = []
+        for event in events:
+            returns.append({
+                "version": int(event["version"]),
+                "guid": {
+                    "creation_number": int(event["guid"]["creation_number"]),
+                    "account_address": AccountAddress.from_hex(event["guid"]["account_address"])
+                },
+                "sequence_number": int(event["sequence_number"]),
+                "type": event["type"],
+                "data": {
+                    "custodian_id": int(event["data"]["custodian_id"]),
+                    "market_id": int(event["data"]["market_id"]),
+                    "new_size": int(event["data"]["new_size"]),
+                    "order_id": int(event["data"]["order_id"]),
+                    "side": Side.ASK if event["data"]["side"] else Side.BID,
+                    "user": AccountAddress.from_hex(event["data"]["user"])
+                },
+            })
+        return returns
+    else:
+        return []
+
 def get_cancel_order_events(
     view: EconiaViewer,
     user: AccountAddress,
@@ -94,7 +154,13 @@ def get_cancel_order_events(
                 },
                 "sequence_number": int(event["sequence_number"]),
                 "type": event["type"],
-                "data": event["data"]
+                "data": {
+                    "custodian_id": int(event["data"]["custodian_id"]),
+                    "market_id": int(event["data"]["market_id"]),
+                    "order_id": int(event["data"]["order_id"]),
+                    "reason": CancelReason(int(event["data"]["reason"])),
+                    "user": AccountAddress.from_hex(event["data"]["user"]),
+                }
             })
         return returns
     else:

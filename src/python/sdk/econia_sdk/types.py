@@ -24,6 +24,7 @@ class Restriction(IntEnum):
     ImmediateOrCancel = 2
     PostOrAbort = 3
 
+
 class CancelReason(IntEnum):
     Eviction = 1
     ImmediateOrCancel = 2

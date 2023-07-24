@@ -4,7 +4,7 @@ version = "4.1.0"             # Per SemVer.
 upgrade_policy = "compatible"
 
 [addresses]
-econia = "_"
+econia = "0xc0deb00c405f84c85dc13442e305df75d1288100cdd82675695f6148c7ece51c"
 # Mock addresses for testing.
 user = "0x1234"
 user_0 = "0x2345"

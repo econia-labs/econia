@@ -1,6 +1,8 @@
+from typing import List, Optional
+
 from aptos_sdk.account_address import AccountAddress
-from typing import Optional, List
 from econia_sdk.lib import EconiaViewer
+
 
 def get_MAX_CHARACTERS_GENERIC(view: EconiaViewer) -> int:
     returns = view.get_returns(
@@ -9,12 +11,14 @@ def get_MAX_CHARACTERS_GENERIC(view: EconiaViewer) -> int:
     )
     return int(returns[0])
 
+
 def get_MIN_CHARACTERS_GENERIC(view: EconiaViewer) -> int:
     returns = view.get_returns(
         "registry",
         "get_MIN_CHARACTERS_GENERIC",
     )
     return int(returns[0])
+
 
 def get_NO_CUSTODIAN(view: EconiaViewer) -> int:
     returns = view.get_returns(
@@ -23,6 +27,7 @@ def get_NO_CUSTODIAN(view: EconiaViewer) -> int:
     )
     return int(returns[0])
 
+
 def get_NO_UNDERWRITER(view: EconiaViewer) -> int:
     returns = view.get_returns(
         "registry",
@@ -30,44 +35,48 @@ def get_NO_UNDERWRITER(view: EconiaViewer) -> int:
     )
     return int(returns[0])
 
+
 def get_market_counts(view: EconiaViewer) -> dict:
     returns = view.get_returns(
-      "registry",
-      "get_market_counts",
+        "registry",
+        "get_market_counts",
     )
     value = returns[0]
     return {
         "n_markets": int(value["n_markets"]),
-        "n_recognized_markets": int(value["n_recognized_markets"])
+        "n_recognized_markets": int(value["n_recognized_markets"]),
     }
+
 
 def get_market_info(view: EconiaViewer, market_id: int) -> dict:
     returns = view.get_returns(
-        "registry",
-        "get_market_info",
-        [],
-        [str(market_id)]
+        "registry", "get_market_info", [], [str(market_id)]
     )
     value = returns[0]
     return {
         "base_name_generic": value["base_name_generic"],
         "base_type": {
             "module_name": value["base_type"]["module_name"],
-            "package_address": AccountAddress.from_hex(value["base_type"]["package_address"]),
+            "package_address": AccountAddress.from_hex(
+                value["base_type"]["package_address"]
+            ),
             "type_name": value["base_type"]["type_name"],
         },
         "is_recognized": bool(value["is_recognized"]),
-        "lot_size": int(value["lot_size"]), # subunits of base
+        "lot_size": int(value["lot_size"]),  # subunits of base
         "market_id": int(value["market_id"]),
         "min_size": int(value["min_size"]),
         "quote_type": {
             "module_name": value["quote_type"]["module_name"],
-            "package_address": AccountAddress.from_hex(value["quote_type"]["package_address"]),
+            "package_address": AccountAddress.from_hex(
+                value["quote_type"]["package_address"]
+            ),
             "type_name": value["quote_type"]["type_name"],
         },
         "tick_size": int(value["tick_size"]),
         "underwriter_id": int(value["underwriter_id"]),
     }
+
 
 def get_recognized_market_id_base_coin(
     view: EconiaViewer,
@@ -81,6 +90,7 @@ def get_recognized_market_id_base_coin(
     )
     return int(returns[0])
 
+
 def get_recognized_market_id_base_generic(
     view: EconiaViewer,
     quote_coin_type: str,
@@ -91,6 +101,7 @@ def get_recognized_market_id_base_generic(
         [quote_coin_type],
     )
     return int(returns[0])
+
 
 def has_recognized_market_base_coin_by_type(
     view: EconiaViewer,
@@ -104,6 +115,7 @@ def has_recognized_market_base_coin_by_type(
     )
     return bool(returns[0])
 
+
 def has_recognized_market_base_generic_by_type(
     view: EconiaViewer,
     quote_coin_type: str,
@@ -113,9 +125,10 @@ def has_recognized_market_base_generic_by_type(
         "registry",
         "has_recognized_market_base_generic_by_type",
         [quote_coin_type],
-        [base_name_generic]
+        [base_name_generic],
     )
     return bool(returns[0])
+
 
 def get_market_id_base_coin(
     view: EconiaViewer,
@@ -124,7 +137,7 @@ def get_market_id_base_coin(
     lot_size: int,
     tick_size: int,
     min_size: int,
-) -> Optional[int]: # might be None
+) -> Optional[int]:  # might be None
     returns = view.get_returns(
         "registry",
         "get_market_id_base_coin",
@@ -133,13 +146,14 @@ def get_market_id_base_coin(
             str(lot_size),
             str(tick_size),
             str(min_size),
-        ]
+        ],
     )
-    opt_val = returns[0]['vec']
+    opt_val = returns[0]["vec"]
     if len(opt_val) == 0:
         return None
     else:
         return int(opt_val[0])
+
 
 def get_market_id_base_generic(
     view: EconiaViewer,
@@ -159,45 +173,66 @@ def get_market_id_base_generic(
             str(lot_size),
             str(tick_size),
             str(min_size),
-            str(underwriter_id)
-        ]
+            str(underwriter_id),
+        ],
     )
-    opt_val = returns[0]['vec']
+    opt_val = returns[0]["vec"]
     if len(opt_val) == 0:
         return None
     else:
         return int(opt_val[0])
-    
-def get_market_registration_events(view: EconiaViewer, limit: Optional[int] = None) -> List[dict]:
-    events = view.get_events_by_handle(f"{view.econia_address.hex()}::registry::Registry", "market_registration_events", limit)
+
+
+def get_market_registration_events(
+    view: EconiaViewer, limit: Optional[int] = None
+) -> List[dict]:
+    events = view.get_events_by_handle(
+        f"{view.econia_address.hex()}::registry::Registry",
+        "market_registration_events",
+        limit,
+    )
     events_parsed = []
     for event in events:
         event_parsed = {
             "version": int(event["version"]),
             "guid": {
                 "creation_number": int(event["guid"]["creation_number"]),
-                "account_address": AccountAddress.from_hex(event["guid"]["account_address"])
+                "account_address": AccountAddress.from_hex(
+                    event["guid"]["account_address"]
+                ),
             },
             "sequence_number": int(event["sequence_number"]),
             "type": event["type"],
             "data": {
                 "base_name_generic": event["data"]["base_name_generic"],
                 "base_type": {
-                    "account_address": AccountAddress.from_hex(event["data"]["base_type"]["account_address"]),
-                    "module_name": bytes.fromhex(event["data"]["base_type"]["module_name"][2:]).decode("ascii"),
-                    "struct_name": bytes.fromhex(event["data"]["base_type"]["struct_name"][2:]).decode("ascii")
+                    "account_address": AccountAddress.from_hex(
+                        event["data"]["base_type"]["account_address"]
+                    ),
+                    "module_name": bytes.fromhex(
+                        event["data"]["base_type"]["module_name"][2:]
+                    ).decode("ascii"),
+                    "struct_name": bytes.fromhex(
+                        event["data"]["base_type"]["struct_name"][2:]
+                    ).decode("ascii"),
                 },
                 "lot_size": int(event["data"]["lot_size"]),
                 "market_id": int(event["data"]["market_id"]),
                 "min_size": int(event["data"]["min_size"]),
                 "quote_type": {
-                    "account_address": AccountAddress.from_hex(event["data"]["quote_type"]["account_address"]),
-                    "module_name": bytes.fromhex(event["data"]["quote_type"]["module_name"][2:]).decode("ascii"),
-                    "struct_name": bytes.fromhex(event["data"]["quote_type"]["struct_name"][2:]).decode("ascii")
+                    "account_address": AccountAddress.from_hex(
+                        event["data"]["quote_type"]["account_address"]
+                    ),
+                    "module_name": bytes.fromhex(
+                        event["data"]["quote_type"]["module_name"][2:]
+                    ).decode("ascii"),
+                    "struct_name": bytes.fromhex(
+                        event["data"]["quote_type"]["struct_name"][2:]
+                    ).decode("ascii"),
                 },
                 "tick_size": int(event["data"]["tick_size"]),
-                "underwriter_id": int(event["data"]["underwriter_id"])
-            }
+                "underwriter_id": int(event["data"]["underwriter_id"]),
+            },
         }
         events_parsed.append(event_parsed)
     return events_parsed

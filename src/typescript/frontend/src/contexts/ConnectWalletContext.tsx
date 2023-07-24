@@ -45,7 +45,7 @@ export function ConnectWalletContextProvider({ children }: PropsWithChildren) {
           {wallets.map((wallet) => (
             <div
               key={wallet.name}
-              className="relative flex w-full cursor-pointer items-center gap-2 border border-neutral-600 p-4 font-jost text-lg font-medium  text-neutral-500 transition-all hover:border-blue [&:hover>.arrow-wrapper]:border-blue [&:hover>.arrow-wrapper]:bg-blue [&:hover>div>.arrow]:rotate-[-45deg]"
+              className="relative flex w-full cursor-pointer items-center border border-neutral-600 p-4 transition-all hover:border-blue [&:hover>.arrow-wrapper]:border-blue [&:hover>.arrow-wrapper]:bg-blue [&:hover>div>.arrow]:rotate-[-45deg]"
               onClick={() => {
                 try {
                   connect(wallet.name);
@@ -64,7 +64,7 @@ export function ConnectWalletContextProvider({ children }: PropsWithChildren) {
                 width={36}
                 alt={`${wallet.name} Icon`}
               />
-              <p>
+              <p className="ml-4 font-jost text-lg font-medium text-neutral-500">
                 {wallet.readyState === WalletReadyState.NotDetected
                   ? `Install ${wallet.name} Wallet`
                   : `${wallet.name} Wallet`}

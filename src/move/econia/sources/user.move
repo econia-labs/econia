@@ -3272,9 +3272,56 @@ module econia::user {
     // Test-only functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
+    /// Immutably borrow market event handles for a market account.
+    inline fun borrow_market_event_handles_for_market_account(
+        market_id: u64,
+        user: address,
+        custodian_id: u64
+    ): &MarketEventHandlesForMarketAccount
+    acquires MarketEventHandles {
+        let market_event_handles_map_ref =
+            &borrow_global<MarketEventHandles>(user).map;
+        let market_account_id = get_market_account_id(market_id, custodian_id);
+        table::borrow(market_event_handles_map_ref, market_account_id)
+    }
+
+    #[test_only]
     /// Return `HI_PRICE`, for testing synchronization with
     /// `market.move`.
     public fun get_HI_PRICE_test(): u64 {HI_PRICE}
+
+    #[test_only]
+    /// Return `NO_UNDERWRITER`, for testing synchronization with
+    /// `market.move`.
+    public fun get_NO_UNDERWRITER_test(): u64 {NO_UNDERWRITER}
+
+    #[test_only]
+    /// Get `CancelOrderEvent`s at a market account handle.
+    public fun get_cancel_order_events(
+        market_id: u64,
+        user: address,
+        custodian_id: u64
+    ): vector<CancelOrderEvent>
+    acquires MarketEventHandles {
+        event::emitted_events(
+            &(borrow_market_event_handles_for_market_account(
+                market_id, user, custodian_id).
+                cancel_order_events))
+    }
+
+    #[test_only]
+    /// Get `ChangeOrderSizeEvent`s at a market account handle.
+    public fun get_change_order_size_events(
+        market_id: u64,
+        user: address,
+        custodian_id: u64
+    ): vector<ChangeOrderSizeEvent>
+    acquires MarketEventHandles {
+        event::emitted_events(
+            &(borrow_market_event_handles_for_market_account(
+                market_id, user, custodian_id).
+                change_order_size_events))
+    }
 
     #[test_only]
     /// Like `get_collateral_value_test()`, but accepts market id and
@@ -3306,6 +3353,20 @@ module econia::user {
         let coin_ref = // Immutably borrow coin collateral.
             tablist::borrow(collateral_map_ref, market_account_id);
         coin::value(coin_ref) // Return coin value.
+    }
+
+    #[test_only]
+    /// Get `FillEvent`s at a market account handle.
+    public fun get_fill_events(
+        market_id: u64,
+        user: address,
+        custodian_id: u64
+    ): vector<FillEvent>
+    acquires MarketEventHandles {
+        event::emitted_events(
+            &(borrow_market_event_handles_for_market_account(
+                market_id, user, custodian_id).
+                fill_events))
     }
 
     #[test_only]
@@ -3342,11 +3403,6 @@ module econia::user {
             user_address, market_account_id, side, order_access_key);
         next // Return next inactive order access key.
     }
-
-    #[test_only]
-    /// Return `NO_UNDERWRITER`, for testing synchronization with
-    /// `market.move`.
-    public fun get_NO_UNDERWRITER_test(): u64 {NO_UNDERWRITER}
 
     #[test_only]
     /// Wrapper for `get_order_fields_test()`, accepting market ID and
@@ -3389,6 +3445,34 @@ module econia::user {
         let order_ref = tablist::borrow(orders_ref, order_access_key);
         // Return order fields.
         (order_ref.market_order_id, order_ref.size)
+    }
+
+    #[test_only]
+    /// Get `PlaceLimitOrderEvent`s at a market account handle.
+    public fun get_place_limit_order_events(
+        market_id: u64,
+        user: address,
+        custodian_id: u64
+    ): vector<PlaceLimitOrderEvent>
+    acquires MarketEventHandles {
+        event::emitted_events(
+            &(borrow_market_event_handles_for_market_account(
+                market_id, user, custodian_id).
+                place_limit_order_events))
+    }
+
+    #[test_only]
+    /// Get `PlaceMarketOrderEvent`s at a market account handle.
+    public fun get_place_market_order_events(
+        market_id: u64,
+        user: address,
+        custodian_id: u64
+    ): vector<PlaceMarketOrderEvent>
+    acquires MarketEventHandles {
+        event::emitted_events(
+            &(borrow_market_event_handles_for_market_account(
+                market_id, user, custodian_id).
+                place_market_order_events))
     }
 
     #[test_only]

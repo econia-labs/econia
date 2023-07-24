@@ -7376,10 +7376,36 @@ module econia::market {
             market_id, side_maker, market_order_id_lo), 0);
         assert!(is_list_node_order_active(
             market_id, side_maker, market_order_id_hi), 0);
+        // Assert event streams.
+        assert!(user::get_cancel_order_events_test(
+            market_id, user_address, NO_CUSTODIAN) == vector[], 0);
+        assert!(user::get_cancel_order_events_test(
+            market_id, user_address, CUSTODIAN_ID_USER_0) == vector[], 0);
         // Place taker order with self match.
         place_market_order_user<BC, QC>(
             &user, market_id, integrator, direction_taker, size_taker,
             self_match_behavior_taker);
+        // Assert event streams.
+        let market_order_id_taker_only = order_id_no_post(3);
+        assert!(user::get_cancel_order_events_test(
+            market_id, user_address, NO_CUSTODIAN) == vector[
+                user::create_cancel_order_event_internal(
+                    market_id,
+                    market_order_id_lo,
+                    user_address,
+                    NO_CUSTODIAN,
+                    CANCEL_REASON_SELF_MATCH_MAKER
+                ),
+                user::create_cancel_order_event_internal(
+                    market_id,
+                    market_order_id_taker_only,
+                    user_address,
+                    NO_CUSTODIAN,
+                    CANCEL_REASON_SELF_MATCH_TAKER
+                )
+            ], 0);
+        assert!(user::get_cancel_order_events_test(
+            market_id, user_address, CUSTODIAN_ID_USER_0) == vector[], 0);
         // Assert list node order inactive for low price, active for
         // high price.
         assert!(!is_list_node_order_active(
@@ -7505,11 +7531,29 @@ module econia::market {
             market_id, side_maker, market_order_id_lo), 0);
         assert!(is_list_node_order_active(
             market_id, side_maker, market_order_id_hi), 0);
+        // Assert event streams.
+        assert!(user::get_cancel_order_events_test(
+            market_id, user_address, NO_CUSTODIAN) == vector[], 0);
+        assert!(user::get_cancel_order_events_test(
+            market_id, user_address, CUSTODIAN_ID_USER_0) == vector[], 0);
         // Place taker order with self match.
         let (base_trade_r, quote_trade_r, fee_r) =
                 place_market_order_user<BC, QC>(
             &user, market_id, integrator, direction_taker, size_taker,
             self_match_behavior_taker);
+        // Assert event streams.
+        assert!(user::get_cancel_order_events_test(
+            market_id, user_address, NO_CUSTODIAN) == vector[
+                user::create_cancel_order_event_internal(
+                    market_id,
+                    market_order_id_lo,
+                    user_address,
+                    NO_CUSTODIAN,
+                    CANCEL_REASON_SELF_MATCH_MAKER
+                )
+            ], 0);
+        assert!(user::get_cancel_order_events_test(
+            market_id, user_address, CUSTODIAN_ID_USER_0) == vector[], 0);
         // Assert returns.
         assert!(base_trade_r  == base_trade, 0);
         assert!(quote_trade_r == quote_trade, 0);
@@ -7631,10 +7675,29 @@ module econia::market {
             market_id, side_maker, market_order_id_lo), 0);
         assert!(is_list_node_order_active(
             market_id, side_maker, market_order_id_hi), 0);
+        // Assert event streams.
+        assert!(user::get_cancel_order_events_test(
+            market_id, user_address, NO_CUSTODIAN) == vector[], 0);
+        assert!(user::get_cancel_order_events_test(
+            market_id, user_address, CUSTODIAN_ID_USER_0) == vector[], 0);
         // Place taker order with self match.
         place_market_order_user<BC, QC>(
             &user, market_id, integrator, direction_taker, size_taker,
             self_match_behavior_taker);
+        // Assert event streams.
+        let market_order_id_taker_only = order_id_no_post(3);
+        assert!(user::get_cancel_order_events_test(
+            market_id, user_address, NO_CUSTODIAN) == vector[
+                user::create_cancel_order_event_internal(
+                    market_id,
+                    market_order_id_taker_only,
+                    user_address,
+                    NO_CUSTODIAN,
+                    CANCEL_REASON_SELF_MATCH_TAKER
+                )
+            ], 0);
+        assert!(user::get_cancel_order_events_test(
+            market_id, user_address, CUSTODIAN_ID_USER_0) == vector[], 0);
         // Assert list node orders active.
         assert!(is_list_node_order_active(
             market_id, side_maker, market_order_id_lo), 0);

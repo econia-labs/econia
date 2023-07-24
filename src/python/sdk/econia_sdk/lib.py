@@ -1,4 +1,4 @@
-from typing import List, Any
+from typing import List, Any, Optional
 from aptos_sdk.account import Account
 from aptos_sdk.account_address import AccountAddress
 from aptos_sdk.client import RestClient
@@ -64,14 +64,33 @@ class EconiaViewer:
         self,
         struct_type: str, # i.e 0x1::account::Account
         field_name: str,
-        limit: int = -1,
+        limit: Optional[int] = None,
     ) -> Any:
         request = f"{self.aptos_client.base_url}/accounts/{self.econia_address.hex()}/events/{struct_type}/{field_name}"
-        if limit > 0:
+        if limit is not None:
             request = f"{request}?limit={limit}"
 
         response = self.aptos_client.client.get(request)
         if response.status_code >= 400:
             raise Exception(response.text, response.status_code)
         return response.json()
-
+    
+    def get_events_by_creation_number(
+        self,
+        emission_address: AccountAddress,
+        creation_number: int,
+        limit: Optional[int] = None,
+        start: Optional[int] = None, # sequence number to start from
+    ) -> Any:
+        request = f"{self.aptos_client.base_url}/accounts/{emission_address.hex()}/events/{creation_number}"
+        if limit is not None and start is not None:
+            request = f"{request}?limit={limit}&start={start}"
+        elif limit is not None:
+            request = f"{request}?limit={limit}"
+        elif start is not None:
+            request = f"{request}?start={start}"
+        
+        response = self.aptos_client.client.get(request)
+        if response.status_code >= 400:
+            raise Exception(response.text, response.status_code)
+        return response.json()

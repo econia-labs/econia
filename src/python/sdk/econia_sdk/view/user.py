@@ -1,6 +1,7 @@
 from aptos_sdk.account_address import AccountAddress
-from typing import Any, Optional
+from typing import Any, Optional, List
 from econia_sdk.lib import EconiaViewer
+from econia_sdk.types import Restriction, Side, SelfMatchBehavior
 
 def get_ASK(view: EconiaViewer) -> bool:
     returns = view.get_returns("user", "get_ASK")
@@ -47,7 +48,7 @@ def get_market_event_handle_creation_numbers(
     user: AccountAddress,
     market_id: int,
     custodian_id: int,
-) -> Optional[Any]:
+) -> Optional[dict]:
     returns = view.get_returns(
         "user",
         "get_market_event_handle_creation_numbers",
@@ -66,6 +67,168 @@ def get_market_event_handle_creation_numbers(
             "place_limit_order_events_handle_creation_num": int(val["place_limit_order_events_handle_creation_num"]),
             "place_market_order_events_handle_creation_num": int(val["place_market_order_events_handle_creation_num"]),
         }
+
+def get_cancel_order_events(
+    view: EconiaViewer,
+    user: AccountAddress,
+    market_id: int,
+    custodian_id: int,
+    limit: Optional[int] = None,
+    start: Optional[int] = None, 
+) -> List[dict]:
+    creation_numbers = get_market_event_handle_creation_numbers(view, user, market_id, custodian_id)
+    if creation_numbers is not None:
+        events = view.get_events_by_creation_number(
+            user,
+            creation_numbers["cancel_order_events_handle_creation_num"],
+            limit,
+            start
+        )
+        returns = []
+        for event in events:
+            returns.append({
+                "version": int(event["version"]),
+                "guid": {
+                    "creation_number": int(event["guid"]["creation_number"]),
+                    "account_address": AccountAddress.from_hex(event["guid"]["account_address"])
+                },
+                "sequence_number": int(event["sequence_number"]),
+                "type": event["type"],
+                "data": event["data"]
+            })
+        return returns
+    else:
+        return []
+    
+def get_fill_events(
+    view: EconiaViewer,
+    user: AccountAddress,
+    market_id: int,
+    custodian_id: int,
+    limit: Optional[int] = None,
+    start: Optional[int] = None, 
+) -> List[dict]:
+    creation_numbers = get_market_event_handle_creation_numbers(view, user, market_id, custodian_id)
+    if creation_numbers is not None:
+        events = view.get_events_by_creation_number(
+            user,
+            creation_numbers["fill_events_handle_creation_num"],
+            limit,
+            start
+        )
+        returns = []
+        for event in events:
+            returns.append({
+                "version": int(event["version"]),
+                "guid": {
+                    "creation_number": int(event["guid"]["creation_number"]),
+                    "account_address": AccountAddress.from_hex(event["guid"]["account_address"])
+                },
+                "sequence_number": int(event["sequence_number"]),
+                "type": event["type"],
+                "data": {
+                    "maker": AccountAddress.from_hex(event["data"]["maker"]),
+                    "maker_custodian_id": int(event["data"]["maker_custodian_id"]),
+                    "maker_order_id": int(event["data"]["maker_order_id"]),
+                    "maker_side": Side.ASK if event["data"]["maker_side"] else Side.BID,
+                    "market_id": int(event["data"]["market_id"]),
+                    "price": int(event["data"]["price"]),
+                    "sequence_number_for_trade": int(event["data"]["sequence_number_for_trade"]),
+                    "size": int(event["data"]["size"]),
+                    "taker": AccountAddress.from_hex(event["data"]["taker"]),
+                    "taker_custodian_id": int(event["data"]["taker_custodian_id"]),
+                    "taker_order_id": int(event["data"]["taker_order_id"]),
+                    "taker_quote_fees_paid": int(event["data"]["taker_quote_fees_paid"]),
+                }
+            })
+        return returns
+    else:
+        return []
+
+def get_place_market_order_events(
+    view: EconiaViewer,
+    user: AccountAddress,
+    market_id: int,
+    custodian_id: int,
+    limit: Optional[int] = None,
+    start: Optional[int] = None, 
+) -> List[dict]:
+    creation_numbers = get_market_event_handle_creation_numbers(view, user, market_id, custodian_id)
+    if creation_numbers is not None:
+        events = view.get_events_by_creation_number(
+            user,
+            creation_numbers["place_market_order_events_handle_creation_num"],
+            limit,
+            start
+        )
+        returns = []
+        for event in events:
+            returns.append({
+                "version": int(event["version"]),
+                "guid": {
+                    "creation_number": int(event["guid"]["creation_number"]),
+                    "account_address": AccountAddress.from_hex(event["guid"]["account_address"])
+                },
+                "sequence_number": int(event["sequence_number"]),
+                "type": event["type"],
+                "data": {
+                    "custodian_id": int(event["data"]["custodian_id"]),
+                    "direction": Side.ASK if bool(event["data"]["direction"]) else Side.BID,
+                    "integrator": AccountAddress.from_hex(event["data"]["integrator"]),
+                    "market_id": int(event["data"]["market_id"]),
+                    "order_id": int(event["data"]["order_id"]),
+                    "self_match_behavior": SelfMatchBehavior(int(event["data"]["self_match_behavior"])),
+                    "size": int(event["data"]["size"]),
+                    "user": AccountAddress.from_hex(event["data"]["user"])
+                }
+            })
+        return returns
+    else:
+        return []
+    
+def get_place_limit_order_events(
+    view: EconiaViewer,
+    user: AccountAddress,
+    market_id: int,
+    custodian_id: int,
+    limit: Optional[int] = None,
+    start: Optional[int] = None,
+) -> List[dict]:
+    creation_numbers = get_market_event_handle_creation_numbers(view, user, market_id, custodian_id)
+    if creation_numbers is not None:
+        events = view.get_events_by_creation_number(
+            user,
+            creation_numbers["place_limit_order_events_handle_creation_num"],
+            limit,
+            start
+        )
+        returns = []
+        for event in events:
+            returns.append({
+                "version": int(event["version"]),
+                "guid": {
+                    "creation_number": int(event["guid"]["creation_number"]),
+                    "account_address": AccountAddress.from_hex(event["guid"]["account_address"])
+                },
+                "sequence_number": int(event["sequence_number"]),
+                "type": event["type"],
+                "data": {
+                    "custodian_id": int(event["data"]["custodian_id"]),
+                    "integrator": AccountAddress.from_hex(event["data"]["integrator"]),
+                    "market_id": int(event["data"]["market_id"]),
+                    "order_id": int(event["data"]["order_id"]),
+                    "price": int(event["data"]["price"]),
+                    "remaining_size": int(event["data"]["remaining_size"]),
+                    "restriction": Restriction(int(event["data"]["restriction"])),
+                    "self_match_behavior": SelfMatchBehavior(int(event["data"]["self_match_behavior"])),
+                    "side": Side.ASK if bool(event["data"]["side"]) else Side.BID,
+                    "size": int(event["data"]["size"]),
+                    "user": AccountAddress.from_hex(event["data"]["user"])
+                }
+            })
+        return returns
+    else:
+        return []
     
 def serialize_address(addr: AccountAddress) -> str:
     return addr.address.hex()

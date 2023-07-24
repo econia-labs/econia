@@ -9,12 +9,12 @@ from aptos_sdk.type_tag import TypeTag, StructTag
 
 from econia_sdk.lib import EconiaViewer, EconiaClient;
 from econia_sdk.types import Side, SelfMatchBehavior, Restriction
-from econia_sdk.entry.market import place_market_order_user_entry, place_limit_order_user_entry, register_market_base_coin_from_coinstore
+from econia_sdk.entry.market import cancel_all_orders_user, place_market_order_user_entry, place_limit_order_user_entry, register_market_base_coin_from_coinstore
 from econia_sdk.entry.user import register_market_account, deposit_from_coinstore
 from econia_sdk.view.market import get_price_levels
 from econia_sdk.view.registry import get_market_id_base_coin, get_market_registration_events
 from econia_sdk.view.resource_account import get_address
-from econia_sdk.view.user import get_market_event_handle_creation_numbers, get_market_account
+from econia_sdk.view.user import get_cancel_order_events, get_place_limit_order_events, get_market_account
 
 """
 If using a custom deployment...
@@ -83,19 +83,42 @@ def start():
     buy_base_lots = 1 * (10**3)
     buy_ticks_per_lot = 1 * (10**3)
     place_limit_order(Side.BID, account_A, market_id, buy_base_lots, buy_ticks_per_lot)
+    events = get_place_limit_order_events(viewer, account_A.account_address, market_id, 0)
+    print("")
+    report_place_limit_order_event(
+        list(filter(lambda ev: ev["data"]["side"] == Side.BID, events))[0]
+    )
     # Ask to sell 1 whole ETH at a price of 2 whole USDC per lot!
     # = $2000/ETH since there are 1000 lots in a whole ETH & 1 tick = 0.001 USDC
     sell_base_lots = 1 * (10**3)
     sell_ticks_per_lot = 2 * (10**3)
     place_limit_order(Side.ASK, account_A, market_id, sell_base_lots, sell_ticks_per_lot)
-    print(f"Account A has finished making!")
-    report_best_price_levels(viewer, market_id)
+    events = get_place_limit_order_events(viewer, account_A.account_address, market_id, 0)
+    print("")
+    report_place_limit_order_event(
+        list(filter(lambda ev: ev["data"]["side"] == Side.ASK, events))[0]
+    )
 
+    print(f"Account A has placing limit orders.")
+
+    report_best_price_levels(viewer, market_id)
+    
     account_B = setup_new_account(viewer, faucet_client, market_id)
     print(f"Account B was set-up: {account_B.account_address}")
     place_market_order(Side.BID, account_B, market_id, 500) # Buy 0.5 ETH
     place_market_order(Side.ASK, account_B, market_id, 500) # Sell 0.5 ETH
     print(f"Account B has finished taking!")
+
+    report_best_price_levels(viewer, market_id)
+
+    client_A = EconiaClient(NODE_URL, ECONIA_ADDR, account_A)
+    calldata1 = cancel_all_orders_user(ECONIA_ADDR, market_id, Side.ASK)
+    client_A.submit_tx_wait(calldata1)
+    calldata2 = cancel_all_orders_user(ECONIA_ADDR, market_id, Side.BID)
+    client_A.submit_tx_wait(calldata2)
+
+    print(get_cancel_order_events(viewer, account_A.account_address, market_id, 0))
+    print(f"Account A has cancelled all of their orders!")
 
     report_best_price_levels(viewer, market_id)
 
@@ -271,6 +294,8 @@ def setup_market(faucet_client: FaucetClient, viewer: EconiaViewer) -> int:
 
 def report_best_price_levels(viewer: EconiaViewer, market_id: int):
     price_levels = get_price_levels(viewer, market_id)
+    if len(price_levels["bids"]) == 0 and len(price_levels["asks"]) == 0:
+        print("There is no tETH being bought or sold right now!")
 
     best_bid_level = price_levels["bids"][0]
     best_bid_level_price = best_bid_level["price"] # in ticks
@@ -281,4 +306,20 @@ def report_best_price_levels(viewer: EconiaViewer, market_id: int):
     best_ask_level_price = best_ask_level["price"] # in ticks
     best_ask_level_volume = best_ask_level["size"] # in lots
     print(f"There are {best_ask_level_volume} lots (of ETH) being SOLD for a price of {best_ask_level_price} ticks (of USDC) per lot")
+
+def report_place_limit_order_event(event: dict):
+    print(f"EVENT SUMMARY: PlaceLimitOrderEvent")
+    order_id = event["data"]["order_id"]
+    user_addr = event["data"]["user"].hex()
+    ticks_price = event["data"]["price"]
+    positioning = "SELLING" if event["data"]["side"] == Side.ASK else "BUYING"
+    positioning_tip = "(ASK)" if event["data"]["side"] else "(BID)"
+    size_available = event["data"]["remaining_size"]
+    size_original = event["data"]["size"]
+
+    print(f"  * Owner ID: {user_addr}")
+    print(f"  * Order ID: {order_id}")
+    print(f"  * Position: {positioning} {positioning_tip}")
+    print(f"  * Price: {ticks_price} tUSDC ticks per tETH lot")
+    print(f"  * Size: {size_available} available / {size_original}")
     

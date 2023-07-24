@@ -1,4 +1,5 @@
 import { useWallet, WalletReadyState } from "@aptos-labs/wallet-adapter-react";
+import Image from "next/image";
 import {
   createContext,
   type PropsWithChildren,
@@ -57,13 +58,11 @@ export function ConnectWalletContextProvider({ children }: PropsWithChildren) {
                 }
               }}
             >
-              <img
+              <Image
                 src={wallet.icon}
                 height={36}
                 width={36}
-                className=""
-                alt={"Wallet Icon"}
-                id={"token-icon"}
+                alt={`${wallet.name} Icon`}
               />
               <p>
                 {wallet.readyState === WalletReadyState.NotDetected

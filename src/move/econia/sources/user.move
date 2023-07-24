@@ -3273,7 +3273,7 @@ module econia::user {
 
     #[test_only]
     /// Immutably borrow market event handles for a market account.
-    inline fun borrow_market_event_handles_for_market_account(
+    inline fun borrow_market_event_handles_for_market_account_test(
         market_id: u64,
         user: address,
         custodian_id: u64
@@ -3284,6 +3284,27 @@ module econia::user {
         let market_account_id = get_market_account_id(market_id, custodian_id);
         table::borrow(market_event_handles_map_ref, market_account_id)
     }
+
+    #[test_only]
+    /// Return a `ChangeOrderSizeEvent` with the indicated fields.
+    public fun create_change_order_size_event_test(
+        market_id: u64,
+        order_id: u128,
+        user: address,
+        custodian_id: u64,
+        side: bool,
+        new_size: u64
+    ): ChangeOrderSizeEvent {
+        ChangeOrderSizeEvent{
+            market_id,
+            order_id,
+            user,
+            custodian_id,
+            side,
+            new_size
+        }
+    }
+
 
     #[test_only]
     /// Return `HI_PRICE`, for testing synchronization with
@@ -3297,28 +3318,28 @@ module econia::user {
 
     #[test_only]
     /// Get `CancelOrderEvent`s at a market account handle.
-    public fun get_cancel_order_events(
+    public fun get_cancel_order_events_test(
         market_id: u64,
         user: address,
         custodian_id: u64
     ): vector<CancelOrderEvent>
     acquires MarketEventHandles {
         event::emitted_events(
-            &(borrow_market_event_handles_for_market_account(
+            &(borrow_market_event_handles_for_market_account_test(
                 market_id, user, custodian_id).
                 cancel_order_events))
     }
 
     #[test_only]
     /// Get `ChangeOrderSizeEvent`s at a market account handle.
-    public fun get_change_order_size_events(
+    public fun get_change_order_size_events_test(
         market_id: u64,
         user: address,
         custodian_id: u64
     ): vector<ChangeOrderSizeEvent>
     acquires MarketEventHandles {
         event::emitted_events(
-            &(borrow_market_event_handles_for_market_account(
+            &(borrow_market_event_handles_for_market_account_test(
                 market_id, user, custodian_id).
                 change_order_size_events))
     }
@@ -3357,14 +3378,14 @@ module econia::user {
 
     #[test_only]
     /// Get `FillEvent`s at a market account handle.
-    public fun get_fill_events(
+    public fun get_fill_events_test(
         market_id: u64,
         user: address,
         custodian_id: u64
     ): vector<FillEvent>
     acquires MarketEventHandles {
         event::emitted_events(
-            &(borrow_market_event_handles_for_market_account(
+            &(borrow_market_event_handles_for_market_account_test(
                 market_id, user, custodian_id).
                 fill_events))
     }
@@ -3449,28 +3470,28 @@ module econia::user {
 
     #[test_only]
     /// Get `PlaceLimitOrderEvent`s at a market account handle.
-    public fun get_place_limit_order_events(
+    public fun get_place_limit_order_events_test(
         market_id: u64,
         user: address,
         custodian_id: u64
     ): vector<PlaceLimitOrderEvent>
     acquires MarketEventHandles {
         event::emitted_events(
-            &(borrow_market_event_handles_for_market_account(
+            &(borrow_market_event_handles_for_market_account_test(
                 market_id, user, custodian_id).
                 place_limit_order_events))
     }
 
     #[test_only]
     /// Get `PlaceMarketOrderEvent`s at a market account handle.
-    public fun get_place_market_order_events(
+    public fun get_place_market_order_events_test(
         market_id: u64,
         user: address,
         custodian_id: u64
     ): vector<PlaceMarketOrderEvent>
     acquires MarketEventHandles {
         event::emitted_events(
-            &(borrow_market_event_handles_for_market_account(
+            &(borrow_market_event_handles_for_market_account_test(
                 market_id, user, custodian_id).
                 place_market_order_events))
     }

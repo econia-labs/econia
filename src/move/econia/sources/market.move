@@ -4275,7 +4275,7 @@ module econia::market {
 
     #[test_only]
     /// Immutably borrow market event handles for a market.
-    inline fun borrow_market_event_handles_for_market(
+    inline fun borrow_market_event_handles_for_market_test(
         market_id: u64
     ): &MarketEventHandlesForMarket
     acquires MarketEventHandles {
@@ -4287,7 +4287,7 @@ module econia::market {
 
     #[test_only]
     /// Immutably borrow swapper event handles for a market.
-    inline fun borrow_swapper_event_handles_for_market(
+    inline fun borrow_swapper_event_handles_for_market_test(
         market_id: u64,
         swapper: address
     ): &SwapperEventHandlesForMarket
@@ -4354,59 +4354,59 @@ module econia::market {
 
     #[test_only]
     /// Get `CancelOrderEvent`s at market level.
-    public fun get_cancel_order_events_market(
+    public fun get_cancel_order_events_market_test(
         market_id: u64
     ): vector<CancelOrderEvent>
     acquires MarketEventHandles {
         event::emitted_events(
-            &(borrow_market_event_handles_for_market(market_id).
+            &(borrow_market_event_handles_for_market_test(market_id).
                 cancel_order_events))
     }
 
     #[test_only]
     /// Get `CancelOrderEvent`s at swapper level.
-    public fun get_cancel_order_events_swapper(
+    public fun get_cancel_order_events_swapper_test(
         market_id: u64,
         swapper: address
     ): vector<CancelOrderEvent>
     acquires SwapperEventHandles {
         event::emitted_events(
-            &(borrow_swapper_event_handles_for_market(market_id, swapper).
+            &(borrow_swapper_event_handles_for_market_test(market_id, swapper).
                 cancel_order_events))
     }
 
     #[test_only]
     /// Get `FillEvent`s at swapper level.
-    public fun get_fill_events_swapper(
+    public fun get_fill_events_swapper_test(
         market_id: u64,
         swapper: address
     ): vector<FillEvent>
     acquires SwapperEventHandles {
         event::emitted_events(
-            &(borrow_swapper_event_handles_for_market(market_id, swapper).
+            &(borrow_swapper_event_handles_for_market_test(market_id, swapper).
                 fill_events))
     }
 
     #[test_only]
     /// Get `PlaceSwapOrderEvent`s at market level.
-    public fun get_place_swap_order_events_market(
+    public fun get_place_swap_order_events_market_test(
         market_id: u64
     ): vector<PlaceSwapOrderEvent>
     acquires MarketEventHandles {
         event::emitted_events(
-            &(borrow_market_event_handles_for_market(market_id).
+            &(borrow_market_event_handles_for_market_test(market_id).
                 place_swap_order_events))
     }
 
     #[test_only]
     /// Get `PlaceSwapOrderEvent`s at swapper level.
-    public fun get_place_swap_order_events_swapper(
+    public fun get_place_swap_order_events_swapper_test(
         market_id: u64,
         swapper: address
     ): vector<PlaceSwapOrderEvent>
     acquires SwapperEventHandles {
         event::emitted_events(
-            &(borrow_swapper_event_handles_for_market(market_id, swapper).
+            &(borrow_swapper_event_handles_for_market_test(market_id, swapper).
                 place_swap_order_events))
     }
 
@@ -4799,9 +4799,27 @@ module econia::market {
         // Get user-side order access key for later.
         let (_, _, _, _, order_access_key) =
             get_order_fields_test(market_id, side, market_order_id);
+        // Assert event streams.
+        assert!(user::get_cancel_order_events_test(
+            market_id, maker_address, custodian_id) == vector[], 0);
+        assert!(user::get_change_order_size_events_test(
+            market_id, maker_address, custodian_id) == vector[], 0);
         cancel_order_custodian( // Cancel order.
             maker_address, market_id, side, market_order_id,
             &custodian_capability);
+        // Assert event streams.
+        assert!(user::get_cancel_order_events_test(
+            market_id, maker_address, custodian_id) == vector[
+                user::create_cancel_order_event_internal(
+                    market_id,
+                    market_order_id,
+                    maker_address,
+                    custodian_id,
+                    CANCEL_REASON_MANUAL_CANCEL
+                )
+            ], 0);
+        assert!(user::get_change_order_size_events_test(
+            market_id, maker_address, custodian_id) == vector[], 0);
         // Drop custodian capability.
         registry::drop_custodian_capability_test(custodian_capability);
         // Assert list node order inactive.
@@ -4874,8 +4892,26 @@ module econia::market {
         // Get user-side order access key for later.
         let (_, _, _, _, order_access_key) =
             get_order_fields_test(market_id, side, market_order_id);
+        // Assert event streams.
+        assert!(user::get_cancel_order_events_test(
+            market_id, maker_address, custodian_id) == vector[], 0);
+        assert!(user::get_change_order_size_events_test(
+            market_id, maker_address, custodian_id) == vector[], 0);
         // Cancel order.
         cancel_order_user( &maker, market_id, side, market_order_id);
+        // Assert event streams.
+        assert!(user::get_cancel_order_events_test(
+            market_id, maker_address, custodian_id) == vector[
+                user::create_cancel_order_event_internal(
+                    market_id,
+                    market_order_id,
+                    maker_address,
+                    custodian_id,
+                    CANCEL_REASON_MANUAL_CANCEL
+                )
+            ], 0);
+        assert!(user::get_change_order_size_events_test(
+            market_id, maker_address, custodian_id) == vector[], 0);
         // Assert list node order inactive.
         assert!(!is_list_node_order_active(
             market_id, side, market_order_id), 0);
@@ -5089,9 +5125,28 @@ module econia::market {
             price, restriction, self_match_behavior, &custodian_capability);
         // Check if order is tail of corresponding price level.
         assert!(is_local_tail_test(market_id, side, market_order_id), 0);
+        // Assert event streams.
+        assert!(user::get_cancel_order_events_test(
+            market_id, maker_address, custodian_id) == vector[], 0);
+        assert!(user::get_change_order_size_events_test(
+            market_id, maker_address, custodian_id) == vector[], 0);
         change_order_size_custodian( // Change order size.
             maker_address, market_id, side, market_order_id, size_end,
             &custodian_capability);
+        // Assert event streams.
+        assert!(user::get_cancel_order_events_test(
+            market_id, maker_address, custodian_id) == vector[], 0);
+        assert!(user::get_change_order_size_events_test(
+            market_id, maker_address, custodian_id) == vector[
+                user::create_change_order_size_event_test(
+                    market_id,
+                    market_order_id,
+                    maker_address,
+                    custodian_id,
+                    side,
+                    size_end
+                )
+            ], 0);
         // Check if order is tail of corresponding price level.
         assert!(is_local_tail_test(market_id, side, market_order_id), 0);
         // Drop custodian capability.
@@ -5232,8 +5287,27 @@ module econia::market {
             restriction, self_match_behavior);
         // Check if order is tail of corresponding price level.
         assert!(is_local_tail_test(market_id, side, market_order_id), 0);
+        // Assert event streams.
+        assert!(user::get_cancel_order_events_test(
+            market_id, maker_address, custodian_id) == vector[], 0);
+        assert!(user::get_change_order_size_events_test(
+            market_id, maker_address, custodian_id) == vector[], 0);
         change_order_size_user( // Change order size.
             &maker, market_id, side, market_order_id, size_end);
+        // Assert event streams.
+        assert!(user::get_cancel_order_events_test(
+            market_id, maker_address, custodian_id) == vector[], 0);
+        assert!(user::get_change_order_size_events_test(
+            market_id, maker_address, custodian_id) == vector[
+                user::create_change_order_size_event_test(
+                    market_id,
+                    market_order_id,
+                    maker_address,
+                    custodian_id,
+                    side,
+                    size_end
+                )
+            ], 0);
         // Check if order is tail of corresponding price level.
         assert!(is_local_tail_test(market_id, side, market_order_id), 0);
         // Get fields for maker order on book.
@@ -5337,8 +5411,27 @@ module econia::market {
         // Verify order tail checks at corresponding price level.
         assert!(!is_local_tail_test(market_id, side, market_order_id_0), 0);
         assert!(is_local_tail_test(market_id, side, market_order_id_1), 0);
+        // Assert event streams.
+        assert!(user::get_cancel_order_events_test(
+            market_id, maker_address, custodian_id) == vector[], 0);
+        assert!(user::get_change_order_size_events_test(
+            market_id, maker_address, custodian_id) == vector[], 0);
         change_order_size_user( // Change order size.
             &maker, market_id, side, market_order_id_0, size_end_0);
+        // Assert event streams.
+        assert!(user::get_cancel_order_events_test(
+            market_id, maker_address, custodian_id) == vector[], 0);
+        assert!(user::get_change_order_size_events_test(
+            market_id, maker_address, custodian_id) == vector[
+                user::create_change_order_size_event_test(
+                    market_id,
+                    market_order_id_0,
+                    maker_address,
+                    custodian_id,
+                    side,
+                    size_end_0
+                )
+            ], 0);
         // Verify order tail checks at corresponding price level.
         assert!(is_local_tail_test(market_id, side, market_order_id_0), 0);
         assert!(!is_local_tail_test(market_id, side, market_order_id_1), 0);

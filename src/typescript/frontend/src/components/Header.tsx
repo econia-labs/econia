@@ -114,7 +114,7 @@ export function Header({ logoHref }: HeaderProps) {
               </Button>
               <Button
                 variant="outlined"
-                onClick={() => disconnect()}
+                onClick={disconnect}
                 className="whitespace-nowrap text-[16px]/6"
               >
                 Disconnect

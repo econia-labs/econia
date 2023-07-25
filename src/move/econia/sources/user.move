@@ -4537,8 +4537,8 @@ module econia::user {
         // Fill order, storing base and quote coins for matching engine.
         (optional_base_coins, quote_coins, _) = fill_order_internal<BC, QC>(
                 @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, access_key,
-                size + 1, size, complete_fill, optional_base_coins, quote_coins,
-                base_fill, quote_fill);
+                size + 1, size, complete_fill, optional_base_coins,
+                quote_coins, base_fill, quote_fill);
         // Destroy external coins.
         assets::burn(option::destroy_some(optional_base_coins));
         assets::burn(quote_coins);

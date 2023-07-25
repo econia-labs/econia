@@ -112,26 +112,6 @@ export function OrderbookTable({
     );
   }, [data]);
 
-  // if (isLoading) {
-  //   return (
-  //     <div className="flex h-full flex-col items-center justify-center text-sm font-light uppercase text-neutral-500">
-  //       {/* Loading... */}
-  //       {/* <div className="h-full w-full leading-none">
-  //         <Skeleton containerClassName="block h-full [&>*]:h-full" />
-  //       </div> */}
-  //       <div className="relative flex h-6 w-full cursor-pointer items-center justify-between py-[1px] hover:ring-1 hover:ring-neutral-600">
-  //         <div className={`z-10 ml-4 w-20 text-right font-roboto-mono text-xs`}>
-  //           <Skeleton />
-  //         </div>
-  //         <div className="z-10 mr-4 w-20 py-0.5 font-roboto-mono text-xs text-white">
-  //           <Skeleton />
-  //         </div>
-  //         <div className={`absolute right-0 z-0 h-full opacity-30`}></div>
-  //       </div>
-  //     </div>
-  //   );
-  // }
-
   return (
     <div className="flex grow flex-col">
       {/* title row */}
@@ -174,7 +154,7 @@ export function OrderbookTable({
       </div>
       {/* bids ask spread scrollable container */}
       <div className="scrollbar-none relative grow overflow-y-auto">
-        {true && (
+        {isLoading && (
           <div className="absolute w-full">
             {Array.from({ length: 60 }, (_, i) => (
               <div
@@ -202,7 +182,7 @@ export function OrderbookTable({
             ))}
           </div>
         )}
-        {false && (
+        {!isLoading && (
           <div className="absolute w-full">
             {/* ASK */}
             {data?.asks.map((level) => (

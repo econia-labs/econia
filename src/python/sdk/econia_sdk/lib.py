@@ -42,7 +42,7 @@ class EconiaViewer:
         module: str,
         function: str,
         type_arguments: List[str] = [],
-        arguments: List = [], # string encoded args i.e "12345" or "0xabcdef" or "abracadabra"
+        arguments: List = [],  # string encoded args i.e "12345" or "0xabcdef" or "abracadabra"
         ledger_version: int = -1,
     ) -> List:
         if ledger_version < 0:

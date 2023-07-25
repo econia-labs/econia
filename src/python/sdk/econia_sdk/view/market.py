@@ -166,10 +166,10 @@ def _convert_open_order_value(value) -> dict:
     return {
         "custodian_id": int(value["custodian_id"]),
         "market_id": int(value["market_id"]),
-        "market_order_id": int(value["market_order_id"]),
+        "order_id": int(value["order_id"]),
         "price": int(value["price"]),  # ticks per lot
         "side": side,
-        "size": int(value["size"]),  # lots of base
+        "remaining_size": int(value["remaining_size"]),  # lots of base
         "user": AccountAddress.from_hex(value["user"]),
     }
 

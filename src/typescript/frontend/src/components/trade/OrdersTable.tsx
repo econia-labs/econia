@@ -11,6 +11,7 @@ import React from "react";
 import { type ApiMarket, type ApiOrder } from "@/types/api";
 
 import { ConnectedButton } from "../ConnectedButton";
+import Skeleton from "react-loading-skeleton";
 
 const columnHelper = createColumnHelper<ApiOrder>();
 
@@ -145,11 +146,23 @@ export const OrdersTable: React.FC<{
           </tr>
           {isLoading || !data ? (
             <tr>
-              <td colSpan={7}>
-                <div className="flex h-[150px] flex-col items-center justify-center text-sm font-light uppercase text-neutral-500">
-                  Loading...
-                </div>
-              </td>
+              {table.getAllColumns().map((column, i) => (
+                <td
+                  className={`${
+                    i === 0
+                      ? "pl-4 text-left text-neutral-500"
+                      : i === 6
+                      ? ""
+                      : ""
+                  }`}
+                  key={column.id}
+                >
+                  {/* wrapping div to give some space between skeleton elements */}
+                  <div className={"pr-3"}>
+                    <Skeleton />
+                  </div>
+                </td>
+              ))}
             </tr>
           ) : !connected ? (
             <tr>

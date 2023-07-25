@@ -38,7 +38,7 @@ export default function Faucet({
 
   const balanceQueries = useQueries({
     queries: coinInfoList.map((coinInfo, i) => ({
-      queryKey: ["balance", coinInfo.name, account?.address],
+      queryKey: ["balance", account?.address, coinInfo.name],
       queryFn: async () => {
         if (account?.address == null) {
           throw new Error("Query should not be enabled.");
@@ -55,19 +55,8 @@ export default function Faucet({
   });
 
   useEffect(() => {
-    const invalidateAllBalances = async () => {
-      await Promise.all(
-        coinInfoList.map(async (coinInfo) => {
-          await queryClient.invalidateQueries([
-            "balance",
-            coinInfo.name,
-            account?.address,
-          ]);
-        }),
-      );
-    };
-    invalidateAllBalances();
-  }, [account?.address, coinInfoList, queryClient]);
+    queryClient.invalidateQueries(["balance", account?.address]);
+  }, [account?.address, queryClient]);
 
   const mintCoin = useCallback(
     async (typeTag: TypeTag, i: number) => {

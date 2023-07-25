@@ -49,6 +49,40 @@ impl TryFrom<u8> for Side {
     derive(Serialize, Deserialize),
     serde(rename_all = "snake_case")
 )]
+pub enum Direction {
+    Buy,
+    Sell,
+}
+
+impl From<bool> for Direction {
+    fn from(value: bool) -> Self {
+        match value {
+            false => Self::Buy,
+            true => Self::Sell,
+        }
+    }
+}
+
+impl TryFrom<u8> for Direction {
+    type Error = TypeError;
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Self::Buy),
+            1 => Ok(Self::Sell),
+            _ => Err(TypeError::ConversionError {
+                name: "Direction".to_string(),
+            }),
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[cfg_attr(
+    feature = "serde",
+    derive(Serialize, Deserialize),
+    serde(rename_all = "snake_case")
+)]
 #[repr(u8)]
 pub enum AdvanceStyle {
     Ticks,
@@ -156,6 +190,72 @@ pub enum OrderState {
     Evicted,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[cfg_attr(
+    feature = "serde",
+    derive(Serialize, Deserialize),
+    serde(rename_all = "snake_case")
+)]
+#[repr(u8)]
+pub enum CancelType {
+    Both,
+    Maker,
+    Taker,
+}
+
+impl TryFrom<u8> for CancelType {
+    type Error = TypeError;
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Self::Both),
+            1 => Ok(Self::Maker),
+            2 => Ok(Self::Taker),
+            _ => Err(TypeError::ConversionError {
+                name: "CancelType".to_string(),
+            }),
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[cfg_attr(
+    feature = "serde",
+    derive(Serialize, Deserialize),
+    serde(rename_all = "snake_case")
+)]
+#[repr(u8)]
+pub enum CancelReason {
+    Eviction,
+    ImmediateOrCancel,
+    ManualCancel,
+    MaxQuoteTraded,
+    NotEnoughLiquidity,
+    SelfMatchMaker,
+    SelfMatchTaker,
+    TooSmallAfterMatching,
+}
+
+impl TryFrom<u8> for CancelReason {
+    type Error = TypeError;
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            1 => Ok(CancelReason::Eviction),
+            2 => Ok(CancelReason::ImmediateOrCancel),
+            3 => Ok(CancelReason::ManualCancel),
+            4 => Ok(CancelReason::MaxQuoteTraded),
+            5 => Ok(CancelReason::NotEnoughLiquidity),
+            6 => Ok(CancelReason::SelfMatchMaker),
+            7 => Ok(CancelReason::SelfMatchTaker),
+            8 => Ok(CancelReason::TooSmallAfterMatching),
+            _ => Err(TypeError::ConversionError {
+                name: "CancelReason".to_string(),
+            }),
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Order {
@@ -171,3 +271,24 @@ pub struct Order {
     pub created_at: DateTime<Utc>,
 }
 
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct Fill {
+    pub market_id: u64,
+    pub maker_order_id: u128,
+    pub maker: String,
+    pub maker_side: Side,
+    pub custodian_id: Option<u64>,
+    pub size: u64,
+    pub price: u64,
+    pub time: DateTime<Utc>,
+}
+
+pub const HI_PRICE: u64 = 0xffffffff;
+pub const HI_64: u64 = 0xffffffffffffffff;
+pub const MAX_POSSIBLE: u64 = 0xffffffffffffffff;
+pub const SHIFT_COUNTER: u64 = 64;
+pub const SHIFT_MARKET_ID: u64 = 64;
+pub const NO_CUSTODIAN: u64 = 0;
+pub const NO_UNDERWRITER: u64 = 0;
+pub const NIL: u64 = 0;

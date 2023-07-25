@@ -2674,7 +2674,8 @@ module econia::market {
         // and new size.
         user::change_order_size_internal(
             user, market_id, custodian_id, side, order_ref_mut.size, new_size,
-            order_ref_mut.price, order_ref_mut.order_access_key, market_order_id);
+            order_ref_mut.price, order_ref_mut.order_access_key,
+            market_order_id);
         // Get order price.
         let price = avl_queue::get_access_key_insertion_key(avlq_access_key);
         // If size change is for a size decrease or if order is at tail
@@ -12133,7 +12134,8 @@ module econia::market {
         assert!(custodian_id_r == NO_CUSTODIAN, 0);
         // Assert user-side order fields.
         let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
-            @user_0, MARKET_ID_COIN, NO_CUSTODIAN, side_maker, order_access_key);
+            @user_0, MARKET_ID_COIN, NO_CUSTODIAN, side_maker,
+            order_access_key);
         assert!(market_order_id_r == market_order_id_0, 0);
         assert!(size_r            == size_maker - size_taker, 0);
         // Assert maker's asset counts.

@@ -1896,15 +1896,15 @@ module econia::market {
     ///
     /// # Testing
     ///
-    /// * `test_swap_between_coinstores_max_possible_base_buy()`
-    /// * `test_swap_between_coinstores_max_possible_base_sell()`
-    /// * `test_swap_between_coinstores_max_possible_quote_buy()`
-    /// * `test_swap_between_coinstores_max_possible_quote_sell()`
-    /// * `test_swap_between_coinstores_max_quote_traded()`
-    /// * `test_swap_between_coinstores_not_enough_liquidity()`
-    /// * `test_swap_between_coinstores_register_base_store()`
-    /// * `test_swap_between_coinstores_register_quote_store()`
-    /// * `test_swap_between_coinstores_self_match_taker_cancel()`
+    /// * `test_swap_between_coinstores_max_possible_base_buy()` TODO
+    /// * `test_swap_between_coinstores_max_possible_base_sell()` TODO
+    /// * `test_swap_between_coinstores_max_possible_quote_buy()` TODO
+    /// * `test_swap_between_coinstores_max_possible_quote_sell()` TODO
+    /// * `test_swap_between_coinstores_max_quote_traded()` TODO
+    /// * `test_swap_between_coinstores_not_enough_liquidity()` TODO
+    /// * `test_swap_between_coinstores_register_base_store()` TODO
+    /// * `test_swap_between_coinstores_register_quote_store()` TODO
+    /// * `test_swap_between_coinstores_self_match_taker_cancel()` TODO
     public fun swap_between_coinstores<
         BaseType,
         QuoteType
@@ -2073,12 +2073,12 @@ module econia::market {
     ///
     /// # Testing
     ///
-    /// * `test_swap_coins_buy_max_base_limiting()`
-    /// * `test_swap_coins_buy_no_max_quote_limiting()`
-    /// * `test_swap_coins_buy_no_max_base_limiting()`
-    /// * `test_swap_coins_sell_max_quote_limiting()`
-    /// * `test_swap_coins_sell_no_max_base_limiting()`
-    /// * `test_swap_coins_sell_no_max_quote_limiting()`
+    /// * `test_swap_coins_buy_max_base_limiting()` TODO
+    /// * `test_swap_coins_buy_no_max_quote_limiting()` TODO
+    /// * `test_swap_coins_buy_no_max_base_limiting()` TODO
+    /// * `test_swap_coins_sell_max_quote_limiting()` TODO
+    /// * `test_swap_coins_sell_no_max_base_limiting()` TODO
+    /// * `test_swap_coins_sell_no_max_quote_limiting()` TODO
     public fun swap_coins<
         BaseType,
         QuoteType
@@ -2199,11 +2199,11 @@ module econia::market {
     ///
     /// # Testing
     ///
-    /// * `test_swap_generic_buy_base_limiting()`
-    /// * `test_swap_generic_buy_quote_limiting()`
-    /// * `test_swap_generic_sell_max_quote_limiting()`
-    /// * `test_swap_generic_sell_no_max_base_limiting()`
-    /// * `test_swap_generic_sell_no_max_quote_limiting()`
+    /// * `test_swap_generic_buy_base_limiting()` TODO
+    /// * `test_swap_generic_buy_quote_limiting()` TODO
+    /// * `test_swap_generic_sell_max_quote_limiting()` TODO
+    /// * `test_swap_generic_sell_no_max_base_limiting()` TODO
+    /// * `test_swap_generic_sell_no_max_quote_limiting()` TODO
     public fun swap_generic<
         QuoteType
     >(
@@ -2940,18 +2940,18 @@ module econia::market {
     ///
     /// # Expected value testing
     ///
-    /// * `test_match_complete_fill_no_lots_buy()`
-    /// * `test_match_complete_fill_no_ticks_sell()`
-    /// * `test_match_empty()`
-    /// * `test_match_fill_size_0()`
-    /// * `test_match_loop_twice()`
-    /// * `test_match_partial_fill_lot_limited_sell()`
-    /// * `test_match_partial_fill_tick_limited_buy()`
-    /// * `test_match_price_break_buy()`
-    /// * `test_match_price_break_sell()`
-    /// * `test_match_self_match_cancel_both()`
-    /// * `test_match_self_match_cancel_maker()`
-    /// * `test_match_self_match_cancel_taker()`
+    /// * `test_match_complete_fill_no_lots_buy()` TODO
+    /// * `test_match_complete_fill_no_ticks_sell()` TODO
+    /// * `test_match_empty()` TODO
+    /// * `test_match_fill_size_0()` TODO
+    /// * `test_match_loop_twice()` TODO
+    /// * `test_match_partial_fill_lot_limited_sell()` TODO
+    /// * `test_match_partial_fill_tick_limited_buy()` TODO
+    /// * `test_match_price_break_buy()` TODO
+    /// * `test_match_price_break_sell()` TODO
+    /// * `test_match_self_match_cancel_both()` TODO
+    /// * `test_match_self_match_cancel_maker()` TODO
+    /// * `test_match_self_match_cancel_taker()` TODO
     ///
     /// # Failure testing
     ///
@@ -3233,19 +3233,19 @@ module econia::market {
     ///
     /// # Expected value testing
     ///
-    /// * `test_place_limit_order_crosses_ask_exact()`
-    /// * `test_place_limit_order_crosses_ask_partial()`
-    /// * `test_place_limit_order_crosses_ask_partial_cancel()`
-    /// * `test_place_limit_order_crosses_ask_self_match_cancel()`
-    /// * `test_place_limit_order_crosses_bid_exact()`
-    /// * `test_place_limit_order_crosses_bid_partial()`
-    /// * `test_place_limit_order_crosses_bid_partial_post_under_min()`
+    /// * `test_place_limit_order_crosses_ask_exact()` TODO
+    /// * `test_place_limit_order_crosses_ask_partial()` TODO
+    /// * `test_place_limit_order_crosses_ask_partial_cancel()` TODO
+    /// * `test_place_limit_order_crosses_ask_self_match_cancel()` TODO
+    /// * `test_place_limit_order_crosses_bid_exact()` TODO
+    /// * `test_place_limit_order_crosses_bid_partial()` TODO
+    /// * `test_place_limit_order_crosses_bid_partial_post_under_min()` TODO
     /// * `test_place_limit_order_evict()`
-    /// * `test_place_limit_order_no_cross_ask_user()`
-    /// * `test_place_limit_order_no_cross_ask_user_ioc()`
-    /// * `test_place_limit_order_no_cross_bid_custodian()`
-    /// * `test_place_limit_order_still_crosses_ask()`
-    /// * `test_place_limit_order_still_crosses_bid()`
+    /// * `test_place_limit_order_no_cross_ask_user()` TODO
+    /// * `test_place_limit_order_no_cross_ask_user_ioc()` TODO
+    /// * `test_place_limit_order_no_cross_bid_custodian()` TODO
+    /// * `test_place_limit_order_still_crosses_ask()` TODO
+    /// * `test_place_limit_order_still_crosses_bid()` TODO
     ///
     /// # Failure testing
     ///
@@ -3726,11 +3726,11 @@ module econia::market {
     ///
     /// # Expected value testing
     ///
-    /// * `test_place_market_order_max_base_adjust_buy_user()`
-    /// * `test_place_market_order_max_base_buy_user()`
-    /// * `test_place_market_order_max_base_sell_custodian()`
-    /// * `test_place_market_order_max_quote_buy_custodian()`
-    /// * `test_place_market_order_max_quote_sell_user()`
+    /// * `test_place_market_order_max_base_adjust_buy_user()` TODO
+    /// * `test_place_market_order_max_base_buy_user()` TODO
+    /// * `test_place_market_order_max_base_sell_custodian()` TODO
+    /// * `test_place_market_order_max_quote_buy_custodian()` TODO
+    /// * `test_place_market_order_max_quote_sell_user()` TODO
     ///
     /// # Failure testing
     ///
@@ -8522,6 +8522,15 @@ module econia::market {
                                 assets::mint_test(base_deposit));
         user::deposit_coins<QC>(@user_1, MARKET_ID_COIN, NO_CUSTODIAN,
                                 assets::mint_test(quote_deposit));
+        // Assert events.
+        assert!(user::get_place_limit_order_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[], 0);
+        assert!(user::get_place_limit_order_events_test(
+            MARKET_ID_COIN, @user_1, NO_CUSTODIAN) == vector[], 0);
+        assert!(user::get_cancel_order_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[], 0);
+        assert!(user::get_cancel_order_events_test(
+            MARKET_ID_COIN, @user_1, NO_CUSTODIAN) == vector[], 0);
         // Place a single order by user 0.
         let (market_order_id_0, _, _, _) = place_limit_order_user<BC, QC>(
             &user_0, MARKET_ID_COIN, @integrator, side, size_0, price_0,
@@ -8562,6 +8571,64 @@ module econia::market {
         let (market_order_id_2, _, _, _) = place_limit_order<BC, QC>(
             @user_1, MARKET_ID_COIN, NO_CUSTODIAN, @integrator, side, size_2,
             price_2, restriction, self_match_behavior, critical_height);
+        // Assert events.
+        assert!(user::get_place_limit_order_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[
+                user::create_place_limit_order_event_test(
+                    MARKET_ID_COIN,
+                    @user_0,
+                    NO_CUSTODIAN,
+                    @integrator,
+                    side,
+                    size_0,
+                    price_0,
+                    restriction,
+                    self_match_behavior,
+                    size_0,
+                    market_order_id_0
+                )
+            ], 0);
+        assert!(user::get_place_limit_order_events_test(
+            MARKET_ID_COIN, @user_1, NO_CUSTODIAN) == vector[
+                user::create_place_limit_order_event_test(
+                    MARKET_ID_COIN,
+                    @user_1,
+                    NO_CUSTODIAN,
+                    @integrator,
+                    side,
+                    size_1,
+                    price_1,
+                    restriction,
+                    self_match_behavior,
+                    size_1,
+                    market_order_id_1
+                ),
+                user::create_place_limit_order_event_test(
+                    MARKET_ID_COIN,
+                    @user_1,
+                    NO_CUSTODIAN,
+                    @integrator,
+                    side,
+                    size_2,
+                    price_2,
+                    restriction,
+                    self_match_behavior,
+                    size_2,
+                    market_order_id_2
+                )
+            ], 0);
+        assert!(user::get_cancel_order_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[
+                user::create_cancel_order_event_internal(
+                    MARKET_ID_COIN,
+                    market_order_id_0,
+                    @user_0,
+                    NO_CUSTODIAN,
+                    CANCEL_REASON_EVICTION
+                )
+            ], 0);
+        assert!(user::get_cancel_order_events_test(
+            MARKET_ID_COIN, @user_1, NO_CUSTODIAN) == vector[], 0);
         // Assert order fields for third placed order.
         let (size_r, price_r, user_r, custodian_id_r, order_access_key_2) =
             get_order_fields_test(MARKET_ID_COIN, side, market_order_id_2);

@@ -3305,6 +3305,35 @@ module econia::user {
         }
     }
 
+    #[test_only]
+    /// Return a `PlaceLimitOrderEvent` with the indicated fields.
+    public fun create_place_limit_order_event_test(
+        market_id: u64,
+        user: address,
+        custodian_id: u64,
+        integrator: address,
+        side: bool,
+        size: u64,
+        price: u64,
+        restriction: u8,
+        self_match_behavior: u8,
+        remaining_size: u64,
+        order_id: u128
+    ): PlaceLimitOrderEvent {
+        PlaceLimitOrderEvent{
+            market_id,
+            user,
+            custodian_id,
+            integrator,
+            side,
+            size,
+            price,
+            restriction,
+            self_match_behavior,
+            remaining_size,
+            order_id
+        }
+    }
 
     #[test_only]
     /// Return `HI_PRICE`, for testing synchronization with

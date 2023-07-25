@@ -80,6 +80,8 @@ export default function Faucet({
       } catch (e) {
         if (e instanceof Error) {
           toast.error(e.message);
+        } else {
+          console.error(e);
         }
       } finally {
         setIsLoadingArray((isLoadingArray) => [

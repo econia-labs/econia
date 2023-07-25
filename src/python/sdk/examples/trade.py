@@ -120,72 +120,6 @@ def get_aptos_faucet_url() -> str:
             return url_in
     else:
         return url
-        
-
-def report_fill_events(fill_events: list[dict]):
-    print("LAST ORDER EXECUTION BREAKDOWN: FillEvent(s)")
-    if len(fill_events) != 0:
-        last_events = find_all_fill_events_with_last_taker_order_id(fill_events)
-        last_events_maker_side = last_events[0]["data"]["maker_side"]
-        n_last_events = len(last_events)
-        if last_events_maker_side == Side.ASK:
-            print(
-                f"  * There were {n_last_events} ASK orders filled by the BID order placement."
-            )
-        else:
-            print(
-                f"  * There were {n_last_events} BID orders filled by the ASK order placement."
-            )
-
-        last_events_prices = list(
-            map(lambda ev: ev["data"]["price"], last_events)
-        )
-        price_render = " -> ".join(str(price) for price in last_events_prices)
-        print(f"  * Execution prices (ticks/lot): {price_render}")
-
-        last_events_sizes = list(
-            map(lambda ev: ev["data"]["size"], last_events)
-        )
-        sizes_render = " +> ".join(str(price) for price in last_events_sizes)
-        print(f"  * Execution sizes (lots): {sizes_render}")
-
-        last_events_fees = list(
-            map(lambda ev: ev["data"]["taker_quote_fees_paid"], last_events)
-        )
-        fees_render = " +> ".join(str(price) for price in last_events_fees)
-        print(f"  * Execution fees (quote subunits): {fees_render}")
-    else:
-        print("  * There were no order fills for the queried account")
-
-
-def report_order_for_last_fill(
-    fill_events: list[dict], open_orders: list[dict]
-):
-    order_id = fill_events[-1]["data"]["taker_order_id"]
-    open_order = list(
-        filter(lambda ev: ev["order_id"] == order_id, open_orders)
-    )
-    if len(open_order) == 1:
-        print("  * The order WAS NOT fully satisfied by initial execution")
-    elif len(open_order) == 0:
-        print("  * The order WAS fully satisfied by initial execution")
-    else:
-        print("  * Put on a hazmat suit because it has two cancel events!")
-
-
-def find_all_fill_events_with_last_taker_order_id(
-    events: list[dict],
-) -> list[dict]:
-    index = len(events) - 1
-    returns = []
-    while index > 0:
-        last_fill_order_id = events[-1]["data"]["taker_order_id"]
-        ev = events[index]
-        if ev["data"]["taker_order_id"] == last_fill_order_id:
-            returns.append(ev)
-        index = index - 1
-    returns.reverse()
-    return returns
 
 
 ECONIA_ADDR = (
@@ -211,7 +145,7 @@ def start():
 
     bids_price, asks_price = get_best_prices(viewer, market_id)
     if bids_price is not None or asks_price is not None:
-        input("\nPress enter to clean-up open orders on the market.")
+        input("\n\nPress enter to clean-up open orders on the market.")
         account_ = setup_new_account(
             viewer, faucet_client, market_id, 9, 10_000 * 100
         )
@@ -229,12 +163,12 @@ def start():
     else:
         print("There are no open orders on this market right now.")
 
-    input("\nPress enter to set-up an Account A with funds.")
+    input("\n\nPress enter to set-up an Account A with funds.")
     account_A = setup_new_account(viewer, faucet_client, market_id)
     print(f"Account A was set-up: {account_A.account_address}")
     dump_txns()
 
-    input("\nPress enter to place limit orders with Account A.")
+    input("\n\nPress enter to place limit orders with Account A.")
     # Bid to purchase 1 whole ETH at a price of 1 whole USDC per lot!
     # = $1000/ETH since there are 1000 lots in a whole ETH & 1 tick = 0.001 USDC
     buy_base_lots = 1 * (10**3)
@@ -273,12 +207,14 @@ def start():
     dump_txns()
     report_best_price_levels(viewer, market_id)
 
-    input("\nPress enter to set-up and Account B with funds.")
+    input("\n\nPress enter to set-up and Account B with funds.")
     account_B = setup_new_account(viewer, faucet_client, market_id)
     print(f"Account B was set-up: {account_B.account_address}")
     dump_txns()
 
-    input("\nPress enter to place market orders (buy and sell) with Account B.")
+    input(
+        "\n\nPress enter to place market orders (buy and sell) with Account B."
+    )
     place_market_order(Side.BID, account_B, market_id, 500)  # Buy 0.5 ETH
     place_market_order(Side.ASK, account_B, market_id, 500)  # Sell 0.5 ETH
     fill_size = len(
@@ -289,7 +225,7 @@ def start():
     dump_txns()
     report_best_price_levels(viewer, market_id)
 
-    input("\nPress enter to cancel all of Account A's outstanding orders")
+    input("\n\nPress enter to cancel all of Account A's outstanding orders")
     client_A = EconiaClient(NODE_URL, ECONIA_ADDR, account_A)
     calldata1 = cancel_all_orders_user(ECONIA_ADDR, market_id, Side.ASK)
     exec_txn(client_A, calldata1, "Cancel all ASKS for Account A")
@@ -303,7 +239,7 @@ def start():
     report_best_price_levels(viewer, market_id)
 
     input(
-        "\nPress enter to place competitive limit orders (top-of-book) with Account A."
+        "\n\nPress enter to place competitive limit orders (top-of-book) with Account A."
     )
     _, start_ask_price = place_limit_orders_at_market(
         viewer, account_A, market_id, 100, buy_ticks_per_lot, sell_ticks_per_lot
@@ -328,7 +264,7 @@ def start():
         exit()
 
     input(
-        "\nPress enter to place spread-crossing limit order with Account B (no remainder)."
+        "\n\nPress enter to place spread-crossing limit order with Account B (no remainder)."
     )
     equal_volume = 100 + 200 + 300 + 400 + 500
     place_limit_order(
@@ -342,7 +278,7 @@ def start():
     report_order_for_last_fill(fills, open_orders)
 
     input(
-        "\nPress enter to place spread-crossing limit order with Account B (w/ remainder)."
+        "\n\nPress enter to place spread-crossing limit order with Account B (w/ remainder)."
     )
     greater_volume = equal_volume * 2
     place_limit_order(
@@ -355,7 +291,7 @@ def start():
     open_orders.extend(opens["bids"])
     report_order_for_last_fill(fills, open_orders)
 
-    print("\nTHE END!")
+    print("\n\nTHE END!")
 
 
 def place_market_order(
@@ -676,6 +612,72 @@ def report_place_limit_order_event(event: dict):
     print(f"  * Side: {positioning} {positioning_tip}")
     print(f"  * Price: {ticks_price} tUSDC ticks per tETH lot")
     print(f"  * Size: {size_available} available tETH lots / {size_original}")
+
+
+def report_fill_events(fill_events: list[dict]):
+    print("LAST ORDER EXECUTION BREAKDOWN: FillEvent(s)")
+    if len(fill_events) != 0:
+        last_events = find_all_fill_events_with_last_taker_order_id(fill_events)
+        last_events_maker_side = last_events[0]["data"]["maker_side"]
+        n_last_events = len(last_events)
+        if last_events_maker_side == Side.ASK:
+            print(
+                f"  * There were {n_last_events} ASK orders filled by the BID order placement."
+            )
+        else:
+            print(
+                f"  * There were {n_last_events} BID orders filled by the ASK order placement."
+            )
+
+        last_events_prices = list(
+            map(lambda ev: ev["data"]["price"], last_events)
+        )
+        price_render = " -> ".join(str(price) for price in last_events_prices)
+        print(f"  * Execution prices (ticks/lot): {price_render}")
+
+        last_events_sizes = list(
+            map(lambda ev: ev["data"]["size"], last_events)
+        )
+        sizes_render = " +> ".join(str(price) for price in last_events_sizes)
+        print(f"  * Execution sizes (lots): {sizes_render}")
+
+        last_events_fees = list(
+            map(lambda ev: ev["data"]["taker_quote_fees_paid"], last_events)
+        )
+        fees_render = " +> ".join(str(price) for price in last_events_fees)
+        print(f"  * Execution fees (quote subunits): {fees_render}")
+    else:
+        print("  * There were no order fills for the queried account")
+
+
+def report_order_for_last_fill(
+    fill_events: list[dict], open_orders: list[dict]
+):
+    order_id = fill_events[-1]["data"]["taker_order_id"]
+    open_order = list(
+        filter(lambda ev: ev["order_id"] == order_id, open_orders)
+    )
+    if len(open_order) == 1:
+        print("  * The order WAS NOT fully satisfied by initial execution")
+    elif len(open_order) == 0:
+        print("  * The order WAS fully satisfied by initial execution")
+    else:
+        print("  * Put on a hazmat suit because it has two cancel events!")
+
+
+def find_all_fill_events_with_last_taker_order_id(
+    events: list[dict],
+) -> list[dict]:
+    index = len(events) - 1
+    returns = []
+    while index > 0:
+        last_fill_order_id = events[-1]["data"]["taker_order_id"]
+        ev = events[index]
+        if ev["data"]["taker_order_id"] == last_fill_order_id:
+            returns.append(ev)
+        index = index - 1
+    returns.reverse()
+    return returns
 
 
 def exec_txn(client: EconiaClient, calldata: EntryFunction, reason: str):

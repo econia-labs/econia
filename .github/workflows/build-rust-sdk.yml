@@ -1,0 +1,43 @@
+---
+name: Build Rust SDK
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - src/rust/sdk/**
+      - src/rust/types/**
+      - src/rust/Cargo.toml
+      - src/rust/Cargo.lock
+      - .github/workflows/build-rust-sdk.yml
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Setup mold
+        uses: rui314/setup-mold@v1
+
+      - name: Run sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.3
+
+      - name: Build Rust SDK
+        run: cargo build
+        working-directory: src/rust/sdk
+        env:
+          RUSTFLAGS: "-C link-arg=-fuse-ld=mold"
+          SCCACHE_GHA_ENABLED: true
+          RUSTC_WRAPPER: sccache

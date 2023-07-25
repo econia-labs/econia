@@ -7,6 +7,7 @@ import { type ApiMarket } from "@/types/api";
 import { type Orderbook, type PriceLevel } from "@/types/global";
 import { toDecimalPrice, toDecimalSize } from "@/utils/econia";
 import { averageOrOtherPriceLevel } from "@/utils/formatter";
+import Skeleton from "react-loading-skeleton";
 
 // const precisionOptions: Precision[] = [
 //   "0.01",
@@ -114,7 +115,10 @@ export function OrderbookTable({
   if (isLoading) {
     return (
       <div className="flex h-full flex-col items-center justify-center text-sm font-light uppercase text-neutral-500">
-        Loading...
+        {/* Loading... */}
+        <div className="h-full w-full leading-none">
+          <Skeleton containerClassName="block h-full [&>*]:h-full" />
+        </div>
       </div>
     );
   }

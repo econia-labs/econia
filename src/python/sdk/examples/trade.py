@@ -65,6 +65,7 @@ OPTIONAL: Deploy an Econia Exchange.
 
 NODE_URL_DEVNET = "https://fullnode.devnet.aptoslabs.com/v1"
 FAUCET_URL_DEVNET = "https://faucet.devnet.aptoslabs.com"
+ECONIA_ADDR_DEVNET = "0xc0de0000fe693e08f668613c502360dc48508197401d2ac1ae79571498cd8b74"
 COIN_TYPE_APT = "0x1::aptos_coin::AptosCoin"
 
 
@@ -75,9 +76,7 @@ def get_econia_address() -> AccountAddress:
             "Please enter the address of an Econia deployment (enter nothing to default to devnet OR re-run with ECONIA_ADDR environment variable)\n"
         ).strip()
         if addr_in == "":
-            return AccountAddress.from_hex(
-                "0xc0de0000fe693e08f668613c502360dc48508197401d2ac1ae79571498cd8b74"
-            )
+            return AccountAddress.from_hex(ECONIA_ADDR_DEVNET)
         else:
             return AccountAddress.from_hex(addr_in)
     else:

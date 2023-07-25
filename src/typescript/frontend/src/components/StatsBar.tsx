@@ -203,16 +203,20 @@ export const StatsBar: React.FC<{
               24H CHANGE
             </span>
             <p className="font-roboto-mono text-xs font-light text-white">
-              <span className="inline-block text-white">
+              <span className="inline-block min-w-[70px] text-white">
                 {formatNumber(data?.change24h, 2)}
               </span>
-              <span
-                className={`ml-3 ${
-                  (data?.change24hPercent || 0) < 0 ? "text-red" : "text-green"
-                }`}
-              >
-                {formatNumber(data?.change24hPercent, 2, "always")}%
-              </span>
+              {data?.change24hPercent && (
+                <span
+                  className={`ml-2 ${
+                    (data?.change24hPercent || 0) < 0
+                      ? "text-red"
+                      : "text-green"
+                  }`}
+                >
+                  {formatNumber(data?.change24hPercent, 2, "always")}%
+                </span>
+              )}
             </p>
           </div>
           {/* 24 hr high */}

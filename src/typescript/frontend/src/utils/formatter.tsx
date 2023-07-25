@@ -21,6 +21,7 @@ export const formatNumber = (
   signDisplay: Intl.NumberFormatOptions["signDisplay"] = "never",
 ): string | ReactElement => {
   if (!num) return <Skeleton />;
+  // if (!num) return "SKELETON";
   const lang =
     typeof window === "undefined"
       ? "en"

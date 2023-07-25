@@ -18,8 +18,8 @@ import { fromRawCoinAmount } from "@/utils/coin";
 import { TypeTag } from "@/utils/TypeTag";
 
 const TYPE_TAGS = [
-  TypeTag.fromString(`${FAUCET_ADDR}::test_eth::TestETHCoin`),
-  TypeTag.fromString(`${FAUCET_ADDR}::test_usdc::TestUSDCoin`),
+  new TypeTag(FAUCET_ADDR, "test_eth", "TestETHCoin"),
+  new TypeTag(FAUCET_ADDR, "test_usdc", "TestUSDCoin"),
 ] as const;
 const AMOUNTS = [0.1, 1000];
 

@@ -95,10 +95,6 @@ function set_econia_address {
     if [[ $address == temporary || $address == persistent ]]; then
         # Extract authentication key from auth key message (4th line).
         address=$(print_auth_key_message $address | sed -n '4 p')
-    # If address flagged as mainnet type:
-    elif [[ $address == mainnet ]]; then
-        # Use mainnet address.
-        address=$mainnet_address
     fi                   # Address now reassigned.
     cd $python_build_dir # Navigate to Python build scripts directory.
     # Set address.
@@ -116,15 +112,12 @@ function build_move_docs {
         --include-dep-diagram \
         --include-impl \
         --package-dir $move_dir "$@"
-    set_econia_address mainnet
+    set_econia_address _
 }
 
-# Run Move unit tests.
+# Run Move unit tests, assuming econia named address is `_` before calling.
 function test_move {
-    set_econia_address 0x0 # Set Econia address to null.
-    # Run Move tests with enough instruction time and optional arguments.
-    aptos move test --instructions 1000000 --package-dir $move_dir "$@"
-    set_econia_address mainnet
+    aptos move test --named-addresses econia=0x0 --package-dir $move_dir "$@"
 }
 
 # Run Python tests.
@@ -167,7 +160,7 @@ function publish {
         --assume-yes
     # Print explorer link for account.
     echo https://aptos-explorer.netlify.app/account/$auth_key
-    set_econia_address mainnet # Set mainnet address in manifest.
+    set_econia_address _
 }
 
 # Format Markdown code.

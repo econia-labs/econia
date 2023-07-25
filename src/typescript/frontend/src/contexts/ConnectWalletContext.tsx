@@ -6,7 +6,6 @@ import {
 import Image from "next/image";
 import {
   createContext,
-  type Key,
   type MouseEventHandler,
   type PropsWithChildren,
   useContext,
@@ -28,23 +27,16 @@ export const ConnectWalletContext = createContext<
 const WalletItem: React.FC<
   {
     wallet: Wallet;
-    key?: Key;
     className?: string;
     onClick?: MouseEventHandler<HTMLButtonElement>;
   } & PropsWithChildren
-> = ({ wallet, key, className, onClick, children }) =>
+> = ({ wallet, className, onClick, children }) =>
   wallet.readyState === WalletReadyState.NotDetected ? (
-    <a
-      href={wallet.url}
-      key={key}
-      className={className}
-      target="_blank"
-      rel="noreferrer"
-    >
+    <a href={wallet.url} className={className} target="_blank" rel="noreferrer">
       {children}
     </a>
   ) : (
-    <button key={key} className={className} onClick={onClick}>
+    <button className={className} onClick={onClick}>
       {children}
     </button>
   );

@@ -21,12 +21,12 @@ export const OrderEntry: React.FC<{ marketData: ApiMarket }> = ({
   }, [type]);
 
   return (
-    <div className="min-h-[480px]">
+    <div>
       <div className="m-4 flex gap-2">
         <button
           onClick={() => setSide("buy")}
           className={`w-full border-2 py-2 font-jost font-bold ${
-            side == "buy"
+            side === "buy"
               ? "border-green border-opacity-80 text-green"
               : "border-neutral-600 bg-neutral-700 text-neutral-600"
           }`}
@@ -36,7 +36,7 @@ export const OrderEntry: React.FC<{ marketData: ApiMarket }> = ({
         <button
           onClick={() => setSide("sell")}
           className={`w-full border-2 font-jost font-bold ${
-            side == "sell"
+            side === "sell"
               ? "border-red border-opacity-80 text-red"
               : "border-neutral-600 bg-neutral-700 text-neutral-600"
           }`}

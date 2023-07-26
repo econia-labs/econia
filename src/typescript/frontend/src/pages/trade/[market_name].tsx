@@ -301,10 +301,10 @@ export default function Market({ allMarketData, marketData }: Props) {
       <Head>
         <title>{`${marketData.name} | Econia`}</title>
       </Head>
-      <div className="flex h-screen flex-col">
+      <div className="flex min-h-screen flex-col">
         <Header logoHref={`${allMarketData[0].name}`} />
         <StatsBar selectedMarket={marketData} />
-        <main className="flex h-full w-full">
+        <main className="flex h-full min-h-[680px] w-full grow">
           <div className="flex grow flex-col p-3">
             <div className="mb-3 flex grow flex-col border border-neutral-600">
               <div className="flex h-full">

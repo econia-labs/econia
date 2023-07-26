@@ -1,6 +1,6 @@
 # Python SDK
 
-The code for the Python SDK lives in [`/econia/src/python/sdk/econia_sdk`] ([link](https://github.com/econia-labs/econia/tree/main/src/python/sdk/econia_sdk)). There are 2 primary packages (`econia_sdk.entry` and `econia_sdk.view`) complemented by two secondary imports
+The code for the Python SDK lives in `/econia/src/python/sdk/econia_sdk` ([link](https://github.com/econia-labs/econia/tree/main/src/python/sdk/econia_sdk)). There are 2 primary packages (`econia_sdk.entry` and `econia_sdk.view`) complemented by two secondary imports
 
 # Primary Packages
 ## `econia_sdk.entry`

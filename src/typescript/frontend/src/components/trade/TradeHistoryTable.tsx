@@ -102,25 +102,24 @@ export const TradeHistoryTable: React.FC<{
           </td>
         </tr>
         {isLoading || !data ? (
-          <tr className="text-left font-roboto-mono text-sm uppercase text-white [&>th]:font-light">
-            <td
-              className={` pl-4 text-left
-              text-xs`}
-            >
-              <Skeleton />
-            </td>
-            <td
-              className={` text-left
-              text-xs`}
-            >
-              <Skeleton />
-            </td>
-            <td
-              className={` pr-4 text-right
-              text-xs`}
-            >
-              <Skeleton />
-            </td>
+          <tr>
+            {table.getAllColumns().map((column, i) => (
+              <td
+                className={`text-xs ${
+                  i === 0
+                    ? "pl-4 text-left"
+                    : i === 1
+                    ? "text-left"
+                    : "pr-4 text-right"
+                }`}
+                key={column.id}
+              >
+                {/* wrapping div to give some space between skeleton elements */}
+                <div className={"px-1"}>
+                  <Skeleton />
+                </div>
+              </td>
+            ))}
           </tr>
         ) : data.length === 0 ? (
           <tr>

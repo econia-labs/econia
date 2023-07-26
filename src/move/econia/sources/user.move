@@ -1737,7 +1737,7 @@ module econia::user {
             *in_ceiling_ref_mut - ceiling_decrement_amount;
         // If order is actually being cancelled and user has market
         // event handles for the market account, emit a cancel event.
-        let changing_size = reason != CANCEL_REASON_SIZE_CHANGE_INTERNAL;
+        let changing_size = reason == CANCEL_REASON_SIZE_CHANGE_INTERNAL;
         if (!changing_size && exists<MarketEventHandles>(user_address)) {
             let market_event_handles_map_ref_mut =
                 &mut borrow_global_mut<MarketEventHandles>(user_address).map;

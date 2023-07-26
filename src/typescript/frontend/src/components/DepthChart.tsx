@@ -123,10 +123,12 @@ export const DepthChart: React.FC<{
 
   return (
     <>
-      <p className={"absolute ml-4 mt-2 font-jost text-white"}>Depth</p>
+      <p className={"absolute ml-4 mt-2 font-jost font-bold text-white"}>
+        Depth
+      </p>
       <div
         className={
-          "relative h-full min-w-0 [&>canvas]:!h-full [&>canvas]:!w-full"
+          "relative h-full min-w-0 py-2 pr-2 [&>canvas]:!h-full [&>canvas]:!w-full"
         }
       >
         <Line
@@ -202,7 +204,7 @@ export const DepthChart: React.FC<{
                   maxRotation: 0,
                   color: "white",
                   autoSkip: false,
-                  padding: 8,
+                  padding: 0,
                   minRotation: 0,
                   callback: function (value, index, values) {
                     // show 1/3 and 2/3 of the way through

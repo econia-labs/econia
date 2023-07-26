@@ -186,7 +186,7 @@ export const LimitOrderEntry: React.FC<{
           <Button
             type="submit"
             variant={side === "buy" ? "green" : "red"}
-            className={`w-full`}
+            className="w-full text-[16px]/6"
           >
             {side === "buy" ? "Buy" : "Sell"} {marketData.base?.symbol}
           </Button>

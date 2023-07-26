@@ -3623,7 +3623,7 @@ order if market order ID is not <code><a href="user.md#0xc0deb00c_user_NIL">NIL<
         *in_ceiling_ref_mut - ceiling_decrement_amount;
     // If order is actually being cancelled and <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> <a href="market.md#0xc0deb00c_market">market</a>
     // <a href="">event</a> handles for the <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>, emit a cancel <a href="">event</a>.
-    <b>let</b> changing_size = reason != <a href="user.md#0xc0deb00c_user_CANCEL_REASON_SIZE_CHANGE_INTERNAL">CANCEL_REASON_SIZE_CHANGE_INTERNAL</a>;
+    <b>let</b> changing_size = reason == <a href="user.md#0xc0deb00c_user_CANCEL_REASON_SIZE_CHANGE_INTERNAL">CANCEL_REASON_SIZE_CHANGE_INTERNAL</a>;
     <b>if</b> (!changing_size && <b>exists</b>&lt;<a href="user.md#0xc0deb00c_user_MarketEventHandles">MarketEventHandles</a>&gt;(user_address)) {
         <b>let</b> market_event_handles_map_ref_mut =
             &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketEventHandles">MarketEventHandles</a>&gt;(user_address).map;

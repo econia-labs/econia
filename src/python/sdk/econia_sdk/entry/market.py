@@ -245,3 +245,27 @@ def swap_between_coinstores_entry(
             encoder(limit_price, Serializer.u64),
         ],
     )
+
+
+def place_market_order_user_entry(
+    econia_address: AccountAddress,
+    base: TypeTag,
+    quote: TypeTag,
+    market_id: int,
+    integrator: AccountAddress,
+    side: Side,
+    size: int,
+    self_match_behavior: SelfMatchBehavior,
+) -> EntryFunction:
+    return EntryFunction(
+        get_module_id(econia_address),
+        "place_market_order_user_entry",
+        [base, quote],
+        [
+            encoder(market_id, Serializer.u64),
+            encoder(integrator.address, Serializer.fixed_bytes),
+            encoder(side, Serializer.u8),
+            encoder(size, Serializer.u64),
+            encoder(self_match_behavior, Serializer.u8),
+        ],
+    )

@@ -14,7 +14,7 @@ export const Button: React.FC<
       : variant === "red"
       ? "bg-red text-neutral-800"
       : variant === "outlined"
-      ? "bg-neutral-800 text-neutral-100 border border-neutral-100"
+      ? "bg-neutral-800 text-neutral-100 ring-1 ring-neutral-100"
       : "bg-neutral-700 text-neutral-100"; // secondary
   const [loading, setLoading] = useState(false);
 

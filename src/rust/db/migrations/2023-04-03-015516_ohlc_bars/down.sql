@@ -1,25 +1,25 @@
-drop trigger handle_30m_interval_end_trigger on bars_30m;
+DROP TRIGGER handle_30m_interval_end_trigger ON bars_30m;
 
-drop function handle_30m_interval_end;
+DROP FUNCTION handle_30m_interval_end;
 
-drop trigger handle_15m_interval_end_trigger on bars_15m;
+DROP TRIGGER handle_15m_interval_end_trigger ON bars_15m;
 
-drop function handle_15m_interval_end;
+DROP FUNCTION handle_15m_interval_end;
 
-drop trigger handle_5m_interval_end_trigger on bars_5m;
+DROP TRIGGER handle_5m_interval_end_trigger ON bars_5m;
 
-drop function handle_5m_interval_end;
+DROP FUNCTION handle_5m_interval_end;
 
-drop trigger handle_1m_interval_end_trigger on bars_1m;
+DROP TRIGGER handle_1m_interval_end_trigger ON bars_1m;
 
-drop function handle_1m_interval_end;
+DROP FUNCTION handle_1m_interval_end;
 
-drop table bars_1h;
+DROP TABLE bars_1h;
 
-drop table bars_30m;
+DROP TABLE bars_30m;
 
-drop table bars_15m;
+DROP TABLE bars_15m;
 
-drop table bars_5m;
+DROP TABLE bars_5m;
 
-drop table bars_1m;
+DROP TABLE bars_1m;

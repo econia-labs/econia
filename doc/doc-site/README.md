@@ -6,40 +6,32 @@ Econia's docs are built using [Docusaurus].
 
 1. Install [Homebrew] or a similar package manager.
 
-1. Install [Yarn]:
+2. Install [pnpm]:
 
    ```zsh
 
-   brew install yarn
+   wget -qO- https://get.pnpm.io/install.sh | sh -
 
    ```
 
-1. Install the docs site package dependencies:
+3. Install the docs site package dependencies:
 
    ```zsh
 
-   yarn
+   pnpm install
 
    ```
 
-1. To build locally:
+4. To serve a local site preview:
 
    ```zsh
 
-   yarn build
+   pnpm start
 
    ```
 
-1. To serve a local site preview:
-
-   ```zsh
-
-   yarn start
-
-   ```
-
-1. Open http://localhost:3000
+5. Open http://localhost:3000
 
 [docusaurus]: https://docusaurus.io/
 [homebrew]: https://brew.sh
-[yarn]: https://yarnpkg.com/
+[pnpm]: https://pnpm.io/

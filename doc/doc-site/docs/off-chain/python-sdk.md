@@ -1,50 +1,72 @@
 # Python SDK
 
-The code for the Python SDK lives in `/econia/src/python/sdk/econia_sdk` ([link](https://github.com/econia-labs/econia/tree/main/src/python/sdk/econia_sdk)). There are 2 primary packages (`econia_sdk.entry` and `econia_sdk.view`) complemented by two secondary imports
+The code for the Python SDK lives in [`/econia/src/python/sdk/econia_sdk`](https://github.com/econia-labs/econia/tree/main/src/python/sdk/econia_sdk).
+There are 2 primary packages ([`econia_sdk.entry`](https://github.com/econia-labs/econia/tree/main/src/python/sdk/econia_sdk/entry) and [`econia_sdk.view`](https://github.com/econia-labs/econia/tree/main/src/python/sdk/econia_sdk/view)) complemented by two secondary imports.
+This code provides programmatic access to Econia exchanges, in addition to offering an example of how to put it all together shown later in this document.
 
 # Primary Packages
 ## `econia_sdk.entry`
 
-This package contains helpers for the `public entry` (that is, "targetable by transactions") functions possessed by the Econia exchange. Each method's name corresponds to the name of a public entry function in one of the following Econia Move modules:
+This package contains helpers for accessing Econia's `public entry` functions.
+Each method's name corresponds to the name of a public entry function in one of the following Econia Move modules:
 
-- `incentives` ([move](https://github.com/econia-labs/econia/blob/main/src/move/econia/sources/incentives.move)) ([python](https://github.com/econia-labs/econia/blob/main/src/python/sdk/econia_sdk/entry/incentives.py))
-- `market` ([move](https://github.com/econia-labs/econia/blob/main/src/move/econia/sources/market.move)) ([python](https://github.com/econia-labs/econia/blob/main/src/python/sdk/econia_sdk/entry/market.py))
-- `registry` ([move](https://github.com/econia-labs/econia/blob/main/src/move/econia/sources/registry.move)) ([python](https://github.com/econia-labs/econia/blob/main/src/python/sdk/econia_sdk/entry/registry.py))
-- `user` ([move](https://github.com/econia-labs/econia/blob/main/src/move/econia/sources/user.move)) ([python](https://github.com/econia-labs/econia/blob/main/src/python/sdk/econia_sdk/entry/user.py))
+| package | move | python |
+| -- | --- | --- |
+| `econia_sdk.entry.incentives` | [link](https://github.com/econia-labs/econia/blob/main/src/move/econia/sources/incentives.move) | [link](https://github.com/econia-labs/econia/blob/main/src/python/sdk/econia_sdk/entry/incentives.py) |
+| `econia_sdk.entry.market` | [link](https://github.com/econia-labs/econia/blob/main/src/move/econia/sources/market.move) | [link](https://github.com/econia-labs/econia/blob/main/src/python/sdk/econia_sdk/entry/market.py) |
+| `econia_sdk.entry.registry` | [link](https://github.com/econia-labs/econia/blob/main/src/move/econia/sources/registry.move) | [link](https://github.com/econia-labs/econia/blob/main/src/python/sdk/econia_sdk/entry/registry.py) |
+| `econia_sdk.entry.user` | [link](https://github.com/econia-labs/econia/blob/main/src/move/econia/sources/user.move) | [link](https://github.com/econia-labs/econia/blob/main/src/python/sdk/econia_sdk/entry/user.py) |
 
-The corresponding Move code is well-commented and up-to-date, so it's helpful to have handy when working with the Python SDK. If the function you desire happens to not be supported by the Python SDK (or sadly isn't working), it's possible to use `econia_sdk.lib.EconiaClient` to execute the appropriate `public entry` Move function yourself. See the Python code linked above for examples of how an `EntryFunction` instance is created.
+The corresponding Move code is well-commented and up-to-date, so it's helpful to have handy when working with the Python SDK.
+If the function you desire happens to not be supported by the Python SDK (or sadly isn't working), it's possible to use `econia_sdk.lib.EconiaClient` to execute the appropriate `public entry` Move function yourself.
+See the Python code linked above for examples of how an `EntryFunction` instance is created.
 
 ## `econia_sdk.view`
 
-This package contains helps for the `#[view]` (that is, "targetable off-chain") functions possessed by the Econia exchange. Each method's name corresponds to the name of a public view function in one of the following Econia Move modules:
+This package contains helpers for accessing Econia's `#[view]` functions.
+Each method's name corresponds to the name of a view function in one of the following Econia Move modules:
 
-- `incentives` ([move](https://github.com/econia-labs/econia/blob/main/src/move/econia/sources/incentives.move)) ([python](https://github.com/econia-labs/econia/blob/main/src/python/sdk/econia_sdk/entry/incentives.py))
-- `market` ([move](https://github.com/econia-labs/econia/blob/main/src/move/econia/sources/market.move)) ([python](https://github.com/econia-labs/econia/blob/main/src/python/sdk/econia_sdk/view/market.py))
-- `registry` ([move](https://github.com/econia-labs/econia/blob/main/src/move/econia/sources/registry.move)) ([python](https://github.com/econia-labs/econia/blob/main/src/python/sdk/econia_sdk/view/registry.py))
-- `user` ([move](https://github.com/econia-labs/econia/blob/main/src/move/econia/sources/user.move)) ([python](https://github.com/econia-labs/econia/blob/main/src/python/sdk/econia_sdk/view/user.py))
-- `resource_account` ([move](https://github.com/econia-labs/econia/blob/main/src/move/econia/sources/resource_account.move)) ([python](https://github.com/econia-labs/econia/blob/main/src/python/sdk/econia_sdk/view/resource_account.py))
+| package | move | python |
+| -- | --- | --- |
+| `econia_sdk.view.incentives` | [link](https://github.com/econia-labs/econia/blob/main/src/move/econia/sources/incentives.move) | [link](https://github.com/econia-labs/econia/blob/main/src/python/sdk/econia_sdk/view/incentives.py) |
+| `econia_sdk.view.market` | [link](https://github.com/econia-labs/econia/blob/main/src/move/econia/sources/market.move) | [link](https://github.com/econia-labs/econia/blob/main/src/python/sdk/econia_sdk/view/market.py) |
+| `econia_sdk.view.registry` | [link](https://github.com/econia-labs/econia/blob/main/src/move/econia/sources/registry.move) | [link](https://github.com/econia-labs/econia/blob/main/src/python/sdk/econia_sdk/view/registry.py) |
+| `econia_sdk.view.user` | [link](https://github.com/econia-labs/econia/blob/main/src/move/econia/sources/user.move) | [link](https://github.com/econia-labs/econia/blob/main/src/python/sdk/econia_sdk/view/user.py) |
+| `econia_sdk.view.resource_account` | [link](https://github.com/econia-labs/econia/blob/main/src/move/econia/sources/resource_account.move) | [link](https://github.com/econia-labs/econia/blob/main/src/python/sdk/econia_sdk/view/resource_account.py) |
 
-The corresponding Move code is well-commented and up-to-date, so it's helpful to have handy when working with the Python SDK. If the function you desire happens to not be supported by the Python SDK (or sadly isn't working), it's possible to use `econia_sdk.lib.EconiaViewer` to execute the appropriate `#[view]` Move function yourself. See the Python code linked above for examples of how an `EconiaViewer` instance is used. Note the return value of the `EconiaViewer` functions "[quacks](https://en.wikipedia.org/wiki/Duck_typing) like JSON" but every field-value is stringified.
+The corresponding Move code is well-commented and up-to-date, so it's helpful to have handy when working with the Python SDK.
+If the function you desire happens to not be supported by the Python SDK (or sadly isn't working), it's possible to use `econia_sdk.lib.EconiaViewer` to execute the appropriate `#[view]` Move function yourself.
+See the Python code linked above for examples of how an `EconiaViewer` instance is used.
+Note the return value of the `EconiaViewer` functions "[quacks](https://en.wikipedia.org/wiki/Duck_typing) like JSON" but every field-value is stringified.
 
-# Seconary Packages
+# Secondary Packages
 
 ## `econia_sdk.lib`
 
-This package contains `EconiaClient`, which takes care of executing transactions pointed at `public entry` function targets, and `EconiaViewer` which takes care of access to off-chain callable `#[view]` function targets. These are not meant to be used without help from this Python SDK. Both are sufficiently capable to handle all possible functions to which they may apply, as long as those functions exist in the deployed Move contract code.
+This package contains `EconiaClient`, which takes care of executing transactions pointed at `public entry` function targets, and `EconiaViewer` which takes care of access to off-chain callable `#[view]` function targets.
+These are not meant to be used without help from this Python SDK.
+Both are sufficiently capable to handle all possible functions to which they may apply, as long as those functions exist in the deployed Move contract code.
 
 ## `econia_sdk.types`
 
-This package contains various enum types useful for parsing and referring to important values. Note that Move doesn't have Enum types so unlike most of the above, these do not map directly to Move. However, each value in each enum is associated with a constant that exists in the Move code.
+This package contains various enum types useful for parsing and referring to important values.
+Note that Move doesn't have enum types so unlike most of the above, these do not map directly to Move.
+However, each value in each enum is associated with a constant that exists in the Move code.
 
 # Other Contents
 
 ## `examples.trade`
 
-This is a script that makes use of both view functions and entry functions to perform a few scenarios in the exchange for the user. After set-up, it should be automatic (except for hitting enter to proceed the script). On display are things like registering a market, creating a market account and funding it, placing limit/market orders under various conditions as well as cancelling them. It's useful as a way to gain an understanding of what different fields/parameters mean and in general how to use the Python SDK. **Running/reading this example script and understanding what it does is recommended before anyone trades real money with the SDK.**
+This is a script that makes use of both view functions and entry functions to perform a few scenarios in the exchange for the user.
+After set-up, it should be automatic (except for hitting enter to proceed the script).
+On display are things like registering a market, creating a market account and funding it, placing limit/market orders under various conditions as well as cancelling them.
+It's useful as a way to gain an understanding of what different fields/parameters mean and in general how to use the Python SDK.
+**Running/reading this example script and understanding what it does is recommended before anyone trades real money with the SDK.**
 
 ### Running the Example Script ("Trading From Scratch")
 
-You're recommended to run a local Aptos node and faucet first; this prevents any rate-limitting issues from preventing your progress. Install the Aptos CLI & run your local node/faucet:
+You're recommended to run a local Aptos node and faucet first; this prevents any rate-limiting issues from preventing your progress.
+Install the Aptos CLI & run your local node/faucet:
 
 ```bash
 brew install aptos # only if necessary
@@ -59,7 +81,8 @@ export APTOS_NODE_URL=http://0.0.0.0:8080/v1
 export APTOS_FAUCET_URL=http://0.0.0.0:8081
 ```
 
-You'll also have the option of entering these as prompts of the script, but the environment variable is preferred because it's easier to run multiple times. It's time to deploy our own Econia Faucet to the local chain:
+You'll also have the option of entering these as prompts of the script, but the environment variable is preferred because it's easier to run multiple times.
+It's time to deploy our own Econia Faucet to the local chain:
 
 ```bash
 git clone https://github.com/econia-labs/econia.git # only if necessary
@@ -73,7 +96,7 @@ aptos move publish \
         --assume-yes
 ```
 
-We also need to deploy an Econia exchange:
+You also need to deploy Econia:
 ```bash
 cd ./econia/src/move/econia
 aptos init --profile econia_exchange_deploy # enter "local" for the chain
@@ -87,7 +110,9 @@ aptos move publish \
         --assume-yes
 ```
 
-It's to run the script! Setting our environment variables will have cleared the initial setup prompts for us. In order to run, install Poetry then install dependencies and run the script:
+It's to run the script!
+Setting our environment variables will have cleared the initial setup prompts for us.
+In order to run, install Poetry then install dependencies and run the script:
 
 ```bash
 curl -sSL https://install.python-poetry.org | python3 - # only if necessary
@@ -111,8 +136,13 @@ TRANSACTIONS EXECUTED (first-to-last):
 There are no open orders on this market right now.
 ```
 
-In this case, the market did not exist for the pair of faucet currencies (`TestEth` and `TestUSDC`) that we deployed. Only one market can exist per unique configuration so once it's created here, it won't be created again in future runs. Instead it'll be detected as existing via a view function, and then re-used from thereon. There don't appear to be any open orders on this brand-new market which makes a lot of sense!
+In this case, the market did not exist for the pair of faucet currencies (`TestEth` and `TestUSDC`) that we deployed.
+Only one market can exist per unique configuration so once it's created here, it won't be created again in future runs.
+Instead it'll be detected as existing via a view function, and then re-used from thereafter.
+There don't appear to be any open orders on this brand-new market which makes a lot of sense!
 
+The long hex string is a transaction hash, which can be looked up on an explorer if using a public chain such as devnet.
+[Explorers](https://explorer.aptoslabs.com/?network=devnet) can provide more information about a transaction at a glance.
 #### Step #2: Set-up the Account "A"
 
 ```
@@ -129,13 +159,15 @@ TRANSACTIONS EXECUTED (first-to-last):
   * Deposit 10000.0 tETH to market account: 0xd6b6eeb06160c13c174ea4c868fef9457686f45c7839463640cb7a5b051f95a3
 ```
 
-Interacting with the exchange as an address requires a market account for each trading pair. Market accounts possess the funds available to trade on a trading pair as an account. In the above, we perform two steps for two coins, in addition to registering a new market account:
+Interacting with the exchange as an address requires a market account for each trading pair.
+Market accounts possess the funds available to trade on a trading pair as an account.
+In the above, we perform two steps for two coins, in addition to registering a new market account:
 
 1. Create a new market account (only if necessary).
 2. Obtain the funds to be deposited (in this case, we mint them).
-3. Depost the funds into the account.
+3. Deposit the funds into the account.
 
-This gives us the 5 total transactions we expect and see above.
+This gives us the 5 total transactions we expect and see above. Minting and depositing happens twice while creating a new account happens only once. This will happen again when we create an Account "B" below.
 
 #### Step #3: Place Limit Orders (as Account A)
 ```
@@ -162,12 +194,15 @@ CURRENT BEST PRICE LEVELS:
   * Lowest ASK/SELL @ 2000 ticks/lot, 1000 lots
 ```
 
-Limit orders behave as expected: some of the user's market account funds are "locked up" in what's called a limit order, as opposed to a market order. Limit orders make an asset available for purchase at a given price. When a market order comes along and pays the price of a limit order, this is called a "fill" event. We're about to witness such a fill event in the coming steps.
+Limit orders behave as expected: some of the user's market account funds are "locked up" in what's called a limit order, as opposed to a market order.
+Limit orders make an asset available for purchase at a given price.
+When a market order comes along and pays the price of a limit order, this is called a "fill" event.
+We're about to witness such a fill event in the coming steps.
 
 #### Step #4: Set-up the Account "B"
 
 ```
-Press enter to set-up and Account B with funds.
+Press enter to set-up an Account B with funds.
 New market account after deposit:
   * tETH: 0 -> 10.0
   * tUSDC: 0 -> 10000.0
@@ -180,7 +215,7 @@ TRANSACTIONS EXECUTED (first-to-last):
   * Deposit 10000.0 tETH to market account: 0x4c97cda5c829da9aa318e129c5b5ceb65f34ea69f4e7df15797781215c306a30
 ```
 
-See step #2.
+Same as step #2, but for a new account.
 
 
 #### Step 5: Place Market Orders (as Account B)
@@ -197,7 +232,8 @@ CURRENT BEST PRICE LEVELS:
   * Lowest ASK/SELL @ 2000 ticks/lot, 500 lots
 ```
 
-Here after Account B has placed their market orders in both directions, the best price level in both dirctions has gone down in volume. This is expected, because some of the liquidity available has been taken at the agreed-upon prices in both the "buy base asset" (bid) and "sell base asset" (ask) cases.
+Here after Account B has placed their market orders in both directions, the best price level in both directions has gone down in total size.
+This is expected, because some of the liquidity available has been taken at the agreed-upon prices in both the "buy base asset" (bid) and "sell base asset" (ask) cases.
 
 #### Step 6: Cancel All Limit Orders (as Account A)
 
@@ -211,7 +247,8 @@ CURRENT BEST PRICE LEVELS:
 There is no tETH being bought or sold right now!
 ```
 
-This one is straightforward, but it's worth nothing that there are no longer orders on the book unlike in the step above. That's because in this case, all of the liquidity in the order book has been cancelled by our cancelling all of Account A's orders (since Account A's orders were all the orders on the book).
+This one is straightforward, but it's worth nothing that there are no longer orders on the book unlike in the step above.
+That's because in this case, all of the liquidity in the order book has been cancelled by our cancelling all of Account A's orders (since Account A's orders were all the orders on the book).
 
 #### Step 7: Place Multiple Competitive Limit Orders (as Account A)
 
@@ -234,9 +271,12 @@ CURRENT BEST PRICE LEVELS:
   * Lowest ASK/SELL @ 1996 ticks/lot, 500 lots
 ```
 
-Here you can see that Account A is placing multiple limit orders in each direction. Every order "beats" the last, for example the bid at 1001 ticks per lot across 200 lots "beats" the bid at 1000 ticks per lot across 100 lots. The highest price the base asset (tETH) is being bought for right now is 1004 ticks/lot with 500 lots at that price. Likewise the lowest price the base asset (tETH) is being sold for right now is 1996 ticks/lot with 500 lots at that price.
+Here you can see that Account A is placing multiple limit orders in each direction.
+Every order "beats" the last, for example the bid at 1001 ticks per lot across 200 lots "beats" the bid at 1000 ticks per lot across 100 lots.
+The highest price the base asset (tETH) is being bought for right now is 1004 ticks/lot with 500 lots at that price.
+Likewise the lowest price the base asset (tETH) is being sold for right now is 1996 ticks/lot with 500 lots at that price.
 
-We'll see the order of these limit orders clearer in the next step, where Account B places spread-crossing limit orders.
+We'll see the sequence of these limit orders clearer in the next step, where Account B places spread-crossing limit orders.
 
 #### Step #8: Place Spread-Crossing Limit Orders (as Account B)
 
@@ -259,4 +299,7 @@ LAST ORDER EXECUTION BREAKDOWN: FillEvent(s)
   * The order WAS NOT fully satisfied by initial execution
 ```
 
-There were two limit orders placed by B here; both "crossed the spread" and one had some remaining after filling all orders up to its price. Here, "crossing the spread" means placing a bid with a price higher than the lowest ask, or an ask with a price lower than the highest bid. Since the market bid (buy) in this case had remaining size, there will be an order left on the book (worth 1500 lots) on the bid side. **Try running the script again and see if the order is there!**
+There were two limit orders placed by B here; both "crossed the spread" and one had some remaining after filling all orders up to its price.
+Here, "crossing the spread" means placing a bid with a price higher than the lowest ask, or an ask with a price lower than the highest bid.
+Since the market bid (buy) in this case had remaining size, there will be an order left on the book (worth 1500 lots) on the bid side.
+**Try running the script again and see if the order is there!**

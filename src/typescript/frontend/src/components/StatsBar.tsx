@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import BigNumber from "bignumber.js";
 import { useRouter } from "next/router";
 import React, { useState } from "react";
+import Skeleton from "react-loading-skeleton";
 
 import { useAptos } from "@/contexts/AptosContext";
 import { API_URL } from "@/env";
@@ -17,8 +18,6 @@ import { MediumIcon } from "./icons/MediumIcon";
 import { TwitterIcon } from "./icons/TwitterIcon";
 import { MarketIconPair } from "./MarketIconPair";
 import { SelectMarketContent } from "./trade/DepositWithdrawModal/SelectMarketContent";
-
-import Skeleton from "react-loading-skeleton";
 
 const DEFAULT_TOKEN_ICON = "/tokenImages/default.png";
 
@@ -177,14 +176,17 @@ export const StatsBar: React.FC<{
           <div className="block md:hidden">
             <p className="font-roboto-mono font-light">
               <span className="inline-block min-w-[4em] text-xl text-white">
-                ${formatNumber(data?.lastPrice, 2)}
+                {data?.lastPrice && "$"}
+                {formatNumber(data?.lastPrice, 2) ?? <Skeleton />}
               </span>
               <span
                 className={`ml-1 inline-block min-w-[6em] text-base ${
                   (data?.lastPriceChange || 0) < 0 ? "text-red" : "text-green"
                 }`}
               >
-                {formatNumber(data?.lastPriceChange, 2, "always")}
+                {formatNumber(data?.lastPriceChange, 2, "always") ?? (
+                  <Skeleton />
+                )}
               </span>
             </p>
           </div>
@@ -194,7 +196,8 @@ export const StatsBar: React.FC<{
               LAST PRICE
             </span>
             <p className="font-roboto-mono text-xs font-light text-white">
-              ${formatNumber(data?.lastPrice, 2)}
+              {data?.lastPrice && "$"}
+              {formatNumber(data?.lastPrice, 2) ?? <Skeleton />}
             </p>
           </div>
           {/* 24 hr */}
@@ -204,7 +207,7 @@ export const StatsBar: React.FC<{
             </span>
             <p className="font-roboto-mono text-xs font-light text-white">
               <span className="inline-block min-w-[70px] text-white">
-                {formatNumber(data?.change24h, 2)}
+                {formatNumber(data?.change24h, 2) ?? <Skeleton />}
               </span>
               {data?.change24hPercent && (
                 <span
@@ -214,7 +217,10 @@ export const StatsBar: React.FC<{
                       : "text-green"
                   }`}
                 >
-                  {formatNumber(data?.change24hPercent, 2, "always")}%
+                  {formatNumber(data?.change24hPercent, 2, "always") ?? (
+                    <Skeleton />
+                  )}
+                  %
                 </span>
               )}
             </p>
@@ -225,7 +231,7 @@ export const StatsBar: React.FC<{
               24h high
             </span>
             <p className="font-roboto-mono text-xs font-light text-white">
-              {formatNumber(data?.high24h, 2)}
+              {formatNumber(data?.high24h, 2) ?? <Skeleton />}
             </p>
           </div>
           {/* 24 hr low */}
@@ -234,7 +240,7 @@ export const StatsBar: React.FC<{
               24h low
             </span>
             <p className="font-roboto-mono text-xs font-light text-white">
-              {formatNumber(data?.low24h, 2)}
+              {formatNumber(data?.low24h, 2) ?? <Skeleton />}
             </p>
           </div>
           {/* 24 hr main */}
@@ -243,7 +249,7 @@ export const StatsBar: React.FC<{
               24H VOLUME ({data?.pairData.baseAsset || "-"})
             </span>
             <p className="font-roboto-mono text-xs font-light text-white">
-              {formatNumber(data?.pairData.baseVolume, 2)}
+              {formatNumber(data?.pairData.baseVolume, 2) ?? <Skeleton />}
             </p>
           </div>
           {/* 24 hr pair */}
@@ -252,7 +258,7 @@ export const StatsBar: React.FC<{
               24H VOLUME ({data?.pairData.quoteAsset || "-"})
             </span>
             <p className="font-roboto-mono text-xs font-light text-white">
-              {formatNumber(data?.pairData.quoteVolume, 2)}
+              {formatNumber(data?.pairData.quoteVolume, 2) ?? <Skeleton />}
             </p>
           </div>
         </div>

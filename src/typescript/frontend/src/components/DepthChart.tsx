@@ -169,8 +169,8 @@ export const DepthChart: React.FC<{
                           labels[labels.length / 2 - 1]) /
                           2,
                         2,
-                      )
-                    : formatNumber(labels[labels.length / 2], 2)
+                      ) ?? "-"
+                    : formatNumber(labels[labels.length / 2], 2) ?? "-"
                 }`,
                 color: "white",
               },
@@ -212,7 +212,7 @@ export const DepthChart: React.FC<{
                       index === Math.floor(values.length / 4) ||
                       index === Math.floor((3 * values.length) / 4)
                     ) {
-                      return formatNumber(labels[index], 2);
+                      return formatNumber(labels[index], 2) ?? "-";
                     } else {
                       return "";
                     }

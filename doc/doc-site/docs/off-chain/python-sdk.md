@@ -110,7 +110,7 @@ aptos move publish \
         --assume-yes
 ```
 
-It's to run the script!
+It's time to run the script!
 Setting our environment variables will have cleared the initial setup prompts for us.
 In order to run, install Poetry then install dependencies and run the script:
 

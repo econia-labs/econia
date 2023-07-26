@@ -2073,12 +2073,12 @@ module econia::market {
     ///
     /// # Testing
     ///
-    /// * `test_swap_coins_buy_max_base_limiting()` TODO
-    /// * `test_swap_coins_buy_no_max_quote_limiting()` TODO
-    /// * `test_swap_coins_buy_no_max_base_limiting()` TODO
-    /// * `test_swap_coins_sell_max_quote_limiting()` TODO
-    /// * `test_swap_coins_sell_no_max_base_limiting()` TODO
-    /// * `test_swap_coins_sell_no_max_quote_limiting()` TODO
+    /// * `test_swap_coins_buy_max_base_limiting()`
+    /// * `test_swap_coins_buy_no_max_base_limiting()`
+    /// * `test_swap_coins_buy_no_max_quote_limiting()`
+    /// * `test_swap_coins_sell_max_quote_limiting()`
+    /// * `test_swap_coins_sell_no_max_base_limiting()`
+    /// * `test_swap_coins_sell_no_max_quote_limiting()`
     public fun swap_coins<
         BaseType,
         QuoteType
@@ -12548,6 +12548,15 @@ module econia::market {
         // Create taker coins.
         let base_coins  = assets::mint_test<BC>(base_deposit_taker);
         let quote_coins = assets::mint_test<QC>(quote_deposit_taker);
+        // Assert events.
+        assert!(user::get_place_limit_order_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[], 0);
+        assert!(user::get_fill_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[], 0);
+        assert!(user::get_cancel_order_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[], 0);
+        assert!(!exists<SwapperEventHandles>(@user_0), 0);
+        assert!(!exists_market_event_handles(), 0);
         // Place maker order.
         let (market_order_id_0, _, _, _) = place_limit_order_user<BC, QC>(
             &user_0, MARKET_ID_COIN, @integrator, side_maker, size_maker,
@@ -12556,6 +12565,60 @@ module econia::market {
             swap_coins<BC, QC>( // Place taker order.
                 MARKET_ID_COIN, @integrator, direction, min_base, max_base,
                 min_quote, max_quote, price, base_coins, quote_coins);
+        let taker_order_id = order_id_no_post(2);
+        // Assert events.
+        assert!(user::get_place_limit_order_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[
+                user::create_place_limit_order_event_test(
+                    MARKET_ID_COIN,
+                    @user_0,
+                    NO_CUSTODIAN,
+                    @integrator,
+                    side_maker,
+                    size_maker,
+                    price,
+                    NO_RESTRICTION,
+                    self_match_behavior,
+                    size_maker,
+                    market_order_id_0
+                )
+            ], 0);
+        assert!(user::get_fill_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[
+                user::create_fill_event_internal(
+                    MARKET_ID_COIN,
+                    size_taker,
+                    price,
+                    side_maker,
+                    @user_0,
+                    NO_CUSTODIAN,
+                    market_order_id_0,
+                    NO_TAKER_ADDRESS,
+                    NO_CUSTODIAN,
+                    taker_order_id,
+                    fee,
+                    0
+                )
+            ], 0);
+        assert!(user::get_cancel_order_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[], 0);
+        assert!(get_place_swap_order_events_market_test(
+            MARKET_ID_COIN) == vector[
+                PlaceSwapOrderEvent{
+                    market_id: MARKET_ID_COIN,
+                    signing_account: NO_TAKER_ADDRESS,
+                    integrator: @integrator,
+                    direction,
+                    min_base,
+                    max_base: HI_64 - base_deposit_taker,
+                    min_quote,
+                    max_quote: quote_deposit_taker,
+                    limit_price: price,
+                    order_id: taker_order_id
+                }
+            ], 0);
+        assert!(get_cancel_order_events_market_test(
+            MARKET_ID_COIN) == vector[], 0);
         // Assert returns.
         assert!(base_trade_r  == base_taker, 0);
         assert!(quote_trade_r == quote_trade, 0);
@@ -12656,6 +12719,15 @@ module econia::market {
         // Create taker coins.
         let base_coins  = assets::mint_test<BC>(base_deposit_taker);
         let quote_coins = assets::mint_test<QC>(quote_deposit_taker);
+        // Assert events.
+        assert!(user::get_place_limit_order_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[], 0);
+        assert!(user::get_fill_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[], 0);
+        assert!(user::get_cancel_order_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[], 0);
+        assert!(!exists<SwapperEventHandles>(@user_0), 0);
+        assert!(!exists_market_event_handles(), 0);
         // Place maker order.
         let (market_order_id_0, _, _, _) = place_limit_order_user<BC, QC>(
             &user_0, MARKET_ID_COIN, @integrator, side_maker, size_maker,
@@ -12664,6 +12736,60 @@ module econia::market {
             swap_coins<BC, QC>( // Place taker order.
                 MARKET_ID_COIN, @integrator, direction, min_base, max_base,
                 min_quote, max_quote, price, base_coins, quote_coins);
+        let taker_order_id = order_id_no_post(2);
+        // Assert events.
+        assert!(user::get_place_limit_order_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[
+                user::create_place_limit_order_event_test(
+                    MARKET_ID_COIN,
+                    @user_0,
+                    NO_CUSTODIAN,
+                    @integrator,
+                    side_maker,
+                    size_maker,
+                    price,
+                    NO_RESTRICTION,
+                    self_match_behavior,
+                    size_maker,
+                    market_order_id_0
+                )
+            ], 0);
+        assert!(user::get_fill_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[
+                user::create_fill_event_internal(
+                    MARKET_ID_COIN,
+                    size_taker,
+                    price,
+                    side_maker,
+                    @user_0,
+                    NO_CUSTODIAN,
+                    market_order_id_0,
+                    NO_TAKER_ADDRESS,
+                    NO_CUSTODIAN,
+                    taker_order_id,
+                    fee,
+                    0
+                )
+            ], 0);
+        assert!(user::get_cancel_order_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[], 0);
+        assert!(get_place_swap_order_events_market_test(
+            MARKET_ID_COIN) == vector[
+                PlaceSwapOrderEvent{
+                    market_id: MARKET_ID_COIN,
+                    signing_account: NO_TAKER_ADDRESS,
+                    integrator: @integrator,
+                    direction,
+                    min_base,
+                    max_base: base_taker,
+                    min_quote,
+                    max_quote: quote_deposit_taker,
+                    limit_price: price,
+                    order_id: taker_order_id
+                }
+            ], 0);
+        assert!(get_cancel_order_events_market_test(
+            MARKET_ID_COIN) == vector[], 0);
         // Assert returns.
         assert!(base_trade_r  == base_taker, 0);
         assert!(quote_trade_r == quote_trade, 0);
@@ -12764,6 +12890,15 @@ module econia::market {
         // Create taker coins.
         let base_coins  = assets::mint_test<BC>(base_deposit_taker);
         let quote_coins = assets::mint_test<QC>(quote_deposit_taker);
+        // Assert events.
+        assert!(user::get_place_limit_order_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[], 0);
+        assert!(user::get_fill_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[], 0);
+        assert!(user::get_cancel_order_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[], 0);
+        assert!(!exists<SwapperEventHandles>(@user_0), 0);
+        assert!(!exists_market_event_handles(), 0);
         // Place maker order.
         let (market_order_id_0, _, _, _) = place_limit_order_user<BC, QC>(
             &user_0, MARKET_ID_COIN, @integrator, side_maker, size_maker,
@@ -12772,6 +12907,68 @@ module econia::market {
             swap_coins<BC, QC>( // Place taker order.
                 MARKET_ID_COIN, @integrator, direction, min_base, max_base,
                 min_quote, max_quote, price, base_coins, quote_coins);
+        let taker_order_id = order_id_no_post(2);
+        // Assert events.
+        assert!(user::get_place_limit_order_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[
+                user::create_place_limit_order_event_test(
+                    MARKET_ID_COIN,
+                    @user_0,
+                    NO_CUSTODIAN,
+                    @integrator,
+                    side_maker,
+                    size_maker,
+                    price,
+                    NO_RESTRICTION,
+                    self_match_behavior,
+                    size_maker,
+                    market_order_id_0
+                )
+            ], 0);
+        assert!(user::get_fill_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[
+                user::create_fill_event_internal(
+                    MARKET_ID_COIN,
+                    size_taker,
+                    price,
+                    side_maker,
+                    @user_0,
+                    NO_CUSTODIAN,
+                    market_order_id_0,
+                    NO_TAKER_ADDRESS,
+                    NO_CUSTODIAN,
+                    taker_order_id,
+                    fee,
+                    0
+                )
+            ], 0);
+        assert!(user::get_cancel_order_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[], 0);
+        assert!(get_place_swap_order_events_market_test(
+            MARKET_ID_COIN) == vector[
+                PlaceSwapOrderEvent{
+                    market_id: MARKET_ID_COIN,
+                    signing_account: NO_TAKER_ADDRESS,
+                    integrator: @integrator,
+                    direction,
+                    min_base,
+                    max_base,
+                    min_quote,
+                    max_quote: quote_deposit_taker,
+                    limit_price: price,
+                    order_id: taker_order_id
+                }
+            ], 0);
+        assert!(get_cancel_order_events_market_test(
+            MARKET_ID_COIN) == vector[
+                user::create_cancel_order_event_internal(
+                    MARKET_ID_COIN,
+                    taker_order_id,
+                    NO_TAKER_ADDRESS,
+                    NO_CUSTODIAN,
+                    CANCEL_REASON_MAX_QUOTE_TRADED
+                )
+            ], 0);
         // Assert returns.
         assert!(base_trade_r  == base_taker, 0);
         assert!(quote_trade_r == quote_trade, 0);
@@ -12872,6 +13069,15 @@ module econia::market {
         // Create taker coins.
         let base_coins  = assets::mint_test<BC>(base_deposit_taker);
         let quote_coins = assets::mint_test<QC>(quote_deposit_taker);
+        // Assert events.
+        assert!(user::get_place_limit_order_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[], 0);
+        assert!(user::get_fill_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[], 0);
+        assert!(user::get_cancel_order_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[], 0);
+        assert!(!exists<SwapperEventHandles>(@user_0), 0);
+        assert!(!exists_market_event_handles(), 0);
         // Place maker order.
         let (market_order_id_0, _, _, _) = place_limit_order_user<BC, QC>(
             &user_0, MARKET_ID_COIN, @integrator, side_maker, size_maker,
@@ -12880,6 +13086,68 @@ module econia::market {
             swap_coins<BC, QC>( // Place taker order.
                 MARKET_ID_COIN, @integrator, direction, min_base, max_base,
                 min_quote, max_quote, price, base_coins, quote_coins);
+        let taker_order_id = order_id_no_post(2);
+        // Assert events.
+        assert!(user::get_place_limit_order_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[
+                user::create_place_limit_order_event_test(
+                    MARKET_ID_COIN,
+                    @user_0,
+                    NO_CUSTODIAN,
+                    @integrator,
+                    side_maker,
+                    size_maker,
+                    price,
+                    NO_RESTRICTION,
+                    self_match_behavior,
+                    size_maker,
+                    market_order_id_0
+                )
+            ], 0);
+        assert!(user::get_fill_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[
+                user::create_fill_event_internal(
+                    MARKET_ID_COIN,
+                    size_taker,
+                    price,
+                    side_maker,
+                    @user_0,
+                    NO_CUSTODIAN,
+                    market_order_id_0,
+                    NO_TAKER_ADDRESS,
+                    NO_CUSTODIAN,
+                    taker_order_id,
+                    fee,
+                    0
+                )
+            ], 0);
+        assert!(user::get_cancel_order_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[], 0);
+        assert!(get_place_swap_order_events_market_test(
+            MARKET_ID_COIN) == vector[
+                PlaceSwapOrderEvent{
+                    market_id: MARKET_ID_COIN,
+                    signing_account: NO_TAKER_ADDRESS,
+                    integrator: @integrator,
+                    direction,
+                    min_base,
+                    max_base: base_deposit_taker,
+                    min_quote,
+                    max_quote: HI_64 - quote_deposit_taker,
+                    limit_price: price,
+                    order_id: taker_order_id
+                }
+            ], 0);
+        assert!(get_cancel_order_events_market_test(
+            MARKET_ID_COIN) == vector[
+                user::create_cancel_order_event_internal(
+                    MARKET_ID_COIN,
+                    taker_order_id,
+                    NO_TAKER_ADDRESS,
+                    NO_CUSTODIAN,
+                    CANCEL_REASON_MAX_QUOTE_TRADED
+                )
+            ], 0);
         // Assert returns.
         assert!(base_trade_r  == base_taker, 0);
         assert!(quote_trade_r == quote_trade, 0);
@@ -12980,6 +13248,15 @@ module econia::market {
         // Create taker coins.
         let base_coins  = assets::mint_test<BC>(base_deposit_taker);
         let quote_coins = assets::mint_test<QC>(quote_deposit_taker);
+        // Assert events.
+        assert!(user::get_place_limit_order_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[], 0);
+        assert!(user::get_fill_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[], 0);
+        assert!(user::get_cancel_order_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[], 0);
+        assert!(!exists<SwapperEventHandles>(@user_0), 0);
+        assert!(!exists_market_event_handles(), 0);
         // Place maker order.
         let (market_order_id_0, _, _, _) = place_limit_order_user<BC, QC>(
             &user_0, MARKET_ID_COIN, @integrator, side_maker, size_maker,
@@ -12988,6 +13265,60 @@ module econia::market {
             swap_coins<BC, QC>( // Place taker order.
                 MARKET_ID_COIN, @integrator, direction, min_base, max_base,
                 min_quote, max_quote, price, base_coins, quote_coins);
+        let taker_order_id = order_id_no_post(2);
+        // Assert events.
+        assert!(user::get_place_limit_order_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[
+                user::create_place_limit_order_event_test(
+                    MARKET_ID_COIN,
+                    @user_0,
+                    NO_CUSTODIAN,
+                    @integrator,
+                    side_maker,
+                    size_maker,
+                    price,
+                    NO_RESTRICTION,
+                    self_match_behavior,
+                    size_maker,
+                    market_order_id_0
+                )
+            ], 0);
+        assert!(user::get_fill_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[
+                user::create_fill_event_internal(
+                    MARKET_ID_COIN,
+                    size_taker,
+                    price,
+                    side_maker,
+                    @user_0,
+                    NO_CUSTODIAN,
+                    market_order_id_0,
+                    NO_TAKER_ADDRESS,
+                    NO_CUSTODIAN,
+                    taker_order_id,
+                    fee,
+                    0
+                )
+            ], 0);
+        assert!(user::get_cancel_order_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[], 0);
+        assert!(get_place_swap_order_events_market_test(
+            MARKET_ID_COIN) == vector[
+                PlaceSwapOrderEvent{
+                    market_id: MARKET_ID_COIN,
+                    signing_account: NO_TAKER_ADDRESS,
+                    integrator: @integrator,
+                    direction,
+                    min_base,
+                    max_base: base_deposit_taker,
+                    min_quote,
+                    max_quote: max_quote,
+                    limit_price: price,
+                    order_id: taker_order_id
+                }
+            ], 0);
+        assert!(get_cancel_order_events_market_test(
+            MARKET_ID_COIN) == vector[], 0);
         // Assert returns.
         assert!(base_trade_r  == base_taker, 0);
         assert!(quote_trade_r == quote_trade, 0);
@@ -13087,6 +13418,15 @@ module econia::market {
         // Create taker coins.
         let base_coins  = assets::mint_test<BC>(base_deposit_taker);
         let quote_coins = assets::mint_test<QC>(quote_deposit_taker);
+        // Assert events.
+        assert!(user::get_place_limit_order_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[], 0);
+        assert!(user::get_fill_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[], 0);
+        assert!(user::get_cancel_order_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[], 0);
+        assert!(!exists<SwapperEventHandles>(@user_0), 0);
+        assert!(!exists_market_event_handles(), 0);
         // Place maker order.
         let (market_order_id_0, _, _, _) = place_limit_order_user<BC, QC>(
             &user_0, MARKET_ID_COIN, @integrator, side_maker, size_maker,
@@ -13095,6 +13435,68 @@ module econia::market {
             swap_coins<BC, QC>( // Place taker order.
                 MARKET_ID_COIN, @integrator, direction, min_base, max_base,
                 min_quote, max_quote, price, base_coins, quote_coins);
+        let taker_order_id = order_id_no_post(2);
+        // Assert events.
+        assert!(user::get_place_limit_order_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[
+                user::create_place_limit_order_event_test(
+                    MARKET_ID_COIN,
+                    @user_0,
+                    NO_CUSTODIAN,
+                    @integrator,
+                    side_maker,
+                    size_maker,
+                    price,
+                    NO_RESTRICTION,
+                    self_match_behavior,
+                    size_maker,
+                    market_order_id_0
+                )
+            ], 0);
+        assert!(user::get_fill_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[
+                user::create_fill_event_internal(
+                    MARKET_ID_COIN,
+                    size_taker,
+                    price,
+                    side_maker,
+                    @user_0,
+                    NO_CUSTODIAN,
+                    market_order_id_0,
+                    NO_TAKER_ADDRESS,
+                    NO_CUSTODIAN,
+                    taker_order_id,
+                    fee,
+                    0
+                )
+            ], 0);
+        assert!(user::get_cancel_order_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[], 0);
+        assert!(get_place_swap_order_events_market_test(
+            MARKET_ID_COIN) == vector[
+                PlaceSwapOrderEvent{
+                    market_id: MARKET_ID_COIN,
+                    signing_account: NO_TAKER_ADDRESS,
+                    integrator: @integrator,
+                    direction,
+                    min_base,
+                    max_base: base_deposit_taker,
+                    min_quote,
+                    max_quote,
+                    limit_price: price,
+                    order_id: taker_order_id
+                }
+            ], 0);
+        assert!(get_cancel_order_events_market_test(
+            MARKET_ID_COIN) == vector[
+                user::create_cancel_order_event_internal(
+                    MARKET_ID_COIN,
+                    taker_order_id,
+                    NO_TAKER_ADDRESS,
+                    NO_CUSTODIAN,
+                    CANCEL_REASON_MAX_QUOTE_TRADED
+                )
+            ], 0);
         // Assert returns.
         assert!(base_trade_r  == base_taker, 0);
         assert!(quote_trade_r == quote_trade, 0);

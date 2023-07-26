@@ -22,7 +22,7 @@ const config = {
     "simple-import-sort",
   ],
   rules: {
-    "no-console": "warn",
+    "no-console": ["warn", { allow: ["warn", "error"] }],
     "no-unused-vars": "off",
     "@typescript-eslint/no-unused-vars": [
       "warn",

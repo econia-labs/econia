@@ -7,9 +7,9 @@ edition = "2021"
 [dependencies]
 bigdecimal = { workspace = true }
 chrono = { workspace = true }
-diesel = { version = "2.1.0", features = ["chrono", "numeric", "postgres"] }
-diesel-derive-enum = { version = "2.1.0", features = ["postgres"] }
-field_count = "0.1.1"
+diesel = { workspace = true, features = ["chrono", "numeric", "postgres"] }
+diesel-derive-enum = { workspace = true, features = ["postgres"] }
+field_count = { workspace = true }
 serde = { workspace = true, optional = true }
 sqlx = { workspace = true, optional = true }
 thiserror = { workspace = true }

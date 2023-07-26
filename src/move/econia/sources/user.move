@@ -94,6 +94,7 @@
 /// * `get_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY()`
 /// * `get_CANCEL_REASON_SELF_MATCH_MAKER()`
 /// * `get_CANCEL_REASON_SELF_MATCH_TAKER()`
+/// * `get_CANCEL_REASON_TOO_SMALL_TO_FILL_LOT()`
 /// * `get_NO_CUSTODIAN()`
 ///
 /// Market account lookup:
@@ -684,6 +685,9 @@ module econia::user {
     /// market account memory because it will be subsequently re-placed
     /// as part of a size change.
     const CANCEL_REASON_SIZE_CHANGE_INTERNAL: u8 = 0;
+    /// Swap order cancelled because the remaining base asset amount to
+    /// match was too small to fill a single lot.
+    const CANCEL_REASON_TOO_SMALL_TO_FILL_LOT: u8 = 8;
     /// `u64` bitmask with all bits set, generated in Python via
     /// `hex(int('1' * 64, 2))`.
     const HI_64: u64 = 0xffffffffffffffff;
@@ -787,6 +791,17 @@ module econia::user {
     /// * `test_get_cancel_reasons()`
     public fun get_CANCEL_REASON_SELF_MATCH_TAKER(): u8 {
         CANCEL_REASON_SELF_MATCH_TAKER
+    }
+
+    #[view]
+    /// Public constant getter for
+    /// `CANCEL_REASON_TOO_SMALL_TO_FILL_LOT`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_cancel_reasons()`
+    public fun get_CANCEL_REASON_TOO_SMALL_TO_FILL_LOT(): u8 {
+        CANCEL_REASON_TOO_SMALL_TO_FILL_LOT
     }
 
     #[view]
@@ -4678,6 +4693,8 @@ module econia::user {
                     CANCEL_REASON_SELF_MATCH_MAKER, 0);
         assert!(get_CANCEL_REASON_SELF_MATCH_TAKER() ==
                     CANCEL_REASON_SELF_MATCH_TAKER, 0);
+        assert!(get_CANCEL_REASON_TOO_SMALL_TO_FILL_LOT() ==
+                    CANCEL_REASON_TOO_SMALL_TO_FILL_LOT, 0);
     }
 
     #[test]

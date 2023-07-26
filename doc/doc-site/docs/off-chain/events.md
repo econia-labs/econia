@@ -82,7 +82,11 @@ When a signing swapper places a swap order, a [`market::PlaceSwapOrderEvent`] is
 
 For each fill a [`user::FillEvent`] is emitted to the [`user::MarketEventHandlesForMarketAccount`] for the maker side, and to the [`market::SwapperEventHandlesForMarket`] for the taker side.
 
-If the swap order does not fill the maximum specified base amount during the function call in which it was placed, a [`user::CancelOrderEvent`] is emitted to the associated [`market::SwapperEventHandlesForMarket`] with the same reasons as for a [market order].
+If the swap order does not fill the maximum specified base amount during the function call in which it was placed, a [`user::CancelOrderEvent`] is emitted to the associated [`market::SwapperEventHandlesForMarket`] with the same reasons as for a [market order], as well as an additional cancel reason that only applies to swaps:
+
+| Cancel reason                           | Description                                                                            |
+| --------------------------------------- | -------------------------------------------------------------------------------------- |
+| [`CANCEL_REASON_TOO_SMALL_TO_FILL_LOT`] | No more base asset can be traded because the amount left to trade is less than one lot |
 
 ### Placing a swap order (non-signing swapper)
 
@@ -90,7 +94,7 @@ When a swap order is not placed by a signing swapper, a [`market::PlaceSwapOrder
 
 For each fill a [`user::FillEvent`] is emitted to the [`user::MarketEventHandlesForMarketAccount`] for the maker side only.
 
-If the swap order does not fill the maximum specified base amount during the function call in which it was placed, a [`user::CancelOrderEvent`] is emitted to the associated [`market::MarketEventHandlesForMarket`] with the same reasons as for a [market order].
+If the swap order does not fill the maximum specified base amount during the function call in which it was placed, a [`user::CancelOrderEvent`] is emitted to the associated [`market::MarketEventHandlesForMarket`] with the same reasons as for a [swap order with a signing swapper].
 
 ### Maker self cancel
 
@@ -112,6 +116,7 @@ When a [signing user or a custodian][market account] manually cancels an open or
 [market order]: #placing-a-market-order
 [market orders]: ../overview/matching.md#market-orders
 [markets]: ../overview/registry.md
+[swap order with a signing swapper]: #placing-a-swap-order-signing-swapper
 [swaps]: ../overview/matching.md#swaps
 [`cancel_reason_eviction`]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/user.md#0xc0deb00c_user_CANCEL_REASON_EVICTION
 [`cancel_reason_immediate_or_cancel`]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/user.md#0xc0deb00c_user_CANCEL_REASON_IMMEDIATE_OR_CANCEL
@@ -120,6 +125,7 @@ When a [signing user or a custodian][market account] manually cancels an open or
 [`cancel_reason_not_enough_liquidity`]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/user.md#0xc0deb00c_user_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY
 [`cancel_reason_self_match_maker`]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/user.md#0xc0deb00c_user_CANCEL_REASON_SELF_MATCH_MAKER
 [`cancel_reason_self_match_taker`]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/user.md#0xc0deb00c_user_CANCEL_REASON_SELF_MATCH_TAKER
+[`cancel_reason_too_small_to_fill_lot`]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/user.md#0xc0deb00c_user_CANCEL_REASON_TOO_SMALL_TO_FILL_LOT
 [`market::get_market_event_handle_creation_info`]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#function-get_market_event_handle_creation_info
 [`market::get_swapper_event_handle_creation_numbers`]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#function-get_swapper_event_handle_creation_numbers
 [`market::marketeventhandlesformarket`]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#struct-marketeventhandlesformarket

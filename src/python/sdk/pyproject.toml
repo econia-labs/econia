@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "econia-sdk"
-version = "0.1.0"
+version = "1.0.0"
 description = ""
-authors = ["qdrs <qdrs@proton.me>"]
+authors = ["egd <elliott@econialabs.com>"]
 readme = "README.md"
 packages = [{ include = "econia_sdk" }]
 

@@ -65,7 +65,9 @@ OPTIONAL: Deploy an Econia Exchange.
 
 NODE_URL_DEVNET = "https://fullnode.devnet.aptoslabs.com/v1"
 FAUCET_URL_DEVNET = "https://faucet.devnet.aptoslabs.com"
-ECONIA_ADDR_DEVNET = "0xc0de0000fe693e08f668613c502360dc48508197401d2ac1ae79571498cd8b74"
+ECONIA_ADDR_DEVNET = (
+    "0xc0de0000fe693e08f668613c502360dc48508197401d2ac1ae79571498cd8b74"
+)
 COIN_TYPE_APT = "0x1::aptos_coin::AptosCoin"
 
 
@@ -206,7 +208,7 @@ def start():
     dump_txns()
     report_best_price_levels(viewer, market_id)
 
-    input("\n\nPress enter to set-up and Account B with funds.")
+    input("\n\nPress enter to set-up an Account B with funds.")
     account_B = setup_new_account(viewer, faucet_client, market_id)
     print(f"Account B was set-up: {account_B.account_address}")
     dump_txns()

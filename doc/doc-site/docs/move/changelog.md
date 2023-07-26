@@ -16,6 +16,7 @@ Econia Move source code adheres to [Semantic Versioning] and [Keep a Changelog] 
 - Default self match behavior for swaps (signing swapper self match against signing market account) changed from `ABORT` to `CANCEL_TAKER` ([#321]).
 - Started using `order_id` instead of `market_order_id` for new implementations ([#321]).
 - Replaced `market::NO_MARKET_ACCOUNT` with `market::NO_TAKER_ADDRESS` to account for signing swappers ([#321]).
+- Allow limit orders to post less than minimum size if they first fill across the spread ([#347]).
 
 ### Deprecated
 

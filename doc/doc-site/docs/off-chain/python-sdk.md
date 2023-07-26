@@ -26,3 +26,13 @@ This package contains helps for the `#[view]` (that is, "targetable off-chain") 
 
 The corresponding Move code is well-commented and up-to-date, so it's helpful to have handy when working with the Python SDK. If the function you desire happens to not be supported by the Python SDK (or sadly isn't working), it's possible to use `econia_sdk.lib.EconiaViewer` to execute the appropriate `#[view]` Move function yourself. See the Python code linked above for examples of how an `EconiaViewer` instance is used. Note the return value of the `EconiaViewer` functions "[quacks](https://en.wikipedia.org/wiki/Duck_typing) like JSON" but every field-value is stringified.
 
+# Seconary Packages
+
+## `econia_sdk.lib`
+
+This package contains `EconiaClient`, which takes care of executing transactions pointed at `public entry` function targets, and `EconiaViewer` which takes care of access to off-chain callable `#[view]` function targets. These are not meant to be used without help from this Python SDK. Both are sufficiently capable to handle all possible functions to which they may apply, as long as those functions exist in the deployed Move contract code.
+
+## `econia_sdk.types`
+
+This package contains various enum types useful for parsing and referring to important values. Note that Move doesn't have Enum types so unlike most of the above, these do not map directly to Move. However, each value in each enum is associated with a constant that exists in the Move code.
+

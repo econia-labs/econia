@@ -1,3 +1,5 @@
+-- TODO: need to finish this correctly
+
 DROP TABLE fills;
 
 DROP TRIGGER handle_taker_event_trigger ON taker_events;

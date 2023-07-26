@@ -47,6 +47,27 @@ CREATE TABLE cancel_order_events (
     FOREIGN KEY (order_id, market_id) REFERENCES orders (order_id, market_id)
 );
 
+CREATE FUNCTION handle_cancel_order_event ()
+    RETURNS TRIGGER
+    AS $handle_cancel_order_event$
+BEGIN
+    UPDATE
+        orders
+    SET
+        order_state = 'cancelled'
+    WHERE
+        market_id = NEW.market_id
+        AND order_id = NEW.order_id;
+    RETURN new;
+END;
+$handle_cancel_order_event$
+LANGUAGE plpgsql;
+
+CREATE TRIGGER handle_cancel_order_event_trigger
+    BEFORE INSERT ON cancel_order_events
+    FOR EACH ROW
+    EXECUTE PROCEDURE handle_cancel_order_event ();
+
 CREATE TABLE change_order_size_events (
     market_id numeric(20) NOT NULL,
     order_id numeric(39) NOT NULL,
@@ -59,6 +80,27 @@ CREATE TABLE change_order_size_events (
     FOREIGN KEY (market_id) REFERENCES markets (market_id),
     FOREIGN KEY (order_id, market_id) REFERENCES orders (order_id, market_id)
 );
+
+CREATE FUNCTION handle_change_order_size_event ()
+    RETURNS TRIGGER
+    AS $handle_change_order_size_event$
+BEGIN
+    UPDATE
+        orders
+    SET
+        size = NEW.size
+    WHERE
+        market_id = NEW.market_id
+        AND order_id = NEW.order_id;
+    RETURN new;
+END;
+$handle_change_order_size_event$
+LANGUAGE plpgsql;
+
+CREATE TRIGGER handle_change_order_size_event_trigger
+    BEFORE INSERT ON change_order_size_events
+    FOR EACH ROW
+    EXECUTE PROCEDURE handle_change_order_size_event ();
 
 CREATE TABLE fill_events (
     market_id numeric(20) NOT NULL,

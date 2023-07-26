@@ -1,0 +1,93 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        select\n            market_order_id,\n            market_id,\n            side as \"side: db::models::order::Side\",\n            size,\n            price,\n            user_address,\n            custodian_id,\n            order_state as \"order_state: db::models::order::OrderState\",\n            created_at\n        from orders where market_id = $1 and market_order_id = $2;\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "market_order_id",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 1,
+        "name": "market_id",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 2,
+        "name": "side: db::models::order::Side",
+        "type_info": {
+          "Custom": {
+            "name": "side",
+            "kind": {
+              "Enum": [
+                "bid",
+                "ask"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "size",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 4,
+        "name": "price",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 5,
+        "name": "user_address",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "custodian_id",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 7,
+        "name": "order_state: db::models::order::OrderState",
+        "type_info": {
+          "Custom": {
+            "name": "order_state",
+            "kind": {
+              "Enum": [
+                "open",
+                "filled",
+                "cancelled",
+                "evicted"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Numeric",
+        "Numeric"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "b4109cc796a1f78a5db4dc529677a99b28b468c5a1a470686367fd900c62e4c9"
+}

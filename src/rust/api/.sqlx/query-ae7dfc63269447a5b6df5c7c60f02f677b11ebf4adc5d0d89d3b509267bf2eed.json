@@ -1,0 +1,94 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        select\n            market_order_id,\n            market_id,\n            side as \"side: db::models::order::Side\",\n            size,\n            price,\n            user_address,\n            custodian_id,\n            order_state as \"order_state: db::models::order::OrderState\",\n            created_at\n        from orders where user_address = $1 order by created_at limit $2 offset $3;\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "market_order_id",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 1,
+        "name": "market_id",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 2,
+        "name": "side: db::models::order::Side",
+        "type_info": {
+          "Custom": {
+            "name": "side",
+            "kind": {
+              "Enum": [
+                "bid",
+                "ask"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "size",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 4,
+        "name": "price",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 5,
+        "name": "user_address",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "custodian_id",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 7,
+        "name": "order_state: db::models::order::OrderState",
+        "type_info": {
+          "Custom": {
+            "name": "order_state",
+            "kind": {
+              "Enum": [
+                "open",
+                "filled",
+                "cancelled",
+                "evicted"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "ae7dfc63269447a5b6df5c7c60f02f677b11ebf4adc5d0d89d3b509267bf2eed"
+}

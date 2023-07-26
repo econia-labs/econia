@@ -115,7 +115,7 @@ Setting our environment variables will have cleared the initial setup prompts fo
 In order to run, install Poetry then install dependencies and run the script:
 
 ```bash
-curl -sSL https://install.python-poetry.org | python3 - # only if necessary
+brew install poetry # only if necessary
 cd ./econia/src/python/sdk && poetry install # only if necessary
 poetry run trade # we're off to the races!
 ```

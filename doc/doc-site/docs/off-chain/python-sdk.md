@@ -5,17 +5,18 @@ There are 2 primary packages ([`econia_sdk.entry`](https://github.com/econia-lab
 This code provides programmatic access to Econia exchanges, in addition to offering an example of how to put it all together shown later in this document.
 
 # Primary Packages
+
 ## `econia_sdk.entry`
 
 This package contains helpers for accessing Econia's `public entry` functions.
 Each method's name corresponds to the name of a public entry function in one of the following Econia Move modules:
 
-| package | move | python |
-| -- | --- | --- |
+| package                       | move                                                                                            | python                                                                                                |
+| ----------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
 | `econia_sdk.entry.incentives` | [link](https://github.com/econia-labs/econia/blob/main/src/move/econia/sources/incentives.move) | [link](https://github.com/econia-labs/econia/blob/main/src/python/sdk/econia_sdk/entry/incentives.py) |
-| `econia_sdk.entry.market` | [link](https://github.com/econia-labs/econia/blob/main/src/move/econia/sources/market.move) | [link](https://github.com/econia-labs/econia/blob/main/src/python/sdk/econia_sdk/entry/market.py) |
-| `econia_sdk.entry.registry` | [link](https://github.com/econia-labs/econia/blob/main/src/move/econia/sources/registry.move) | [link](https://github.com/econia-labs/econia/blob/main/src/python/sdk/econia_sdk/entry/registry.py) |
-| `econia_sdk.entry.user` | [link](https://github.com/econia-labs/econia/blob/main/src/move/econia/sources/user.move) | [link](https://github.com/econia-labs/econia/blob/main/src/python/sdk/econia_sdk/entry/user.py) |
+| `econia_sdk.entry.market`     | [link](https://github.com/econia-labs/econia/blob/main/src/move/econia/sources/market.move)     | [link](https://github.com/econia-labs/econia/blob/main/src/python/sdk/econia_sdk/entry/market.py)     |
+| `econia_sdk.entry.registry`   | [link](https://github.com/econia-labs/econia/blob/main/src/move/econia/sources/registry.move)   | [link](https://github.com/econia-labs/econia/blob/main/src/python/sdk/econia_sdk/entry/registry.py)   |
+| `econia_sdk.entry.user`       | [link](https://github.com/econia-labs/econia/blob/main/src/move/econia/sources/user.move)       | [link](https://github.com/econia-labs/econia/blob/main/src/python/sdk/econia_sdk/entry/user.py)       |
 
 The corresponding Move code is well-commented and up-to-date, so it's helpful to have handy when working with the Python SDK.
 If the function you desire happens to not be supported by the Python SDK (or sadly isn't working), it's possible to use `econia_sdk.lib.EconiaClient` to execute the appropriate `public entry` Move function yourself.
@@ -26,12 +27,12 @@ See the Python code linked above for examples of how an `EntryFunction` instance
 This package contains helpers for accessing Econia's `#[view]` functions.
 Each method's name corresponds to the name of a view function in one of the following Econia Move modules:
 
-| package | move | python |
-| -- | --- | --- |
-| `econia_sdk.view.incentives` | [link](https://github.com/econia-labs/econia/blob/main/src/move/econia/sources/incentives.move) | [link](https://github.com/econia-labs/econia/blob/main/src/python/sdk/econia_sdk/view/incentives.py) |
-| `econia_sdk.view.market` | [link](https://github.com/econia-labs/econia/blob/main/src/move/econia/sources/market.move) | [link](https://github.com/econia-labs/econia/blob/main/src/python/sdk/econia_sdk/view/market.py) |
-| `econia_sdk.view.registry` | [link](https://github.com/econia-labs/econia/blob/main/src/move/econia/sources/registry.move) | [link](https://github.com/econia-labs/econia/blob/main/src/python/sdk/econia_sdk/view/registry.py) |
-| `econia_sdk.view.user` | [link](https://github.com/econia-labs/econia/blob/main/src/move/econia/sources/user.move) | [link](https://github.com/econia-labs/econia/blob/main/src/python/sdk/econia_sdk/view/user.py) |
+| package                            | move                                                                                                  | python                                                                                                     |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `econia_sdk.view.incentives`       | [link](https://github.com/econia-labs/econia/blob/main/src/move/econia/sources/incentives.move)       | [link](https://github.com/econia-labs/econia/blob/main/src/python/sdk/econia_sdk/view/incentives.py)       |
+| `econia_sdk.view.market`           | [link](https://github.com/econia-labs/econia/blob/main/src/move/econia/sources/market.move)           | [link](https://github.com/econia-labs/econia/blob/main/src/python/sdk/econia_sdk/view/market.py)           |
+| `econia_sdk.view.registry`         | [link](https://github.com/econia-labs/econia/blob/main/src/move/econia/sources/registry.move)         | [link](https://github.com/econia-labs/econia/blob/main/src/python/sdk/econia_sdk/view/registry.py)         |
+| `econia_sdk.view.user`             | [link](https://github.com/econia-labs/econia/blob/main/src/move/econia/sources/user.move)             | [link](https://github.com/econia-labs/econia/blob/main/src/python/sdk/econia_sdk/view/user.py)             |
 | `econia_sdk.view.resource_account` | [link](https://github.com/econia-labs/econia/blob/main/src/move/econia/sources/resource_account.move) | [link](https://github.com/econia-labs/econia/blob/main/src/python/sdk/econia_sdk/view/resource_account.py) |
 
 The corresponding Move code is well-commented and up-to-date, so it's helpful to have handy when working with the Python SDK.
@@ -97,6 +98,7 @@ aptos move publish \
 ```
 
 You also need to deploy Econia:
+
 ```bash
 cd ./econia/src/move/econia
 aptos init --profile econia_exchange_deploy # enter "local" for the chain
@@ -143,6 +145,7 @@ There don't appear to be any open orders on this brand-new market which makes a 
 
 The long hex string is a transaction hash, which can be looked up on an explorer if using a public chain such as devnet.
 [Explorers](https://explorer.aptoslabs.com/?network=devnet) can provide more information about a transaction at a glance.
+
 #### Step #2: Set-up the Account "A"
 
 ```
@@ -164,12 +167,13 @@ Market accounts possess the funds available to trade on a trading pair as an acc
 In the above, we perform two steps for two coins, in addition to registering a new market account:
 
 1. Create a new market account (only if necessary).
-2. Obtain the funds to be deposited (in this case, we mint them).
-3. Deposit the funds into the account.
+1. Obtain the funds to be deposited (in this case, we mint them).
+1. Deposit the funds into the account.
 
 This gives us the 5 total transactions we expect and see above. Minting and depositing happens twice while creating a new account happens only once. This will happen again when we create an Account "B" below.
 
 #### Step #3: Place Limit Orders (as Account A)
+
 ```
 Press enter to place limit orders with Account A.
 EVENT SUMMARY: PlaceLimitOrderEvent
@@ -216,7 +220,6 @@ TRANSACTIONS EXECUTED (first-to-last):
 ```
 
 Same as step #2, but for a new account.
-
 
 #### Step 5: Place Market Orders (as Account B)
 

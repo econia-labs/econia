@@ -330,7 +330,7 @@ export default function Market({ allMarketData, marketData }: Props) {
               />
             </div>
           </div>
-          <div className="flex min-w-[268px] flex-col py-3 pr-3">
+          <div className="flex min-w-[296px] max-w-[296px] flex-col py-3 pr-3">
             <div className="border border-neutral-600">
               <OrderEntry marketData={marketData} />
             </div>

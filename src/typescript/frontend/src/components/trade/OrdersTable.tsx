@@ -144,7 +144,15 @@ export const OrdersTable: React.FC<{
               <div className="h-[1px] bg-neutral-600"></div>
             </td>
           </tr>
-          {isLoading || !data ? (
+          {!connected ? (
+            <tr>
+              <td colSpan={7}>
+                <div className="flex h-[150px] flex-col items-center justify-center">
+                  <ConnectedButton />
+                </div>
+              </td>
+            </tr>
+          ) : isLoading || !data ? (
             <tr>
               {table.getAllColumns().map((column, i) => (
                 <td
@@ -163,14 +171,6 @@ export const OrdersTable: React.FC<{
                   </div>
                 </td>
               ))}
-            </tr>
-          ) : !connected ? (
-            <tr>
-              <td colSpan={7}>
-                <div className="flex h-[150px] flex-col items-center justify-center">
-                  <ConnectedButton />
-                </div>
-              </td>
             </tr>
           ) : data.length === 0 ? (
             <tr>

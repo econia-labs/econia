@@ -15,6 +15,8 @@ import { type ApiMarket, type ApiOrder } from "@/types/api";
 
 import { ConnectedButton } from "../ConnectedButton";
 
+import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/20/solid";
+
 type TableOrder = ApiOrder & { total: number };
 
 const columnHelper = createColumnHelper<TableOrder>();
@@ -66,10 +68,16 @@ export const OrdersTable: React.FC<{
   }, [allMarketData]);
 
   const sortLabel = useMemo(() => {
-    const map = new Map<SortDirection | false, string | null>();
+    const map = new Map<
+      SortDirection | false,
+      string | null | React.JSX.Element // ok for some weird reason `Element` seems to point to a different type
+    >();
     map.set(false, null);
-    map.set("asc", " ▲");
-    map.set("desc", " ▼");
+    map.set("asc", <ChevronUpIcon className={"ml-1 inline-block h-4 w-4"} />);
+    map.set(
+      "desc",
+      <ChevronDownIcon className={"ml-1 inline-block h-4 w-4"} />,
+    );
     return map;
   }, []);
 

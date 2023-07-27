@@ -111,7 +111,7 @@ export function OrderbookTable({
     );
   }, [data]);
 
-  if (isLoading) {
+  if (isLoading || data == null) {
     return (
       <div className="flex h-full flex-col items-center justify-center text-sm font-light uppercase text-neutral-500">
         Loading...
@@ -163,15 +163,18 @@ export function OrderbookTable({
       <div className="scrollbar-none relative grow overflow-y-auto">
         <div className="absolute w-full">
           {/* ASK */}
-          {data?.asks.map((level) => (
-            <Row
-              level={level}
-              type={"ask"}
-              key={`ask-${level.price}-${level.size}`}
-              highestSize={highestSize}
-              marketData={marketData}
-            />
-          ))}
+          {data.asks
+            .slice()
+            .reverse()
+            .map((level) => (
+              <Row
+                level={level}
+                type={"ask"}
+                key={`ask-${level.price}-${level.size}`}
+                highestSize={highestSize}
+                marketData={marketData}
+              />
+            ))}
           {/* SPREAD */}
           <div
             className="flex items-center justify-between border-y border-neutral-600"
@@ -191,7 +194,7 @@ export function OrderbookTable({
             </div>
           </div>
           {/* BID */}
-          {data?.bids.map((level) => (
+          {data.bids.map((level) => (
             <Row
               level={level}
               type={"bid"}

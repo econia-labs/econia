@@ -33,3 +33,4 @@ class CancelReason(IntEnum):
     NotEnoughLiquidity = 5
     SelfMatchMaker = 6
     SelfMatchTaker = 7
+    ViolatedLimitPrice = 9

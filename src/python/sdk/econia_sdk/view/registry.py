@@ -1,6 +1,7 @@
 from typing import List, Optional
 
 from aptos_sdk.account_address import AccountAddress
+
 from econia_sdk.lib import EconiaViewer
 
 
@@ -48,34 +49,74 @@ def get_market_counts(view: EconiaViewer) -> dict:
     }
 
 
-def get_market_info(view: EconiaViewer, market_id: int) -> dict:
+class GetMarketInfoReturn(dict):
+    def is_coin_market(self, viewer: EconiaViewer) -> bool:
+        base_info = self["base_type"]
+        is_econia = viewer.econia_address.hex() == base_info["package_address"]
+        is_generic = (
+            base_info["module_name"] == "registry"
+            and base_info["type_name"] == "GenericAsset"
+        )
+        return not (is_econia and is_generic)
+
+    def get_decimals_base(self, viewer: EconiaViewer):
+        assert self.is_coin_market(
+            viewer
+        ), "Generic market has no decimals for base type!"
+        return self._get_decimals(viewer, self["base_type"])
+
+    def get_decimals_quote(self, viewer: EconiaViewer):
+        return self._get_decimals(viewer, self["quote_type"])
+
+    def _get_decimals(self, viewer: EconiaViewer, type_info: dict):
+        request = f"{viewer.aptos_client.base_url}/view"
+        address = type_info["package_address"].hex()
+        module = type_info["module_name"]
+        type_name = type_info["type_name"]
+        response = viewer.aptos_client.client.post(
+            request,
+            json={
+                "function": f"0x1::coin::decimals",
+                "type_arguments": [f"{address}::{module}::{type_name}"],
+                "arguments": [],
+            },
+        )
+
+        if response.status_code >= 400:
+            raise Exception(response.text, response.status_code)
+        return int(response.json()[0])
+
+
+def get_market_info(view: EconiaViewer, market_id: int) -> GetMarketInfoReturn:
     returns = view.get_returns(
         "registry", "get_market_info", [], [str(market_id)]
     )
     value = returns[0]
-    return {
-        "base_name_generic": value["base_name_generic"],
-        "base_type": {
-            "module_name": value["base_type"]["module_name"],
-            "package_address": AccountAddress.from_hex(
-                value["base_type"]["package_address"]
-            ),
-            "type_name": value["base_type"]["type_name"],
-        },
-        "is_recognized": bool(value["is_recognized"]),
-        "lot_size": int(value["lot_size"]),  # subunits of base
-        "market_id": int(value["market_id"]),
-        "min_size": int(value["min_size"]),
-        "quote_type": {
-            "module_name": value["quote_type"]["module_name"],
-            "package_address": AccountAddress.from_hex(
-                value["quote_type"]["package_address"]
-            ),
-            "type_name": value["quote_type"]["type_name"],
-        },
-        "tick_size": int(value["tick_size"]),
-        "underwriter_id": int(value["underwriter_id"]),
-    }
+    return GetMarketInfoReturn(
+        {
+            "base_name_generic": value["base_name_generic"],
+            "base_type": {
+                "module_name": value["base_type"]["module_name"],
+                "package_address": AccountAddress.from_hex(
+                    value["base_type"]["package_address"]
+                ),
+                "type_name": value["base_type"]["type_name"],
+            },
+            "is_recognized": bool(value["is_recognized"]),
+            "lot_size": int(value["lot_size"]),  # subunits of base
+            "market_id": int(value["market_id"]),
+            "min_size": int(value["min_size"]),
+            "quote_type": {
+                "module_name": value["quote_type"]["module_name"],
+                "package_address": AccountAddress.from_hex(
+                    value["quote_type"]["package_address"]
+                ),
+                "type_name": value["quote_type"]["type_name"],
+            },
+            "tick_size": int(value["tick_size"]),
+            "underwriter_id": int(value["underwriter_id"]),
+        }
+    )
 
 
 def get_recognized_market_id_base_coin(

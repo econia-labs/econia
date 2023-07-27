@@ -1,7 +1,8 @@
 [package]
 name = "Econia"
-version = "4.1.0"             # Per SemVer.
+version = "4.1.0"                                     # Per SemVer.
 upgrade_policy = "compatible"
+authors = ["Econia Labs (developers@econialabs.com)"]
 
 [addresses]
 econia = "_"

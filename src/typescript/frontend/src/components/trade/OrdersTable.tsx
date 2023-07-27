@@ -148,7 +148,7 @@ export const OrdersTable: React.FC<{
       <table
         className={"w-full table-auto" + (className ? ` ${className}` : "")}
       >
-        <thead className="sticky top-0 h-8 bg-black shadow-[inset_0_-1px_0_#565656]">
+        <thead className="sticky top-0 h-8 bg-black shadow-[inset_0_-1px_0_theme(colors.neutral.600)]">
           <tr>
             {table.getFlatHeaders().map((header) => (
               <th

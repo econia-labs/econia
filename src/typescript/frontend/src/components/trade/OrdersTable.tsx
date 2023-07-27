@@ -148,12 +148,7 @@ export const OrdersTable: React.FC<{
       <table
         className={"w-full table-auto" + (className ? ` ${className}` : "")}
       >
-        <thead
-          className="sticky top-0 h-8 bg-black"
-          style={{
-            boxShadow: "inset 0 -1px 0 #565656",
-          }}
-        >
+        <thead className="sticky top-0 h-8 bg-black shadow-[inset_0_-1px_0_#565656]">
           <tr>
             {table.getFlatHeaders().map((header) => (
               <th

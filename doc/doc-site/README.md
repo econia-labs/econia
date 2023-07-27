@@ -10,7 +10,7 @@ Econia's docs are built using [Docusaurus].
 
    ```zsh
 
-   wget -qO- https://get.pnpm.io/install.sh | sh -
+   brew install pnpm
 
    ```
 

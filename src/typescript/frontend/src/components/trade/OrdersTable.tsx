@@ -73,10 +73,17 @@ export const OrdersTable: React.FC<{
       string | null | React.JSX.Element // ok for some weird reason `Element` seems to point to a different type
     >();
     map.set(false, null);
-    map.set("asc", <ChevronUpIcon className={"ml-1 inline-block h-4 w-4"} />);
+    map.set(
+      "asc",
+      <ChevronUpIcon
+        className={"absolute top-0 inline-block h-4 w-4 translate-y-1/2"}
+      />,
+    );
     map.set(
       "desc",
-      <ChevronDownIcon className={"ml-1 inline-block h-4 w-4"} />,
+      <ChevronDownIcon
+        className={"absolute top-0 inline-block h-4 w-4 translate-y-1/2"}
+      />,
     );
     return map;
   }, []);

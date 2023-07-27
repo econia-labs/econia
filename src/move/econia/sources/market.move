@@ -893,6 +893,9 @@ module econia::market {
     /// Swap order cancelled because the remaining base asset amount to
     /// match was too small to fill a single lot.
     const CANCEL_REASON_TOO_SMALL_TO_FILL_LOT: u8 = 8;
+    /// Swap order cancelled because the next order on the book to match
+    /// against violated the swap order limit price.
+    const CANCEL_REASON_VIOLATED_LIMIT_PRICE: u8 = 9;
     /// Flag to cancel taker order only during a self match.
     const CANCEL_TAKER: u8 = 3;
     /// Critical tree height above which evictions may take place.
@@ -2722,6 +2725,9 @@ module econia::market {
     ///   match.
     /// * `liquidity_gone`: If the matching engine halted due to
     ///   insufficient liquidity.
+    /// * `lot_size`: The lot size for the market.
+    /// * `violated_limit_price`: `true` if matching halted due to a
+    ///   violated limit price
     ///
     /// # Returns
     ///
@@ -2732,13 +2738,16 @@ module econia::market {
         base_traded: u64,
         max_base: u64,
         liquidity_gone: bool,
-        lot_size: u64
+        lot_size: u64,
+        limit_price_violated: bool
     ): Option<u8> {
         let need_to_cancel =
             ((self_match_taker_cancel) || (base_traded < max_base));
         if (need_to_cancel) {
             if (self_match_taker_cancel) {
                 option::some(CANCEL_REASON_SELF_MATCH_TAKER)
+            } else if (limit_price_violated) {
+                option::some(CANCEL_REASON_VIOLATED_LIMIT_PRICE)
             } else if (liquidity_gone) {
                 option::some(CANCEL_REASON_NOT_ENOUGH_LIQUIDITY)
             } else if ((max_base - base_traded) < lot_size) {
@@ -2954,7 +2963,7 @@ module econia::market {
     /// * `test_match_loop_twice()`
     /// * `test_match_partial_fill_lot_limited_sell()`
     /// * `test_match_partial_fill_tick_limited_buy()`
-    /// * `test_match_price_break_buy()` TODO
+    /// * `test_match_price_break_buy()`
     /// * `test_match_price_break_sell()` TODO
     /// * `test_match_self_match_cancel_both()` TODO
     /// * `test_match_self_match_cancel_maker()` TODO
@@ -3850,7 +3859,7 @@ module econia::market {
         let cancel_reason_option =
             get_cancel_reason_option_for_market_order_or_swap(
                 self_match_taker_cancel, base_traded, max_base,
-                liquidity_gone, order_book_ref_mut.lot_size);
+                liquidity_gone, order_book_ref_mut.lot_size, false);
         // Emit relevant events to user event handles.
         user::emit_market_order_events_internal(
             market_id, user_address, custodian_id, integrator, direction, size,
@@ -4203,10 +4212,22 @@ module econia::market {
             limit_price,
             order_id: market_order_id
         };
+        // Check if violated limit price.
+        let violated_limit_price = if (!liquidity_gone) {
+            // Mutably borrow orders AVL queue matched against.
+            let orders_ref_mut = if (direction == BUY)
+                &mut order_book_ref_mut.asks else &mut order_book_ref_mut.bids;
+            let head_price = // Get price of order at head of AVL queue.
+                *option::borrow(&avl_queue::get_head_key(orders_ref_mut));
+            // Check if limit price violated
+            (((direction == BUY ) && (head_price > limit_price)) ||
+             ((direction == SELL) && (head_price < limit_price)))
+        } else false;
         let cancel_reason_option =
             get_cancel_reason_option_for_market_order_or_swap(
                 self_match_taker_cancel, base_traded, max_base,
-                liquidity_gone, order_book_ref_mut.lot_size);
+                liquidity_gone, order_book_ref_mut.lot_size,
+                violated_limit_price);
         let need_to_cancel = option::is_some(&cancel_reason_option);
         let cancel_order_event_option = if (need_to_cancel)
             option::some(user::create_cancel_order_event_internal(
@@ -5095,6 +5116,8 @@ module econia::market {
                 CANCEL_REASON_MAX_QUOTE_TRADED, 0);
         assert!(user::get_CANCEL_REASON_TOO_SMALL_TO_FILL_LOT() ==
                 CANCEL_REASON_TOO_SMALL_TO_FILL_LOT, 0);
+        assert!(user::get_CANCEL_REASON_VIOLATED_LIMIT_PRICE() ==
+                CANCEL_REASON_VIOLATED_LIMIT_PRICE, 0);
     }
 
     #[test]
@@ -7516,8 +7539,7 @@ module econia::market {
                     taker_order_id,
                     NO_TAKER_ADDRESS,
                     NO_CUSTODIAN,
-                    // TODO: `CANCEL_REASON_VIOLATED_LIMIT_PRICE`
-                    CANCEL_REASON_MAX_QUOTE_TRADED
+                    CANCEL_REASON_VIOLATED_LIMIT_PRICE
                 )
         ], 0);
         // Assert returns.

@@ -95,6 +95,7 @@
 /// * `get_CANCEL_REASON_SELF_MATCH_MAKER()`
 /// * `get_CANCEL_REASON_SELF_MATCH_TAKER()`
 /// * `get_CANCEL_REASON_TOO_SMALL_TO_FILL_LOT()`
+/// * `get_CANCEL_REASON_VIOLATED_LIMIT_PRICE()`
 /// * `get_NO_CUSTODIAN()`
 ///
 /// Market account lookup:
@@ -688,6 +689,9 @@ module econia::user {
     /// Swap order cancelled because the remaining base asset amount to
     /// match was too small to fill a single lot.
     const CANCEL_REASON_TOO_SMALL_TO_FILL_LOT: u8 = 8;
+    /// Swap order cancelled because the next order on the book to match
+    /// against violated the swap order limit price.
+    const CANCEL_REASON_VIOLATED_LIMIT_PRICE: u8 = 9;
     /// `u64` bitmask with all bits set, generated in Python via
     /// `hex(int('1' * 64, 2))`.
     const HI_64: u64 = 0xffffffffffffffff;
@@ -802,6 +806,16 @@ module econia::user {
     /// * `test_get_cancel_reasons()`
     public fun get_CANCEL_REASON_TOO_SMALL_TO_FILL_LOT(): u8 {
         CANCEL_REASON_TOO_SMALL_TO_FILL_LOT
+    }
+
+    #[view]
+    /// Public constant getter for `CANCEL_REASON_VIOLATED_LIMIT_PRICE`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_cancel_reasons()`
+    public fun get_CANCEL_REASON_VIOLATED_LIMIT_PRICE(): u8 {
+        CANCEL_REASON_VIOLATED_LIMIT_PRICE
     }
 
     #[view]
@@ -4695,6 +4709,8 @@ module econia::user {
                     CANCEL_REASON_SELF_MATCH_TAKER, 0);
         assert!(get_CANCEL_REASON_TOO_SMALL_TO_FILL_LOT() ==
                     CANCEL_REASON_TOO_SMALL_TO_FILL_LOT, 0);
+        assert!(get_CANCEL_REASON_VIOLATED_LIMIT_PRICE() ==
+                    CANCEL_REASON_VIOLATED_LIMIT_PRICE, 0);
     }
 
     #[test]

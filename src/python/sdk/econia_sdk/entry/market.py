@@ -4,6 +4,7 @@ from aptos_sdk.account_address import AccountAddress
 from aptos_sdk.bcs import Serializer, encoder
 from aptos_sdk.transactions import EntryFunction, ModuleId
 from aptos_sdk.type_tag import TypeTag
+
 from econia_sdk.types import AdvanceStyle, Restriction, SelfMatchBehavior, Side
 
 

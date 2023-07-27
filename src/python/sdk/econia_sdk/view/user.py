@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import List, Optional
 
 from aptos_sdk.account_address import AccountAddress
 from econia_sdk.lib import EconiaViewer

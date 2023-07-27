@@ -24,7 +24,6 @@ from econia_sdk.view.registry import (
     get_market_id_base_coin,
     get_market_registration_events,
 )
-from econia_sdk.view.resource_account import get_address
 from econia_sdk.view.user import (
     get_cancel_order_events,
     get_fill_events,

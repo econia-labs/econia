@@ -148,10 +148,13 @@ export const OrdersTable: React.FC<{
       <table
         className={"w-full table-auto" + (className ? ` ${className}` : "")}
       >
-        <thead className="sticky top-0 h-8 bg-black">
-          {/* These classes create a pseudoelement at the bottom of the table
-              header for a border that does not scroll with the table body. */}
-          <tr className="after:absolute after:bottom-[-1px] after:left-0 after:w-full after:border-b after:border-neutral-600 after:content-['']">
+        <thead
+          className="sticky top-0 h-8 bg-black"
+          style={{
+            boxShadow: "inset 0 -1px 0 #565656",
+          }}
+        >
+          <tr>
             {table.getFlatHeaders().map((header) => (
               <th
                 className="cursor-pointer select-none py-0.5 text-left font-roboto-mono text-sm font-light uppercase text-neutral-500"

@@ -3748,6 +3748,8 @@ module econia::market {
     /// * `test_place_market_order_max_base_sell_custodian()`
     /// * `test_place_market_order_max_quote_buy_custodian()`
     /// * `test_place_market_order_max_quote_sell_user()`
+    /// * `test_place_market_order_max_quote_traded()`
+    /// * `test_place_market_order_not_enough_liquidity()`
     /// * `test_place_market_order_remove_event_handles()`
     ///
     /// # Failure testing
@@ -12386,6 +12388,365 @@ module econia::market {
             == base_deposit - base_match, 0);
         assert!(user::get_collateral_value_simple_test<QC>(
             @user_1, MARKET_ID_COIN, NO_CUSTODIAN) == HI_64, 0);
+    }
+
+    #[test]
+    /// Verify state updates, returns for market buy when matching
+    /// engine halts due to max quote traded. Based on
+    /// Based on `test_place_limit_order_still_crosses_bid()`.
+    fun test_place_market_order_max_quote_traded()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (maker, taker) = init_markets_users_integrator_test();
+        let (maker_address, taker_address) = // Get user addresses.
+            (address_of(&maker), address_of(&taker));
+        // Get fee divisors.
+        let (taker_divisor, integrator_divisor) =
+            (incentives::get_taker_fee_divisor(),
+             incentives::get_fee_share_divisor(INTEGRATOR_TIER));
+        // Declare order parameters with price set to product of
+        // divisors, to prevent truncation effects on estimates.
+        let direction_taker      = BUY;
+        let side_maker           = if (direction_taker == BUY) ASK else SELL;
+        let size_maker           = MIN_SIZE_COIN + 123;
+        let size_taker           = size_maker - 10;
+        let size_taker_requested = size_maker + 1;
+        let base_maker           = size_maker * LOT_SIZE_COIN;
+        let base_taker           = size_taker * LOT_SIZE_COIN;
+        let price                = integrator_divisor * taker_divisor;
+        let quote_maker          = size_maker * price * TICK_SIZE_COIN;
+        let quote_match          = size_taker * price * TICK_SIZE_COIN;
+        let integrator_share     = quote_match / integrator_divisor;
+        let econia_share         =
+            quote_match / taker_divisor - integrator_share;
+        let fee                  = integrator_share + econia_share;
+        let quote_trade          = if (direction_taker == BUY)
+            (quote_match + fee) else (quote_match - fee);
+        let restriction          = NO_RESTRICTION;
+        let self_match_behavior  = ABORT;
+        // Deposit to maker's account enough to impinge on min and max
+        // amounts after fill.
+        let base_deposit_maker  = base_maker;
+        let quote_deposit_maker = HI_64 - quote_maker;
+        user::deposit_coins<BC>(maker_address, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(base_deposit_maker));
+        user::deposit_coins<QC>(maker_address, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(quote_deposit_maker));
+        // Deposit to second maker's account such that matching engine
+        // halts before matching requested size.
+        let base_deposit_taker  = 0;
+        let quote_deposit_taker = quote_trade;
+        user::deposit_coins<BC>(taker_address, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(base_deposit_taker));
+        user::deposit_coins<QC>(taker_address, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(quote_deposit_taker));
+        // Assert events.
+        assert!(user::get_place_limit_order_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[], 0);
+        assert!(user::get_fill_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[], 0);
+        assert!(user::get_cancel_order_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[], 0);
+        assert!(user::get_place_limit_order_events_test(
+            MARKET_ID_COIN, @user_1, NO_CUSTODIAN) == vector[], 0);
+        assert!(user::get_fill_events_test(
+            MARKET_ID_COIN, @user_1, NO_CUSTODIAN) == vector[], 0);
+        assert!(user::get_cancel_order_events_test(
+            MARKET_ID_COIN, @user_1, NO_CUSTODIAN) == vector[], 0);
+        // Place maker order.
+        let (market_order_id_0, _, _, _) = place_limit_order_user<BC, QC>(
+            &maker, MARKET_ID_COIN, @integrator, side_maker, size_maker, price,
+            restriction, self_match_behavior);
+        let (base_trade_r, quote_trade_r, fee_r) =
+            place_market_order_user<BC, QC>( // Place taker order.
+                &taker, MARKET_ID_COIN, @integrator, direction_taker,
+                size_taker_requested, self_match_behavior);
+        let taker_order_id = order_id_no_post(2);
+        // Assert events.
+        assert!(user::get_place_limit_order_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[
+                user::create_place_limit_order_event_test(
+                    MARKET_ID_COIN,
+                    @user_0,
+                    NO_CUSTODIAN,
+                    @integrator,
+                    side_maker,
+                    size_maker,
+                    price,
+                    restriction,
+                    self_match_behavior,
+                    size_maker,
+                    market_order_id_0
+                )
+            ], 0);
+        assert!(user::get_place_market_order_events_test(
+            MARKET_ID_COIN, @user_1, NO_CUSTODIAN) == vector[
+                user::create_place_market_order_event_test(
+                    MARKET_ID_COIN,
+                    @user_1,
+                    NO_CUSTODIAN,
+                    @integrator,
+                    direction_taker,
+                    size_taker_requested,
+                    self_match_behavior,
+                    taker_order_id
+                )
+            ], 0);
+        let fill_event = user::create_fill_event_internal(
+            MARKET_ID_COIN,
+            size_taker,
+            price,
+            side_maker,
+            @user_0,
+            NO_CUSTODIAN,
+            market_order_id_0,
+            @user_1,
+            NO_CUSTODIAN,
+            taker_order_id,
+            fee_r,
+            0
+        );
+        assert!(user::get_fill_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[fill_event], 0);
+        assert!(user::get_fill_events_test(
+            MARKET_ID_COIN, @user_1, NO_CUSTODIAN) == vector[fill_event], 0);
+        assert!(user::get_cancel_order_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[], 0);
+        assert!(user::get_cancel_order_events_test(
+            MARKET_ID_COIN, @user_1, NO_CUSTODIAN) == vector[
+                user::create_cancel_order_event_internal(
+                    MARKET_ID_COIN,
+                    taker_order_id,
+                    @user_1,
+                    NO_CUSTODIAN,
+                    CANCEL_REASON_MAX_QUOTE_TRADED
+                )
+            ], 0);
+        // Assert returns
+        assert!(base_trade_r      == base_taker, 0);
+        assert!(quote_trade_r     == quote_trade, 0);
+        assert!(fee_r             == fee, 0);
+        // Get fields for maker order on book.
+        let (size_r, price_r, user_r, custodian_id_r, order_access_key) =
+            get_order_fields_test(MARKET_ID_COIN, side_maker,
+                                  market_order_id_0);
+        // Assert field returns except access key, used for user lookup.
+        assert!(size_r         == size_maker - size_taker, 0);
+        assert!(price_r        == price, 0);
+        assert!(user_r         == maker_address, 0);
+        assert!(custodian_id_r == NO_CUSTODIAN, 0);
+        // Assert user-side order fields.
+        let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
+            maker_address, MARKET_ID_COIN, NO_CUSTODIAN, side_maker,
+            order_access_key);
+        assert!(market_order_id_r == market_order_id_0, 0);
+        assert!(size_r            == size_maker - size_taker, 0);
+        // Assert maker's asset counts.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            user::get_asset_counts_internal(
+                maker_address, MARKET_ID_COIN, NO_CUSTODIAN);
+        assert!(base_total      == base_deposit_maker - base_taker, 0);
+        assert!(base_available  == 0, 0);
+        assert!(base_ceiling    == base_deposit_maker - base_taker, 0);
+        assert!(quote_total     == quote_deposit_maker + quote_match, 0);
+        assert!(quote_available == quote_deposit_maker + quote_match, 0);
+        assert!(quote_ceiling   == HI_64, 0);
+        // Assert collateral amounts.
+        assert!(user::get_collateral_value_simple_test<BC>(
+            maker_address, MARKET_ID_COIN, NO_CUSTODIAN) ==
+            base_deposit_maker - base_taker, 0);
+        assert!(user::get_collateral_value_simple_test<QC>(
+            maker_address, MARKET_ID_COIN, NO_CUSTODIAN) ==
+            quote_deposit_maker + quote_match, 0);
+        // Assert asset counts of taker.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            user::get_asset_counts_internal(
+                taker_address, MARKET_ID_COIN, NO_CUSTODIAN);
+        assert!(base_total      == base_taker, 0);
+        assert!(base_available  == base_taker, 0);
+        assert!(base_ceiling    == base_taker, 0);
+        assert!(quote_total     == 0, 0);
+        assert!(quote_available == 0, 0);
+        assert!(quote_ceiling   == 0, 0);
+        // Assert collateral amounts.
+        assert!(user::get_collateral_value_simple_test<BC>(
+            taker_address, MARKET_ID_COIN, NO_CUSTODIAN) == base_taker, 0);
+        assert!(user::get_collateral_value_simple_test<QC>(
+            taker_address, MARKET_ID_COIN, NO_CUSTODIAN) == 0, 0);
+    }
+
+    #[test]
+    /// Verify state updates, returns for market sell when not enough
+    /// liquidity to fill order. Based on
+    /// `test_place_limit_order_crosses_bid_partial()`.
+    fun test_place_market_order_not_enough_liquidity()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (user_0, user_1) = init_markets_users_integrator_test();
+        // Get fee divisors.
+        let (taker_divisor, integrator_divisor) =
+            (incentives::get_taker_fee_divisor(),
+             incentives::get_fee_share_divisor(INTEGRATOR_TIER));
+        // Declare order parameters with price set to product of
+        // divisors, to prevent truncation effects on estimates.
+        let direction_taker     = BUY;
+        let side_maker          = if (direction_taker == BUY) ASK else BID;
+        let size_match          = MIN_SIZE_COIN + 123;
+        let size_post           = MIN_SIZE_COIN;
+        let size                = size_match + size_post;
+        let base_match          = size_match * LOT_SIZE_COIN;
+        let base_post           = size_post * LOT_SIZE_COIN;
+        let base                = base_match + base_post;
+        let price               = integrator_divisor * taker_divisor;
+        let quote_match         = size_match * price * TICK_SIZE_COIN;
+        let quote_post          = size_post * price * TICK_SIZE_COIN;
+        let quote               = quote_match + quote_post;
+        let quote_max           = quote + quote / taker_divisor;
+        let integrator_share    = quote_match / integrator_divisor;
+        let econia_share        =
+            quote_match / taker_divisor - integrator_share;
+        let fee                 = integrator_share + econia_share;
+        let quote_trade         = quote_match + fee;
+        let restriction         = NO_RESTRICTION;
+        let self_match_behavior = ABORT;
+        // Deposit to maker's account enough to impinge on min and max
+        // amounts after fill.
+        user::deposit_coins<BC>(@user_0, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(base_match));
+        user::deposit_coins<QC>(@user_0, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(HI_64 - quote_match));
+        // Deposit to taker's account minimum amount to pass range
+        // checking for taker fill.
+        user::deposit_coins<BC>(@user_1, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(HI_64 - base));
+        user::deposit_coins<QC>(@user_1, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(quote_max));
+        // Assert events.
+        assert!(user::get_place_limit_order_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[], 0);
+        assert!(user::get_fill_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[], 0);
+        assert!(user::get_cancel_order_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[], 0);
+        assert!(user::get_place_market_order_events_test(
+            MARKET_ID_COIN, @user_1, NO_CUSTODIAN) == vector[], 0);
+        assert!(user::get_fill_events_test(
+            MARKET_ID_COIN, @user_1, NO_CUSTODIAN) == vector[], 0);
+        assert!(user::get_cancel_order_events_test(
+            MARKET_ID_COIN, @user_1, NO_CUSTODIAN) == vector[], 0);
+        // Place maker order.
+        let (market_order_id_0, _, _, _) = place_limit_order_user<BC, QC>(
+            &user_0, MARKET_ID_COIN, @integrator, side_maker, size_match,
+            price, restriction, self_match_behavior);
+        assert!(is_list_node_order_active( // Assert order is active.
+            MARKET_ID_COIN, side_maker, market_order_id_0), 0);
+        let (base_trade_r, quote_trade_r, fee_r) =
+            place_market_order_user<BC, QC>( // Place taker order.
+                &user_1, MARKET_ID_COIN, @integrator, direction_taker,
+                size, self_match_behavior);
+        let taker_order_id = order_id_no_post(2);
+        // Assert events.
+        assert!(user::get_place_limit_order_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[
+                user::create_place_limit_order_event_test(
+                    MARKET_ID_COIN,
+                    @user_0,
+                    NO_CUSTODIAN,
+                    @integrator,
+                    side_maker,
+                    size_match,
+                    price,
+                    restriction,
+                    self_match_behavior,
+                    size_match,
+                    market_order_id_0
+                )
+            ], 0);
+        assert!(user::get_place_market_order_events_test(
+            MARKET_ID_COIN, @user_1, NO_CUSTODIAN) == vector[
+                user::create_place_market_order_event_test(
+                    MARKET_ID_COIN,
+                    @user_1,
+                    NO_CUSTODIAN,
+                    @integrator,
+                    direction_taker,
+                    size,
+                    self_match_behavior,
+                    taker_order_id
+                )
+            ], 0);
+        let fill_event = user::create_fill_event_internal(
+            MARKET_ID_COIN,
+            size_match,
+            price,
+            side_maker,
+            @user_0,
+            NO_CUSTODIAN,
+            market_order_id_0,
+            @user_1,
+            NO_CUSTODIAN,
+            taker_order_id,
+            fee_r,
+            0
+        );
+        assert!(user::get_fill_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[fill_event], 0);
+        assert!(user::get_fill_events_test(
+            MARKET_ID_COIN, @user_1, NO_CUSTODIAN) == vector[fill_event], 0);
+        assert!(user::get_cancel_order_events_test(
+            MARKET_ID_COIN, @user_0, NO_CUSTODIAN) == vector[], 0);
+        assert!(user::get_cancel_order_events_test(
+            MARKET_ID_COIN, @user_1, NO_CUSTODIAN) == vector[
+                user::create_cancel_order_event_internal(
+                    MARKET_ID_COIN,
+                    taker_order_id,
+                    @user_1,
+                    NO_CUSTODIAN,
+                    CANCEL_REASON_NOT_ENOUGH_LIQUIDITY
+                )
+            ], 0);
+        // Assert returns
+        assert!(base_trade_r      == base_match, 0);
+        assert!(quote_trade_r     == quote_trade, 0);
+        assert!(fee_r             == fee, 0);
+        // Assert filled order inactive.
+        assert!(!is_list_node_order_active(
+            MARKET_ID_COIN, side_maker, market_order_id_0), 0);
+        // Assert maker's asset counts.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            user::get_asset_counts_internal(
+                @user_0, MARKET_ID_COIN, NO_CUSTODIAN);
+        assert!(base_total      == 0, 0);
+        assert!(base_available  == 0, 0);
+        assert!(base_ceiling    == 0, 0);
+        assert!(quote_total     == HI_64, 0);
+        assert!(quote_available == HI_64, 0);
+        assert!(quote_ceiling   == HI_64, 0);
+        // Assert collateral amounts.
+        assert!(user::get_collateral_value_simple_test<BC>(
+            @user_0, MARKET_ID_COIN, NO_CUSTODIAN) == 0, 0);
+        assert!(user::get_collateral_value_simple_test<QC>(
+            @user_0, MARKET_ID_COIN, NO_CUSTODIAN) == HI_64, 0);
+        // Assert asset counts of taker.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            user::get_asset_counts_internal(
+                @user_1, MARKET_ID_COIN, NO_CUSTODIAN);
+        assert!(base_total      == HI_64 - base_post, 0);
+        assert!(base_available  == HI_64 - base_post, 0);
+        assert!(base_ceiling    == HI_64 - base_post, 0);
+        assert!(quote_total     == quote_max - quote_trade, 0);
+        assert!(quote_available == quote_max - quote_trade, 0);
+        assert!(quote_ceiling   == quote_max - quote_trade, 0);
+        // Assert collateral amounts.
+        assert!(user::get_collateral_value_simple_test<BC>(
+            @user_1, MARKET_ID_COIN, NO_CUSTODIAN) == HI_64 - base_post, 0);
+        assert!(user::get_collateral_value_simple_test<QC>(
+            @user_1, MARKET_ID_COIN, NO_CUSTODIAN)
+            == quote_max - quote_trade, 0);
     }
 
     #[test]

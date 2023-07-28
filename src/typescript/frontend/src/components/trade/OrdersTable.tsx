@@ -1,4 +1,5 @@
 import { useWallet } from "@aptos-labs/wallet-adapter-react";
+import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/20/solid";
 import { useQuery } from "@tanstack/react-query";
 import {
   createColumnHelper,
@@ -9,13 +10,11 @@ import {
   type SortingState,
   useReactTable,
 } from "@tanstack/react-table";
-import { useMemo, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 
 import { type ApiMarket, type ApiOrder } from "@/types/api";
 
 import { ConnectedButton } from "../ConnectedButton";
-
-import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/20/solid";
 
 type TableOrder = ApiOrder & { total: number };
 
@@ -68,22 +67,15 @@ export const OrdersTable: React.FC<{
   }, [allMarketData]);
 
   const sortLabel = useMemo(() => {
-    const map = new Map<
-      SortDirection | false,
-      string | null | React.JSX.Element // ok for some weird reason `Element` seems to point to a different type
-    >();
+    const map = new Map<SortDirection | false, ReactNode>();
     map.set(false, null);
     map.set(
       "asc",
-      <ChevronUpIcon
-        className={"absolute top-0 inline-block h-4 w-4 translate-y-1/2"}
-      />,
+      <ChevronUpIcon className="absolute top-0 ml-0.5 inline-block h-4 w-4 translate-y-1/2" />,
     );
     map.set(
       "desc",
-      <ChevronDownIcon
-        className={"absolute top-0 inline-block h-4 w-4 translate-y-1/2"}
-      />,
+      <ChevronDownIcon className="absolute top-0 ml-0.5 inline-block h-4 w-4 translate-y-1/2" />,
     );
     return map;
   }, []);

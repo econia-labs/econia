@@ -89,7 +89,7 @@ It's time to deploy our own Econia Faucet to the local chain:
 git clone https://github.com/econia-labs/econia.git # only if necessary
 cd ./econia/src/move/faucet
 aptos init --profile econia_faucet_deploy # enter "local" for the chain
-export FAUCET_ADDR=<ADDR-FROM-ABOVE>
+export FAUCET_ADDR=<ACCOUNT-FROM-ABOVE>
 # deploy the faucet (all one command)
 aptos move publish \
         --named-addresses econia_faucet=$FAUCET_ADDR \
@@ -102,7 +102,7 @@ You also need to deploy Econia:
 ```bash
 cd ./econia/src/move/econia
 aptos init --profile econia_exchange_deploy # enter "local" for the chain
-export ECONIA_ADDR=<ADDR-FROM-ABOVE>
+export ECONIA_ADDR=<ACCOUNT-FROM-ABOVE>
 # deploy the faucet (all one command)
 aptos move publish \
         --override-size-check \

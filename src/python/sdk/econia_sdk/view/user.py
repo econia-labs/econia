@@ -51,13 +51,6 @@ def get_CANCEL_REASON_SELF_MATCH_TAKER(view: EconiaViewer) -> int:
     return int(returns[0])
 
 
-def get_CANCEL_REASON_TOO_SMALL_AFTER_MATCHING(view: EconiaViewer) -> int:
-    returns = view.get_returns(
-        "user", "get_CANCEL_REASON_TOO_SMALL_AFTER_MATCHING"
-    )
-    return int(returns[0])
-
-
 def get_market_event_handle_creation_numbers(
     view: EconiaViewer,
     user: AccountAddress,

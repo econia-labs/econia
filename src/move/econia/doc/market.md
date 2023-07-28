@@ -1923,6 +1923,28 @@ where self match behavior indicated cancelling the taker order.
 
 
 
+<a name="0xc0deb00c_market_CANCEL_REASON_TOO_SMALL_TO_FILL_LOT"></a>
+
+Swap order cancelled because the remaining base asset amount to
+match was too small to fill a single lot.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_CANCEL_REASON_TOO_SMALL_TO_FILL_LOT">CANCEL_REASON_TOO_SMALL_TO_FILL_LOT</a>: u8 = 8;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_CANCEL_REASON_VIOLATED_LIMIT_PRICE"></a>
+
+Swap order cancelled because the next order on the book to match
+against violated the swap order limit price.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_CANCEL_REASON_VIOLATED_LIMIT_PRICE">CANCEL_REASON_VIOLATED_LIMIT_PRICE</a>: u8 = 9;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_market_E_INVALID_MARKET_ORDER_ID"></a>
 
 Market order ID invalid.
@@ -4454,8 +4476,8 @@ the case of a buy, base coins in the case of a sell.
 
 
 * <code>test_swap_coins_buy_max_base_limiting()</code>
-* <code>test_swap_coins_buy_no_max_quote_limiting()</code>
 * <code>test_swap_coins_buy_no_max_base_limiting()</code>
+* <code>test_swap_coins_buy_no_max_quote_limiting()</code>
 * <code>test_swap_coins_sell_max_quote_limiting()</code>
 * <code>test_swap_coins_sell_no_max_base_limiting()</code>
 * <code>test_swap_coins_sell_no_max_quote_limiting()</code>
@@ -5348,7 +5370,8 @@ custodian ID of order on order book having market order ID.
     // and new size.
     <a href="user.md#0xc0deb00c_user_change_order_size_internal">user::change_order_size_internal</a>(
         <a href="user.md#0xc0deb00c_user">user</a>, market_id, custodian_id, side, order_ref_mut.size, new_size,
-        order_ref_mut.price, order_ref_mut.order_access_key, market_order_id);
+        order_ref_mut.price, order_ref_mut.order_access_key,
+        market_order_id);
     // Get order price.
     <b>let</b> price = <a href="avl_queue.md#0xc0deb00c_avl_queue_get_access_key_insertion_key">avl_queue::get_access_key_insertion_key</a>(avlq_access_key);
     // If size change is for a size decrease or <b>if</b> order is at tail
@@ -5403,6 +5426,9 @@ the taker side of an order due to a self match.
 match.
 * <code>liquidity_gone</code>: If the matching engine halted due to
 insufficient liquidity.
+* <code>lot_size</code>: The lot size for the market.
+* <code>violated_limit_price</code>: <code><b>true</b></code> if matching halted due to a
+violated limit price
 
 
 <a name="@Returns_109"></a>
@@ -5414,7 +5440,7 @@ insufficient liquidity.
 to be cancelled.
 
 
-<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_get_cancel_reason_option_for_market_order_or_swap">get_cancel_reason_option_for_market_order_or_swap</a>(self_match_taker_cancel: bool, base_traded: u64, max_base: u64, liquidity_gone: bool): <a href="_Option">option::Option</a>&lt;u8&gt;
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_get_cancel_reason_option_for_market_order_or_swap">get_cancel_reason_option_for_market_order_or_swap</a>(self_match_taker_cancel: bool, base_traded: u64, max_base: u64, liquidity_gone: bool, lot_size: u64, limit_price_violated: bool): <a href="_Option">option::Option</a>&lt;u8&gt;
 </code></pre>
 
 
@@ -5426,15 +5452,21 @@ to be cancelled.
     self_match_taker_cancel: bool,
     base_traded: u64,
     max_base: u64,
-    liquidity_gone: bool
+    liquidity_gone: bool,
+    lot_size: u64,
+    limit_price_violated: bool
 ): Option&lt;u8&gt; {
     <b>let</b> need_to_cancel =
         ((self_match_taker_cancel) || (base_traded &lt; max_base));
     <b>if</b> (need_to_cancel) {
         <b>if</b> (self_match_taker_cancel) {
             <a href="_some">option::some</a>(<a href="market.md#0xc0deb00c_market_CANCEL_REASON_SELF_MATCH_TAKER">CANCEL_REASON_SELF_MATCH_TAKER</a>)
+        } <b>else</b> <b>if</b> (limit_price_violated) {
+            <a href="_some">option::some</a>(<a href="market.md#0xc0deb00c_market_CANCEL_REASON_VIOLATED_LIMIT_PRICE">CANCEL_REASON_VIOLATED_LIMIT_PRICE</a>)
         } <b>else</b> <b>if</b> (liquidity_gone) {
             <a href="_some">option::some</a>(<a href="market.md#0xc0deb00c_market_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY">CANCEL_REASON_NOT_ENOUGH_LIQUIDITY</a>)
+        } <b>else</b> <b>if</b> ((max_base - base_traded) &lt; lot_size) {
+            <a href="_some">option::some</a>(<a href="market.md#0xc0deb00c_market_CANCEL_REASON_TOO_SMALL_TO_FILL_LOT">CANCEL_REASON_TOO_SMALL_TO_FILL_LOT</a>)
         } <b>else</b> {
             <a href="_some">option::some</a>(<a href="market.md#0xc0deb00c_market_CANCEL_REASON_MAX_QUOTE_TRADED">CANCEL_REASON_MAX_QUOTE_TRADED</a>)
         }
@@ -6099,6 +6131,7 @@ restriction, and
 * <code>test_place_limit_order_no_cross_ask_user()</code>
 * <code>test_place_limit_order_no_cross_ask_user_ioc()</code>
 * <code>test_place_limit_order_no_cross_bid_custodian()</code>
+* <code>test_place_limit_order_remove_event_handles()</code>
 * <code>test_place_limit_order_still_crosses_ask()</code>
 * <code>test_place_limit_order_still_crosses_bid()</code>
 
@@ -6667,11 +6700,14 @@ lot size results in a base asset unit overflow.
 ### Expected value testing
 
 
-* <code>test_place_market_order_max_base_adjust_buy_user()</code>
+* <code>test_place_market_order_max_base_below_buy_user()</code>
 * <code>test_place_market_order_max_base_buy_user()</code>
 * <code>test_place_market_order_max_base_sell_custodian()</code>
 * <code>test_place_market_order_max_quote_buy_custodian()</code>
 * <code>test_place_market_order_max_quote_sell_user()</code>
+* <code>test_place_market_order_max_quote_traded()</code>
+* <code>test_place_market_order_not_enough_liquidity()</code>
+* <code>test_place_market_order_remove_event_handles()</code>
 
 
 <a name="@Failure_testing_139"></a>
@@ -6798,7 +6834,7 @@ lot size results in a base asset unit overflow.
     <b>let</b> cancel_reason_option =
         <a href="market.md#0xc0deb00c_market_get_cancel_reason_option_for_market_order_or_swap">get_cancel_reason_option_for_market_order_or_swap</a>(
             self_match_taker_cancel, base_traded, max_base,
-            liquidity_gone);
+            liquidity_gone, order_book_ref_mut.lot_size, <b>false</b>);
     // Emit relevant events <b>to</b> <a href="user.md#0xc0deb00c_user">user</a> <a href="">event</a> handles.
     <a href="user.md#0xc0deb00c_user_emit_market_order_events_internal">user::emit_market_order_events_internal</a>(
         market_id, user_address, custodian_id, integrator, direction, size,
@@ -7262,10 +7298,22 @@ filling, when swap is from non-signing swapper.
         limit_price,
         order_id: market_order_id
     };
+    // Check <b>if</b> violated limit price.
+    <b>let</b> violated_limit_price = <b>if</b> (!liquidity_gone) {
+        // Mutably borrow orders AVL queue matched against.
+        <b>let</b> orders_ref_mut = <b>if</b> (direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>)
+            &<b>mut</b> order_book_ref_mut.asks <b>else</b> &<b>mut</b> order_book_ref_mut.bids;
+        <b>let</b> head_price = // Get price of order at head of AVL queue.
+            *<a href="_borrow">option::borrow</a>(&<a href="avl_queue.md#0xc0deb00c_avl_queue_get_head_key">avl_queue::get_head_key</a>(orders_ref_mut));
+        // Check <b>if</b> limit price violated
+        (((direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a> ) && (head_price &gt; limit_price)) ||
+         ((direction == <a href="market.md#0xc0deb00c_market_SELL">SELL</a>) && (head_price &lt; limit_price)))
+    } <b>else</b> <b>false</b>;
     <b>let</b> cancel_reason_option =
         <a href="market.md#0xc0deb00c_market_get_cancel_reason_option_for_market_order_or_swap">get_cancel_reason_option_for_market_order_or_swap</a>(
             self_match_taker_cancel, base_traded, max_base,
-            liquidity_gone);
+            liquidity_gone, order_book_ref_mut.lot_size,
+            violated_limit_price);
     <b>let</b> need_to_cancel = <a href="_is_some">option::is_some</a>(&cancel_reason_option);
     <b>let</b> cancel_order_event_option = <b>if</b> (need_to_cancel)
         <a href="_some">option::some</a>(<a href="user.md#0xc0deb00c_user_create_cancel_order_event_internal">user::create_cancel_order_event_internal</a>(

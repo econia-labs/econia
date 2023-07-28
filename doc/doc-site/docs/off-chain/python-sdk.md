@@ -130,11 +130,11 @@ poetry run trade # we're off to the races!
 Press enter to initialize (or obtain) the market.
 Market does not exist yet, creating one...
 EVENT SUMMARY: MarketRegistrationEvent
-  * Base Type (unit of lots): 0x...::test_eth::TestETH
+  * Base Type (unit of lots): 0x...::test_apt::TestAPT
   * Quote Type (unit of ticks): 0x...::test_usdc::TestUSDC
-Market ID: 1
+Market ID: 3
 TRANSACTIONS EXECUTED (first-to-last):
-  * Create a new market: 0x544c1535d9634bb4d4f5ee5b74ae798e45e5b1a0e54bfea060026e5ce0163dd9
+  * Create a new market: 0xfb71a2742a9ac08e2757d0f0cca54f9b859b49423679c57075852591cda8dabf
 There are no open orders on this market right now.
 ```
 
@@ -151,15 +151,15 @@ The long hex string is a transaction hash, which can be looked up on an explorer
 ```
 Press enter to set-up an Account A with funds.
 New market account after deposit:
-  * tETH: 0 -> 10.0
+  * tAPT: 0 -> 10.0
   * tUSDC: 0 -> 10000.0
-Account A was set-up: 0xb5a2e0363ecfd9fbc9cd9e77f5db5d7d6e85a1c8b931675f71e99a1836adfe41
+Account A was set-up: 0x73db82a6cee1bd2443d3305454d83e36ca81ee5f3c17c5d06ecd8fe68838c9a4
 TRANSACTIONS EXECUTED (first-to-last):
-  * Mint 10.0 tETH (yet to be deposited): 0xbecafd3453798384eacdc25733d53e30d8d86524c27cf2f8da533a3ad785838a
-  * Mint 10000.0 tUSDC (yet to be deposited): 0xfdddda8daf3881908c413ec5d8cf12fb3a2d164d57a43908b06236171cfd1103
-  * Register a new account in market 1: 0x89a403548b2b986555751fa0e4d2d29e6a099ca38dd2d5640297b587fb27510c
-  * Deposit 10.0 tETH to market account: 0x8233bc577deafd9f3ace59c9d7843807c1a41bf9604e980eddff47990d677bdc
-  * Deposit 10000.0 tETH to market account: 0xd6b6eeb06160c13c174ea4c868fef9457686f45c7839463640cb7a5b051f95a3
+  * Mint 10.0 tAPT (yet to be deposited): 0x44dd030c6b689544b20c5bddf5d9cafdd17a8550e3696f7f4dbad17dcc231716
+  * Mint 10000.0 tUSDC (yet to be deposited): 0xe92cdb4235e32840bae7961dd3d0b5ed47374bb9c6791986283bd148acf9ebca
+  * Register a new account in market 3: 0x30e8d0dddbf44e6ab639b15f127cdae6d0fda4c4aab82e20d34deddda423dd03
+  * Deposit 10.0 tAPT to market account: 0x0baddfd53f7a105e45de96e7682ca7b90d2dcc449314e3c18bfdb869e9a49f92
+  * Deposit 10000.0 tUSDC to market account: 0xef94c0d495377afeb2bde1180d3e2c4b620c01b925d623186a8c18adac5f768d
 ```
 
 Interacting with the exchange as an address requires a market account for each trading pair.
@@ -177,22 +177,22 @@ This gives us the 5 total transactions we expect and see above. Minting and depo
 ```
 Press enter to place limit orders with Account A.
 EVENT SUMMARY: PlaceLimitOrderEvent
-  * User address: 0xb5a2e0363ecfd9fbc9cd9e77f5db5d7d6e85a1c8b931675f71e99a1836adfe41
+  * User address: 0x73db82a6cee1bd2443d3305454d83e36ca81ee5f3c17c5d06ecd8fe68838c9a4
   * Order ID: 18446884819787842536
   * Side: BID (Buying)
-  * Price: 1000 tUSDC ticks per tETH lot
-  * Size: 1000 available tETH lots / 1000
+  * Price: 1000 tUSDC ticks per tAPT lot
+  * Size: 1000 available tAPT lots / 1000
 EVENT SUMMARY: PlaceLimitOrderEvent
-  * User address: 0xb5a2e0363ecfd9fbc9cd9e77f5db5d7d6e85a1c8b931675f71e99a1836adfe41
+  * User address: 0x73db82a6cee1bd2443d3305454d83e36ca81ee5f3c17c5d06ecd8fe68838c9a4
   * Order ID: 36893628897792362448
   * Side: ASK (Selling)
-  * Price: 2000 tUSDC ticks per tETH lot
-  * Size: 1000 available tETH lots / 1000
+  * Price: 2000 tUSDC ticks per tAPT lot
+  * Size: 1000 available tAPT lots / 1000
 Account A has finished placing limit orders.
   * There were no limit orders filled by any orders placed.
 TRANSACTIONS EXECUTED (first-to-last):
-  * Place limit BID/BUY order (1000 lots) (1000 ticks/lot): 0x7f8a086a31a7298f68eb474179de845ca31f0c124a31bdf3ecbdad23d571d880
-  * Place limit ASK/SELL order (1000 lots) (2000 ticks/lot): 0xc994c5aca37a83aca9514b002d54788650943cba80d008c48ffa2870898fbf12
+  * Place limit BID/BUY order (1000 lots) (1000 ticks/lot): 0xb5cc09e7f1caa23b27f0037c1de5e0052b52bccf22f50842b1942ed4629b2db5
+  * Place limit ASK/SELL order (1000 lots) (2000 ticks/lot): 0x9ed8e3afe84a533ec485ee58188d4134d86b2b7271f24041d8f872c5dc26ba7f
 CURRENT BEST PRICE LEVELS:
   * Highest BID/BUY @ 1000 ticks/lot, 1000 lots
   * Lowest ASK/SELL @ 2000 ticks/lot, 1000 lots
@@ -208,15 +208,15 @@ We're about to witness such a fill event in the coming steps.
 ```
 Press enter to set-up an Account B with funds.
 New market account after deposit:
-  * tETH: 0 -> 10.0
+  * tAPT: 0 -> 10.0
   * tUSDC: 0 -> 10000.0
-Account B was set-up: 0x9f8bdcf624604f69b6c70c8d121b6d9bacddf48c8424dcccb5adf0ebd2c2e700
+Account B was set-up: 0x6c1bf6edc2dd770096b1251f218b3fb23aa242e3ef6a62fa55f1c01345ba2692
 TRANSACTIONS EXECUTED (first-to-last):
-  * Mint 10.0 tETH (yet to be deposited): 0x95bd0b4e5f5758e90c6a8a74074710cc8f44379e178125c141792ba1c7df744a
-  * Mint 10000.0 tUSDC (yet to be deposited): 0x840f1fdedefaec8d48b6483052d804cf1af82d1197f3619623272a151a2bfa0d
-  * Register a new account in market 1: 0xb2f0ffdfac1edf6fe1de2c489dbaac353e03e8a12f97b6c48ae51e9651cfcd99
-  * Deposit 10.0 tETH to market account: 0xda3d0c4c29d8c3b6ac8baeddd66b7308e8b053ec1ede3d39b01ae0fa49adc83b
-  * Deposit 10000.0 tETH to market account: 0x4c97cda5c829da9aa318e129c5b5ceb65f34ea69f4e7df15797781215c306a30
+  * Mint 10.0 tAPT (yet to be deposited): 0xf1690dd28662a9ff19712a56a5e30f0b65dce452b8a40f8a0dc7494d4657b290
+  * Mint 10000.0 tUSDC (yet to be deposited): 0x848ac4b0a11dd6f11117721ccdcfd0bdcbde9fbfb6b5f36f8388b235c548a13d
+  * Register a new account in market 3: 0xf7089757ee42aced4deb3f59f8f2c79770f06e24751aaa46ab4de1fbcbcf04a1
+  * Deposit 10.0 tAPT to market account: 0x633d4dbf96368c2da4e4370402a402362134bd33d6065917b7f76d3a4fb5d449
+  * Deposit 10000.0 tUSDC to market account: 0xb237d27d1cfccbf7aa2bb3d7dea8a7bf52f2ac3f94ff142d82ee67a740db672b
 ```
 
 Same as step #2, but for a new account.
@@ -228,8 +228,8 @@ Press enter to place market orders (buy and sell) with Account B.
 Account B has finished placing 2 market orders.
   * This resulted in 2 limit orders getting filled.
 TRANSACTIONS EXECUTED (first-to-last):
-  * Place market BID/BUY order (500 lots): 0x1b20523bd946e81d921243bc2acb0666aff5049d7aeb0f184004a606a66f1623
-  * Place market ASK/SELL order (500 lots): 0xb82e88ddae98aadd195c743fc8dfde582fb03a41ff959af231157ffbddcce8db
+  * Place market BID/BUY order (500 lots): 0xa52c0f6fa1d7f9ce01e89a0044198bb8e4495d7964b5ae8f7a9660f8b635e0a8
+  * Place market ASK/SELL order (500 lots): 0x719a60b1f2edff7bf6d5a0d175b27aebddb81c1abdb75146b93b96e5483897af
 CURRENT BEST PRICE LEVELS:
   * Highest BID/BUY @ 1000 ticks/lot, 500 lots
   * Lowest ASK/SELL @ 2000 ticks/lot, 500 lots
@@ -244,10 +244,10 @@ This is expected, because some of the liquidity available has been taken at the 
 Press enter to cancel all of Account A's outstanding orders
 Account A has cancelled all 2 of their orders.
 TRANSACTIONS EXECUTED (first-to-last):
-  * Cancel all ASKS for Account A: 0xbd77261240ede717d95af21d1887b7292271a8675fe8ced54aa100d998e2edc5
-  * Cancel all BIDS for Account A:: 0x207b2cdeea95fa60549301d77e72baa38fe99346893d771ed59ffe9df8c0167c
+  * Cancel all ASKS for Account A: 0x46cb07d3eb9b622d4645559adae8a5e9cdc28670173760bee4154f43b8f8f4e0
+  * Cancel all BIDS for Account A:: 0x50da928e8621167a8e9b6297dd9966f4f871b81b918a046b7840305002299075
 CURRENT BEST PRICE LEVELS:
-There is no tETH being bought or sold right now!
+There is no tAPT being bought or sold right now!
 ```
 
 This one is straightforward, but it's worth nothing that there are no longer orders on the book unlike in the step above.
@@ -259,16 +259,16 @@ That's because in this case, all of the liquidity in the order book has been can
 Press enter to place competitive limit orders (top-of-book) with Account A.
 Account A has created multiple competitive limit orders!
 TRANSACTIONS EXECUTED (first-to-last):
-  * Place limit BID/BUY order (100 lots) (1000 ticks/lot): 0xaa5eaf815072342645a85dbd7e40e84d999d44fae484440832474ccc7927cc18
-  * Place limit ASK/SELL order (100 lots) (2000 ticks/lot): 0x7ec72c68aef04221eba37e83041440c2ef0e9bfe68bfc70b9e73580508177237
-  * Place limit BID/BUY order (200 lots) (1001 ticks/lot): 0x463316baead724ff08021e2e8d59fbeefcffffb19e6ea026d167005e69168268
-  * Place limit ASK/SELL order (200 lots) (1999 ticks/lot): 0xd19cacbe7b6a2496e91fd17fd359e228f1b5bd9d6ac9c4f0db706e8ad24a9939
-  * Place limit BID/BUY order (300 lots) (1002 ticks/lot): 0xbb9b637d01b6209c13d760e7a1b9dbd4fcdd05a724b5ed0e4c50463be1566d3d
-  * Place limit ASK/SELL order (300 lots) (1998 ticks/lot): 0x7ad8c60956edaee5c3d4a8d355c015a5c5776f79ec19310f8d91b7a1ba3e159a
-  * Place limit BID/BUY order (400 lots) (1003 ticks/lot): 0x64a1e2bc60a50ad2a44fdadb9aaa4f75a03a1061af5ebe926a79619ba4acdab8
-  * Place limit ASK/SELL order (400 lots) (1997 ticks/lot): 0x2acba7786094cbaa5f3551f9489847e33f9d114734ff9f35bdc815488cb0c8ea
-  * Place limit BID/BUY order (500 lots) (1004 ticks/lot): 0x2038221c4fa6488f3645fe6722ef1269f19ecd61d7e4352a8767cb12106ba3d8
-  * Place limit ASK/SELL order (500 lots) (1996 ticks/lot): 0xe4754a6069c76275a0d8ea3933825160abb9bddf78a3cee7f27d798e479df337
+  * Place limit BID/BUY order (100 lots) (1000 ticks/lot): 0xbae8ef0b65838fa914d00da061cf2ab34f5cf6882f0d6a8d6f65b07db184101d
+  * Place limit ASK/SELL order (100 lots) (2000 ticks/lot): 0x988a1c25d4d4bf987e4fa4f75c98bfea2c77637605575296d5179d1589bdb266
+  * Place limit BID/BUY order (200 lots) (1001 ticks/lot): 0x149f2519dc522cccd1fdd242309cfe2504565b172eb1f394e6106a3173d97978
+  * Place limit ASK/SELL order (200 lots) (1999 ticks/lot): 0x60f1632bf52d3a5c00b8b6a08596d961e07ef83ce6421dad95b090cb6ac1d44a
+  * Place limit BID/BUY order (300 lots) (1002 ticks/lot): 0x8efda089c834b7962771cb30a04faeead52aa2d21d6b829541b6c2a4ef7aed64
+  * Place limit ASK/SELL order (300 lots) (1998 ticks/lot): 0x614d18accc9f50e4aa33e477c1d0bd835b416b7e7d4bc16226ceb6c497e8a364
+  * Place limit BID/BUY order (400 lots) (1003 ticks/lot): 0x27bf83490f24d16677ce2478d62b4d15984bbee3b7a4b8c78a98e68dd25abb8d
+  * Place limit ASK/SELL order (400 lots) (1997 ticks/lot): 0xca00b5f77d31a2746496da7d24ce15596ee1e96fb6ddce4208265228b46ea8e5
+  * Place limit BID/BUY order (500 lots) (1004 ticks/lot): 0x8f736a19aa57e724b5ecb5e3dc812c2c21189bc631d9a8810b82be1e79fbe167
+  * Place limit ASK/SELL order (500 lots) (1996 ticks/lot): 0xc9ad3b9f29cab5e0dd6c234c359bf1e569b326e4f1303cf7c7de77843f9b8455
 CURRENT BEST PRICE LEVELS:
   * Highest BID/BUY @ 1004 ticks/lot, 500 lots
   * Lowest ASK/SELL @ 1996 ticks/lot, 500 lots
@@ -300,6 +300,9 @@ LAST ORDER EXECUTION BREAKDOWN: FillEvent(s)
   * Execution sizes (lots): 500 +> 400 +> 300 +> 200 +> 100
   * Execution fees (quote subunits): 499000 +> 399400 +> 299700 +> 199900 +> 100000
   * The order WAS NOT fully satisfied by initial execution
+
+
+THE END!
 ```
 
 There were two limit orders placed by B here; both "crossed the spread" and one had some remaining after filling all orders up to its price.

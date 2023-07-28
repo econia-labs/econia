@@ -412,7 +412,7 @@ def setup_new_account(
     # Register market account
     calldata = register_market_account(
         ECONIA_ADDR,
-        TypeTag(StructTag.from_str(COIN_TYPE_APT)),
+        TypeTag(StructTag.from_str(COIN_TYPE_TAPT)),
         TypeTag(StructTag.from_str(COIN_TYPE_USDC)),
         market_id,
         0,
@@ -498,7 +498,7 @@ def fund_USDC(account: Account, wholes: int):
 def setup_market(faucet_client: FaucetClient, viewer: EconiaViewer) -> int:
     lot_size = 10 ** (8 - 3)  # tAPT has 8 decimals, want 1/1000th granularity
     tick_size = 10 ** (6 - 3)  # tUSDC has 6 decimals, want 1/1000th granularity
-    min_size = 7
+    min_size = 1
     market_id = get_market_id_base_coin(
         viewer, COIN_TYPE_TAPT, COIN_TYPE_USDC, lot_size, tick_size, min_size
     )

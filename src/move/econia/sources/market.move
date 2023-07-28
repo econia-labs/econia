@@ -11533,48 +11533,6 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = E_SIZE_BASE_OVERFLOW)]
-    /// Verify failure for invalid size argument.
-    fun test_place_market_order_size_base_overflow()
-    acquires OrderBooks {
-        // Initialize markets, users, and an integrator.
-        init_markets_users_integrator_test();
-        // Declare order arguments.
-        let user_address = @user_0;
-        let market_id = MARKET_ID_COIN;
-        let custodian_id = NO_CUSTODIAN;
-        let integrator = @integrator;
-        let direction = BUY;
-        let size = HI_64 / LOT_SIZE_COIN + 1;
-        let self_match_behavior = ABORT;
-        // Attempt invalid invocation.
-        place_market_order<BC, QC>(
-            user_address, market_id, custodian_id, integrator, direction,
-            size, self_match_behavior);
-    }
-
-    #[test]
-    #[expected_failure(abort_code = E_SIZE_TOO_SMALL)]
-    /// Verify failure for invalid size argument.
-    fun test_place_market_order_size_too_small()
-    acquires OrderBooks {
-        // Initialize markets, users, and an integrator.
-        init_markets_users_integrator_test();
-        // Declare order arguments.
-        let user_address = @user_0;
-        let market_id = MARKET_ID_COIN;
-        let custodian_id = NO_CUSTODIAN;
-        let integrator = @integrator;
-        let direction = BUY;
-        let size = MIN_SIZE_COIN - 1;
-        let self_match_behavior = ABORT;
-        // Attempt invalid invocation.
-        place_market_order<BC, QC>(
-            user_address, market_id, custodian_id, integrator, direction,
-            size, self_match_behavior);
-    }
-
-    #[test]
     /// Verify state updates, returns for market buy when user specifies
     /// base trade amount that is less than max possible, under
     /// authority of signing user.
@@ -12485,6 +12443,48 @@ module econia::market {
         place_market_order_user<BC, QC>(
             &user_1, MARKET_ID_COIN, @integrator, BUY, size_match,
             self_match_behavior);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = E_SIZE_BASE_OVERFLOW)]
+    /// Verify failure for invalid size argument.
+    fun test_place_market_order_size_base_overflow()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        init_markets_users_integrator_test();
+        // Declare order arguments.
+        let user_address = @user_0;
+        let market_id = MARKET_ID_COIN;
+        let custodian_id = NO_CUSTODIAN;
+        let integrator = @integrator;
+        let direction = BUY;
+        let size = HI_64 / LOT_SIZE_COIN + 1;
+        let self_match_behavior = ABORT;
+        // Attempt invalid invocation.
+        place_market_order<BC, QC>(
+            user_address, market_id, custodian_id, integrator, direction,
+            size, self_match_behavior);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = E_SIZE_TOO_SMALL)]
+    /// Verify failure for invalid size argument.
+    fun test_place_market_order_size_too_small()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        init_markets_users_integrator_test();
+        // Declare order arguments.
+        let user_address = @user_0;
+        let market_id = MARKET_ID_COIN;
+        let custodian_id = NO_CUSTODIAN;
+        let integrator = @integrator;
+        let direction = BUY;
+        let size = MIN_SIZE_COIN - 1;
+        let self_match_behavior = ABORT;
+        // Attempt invalid invocation.
+        place_market_order<BC, QC>(
+            user_address, market_id, custodian_id, integrator, direction,
+            size, self_match_behavior);
     }
 
     #[test]

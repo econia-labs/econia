@@ -3365,6 +3365,30 @@ module econia::user {
     }
 
     #[test_only]
+    /// Return a `PlaceMarketOrderEvent` with the indicated fields.
+    public fun create_place_market_order_event_test(
+        market_id: u64,
+        user: address,
+        custodian_id: u64,
+        integrator: address,
+        direction: bool,
+        size: u64,
+        self_match_behavior: u8,
+        order_id: u128
+    ): PlaceMarketOrderEvent {
+        PlaceMarketOrderEvent{
+            market_id,
+            user,
+            custodian_id,
+            integrator,
+            direction,
+            size,
+            self_match_behavior,
+            order_id
+        }
+    }
+
+    #[test_only]
     /// Return `HI_PRICE`, for testing synchronization with
     /// `market.move`.
     public fun get_HI_PRICE_test(): u64 {HI_PRICE}

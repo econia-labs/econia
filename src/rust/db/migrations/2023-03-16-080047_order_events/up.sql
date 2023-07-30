@@ -187,7 +187,7 @@ CREATE FUNCTION handle_place_limit_order_event ()
     AS $handle_place_limit_order_event$
 BEGIN
     INSERT INTO orders
-        VALUES (NEW.order_id, NEW.market_id, NEW.side, NEW.size, NEW.size, NEW.price, NEW.user_address, NEW.custodian_id, 'open', NEW.time);
+        VALUES (NEW.order_id, NEW.market_id, NEW.side, NEW.size, NEW.remaining_size, NEW.price, NEW.user_address, NEW.custodian_id, 'open', NEW.time);
     RETURN new;
 END;
 $handle_place_limit_order_event$
@@ -218,7 +218,7 @@ CREATE FUNCTION handle_place_market_order_event ()
     AS $handle_place_market_order_event$
 BEGIN
     INSERT INTO orders
-        VALUES (NEW.order_id, NEW.market_id, NEW.direction, NEW.size, NEW.size, 'NaN', NEW.user_address, NEW.custodian_id, 'open', NEW.time);
+        VALUES (NEW.order_id, NEW.market_id, NEW.direction, NEW.size, NEW.size, NEW.remaining_size, NEW.user_address, NEW.custodian_id, 'open', NEW.time);
     RETURN new;
 END;
 $handle_place_market_order_event$

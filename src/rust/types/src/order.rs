@@ -119,6 +119,7 @@ pub enum Restriction {
     NoRestriction,
     FillOrAbort,
     ImmediateOrCancel,
+    PostOrAbort
 }
 
 impl TryFrom<u8> for Restriction {
@@ -129,6 +130,7 @@ impl TryFrom<u8> for Restriction {
             0 => Ok(Self::NoRestriction),
             1 => Ok(Self::FillOrAbort),
             2 => Ok(Self::ImmediateOrCancel),
+            3 => Ok(Self::PostOrAbort),
             _ => Err(TypeError::ConversionError {
                 name: "Restriction".to_string(),
             }),
@@ -157,7 +159,7 @@ pub enum OrderState {
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Order {
-    pub market_order_id: u128,
+    pub order_id: u128,
     pub market_id: u64,
     pub side: Side,
     pub size: u64,

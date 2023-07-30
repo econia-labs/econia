@@ -6,10 +6,7 @@ use models::{
 
 use crate::{
     error::DbError,
-    models::{
-        coin::{Coin, NewCoin},
-        events::{MakerEvent, NewMakerEvent, NewTakerEvent, TakerEvent},
-    },
+    models::coin::{Coin, NewCoin},
 };
 
 pub mod error;

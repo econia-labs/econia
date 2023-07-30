@@ -2,7 +2,7 @@ use chrono::{DateTime, Utc};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use crate::{error::TypeError, order::Side};
+use crate::order::{Side, Restriction, SelfMatchBehavior};
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -17,33 +17,26 @@ pub enum EconiaEvent {
     PlaceSwapOrder(Box<PlaceSwapOrderEvent>),
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(
     feature = "serde",
     derive(Serialize, Deserialize),
     serde(rename_all = "snake_case")
 )]
-pub enum MakerEventType {
-    Cancel,
-    Change,
-    Evict,
-    Place,
-}
-
-impl TryFrom<u8> for MakerEventType {
-    type Error = TypeError;
-
-    fn try_from(value: u8) -> Result<Self, Self::Error> {
-        match value {
-            0 => Ok(MakerEventType::Cancel),
-            1 => Ok(MakerEventType::Change),
-            2 => Ok(MakerEventType::Evict),
-            3 => Ok(MakerEventType::Place),
-            _ => Err(TypeError::ConversionError {
-                name: "MakerEventType".to_string(),
-            }),
-        }
-    }
+#[cfg_attr(
+    feature = "sqlx",
+    derive(sqlx::Type),
+    sqlx(type_name = "cancel_reason", rename_all = "snake_case")
+)]
+pub enum CancelReason {
+    SizeChangeInternal,
+    Eviction,
+    ImmediateOrCancel,
+    ManualCancel,
+    MaxQuoteTraded,
+    NotEnoughLiquidity,
+    SelfMatchMaker,
+    SelfMatchTaker,
 }
 
 #[derive(Clone, Debug)]
@@ -95,7 +88,7 @@ pub struct CancelOrderEvent {
     pub order_id: u128,
     pub user: String,
     pub custodian_id: Option<u64>,
-    pub reason: u8,
+    pub reason: CancelReason,
     pub time: DateTime<Utc>,
 }
 
@@ -139,8 +132,8 @@ pub struct PlaceLimitOrderEvent {
     pub side: Side,
     pub size: u64,
     pub price: u64,
-    pub restriction: u8,
-    pub self_match_behavior: u8,
+    pub restriction: Restriction,
+    pub self_match_behavior: SelfMatchBehavior,
     pub remaining_size: u64,
     pub order_id: u128,
     pub time: DateTime<Utc>,
@@ -155,7 +148,7 @@ pub struct PlaceMarketOrderEvent {
     pub integrator: Option<String>,
     pub direction: Side,
     pub size: u64,
-    pub self_match_behavior: u8,
+    pub self_match_behavior: SelfMatchBehavior,
     pub order_id: u128,
     pub time: DateTime<Utc>,
 }

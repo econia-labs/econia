@@ -511,7 +511,7 @@ mod tests {
 
         tokio::spawn(async move {
             let order = types::order::Order {
-                market_order_id: 100,
+                order_id: 100,
                 market_id,
                 side: types::order::Side::Bid,
                 size: 1000,
@@ -687,7 +687,7 @@ mod tests {
         tokio::spawn(async move {
             // Send message for placing order.
             let order = types::order::Order {
-                market_order_id: 100,
+                order_id: 100,
                 market_id,
                 side: types::order::Side::Bid,
                 size: 1000,
@@ -706,7 +706,7 @@ mod tests {
 
             // Send message for cancelling order.
             let order = types::order::Order {
-                market_order_id: 100,
+                order_id: 100,
                 market_id,
                 side: types::order::Side::Bid,
                 size: 1000,

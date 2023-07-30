@@ -75,6 +75,15 @@ pub enum OrderState {
     Evicted,
 }
 
+#[derive(Debug, DbEnum, Clone, Copy, PartialEq, Eq)]
+#[ExistingTypePath = "crate::schema::sql_types::Restriction"]
+pub enum Restriction {
+    NoRestriction,
+    FillOrAbort,
+    ImmediateOrCancel,
+    PostOrAbort,
+}
+
 #[derive(Clone, Debug, Queryable)]
 pub struct Order {
     pub market_order_id: BigDecimal,

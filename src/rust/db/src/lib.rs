@@ -51,23 +51,23 @@ pub fn register_market(
         .map_err(DbError::QueryError)
 }
 
-pub fn add_maker_event(conn: &mut PgConnection, event: &NewMakerEvent) -> Result<MakerEvent> {
-    use crate::schema::maker_events;
-    diesel::insert_into(maker_events::table)
-        .values(event)
-        .on_conflict_do_nothing()
-        .get_result(conn)
-        .map_err(DbError::QueryError)
-}
-
-pub fn add_taker_event(conn: &mut PgConnection, event: &NewTakerEvent) -> Result<TakerEvent> {
-    use crate::schema::taker_events;
-    diesel::insert_into(taker_events::table)
-        .values(event)
-        .on_conflict_do_nothing()
-        .get_result(conn)
-        .map_err(DbError::QueryError)
-}
+// pub fn add_maker_event(conn: &mut PgConnection, event: &NewMakerEvent) -> Result<MakerEvent> {
+//     use crate::schema::maker_events;
+//     diesel::insert_into(maker_events::table)
+//         .values(event)
+//         .on_conflict_do_nothing()
+//         .get_result(conn)
+//         .map_err(DbError::QueryError)
+// }
+//
+// pub fn add_taker_event(conn: &mut PgConnection, event: &NewTakerEvent) -> Result<TakerEvent> {
+//     use crate::schema::taker_events;
+//     diesel::insert_into(taker_events::table)
+//         .values(event)
+//         .on_conflict_do_nothing()
+//         .get_result(conn)
+//         .map_err(DbError::QueryError)
+// }
 
 pub fn add_bar(conn: &mut PgConnection, bar: &NewBar) -> Result<Bar> {
     use crate::schema::bars_1m;

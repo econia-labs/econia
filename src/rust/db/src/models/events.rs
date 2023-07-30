@@ -6,16 +6,7 @@ use field_count::FieldCount;
 use types::{error::TypeError, events};
 
 use super::{bigdecimal_from_u128, bigdecimal_to_u128, order::Side, ToInsertable};
-use crate::schema::{maker_events, taker_events};
 
-#[derive(Debug, DbEnum, Clone, Copy, PartialEq, Eq)]
-#[ExistingTypePath = "crate::schema::sql_types::MakerEventType"]
-pub enum MakerEventType {
-    Cancel,
-    Change,
-    Evict,
-    Place,
-}
 
 impl TryFrom<u8> for MakerEventType {
     type Error = TypeError;

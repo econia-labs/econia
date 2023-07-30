@@ -171,15 +171,3 @@ pub struct Order {
     pub created_at: DateTime<Utc>,
 }
 
-#[derive(Clone, Debug)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct Fill {
-    pub market_id: u64,
-    pub maker_order_id: u128,
-    pub maker: String,
-    pub maker_side: Side,
-    pub custodian_id: Option<u64>,
-    pub size: u64,
-    pub price: u64,
-    pub time: DateTime<Utc>,
-}

@@ -1,5 +1,6 @@
-import { entryFunctions, type order } from "@econia-labs/sdk";
+import { entryFunctionsorder } from "@econia-labs/sdk";
 import { useForm } from "react-hook-form";
+import { toast } from "react-toastify";
 
 import { Button } from "@/components/Button";
 import { ConnectedButton } from "@/components/ConnectedButton";
@@ -13,6 +14,7 @@ import { TypeTag } from "@/utils/TypeTag";
 
 import { OrderEntryInfo } from "./OrderEntryInfo";
 import { OrderEntryInputWrapper } from "./OrderEntryInputWrapper";
+import { toRawCoinAmount } from "@/utils/coin";
 
 type MarketFormValues = {
   size: string;
@@ -40,12 +42,64 @@ export const MarketOrderEntry: React.FC<{
     marketData.quote,
   );
 
+  const validateInput = (value: string) => {};
+
   const onSubmit = async (values: MarketFormValues) => {
     const orderSideMap: Record<Side, order.Side> = {
       buy: "bid",
       sell: "ask",
     };
     const orderSide = orderSideMap[side];
+
+    // validation
+    const rawValueSize = BigInt(
+      toRawCoinAmount(values.size ?? 0, marketData?.base?.decimals ?? 0),
+    );
+    const rawBaseBalance = BigInt(
+      toRawCoinAmount(
+        baseBalance.data ?? 0, // assume if null, user has 0
+        marketData?.base?.decimals ?? 0, // is this fine?
+      ),
+    );
+    const rawQuoteBalance = BigInt(
+      toRawCoinAmount(
+        quoteBalance.data ?? 0, // assume if null, user has 0
+        marketData?.quote?.decimals ?? 0, // is this fine?
+      ),
+    );
+
+    // validate Lot size
+    if (rawValueSize % BigInt(marketData.lot_size) == BigInt(0)) {
+      toast.info("Invalid lot size");
+      return;
+    }
+    // validate min size
+    if (rawValueSize >= BigInt(marketData.min_size)) {
+      toast.info("Invalid min size");
+      return;
+    }
+
+    // validate lot size & tick size in limit order entry
+
+    // market buy -- make sure user has enough quote balance
+    // amount * price
+    // todo multiplication here compared to get "price"
+    if (orderSide === "bid") {
+      const isValid = rawQuoteBalance >= BigInt(values.size) * BigInt(-1); // how to get price? esp if market order
+      if (!isValid) {
+        toast.info("Insufficient quote balance");
+        return;
+      }
+    }
+
+    // market sell -- make sure user has enough base balance
+    if (orderSide === "ask") {
+      const isValid = rawBaseBalance >= BigInt(values.size); // is gte fine?
+      if (!isValid) {
+        toast.info("Insufficient base balance");
+        return;
+      }
+    }
 
     if (marketData.base == null) {
       // TODO: handle generic markets

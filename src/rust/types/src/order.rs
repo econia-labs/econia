@@ -161,6 +161,7 @@ pub struct Order {
     pub market_id: u64,
     pub side: Side,
     pub size: u64,
+    pub remaining_size: u64,
     pub price: u64,
     pub user_address: String,
     pub custodian_id: Option<u64>,

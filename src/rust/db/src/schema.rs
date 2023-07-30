@@ -2,8 +2,8 @@
 
 pub mod sql_types {
     #[derive(diesel::sql_types::SqlType)]
-    #[diesel(postgres_type(name = "maker_event_type"))]
-    pub struct MakerEventType;
+    #[diesel(postgres_type(name = "cancel_reason"))]
+    pub struct CancelReason;
 
     #[derive(diesel::sql_types::SqlType)]
     #[diesel(postgres_type(name = "market_event_type"))]
@@ -79,10 +79,43 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::CancelReason;
+
+    cancel_order_events (market_id, order_id) {
+        market_id -> Numeric,
+        order_id -> Numeric,
+        #[max_length = 70]
+        user_address -> Varchar,
+        custodian_id -> Nullable<Numeric>,
+        reason -> CancelReason,
+        time -> Timestamptz,
+    }
+}
+
+diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::Side;
+
+    change_order_size_events (market_id, order_id) {
+        market_id -> Numeric,
+        order_id -> Numeric,
+        #[max_length = 70]
+        user_address -> Varchar,
+        custodian_id -> Nullable<Numeric>,
+        side -> Side,
+        new_size -> Numeric,
+        time -> Timestamptz,
+    }
+}
+
+diesel::table! {
     coins (account_address, module_name, struct_name) {
+        #[max_length = 70]
         account_address -> Varchar,
         module_name -> Text,
         struct_name -> Text,
+        #[max_length = 10]
         symbol -> Varchar,
         name -> Text,
         decimals -> Int2,
@@ -93,32 +126,21 @@ diesel::table! {
     use diesel::sql_types::*;
     use super::sql_types::Side;
 
-    fills (market_id, maker_order_id, time) {
+    fill_events (market_id, maker_order_id, taker_order_id) {
         market_id -> Numeric,
-        maker_order_id -> Numeric,
-        maker -> Varchar,
+        size -> Numeric,
+        price -> Numeric,
         maker_side -> Side,
-        custodian_id -> Nullable<Numeric>,
-        size -> Numeric,
-        price -> Numeric,
-        time -> Timestamptz,
-    }
-}
-
-diesel::table! {
-    use diesel::sql_types::*;
-    use super::sql_types::Side;
-    use super::sql_types::MakerEventType;
-
-    maker_events (market_order_id, time) {
-        market_id -> Numeric,
-        side -> Side,
-        market_order_id -> Numeric,
-        user_address -> Varchar,
-        custodian_id -> Nullable<Numeric>,
-        event_type -> MakerEventType,
-        size -> Numeric,
-        price -> Numeric,
+        #[max_length = 70]
+        maker -> Varchar,
+        maker_custodian_id -> Nullable<Numeric>,
+        maker_order_id -> Numeric,
+        #[max_length = 70]
+        taker -> Varchar,
+        taker_custodian_id -> Nullable<Numeric>,
+        taker_order_id -> Numeric,
+        taker_quote_fees_paid -> Numeric,
+        sequence_number_for_trade -> Numeric,
         time -> Timestamptz,
     }
 }
@@ -127,10 +149,12 @@ diesel::table! {
     market_registration_events (market_id) {
         market_id -> Numeric,
         time -> Timestamptz,
+        #[max_length = 70]
         base_account_address -> Nullable<Varchar>,
         base_module_name -> Nullable<Text>,
         base_struct_name -> Nullable<Text>,
         base_name_generic -> Nullable<Text>,
+        #[max_length = 70]
         quote_account_address -> Varchar,
         quote_module_name -> Text,
         quote_struct_name -> Text,
@@ -145,10 +169,12 @@ diesel::table! {
     markets (market_id) {
         market_id -> Numeric,
         name -> Text,
+        #[max_length = 70]
         base_account_address -> Nullable<Varchar>,
         base_module_name -> Nullable<Text>,
         base_struct_name -> Nullable<Text>,
         base_name_generic -> Nullable<Text>,
+        #[max_length = 70]
         quote_account_address -> Varchar,
         quote_module_name -> Text,
         quote_struct_name -> Text,
@@ -165,12 +191,14 @@ diesel::table! {
     use super::sql_types::Side;
     use super::sql_types::OrderState;
 
-    orders (market_order_id, market_id) {
-        market_order_id -> Numeric,
+    orders (order_id, market_id) {
+        order_id -> Numeric,
         market_id -> Numeric,
         side -> Side,
         size -> Numeric,
+        remaining_size -> Numeric,
         price -> Numeric,
+        #[max_length = 70]
         user_address -> Varchar,
         custodian_id -> Nullable<Numeric>,
         order_state -> OrderState,
@@ -199,33 +227,17 @@ diesel::table! {
     }
 }
 
-diesel::table! {
-    use diesel::sql_types::*;
-    use super::sql_types::Side;
-
-    taker_events (market_order_id, time) {
-        market_id -> Numeric,
-        side -> Side,
-        market_order_id -> Numeric,
-        maker -> Varchar,
-        custodian_id -> Nullable<Numeric>,
-        size -> Numeric,
-        price -> Numeric,
-        time -> Timestamptz,
-    }
-}
-
 diesel::joinable!(bars_15m -> markets (market_id));
 diesel::joinable!(bars_1h -> markets (market_id));
 diesel::joinable!(bars_1m -> markets (market_id));
 diesel::joinable!(bars_30m -> markets (market_id));
 diesel::joinable!(bars_5m -> markets (market_id));
-diesel::joinable!(fills -> markets (market_id));
-diesel::joinable!(maker_events -> markets (market_id));
+diesel::joinable!(cancel_order_events -> markets (market_id));
+diesel::joinable!(change_order_size_events -> markets (market_id));
+diesel::joinable!(fill_events -> markets (market_id));
 diesel::joinable!(market_registration_events -> markets (market_id));
 diesel::joinable!(orders -> markets (market_id));
 diesel::joinable!(recognized_markets -> markets (market_id));
-diesel::joinable!(taker_events -> markets (market_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     bars_15m,
@@ -233,13 +245,13 @@ diesel::allow_tables_to_appear_in_same_query!(
     bars_1m,
     bars_30m,
     bars_5m,
+    cancel_order_events,
+    change_order_size_events,
     coins,
-    fills,
-    maker_events,
+    fill_events,
     market_registration_events,
     markets,
     orders,
     recognized_market_events,
     recognized_markets,
-    taker_events,
 );

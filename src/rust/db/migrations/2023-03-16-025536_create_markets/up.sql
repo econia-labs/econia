@@ -85,7 +85,8 @@ $register_market$
 LANGUAGE plpgsql;
 
 CREATE TRIGGER register_market_trigger
-    BEFORE INSERT ON market_registration_events FOR EACH ROW
+    BEFORE INSERT ON market_registration_events
+    FOR EACH ROW
     EXECUTE PROCEDURE register_market ();
 
 -- Corresponds to econia::registry::RecognizedMarketInfo

@@ -23,8 +23,8 @@ pub async fn order_history_by_account(
 ) -> Result<Json<Vec<types::order::Order>>, ApiError> {
     check_addr(&account_address)?;
 
-    let limit = params.limit.map(|v| i64::from(v));
-    let offset = params.offset.map(|v| i64::from(v));
+    let limit = params.limit.map(i64::from);
+    let offset = params.offset.map(i64::from);
 
     let order_history_query = sqlx::query_as!(
         db::models::order::Order,
@@ -68,8 +68,8 @@ pub async fn open_orders_by_account(
 ) -> Result<Json<Vec<types::order::Order>>, ApiError> {
     check_addr(&account_address)?;
 
-    let limit = params.limit.map(|v| i64::from(v));
-    let offset = params.offset.map(|v| i64::from(v));
+    let limit = params.limit.map(i64::from);
+    let offset = params.offset.map(i64::from);
 
     let open_orders_query = sqlx::query_as!(
         db::models::order::Order,

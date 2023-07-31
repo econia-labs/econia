@@ -1,4 +1,3 @@
-import { entryFunctionsorder } from "@econia-labs/sdk";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 
@@ -9,12 +8,12 @@ import { ECONIA_ADDR } from "@/env";
 import { useMarketAccountBalance } from "@/hooks/useMarketAccountBalance";
 import { type ApiMarket } from "@/types/api";
 import { type Side } from "@/types/global";
+import { toRawCoinAmount } from "@/utils/coin";
 import { fromDecimalSize } from "@/utils/econia";
 import { TypeTag } from "@/utils/TypeTag";
 
 import { OrderEntryInfo } from "./OrderEntryInfo";
 import { OrderEntryInputWrapper } from "./OrderEntryInputWrapper";
-import { toRawCoinAmount } from "@/utils/coin";
 
 type MarketFormValues = {
   size: string;

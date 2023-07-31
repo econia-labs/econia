@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import React, { useEffect } from "react";
 
 import { API_URL } from "@/env";
-import { MOCK_MARKETS } from "@/mockdata/markets";
 import { type ApiMarket, type ApiStats } from "@/types/api";
 
 import { BaseModal } from "../../BaseModal";
@@ -23,37 +22,19 @@ export const useAllMarketStats = () => {
     });
   });
 };
-// TODO: remove before PR
-export const useAllMarketData = () => {
-  return useQuery<ApiMarket[]>(["allMarketData"], async () => {
-    return fetch(new URL("markets", API_URL).href).then(async (res) => {
-      // const d = await res.json();
-      // TODO: Remove once real data exists
-      const d = MOCK_MARKETS;
-      return d.map((m: ApiMarket, i: number) => {
-        m.recognized = i % 2 === 0 ? true : false;
-        return m;
-      });
-    });
-  });
-};
 
 export const DepositWithdrawModal: React.FC<{
+  allMarketData: ApiMarket[];
   open: boolean;
   onClose: () => void;
-}> = ({ open, onClose }) => {
+}> = ({ allMarketData, open, onClose }) => {
   const [selectedMarket, setSelectedMarket] = React.useState<ApiMarket>();
   const [step, setStep] = React.useState<Step>(Step.Initial);
-  const allMarketData = useAllMarketData();
   useEffect(() => {
-    if (
-      allMarketData.data &&
-      allMarketData.data.length > 0 &&
-      selectedMarket === undefined
-    ) {
-      setSelectedMarket(allMarketData.data?.[0]);
+    if (allMarketData.length > 0 && selectedMarket === undefined) {
+      setSelectedMarket(allMarketData[0]);
     }
-  }, [allMarketData.data, selectedMarket]);
+  }, [allMarketData, selectedMarket]);
   return (
     <BaseModal
       open={open}
@@ -77,6 +58,7 @@ export const DepositWithdrawModal: React.FC<{
       )}
       {step === Step.SelectMarket && (
         <SelectMarketContent
+          allMarketData={allMarketData}
           onSelectMarket={(market) => {
             setSelectedMarket(market);
             setStep(Step.Initial);

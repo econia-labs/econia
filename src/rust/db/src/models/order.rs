@@ -157,7 +157,8 @@ impl From<SelfMatchBehavior> for types::order::SelfMatchBehavior {
     }
 }
 
-#[derive(Clone, Debug, Queryable)]
+#[derive(Clone, Debug, Queryable, Identifiable)]
+#[diesel(table_name = orders, primary_key(order_id, market_id))]
 pub struct Order {
     pub order_id: BigDecimal,
     pub market_id: BigDecimal,
@@ -169,40 +170,6 @@ pub struct Order {
     pub custodian_id: Option<BigDecimal>,
     pub order_state: OrderState,
     pub created_at: DateTime<Utc>,
-}
-
-#[derive(Insertable, Debug)]
-#[diesel(table_name = orders)]
-pub struct NewOrder<'a> {
-    pub order_id: &'a BigDecimal,
-    pub market_id: &'a BigDecimal,
-    pub side: Side,
-    pub size: &'a BigDecimal,
-    pub remaining_size: &'a BigDecimal,
-    pub price: &'a BigDecimal,
-    pub user_address: &'a str,
-    pub custodian_id: Option<&'a BigDecimal>,
-    pub order_state: OrderState,
-    pub created_at: &'a DateTime<Utc>,
-}
-
-impl ToInsertable for Order {
-    type Insertable<'a> = NewOrder<'a>;
-
-    fn to_insertable(&self) -> Self::Insertable<'_> {
-        NewOrder {
-            order_id: &self.order_id,
-            market_id: &self.market_id,
-            side: self.side,
-            size: &self.size,
-            remaining_size: &self.remaining_size,
-            price: &self.price,
-            user_address: &self.user_address,
-            custodian_id: self.custodian_id.as_ref(),
-            order_state: self.order_state,
-            created_at: &self.created_at,
-        }
-    }
 }
 
 impl TryFrom<Order> for types::order::Order {
@@ -255,7 +222,8 @@ impl TryFrom<Order> for types::order::Order {
     }
 }
 
-#[derive(Clone, Debug, Queryable)]
+#[derive(Clone, Debug, Queryable, Identifiable)]
+#[diesel(table_name = cancel_order_events, primary_key(market_id, order_id))]
 pub struct CancelOrderEvent {
     pub market_id: BigDecimal,
     pub order_id: BigDecimal,
@@ -265,8 +233,8 @@ pub struct CancelOrderEvent {
     pub time: DateTime<Utc>,
 }
 
-#[derive(Insertable, Debug)]
-#[diesel(table_name = cancel_order_events)]
+#[derive(Insertable, Debug, AsChangeset)]
+#[diesel(table_name = cancel_order_events, primary_key(market_id, order_id))]
 pub struct NewCancelOrderEvent<'a> {
     pub market_id: &'a BigDecimal,
     pub order_id: &'a BigDecimal,
@@ -321,7 +289,8 @@ impl TryFrom<CancelOrderEvent> for types::events::CancelOrderEvent {
     }
 }
 
-#[derive(Clone, Debug, Queryable)]
+#[derive(Clone, Debug, Queryable, Identifiable)]
+#[diesel(table_name = change_order_size_events, primary_key(market_id, order_id))]
 pub struct ChangeOrderSizeEvent {
     pub market_id: BigDecimal,
     pub order_id: BigDecimal,
@@ -332,8 +301,8 @@ pub struct ChangeOrderSizeEvent {
     pub time: DateTime<Utc>,
 }
 
-#[derive(Insertable, Debug)]
-#[diesel(table_name = change_order_size_events)]
+#[derive(Insertable, Debug, AsChangeset)]
+#[diesel(table_name = change_order_size_events, primary_key(market_id, order_id))]
 pub struct NewChangeOrderSizeEvent<'a> {
     pub market_id: &'a BigDecimal,
     pub order_id: &'a BigDecimal,
@@ -395,7 +364,8 @@ impl TryFrom<ChangeOrderSizeEvent> for types::events::ChangeOrderSizeEvent {
     }
 }
 
-#[derive(Clone, Debug, Queryable)]
+#[derive(Clone, Debug, Queryable, Identifiable)]
+#[diesel(table_name = fill_events, primary_key(market_id, maker_order_id, taker_order_id))]
 pub struct FillEvent {
     pub market_id: BigDecimal,
     pub size: BigDecimal,
@@ -412,8 +382,8 @@ pub struct FillEvent {
     pub time: DateTime<Utc>,
 }
 
-#[derive(Insertable, Debug)]
-#[diesel(table_name = fill_events)]
+#[derive(Insertable, Debug, AsChangeset)]
+#[diesel(table_name = fill_events, primary_key(market_id, maker_order_id, taker_order_id))]
 pub struct NewFillEvent<'a> {
     pub market_id: &'a BigDecimal,
     pub size: &'a BigDecimal,
@@ -527,7 +497,8 @@ impl TryFrom<FillEvent> for types::events::FillEvent {
     }
 }
 
-#[derive(Clone, Debug, Queryable)]
+#[derive(Clone, Debug, Queryable, Identifiable)]
+#[diesel(table_name = place_limit_order_events, primary_key(market_id, order_id))]
 pub struct PlaceLimitOrderEvent {
     pub market_id: BigDecimal,
     pub user_address: String,
@@ -543,8 +514,8 @@ pub struct PlaceLimitOrderEvent {
     pub time: DateTime<Utc>,
 }
 
-#[derive(Insertable, Debug)]
-#[diesel(table_name = place_limit_order_events)]
+#[derive(Insertable, Debug, AsChangeset)]
+#[diesel(table_name = place_limit_order_events, primary_key(market_id, order_id))]
 pub struct NewPlaceLimitOrderEvent<'a> {
     pub market_id: &'a BigDecimal,
     pub user_address: String,
@@ -629,7 +600,8 @@ impl TryFrom<PlaceLimitOrderEvent> for types::events::PlaceLimitOrderEvent {
     }
 }
 
-#[derive(Clone, Debug, Queryable)]
+#[derive(Clone, Debug, Queryable, Identifiable)]
+#[diesel(table_name = place_market_order_events, primary_key(market_id, order_id))]
 pub struct PlaceMarketOrderEvent {
     pub market_id: BigDecimal,
     pub user_address: String,
@@ -642,8 +614,8 @@ pub struct PlaceMarketOrderEvent {
     pub time: DateTime<Utc>,
 }
 
-#[derive(Insertable, Debug)]
-#[diesel(table_name = place_market_order_events)]
+#[derive(Insertable, Debug, AsChangeset)]
+#[diesel(table_name = place_market_order_events, primary_key(market_id, order_id))]
 pub struct NewPlaceMarketOrderEvent<'a> {
     pub market_id: &'a BigDecimal,
     pub user_address: String,
@@ -710,7 +682,8 @@ impl TryFrom<PlaceMarketOrderEvent> for types::events::PlaceMarketOrderEvent {
     }
 }
 
-#[derive(Clone, Debug, Queryable)]
+#[derive(Clone, Debug, Queryable, Identifiable)]
+#[diesel(table_name = place_swap_order_events, primary_key(market_id, order_id))]
 pub struct PlaceSwapOrderEvent {
     pub market_id: BigDecimal,
     pub signing_account: String,
@@ -725,8 +698,8 @@ pub struct PlaceSwapOrderEvent {
     pub time: DateTime<Utc>,
 }
 
-#[derive(Insertable, Debug)]
-#[diesel(table_name = place_swap_order_events)]
+#[derive(Insertable, Debug, AsChangeset)]
+#[diesel(table_name = place_swap_order_events, primary_key(market_id, order_id))]
 pub struct NewPlaceSwapOrderEvent<'a> {
     pub market_id: &'a BigDecimal,
     pub signing_account: String,
@@ -780,9 +753,12 @@ impl TryFrom<PlaceSwapOrderEvent> for types::events::PlaceSwapOrderEvent {
         let max_quote = value.max_quote.to_u64().ok_or(TypeError::ConversionError {
             name: "max_quote".into(),
         })?;
-        let limit_price = value.limit_price.to_u64().ok_or(TypeError::ConversionError {
-            name: "limit_price".into(),
-        })?;
+        let limit_price = value
+            .limit_price
+            .to_u64()
+            .ok_or(TypeError::ConversionError {
+                name: "limit_price".into(),
+            })?;
         let order_id = value.order_id.to_u128().ok_or(TypeError::ConversionError {
             name: "order_id".into(),
         })?;

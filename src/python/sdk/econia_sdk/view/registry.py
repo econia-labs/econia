@@ -6,6 +6,9 @@ from econia_sdk.lib import EconiaViewer
 
 
 def get_MAX_CHARACTERS_GENERIC(view: EconiaViewer) -> int:
+    """
+    Public constant getter for `MAX_CHARACTERS_GENERIC`.
+    """
     returns = view.get_returns(
         "registry",
         "get_MAX_CHARACTERS_GENERIC",
@@ -14,6 +17,9 @@ def get_MAX_CHARACTERS_GENERIC(view: EconiaViewer) -> int:
 
 
 def get_MIN_CHARACTERS_GENERIC(view: EconiaViewer) -> int:
+    """
+    Public constant getter for `MIN_CHARACTERS_GENERIC`.
+    """
     returns = view.get_returns(
         "registry",
         "get_MIN_CHARACTERS_GENERIC",
@@ -22,6 +28,9 @@ def get_MIN_CHARACTERS_GENERIC(view: EconiaViewer) -> int:
 
 
 def get_NO_CUSTODIAN(view: EconiaViewer) -> int:
+    """
+    Public constant getter for `NO_CUSTODIAN`.
+    """
     returns = view.get_returns(
         "registry",
         "get_NO_CUSTODIAN",
@@ -30,6 +39,9 @@ def get_NO_CUSTODIAN(view: EconiaViewer) -> int:
 
 
 def get_NO_UNDERWRITER(view: EconiaViewer) -> int:
+    """
+    Public constant getter for `NO_UNDERWRITER`.
+    """
     returns = view.get_returns(
         "registry",
         "get_NO_UNDERWRITER",
@@ -38,6 +50,11 @@ def get_NO_UNDERWRITER(view: EconiaViewer) -> int:
 
 
 def get_market_counts(view: EconiaViewer) -> dict:
+    """
+    Return a the number of markets ("n_markets") and the number of
+    recognized markets ("n_recognized_markets") for current registry
+    state.
+    """
     returns = view.get_returns(
         "registry",
         "get_market_counts",
@@ -51,6 +68,9 @@ def get_market_counts(view: EconiaViewer) -> dict:
 
 class GetMarketInfoReturn(dict):
     def is_coin_market(self, viewer: EconiaViewer) -> bool:
+        """
+        Assess whether or not this market is a generic market.
+        """
         base_info = self["base_type"]
         is_econia = viewer.econia_address.hex() == base_info["package_address"]
         is_generic = (
@@ -60,12 +80,20 @@ class GetMarketInfoReturn(dict):
         return not (is_econia and is_generic)
 
     def get_decimals_base(self, viewer: EconiaViewer):
+        """
+        Get the number of decimals for the base coin, throws an
+        exception if it's a generic coin. Use is_coin_market to
+        check if this is a generic market.
+        """
         assert self.is_coin_market(
             viewer
         ), "Generic market has no decimals for base type!"
         return self._get_decimals(viewer, self["base_type"])
 
     def get_decimals_quote(self, viewer: EconiaViewer):
+        """
+        Get the number of decimals for the quote coin.
+        """
         return self._get_decimals(viewer, self["quote_type"])
 
     def _get_decimals(self, viewer: EconiaViewer, type_info: dict):
@@ -88,9 +116,7 @@ class GetMarketInfoReturn(dict):
 
 
 def get_market_info(view: EconiaViewer, market_id: int) -> GetMarketInfoReturn:
-    returns = view.get_returns(
-        "registry", "get_market_info", [], [str(market_id)]
-    )
+    returns = view.get_returns("registry", "get_market_info", [], [str(market_id)])
     value = returns[0]
     return GetMarketInfoReturn(
         {
@@ -124,6 +150,9 @@ def get_recognized_market_id_base_coin(
     base_coin_type: str,
     quote_coin_type: str,
 ) -> int:
+    """
+    Return recognized market ID for a pure coin trading pair.
+    """
     returns = view.get_returns(
         "registry",
         "get_recognized_market_id_base_coin",
@@ -136,6 +165,10 @@ def get_recognized_market_id_base_generic(
     view: EconiaViewer,
     quote_coin_type: str,
 ) -> int:
+    """
+    Return recognized market ID for trading pair with generic base
+    asset.
+    """
     returns = view.get_returns(
         "registry",
         "get_recognized_market_id_base_generic",
@@ -149,6 +182,14 @@ def has_recognized_market_base_coin_by_type(
     base_coin_type: str,
     quote_coin_type: str,
 ) -> bool:
+    """
+    /// Wrapper for `has_recognized_market_base_coin()` with type
+    /// parameters.
+    ///
+    /// # Parameters
+    /// * `base_coin_type`: Base asset coin type.
+    /// * `quote_coin_type`: Quote asset coin type.
+    """
     returns = view.get_returns(
         "registry",
         "has_recognized_market_base_coin_by_type",
@@ -162,6 +203,14 @@ def has_recognized_market_base_generic_by_type(
     quote_coin_type: str,
     base_name_generic: str,
 ) -> bool:
+    """
+    /// Wrapper for `has_recognized_market_base_generic()` with quote
+    /// type parameter.
+    ///
+    /// # Parameters
+    /// * `quote_coin_type`: Quote asset coin type.
+    /// * `base_name_generic`: Generic base asset name.
+    """
     returns = view.get_returns(
         "registry",
         "has_recognized_market_base_generic_by_type",
@@ -178,7 +227,11 @@ def get_market_id_base_coin(
     lot_size: int,
     tick_size: int,
     min_size: int,
-) -> Optional[int]:  # might be None
+) -> Optional[int]:
+    """
+    Return optional market ID corresponding to given market
+    parameters when the base asset is a coin type.
+    """
     returns = view.get_returns(
         "registry",
         "get_market_id_base_coin",
@@ -205,6 +258,10 @@ def get_market_id_base_generic(
     min_size: int,
     underwriter_id: int = 0,
 ) -> Optional[int]:
+    """
+    Return optional market ID corresponding to given market
+    parameters when the base asset is generic.
+    """
     returns = view.get_returns(
         "registry",
         "get_market_id_base_generic",
@@ -227,6 +284,9 @@ def get_market_id_base_generic(
 def get_market_registration_events(
     view: EconiaViewer, limit: Optional[int] = None
 ) -> List[dict]:
+    """
+    Get all (optionally, a limit of) market registration events.
+    """
     events = view.get_events_by_handle(
         f"{view.econia_address.hex()}::registry::Registry",
         "market_registration_events",

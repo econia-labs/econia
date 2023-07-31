@@ -48,7 +48,9 @@ class EconiaViewer:
         if ledger_version < 0:
             request = f"{self.aptos_client.base_url}/view"
         else:
-            request = f"{self.aptos_client.base_url}/view?ledger_version={ledger_version}"
+            request = (
+                f"{self.aptos_client.base_url}/view?ledger_version={ledger_version}"
+            )
 
         response = self.aptos_client.client.post(
             request,

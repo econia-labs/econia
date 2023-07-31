@@ -7,46 +7,73 @@ from econia_sdk.types import CancelReason, Restriction, SelfMatchBehavior, Side
 
 
 def get_ASK(view: EconiaViewer) -> bool:
+    """
+    Public constant getter for `ASK`.
+    """
     returns = view.get_returns("user", "get_ASK")
     return bool(returns[0])
 
 
 def get_BID(view: EconiaViewer) -> bool:
+    """
+    Public constant getter for `BID`.
+    """
     returns = view.get_returns("user", "get_BID")
     return bool(returns[0])
 
 
 def get_NO_CUSTODIAN(view: EconiaViewer) -> int:
+    """
+    Public constant getter for `NO_CUSTODIAN`.
+    """
     returns = view.get_returns("user", "get_NO_CUSTODIAN")
     return int(returns[0])
 
 
 def get_CANCEL_REASON_EVICTION(view: EconiaViewer) -> int:
+    """
+    Public constant getter for `CANCEL_REASON_EVICTION`.
+    """
     returns = view.get_returns("user", "get_CANCEL_REASON_EVICTION")
     return int(returns[0])
 
 
 def get_CANCEL_REASON_IMMEDIATE_OR_CANCEL(view: EconiaViewer) -> int:
+    """
+    Public constant getter for `CANCEL_REASON_IMMEDIATE_OR_CANCEL`.
+    """
     returns = view.get_returns("user", "get_CANCEL_REASON_IMMEDIATE_OR_CANCEL")
     return int(returns[0])
 
 
 def get_CANCEL_REASON_MANUAL_CANCEL(view: EconiaViewer) -> int:
+    """
+    Public constant getter for `CANCEL_REASON_MANUAL_CANCEL`.
+    """
     returns = view.get_returns("user", "get_CANCEL_REASON_MANUAL_CANCEL")
     return int(returns[0])
 
 
 def get_CANCEL_REASON_MAX_QUOTE_TRADED(view: EconiaViewer) -> int:
+    """
+    Public constant getter for `CANCEL_REASON_MAX_QUOTE_TRADED`.
+    """
     returns = view.get_returns("user", "get_CANCEL_REASON_MAX_QUOTE_TRADED")
     return int(returns[0])
 
 
 def get_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY(view: EconiaViewer) -> int:
+    """
+    Public constant getter for `CANCEL_REASON_NOT_ENOUGH_LIQUIDITY`.
+    """
     returns = view.get_returns("user", "get_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY")
     return int(returns[0])
 
 
 def get_CANCEL_REASON_SELF_MATCH_TAKER(view: EconiaViewer) -> int:
+    """
+    Public constant getter for `CANCEL_REASON_SELF_MATCH_TAKER`.
+    """
     returns = view.get_returns("user", "get_CANCEL_REASON_SELF_MATCH_TAKER")
     return int(returns[0])
 
@@ -57,6 +84,11 @@ def get_market_event_handle_creation_numbers(
     market_id: int,
     custodian_id: int,
 ) -> Optional[dict]:
+    """
+    Return the market event handle creation numbers for `market_id` and
+    `custodian_id`, if `user` has event handles for indicated market
+    account.
+    """
     returns = view.get_returns(
         "user",
         "get_market_event_handle_creation_numbers",
@@ -95,6 +127,17 @@ def get_change_order_size_events(
     limit: Optional[int] = None,
     start: Optional[int] = None,
 ) -> List[dict]:
+    """
+    Get all (or some) of the order size change events by a given user, market_id,
+    and custodian_id.
+
+    # Parameters
+    * `user`: the account address to which the events will have been emitted;
+    * `market_id`: the market id to which the events pertain.
+    * `custodian_id`: the custodian id associated with the event, usually 0.
+    * `limit`: the maximum number of events to be returned.
+    * `start`: the lowest sequence number of event to be returned
+    """
     creation_numbers = get_market_event_handle_creation_numbers(
         view, user, market_id, custodian_id
     )
@@ -111,9 +154,7 @@ def get_change_order_size_events(
                 {
                     "version": int(event["version"]),
                     "guid": {
-                        "creation_number": int(
-                            event["guid"]["creation_number"]
-                        ),
+                        "creation_number": int(event["guid"]["creation_number"]),
                         "account_address": AccountAddress.from_hex(
                             event["guid"]["account_address"]
                         ),
@@ -164,6 +205,17 @@ def get_cancel_order_events(
     limit: Optional[int] = None,
     start: Optional[int] = None,
 ) -> List[dict]:
+    """
+    Get all (or some) of the order cancel events by a given user, market_id,
+    and custodian_id.
+
+    # Parameters
+    * `user`: the account address to which the events will have been emitted;
+    * `market_id`: the market id to which the events pertain.
+    * `custodian_id`: the custodian id associated with the event, usually 0.
+    * `limit`: the maximum number of events to be returned.
+    * `start`: the lowest sequence number of event to be returned
+    """
     creation_numbers = get_market_event_handle_creation_numbers(
         view, user, market_id, custodian_id
     )
@@ -207,9 +259,7 @@ def _convert_fill_order_event(event: dict) -> dict:
             "taker": AccountAddress.from_hex(event["data"]["taker"]),
             "taker_custodian_id": int(event["data"]["taker_custodian_id"]),
             "taker_order_id": int(event["data"]["taker_order_id"]),
-            "taker_quote_fees_paid": int(
-                event["data"]["taker_quote_fees_paid"]
-            ),
+            "taker_quote_fees_paid": int(event["data"]["taker_quote_fees_paid"]),
         },
     }
 
@@ -222,6 +272,17 @@ def get_fill_events(
     limit: Optional[int] = None,
     start: Optional[int] = None,
 ) -> List[dict]:
+    """
+    Get all (or some) of the order fill events by/for a given user, market_id,
+    and custodian_id.
+
+    # Parameters
+    * `user`: the account address to which the events will have been emitted;
+    * `market_id`: the market id to which the events pertain.
+    * `custodian_id`: the custodian id associated with the event, usually 0.
+    * `limit`: the maximum number of events to be returned.
+    * `start`: the lowest sequence number of event to be returned
+    """
     creation_numbers = get_market_event_handle_creation_numbers(
         view, user, market_id, custodian_id
     )
@@ -248,6 +309,17 @@ def get_place_market_order_events(
     limit: Optional[int] = None,
     start: Optional[int] = None,
 ) -> List[dict]:
+    """
+    Get all (or some) of the market order placement events by a given user,
+    market_id, and custodian_id.
+
+    # Parameters
+    * `user`: the account address to which the events will have been emitted;
+    * `market_id`: the market id to which the events pertain.
+    * `custodian_id`: the custodian id associated with the event, usually 0.
+    * `limit`: the maximum number of events to be returned.
+    * `start`: the lowest sequence number of event to be returned
+    """
     creation_numbers = get_market_event_handle_creation_numbers(
         view, user, market_id, custodian_id
     )
@@ -264,9 +336,7 @@ def get_place_market_order_events(
                 {
                     "version": int(event["version"]),
                     "guid": {
-                        "creation_number": int(
-                            event["guid"]["creation_number"]
-                        ),
+                        "creation_number": int(event["guid"]["creation_number"]),
                         "account_address": AccountAddress.from_hex(
                             event["guid"]["account_address"]
                         ),
@@ -304,6 +374,17 @@ def get_place_limit_order_events(
     limit: Optional[int] = None,
     start: Optional[int] = None,
 ) -> List[dict]:
+    """
+    Get all (or some) of the limit order placement events by a given user,
+    market_id, and custodian_id.
+
+    # Parameters
+    * `user`: the account address to which the events will have been emitted;
+    * `market_id`: the market id to which the events pertain.
+    * `custodian_id`: the custodian id associated with the event, usually 0.
+    * `limit`: the maximum number of events to be returned.
+    * `start`: the lowest sequence number of event to be returned
+    """
     creation_numbers = get_market_event_handle_creation_numbers(
         view, user, market_id, custodian_id
     )
@@ -320,9 +401,7 @@ def get_place_limit_order_events(
                 {
                     "version": int(event["version"]),
                     "guid": {
-                        "creation_number": int(
-                            event["guid"]["creation_number"]
-                        ),
+                        "creation_number": int(event["guid"]["creation_number"]),
                         "account_address": AccountAddress.from_hex(
                             event["guid"]["account_address"]
                         ),
@@ -338,15 +417,11 @@ def get_place_limit_order_events(
                         "order_id": int(event["data"]["order_id"]),
                         "price": int(event["data"]["price"]),
                         "remaining_size": int(event["data"]["remaining_size"]),
-                        "restriction": Restriction(
-                            int(event["data"]["restriction"])
-                        ),
+                        "restriction": Restriction(int(event["data"]["restriction"])),
                         "self_match_behavior": SelfMatchBehavior(
                             int(event["data"]["self_match_behavior"])
                         ),
-                        "side": Side.ASK
-                        if bool(event["data"]["side"])
-                        else Side.BID,
+                        "side": Side.ASK if bool(event["data"]["side"]) else Side.BID,
                         "size": int(event["data"]["size"]),
                         "user": AccountAddress.from_hex(event["data"]["user"]),
                     },
@@ -366,6 +441,17 @@ def get_all_market_account_ids_for_market_id(
     user: AccountAddress,
     market_id: int,
 ) -> list[int]:
+    """
+    Return all market account IDs associated with market ID.
+
+    # Parameters
+    * `user`: Address of user to check market account IDs for.
+    * `market_id`: Market ID to check market accounts for.
+
+    # Returns
+    * `list[int]`: Vector of user's market account IDs for given
+      market, empty if no market accounts.
+    """
     returns = view.get_returns(
         "user",
         "get_all_market_account_ids_for_market_id",
@@ -382,6 +468,16 @@ def get_all_market_account_ids_for_user(
     view: EconiaViewer,
     user: AccountAddress,
 ) -> list[int]:
+    """
+    Return all of a user's market account IDs.
+
+    # Parameters
+    * `user`: Address of user to check market account IDs for.
+
+    # Returns
+    * `list[int]`: Vector of user's market account IDs, empty if
+      no market accounts.
+    """
     returns = view.get_returns(
         "user",
         "get_all_market_account_ids_for_user",
@@ -395,9 +491,10 @@ def get_all_market_account_ids_for_user(
 
 
 def get_custodian_id(view: EconiaViewer, market_account_id: int) -> int:
-    returns = view.get_returns(
-        "user", "get_custodian_id", [], [str(market_account_id)]
-    )
+    """
+    Return custodian ID encoded in market account ID.
+    """
+    returns = view.get_returns("user", "get_custodian_id", [], [str(market_account_id)])
     return int(returns[0])
 
 
@@ -407,6 +504,10 @@ def get_market_account(
     market_id: int,
     custodian_id: int,
 ) -> dict:
+    """
+    Return the open "bids" and "asks" amongst other information, for
+    the account associated with a user, market id, and custodian id.
+    """
     returns = view.get_returns(
         "user",
         "get_market_account",
@@ -452,6 +553,9 @@ def get_market_account_id(
     market_id: int,
     custodian_id: int,
 ) -> int:
+    """
+    Return market account ID with encoded market and custodian IDs.
+    """
     returns = view.get_returns(
         "user",
         "get_market_account_id",
@@ -465,6 +569,9 @@ def get_market_account_id(
 
 
 def get_market_accounts(view: EconiaViewer, user: AccountAddress) -> list[dict]:
+    """
+    Get user-friendly views of all of a `user`'s market accounts.
+    """
     returns = view.get_returns(
         "user",
         "get_market_accounts",
@@ -482,6 +589,9 @@ def get_market_id(
     view: EconiaViewer,
     market_account_id: int,
 ) -> int:
+    """
+    Return market ID encoded in market account ID.
+    """
     returns = view.get_returns(
         "user",
         "get_market_id",
@@ -494,6 +604,10 @@ def get_market_id(
 def has_market_account(
     view: EconiaViewer, user: AccountAddress, market_id: int, custodian_id: int
 ) -> bool:
+    """
+    Return `True` if `user` has market account registered with
+    given `market_id` and `custodian_id`.
+    """
     returns = view.get_returns(
         "user",
         "has_market_account",
@@ -508,6 +622,10 @@ def has_market_account_by_market_account_id(
     user: AccountAddress,
     market_account_id: int,
 ) -> bool:
+    """
+    Return `True` if `user` has market account registered with
+    given `market_account_id`.
+    """
     returns = view.get_returns(
         "user",
         "has_market_account",
@@ -525,6 +643,10 @@ def has_market_account_by_market_id(
     user: AccountAddress,
     market_id: int,
 ) -> bool:
+    """
+    Return `True` if `user` has at least one market account
+    registered with given `market_id`.
+    """
     returns = view.get_returns(
         "user",
         "has_market_account_by_market_id",

@@ -61,12 +61,6 @@ export const MarketOrderEntry: React.FC<{
         marketData?.base?.decimals ?? 0, // is this fine?
       ),
     );
-    const rawQuoteBalance = BigInt(
-      toRawCoinAmount(
-        quoteBalance.data ?? 0, // assume if null, user has 0
-        marketData?.quote?.decimals ?? 0, // is this fine?
-      ),
-    );
 
     // validate Lot size
     if (rawValueSize % BigInt(marketData.lot_size) == BigInt(0)) {

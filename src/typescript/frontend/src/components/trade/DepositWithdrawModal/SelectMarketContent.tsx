@@ -17,7 +17,7 @@ import { type ApiMarket, type ApiStats } from "@/types/api";
 import { formatNumber, plusMinus } from "@/utils/formatter";
 import { TypeTag } from "@/utils/TypeTag";
 
-import { useAllMarketData, useAllMarketStats } from ".";
+import { useAllMarketStats } from ".";
 const columnHelper = createColumnHelper<ApiMarket>();
 
 const TABLE_SPACING = {
@@ -27,9 +27,9 @@ const TABLE_SPACING = {
 };
 
 export const SelectMarketContent: React.FC<{
+  allMarketData: ApiMarket[];
   onSelectMarket: (market: ApiMarket) => void;
-}> = ({ onSelectMarket }) => {
-  const { data, isLoading } = useAllMarketData();
+}> = ({ allMarketData, onSelectMarket }) => {
   const { data: marketStats } = useAllMarketStats();
   const [filter, setFilter] = useState("");
 
@@ -49,8 +49,9 @@ export const SelectMarketContent: React.FC<{
           <PriceCell
             price={getStatsByMarketId(info.getValue(), marketStats)?.close || 0}
             quoteAsset={
-              getMarketByMarketId(info.getValue(), data)?.name.split("-")[1] ||
-              "?"
+              getMarketByMarketId(info.getValue(), allMarketData)?.name.split(
+                "-",
+              )[1] || "?"
             }
           />
         ),
@@ -64,8 +65,9 @@ export const SelectMarketContent: React.FC<{
               getStatsByMarketId(info.getValue(), marketStats)?.volume || 0
             }
             baseAsset={
-              getMarketByMarketId(info.getValue(), data)?.name.split("-")[0] ||
-              "?"
+              getMarketByMarketId(info.getValue(), allMarketData)?.name.split(
+                "-",
+              )[0] || "?"
             }
           />
         ),
@@ -92,11 +94,11 @@ export const SelectMarketContent: React.FC<{
         id: "recognized",
       }),
     ];
-  }, [data, marketStats]);
+  }, [allMarketData, marketStats]);
 
   const table = useReactTable({
     columns,
-    data: data || [],
+    data: allMarketData || [],
     getFilteredRowModel: getFilteredRowModel(),
     getCoreRowModel: getCoreRowModel(),
   });
@@ -207,15 +209,7 @@ export const SelectMarketContent: React.FC<{
                     <div className="h-4"></div>
                   </td>
                 </tr>
-                {isLoading || !data ? (
-                  <tr>
-                    <td colSpan={7}>
-                      <div className="flex h-[150px] flex-col items-center justify-center text-sm font-light uppercase text-neutral-500">
-                        Loading...
-                      </div>
-                    </td>
-                  </tr>
-                ) : data.length === 0 ? (
+                {allMarketData.length === 0 ? (
                   <tr>
                     <td colSpan={7}>
                       <div className="flex h-[150px] flex-col items-center justify-center text-sm font-light uppercase text-neutral-500">

@@ -72,8 +72,9 @@ const SocialMediaIcons: React.FC<{ className?: string }> = ({ className }) => {
 };
 
 export const StatsBar: React.FC<{
+  allMarketData: ApiMarket[];
   selectedMarket: ApiMarket;
-}> = ({ selectedMarket }) => {
+}> = ({ allMarketData, selectedMarket }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const router = useRouter();
   const { coinListClient } = useAptos();
@@ -145,6 +146,7 @@ export const StatsBar: React.FC<{
         showCloseButton={false}
       >
         <SelectMarketContent
+          allMarketData={allMarketData}
           onSelectMarket={(market) => {
             setIsModalOpen(false);
             false;

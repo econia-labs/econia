@@ -14,7 +14,7 @@ def get_cost_to_upgrade_integrator_fee_store_view(
     """
     Calculate cost to upgrade `IntegratorFeeStore` to higher tier.
 
-    # Type parameters
+    Type parameters
     * `QuoteCoinType`: The quote coin type for market.
     * `UtilityCoinType`: The utility coin type.
 
@@ -23,20 +23,20 @@ def get_cost_to_upgrade_integrator_fee_store_view(
     * `market_id`: Market ID for corresponding market.
     * `new_tier`: Tier to upgrade to.
 
-    # Returns
+    Returns
     * `u64`: Cost, in utility coins, to upgrade to given tier,
       calculated as the difference between the cumulative activation
       cost for each tier. For example, if it costs 1000 to activate
       to tier 3 and 100 to activate to tier 1, it costs 900 to
       upgrade from tier 1 to tier 3.
 
-    # Aborts
+    Aborts
     * `E_NOT_AN_UPGRADE`: `new_tier` is not higher than the one
        that the `IntegratorFeeStore` is already activated to.
     * `E_TIER_COST_NOT_INCREASE`: Cumulative activation fee for new
       tier is not greater than that of current tier.
 
-    # Restrictions
+    Restrictions
     * Restricted to private view function to prevent excessive
       public queries on an `IntegratorFeeStore` and thus transaction
       collisions with the matching engine.
@@ -76,7 +76,7 @@ def get_integrator_withdrawal_fee_view(
     Return withdrawal fee for given `integrator_address` and
     `market_id`.
 
-    # Restrictions
+    Restrictions
     * Restricted to private view function to prevent excessive
       public queries on an `IntegratorFeeStore` and thus transaction
       collisions with the matching engine.

@@ -131,7 +131,7 @@ def get_change_order_size_events(
     Get all (or some) of the order size change events by a given user, market_id,
     and custodian_id.
 
-    # Parameters
+    Parameters
     * `user`: the account address to which the events will have been emitted;
     * `market_id`: the market id to which the events pertain.
     * `custodian_id`: the custodian id associated with the event, usually 0.
@@ -209,7 +209,7 @@ def get_cancel_order_events(
     Get all (or some) of the order cancel events by a given user, market_id,
     and custodian_id.
 
-    # Parameters
+    Parameters
     * `user`: the account address to which the events will have been emitted;
     * `market_id`: the market id to which the events pertain.
     * `custodian_id`: the custodian id associated with the event, usually 0.
@@ -276,7 +276,7 @@ def get_fill_events(
     Get all (or some) of the order fill events by/for a given user, market_id,
     and custodian_id.
 
-    # Parameters
+    Parameters
     * `user`: the account address to which the events will have been emitted;
     * `market_id`: the market id to which the events pertain.
     * `custodian_id`: the custodian id associated with the event, usually 0.
@@ -313,7 +313,7 @@ def get_place_market_order_events(
     Get all (or some) of the market order placement events by a given user,
     market_id, and custodian_id.
 
-    # Parameters
+    Parameters
     * `user`: the account address to which the events will have been emitted;
     * `market_id`: the market id to which the events pertain.
     * `custodian_id`: the custodian id associated with the event, usually 0.
@@ -378,7 +378,7 @@ def get_place_limit_order_events(
     Get all (or some) of the limit order placement events by a given user,
     market_id, and custodian_id.
 
-    # Parameters
+    Parameters
     * `user`: the account address to which the events will have been emitted;
     * `market_id`: the market id to which the events pertain.
     * `custodian_id`: the custodian id associated with the event, usually 0.
@@ -444,11 +444,11 @@ def get_all_market_account_ids_for_market_id(
     """
     Return all market account IDs associated with market ID.
 
-    # Parameters
+    Parameters
     * `user`: Address of user to check market account IDs for.
     * `market_id`: Market ID to check market accounts for.
 
-    # Returns
+    Returns
     * `list[int]`: Vector of user's market account IDs for given
       market, empty if no market accounts.
     """
@@ -471,10 +471,10 @@ def get_all_market_account_ids_for_user(
     """
     Return all of a user's market account IDs.
 
-    # Parameters
+    Parameters
     * `user`: Address of user to check market account IDs for.
 
-    # Returns
+    Returns
     * `list[int]`: Vector of user's market account IDs, empty if
       no market accounts.
     """

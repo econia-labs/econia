@@ -18,7 +18,24 @@ import { formatNumber, plusMinus } from "@/utils/formatter";
 import { TypeTag } from "@/utils/TypeTag";
 
 import { useAllMarketStats } from ".";
-const columnHelper = createColumnHelper<ApiMarket>();
+
+const DEFAULT_TOKEN_ICON = "/tokenImages/default.png";
+
+type MarketWithStats = {
+  marketId: number;
+  baseSymbol?: string;
+  quoteSymbol: string;
+  baseAssetIcon: string;
+  quoteAssetIcon: string;
+  name: string;
+  price?: number;
+  baseVolume?: number;
+  quoteVolume?: number;
+  twentyFourHourChange?: number;
+  recognized?: boolean;
+};
+
+const columnHelper = createColumnHelper<MarketWithStats>();
 
 const TABLE_SPACING = {
   margin: "-mx-6 -mb-6",
@@ -28,77 +45,170 @@ const TABLE_SPACING = {
 
 export const SelectMarketContent: React.FC<{
   allMarketData: ApiMarket[];
-  onSelectMarket: (market: ApiMarket) => void;
-}> = ({ allMarketData, onSelectMarket }) => {
+}> = ({ allMarketData }) => {
   const { data: marketStats } = useAllMarketStats();
   const [filter, setFilter] = useState("");
+  const { coinListClient } = useAptos();
 
   const [selectedTab, setSelectedTab] = useState(0);
 
-  const columns = useMemo(() => {
-    return [
+  const marketDataWithStats: MarketWithStats[] = useMemo(() => {
+    const marketsWithNoStats = allMarketData.map((market): MarketWithStats => {
+      const baseAssetIcon = market.base
+        ? coinListClient.getCoinInfoByFullName(
+            TypeTag.fromApiCoin(market.base).toString(),
+          )?.logo_url ?? DEFAULT_TOKEN_ICON
+        : DEFAULT_TOKEN_ICON;
+      const quoteAssetIcon =
+        coinListClient.getCoinInfoByFullName(
+          TypeTag.fromApiCoin(market.quote).toString(),
+        )?.logo_url ?? DEFAULT_TOKEN_ICON;
+
+      const baseSymbol =
+        market.base != null
+          ? market.base.symbol
+          : market.base_name_generic ?? undefined;
+
+      return {
+        marketId: market.market_id,
+        baseSymbol,
+        quoteSymbol: market.quote.symbol,
+        baseAssetIcon,
+        quoteAssetIcon,
+        name: market.name,
+        price: undefined,
+        baseVolume: undefined,
+        quoteVolume: undefined,
+        twentyFourHourChange: undefined,
+        recognized: market.recognized,
+      };
+    });
+    if (marketStats == null) {
+      return marketsWithNoStats;
+    }
+    return marketsWithNoStats.map((market): MarketWithStats => {
+      const stats = marketStats.find(
+        ({ market_id }) => market_id === market.marketId,
+      );
+      if (stats == null) {
+        return market;
+      }
+      return {
+        ...market,
+        price: stats.close,
+        baseVolume: stats.volume,
+        quoteVolume: undefined, // TODO
+        twentyFourHourChange: stats.change,
+      };
+    });
+  }, [allMarketData, coinListClient, marketStats]);
+
+  const columns = useMemo(
+    () => [
       columnHelper.accessor("name", {
         cell: (info) => {
-          return <MarketNameCell name={info.row.original} />;
+          const { baseAssetIcon, quoteAssetIcon } = info.row.original;
+          return (
+            <div
+              className={`flex items-center text-base ${TABLE_SPACING.paddingLeft}`}
+            >
+              <MarketIconPair
+                quoteAssetIcon={quoteAssetIcon}
+                baseAssetIcon={baseAssetIcon}
+              />
+              <div className={`ml-7 min-w-[12em]`}>{info.getValue()}</div>
+            </div>
+          );
         },
-        header: "NAME",
-        id: "name",
       }),
-      columnHelper.accessor("market_id", {
-        cell: (info) => (
-          <PriceCell
-            price={getStatsByMarketId(info.getValue(), marketStats)?.close || 0}
-            quoteAsset={
-              getMarketByMarketId(info.getValue(), allMarketData)?.name.split(
-                "-",
-              )[1] || "?"
-            }
-          />
-        ),
-        header: "PRICE",
-        id: "price",
+      columnHelper.accessor("price", {
+        cell: (info) => {
+          const price = info.getValue();
+          const { quoteSymbol } = info.row.original;
+          const formatter = Intl.NumberFormat("en", {
+            notation: "compact",
+            compactDisplay: "short",
+            minimumFractionDigits: 1,
+            maximumFractionDigits: 1,
+          });
+          return price != null ? (
+            <div className="min-w-[8em] text-sm">
+              {price >= 10_000 && formatter.format(price).replace("K", "k")}
+              {price < 10_000 &&
+                price.toLocaleString("en", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}{" "}
+              {quoteSymbol}
+            </div>
+          ) : (
+            <div className="min-w-[8em] text-sm">-</div>
+          );
+        },
       }),
-      columnHelper.accessor("market_id", {
-        cell: (info) => (
-          <VolumeCell
-            volume={
-              getStatsByMarketId(info.getValue(), marketStats)?.volume || 0
-            }
-            baseAsset={
-              getMarketByMarketId(info.getValue(), allMarketData)?.name.split(
-                "-",
-              )[0] || "?"
-            }
-          />
-        ),
-        header: "VOLUME",
-        id: "volume",
+      columnHelper.accessor("baseVolume", {
+        header: "volume",
+        cell: (info) => {
+          // TODO: add quote volume
+          const volume = info.getValue();
+          const { baseSymbol } = info.row.original;
+          const formatter = Intl.NumberFormat("en", {
+            notation: "compact",
+            compactDisplay: "short",
+            minimumFractionDigits: 1,
+            maximumFractionDigits: 1,
+          });
+          return (
+            <div className={`min-w-[8em] text-sm`}>
+              {volume != null
+                ? formatter.format(volume).replace("K", "k")
+                : "-"}{" "}
+              {baseSymbol}
+            </div>
+          );
+        },
       }),
-      columnHelper.accessor("market_id", {
-        cell: (info) => (
-          <TwentyFourHourChangeCell
-            change={
-              getStatsByMarketId(info.getValue(), marketStats)?.change || 0
-            }
-          />
-        ),
-        header: "24H CHANGE",
-        id: "24h_change",
+      columnHelper.accessor("twentyFourHourChange", {
+        header: "24h change",
+        cell: (info) => {
+          const change = info.getValue();
+          return change != null ? (
+            <span
+              className={`ml-1 inline-block min-w-[10em] text-center ${
+                change < 0 ? "text-red" : "text-green"
+              }`}
+            >
+              {plusMinus(change)}
+              {formatNumber(change * 100, 2)}%
+            </span>
+          ) : (
+            <span>-</span>
+          );
+        },
       }),
       columnHelper.accessor("recognized", {
-        // TODO: add recognized cell
-        cell: (info) => (
-          <RecognizedCell isRecognized={info.getValue() || false} />
-        ),
-        header: "RECOGNIZED",
-        id: "recognized",
+        cell: (info) => {
+          const isRecognized = info.getValue();
+          return (
+            <div
+              className={`flex justify-center  ${TABLE_SPACING.paddingRight}`}
+            >
+              {isRecognized ? (
+                <RecognizedIcon className="h-5 w-5" />
+              ) : (
+                <NotRecognizedIcon className="h-5 w-5" />
+              )}
+            </div>
+          );
+        },
       }),
-    ];
-  }, [allMarketData, marketStats]);
+    ],
+    [],
+  );
 
   const table = useReactTable({
     columns,
-    data: allMarketData || [],
+    data: marketDataWithStats || [],
     getFilteredRowModel: getFilteredRowModel(),
     getCoreRowModel: getCoreRowModel(),
   });
@@ -143,7 +253,7 @@ export const SelectMarketContent: React.FC<{
               <thead>
                 {table.getHeaderGroups().map((headerGroup) => (
                   <tr
-                    className="text-left font-roboto-mono text-sm text-neutral-500 [&>th]:font-light"
+                    className="text-left font-roboto-mono text-sm uppercase text-neutral-500 [&>th]:font-light"
                     key={headerGroup.id}
                   >
                     {headerGroup.headers.map((header, i) => {
@@ -221,7 +331,6 @@ export const SelectMarketContent: React.FC<{
                   table.getRowModel().rows.map((row) => (
                     <tr
                       className="h-24 min-w-[780px] cursor-pointer px-6 text-left font-roboto-mono text-sm text-white hover:bg-neutral-700 [&>th]:font-light"
-                      onClick={() => onSelectMarket(row.original)}
                       key={row.id}
                     >
                       {row.getVisibleCells().map((cell, i) => (
@@ -249,7 +358,6 @@ export const SelectMarketContent: React.FC<{
               </tbody>
             </table>
           </div>
-          {/* <TableComponent table={table} /> */}
         </Tab.Panels>
       </Tab.Group>
     </div>
@@ -257,120 +365,120 @@ export const SelectMarketContent: React.FC<{
 };
 
 // row components
-const MarketNameCell = ({ name }: { name: ApiMarket }) => {
-  const DEFAULT_TOKEN_ICON = "/tokenImages/default.png";
+// const MarketNameCell = ({ name }: { name: ApiMarket }) => {
+//   const DEFAULT_TOKEN_ICON = "/tokenImages/default.png";
 
-  const { coinListClient } = useAptos();
-  const baseAssetIcon = name.base
-    ? coinListClient.getCoinInfoByFullName(
-        TypeTag.fromApiCoin(name.base).toString(),
-      )?.logo_url
-    : DEFAULT_TOKEN_ICON;
-  const quoteAssetIcon =
-    coinListClient.getCoinInfoByFullName(
-      TypeTag.fromApiCoin(name.quote).toString(),
-    )?.logo_url ?? DEFAULT_TOKEN_ICON;
-  return (
-    <div className={`flex items-center text-base ${TABLE_SPACING.paddingLeft}`}>
-      <MarketIconPair
-        quoteAssetIcon={quoteAssetIcon}
-        baseAssetIcon={baseAssetIcon}
-      />
-      <div className={`ml-7 min-w-[12em]`}>{name.name}</div>
-    </div>
-  );
-};
+//   const { coinListClient } = useAptos();
+//   const baseAssetIcon = name.base
+//     ? coinListClient.getCoinInfoByFullName(
+//         TypeTag.fromApiCoin(name.base).toString(),
+//       )?.logo_url
+//     : DEFAULT_TOKEN_ICON;
+//   const quoteAssetIcon =
+//     coinListClient.getCoinInfoByFullName(
+//       TypeTag.fromApiCoin(name.quote).toString(),
+//     )?.logo_url ?? DEFAULT_TOKEN_ICON;
+//   return (
+//     <div className={`flex items-center text-base ${TABLE_SPACING.paddingLeft}`}>
+//       <MarketIconPair
+//         quoteAssetIcon={quoteAssetIcon}
+//         baseAssetIcon={baseAssetIcon}
+//       />
+//       <div className={`ml-7 min-w-[12em]`}>{name.name}</div>
+//     </div>
+//   );
+// };
 
-const PriceCell = ({
-  price,
-  quoteAsset,
-}: {
-  price: number;
-  quoteAsset: string;
-}) => {
-  const formatter = Intl.NumberFormat("en", {
-    notation: "compact",
-    compactDisplay: "short",
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
-  });
-  return (
-    <div className="min-w-[8em] text-sm">
-      {price >= 10_000 && formatter.format(price).replace("K", "k")}
-      {price < 10_000 &&
-        price.toLocaleString("en", {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        })}{" "}
-      {quoteAsset}
-    </div>
-  );
-};
+// const PriceCell = ({
+//   price,
+//   quoteAsset,
+// }: {
+//   price: number;
+//   quoteAsset: string;
+// }) => {
+//   const formatter = Intl.NumberFormat("en", {
+//     notation: "compact",
+//     compactDisplay: "short",
+//     minimumFractionDigits: 1,
+//     maximumFractionDigits: 1,
+//   });
+//   return (
+//     <div className="min-w-[8em] text-sm">
+//       {price >= 10_000 && formatter.format(price).replace("K", "k")}
+//       {price < 10_000 &&
+//         price.toLocaleString("en", {
+//           minimumFractionDigits: 2,
+//           maximumFractionDigits: 2,
+//         })}{" "}
+//       {quoteAsset}
+//     </div>
+//   );
+// };
 
-const VolumeCell = ({
-  volume,
-  baseAsset,
-}: {
-  volume: number;
-  baseAsset: string;
-}) => {
-  // is this ok? https://caniuse.com/mdn-javascript_builtins_intl_numberformat_numberformat_options_compactdisplay_parameter
-  // reference: https://stackoverflow.com/a/60988355
-  // also, people tend to use lower case 'k' but the formatter uses upper case 'K'
-  const formatter = Intl.NumberFormat("en", {
-    notation: "compact",
-    compactDisplay: "short",
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
-  });
-  return (
-    <div className="block">
-      <div className={`min-w-[8em] text-sm`}>
-        {formatter.format(volume).replace("K", "k")} {baseAsset}
-      </div>
-      <div className={`min-w-[6em] text-neutral-500`}>$1.5M</div>
-    </div>
-  );
-};
+// const VolumeCell = ({
+//   volume,
+//   baseAsset,
+// }: {
+//   volume: number;
+//   baseAsset: string;
+// }) => {
+//   // is this ok? https://caniuse.com/mdn-javascript_builtins_intl_numberformat_numberformat_options_compactdisplay_parameter
+//   // reference: https://stackoverflow.com/a/60988355
+//   // also, people tend to use lower case 'k' but the formatter uses upper case 'K'
+//   const formatter = Intl.NumberFormat("en", {
+//     notation: "compact",
+//     compactDisplay: "short",
+//     minimumFractionDigits: 1,
+//     maximumFractionDigits: 1,
+//   });
+//   return (
+//     <div className="block">
+//       <div className={`min-w-[8em] text-sm`}>
+//         {formatter.format(volume).replace("K", "k")} {baseAsset}
+//       </div>
+//       <div className={`min-w-[6em] text-neutral-500`}>$1.5M</div>
+//     </div>
+//   );
+// };
 
-const TwentyFourHourChangeCell = ({ change = 0 }: { change: number }) => {
-  return (
-    <span
-      className={`ml-1 inline-block min-w-[10em] text-center ${
-        change < 0 ? "text-red" : "text-green"
-      }`}
-    >
-      {plusMinus(change)}
-      {formatNumber(change * 100, 2)}%
-    </span>
-  );
-};
+// const TwentyFourHourChangeCell = ({ change = 0 }: { change: number }) => {
+//   return (
+//     <span
+//       className={`ml-1 inline-block min-w-[10em] text-center ${
+//         change < 0 ? "text-red" : "text-green"
+//       }`}
+//     >
+//       {plusMinus(change)}
+//       {formatNumber(change * 100, 2)}%
+//     </span>
+//   );
+// };
 
-const RecognizedCell = ({ isRecognized }: { isRecognized: boolean }) => {
-  return (
-    <div className={`flex justify-center  ${TABLE_SPACING.paddingRight}`}>
-      {isRecognized ? (
-        <RecognizedIcon className="h-5 w-5" />
-      ) : (
-        <NotRecognizedIcon className="h-5 w-5" />
-      )}
-    </div>
-  );
-};
+// const RecognizedCell = ({ isRecognized }: { isRecognized: boolean }) => {
+//   return (
+//     <div className={`flex justify-center  ${TABLE_SPACING.paddingRight}`}>
+//       {isRecognized ? (
+//         <RecognizedIcon className="h-5 w-5" />
+//       ) : (
+//         <NotRecognizedIcon className="h-5 w-5" />
+//       )}
+//     </div>
+//   );
+// };
 
-// util
-const getStatsByMarketId = (
-  marketId: number,
-  marketStats: ApiStats[] | undefined,
-) => {
-  if (!marketStats) return undefined;
-  return marketStats.find((stats) => stats.market_id === marketId);
-};
+// // util
+// const getStatsByMarketId = (
+//   marketId: number,
+//   marketStats: ApiStats[] | undefined,
+// ) => {
+//   if (!marketStats) return undefined;
+//   return marketStats.find((stats) => stats.market_id === marketId);
+// };
 
-const getMarketByMarketId = (
-  marketId: number,
-  markets: ApiMarket[] | undefined,
-) => {
-  if (!markets) return undefined;
-  return markets.find((market) => market.market_id === marketId);
-};
+// const getMarketByMarketId = (
+//   marketId: number,
+//   markets: ApiMarket[] | undefined,
+// ) => {
+//   if (!markets) return undefined;
+//   return markets.find((market) => market.market_id === marketId);
+// };

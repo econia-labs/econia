@@ -145,14 +145,7 @@ export const StatsBar: React.FC<{
         }}
         showCloseButton={false}
       >
-        <SelectMarketContent
-          allMarketData={allMarketData}
-          onSelectMarket={(market) => {
-            setIsModalOpen(false);
-            false;
-            router.push(`/trade/${market.name}`);
-          }}
-        />
+        <SelectMarketContent allMarketData={allMarketData} />
       </BaseModal>
       <div className="flex justify-between border-b border-neutral-600 px-9 py-3">
         <div className="flex overflow-x-clip whitespace-nowrap">

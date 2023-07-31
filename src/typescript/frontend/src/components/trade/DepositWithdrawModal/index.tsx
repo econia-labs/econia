@@ -57,13 +57,7 @@ export const DepositWithdrawModal: React.FC<{
         />
       )}
       {step === Step.SelectMarket && (
-        <SelectMarketContent
-          allMarketData={allMarketData}
-          onSelectMarket={(market) => {
-            setSelectedMarket(market);
-            setStep(Step.Initial);
-          }}
-        />
+        <SelectMarketContent allMarketData={allMarketData} />
       )}
       {step === Step.DepositWithdraw &&
         (selectedMarket !== undefined ? (

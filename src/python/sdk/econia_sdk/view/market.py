@@ -169,7 +169,7 @@ def get_market_order_id_price(view: EconiaViewer, market_order_id: int) -> int:
     the price that the maker portion of the order posted to the book
     at.
 
-    Aborts
+    Aborts:
     * `E_ORDER_DID_NOT_POST`: Order ID corresponds to an order that
       did not post to the book.
     """
@@ -185,7 +185,7 @@ def get_posted_order_id_side(view: EconiaViewer, market_order_id: int) -> bool:
     the order side encoded in its order ID, corresponding to the
     side that the maker portion of the order posted to the book at.
 
-    Aborts
+    Aborts:
     * `E_ORDER_DID_NOT_POST`: Order ID corresponds to an order that
       did not post to the book.
     """
@@ -222,12 +222,12 @@ def get_open_orders(
     Index order book for given market ID into "asks" and "bids"
     vectors. Vectors sorted by price-time priority.
 
-    Parameters
+    Parameters:
     * `market_id`: Market ID of maker orders to index.
     * `n_asks_max`: Maximum number of asks to index.
     * `n_bids_max`: Maximum number of bids to index.
 
-    Aborts
+    Aborts:
     * `E_INVALID_MARKET_ID`: No market with given ID.
     """
     returns = view.get_returns(
@@ -285,7 +285,7 @@ def get_price_levels(
 
     Vectors sorted by price priority.
 
-    Parameters
+    Parameters:
     * `market_id`: Market ID of price levels to index.
     * `n_ask_levels_max`: Maximum number of ask price levels to
       index.

@@ -15,6 +15,8 @@ import { TypeTag } from "@/utils/TypeTag";
 
 import { OrderEntryInfo } from "./OrderEntryInfo";
 import { OrderEntryInputWrapper } from "./OrderEntryInputWrapper";
+import { toast } from "react-toastify";
+import { toRawCoinAmount } from "@/utils/coin";
 
 type LimitFormValues = {
   price: string;
@@ -57,6 +59,62 @@ export const LimitOrderEntry: React.FC<{
       sell: "ask",
     };
     const orderSide = orderSideMap[side];
+
+    // validation
+    const rawValueSize = BigInt(
+      toRawCoinAmount(values.size ?? 0, marketData?.base?.decimals ?? 0),
+    );
+    const rawBaseBalance = BigInt(
+      toRawCoinAmount(
+        baseBalance.data ?? 0, // assume if null, user has 0
+        marketData?.base?.decimals ?? 0, // is this fine?
+      ),
+    );
+    const rawQuoteBalance = BigInt(
+      toRawCoinAmount(
+        quoteBalance.data ?? 0, // assume if null, user has 0
+        marketData?.quote?.decimals ?? 0, // is this fine?
+      ),
+    );
+    const rawValuePrice = BigInt(
+      toRawCoinAmount(values.price ?? 0, marketData?.quote?.decimals ?? 0),
+    );
+
+    // validate tick size
+    if (rawValuePrice % BigInt(marketData.tick_size) == BigInt(0)) {
+      toast.info("Invalid tick size");
+      return;
+    }
+
+    // validate Lot size
+    if (rawValueSize % BigInt(marketData.lot_size) == BigInt(0)) {
+      toast.info("Invalid lot size");
+      return;
+    }
+    // validate min size
+    if (rawValueSize >= BigInt(marketData.min_size)) {
+      toast.info("Invalid min size");
+      return;
+    }
+
+    // limit buy -- make sure user has enough quote balance
+    if (orderSide === "bid") {
+      const isValid =
+        rawQuoteBalance >= BigInt(values.size) * BigInt(rawValuePrice); // how to get price? esp if market order
+      if (!isValid) {
+        toast.info("Insufficient quote balance");
+        return;
+      }
+    }
+
+    // limit sell -- make sure user has enough base balance
+    if (orderSide === "ask") {
+      const isValid = rawBaseBalance >= BigInt(values.size); // is gte fine?
+      if (!isValid) {
+        toast.info("Insufficient base balance");
+        return;
+      }
+    }
 
     if (marketData.base == null) {
       // TODO: handle generic markets

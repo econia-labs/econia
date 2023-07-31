@@ -79,19 +79,6 @@ export const MarketOrderEntry: React.FC<{
       return;
     }
 
-    // validate lot size & tick size in limit order entry
-
-    // market buy -- make sure user has enough quote balance
-    // amount * price
-    // todo multiplication here compared to get "price"
-    if (orderSide === "bid") {
-      const isValid = rawQuoteBalance >= BigInt(values.size) * BigInt(-1); // how to get price? esp if market order
-      if (!isValid) {
-        toast.info("Insufficient quote balance");
-        return;
-      }
-    }
-
     // market sell -- make sure user has enough base balance
     if (orderSide === "ask") {
       const isValid = rawBaseBalance >= BigInt(values.size); // is gte fine?

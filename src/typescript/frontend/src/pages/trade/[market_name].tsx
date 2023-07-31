@@ -316,7 +316,10 @@ export default function Market({ allMarketData, marketData }: Props) {
               </div>
             </div>
             <div className="border border-neutral-600">
-              <p className="my-3 ml-4 font-jost font-bold text-white">Orders</p>
+              <div className="bg-black py-3 pl-4">
+                <p className="font-jost font-bold text-white">Orders</p>
+              </div>
+
               <OrdersTable allMarketData={allMarketData} />
             </div>
           </div>

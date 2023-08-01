@@ -46,3 +46,12 @@ def get_min_size(
     """
     smallest_subunits = smallest_decimal_size * (10 ** base_coin_decimals)
     return math.ceil(smallest_subunits / lot_size)
+
+
+def get_min_quote_per_base(
+    smallest_decimal_size_base: float,
+    smallest_decimal_size_quote: float,
+) -> float:
+    """
+    """
+    return (1/smallest_decimal_size_base) * smallest_decimal_size_quote

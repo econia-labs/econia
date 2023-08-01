@@ -147,18 +147,14 @@ def start():
     bids_price, asks_price = get_best_prices(viewer, market_id)
     if bids_price is not None or asks_price is not None:
         input("\n\nPress enter to clean-up open orders on the market.")
-        account_ = setup_new_account(
-            viewer, faucet_client, market_id, 9, 10_000 * 100
-        )
+        account_ = setup_new_account(viewer, faucet_client, market_id, 9, 10_000 * 100)
         if bids_price is not None:
             place_market_order(Side.ASK, account_, market_id, 9000)
         if asks_price is not None:
             place_market_order(Side.BID, account_, market_id, 9000)
 
         dump_txns()
-        n_clears = len(
-            get_fill_events(viewer, account_.account_address, market_id, 0)
-        )
+        n_clears = len(get_fill_events(viewer, account_.account_address, market_id, 0))
         print(f"Cleared {n_clears} orders off of the market!")
         report_best_price_levels(viewer, market_id)
     else:
@@ -174,9 +170,7 @@ def start():
     # = $1000/eAPT since there are 1000 lots in a whole eAPT & 1 tick = 0.001 USDC
     buy_base_lots = 1 * (10**3)
     buy_ticks_per_lot = 1 * (10**3)
-    place_limit_order(
-        Side.BID, account_A, market_id, buy_base_lots, buy_ticks_per_lot
-    )
+    place_limit_order(Side.BID, account_A, market_id, buy_base_lots, buy_ticks_per_lot)
     events = get_place_limit_order_events(
         viewer, account_A.account_address, market_id, 0
     )
@@ -202,9 +196,7 @@ def start():
     if n_fills == 0:
         print("  * There were no limit orders filled by any orders placed.")
     else:
-        print(
-            f"  * There were {n_fills} limit orders filled by the orders placed."
-        )
+        print(f"  * There were {n_fills} limit orders filled by the orders placed.")
     dump_txns()
     report_best_price_levels(viewer, market_id)
 
@@ -268,9 +260,7 @@ def start():
         "\n\nPress enter to place spread-crossing limit order with Account B (no remainder)."
     )
     equal_volume = 100 + 200 + 300 + 400 + 500
-    place_limit_order(
-        Side.ASK, account_B, market_id, equal_volume, buy_ticks_per_lot
-    )
+    place_limit_order(Side.ASK, account_B, market_id, equal_volume, buy_ticks_per_lot)
     fills = get_fill_events(viewer, account_B.account_address, market_id, 0)
     report_fill_events(fills)
     opens = get_open_orders_all(viewer, market_id)
@@ -282,9 +272,7 @@ def start():
         "\n\nPress enter to place spread-crossing limit order with Account B (w/ remainder)."
     )
     greater_volume = equal_volume * 2
-    place_limit_order(
-        Side.BID, account_B, market_id, greater_volume, start_ask_price
-    )
+    place_limit_order(Side.BID, account_B, market_id, greater_volume, start_ask_price)
     fills = get_fill_events(viewer, account_B.account_address, market_id, 0)
     report_fill_events(fills)
     opens = get_open_orders_all(viewer, market_id)
@@ -455,9 +443,7 @@ def setup_new_account(
         f"Deposit {tusdc_subunits/(10**6)} eUSDC to market account",
     )
 
-    mkt_account = get_market_account(
-        viewer, account.account_address, market_id, 0
-    )
+    mkt_account = get_market_account(viewer, account.account_address, market_id, 0)
     print("New market account after deposit:")
     account_apt = mkt_account["base_available"] / 10**8
     account_usdc = mkt_account["quote_available"] / 10**6
@@ -529,9 +515,7 @@ def setup_market(faucet_client: FaucetClient, viewer: EconiaViewer) -> int:
         )
         events = get_market_registration_events(viewer)
         report_market_creation_event(
-            list(filter(lambda e: e["data"]["market_id"] == market_id, events))[
-                0
-            ]
+            list(filter(lambda e: e["data"]["market_id"] == market_id, events))[0]
         )
     if market_id == None:
         exit()
@@ -587,14 +571,10 @@ def report_market_creation_event(event: dict):
     print("EVENT SUMMARY: MarketRegistrationEvent")
     base_mod_name = event["data"]["base_type"]["module_name"]
     base_str_name = event["data"]["base_type"]["struct_name"]
-    print(
-        f"  * Base Type (unit of lots): 0x...::{base_mod_name}::{base_str_name}"
-    )
+    print(f"  * Base Type (unit of lots): 0x...::{base_mod_name}::{base_str_name}")
     quote_mod_name = event["data"]["quote_type"]["module_name"]
     quote_str_name = event["data"]["quote_type"]["struct_name"]
-    print(
-        f"  * Quote Type (unit of ticks): 0x...::{quote_mod_name}::{quote_str_name}"
-    )
+    print(f"  * Quote Type (unit of ticks): 0x...::{quote_mod_name}::{quote_str_name}")
 
 
 def report_place_limit_order_event(event: dict):
@@ -629,15 +609,11 @@ def report_fill_events(fill_events: list[dict]):
                 f"  * There were {n_last_events} BID orders filled by the ASK order placement."
             )
 
-        last_events_prices = list(
-            map(lambda ev: ev["data"]["price"], last_events)
-        )
+        last_events_prices = list(map(lambda ev: ev["data"]["price"], last_events))
         price_render = " -> ".join(str(price) for price in last_events_prices)
         print(f"  * Execution prices (ticks/lot): {price_render}")
 
-        last_events_sizes = list(
-            map(lambda ev: ev["data"]["size"], last_events)
-        )
+        last_events_sizes = list(map(lambda ev: ev["data"]["size"], last_events))
         sizes_render = " +> ".join(str(price) for price in last_events_sizes)
         print(f"  * Execution sizes (lots): {sizes_render}")
 
@@ -650,13 +626,9 @@ def report_fill_events(fill_events: list[dict]):
         print("  * There were no order fills for the queried account")
 
 
-def report_order_for_last_fill(
-    fill_events: list[dict], open_orders: list[dict]
-):
+def report_order_for_last_fill(fill_events: list[dict], open_orders: list[dict]):
     order_id = fill_events[-1]["data"]["taker_order_id"]
-    open_order = list(
-        filter(lambda ev: ev["order_id"] == order_id, open_orders)
-    )
+    open_order = list(filter(lambda ev: ev["order_id"] == order_id, open_orders))
     if len(open_order) == 1:
         print("  * The order WAS NOT fully satisfied by initial execution")
     elif len(open_order) == 0:

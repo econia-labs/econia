@@ -13,7 +13,7 @@ import { NotRecognizedIcon } from "@/components/icons/NotRecognizedIcon";
 import { RecognizedIcon } from "@/components/icons/RecognizedIcon";
 import { MarketIconPair } from "@/components/MarketIconPair";
 import { useAptos } from "@/contexts/AptosContext";
-import { type ApiMarket, type ApiStats } from "@/types/api";
+import { type ApiMarket } from "@/types/api";
 import { formatNumber, plusMinus } from "@/utils/formatter";
 import { TypeTag } from "@/utils/TypeTag";
 
@@ -211,7 +211,7 @@ export const SelectMarketContent: React.FC<{
           setSelectedTab(index);
         }}
       >
-        <div className="w-full px-2 pt-2">
+        <div className="w-full px-8 pt-8">
           <div className="relative w-full">
             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
               <MagnifyingGlassIcon className="h-5 w-5 text-neutral-500" />
@@ -237,7 +237,7 @@ export const SelectMarketContent: React.FC<{
             </Tab>
           </Tab.List>
         </div>
-        <Tab.Panels className="w-full">
+        <Tab.Panels className="w-full bg-sky-800">
           <div className="scrollbar-none w-full px-2">
             <table className="w-full">
               <thead>

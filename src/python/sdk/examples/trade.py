@@ -490,6 +490,7 @@ def setup_market(faucet_client: FaucetClient, viewer: EconiaViewer) -> int:
     )
     if market_id == None:
         account_XCH = Account.generate()
+        # The faucet only gives out 1 APT at a time, have to go multiple times
         faucet_client.fund_account(account_XCH.address(), 1 * (10**8))
         faucet_client.fund_account(account_XCH.address(), 1 * (10**8))
         faucet_client.fund_account(account_XCH.address(), 1 * (10**8))

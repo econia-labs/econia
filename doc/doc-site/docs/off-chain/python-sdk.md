@@ -81,7 +81,7 @@ Market configuration (beyond base type and quote type) consists of 3 integer val
 In order to proceed, we must decide the granularity of base and quote sizes as well as the minimum limit order size for our market.
 One must consider that "price" in the exchange is an integer expressed in terms of "ticks per lot" so the granularity (size) of ticks and lots relates to the prices that can be expressed.
 That is, tick size and lot size beget a constant price granularity.
-In general the desire is to have one tick be "small" relative to one lot in terms of value, since the minimum expressible price is 1 tick per lot, then 2 ticks and so forth.
+In general the desire is to have one _tick_ be "small" relative to one **_lot_** in terms of value, since the minimum expressible price is 1 tick per lot, then 2 ticks and so forth.
 Let's use `eAPT` and `eUSDC` used in the faucet below as example base and quote types respectively for a market.
 We know that eAPT (the base type) has 8 decimals and eUSDC (the quote type) has 6 decimals:
 ```
@@ -90,7 +90,7 @@ We know that eAPT (the base type) has 8 decimals and eUSDC (the quote type) has 
 ```
 
 We'd like to be able to express small prices with high granularity.
-Let's try using 0.001 eAPT for the granularity base coin sizes, and 0.01 (one penny) for the granularity of quote coin sizes.
+Let's try using 0.001 eAPT for the granularity base coin sizes, and 0.01 eUSDC (one penny) for the granularity of quote coin sizes.
 Does this work?
 Let's find out!
 ```
@@ -109,19 +109,21 @@ Checking our price granularity now shows better results:
 0.01
 ```
 
-That's a price granularity of 1 cent.
+That's a price granularity of 1 cent, since the result here is in quote units and 1 eUSDC is \$1.
 Now that we have the minimum base and quote size decimals we'd like to use, we're ready to configure the market.
 Let's get the lot size and tick size:
 ```
->>> get_lot_size(0.001, 8)
+>>> lot_size = get_lot_size(0.001, base_decimals)
+>>> lot_size
 100000
->>> get_tick_size(0.00001, 6)
+>>> tick_size = get_tick_size(0.00001, quote_decimals)
+>>> tick_size
 10
 ```
 
 We also need a minimum size. Let's say orders must have a minimum of 1 whole APT in order to post, given the lot size of 100000 from above:
 ```
->>> get_min_size(1.0, 8, 100000)
+>>> get_min_size(1.0, base_decimals, lot_size)
 1000
 ```
 

@@ -109,9 +109,7 @@ export const SelectMarketContent: React.FC<{
         cell: (info) => {
           const { baseAssetIcon, quoteAssetIcon } = info.row.original;
           return (
-            <div
-              className={`flex items-center text-base ${TABLE_SPACING.paddingLeft}`}
-            >
+            <div className="flex align-middle">
               <MarketIconPair
                 quoteAssetIcon={quoteAssetIcon}
                 baseAssetIcon={baseAssetIcon}
@@ -189,16 +187,10 @@ export const SelectMarketContent: React.FC<{
       columnHelper.accessor("recognized", {
         cell: (info) => {
           const isRecognized = info.getValue();
-          return (
-            <div
-              className={`flex justify-center  ${TABLE_SPACING.paddingRight}`}
-            >
-              {isRecognized ? (
-                <RecognizedIcon className="h-5 w-5" />
-              ) : (
-                <NotRecognizedIcon className="h-5 w-5" />
-              )}
-            </div>
+          return isRecognized ? (
+            <RecognizedIcon className="h-5 w-5" />
+          ) : (
+            <NotRecognizedIcon className="h-5 w-5" />
           );
         },
       }),
@@ -246,9 +238,7 @@ export const SelectMarketContent: React.FC<{
           </Tab.List>
         </div>
         <Tab.Panels className="w-full">
-          <div
-            className={`${TABLE_SPACING.margin} scrollbar-none w-[calc(100%+3em)] overflow-x-auto`}
-          >
+          <div className="scrollbar-none w-full px-2">
             <table className="w-full">
               <thead>
                 {table.getHeaderGroups().map((headerGroup) => (

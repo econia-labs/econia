@@ -634,7 +634,7 @@ def report_order_for_last_fill(fill_events: list[dict], open_orders: list[dict])
     elif len(open_order) == 0:
         print("  * The order WAS fully satisfied by initial execution")
     else:
-        print("  * Put on a hazmat suit because it has two cancel events!")
+        raise SystemError("This is not possible")
 
 
 def find_all_fill_events_with_last_taker_order_id(

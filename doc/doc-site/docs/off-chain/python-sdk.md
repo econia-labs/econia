@@ -54,6 +54,14 @@ This package contains various enum types useful for parsing and referring to imp
 Note that Move doesn't have enum types so unlike most of the above, these do not map directly to Move.
 However, each value in each enum is associated with a constant that exists in the Move code.
 
+## `econia_sdk.utils.decimals`
+
+This package contains a few helpers for calculating market creation parameters (lot size, tick size, and min size).
+The intent is to allow one to express their desired sizes in decimal notation, and have that converted to integer notation.
+Nota bene that these expect reasonable inputs.
+For example: converting 0.000001 unit size for 3 decimals returns 1 subunit size, which is 0.001 unit size, instead of an error.
+Price conversion utilities are left out for this reason: truncation, even a small percent's worth, would make them too dangerous.
+
 # Other Contents
 
 ## `examples.trade`

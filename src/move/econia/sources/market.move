@@ -2938,6 +2938,7 @@ module econia::market {
     /// * `bool`: `true` if a self match that results in a taker cancel.
     /// * `bool`: `true` if liquidity is gone from order book on
     ///   corresponding side after matching.
+    /// * `bool`: `true` if matching halted due to violated limit price.
     ///
     /// # Aborts
     ///
@@ -3003,6 +3004,7 @@ module econia::market {
         u64,
         u64,
         bool,
+        bool,
         bool
     ) {
         // Assert price is not too high.
@@ -3032,13 +3034,17 @@ module econia::market {
         let order_id = ((order_book_ref_mut.counter as u128) << SHIFT_COUNTER);
         // Initialize counters for fill iteration.
         let (fill_count, fees_paid) = (0, 0);
+        let violated_limit_price = false; // Assume no price violation.
         // While there are orders to match against:
         while (!avl_queue::is_empty(orders_ref_mut)) {
             let price = // Get price of order at head of AVL queue.
                 *option::borrow(&avl_queue::get_head_key(orders_ref_mut));
             // Break if price too high to buy at or too low to sell at.
             if (((direction == BUY ) && (price > limit_price)) ||
-                ((direction == SELL) && (price < limit_price))) break;
+                ((direction == SELL) && (price < limit_price))) {
+                    violated_limit_price = true;
+                    break
+            };
             // Calculate max number of lots that could be filled
             // at order price, limited by ticks left to fill until max.
             let max_fill_size_ticks = ticks_until_max / price;
@@ -3162,9 +3168,11 @@ module econia::market {
         // Assert minimum quote coin trade amount met.
         assert!(quote_traded >= min_quote, E_MIN_QUOTE_NOT_TRADED);
         // Return optional base coin, quote coins, trade amounts,
-        // self match taker cancel flag, and if liquidity is gone.
+        // self match taker cancel flag, if liquidity is gone, and if
+        // limit price was violated.
         (optional_base_coins, quote_coins, base_fill, quote_traded, fees_paid,
-         self_match_taker_cancel, avl_queue::is_empty(orders_ref_mut))
+         self_match_taker_cancel, avl_queue::is_empty(orders_ref_mut),
+         violated_limit_price)
     }
 
     /// Place limit order against order book from user market account.
@@ -3412,6 +3420,7 @@ module econia::market {
                 fees,
                 self_match_cancel,
                 _,
+                _
             ) = match(
                 market_id,
                 &mut fill_event_queue,
@@ -3831,7 +3840,8 @@ module econia::market {
             quote_traded,
             fees,
             self_match_taker_cancel,
-            liquidity_gone
+            liquidity_gone,
+            _
         ) = match(
             market_id,
             &mut fill_event_queue,
@@ -4161,7 +4171,8 @@ module econia::market {
             quote_traded,
             fees,
             self_match_taker_cancel,
-            liquidity_gone
+            liquidity_gone,
+            violated_limit_price
         ) = match(
             market_id,
             fill_event_queue_ref_mut,
@@ -4216,17 +4227,6 @@ module econia::market {
             limit_price,
             order_id: market_order_id
         };
-        // Check if violated limit price.
-        let violated_limit_price = if (!liquidity_gone) {
-            // Mutably borrow orders AVL queue matched against.
-            let orders_ref_mut = if (direction == BUY)
-                &mut order_book_ref_mut.asks else &mut order_book_ref_mut.bids;
-            let head_price = // Get price of order at head of AVL queue.
-                *option::borrow(&avl_queue::get_head_key(orders_ref_mut));
-            // Check if limit price violated
-            (((direction == BUY ) && (head_price > limit_price)) ||
-             ((direction == SELL) && (head_price < limit_price)))
-        } else false;
         let cancel_reason_option =
             get_cancel_reason_option_for_market_order_or_swap(
                 self_match_taker_cancel, base_traded, max_base,

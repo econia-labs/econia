@@ -5752,6 +5752,7 @@ net change in taker's quote coin holdings.
 * <code>bool</code>: <code><b>true</b></code> if a self match that results in a taker cancel.
 * <code>bool</code>: <code><b>true</b></code> if liquidity is gone from order book on
 corresponding side after matching.
+* <code>bool</code>: <code><b>true</b></code> if matching halted due to violated limit price.
 
 
 <a name="@Aborts_116"></a>
@@ -5805,7 +5806,7 @@ requirement not met.
 * <code>test_match_self_match_invalid()</code>
 
 
-<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_match">match</a>&lt;BaseType, QuoteType&gt;(market_id: u64, fill_event_queue_ref_mut: &<b>mut</b> <a href="">vector</a>&lt;<a href="user.md#0xc0deb00c_user_FillEvent">user::FillEvent</a>&gt;, order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">market::OrderBook</a>, taker: <b>address</b>, custodian_id: u64, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64, self_match_behavior: u8, optional_base_coins: <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, quote_coins: <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;): (<a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;, u64, u64, u64, bool, bool)
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_match">match</a>&lt;BaseType, QuoteType&gt;(market_id: u64, fill_event_queue_ref_mut: &<b>mut</b> <a href="">vector</a>&lt;<a href="user.md#0xc0deb00c_user_FillEvent">user::FillEvent</a>&gt;, order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">market::OrderBook</a>, taker: <b>address</b>, custodian_id: u64, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64, self_match_behavior: u8, optional_base_coins: <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, quote_coins: <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;): (<a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;, u64, u64, u64, bool, bool, bool)
 </code></pre>
 
 
@@ -5839,6 +5840,7 @@ requirement not met.
     u64,
     u64,
     bool,
+    bool,
     bool
 ) {
     // Assert price is not too high.
@@ -5868,13 +5870,17 @@ requirement not met.
     <b>let</b> order_id = ((order_book_ref_mut.counter <b>as</b> u128) &lt;&lt; <a href="market.md#0xc0deb00c_market_SHIFT_COUNTER">SHIFT_COUNTER</a>);
     // Initialize counters for fill iteration.
     <b>let</b> (fill_count, fees_paid) = (0, 0);
+    <b>let</b> violated_limit_price = <b>false</b>; // Assume no price violation.
     // While there are orders <b>to</b> match against:
     <b>while</b> (!<a href="avl_queue.md#0xc0deb00c_avl_queue_is_empty">avl_queue::is_empty</a>(orders_ref_mut)) {
         <b>let</b> price = // Get price of order at head of AVL queue.
             *<a href="_borrow">option::borrow</a>(&<a href="avl_queue.md#0xc0deb00c_avl_queue_get_head_key">avl_queue::get_head_key</a>(orders_ref_mut));
         // Break <b>if</b> price too high <b>to</b> buy at or too low <b>to</b> sell at.
         <b>if</b> (((direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a> ) && (price &gt; limit_price)) ||
-            ((direction == <a href="market.md#0xc0deb00c_market_SELL">SELL</a>) && (price &lt; limit_price))) <b>break</b>;
+            ((direction == <a href="market.md#0xc0deb00c_market_SELL">SELL</a>) && (price &lt; limit_price))) {
+                violated_limit_price = <b>true</b>;
+                <b>break</b>
+        };
         // Calculate max number of lots that could be filled
         // at order price, limited by ticks left <b>to</b> fill until max.
         <b>let</b> max_fill_size_ticks = ticks_until_max / price;
@@ -5998,9 +6004,11 @@ requirement not met.
     // Assert minimum quote <a href="">coin</a> trade amount met.
     <b>assert</b>!(quote_traded &gt;= min_quote, <a href="market.md#0xc0deb00c_market_E_MIN_QUOTE_NOT_TRADED">E_MIN_QUOTE_NOT_TRADED</a>);
     // Return optional base <a href="">coin</a>, quote coins, trade amounts,
-    // self match taker cancel flag, and <b>if</b> liquidity is gone.
+    // self match taker cancel flag, <b>if</b> liquidity is gone, and <b>if</b>
+    // limit price was violated.
     (optional_base_coins, quote_coins, base_fill, quote_traded, fees_paid,
-     self_match_taker_cancel, <a href="avl_queue.md#0xc0deb00c_avl_queue_is_empty">avl_queue::is_empty</a>(orders_ref_mut))
+     self_match_taker_cancel, <a href="avl_queue.md#0xc0deb00c_avl_queue_is_empty">avl_queue::is_empty</a>(orders_ref_mut),
+     violated_limit_price)
 }
 </code></pre>
 
@@ -6297,6 +6305,7 @@ restriction, and
             fees,
             self_match_cancel,
             _,
+            _
         ) = <a href="market.md#0xc0deb00c_market_match">match</a>(
             market_id,
             &<b>mut</b> fill_event_queue,
@@ -6802,7 +6811,8 @@ lot size results in a base asset unit overflow.
         quote_traded,
         fees,
         self_match_taker_cancel,
-        liquidity_gone
+        liquidity_gone,
+        _
     ) = <a href="market.md#0xc0deb00c_market_match">match</a>(
         market_id,
         &<b>mut</b> fill_event_queue,
@@ -7243,7 +7253,8 @@ filling, when swap is from non-signing swapper.
         quote_traded,
         fees,
         self_match_taker_cancel,
-        liquidity_gone
+        liquidity_gone,
+        violated_limit_price
     ) = <a href="market.md#0xc0deb00c_market_match">match</a>(
         market_id,
         fill_event_queue_ref_mut,
@@ -7298,17 +7309,6 @@ filling, when swap is from non-signing swapper.
         limit_price,
         order_id: market_order_id
     };
-    // Check <b>if</b> violated limit price.
-    <b>let</b> violated_limit_price = <b>if</b> (!liquidity_gone) {
-        // Mutably borrow orders AVL queue matched against.
-        <b>let</b> orders_ref_mut = <b>if</b> (direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>)
-            &<b>mut</b> order_book_ref_mut.asks <b>else</b> &<b>mut</b> order_book_ref_mut.bids;
-        <b>let</b> head_price = // Get price of order at head of AVL queue.
-            *<a href="_borrow">option::borrow</a>(&<a href="avl_queue.md#0xc0deb00c_avl_queue_get_head_key">avl_queue::get_head_key</a>(orders_ref_mut));
-        // Check <b>if</b> limit price violated
-        (((direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a> ) && (head_price &gt; limit_price)) ||
-         ((direction == <a href="market.md#0xc0deb00c_market_SELL">SELL</a>) && (head_price &lt; limit_price)))
-    } <b>else</b> <b>false</b>;
     <b>let</b> cancel_reason_option =
         <a href="market.md#0xc0deb00c_market_get_cancel_reason_option_for_market_order_or_swap">get_cancel_reason_option_for_market_order_or_swap</a>(
             self_match_taker_cancel, base_traded, max_base,

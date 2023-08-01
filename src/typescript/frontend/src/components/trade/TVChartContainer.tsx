@@ -317,6 +317,43 @@ export const TVChartContainer: React.FC<
         "volume.volume.color.0": RED_OPACITY_HALF,
         "volume.volume.color.1": GREEN_OPACITY_HALF,
       },
+      time_frames: [
+        // defaults
+        {
+          text: "5y",
+          resolution: "W" as ResolutionString,
+        },
+        {
+          text: "1y",
+          resolution: "D" as ResolutionString,
+        },
+        {
+          text: "6M",
+          resolution: "120" as ResolutionString,
+        },
+        {
+          text: "3M",
+          resolution: "60" as ResolutionString,
+        },
+        {
+          text: "1M",
+          resolution: "30" as ResolutionString,
+        },
+        {
+          text: "5D",
+          resolution: "5" as ResolutionString,
+        },
+        {
+          text: "1D",
+          resolution: "1" as ResolutionString,
+        },
+        {
+          text: "1000y", // custom ALL timeframe
+          resolution: "60" as ResolutionString, // may want to specify a different resolution here for server load purposes
+          description: "All",
+          title: "All",
+        },
+      ],
     };
 
     tvWidget.current = new widget(widgetOptions);

@@ -4,7 +4,7 @@ module econia_faucet::example_usdc {
 
     struct ExampleUSDC {}
 
-    const NAME: vector<u8> = b"Example USD coin";
+    const NAME: vector<u8> = b"Example USD Coin";
     const SYMBOL: vector<u8> = b"eUSDC";
     const DECIMALS: u8 = 6;
     const MONITOR_SUPPLY: bool = false;

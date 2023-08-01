@@ -170,8 +170,8 @@ def start():
     dump_txns()
 
     input("\n\nPress enter to place limit orders with Account A.")
-    # Bid to purchase 1 whole APT at a price of 1 whole USDC per lot!
-    # = $1000/APT since there are 1000 lots in a whole APT & 1 tick = 0.001 USDC
+    # Bid to purchase 1 whole eAPT at a price of 1 whole eUSDC per lot!
+    # = $1000/eAPT since there are 1000 lots in a whole eAPT & 1 tick = 0.001 USDC
     buy_base_lots = 1 * (10**3)
     buy_ticks_per_lot = 1 * (10**3)
     place_limit_order(
@@ -183,8 +183,8 @@ def start():
     report_place_limit_order_event(
         list(filter(lambda ev: ev["data"]["side"] == Side.BID, events))[0]
     )
-    # Ask to sell 1 whole APT at a price of 2 whole USDC per lot!
-    # = $2000/APT since there are 1000 lots in a whole APT & 1 tick = 0.001 USDC
+    # Ask to sell 1 whole eAPT at a price of 2 whole eUSDC per lot!
+    # = $2000/eAPT since there are 1000 lots in a whole eAPT & 1 tick = 0.001 USDC
     sell_base_lots = 1 * (10**3)
     sell_ticks_per_lot = 2 * (10**3)
     place_limit_order(

@@ -40,12 +40,24 @@ const Row: React.FC<{
     baseCoinDecimals: BigNumber(marketData.base?.decimals || 0),
   });
 
+  const barPercentage = (level.size * 100) / highestSize;
+  const barColor =
+    type === "bid" ? "rgba(110, 213, 163, 30%)" : "rgba(213, 110, 110, 30%)";
+
   return (
     <div
       className="relative flex h-6 cursor-pointer items-center justify-between py-[1px] hover:ring-1 hover:ring-neutral-600"
       onClick={() => {
         setType(type === "ask" ? "buy" : "sell");
         setPrice(price.toString());
+      }}
+      style={{
+        background: `linear-gradient(
+          to left,
+          ${barColor},
+          ${barColor} ${barPercentage}%,
+          transparent ${barPercentage}%
+        )`,
       }}
     >
       <div
@@ -58,14 +70,6 @@ const Row: React.FC<{
       <div className="z-10 mr-4 py-0.5 font-roboto-mono text-xs text-white">
         {size.toPrecision(4)}
       </div>
-      <div
-        className={`absolute right-0 z-0 h-full opacity-30 ${
-          type === "ask" ? "bg-red" : "bg-green"
-        }`}
-        // dynamic taillwind?
-
-        style={{ width: `${(100 * level.size) / highestSize}%` }}
-      ></div>
     </div>
   );
 };
@@ -111,7 +115,7 @@ export function OrderbookTable({
     );
   }, [data]);
 
-  if (isLoading) {
+  if (isLoading || data == null) {
     return (
       <div className="flex h-full flex-col items-center justify-center text-sm font-light uppercase text-neutral-500">
         Loading...
@@ -163,15 +167,18 @@ export function OrderbookTable({
       <div className="scrollbar-none relative grow overflow-y-auto">
         <div className="absolute w-full">
           {/* ASK */}
-          {data?.asks.map((level) => (
-            <Row
-              level={level}
-              type={"ask"}
-              key={`ask-${level.price}-${level.size}`}
-              highestSize={highestSize}
-              marketData={marketData}
-            />
-          ))}
+          {data.asks
+            .slice()
+            .reverse()
+            .map((level) => (
+              <Row
+                level={level}
+                type={"ask"}
+                key={`ask-${level.price}-${level.size}`}
+                highestSize={highestSize}
+                marketData={marketData}
+              />
+            ))}
           {/* SPREAD */}
           <div
             className="flex items-center justify-between border-y border-neutral-600"
@@ -191,7 +198,7 @@ export function OrderbookTable({
             </div>
           </div>
           {/* BID */}
-          {data?.bids.map((level) => (
+          {data.bids.map((level) => (
             <Row
               level={level}
               type={"bid"}

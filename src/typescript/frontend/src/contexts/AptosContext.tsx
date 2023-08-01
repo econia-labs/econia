@@ -54,10 +54,16 @@ export function AptosContextProvider({ children }: PropsWithChildren) {
           }),
         };
       }
+
       const res = await aptosSignAndSubmitTransaction(transaction, options);
-      await aptosClient.waitForTransaction(res.hash, { checkSuccess: true });
-      toast.success("Transaction confirmed");
-      return res;
+      // taken from https://github.com/aptos-labs/aptos-wallet-adapter/tree/main/packages/wallet-adapter-react#signandsubmittransactionpayload
+      try {
+        await aptosClient.waitForTransaction(res?.hash || "");
+        toast.success("Transaction confirmed");
+      } catch (error) {
+        toast.error("Transaction failed");
+        console.error(error);
+      }
     },
     [aptosSignAndSubmitTransaction, aptosClient],
   );

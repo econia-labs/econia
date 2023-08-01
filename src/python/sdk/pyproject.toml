@@ -1,14 +1,15 @@
 [tool.poetry]
 name = "econia-sdk"
-version = "0.1.0"
+version = "1.0.2"
 description = ""
-authors = ["qdrs <qdrs@proton.me>"]
+authors = ["Econia Labs <developers@econialabs.com>"]
 readme = "README.md"
 packages = [{ include = "econia_sdk" }]
 
 [tool.poetry.dependencies]
 aptos-sdk = "^0.5.1"
-python = "^3.11"
+python = "^3.8"
+autoflake = "^2.2.0"
 
 [tool.poetry.scripts]
 trade = "examples.trade:start"

@@ -128,7 +128,7 @@ ECONIA_ADDR = (
 )  # See https://econia.dev/ for up-to-date per-chain addresses
 FAUCET_ADDR = get_faucet_address()  # See (and deploy): /econia/src/move/faucet
 COIN_TYPE_EAPT = f"{FAUCET_ADDR}::example_apt::ExampleAPT"
-COIN_TYPE_USDC = f"{FAUCET_ADDR}::example_usdc::ExampleUSDC"
+COIN_TYPE_EUSDC = f"{FAUCET_ADDR}::example_usdc::ExampleUSDC"
 NODE_URL = get_aptos_node_url()
 FAUCET_URL = get_aptos_faucet_url()
 
@@ -292,7 +292,7 @@ def place_market_order(
     calldata = place_market_order_user_entry(
         ECONIA_ADDR,
         TypeTag(StructTag.from_str(COIN_TYPE_EAPT)),
-        TypeTag(StructTag.from_str(COIN_TYPE_USDC)),
+        TypeTag(StructTag.from_str(COIN_TYPE_EUSDC)),
         market_id,
         ECONIA_ADDR,
         direction,
@@ -317,7 +317,7 @@ def place_limit_order(
     calldata = place_limit_order_user_entry(
         ECONIA_ADDR,
         TypeTag(StructTag.from_str(COIN_TYPE_EAPT)),
-        TypeTag(StructTag.from_str(COIN_TYPE_USDC)),
+        TypeTag(StructTag.from_str(COIN_TYPE_EUSDC)),
         market_id,
         ECONIA_ADDR,
         direction,
@@ -401,7 +401,7 @@ def setup_new_account(
     calldata = register_market_account(
         ECONIA_ADDR,
         TypeTag(StructTag.from_str(COIN_TYPE_EAPT)),
-        TypeTag(StructTag.from_str(COIN_TYPE_USDC)),
+        TypeTag(StructTag.from_str(COIN_TYPE_EUSDC)),
         market_id,
         0,
     )
@@ -429,18 +429,18 @@ def setup_new_account(
     )
 
     # Deposit "eUSDC"
-    tusdc_subunits = quote_wholes * (10**6)
+    eusdc_subunits = quote_wholes * (10**6)
     calldata = deposit_from_coinstore(
         ECONIA_ADDR,
-        TypeTag(StructTag.from_str(COIN_TYPE_USDC)),
+        TypeTag(StructTag.from_str(COIN_TYPE_EUSDC)),
         market_id,
         0,
-        tusdc_subunits,
+        eusdc_subunits,
     )
     exec_txn(
         client,
         calldata,
-        f"Deposit {tusdc_subunits/(10**6)} eUSDC to market account",
+        f"Deposit {eusdc_subunits/(10**6)} eUSDC to market account",
     )
 
     mkt_account = get_market_account(viewer, account.account_address, market_id, 0)
@@ -471,7 +471,7 @@ def fund_USDC(account: Account, wholes: int):
     calldata = EntryFunction(
         ModuleId.from_str(f"{FAUCET_ADDR}::faucet"),  # module
         "mint",  # funcname
-        [TypeTag(StructTag.from_str(COIN_TYPE_USDC))],  # generics
+        [TypeTag(StructTag.from_str(COIN_TYPE_EUSDC))],  # generics
         [encoder(wholes * (10**6), Serializer.u64)],  # arguments
     )
     return exec_txn(
@@ -486,7 +486,7 @@ def setup_market(faucet_client: FaucetClient, viewer: EconiaViewer) -> int:
     tick_size = 10 ** (6 - 3)  # eUSDC has 6 decimals, want 1/1000th granularity
     min_size = 1
     market_id = get_market_id_base_coin(
-        viewer, COIN_TYPE_EAPT, COIN_TYPE_USDC, lot_size, tick_size, min_size
+        viewer, COIN_TYPE_EAPT, COIN_TYPE_EUSDC, lot_size, tick_size, min_size
     )
     if market_id == None:
         account_XCH = Account.generate()
@@ -499,7 +499,7 @@ def setup_market(faucet_client: FaucetClient, viewer: EconiaViewer) -> int:
         calldata = register_market_base_coin_from_coinstore(
             ECONIA_ADDR,
             TypeTag(StructTag.from_str(COIN_TYPE_EAPT)),
-            TypeTag(StructTag.from_str(COIN_TYPE_USDC)),
+            TypeTag(StructTag.from_str(COIN_TYPE_EUSDC)),
             TypeTag(StructTag.from_str(COIN_TYPE_APT)),
             lot_size,
             tick_size,
@@ -511,7 +511,7 @@ def setup_market(faucet_client: FaucetClient, viewer: EconiaViewer) -> int:
             "Create a new market",
         )
         market_id = get_market_id_base_coin(
-            viewer, COIN_TYPE_EAPT, COIN_TYPE_USDC, lot_size, tick_size, min_size
+            viewer, COIN_TYPE_EAPT, COIN_TYPE_EUSDC, lot_size, tick_size, min_size
         )
         events = get_market_registration_events(viewer)
         report_market_creation_event(

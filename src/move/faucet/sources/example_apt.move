@@ -4,7 +4,7 @@ module econia_faucet::example_apt {
 
     struct ExampleAPT {}
 
-    const NAME: vector<u8> = b"Example Aptos";
+    const NAME: vector<u8> = b"Example Aptos coin";
     const SYMBOL: vector<u8> = b"eAPT";
     const DECIMALS: u8 = 8;
     const MONITOR_SUPPLY: bool = false;

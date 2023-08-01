@@ -127,8 +127,8 @@ ECONIA_ADDR = (
     get_econia_address()
 )  # See https://econia.dev/ for up-to-date per-chain addresses
 FAUCET_ADDR = get_faucet_address()  # See (and deploy): /econia/src/move/faucet
-COIN_TYPE_TAPT = f"{FAUCET_ADDR}::test_apt::TestAPT"
-COIN_TYPE_USDC = f"{FAUCET_ADDR}::test_usdc::TestUSDC"
+COIN_TYPE_EAPT = f"{FAUCET_ADDR}::example_apt::ExampleAPT"
+COIN_TYPE_USDC = f"{FAUCET_ADDR}::example_usdc::ExampleUSDC"
 NODE_URL = get_aptos_node_url()
 FAUCET_URL = get_aptos_faucet_url()
 
@@ -216,8 +216,8 @@ def start():
     input(
         "\n\nPress enter to place market orders (buy and sell) with Account B."
     )
-    place_market_order(Side.BID, account_B, market_id, 500)  # Buy 0.5 tAPT
-    place_market_order(Side.ASK, account_B, market_id, 500)  # Sell 0.5 tAPT
+    place_market_order(Side.BID, account_B, market_id, 500)  # Buy 0.5 eAPT
+    place_market_order(Side.ASK, account_B, market_id, 500)  # Sell 0.5 eAPT
     fill_size = len(
         get_fill_events(viewer, account_B.account_address, market_id, 0)
     )
@@ -303,7 +303,7 @@ def place_market_order(
 ):
     calldata = place_market_order_user_entry(
         ECONIA_ADDR,
-        TypeTag(StructTag.from_str(COIN_TYPE_TAPT)),
+        TypeTag(StructTag.from_str(COIN_TYPE_EAPT)),
         TypeTag(StructTag.from_str(COIN_TYPE_USDC)),
         market_id,
         ECONIA_ADDR,
@@ -328,7 +328,7 @@ def place_limit_order(
 ):
     calldata = place_limit_order_user_entry(
         ECONIA_ADDR,
-        TypeTag(StructTag.from_str(COIN_TYPE_TAPT)),
+        TypeTag(StructTag.from_str(COIN_TYPE_EAPT)),
         TypeTag(StructTag.from_str(COIN_TYPE_USDC)),
         market_id,
         ECONIA_ADDR,
@@ -404,7 +404,7 @@ def setup_new_account(
     account = Account.generate()
     client = EconiaClient(NODE_URL, ECONIA_ADDR, account)
 
-    # Fund with APT, "tAPT" and "USDC"
+    # Fund with APT, "eAPT" and "eUSDC"
     faucet.fund_account(account.address(), 1 * (10**8))
     fund_APT(account, base_wholes)
     fund_USDC(account, quote_wholes)
@@ -412,7 +412,7 @@ def setup_new_account(
     # Register market account
     calldata = register_market_account(
         ECONIA_ADDR,
-        TypeTag(StructTag.from_str(COIN_TYPE_TAPT)),
+        TypeTag(StructTag.from_str(COIN_TYPE_EAPT)),
         TypeTag(StructTag.from_str(COIN_TYPE_USDC)),
         market_id,
         0,
@@ -425,22 +425,22 @@ def setup_new_account(
     account_apt_pre = mkt_account["base_available"] // 10**8
     account_usdc_pre = mkt_account["quote_available"] // 10**6
 
-    # Deposit "tAPT"
-    tapt_subunits = base_wholes * (10**8)
+    # Deposit "eAPT"
+    eapt_subunits = base_wholes * (10**8)
     calldata = deposit_from_coinstore(
         ECONIA_ADDR,
-        TypeTag(StructTag.from_str(COIN_TYPE_TAPT)),
+        TypeTag(StructTag.from_str(COIN_TYPE_EAPT)),
         market_id,
         0,
-        tapt_subunits,
+        eapt_subunits,
     )
     exec_txn(
         client,
         calldata,
-        f"Deposit {tapt_subunits/(10**8)} tAPT to market account",
+        f"Deposit {eapt_subunits/(10**8)} eAPT to market account",
     )
 
-    # Deposit "tUSDC"
+    # Deposit "eUSDC"
     tusdc_subunits = quote_wholes * (10**6)
     calldata = deposit_from_coinstore(
         ECONIA_ADDR,
@@ -452,7 +452,7 @@ def setup_new_account(
     exec_txn(
         client,
         calldata,
-        f"Deposit {tusdc_subunits/(10**6)} tUSDC to market account",
+        f"Deposit {tusdc_subunits/(10**6)} eUSDC to market account",
     )
 
     mkt_account = get_market_account(
@@ -461,8 +461,8 @@ def setup_new_account(
     print("New market account after deposit:")
     account_apt = mkt_account["base_available"] / 10**8
     account_usdc = mkt_account["quote_available"] / 10**6
-    print(f"  * tAPT: {account_apt_pre} -> {account_apt}")
-    print(f"  * tUSDC: {account_usdc_pre} -> {account_usdc}")
+    print(f"  * eAPT: {account_apt_pre} -> {account_apt}")
+    print(f"  * eUSDC: {account_usdc_pre} -> {account_usdc}")
     return account
 
 
@@ -470,14 +470,14 @@ def fund_APT(account: Account, wholes: int):
     calldata = EntryFunction(
         ModuleId.from_str(f"{FAUCET_ADDR}::faucet"),  # module
         "mint",  # funcname
-        [TypeTag(StructTag.from_str(COIN_TYPE_TAPT))],  # generics
+        [TypeTag(StructTag.from_str(COIN_TYPE_EAPT))],  # generics
         [encoder(wholes * (10**18), Serializer.u64)],  # arguments
     )
 
     return exec_txn(
         EconiaClient(NODE_URL, ECONIA_ADDR, account),
         calldata,
-        f"Mint {wholes/1.0} tAPT (yet to be deposited)",
+        f"Mint {wholes/1.0} eAPT (yet to be deposited)",
     )
 
 
@@ -491,16 +491,16 @@ def fund_USDC(account: Account, wholes: int):
     return exec_txn(
         EconiaClient(NODE_URL, ECONIA_ADDR, account),
         calldata,
-        f"Mint {wholes/1.0} tUSDC (yet to be deposited)",
+        f"Mint {wholes/1.0} eUSDC (yet to be deposited)",
     )
 
 
 def setup_market(faucet_client: FaucetClient, viewer: EconiaViewer) -> int:
-    lot_size = 10 ** (8 - 3)  # tAPT has 8 decimals, want 1/1000th granularity
-    tick_size = 10 ** (6 - 3)  # tUSDC has 6 decimals, want 1/1000th granularity
+    lot_size = 10 ** (8 - 3)  # eAPT has 8 decimals, want 1/1000th granularity
+    tick_size = 10 ** (6 - 3)  # eUSDC has 6 decimals, want 1/1000th granularity
     min_size = 1
     market_id = get_market_id_base_coin(
-        viewer, COIN_TYPE_TAPT, COIN_TYPE_USDC, lot_size, tick_size, min_size
+        viewer, COIN_TYPE_EAPT, COIN_TYPE_USDC, lot_size, tick_size, min_size
     )
     if market_id == None:
         account_XCH = Account.generate()
@@ -512,7 +512,7 @@ def setup_market(faucet_client: FaucetClient, viewer: EconiaViewer) -> int:
         print("Market does not exist yet, creating one...")
         calldata = register_market_base_coin_from_coinstore(
             ECONIA_ADDR,
-            TypeTag(StructTag.from_str(COIN_TYPE_TAPT)),
+            TypeTag(StructTag.from_str(COIN_TYPE_EAPT)),
             TypeTag(StructTag.from_str(COIN_TYPE_USDC)),
             TypeTag(StructTag.from_str(COIN_TYPE_APT)),
             lot_size,
@@ -525,7 +525,7 @@ def setup_market(faucet_client: FaucetClient, viewer: EconiaViewer) -> int:
             "Create a new market",
         )
         market_id = get_market_id_base_coin(
-            viewer, COIN_TYPE_TAPT, COIN_TYPE_USDC, lot_size, tick_size, min_size
+            viewer, COIN_TYPE_EAPT, COIN_TYPE_USDC, lot_size, tick_size, min_size
         )
         events = get_market_registration_events(viewer)
         report_market_creation_event(
@@ -559,7 +559,7 @@ def report_best_price_levels(viewer: EconiaViewer, market_id: int):
     print("CURRENT BEST PRICE LEVELS:")
     price_levels = get_price_levels(viewer, market_id)
     if len(price_levels["bids"]) == 0 and len(price_levels["asks"]) == 0:
-        print("There is no tAPT being bought or sold right now!")
+        print("There is no eAPT being bought or sold right now!")
         return
 
     if len(price_levels["bids"]) != 0:
@@ -610,8 +610,8 @@ def report_place_limit_order_event(event: dict):
     print(f"  * User address: {user_addr}")
     print(f"  * Order ID: {order_id}")
     print(f"  * Side: {positioning} {positioning_tip}")
-    print(f"  * Price: {ticks_price} tUSDC ticks per tAPT lot")
-    print(f"  * Size: {size_available} available tAPT lots / {size_original}")
+    print(f"  * Price: {ticks_price} eUSDC ticks per eAPT lot")
+    print(f"  * Size: {size_available} available eAPT lots / {size_original}")
 
 
 def report_fill_events(fill_events: list[dict]):

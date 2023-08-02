@@ -1,3 +1,6 @@
+# pdoc build files
+docs/
+
 # mypy
 .mypy_cache/
 .dmypy.json
@@ -78,6 +81,3 @@ MANIFEST
 # Translations
 *.mo
 *.pot
-
-# pdoc build files
-docs/

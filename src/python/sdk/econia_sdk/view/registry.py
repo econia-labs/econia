@@ -185,7 +185,7 @@ def has_recognized_market_base_coin_by_type(
     """
     Wrapper for `has_recognized_market_base_coin()` with type
     parameters.
-    
+
     Parameters:
     * `base_coin_type`: Base asset coin type.
     * `quote_coin_type`: Quote asset coin type.
@@ -206,7 +206,7 @@ def has_recognized_market_base_generic_by_type(
     """
     Wrapper for `has_recognized_market_base_generic()` with quote
     type parameter.
-    
+
     Parameters:
     * `quote_coin_type`: Quote asset coin type.
     * `base_name_generic`: Generic base asset name.

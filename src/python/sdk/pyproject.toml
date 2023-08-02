@@ -11,11 +11,14 @@ aptos-sdk = "^0.5.1"
 autoflake = "^2.2.0"
 python = "^3.8"
 
-[tool.poetry.scripts]
-trade = "examples.trade:start"
+[tool.poetry.group.dev.dependencies]
+black = "^23.7.0"
 
 [tool.poetry.group.docs.dependencies]
 pdoc = "^14.0.0"
+
+[tool.poetry.scripts]
+trade = "examples.trade:start"
 
 [build-system]
 requires = ["poetry-core"]

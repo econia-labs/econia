@@ -41,7 +41,8 @@ const columnHelper = createColumnHelper<MarketWithStats>();
 
 export const SelectMarketContent: React.FC<{
   allMarketData: ApiMarket[];
-}> = ({ allMarketData }) => {
+  onSelectMarket?: (marketId: number) => void;
+}> = ({ allMarketData, onSelectMarket }) => {
   const router = useRouter();
   const { data: marketStats } = useAllMarketStats();
   const [filter, setFilter] = useState("");
@@ -303,9 +304,14 @@ export const SelectMarketContent: React.FC<{
                   <tr
                     className="h-24 cursor-pointer hover:bg-neutral-700"
                     key={row.id}
-                    onClick={() =>
-                      router.push(`/trade/${row.getValue("name")}`)
-                    }
+                    onClick={() => {
+                      // TODO clean up once ECO-327 is resolved
+                      if (onSelectMarket != null) {
+                        const marketId = row.original.marketId;
+                        onSelectMarket(marketId);
+                      }
+                      router.push(`/trade/${row.getValue("name")}`);
+                    }}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <td

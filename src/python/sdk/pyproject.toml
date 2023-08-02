@@ -13,6 +13,7 @@ python = "^3.8"
 
 [tool.poetry.scripts]
 trade = "examples.trade:start"
+market = "examples.market:start"
 
 [tool.poetry.group.docs.dependencies]
 pdoc = "^14.0.0"

@@ -8,11 +8,14 @@ packages = [{ include = "econia_sdk" }]
 
 [tool.poetry.dependencies]
 aptos-sdk = "^0.5.1"
-python = "^3.8"
 autoflake = "^2.2.0"
+python = "^3.8"
 
 [tool.poetry.scripts]
 trade = "examples.trade:start"
+
+[tool.poetry.group.docs.dependencies]
+pdoc = "^14.0.0"
 
 [build-system]
 requires = ["poetry-core"]

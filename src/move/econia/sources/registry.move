@@ -2480,12 +2480,41 @@ module econia::registry {
                 == option::none(), 0);
         assert!(get_market_id_base_coin<BC, QC>(
                     lot_size_2, tick_size_2, min_size_2) == option::none(), 0);
+        // Assert events.
+        let market_registration_events = event::emitted_events(
+            &borrow_global<Registry>(@econia).market_registration_events);
+        assert!(market_registration_events == vector[], 0);
         // Register markets.
         register_market_base_generic_internal<QC, UC>(
             base_name_generic, lot_size_1, tick_size_1, min_size_1,
             &underwriter_capability, assets::mint_test(fee));
         register_market_base_coin_internal<BC, QC, UC>(
             lot_size_2, tick_size_2, min_size_2, assets::mint_test(fee));
+        // Assert events.
+        market_registration_events = event::emitted_events(
+            &borrow_global<Registry>(@econia).market_registration_events);
+        assert!(market_registration_events == vector[
+            MarketRegistrationEvent{
+                market_id: 1,
+                base_type: type_info::type_of<GenericAsset>(),
+                base_name_generic,
+                quote_type: type_info::type_of<QC>(),
+                lot_size: lot_size_1,
+                tick_size: tick_size_1,
+                min_size: min_size_1,
+                underwriter_id: underwriter_id_generic
+            },
+            MarketRegistrationEvent{
+                market_id: 2,
+                base_type: type_info::type_of<BC>(),
+                base_name_generic: string::utf8(b""),
+                quote_type: type_info::type_of<QC>(),
+                lot_size: lot_size_2,
+                tick_size: tick_size_2,
+                min_size: min_size_2,
+                underwriter_id: NO_UNDERWRITER
+            },
+        ], 0);
         // Verify market info.
         assert!(get_market_info(1) == MarketInfoView{
             market_id: 1,
@@ -2511,8 +2540,47 @@ module econia::registry {
         }, 0);
         // Drop underwriter capability.
         drop_underwriter_capability_test(underwriter_capability);
+        // Assert events.
+        let recognized_market_events = event::emitted_events(
+            &borrow_global<RecognizedMarkets>(@econia).
+            recognized_market_events);
+        assert!(recognized_market_events == vector[], 0);
         // Set both as recognized markets.
         set_recognized_markets(econia, vector[1, 2]);
+        // Assert events.
+        recognized_market_events = event::emitted_events(
+            &borrow_global<RecognizedMarkets>(@econia).
+            recognized_market_events);
+        assert!(recognized_market_events == vector[
+            RecognizedMarketEvent{
+                trading_pair: TradingPair{
+                    base_type: type_info::type_of<GenericAsset>(),
+                    base_name_generic,
+                    quote_type: type_info::type_of<QC>()
+                },
+                recognized_market_info: option::some(RecognizedMarketInfo{
+                    market_id: 1,
+                    lot_size: lot_size_1,
+                    tick_size: tick_size_1,
+                    min_size: min_size_1,
+                    underwriter_id: underwriter_id_generic
+                })
+            },
+            RecognizedMarketEvent{
+                trading_pair: TradingPair{
+                    base_type: type_info::type_of<BC>(),
+                    base_name_generic: string::utf8(b""),
+                    quote_type: type_info::type_of<QC>()
+                },
+                recognized_market_info: option::some(RecognizedMarketInfo{
+                    market_id: 2,
+                    lot_size: lot_size_2,
+                    tick_size: tick_size_2,
+                    min_size: min_size_2,
+                    underwriter_id: NO_UNDERWRITER
+                })
+            },
+        ], 0);
         // Assert existence checks.
         assert!(
             has_recognized_market_base_generic_by_type<QC>(base_name_generic),
@@ -2573,6 +2641,29 @@ module econia::registry {
         }, 0);
         // Remove both recognized markets.
         remove_recognized_markets(econia, vector[1, 2]);
+        // Assert events.
+        recognized_market_events = event::emitted_events(
+            &borrow_global<RecognizedMarkets>(@econia).
+            recognized_market_events);
+        assert!(vector::length(&recognized_market_events) == 4, 0);
+        assert!(vector::pop_back(&mut recognized_market_events) ==
+            RecognizedMarketEvent{
+                trading_pair: TradingPair{
+                    base_type: type_info::type_of<BC>(),
+                    base_name_generic: string::utf8(b""),
+                    quote_type: type_info::type_of<QC>()
+                },
+            recognized_market_info: option::none()
+            }, 0);
+        assert!(vector::pop_back(&mut recognized_market_events) ==
+            RecognizedMarketEvent{
+                trading_pair: TradingPair{
+                    base_type: type_info::type_of<GenericAsset>(),
+                    base_name_generic,
+                    quote_type: type_info::type_of<QC>()
+                },
+            recognized_market_info: option::none()
+            }, 0);
         // Assert existence checks.
         assert!(
             !has_recognized_market_base_generic_by_type<QC>(base_name_generic),
@@ -2599,6 +2690,62 @@ module econia::registry {
             min_size: min_size_2,
             underwriter_id: NO_UNDERWRITER
         }, 0);
+        // Assert events.
+        market_registration_events = event::emitted_events(
+            &borrow_global<Registry>(@econia).market_registration_events);
+        assert!(vector::length(&market_registration_events) == 3, 0);
+        assert!(vector::pop_back(&mut market_registration_events) ==
+            MarketRegistrationEvent{
+                market_id: 3,
+                base_type: type_info::type_of<BC>(),
+                base_name_generic: string::utf8(b""),
+                quote_type: type_info::type_of<QC>(),
+                lot_size: lot_size_3,
+                tick_size: tick_size_3,
+                min_size: min_size_3,
+                underwriter_id: NO_UNDERWRITER
+            }, 0);
+        recognized_market_events = event::emitted_events(
+            &borrow_global<RecognizedMarkets>(@econia).
+            recognized_market_events);
+        assert!(vector::length(&recognized_market_events) == 5, 0);
+        assert!(vector::pop_back(&mut recognized_market_events) ==
+            RecognizedMarketEvent{
+                trading_pair: TradingPair{
+                    base_type: type_info::type_of<BC>(),
+                    base_name_generic: string::utf8(b""),
+                    quote_type: type_info::type_of<QC>()
+                },
+                recognized_market_info: option::some(RecognizedMarketInfo{
+                    market_id: 3,
+                    lot_size: lot_size_3,
+                    tick_size: tick_size_3,
+                    min_size: min_size_3,
+                    underwriter_id: NO_UNDERWRITER
+                })
+            }, 0);
+        // Set the second market as the recognized market, thus removing
+        // the third market as recognized, and assert event.
+        set_recognized_markets(econia, vector[2]);
+        recognized_market_events = event::emitted_events(
+            &borrow_global<RecognizedMarkets>(@econia).
+            recognized_market_events);
+        assert!(vector::length(&recognized_market_events) == 6, 0);
+        assert!(vector::pop_back(&mut recognized_market_events) ==
+            RecognizedMarketEvent{
+                trading_pair: TradingPair{
+                    base_type: type_info::type_of<BC>(),
+                    base_name_generic: string::utf8(b""),
+                    quote_type: type_info::type_of<QC>()
+                },
+                recognized_market_info: option::some(RecognizedMarketInfo{
+                    market_id: 2,
+                    lot_size: lot_size_2,
+                    tick_size: tick_size_2,
+                    min_size: min_size_2,
+                    underwriter_id: NO_UNDERWRITER
+                })
+            }, 0);
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

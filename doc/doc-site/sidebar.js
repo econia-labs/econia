@@ -79,6 +79,7 @@ module.exports = {
             ]
         },
         'security',
-        'logo'
+        'logo',
+        'glossary'
     ]
 }

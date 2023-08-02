@@ -1,8 +1,7 @@
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import { useQuery } from "@tanstack/react-query";
 import BigNumber from "bignumber.js";
-import { useRouter } from "next/router";
-import React, { useState } from "react";
+import { useState } from "react";
 
 import { useAptos } from "@/contexts/AptosContext";
 import { API_URL } from "@/env";
@@ -76,7 +75,6 @@ export const StatsBar: React.FC<{
   selectedMarket: ApiMarket;
 }> = ({ allMarketData, selectedMarket }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const router = useRouter();
   const { coinListClient } = useAptos();
 
   const { data } = useQuery(

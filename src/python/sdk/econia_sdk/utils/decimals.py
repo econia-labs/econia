@@ -53,5 +53,15 @@ def get_min_quote_per_base(
     smallest_decimal_size_quote: float,
 ) -> float:
     """
+    Returns the minimum units of quote that one can obtain for a unit of
+    base, given the granularity of base and granularity of quote. This
+    can be thought of as price granularity--how much the price must move
+    by in order to move at all. If the price granularity is 10 USDC for
+    example, then only prices divisible by 10 are expressible: $10/unit,
+    $20/unit, $30/unit, any so on.
+
+    Parameters:
+    * `smallest_decimal_size_base`: The decimal size of one lot of base.
+    * `smallest_decimal_size_quote`: The decimal size of one tick of quote.
     """
     return (1/smallest_decimal_size_base) * smallest_decimal_size_quote

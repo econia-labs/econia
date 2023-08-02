@@ -20,6 +20,8 @@ Econia Move source code adheres to [Semantic Versioning] and [Keep a Changelog] 
 
 ### Deprecated
 
+- [`market::MakerEvent`](https://github.com/econia-labs/econia/blob/v4.0.2-audited/src/move/econia/sources/market.move#L523) ([#321]).
+- [`market::OrderBook.maker_events`](https://github.com/econia-labs/econia/blob/v4.0.2-audited/src/move/econia/sources/market.move#L585) ([#321]).
 - [`market::OrderBook.taker_events`](https://github.com/econia-labs/econia/blob/v4.0.2-audited/src/move/econia/sources/market.move#L587) ([#321]).
 - [`market::Orders`](https://github.com/econia-labs/econia/blob/v4.0.2-audited/src/move/econia/sources/market.move#L3337) ([#301]).
 - [`market::TakerEvent`](https://github.com/econia-labs/econia/blob/v4.0.2-audited/src/move/econia/sources/market.move#L600) ([#321]).

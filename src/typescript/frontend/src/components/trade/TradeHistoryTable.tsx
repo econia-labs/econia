@@ -102,25 +102,27 @@ export const TradeHistoryTable: React.FC<{
           </td>
         </tr>
         {isLoading || !data ? (
-          <tr>
-            {table.getAllColumns().map((column, i) => (
-              <td
-                className={`text-xs ${
-                  i === 0
-                    ? "pl-4 text-left"
-                    : i === 1
-                    ? "text-left"
-                    : "pr-4 text-right"
-                }`}
-                key={column.id}
-              >
-                {/* wrapping div to give some space between skeleton elements */}
-                <div className={"px-1"}>
-                  <Skeleton />
-                </div>
-              </td>
-            ))}
-          </tr>
+          <>
+            {/* temporarily removing skeletong to help UX and reduce glitchyness. see: ECO-230 */}
+            {/* <tr>
+              {table.getAllColumns().map((column, i) => (
+                <td
+                  className={`text-xs ${
+                    i === 0
+                      ? "pl-4 text-left"
+                      : i === 1
+                      ? "text-left"
+                      : "pr-4 text-right"
+                  }`}
+                  key={column.id}
+                >
+                  <div className={"px-1"}>
+                    <Skeleton />
+                  </div>
+                </td>
+              ))}
+            </tr> */}
+          </>
         ) : data.length === 0 ? (
           <tr>
             <td colSpan={7}>

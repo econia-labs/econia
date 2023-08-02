@@ -153,25 +153,27 @@ export const OrdersTable: React.FC<{
               </td>
             </tr>
           ) : isLoading || !data ? (
-            <tr>
-              {table.getAllColumns().map((column, i) => (
-                <td
-                  className={`${
-                    i === 0
-                      ? "pl-4 text-left text-neutral-500"
-                      : i === 6
-                      ? ""
-                      : ""
-                  }`}
-                  key={column.id}
-                >
-                  {/* wrapping div to give some space between skeleton elements */}
-                  <div className={"pr-3"}>
-                    <Skeleton />
-                  </div>
-                </td>
-              ))}
-            </tr>
+            <>
+              {/* temporarily removing skeletong to help UX and reduce glitchyness. see: ECO-230 */}
+              {/* <tr>
+                {table.getAllColumns().map((column, i) => (
+                  <td
+                    className={`${
+                      i === 0
+                        ? "pl-4 text-left text-neutral-500"
+                        : i === 6
+                        ? ""
+                        : ""
+                    }`}
+                    key={column.id}
+                  >
+                    <div className={"pr-3"}>
+                      <Skeleton />
+                    </div>
+                  </td>
+                ))}
+              </tr> */}
+            </>
           ) : data.length === 0 ? (
             <tr>
               <td colSpan={7}>

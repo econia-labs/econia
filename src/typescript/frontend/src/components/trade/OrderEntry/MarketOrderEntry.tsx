@@ -63,19 +63,19 @@ export const MarketOrderEntry: React.FC<{
     );
 
     // validate Lot size
-    if (rawValueSize % BigInt(marketData.lot_size) == BigInt(0)) {
+    if (rawValueSize % BigInt(marketData.lot_size) != BigInt(0)) {
       toast.info("Invalid lot size");
       return;
     }
     // validate min size
-    if (rawValueSize >= BigInt(marketData.min_size)) {
+    if (rawValueSize <= BigInt(marketData.min_size)) {
       toast.info("Invalid min size");
       return;
     }
 
     // market sell -- make sure user has enough base balance
     if (orderSide === "ask") {
-      const isValid = rawBaseBalance >= BigInt(values.size); // is gte fine?
+      const isValid = rawBaseBalance >= rawValueSize; // is gte fine?
       if (!isValid) {
         toast.info("Insufficient base balance");
         return;

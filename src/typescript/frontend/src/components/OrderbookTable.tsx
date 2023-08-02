@@ -154,35 +154,31 @@ export function OrderbookTable({
       </div>
       {/* bids ask spread scrollable container */}
       <div className="scrollbar-none relative grow overflow-y-auto">
-        {isLoading && (
+        {isLoading ? (
           <div className="absolute w-full">
             {Array.from({ length: 60 }, (_, i) => (
               <div
                 className="relative flex h-6 w-full cursor-pointer items-center justify-between py-[1px] hover:ring-1 hover:ring-neutral-600"
                 key={"skeleton-" + i}
               >
-                <div
-                  className={`z-10 ml-4 w-20 text-right font-roboto-mono text-xs`}
+                <Skeleton
+                  containerClassName={`z-10 ml-2 font-roboto-mono text-xs text-left`}
                   style={{
-                    width: `${80 + (i % 2 == 0 ? 10 : -10)}px`,
+                    width: `${i % 2 == 0 ? 90 : 70}px`,
                   }}
-                >
-                  <Skeleton />
-                </div>
-                <div
-                  className="z-10 mr-4 w-20 py-0.5 font-roboto-mono text-xs text-white"
+                />
+                <Skeleton
+                  containerClassName="z-10 mr-2 py-0.5 font-roboto-mono text-xs text-white text-right"
                   style={{
-                    width: `${80 + (i % 2 == 1 ? 10 : -10)}px`,
+                    width: `${i % 2 == 0 ? 90 : 70}px`,
                   }}
-                >
-                  <Skeleton />
-                </div>
+                />
+
                 <div className={`absolute right-0 z-0 h-full opacity-30`}></div>
               </div>
             ))}
           </div>
-        )}
-        {!isLoading && (
+        ) : (
           <div className="absolute w-full">
             {/* ASK */}
             {data?.asks.map((level) => (

@@ -16,6 +16,7 @@ import { useAptos } from "@/contexts/AptosContext";
 import { type ApiMarket, type ApiStats } from "@/types/api";
 import { formatNumber, plusMinus } from "@/utils/formatter";
 import { TypeTag } from "@/utils/TypeTag";
+import Skeleton from "react-loading-skeleton";
 
 import { useAllMarketData, useAllMarketPrices, useAllMarketStats } from ".";
 const columnHelper = createColumnHelper<ApiMarket>();
@@ -350,7 +351,7 @@ const TwentyFourHourChangeCell = ({ change = 0 }: { change: number }) => {
       }`}
     >
       {plusMinus(change)}
-      {formatNumber(change * 100, 2) ?? "-"}%
+      {formatNumber(change * 100, 2) ?? <Skeleton />}%
     </span>
   );
 };

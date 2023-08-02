@@ -20,7 +20,7 @@ export const formatNumber = (
   digits: number,
   signDisplay: Intl.NumberFormatOptions["signDisplay"] = "never",
 ): undefined | string => {
-  if (!num) return undefined;
+  if (num == undefined) return undefined;
   const lang =
     typeof window === "undefined"
       ? "en"

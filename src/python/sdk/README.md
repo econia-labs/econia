@@ -15,10 +15,16 @@ poetry run black econia_sdk
 poetry run isort econia_sdk
 ```
 
-To run the type checker, run
+To check types with mypy, run the following command:
 
 ```sh
 poetry run mypy --config-file=./mypy.ini
+```
+
+Run autoflake with the following command:
+
+```sh
+poetry run autoflake -i -r econia_sdk
 ```
 
 ## Documentation

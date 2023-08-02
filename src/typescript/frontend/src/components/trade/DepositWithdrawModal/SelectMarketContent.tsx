@@ -7,6 +7,7 @@ import {
   getFilteredRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+import { useRouter } from "next/router";
 import { useMemo, useState } from "react";
 
 import { NotRecognizedIcon } from "@/components/icons/NotRecognizedIcon";
@@ -20,6 +21,7 @@ import { TypeTag } from "@/utils/TypeTag";
 import { useAllMarketStats } from ".";
 
 const DEFAULT_TOKEN_ICON = "/tokenImages/default.png";
+const colWidths = [260, undefined, undefined, 120, 130] as const;
 
 type MarketWithStats = {
   marketId: number;
@@ -37,15 +39,10 @@ type MarketWithStats = {
 
 const columnHelper = createColumnHelper<MarketWithStats>();
 
-const TABLE_SPACING = {
-  margin: "-mx-6 -mb-6",
-  paddingLeft: "pl-6",
-  paddingRight: "pr-6",
-};
-
 export const SelectMarketContent: React.FC<{
   allMarketData: ApiMarket[];
 }> = ({ allMarketData }) => {
+  const router = useRouter();
   const { data: marketStats } = useAllMarketStats();
   const [filter, setFilter] = useState("");
   const { coinListClient } = useAptos();
@@ -103,18 +100,33 @@ export const SelectMarketContent: React.FC<{
     });
   }, [allMarketData, coinListClient, marketStats]);
 
+  const priceFmtr = Intl.NumberFormat("en", {
+    notation: "compact",
+    compactDisplay: "short",
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
+
+  const volFmtr = Intl.NumberFormat("en", {
+    notation: "compact",
+    compactDisplay: "short",
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
+
   const columns = useMemo(
     () => [
       columnHelper.accessor("name", {
+        header: () => <div className="pl-8">Name</div>,
         cell: (info) => {
           const { baseAssetIcon, quoteAssetIcon } = info.row.original;
           return (
-            <div className="flex align-middle">
+            <div className="flex pl-8">
               <MarketIconPair
                 quoteAssetIcon={quoteAssetIcon}
                 baseAssetIcon={baseAssetIcon}
               />
-              <div className={`ml-7 min-w-[12em]`}>{info.getValue()}</div>
+              <p className="my-auto ml-2">{info.getValue()}</p>
             </div>
           );
         },
@@ -122,26 +134,20 @@ export const SelectMarketContent: React.FC<{
       columnHelper.accessor("price", {
         cell: (info) => {
           const price = info.getValue();
-          const { quoteSymbol } = info.row.original;
-          const formatter = Intl.NumberFormat("en", {
-            notation: "compact",
-            compactDisplay: "short",
-            minimumFractionDigits: 1,
-            maximumFractionDigits: 1,
-          });
-          return price != null ? (
-            <div className="min-w-[8em] text-sm">
-              {price >= 10_000 && formatter.format(price).replace("K", "k")}
-              {price < 10_000 &&
-                price.toLocaleString("en", {
+          if (price == null) {
+            return "-";
+          }
+
+          const priceStr =
+            price < 10_000
+              ? price.toLocaleString("en", {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
-                })}{" "}
-              {quoteSymbol}
-            </div>
-          ) : (
-            <div className="min-w-[8em] text-sm">-</div>
-          );
+                })
+              : priceFmtr.format(price).replace("K", "k");
+          const { quoteSymbol } = info.row.original;
+
+          return `${priceStr} ${quoteSymbol}`;
         },
       }),
       columnHelper.accessor("baseVolume", {
@@ -150,52 +156,43 @@ export const SelectMarketContent: React.FC<{
           // TODO: add quote volume
           const volume = info.getValue();
           const { baseSymbol } = info.row.original;
-          const formatter = Intl.NumberFormat("en", {
-            notation: "compact",
-            compactDisplay: "short",
-            minimumFractionDigits: 1,
-            maximumFractionDigits: 1,
-          });
-          return (
-            <div className={`min-w-[8em] text-sm`}>
-              {volume != null
-                ? formatter.format(volume).replace("K", "k")
-                : "-"}{" "}
-              {baseSymbol}
-            </div>
-          );
+          return `${
+            volume != null ? volFmtr.format(volume).replace("K", "k") : "-"
+          } ${baseSymbol}`;
         },
       }),
       columnHelper.accessor("twentyFourHourChange", {
         header: "24h change",
         cell: (info) => {
           const change = info.getValue();
-          return change != null ? (
-            <span
-              className={`ml-1 inline-block min-w-[10em] text-center ${
-                change < 0 ? "text-red" : "text-green"
-              }`}
-            >
+          if (change == null) {
+            return "-";
+          }
+          return (
+            <p className={change < 0 ? "text-red" : "text-green"}>
               {plusMinus(change)}
               {formatNumber(change * 100, 2)}%
-            </span>
-          ) : (
-            <span>-</span>
+            </p>
           );
         },
       }),
       columnHelper.accessor("recognized", {
+        header: () => <div className="pr-8 text-right">Recognized</div>,
         cell: (info) => {
           const isRecognized = info.getValue();
-          return isRecognized ? (
-            <RecognizedIcon className="h-5 w-5" />
-          ) : (
-            <NotRecognizedIcon className="h-5 w-5" />
+          return (
+            <div className="flex pr-8">
+              {isRecognized ? (
+                <RecognizedIcon className="m-auto h-5 w-5" />
+              ) : (
+                <NotRecognizedIcon className="m-auto h-5 w-5" />
+              )}
+            </div>
           );
         },
       }),
     ],
-    [],
+    [priceFmtr, volFmtr],
   );
 
   const table = useReactTable({
@@ -204,6 +201,7 @@ export const SelectMarketContent: React.FC<{
     getFilteredRowModel: getFilteredRowModel(),
     getCoreRowModel: getCoreRowModel(),
   });
+
   return (
     <div className="flex w-full flex-col items-center">
       <Tab.Group
@@ -228,7 +226,7 @@ export const SelectMarketContent: React.FC<{
               value={filter}
             />
           </div>
-          <Tab.List className="mb-9 mt-4 w-full">
+          <Tab.List className="mt-4 w-full">
             <Tab className="w-1/2 border-b border-b-neutral-600 py-4 text-center font-jost font-bold text-neutral-600 outline-none ui-selected:border-b-white ui-selected:text-white">
               Recognized
             </Tab>
@@ -237,238 +235,96 @@ export const SelectMarketContent: React.FC<{
             </Tab>
           </Tab.List>
         </div>
-        <Tab.Panels className="w-full bg-sky-800">
-          <div className="scrollbar-none w-full px-2">
-            <table className="w-full">
-              <thead>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <tr
-                    className="text-left font-roboto-mono text-sm uppercase text-neutral-500 [&>th]:font-light"
-                    key={headerGroup.id}
-                  >
-                    {headerGroup.headers.map((header, i) => {
-                      if (header.id === "name") {
-                        if (
-                          filter == "" &&
-                          header.column.getFilterValue() != undefined
-                        ) {
-                          header.column.setFilterValue(undefined);
-                        }
-                        if (
-                          filter != "" &&
-                          header.column.getFilterValue() != filter
-                        ) {
-                          header.column.setFilterValue(filter);
-                        }
+        <Tab.Panels className="w-full">
+          <table className="mt-4 w-full table-fixed">
+            <thead>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <tr className="h-8" key={headerGroup.id}>
+                  {headerGroup.headers.map((header, i) => {
+                    if (header.id === "name") {
+                      if (
+                        filter == "" &&
+                        header.column.getFilterValue() != undefined
+                      ) {
+                        header.column.setFilterValue(undefined);
                       }
+                      if (
+                        filter != "" &&
+                        header.column.getFilterValue() != filter
+                      ) {
+                        header.column.setFilterValue(filter);
+                      }
+                    }
 
-                      // recognized
-                      if (header.id === "recognized") {
-                        if (
-                          selectedTab === 0 &&
-                          header.column.getFilterValue() == undefined
-                        ) {
-                          header.column.setFilterValue(true);
-                        }
-                        if (
-                          selectedTab === 1 &&
-                          header.column.getFilterValue() == true
-                        ) {
-                          header.column.setFilterValue(undefined);
-                        }
+                    // recognized
+                    if (header.id === "recognized") {
+                      if (
+                        selectedTab === 0 &&
+                        header.column.getFilterValue() == undefined
+                      ) {
+                        header.column.setFilterValue(true);
                       }
-                      return (
-                        <th
-                          className={`${i === 0 ? "text-left" : ""} ${
-                            header.id === "recognized" ||
-                            (header.id === "24h_change" && "text-center")
-                          }
-                          ${i === 0 ? TABLE_SPACING.paddingLeft : ""}
-                          ${
-                            i === headerGroup.headers.length - 1
-                              ? TABLE_SPACING.paddingRight
-                              : ""
-                          } `}
-                          key={header.id}
-                        >
-                          {header.isPlaceholder
-                            ? null
-                            : flexRender(
-                                header.column.columnDef.header,
-                                header.getContext(),
-                              )}
-                        </th>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </thead>
-              <tbody>
+                      if (
+                        selectedTab === 1 &&
+                        header.column.getFilterValue() == true
+                      ) {
+                        header.column.setFilterValue(undefined);
+                      }
+                    }
+                    return (
+                      <th
+                        className={`text-left font-roboto-mono text-sm font-light uppercase text-neutral-500`}
+                        key={header.id}
+                        style={{ width: colWidths[i] }}
+                      >
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext(),
+                            )}
+                      </th>
+                    );
+                  })}
+                </tr>
+              ))}
+            </thead>
+            <tbody>
+              {allMarketData.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="">
-                    <div className="h-4"></div>
+                  <td colSpan={7}>
+                    <div className="flex h-[150px] flex-col items-center justify-center text-sm font-light uppercase text-neutral-500">
+                      No markets to show
+                    </div>
                   </td>
                 </tr>
-                {allMarketData.length === 0 ? (
-                  <tr>
-                    <td colSpan={7}>
-                      <div className="flex h-[150px] flex-col items-center justify-center text-sm font-light uppercase text-neutral-500">
-                        No markets to show
-                      </div>
-                    </td>
+              ) : (
+                table.getRowModel().rows.map((row) => (
+                  <tr
+                    className="h-24 cursor-pointer hover:bg-neutral-700"
+                    key={row.id}
+                    onClick={() =>
+                      router.push(`/trade/${row.getValue("name")}`)
+                    }
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <td
+                        className="text-left font-roboto-mono text-sm font-light text-white"
+                        key={cell.id}
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </td>
+                    ))}
                   </tr>
-                ) : (
-                  table.getRowModel().rows.map((row) => (
-                    <tr
-                      className="h-24 min-w-[780px] cursor-pointer px-6 text-left font-roboto-mono text-sm text-white hover:bg-neutral-700 [&>th]:font-light"
-                      key={row.id}
-                    >
-                      {row.getVisibleCells().map((cell, i) => (
-                        <td
-                          className={
-                            i === 0
-                              ? "text-left text-white"
-                              : i === 6
-                              ? `${
-                                  cell.getValue() === "open" ? "text-green" : ""
-                                }`
-                              : ""
-                          }
-                          key={cell.id}
-                        >
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext(),
-                          )}
-                        </td>
-                      ))}
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                ))
+              )}
+            </tbody>
+          </table>
         </Tab.Panels>
       </Tab.Group>
     </div>
   );
 };
-
-// row components
-// const MarketNameCell = ({ name }: { name: ApiMarket }) => {
-//   const DEFAULT_TOKEN_ICON = "/tokenImages/default.png";
-
-//   const { coinListClient } = useAptos();
-//   const baseAssetIcon = name.base
-//     ? coinListClient.getCoinInfoByFullName(
-//         TypeTag.fromApiCoin(name.base).toString(),
-//       )?.logo_url
-//     : DEFAULT_TOKEN_ICON;
-//   const quoteAssetIcon =
-//     coinListClient.getCoinInfoByFullName(
-//       TypeTag.fromApiCoin(name.quote).toString(),
-//     )?.logo_url ?? DEFAULT_TOKEN_ICON;
-//   return (
-//     <div className={`flex items-center text-base ${TABLE_SPACING.paddingLeft}`}>
-//       <MarketIconPair
-//         quoteAssetIcon={quoteAssetIcon}
-//         baseAssetIcon={baseAssetIcon}
-//       />
-//       <div className={`ml-7 min-w-[12em]`}>{name.name}</div>
-//     </div>
-//   );
-// };
-
-// const PriceCell = ({
-//   price,
-//   quoteAsset,
-// }: {
-//   price: number;
-//   quoteAsset: string;
-// }) => {
-//   const formatter = Intl.NumberFormat("en", {
-//     notation: "compact",
-//     compactDisplay: "short",
-//     minimumFractionDigits: 1,
-//     maximumFractionDigits: 1,
-//   });
-//   return (
-//     <div className="min-w-[8em] text-sm">
-//       {price >= 10_000 && formatter.format(price).replace("K", "k")}
-//       {price < 10_000 &&
-//         price.toLocaleString("en", {
-//           minimumFractionDigits: 2,
-//           maximumFractionDigits: 2,
-//         })}{" "}
-//       {quoteAsset}
-//     </div>
-//   );
-// };
-
-// const VolumeCell = ({
-//   volume,
-//   baseAsset,
-// }: {
-//   volume: number;
-//   baseAsset: string;
-// }) => {
-//   // is this ok? https://caniuse.com/mdn-javascript_builtins_intl_numberformat_numberformat_options_compactdisplay_parameter
-//   // reference: https://stackoverflow.com/a/60988355
-//   // also, people tend to use lower case 'k' but the formatter uses upper case 'K'
-//   const formatter = Intl.NumberFormat("en", {
-//     notation: "compact",
-//     compactDisplay: "short",
-//     minimumFractionDigits: 1,
-//     maximumFractionDigits: 1,
-//   });
-//   return (
-//     <div className="block">
-//       <div className={`min-w-[8em] text-sm`}>
-//         {formatter.format(volume).replace("K", "k")} {baseAsset}
-//       </div>
-//       <div className={`min-w-[6em] text-neutral-500`}>$1.5M</div>
-//     </div>
-//   );
-// };
-
-// const TwentyFourHourChangeCell = ({ change = 0 }: { change: number }) => {
-//   return (
-//     <span
-//       className={`ml-1 inline-block min-w-[10em] text-center ${
-//         change < 0 ? "text-red" : "text-green"
-//       }`}
-//     >
-//       {plusMinus(change)}
-//       {formatNumber(change * 100, 2)}%
-//     </span>
-//   );
-// };
-
-// const RecognizedCell = ({ isRecognized }: { isRecognized: boolean }) => {
-//   return (
-//     <div className={`flex justify-center  ${TABLE_SPACING.paddingRight}`}>
-//       {isRecognized ? (
-//         <RecognizedIcon className="h-5 w-5" />
-//       ) : (
-//         <NotRecognizedIcon className="h-5 w-5" />
-//       )}
-//     </div>
-//   );
-// };
-
-// // util
-// const getStatsByMarketId = (
-//   marketId: number,
-//   marketStats: ApiStats[] | undefined,
-// ) => {
-//   if (!marketStats) return undefined;
-//   return marketStats.find((stats) => stats.market_id === marketId);
-// };
-
-// const getMarketByMarketId = (
-//   marketId: number,
-//   markets: ApiMarket[] | undefined,
-// ) => {
-//   if (!markets) return undefined;
-//   return markets.find((market) => market.market_id === marketId);
-// };

@@ -1,6 +1,5 @@
 use db::{
-    EconiaDb,
-    models::coin::{Coin, NewCoin},
+    models::coin::{Coin, NewCoin}, establish_connection, create_coin,
 };
 use diesel::prelude::*;
 use helpers::{load_config, reset_tables};
@@ -10,10 +9,10 @@ mod helpers;
 #[test]
 fn test_create_coin() {
     let config = load_config();
-    let mut db = EconiaDb::establish(&config.database_url).unwrap();
+    let mut conn = establish_connection(&config.database_url).unwrap();
 
     // Delete all entries in the assets table before running tests.
-    reset_tables(&mut db);
+    reset_tables(&mut conn);
 
     let coin = NewCoin {
         account_address: "0x1",
@@ -24,11 +23,11 @@ fn test_create_coin() {
         decimals: 8,
     };
 
-    db.create_coin(&coin).unwrap();
+    create_coin(&mut conn, &coin).unwrap();
 
     // Query the assets table in the database.
     let db_coins = db::schema::coins::dsl::coins
-        .load::<Coin>(&mut *db)
+        .load::<Coin>(&mut conn)
         .expect("Could not query assets table.");
 
     // Assert that the assets table now has one entry.

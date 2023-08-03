@@ -3,7 +3,7 @@ use db::{
     models::{
         coin::NewCoin,
         market::{MarketRegistrationEvent, NewMarketRegistrationEvent},
-    }, EconiaDb,
+    }, create_coin, add_market_registration_event,
 };
 use diesel::prelude::*;
 use serde::Deserialize;
@@ -96,8 +96,9 @@ pub fn reset_tables(conn: &mut PgConnection) {
 }
 
 #[allow(dead_code)]
-pub fn setup_market(db: &mut EconiaDb) -> MarketRegistrationEvent {
-    let aptos_coin = db.create_coin(
+pub fn setup_market(conn: &mut PgConnection) -> MarketRegistrationEvent {
+    let aptos_coin = create_coin(
+        conn,
         &NewCoin {
             account_address: "0x1",
             module_name: "aptos_coin",
@@ -109,7 +110,8 @@ pub fn setup_market(db: &mut EconiaDb) -> MarketRegistrationEvent {
     )
     .unwrap();
 
-    let tusdc_coin = db.create_coin(
+    let tusdc_coin = create_coin(
+        conn,
         &NewCoin {
             account_address: "0x7c36a610d1cde8853a692c057e7bd2479ba9d5eeaeceafa24f125c23d2abf942",
             module_name: "test_usdc",
@@ -121,7 +123,8 @@ pub fn setup_market(db: &mut EconiaDb) -> MarketRegistrationEvent {
     )
     .unwrap();
 
-    db.add_market_registration_event(
+    add_market_registration_event(
+        conn,
         &NewMarketRegistrationEvent {
             market_id: &0.into(),
             time: Utc::now(),

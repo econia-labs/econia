@@ -1,15 +1,15 @@
-DROP TABLE recognized_market_events;
+drop table recognized_market_events;
 
-DROP TYPE market_event_type;
+drop type market_event_type;
 
-DROP TABLE recognized_markets;
+drop table recognized_markets;
 
-DROP TRIGGER register_market_trigger ON market_registration_events;
+drop trigger register_market_trigger on market_registration_events;
 
-DROP FUNCTION register_market;
+drop function register_market;
 
-DROP TABLE market_registration_events;
+drop table market_registration_events;
 
-DROP TABLE markets;
+drop table markets;
 
-DROP TABLE coins;
+drop table coins;

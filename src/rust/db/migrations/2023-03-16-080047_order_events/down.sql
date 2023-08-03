@@ -1,23 +1,22 @@
 -- TODO: need to finish this correctly
+drop table fills;
 
-DROP TABLE fills;
+drop trigger handle_taker_event_trigger on taker_events;
 
-DROP TRIGGER handle_taker_event_trigger ON taker_events;
+drop function handle_taker_event;
 
-DROP FUNCTION handle_taker_event;
+drop table taker_events;
 
-DROP TABLE taker_events;
+drop trigger handle_maker_event_trigger on maker_events;
 
-DROP TRIGGER handle_maker_event_trigger ON maker_events;
+drop function handle_maker_event;
 
-DROP FUNCTION handle_maker_event;
+drop table maker_events;
 
-DROP TABLE maker_events;
+drop type maker_event_type;
 
-DROP TYPE maker_event_type;
+drop table orders;
 
-DROP TABLE orders;
+drop type order_state;
 
-DROP TYPE order_state;
-
-DROP TYPE side;
+drop type side;

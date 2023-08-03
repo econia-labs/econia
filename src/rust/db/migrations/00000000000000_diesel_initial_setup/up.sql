@@ -15,24 +15,24 @@
 --
 -- SELECT diesel_manage_updated_at('users');
 -- ```
-CREATE OR REPLACE FUNCTION diesel_manage_updated_at (_tbl regclass)
-    RETURNS void
-    AS $$
-BEGIN
-    EXECUTE format('CREATE TRIGGER set_updated_at BEFORE UPDATE ON %s
+create or replace function diesel_manage_updated_at (_tbl regclass)
+    returns void
+    as $$
+begin
+    execute format('CREATE TRIGGER set_updated_at BEFORE UPDATE ON %s
                     FOR EACH ROW EXECUTE PROCEDURE diesel_set_updated_at()', _tbl);
-END;
+end;
 $$
-LANGUAGE plpgsql;
+language plpgsql;
 
-CREATE OR REPLACE FUNCTION diesel_set_updated_at ()
-    RETURNS TRIGGER
-    AS $$
-BEGIN
-    IF (NEW IS DISTINCT FROM OLD AND NEW.updated_at IS NOT DISTINCT FROM OLD.updated_at) THEN
-        NEW.updated_at := CURRENT_TIMESTAMP;
-    END IF;
-    RETURN NEW;
-END;
+create or replace function diesel_set_updated_at ()
+    returns trigger
+    as $$
+begin
+    if (NEW is distinct from OLD and new.updated_at is not distinct from old.updated_at) then
+        new.updated_at := current_timestamp;
+    end if;
+    return NEW;
+end;
 $$
-LANGUAGE plpgsql;
+language plpgsql;

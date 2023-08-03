@@ -235,14 +235,14 @@ export const SelectMarketContent: React.FC<{
                   {headerGroup.headers.map((header, i) => {
                     if (header.id === "name") {
                       if (
-                        filter == "" &&
+                        filter === "" &&
                         header.column.getFilterValue() != undefined
                       ) {
                         header.column.setFilterValue(undefined);
                       }
                       if (
-                        filter != "" &&
-                        header.column.getFilterValue() != filter
+                        filter !== "" &&
+                        header.column.getFilterValue() !== filter
                       ) {
                         header.column.setFilterValue(filter);
                       }
@@ -258,7 +258,7 @@ export const SelectMarketContent: React.FC<{
                       }
                       if (
                         selectedTab === 1 &&
-                        header.column.getFilterValue() == true
+                        header.column.getFilterValue() === true
                       ) {
                         header.column.setFilterValue(undefined);
                       }

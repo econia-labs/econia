@@ -32,7 +32,7 @@ export const BaseModal: React.FC<
         <div className="fixed inset-0 overflow-y-auto">
           <div className="flex min-h-full items-center justify-center p-4 text-center">
             <Dialog.Panel
-              className="w-full max-w-4xl transform border border-neutral-600 bg-black p-6 align-middle shadow-xl transition-all"
+              className="w-full max-w-4xl transform border border-neutral-600 bg-black align-middle shadow-xl transition-all"
               style={{
                 backgroundImage: `url(${bg.src})`,
               }}

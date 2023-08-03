@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import React, { useEffect } from "react";
+import React, { useMemo, useState } from "react";
 
 import { API_URL } from "@/env";
 import { type ApiMarket, type ApiStats } from "@/types/api";
@@ -28,13 +28,17 @@ export const DepositWithdrawModal: React.FC<{
   open: boolean;
   onClose: () => void;
 }> = ({ allMarketData, open, onClose }) => {
-  const [selectedMarket, setSelectedMarket] = React.useState<ApiMarket>();
-  const [step, setStep] = React.useState<Step>(Step.Initial);
-  useEffect(() => {
-    if (allMarketData.length > 0 && selectedMarket === undefined) {
-      setSelectedMarket(allMarketData[0]);
-    }
-  }, [allMarketData, selectedMarket]);
+  const [selectedMarketId, setSelectedMarketId] = useState<number>(
+    allMarketData[0].market_id,
+  );
+  const selectedMarket = useMemo(() => {
+    return allMarketData.find(
+      ({ market_id }) => market_id === selectedMarketId,
+    );
+  }, [selectedMarketId, allMarketData]);
+
+  const [step, setStep] = useState<Step>(Step.Initial);
+
   return (
     <BaseModal
       open={open}
@@ -59,9 +63,9 @@ export const DepositWithdrawModal: React.FC<{
       {step === Step.SelectMarket && (
         <SelectMarketContent
           allMarketData={allMarketData}
-          onSelectMarket={(market) => {
-            setSelectedMarket(market);
-            setStep(Step.Initial);
+          onSelectMarket={(marketId: number) => {
+            // TODO clean up once ECO-327 is resolved
+            setSelectedMarketId(marketId);
           }}
         />
       )}

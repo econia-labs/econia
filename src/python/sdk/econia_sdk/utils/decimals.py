@@ -1,6 +1,7 @@
 import math
+from decimal import Decimal
 
-def get_lot_size(smallest_decimal_unit: float, coin_decimals: int) -> int:
+def get_lot_size_integer(smallest_decimal_unit: str, coin_decimals: int) -> int:
     """
     Given a decimal representation of the smallest possible unit and the
     whole unit's decimals (e.g. ETH has 18 decimals), return the lot size.
@@ -11,9 +12,13 @@ def get_lot_size(smallest_decimal_unit: float, coin_decimals: int) -> int:
     * `coin_decimals`: The number of decimals one whole unit of the coin
       has (e.g. USDC has 6 decimals, ETH has 18).
     """
-    return math.ceil(10**(coin_decimals+math.log10(smallest_decimal_unit)))
+    smallest_decimal = Decimal(smallest_decimal_unit)
+    smallest_subunits = 10**(coin_decimals+math.log10(smallest_decimal))
+    if smallest_subunits < 1:
+        raise ValueError("Decimal unit too small to represent with 1 subunit")
+    return math.ceil(smallest_subunits)
 
-def get_tick_size(smallest_decimal_unit: float, coin_decimals: int) -> int:
+def get_tick_size_integer(smallest_decimal_unit: str, coin_decimals: int) -> int:
     """
     Given a decimal representation of the smallest possible unit and the
     whole unit's decimals (e.g. ETH has 18 decimals), return the tick size.
@@ -24,10 +29,10 @@ def get_tick_size(smallest_decimal_unit: float, coin_decimals: int) -> int:
     * `coin_decimals`: The number of decimals one whole unit of the coin
       has (e.g. USDC has 6 decimals, ETH has 18).
     """
-    return get_lot_size(smallest_decimal_unit, coin_decimals)
+    return get_lot_size_integer(smallest_decimal_unit, coin_decimals)
 
-def get_min_size(
-    smallest_decimal_size: float,
+def get_min_size_integer(
+    smallest_decimal_size: str,
     base_coin_decimals: int,
     lot_size: int
 ) -> int:
@@ -44,11 +49,14 @@ def get_min_size(
       base has (e.g. USDC has 6 decimals, ETH has 18).
     * `lot_size`: The size in subunits of one lot of base coin.
     """
-    smallest_subunits = smallest_decimal_size * (10 ** base_coin_decimals)
-    return math.ceil(smallest_subunits / lot_size)
+    smallest_decimal = Decimal(smallest_decimal_size)
+    smallest_subunits = (smallest_decimal * (10 ** base_coin_decimals)) / lot_size
+    if smallest_subunits < 0:
+        raise ValueError("Decimal size too small to represent with 1 lot")
+    return math.ceil(smallest_subunits)
 
 
-def get_min_quote_per_base(
+def get_min_quote_per_base_nominal(
     smallest_decimal_size_base: float,
     smallest_decimal_size_quote: float,
 ) -> float:

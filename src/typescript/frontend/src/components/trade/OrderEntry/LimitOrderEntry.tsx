@@ -17,6 +17,7 @@ import { OrderEntryInfo } from "./OrderEntryInfo";
 import { OrderEntryInputWrapper } from "./OrderEntryInputWrapper";
 import { toast } from "react-toastify";
 import { toRawCoinAmount } from "@/utils/coin";
+import { canBeBigInt } from "@/utils/formatter";
 
 type LimitFormValues = {
   price: string;
@@ -62,9 +63,13 @@ export const LimitOrderEntry: React.FC<{
     const orderSide = orderSideMap[side];
 
     // validation
-    const rawValueSize = BigInt(
-      toRawCoinAmount(values.size ?? 0, marketData?.base?.decimals ?? 0),
+    const _rawValueSize = toRawCoinAmount(
+      values.size ?? 0,
+      marketData?.base?.decimals ?? 0,
     );
+    const rawValueSize = canBeBigInt(_rawValueSize) // if after conversion is still a decimal, then it's too small anyways
+      ? BigInt(_rawValueSize)
+      : BigInt(0);
     const rawBaseBalance = BigInt(
       toRawCoinAmount(
         baseBalance.data ?? 0, // assume if null, user has 0
@@ -83,18 +88,18 @@ export const LimitOrderEntry: React.FC<{
 
     // validate tick size
     if (rawValuePrice % BigInt(marketData.tick_size) != BigInt(0)) {
-      // toast.info("Invalid tick size");
+      setError("price", { message: "INVALID TICK SIZE" });
       return;
     }
 
     // validate Lot size
     if (rawValueSize % BigInt(marketData.lot_size) != BigInt(0)) {
-      toast.info("Invalid lot size");
+      setError("size", { message: "INVALID LOT SIZE" });
       return;
     }
     // validate min size
     if (rawValueSize < BigInt(marketData.min_size)) {
-      toast.info("Invalid min size");
+      setError("size", { message: "INVALID MIN SIZE" });
       return;
     }
 
@@ -103,7 +108,7 @@ export const LimitOrderEntry: React.FC<{
       const isValid =
         rawQuoteBalance >= BigInt(values.size) * BigInt(rawValuePrice); // how to get price? esp if market order
       if (!isValid) {
-        toast.info("Insufficient quote balance");
+        setError("price", { message: "INSUFFICIENT QUOTE BALANCE" });
         return;
       }
     }
@@ -112,7 +117,7 @@ export const LimitOrderEntry: React.FC<{
     if (orderSide === "ask") {
       const isValid = rawBaseBalance >= BigInt(rawValueSize); // is gte fine?
       if (!isValid) {
-        toast.info("Insufficient base balance");
+        setError("size", { message: "INSUFFICIENT BASE BALANCE" });
         return;
       }
     }

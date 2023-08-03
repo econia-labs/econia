@@ -15,7 +15,12 @@ import { RecognizedIcon } from "@/components/icons/RecognizedIcon";
 import { MarketIconPair } from "@/components/MarketIconPair";
 import { useAptos } from "@/contexts/AptosContext";
 import { type ApiMarket } from "@/types/api";
-import { formatNumber, plusMinus } from "@/utils/formatter";
+import {
+  formatNumber,
+  plusMinus,
+  priceFormatter,
+  volFormatter,
+} from "@/utils/formatter";
 import { TypeTag } from "@/utils/TypeTag";
 
 import { useAllMarketStats } from ".";
@@ -101,20 +106,6 @@ export const SelectMarketContent: React.FC<{
     });
   }, [allMarketData, coinListClient, marketStats]);
 
-  const priceFmtr = Intl.NumberFormat("en", {
-    notation: "compact",
-    compactDisplay: "short",
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
-  });
-
-  const volFmtr = Intl.NumberFormat("en", {
-    notation: "compact",
-    compactDisplay: "short",
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
-  });
-
   const columns = useMemo(
     () => [
       columnHelper.accessor("name", {
@@ -145,7 +136,7 @@ export const SelectMarketContent: React.FC<{
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
                 })
-              : priceFmtr.format(price).replace("K", "k");
+              : priceFormatter.format(price).replace("K", "k");
           const { quoteSymbol } = info.row.original;
 
           return `${priceStr} ${quoteSymbol}`;
@@ -158,7 +149,7 @@ export const SelectMarketContent: React.FC<{
           const volume = info.getValue();
           const { baseSymbol } = info.row.original;
           return `${
-            volume != null ? volFmtr.format(volume).replace("K", "k") : "-"
+            volume != null ? volFormatter.format(volume).replace("K", "k") : "-"
           } ${baseSymbol}`;
         },
       }),
@@ -193,7 +184,7 @@ export const SelectMarketContent: React.FC<{
         },
       }),
     ],
-    [priceFmtr, volFmtr],
+    [],
   );
 
   const table = useReactTable({

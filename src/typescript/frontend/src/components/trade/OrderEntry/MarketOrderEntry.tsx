@@ -15,6 +15,7 @@ import { TypeTag } from "@/utils/TypeTag";
 
 import { OrderEntryInfo } from "./OrderEntryInfo";
 import { OrderEntryInputWrapper } from "./OrderEntryInputWrapper";
+import { canBeBigInt } from "@/utils/formatter";
 
 type MarketFormValues = {
   size: string;
@@ -29,6 +30,7 @@ export const MarketOrderEntry: React.FC<{
     handleSubmit,
     register,
     setValue,
+    setError,
     formState: { errors },
   } = useForm<MarketFormValues>();
   const baseBalance = useMarketAccountBalance(
@@ -42,8 +44,6 @@ export const MarketOrderEntry: React.FC<{
     marketData.quote,
   );
 
-  const validateInput = (value: string) => {};
-
   const onSubmit = async (values: MarketFormValues) => {
     const orderSideMap: Record<Side, order.Side> = {
       buy: "bid",
@@ -52,9 +52,14 @@ export const MarketOrderEntry: React.FC<{
     const orderSide = orderSideMap[side];
 
     // validation
-    const rawValueSize = BigInt(
-      toRawCoinAmount(values.size ?? 0, marketData?.base?.decimals ?? 0),
+    const _rawValueSize = toRawCoinAmount(
+      values.size ?? 0,
+      marketData?.base?.decimals ?? 0,
     );
+    const rawValueSize = canBeBigInt(_rawValueSize) // if after conversion is still a decimal, then it's too small anyways
+      ? BigInt(_rawValueSize)
+      : BigInt(0);
+
     const rawBaseBalance = BigInt(
       toRawCoinAmount(
         baseBalance.data ?? 0, // assume if null, user has 0
@@ -64,12 +69,12 @@ export const MarketOrderEntry: React.FC<{
 
     // validate Lot size
     if (rawValueSize % BigInt(marketData.lot_size) != BigInt(0)) {
-      toast.info("Invalid lot size");
+      setError("size", { message: "INVALID LOT SIZE" });
       return;
     }
     // validate min size
     if (rawValueSize < BigInt(marketData.min_size)) {
-      toast.info("Invalid min size");
+      setError("size", { message: "INVALID MIN SIZE" });
       return;
     }
 
@@ -77,7 +82,7 @@ export const MarketOrderEntry: React.FC<{
     if (orderSide === "ask") {
       const isValid = rawBaseBalance >= rawValueSize; // is gte fine?
       if (!isValid) {
-        toast.info("Insufficient base balance");
+        setError("size", { message: "INSUFFICIENT BASE BALANCE" });
         return;
       }
     }

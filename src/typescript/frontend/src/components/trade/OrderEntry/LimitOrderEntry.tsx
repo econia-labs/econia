@@ -36,6 +36,7 @@ export const LimitOrderEntry: React.FC<{
     formState: { errors },
     getValues,
     setValue,
+    setError,
   } = useForm<LimitFormValues>();
 
   useEffect(() => {
@@ -82,7 +83,7 @@ export const LimitOrderEntry: React.FC<{
 
     // validate tick size
     if (rawValuePrice % BigInt(marketData.tick_size) != BigInt(0)) {
-      toast.info("Invalid tick size");
+      // toast.info("Invalid tick size");
       return;
     }
 

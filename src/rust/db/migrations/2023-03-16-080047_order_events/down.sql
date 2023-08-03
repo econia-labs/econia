@@ -1,21 +1,42 @@
--- TODO: need to finish this correctly
-drop table fills;
+drop table place_swap_order_events;
 
-drop trigger handle_taker_event_trigger on taker_events;
+drop trigger handle_place_market_order_event_trigger on place_market_order_events;
 
-drop function handle_taker_event;
+drop function handle_place_market_order_event;
 
-drop table taker_events;
+drop table place_market_order_events;
 
-drop trigger handle_maker_event_trigger on maker_events;
+drop trigger handle_place_limit_order_event_trigger on place_limit_order_events;
 
-drop function handle_maker_event;
+drop function handle_place_limit_order_event;
 
-drop table maker_events;
+drop table place_limit_order_events;
 
-drop type maker_event_type;
+drop trigger handle_fill_event_trigger on fill_events;
+
+drop function handle_fill_event;
+
+drop table fill_events;
+
+drop trigger handle_change_order_size_event_trigger on change_order_size_events;
+
+drop function handle_change_order_size_event;
+
+drop table change_order_size_events;
+
+drop trigger handle_cancel_order_event_trigger on cancel_order_events;
+
+drop function handle_cancel_order_event;
+
+drop table cancel_order_events;
 
 drop table orders;
+
+drop type cancel_reason;
+
+drop type self_match_behavior;
+
+drop type restriction;
 
 drop type order_state;
 

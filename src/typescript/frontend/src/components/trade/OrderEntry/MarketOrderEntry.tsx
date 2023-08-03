@@ -68,7 +68,7 @@ export const MarketOrderEntry: React.FC<{
       return;
     }
     // validate min size
-    if (rawValueSize <= BigInt(marketData.min_size)) {
+    if (rawValueSize < BigInt(marketData.min_size)) {
       toast.info("Invalid min size");
       return;
     }

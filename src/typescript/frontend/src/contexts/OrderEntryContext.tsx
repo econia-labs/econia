@@ -8,8 +8,8 @@ import {
 } from "react";
 
 export type OrderEntryContextState = {
-  price: string;
-  setPrice: Dispatch<SetStateAction<string>>;
+  price: string | undefined;
+  setPrice: Dispatch<SetStateAction<string | undefined>>;
 };
 
 export const OrderEntryContext = createContext<
@@ -17,7 +17,7 @@ export const OrderEntryContext = createContext<
 >(undefined);
 
 export function OrderEntryContextProvider({ children }: PropsWithChildren) {
-  const [price, setPrice] = useState<string>("");
+  const [price, setPrice] = useState<string | undefined>(undefined);
 
   const value: OrderEntryContextState = {
     price,

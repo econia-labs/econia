@@ -10,6 +10,8 @@ import { type ApiMarket } from "@/types/api";
 import { Button } from "./Button";
 import { ConnectedButton } from "./ConnectedButton";
 import { DepositWithdrawModal } from "./trade/DepositWithdrawModal";
+import { AccountDetailsModal } from "./AccountDetailsModal";
+import { BaseModal } from "./BaseModal";
 
 const NavItem: React.FC<
   PropsWithChildren<{
@@ -63,6 +65,11 @@ export function Header({ allMarketData, logoHref }: HeaderProps) {
   const { disconnect } = useWallet();
   const router = useRouter();
   const [depositWithdrawOpen, setDepositWithdrawOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(true);
+
+  const onClickDisconnect = () => {
+    disconnect();
+  };
 
   return (
     <header className="border-b border-neutral-600">
@@ -131,6 +138,28 @@ export function Header({ allMarketData, logoHref }: HeaderProps) {
         open={depositWithdrawOpen}
         onClose={() => setDepositWithdrawOpen(false)}
       />
+      <BaseModal
+        open={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          false;
+        }}
+        showCloseButton={false}
+      >
+        <AccountDetailsModal
+          allMarketData={allMarketData}
+          open={depositWithdrawOpen}
+          onClose={() => setDepositWithdrawOpen(false)}
+        />
+        {/* <SelectMarketContent
+          allMarketData={allMarketData}
+          onSelectMarket={(market) => {
+            setIsModalOpen(false);
+            false;
+            router.push(`/trade/${market.name}`);
+          }}
+        /> */}
+      </BaseModal>
     </header>
   );
 }

@@ -7,7 +7,7 @@ def get_lot_size_integer(smallest_decimal_unit: str, coin_decimals: int) -> int:
     whole unit's decimals (e.g. ETH has 18 decimals), return the lot size.
 
     Parameters:
-    * `smallest_decimal_unit`: Decimal (e.g. 0.001 for one thousandth) of
+    * `smallest_decimal_unit`: Decimal (e.g. "0.001" for one thousandth) of
       the smallest possible unit relative to a whole unit.
     * `coin_decimals`: The number of decimals one whole unit of the coin
       has (e.g. USDC has 6 decimals, ETH has 18).
@@ -24,7 +24,7 @@ def get_tick_size_integer(smallest_decimal_unit: str, coin_decimals: int) -> int
     whole unit's decimals (e.g. ETH has 18 decimals), return the tick size.
 
     Parameters:
-    * `smallest_decimal_unit`: Decimal (e.g. 0.001 for one thousandth) of
+    * `smallest_decimal_unit`: Decimal (e.g. "0.001" for one thousandth) of
       the smallest possible unit relative to a whole unit.
     * `coin_decimals`: The number of decimals one whole unit of the coin
       has (e.g. USDC has 6 decimals, ETH has 18).
@@ -41,7 +41,7 @@ def get_min_size_integer(
     decimal size according to the base coin's decimals and lot size.
 
     Parameters:
-    * `smallest_decimal_size`: Decimal (e.g. 0.001 for one thousandth) of
+    * `smallest_decimal_size`: Decimal (e.g. "0.001" for one thousandth) of
       the smallest possible size relative to a whole unit. Note that this
       maybe different (larger) than the smallest possible unit (lot size).
       This should be of the base coin, not the quote coin!
@@ -57,8 +57,8 @@ def get_min_size_integer(
 
 
 def get_min_quote_per_base_nominal(
-    smallest_decimal_size_base: float,
-    smallest_decimal_size_quote: float,
+    smallest_decimal_size_base: str,
+    smallest_decimal_size_quote: str,
 ) -> float:
     """
     Returns the minimum units of quote that one can obtain for a unit of
@@ -69,7 +69,11 @@ def get_min_quote_per_base_nominal(
     $20/unit, $30/unit, any so on.
 
     Parameters:
-    * `smallest_decimal_size_base`: The decimal size of one lot of base.
-    * `smallest_decimal_size_quote`: The decimal size of one tick of quote.
+    * `smallest_decimal_size_base`: The decimal size of one lot of base,
+      as a string i.e "0.001" for one-thousandth.
+    * `smallest_decimal_size_quote`: The decimal size of one tick of quote,
+      as a string i.e "0.001" for one-thousandth.
     """
-    return (1/smallest_decimal_size_base) * smallest_decimal_size_quote
+    return float(
+        (1/Decimal(smallest_decimal_size_base)) * Decimal(smallest_decimal_size_quote)
+    )

@@ -104,8 +104,8 @@ Here, we're asking what the smallest representable price for 1 `eAPT` is in term
 There are 1000 lots in 1 `eAPT` (=1/0.001) and the minimum expressible price is 1 tick per lot.
 Since 1 tick is worth 1 cent, this means that the minimum representable price for 1000 lots (1 `eAPT`) is 1000 ticks, or 10 `eUSDC`.
 The granularity of price in human terms is $10 per `eAPT`.
-That is, the minimum price is \$10/eAPT, the second-lowest expressible price is \$20/eAPT, and so on.
-Given that (real) APT is right now \$7, we can assess that this configuration would not be workable or appropriate!
+That is, the minimum price is $10/eAPT, the second-lowest expressible price is $20/eAPT, and so on.
+Given that (real) APT is right now $7, we can assess that this configuration would not be workable or appropriate!
 
 The problem is fixable by using a more granular tick size, say 0.00001 instead of 0.01.
 Checking our price granularity now shows better results:

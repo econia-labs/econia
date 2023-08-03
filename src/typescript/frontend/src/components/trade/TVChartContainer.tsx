@@ -199,9 +199,13 @@ export const TVChartContainer: React.FC<
 
         if (marketInfo != null) {
           const symbolInfo = getSymbolInfo(marketInfo);
-          onSymbolResolvedCallback(symbolInfo);
+          setTimeout(() => {
+            onSymbolResolvedCallback(symbolInfo);
+          }, 0);
         } else {
-          onResolveErrorCallback(`Market "${symbolName}" not found.`);
+          setTimeout(() => {
+            onResolveErrorCallback(`Market "${symbolName}" not found.`);
+          }, 0);
         }
       },
       getBars: async (

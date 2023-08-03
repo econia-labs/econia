@@ -7,9 +7,17 @@ readme = "README.md"
 packages = [{ include = "econia_sdk" }]
 
 [tool.poetry.dependencies]
-aptos-sdk = "^0.5.1"
+aptos-sdk = "^0.6.4"
 python = "^3.8"
+
+[tool.poetry.group.dev.dependencies]
 autoflake = "^2.2.0"
+black = "^23.7.0"
+isort = "^5.12.0"
+mypy = "^1.4.1"
+
+[tool.poetry.group.docs.dependencies]
+pdoc = "^14.0.0"
 
 [tool.poetry.scripts]
 trade = "examples.trade:start"

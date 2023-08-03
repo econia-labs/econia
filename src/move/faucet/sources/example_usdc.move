@@ -1,16 +1,16 @@
-module econia_faucet::test_eth {
+module econia_faucet::example_usdc {
     use aptos_std::string;
     use econia_faucet::faucet;
 
-    struct TestETH {}
+    struct ExampleUSDC {}
 
-    const NAME: vector<u8> = b"Test Ether";
-    const SYMBOL: vector<u8> = b"tETH";
-    const DECIMALS: u8 = 18;
+    const NAME: vector<u8> = b"Example USD Coin";
+    const SYMBOL: vector<u8> = b"eUSDC";
+    const DECIMALS: u8 = 6;
     const MONITOR_SUPPLY: bool = false;
 
     fun init_module(account: &signer) {
-        faucet::initialize<TestETH>(
+        faucet::initialize<ExampleUSDC>(
             account,
             string::utf8(NAME),
             string::utf8(SYMBOL),

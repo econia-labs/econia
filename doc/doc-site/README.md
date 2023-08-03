@@ -6,7 +6,7 @@ Econia's docs are built using [Docusaurus].
 
 1. Install [Homebrew] or a similar package manager.
 
-2. Install [pnpm]:
+1. Install [pnpm]:
 
    ```zsh
 
@@ -14,7 +14,7 @@ Econia's docs are built using [Docusaurus].
 
    ```
 
-3. Install the docs site package dependencies:
+1. Install the docs site package dependencies:
 
    ```zsh
 
@@ -22,7 +22,7 @@ Econia's docs are built using [Docusaurus].
 
    ```
 
-4. To serve a local site preview:
+1. To serve a local site preview:
 
    ```zsh
 
@@ -30,7 +30,7 @@ Econia's docs are built using [Docusaurus].
 
    ```
 
-5. Open http://localhost:3000
+1. Open http://localhost:3000
 
 [docusaurus]: https://docusaurus.io/
 [homebrew]: https://brew.sh

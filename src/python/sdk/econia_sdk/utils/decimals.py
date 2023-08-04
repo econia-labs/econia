@@ -1,6 +1,7 @@
 import math
 from decimal import Decimal
 
+
 def get_lot_size_integer(smallest_decimal_unit: str, coin_decimals: int) -> int:
     """
     Given a decimal representation of the smallest possible unit and the
@@ -13,12 +14,15 @@ def get_lot_size_integer(smallest_decimal_unit: str, coin_decimals: int) -> int:
       has (e.g. USDC has 6 decimals, ETH has 18).
     """
     smallest_decimal = Decimal(smallest_decimal_unit)
-    smallest_subunits = 10**(coin_decimals+math.log10(smallest_decimal))
+    smallest_subunits = 10 ** (coin_decimals + math.log10(smallest_decimal))
     if smallest_subunits < 1:
         raise ValueError("Decimal unit too small to represent with 1 subunit")
     return math.ceil(smallest_subunits)
 
-def get_tick_size_integer(smallest_decimal_unit: str, coin_decimals: int) -> int:
+
+def get_tick_size_integer(
+    smallest_decimal_unit: str, coin_decimals: int
+) -> int:
     """
     Given a decimal representation of the smallest possible unit and the
     whole unit's decimals (e.g. ETH has 18 decimals), return the tick size.
@@ -31,10 +35,9 @@ def get_tick_size_integer(smallest_decimal_unit: str, coin_decimals: int) -> int
     """
     return get_lot_size_integer(smallest_decimal_unit, coin_decimals)
 
+
 def get_min_size_integer(
-    smallest_decimal_size: str,
-    base_coin_decimals: int,
-    lot_size: int
+    smallest_decimal_size: str, base_coin_decimals: int, lot_size: int
 ) -> int:
     """
     Returns the minimum size, in number of lots, to represent the smallest
@@ -50,7 +53,9 @@ def get_min_size_integer(
     * `lot_size`: The size in subunits of one lot of base coin.
     """
     smallest_decimal = Decimal(smallest_decimal_size)
-    smallest_subunits = (smallest_decimal * (10 ** base_coin_decimals)) / lot_size
+    smallest_subunits = (
+        smallest_decimal * (10**base_coin_decimals)
+    ) / lot_size
     if smallest_subunits < 0:
         raise ValueError("Decimal size too small to represent with 1 lot")
     return math.ceil(smallest_subunits)
@@ -75,8 +80,10 @@ def get_min_quote_per_base_nominal(
       as a string i.e "0.001" for one-thousandth.
     """
     return float(
-        (1/Decimal(smallest_decimal_size_base)) * Decimal(smallest_decimal_size_quote)
+        (1 / Decimal(smallest_decimal_size_base))
+        * Decimal(smallest_decimal_size_quote)
     )
+
 
 def get_max_quote_per_base_nominal(
     smallest_decimal_size_base: str,
@@ -93,7 +100,7 @@ def get_max_quote_per_base_nominal(
     * `smallest_decimal_size_quote`: The decimal size of one tick of quote,
       as a string i.e "0.001" for one-thousandth.
     """
-    lots_per_base_unit = 1/Decimal(smallest_decimal_size_base)
+    lots_per_base_unit = 1 / Decimal(smallest_decimal_size_base)
     max_ticks_per_lot = (2**32) - 1
     max_quote_per_lot = Decimal(smallest_decimal_size_quote) * max_ticks_per_lot
     return float(max_quote_per_lot * lots_per_base_unit)

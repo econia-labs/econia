@@ -71,11 +71,11 @@ python3
 
 Market configuration (beyond base type and quote type) consists of 3 integer values: lot size, tick size, and min size.
 
-| value | units | description |
-| -- | -- | -- |
-| lot size | subunits of base type | the granularity of base sizes |
+| value     | units                  | description                    |
+| --------- | ---------------------- | ------------------------------ |
+| lot size  | subunits of base type  | the granularity of base sizes  |
 | tick size | subunits of quote type | the granularity of quote sizes |
-| min size | number of lots | the minimum limit order size |
+| min size  | number of lots         | the minimum limit order size   |
 
 In order to proceed, we must decide the granularity of base and quote sizes as well as the minimum limit order size for our market.
 Consider that "price" in the exchange is an integer expressed in terms of "ticks per lot", which means that tick size and lot size affect the prices that can be expressed.
@@ -104,7 +104,7 @@ Here, we're asking what the smallest representable price for 1 `eAPT` is in term
 There are 1000 lots in 1 `eAPT` (=1/0.001) and the minimum expressible price is 1 tick per lot.
 Since 1 tick is worth 1 cent, this means that the minimum representable price for 1000 lots (1 `eAPT`) is 1000 ticks, or 10 `eUSDC`.
 The granularity of price in human terms is \$10 per `eAPT`.
-That is, the minimum price is \$10/`eAPT`, the second-lowest expressible price is $20/`eAPT`, and so on.
+That is, the minimum price is \$10/`eAPT`, the second-lowest expressible price is \$20/`eAPT`, and so on.
 Given that (real) `APT` is right now \$7, we can assess that this configuration would not be workable or appropriate!
 
 The problem is fixable by using a more granular tick size, say 0.00001 instead of 0.01.
@@ -142,11 +142,11 @@ Let's say orders can only be submitted if they are for at least 1 whole `eAPT`, 
 
 That means we use use a minimum size of 1000 lots to configure our market, so our market parameters would be:
 
-| parameter | value | units |
-| -- | -- | -- |
-| Lot size | 100000 | Subunits of base |
-| Tick size | 10 | Subunits of quote |
-| Min size | 1000 | Lots of base |
+| parameter | value  | units             |
+| --------- | ------ | ----------------- |
+| Lot size  | 100000 | Subunits of base  |
+| Tick size | 10     | Subunits of quote |
+| Min size  | 1000   | Lots of base      |
 
 This gives us a market with a price granularity of 1 cent and minimum order size of 1 `eAPT`!
 Can you see how one would get a price granularity of 0.1 cents instead?

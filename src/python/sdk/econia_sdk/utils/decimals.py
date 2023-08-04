@@ -77,3 +77,23 @@ def get_min_quote_per_base_nominal(
     return float(
         (1/Decimal(smallest_decimal_size_base)) * Decimal(smallest_decimal_size_quote)
     )
+
+def get_max_quote_per_base_nominal(
+    smallest_decimal_size_base: str,
+    smallest_decimal_size_quote: str,
+) -> float:
+    """
+    Returns the maximum units of quote that once can obtain for a unit of
+    base, given the granularity of base and granularity of quote. This
+    can be thought of as maximum price.
+
+    Parameters:
+    * `smallest_decimal_size_base`: The decimal size of one lot of base,
+      as a string i.e "0.001" for one-thousandth.
+    * `smallest_decimal_size_quote`: The decimal size of one tick of quote,
+      as a string i.e "0.001" for one-thousandth.
+    """
+    lots_per_base_unit = 1/Decimal(smallest_decimal_size_base)
+    max_ticks_per_lot = (2**32) - 1
+    max_quote_per_lot = Decimal(smallest_decimal_size_quote) * max_ticks_per_lot
+    return float(max_quote_per_lot * lots_per_base_unit)

@@ -1,0 +1,29 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        select\n            price,\n            sum(size) as \"size!\"\n        from orders where\n            market_id = $1 and\n            order_state = 'open' and\n            side = 'bid'\n        group by price order by price desc limit $2;\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "price",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 1,
+        "name": "size!",
+        "type_info": "Numeric"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Numeric",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      null
+    ]
+  },
+  "hash": "2015247b0c3cae8f90715a5fa1f9d682f8ddc3dc67097599a7c0ddccf73eb75c"
+}

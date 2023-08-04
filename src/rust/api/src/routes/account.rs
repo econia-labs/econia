@@ -23,17 +23,18 @@ pub async fn order_history_by_account(
 ) -> Result<Json<Vec<types::order::Order>>, ApiError> {
     check_addr(&account_address)?;
 
-    let limit = params.limit.map(|v| i64::from(v));
-    let offset = params.offset.map(|v| i64::from(v));
+    let limit = params.limit.map(i64::from);
+    let offset = params.offset.map(i64::from);
 
     let order_history_query = sqlx::query_as!(
         db::models::order::Order,
         r#"
         select
-            market_order_id,
+            order_id,
             market_id,
             side as "side: db::models::order::Side",
             size,
+            remaining_size,
             price,
             user_address,
             custodian_id,
@@ -67,17 +68,18 @@ pub async fn open_orders_by_account(
 ) -> Result<Json<Vec<types::order::Order>>, ApiError> {
     check_addr(&account_address)?;
 
-    let limit = params.limit.map(|v| i64::from(v));
-    let offset = params.offset.map(|v| i64::from(v));
+    let limit = params.limit.map(i64::from);
+    let offset = params.offset.map(i64::from);
 
     let open_orders_query = sqlx::query_as!(
         db::models::order::Order,
         r#"
         select
-            market_order_id,
+            order_id,
             market_id,
             side as "side: db::models::order::Side",
             size,
+            remaining_size,
             price,
             user_address,
             custodian_id,
@@ -108,23 +110,28 @@ pub async fn open_orders_by_account(
 pub async fn fills_by_account_and_market(
     Path((account_address, market_id)): Path<(String, u64)>,
     State(state): State<Arc<AppState>>,
-) -> Result<Json<Vec<types::order::Fill>>, ApiError> {
+) -> Result<Json<Vec<types::events::FillEvent>>, ApiError> {
     check_addr(&account_address)?;
     let market_id = BigDecimal::from(market_id);
 
     let fills_query = sqlx::query_as!(
-        db::models::fill::Fill,
+        db::models::order::FillEvent,
         r#"
         select
             market_id,
-            maker_order_id,
-            maker,
-            maker_side as "maker_side: db::models::order::Side",
-            custodian_id,
             size,
             price,
+            maker_side as "maker_side: db::models::order::Side",
+            maker,
+            maker_custodian_id,
+            maker_order_id,
+            taker,
+            taker_custodian_id,
+            taker_order_id,
+            taker_quote_fees_paid,
+            sequence_number_for_trade,
             time
-        from fills where maker = $1 and market_id = $2 order by time;
+        from fill_events where maker = $1 and market_id = $2 order by time;
         "#,
         account_address,
         market_id,
@@ -135,7 +142,7 @@ pub async fn fills_by_account_and_market(
     let fills = fills_query
         .into_iter()
         .map(|v| v.try_into())
-        .collect::<Result<Vec<types::order::Fill>, TypeError>>()?;
+        .collect::<Result<Vec<_>, TypeError>>()?;
 
     Ok(Json(fills))
 }

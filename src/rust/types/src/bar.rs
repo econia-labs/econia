@@ -48,7 +48,7 @@ impl fmt::Display for Resolution {
             Self::R12h => "12h",
             Self::R1d => "1d",
         };
-        write!(f, "{}", s)
+        write!(f, "{s}")
     }
 }
 

@@ -20,7 +20,7 @@ export default function Trade({ allMarketData }: Props) {
   return (
     <>
       <Head>
-        <title>Not Found</title>
+        <title>Trade | Econia</title>
       </Head>
       <div className="flex min-h-screen flex-col">
         <Header

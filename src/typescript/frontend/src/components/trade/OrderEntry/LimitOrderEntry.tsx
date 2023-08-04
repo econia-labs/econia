@@ -37,7 +37,9 @@ export const LimitOrderEntry: React.FC<{
   } = useForm<LimitFormValues>();
 
   useEffect(() => {
-    setValue("price", price);
+    if (price != null) {
+      setValue("price", price);
+    }
   }, [price, setValue]);
 
   const baseBalance = useMarketAccountBalance(

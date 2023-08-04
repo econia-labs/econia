@@ -1,7 +1,6 @@
 import { Tab } from "@headlessui/react";
 import React, { useState } from "react";
 
-import { useOrderEntry } from "@/contexts/OrderEntryContext";
 import { type ApiMarket } from "@/types/api";
 import { type Side } from "@/types/global";
 
@@ -11,14 +10,7 @@ import { MarketOrderEntry } from "./MarketOrderEntry";
 export const OrderEntry: React.FC<{ marketData: ApiMarket }> = ({
   marketData,
 }) => {
-  const { type } = useOrderEntry();
   const [side, setSide] = useState<Side>("buy");
-
-  const [selectedIndex, setSelectedIndex] = useState(0);
-
-  React.useEffect(() => {
-    setSelectedIndex(0);
-  }, [type]);
 
   return (
     <div>
@@ -44,7 +36,7 @@ export const OrderEntry: React.FC<{ marketData: ApiMarket }> = ({
           Sell
         </button>
       </div>
-      <Tab.Group selectedIndex={selectedIndex} onChange={setSelectedIndex}>
+      <Tab.Group>
         <Tab.List className="my-5 flex justify-evenly">
           <Tab className="font-roboto-mono text-sm uppercase outline-none ui-selected:font-medium ui-selected:text-white ui-not-selected:font-light ui-not-selected:text-neutral-500">
             Limit

@@ -1,8 +1,7 @@
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import { useQuery } from "@tanstack/react-query";
 import BigNumber from "bignumber.js";
-import { useRouter } from "next/router";
-import React, { useState } from "react";
+import { useState } from "react";
 
 import { useAptos } from "@/contexts/AptosContext";
 import { API_URL } from "@/env";
@@ -41,12 +40,12 @@ type MarketStats = {
 const SocialMediaIcons: React.FC<{ className?: string }> = ({ className }) => {
   return (
     <div className={className}>
-      <div className="flex [&>a]:h-[18px] [&>a]:min-w-[18px] ">
+      <div className="flex">
         <a
           href="https://twitter.com/EconiaLabs"
           target="_blank"
           rel="noreferrer"
-          className="mx-3 aspect-square h-4 w-4 cursor-pointer text-white hover:text-blue"
+          className="mx-3 aspect-square h-[18px] w-[18px] cursor-pointer text-white hover:text-blue"
         >
           <TwitterIcon />
         </a>
@@ -54,7 +53,7 @@ const SocialMediaIcons: React.FC<{ className?: string }> = ({ className }) => {
           href="https://discord.com/invite/Z7gXcMgX8A"
           target="_blank"
           rel="noreferrer"
-          className="mx-3 aspect-square h-4 w-4 cursor-pointer text-white hover:text-blue"
+          className="mx-3 aspect-square h-[18px] w-[18px] cursor-pointer text-white hover:text-blue"
         >
           <DiscordIcon />
         </a>
@@ -62,7 +61,7 @@ const SocialMediaIcons: React.FC<{ className?: string }> = ({ className }) => {
           href="https://medium.com/econialabs"
           target="_blank"
           rel="noreferrer"
-          className="mx-3 aspect-square h-4 w-4 cursor-pointer text-white hover:text-blue"
+          className="mx-3 aspect-square h-[18px] w-[18px] cursor-pointer text-white hover:text-blue"
         >
           <MediumIcon />
         </a>
@@ -72,10 +71,10 @@ const SocialMediaIcons: React.FC<{ className?: string }> = ({ className }) => {
 };
 
 export const StatsBar: React.FC<{
+  allMarketData: ApiMarket[];
   selectedMarket: ApiMarket;
-}> = ({ selectedMarket }) => {
+}> = ({ allMarketData, selectedMarket }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const router = useRouter();
   const { coinListClient } = useAptos();
 
   const { data } = useQuery(
@@ -144,13 +143,7 @@ export const StatsBar: React.FC<{
         }}
         showCloseButton={false}
       >
-        <SelectMarketContent
-          onSelectMarket={(market) => {
-            setIsModalOpen(false);
-            false;
-            router.push(`/trade/${market.name}`);
-          }}
-        />
+        <SelectMarketContent allMarketData={allMarketData} />
       </BaseModal>
       <div className="flex justify-between border-b border-neutral-600 px-9 py-3">
         <div className="flex overflow-x-clip whitespace-nowrap">
@@ -167,7 +160,7 @@ export const StatsBar: React.FC<{
                 }}
               >
                 {selectedMarket.name}
-                <ChevronDownIcon className="my-auto ml-1 h-5 w-5 text-white" />
+                <ChevronDownIcon className="my-auto ml-1 h-[18px] w-[18px] text-white" />
               </button>
             </div>
           </div>
@@ -175,14 +168,14 @@ export const StatsBar: React.FC<{
           <div className="block md:hidden">
             <p className="font-roboto-mono font-light">
               <span className="inline-block min-w-[4em] text-xl text-white">
-                ${formatNumber(data?.lastPrice, 4)}
+                ${formatNumber(data?.lastPrice, 2)}
               </span>
               <span
                 className={`ml-1 inline-block min-w-[6em] text-base ${
                   (data?.lastPriceChange || 0) < 0 ? "text-red" : "text-green"
                 }`}
               >
-                {formatNumber(data?.lastPriceChange, 4, "always")}
+                {formatNumber(data?.lastPriceChange, 2, "always")}
               </span>
             </p>
           </div>
@@ -192,7 +185,7 @@ export const StatsBar: React.FC<{
               LAST PRICE
             </span>
             <p className="font-roboto-mono text-xs font-light text-white">
-              ${formatNumber(data?.lastPrice, 4)}
+              ${formatNumber(data?.lastPrice, 2)}
             </p>
           </div>
           {/* 24 hr */}
@@ -202,14 +195,14 @@ export const StatsBar: React.FC<{
             </span>
             <p className="font-roboto-mono text-xs font-light text-white">
               <span className="inline-block text-white">
-                {formatNumber(data?.change24h, 4)}
+                {formatNumber(data?.change24h, 2)}
               </span>
               <span
                 className={`ml-3 ${
                   (data?.change24hPercent || 0) < 0 ? "text-red" : "text-green"
                 }`}
               >
-                {formatNumber(data?.change24hPercent, 4, "always")}%
+                {formatNumber(data?.change24hPercent, 2, "always")}%
               </span>
             </p>
           </div>
@@ -219,7 +212,7 @@ export const StatsBar: React.FC<{
               24h high
             </span>
             <p className="font-roboto-mono text-xs font-light text-white">
-              {formatNumber(data?.high24h, 4)}
+              {formatNumber(data?.high24h, 2)}
             </p>
           </div>
           {/* 24 hr low */}
@@ -228,7 +221,7 @@ export const StatsBar: React.FC<{
               24h low
             </span>
             <p className="font-roboto-mono text-xs font-light text-white">
-              {formatNumber(data?.low24h, 4)}
+              {formatNumber(data?.low24h, 2)}
             </p>
           </div>
           {/* 24 hr main */}
@@ -237,7 +230,7 @@ export const StatsBar: React.FC<{
               24H VOLUME ({data?.pairData.baseAsset || "-"})
             </span>
             <p className="font-roboto-mono text-xs font-light text-white">
-              {formatNumber(data?.pairData.baseVolume, 4)}
+              {formatNumber(data?.pairData.baseVolume, 2)}
             </p>
           </div>
           {/* 24 hr pair */}
@@ -246,7 +239,7 @@ export const StatsBar: React.FC<{
               24H VOLUME ({data?.pairData.quoteAsset || "-"})
             </span>
             <p className="font-roboto-mono text-xs font-light text-white">
-              {formatNumber(data?.pairData.quoteVolume, 4)}
+              {formatNumber(data?.pairData.quoteVolume, 2)}
             </p>
           </div>
         </div>

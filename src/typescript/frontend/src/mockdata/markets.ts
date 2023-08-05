@@ -28,6 +28,7 @@ export const MOCK_MARKETS: ApiMarket[] = [
     min_size: 1,
     underwriter_id: 0,
     created_at: "2023-05-18T17:22:48.971737Z",
+    recognized: true,
   },
   {
     market_id: 2,
@@ -56,5 +57,6 @@ export const MOCK_MARKETS: ApiMarket[] = [
     tick_size: 1,
     underwriter_id: 0,
     created_at: "2023-05-18T17:22:48.971737Z",
+    recognized: false,
   },
 ];

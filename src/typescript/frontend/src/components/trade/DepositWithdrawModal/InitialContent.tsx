@@ -1,6 +1,7 @@
 import { entryFunctions } from "@econia-labs/sdk";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import { useQuery } from "@tanstack/react-query";
+import { toast } from "react-toastify";
 
 import { Button } from "@/components/Button";
 import { NO_CUSTODIAN } from "@/constants";
@@ -28,7 +29,11 @@ export const InitialContent: React.FC<{
         );
         return resource.data as MarketAccounts;
       } catch (e) {
-        console.log(e);
+        if (e instanceof Error) {
+          toast.error(e.message);
+        } else {
+          console.error(e);
+        }
         return null;
       }
     },
@@ -48,7 +53,11 @@ export const InitialContent: React.FC<{
         );
         return marketAccount as MarketAccount;
       } catch (e) {
-        console.log(e);
+        if (e instanceof Error) {
+          toast.error(e.message);
+        } else {
+          console.error(e);
+        }
         return null;
       }
     },
@@ -58,7 +67,7 @@ export const InitialContent: React.FC<{
   );
 
   return (
-    <div className="flex w-full flex-col items-center gap-6">
+    <div className="flex w-full flex-col items-center gap-6 py-8">
       <p className="font-jost text-3xl font-bold text-white">Select a Market</p>
 
       {selectedMarket && (

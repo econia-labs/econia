@@ -1,0 +1,60 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                select\n                    market_id,\n                    start_time,\n                    open,\n                    high,\n                    low,\n                    close,\n                    volume\n                from bars_15m where market_id = $1 and start_time >= $2 and start_time < $3\n                order by start_time;;\n                ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "market_id",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 1,
+        "name": "start_time",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 2,
+        "name": "open",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 3,
+        "name": "high",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 4,
+        "name": "low",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 5,
+        "name": "close",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 6,
+        "name": "volume",
+        "type_info": "Numeric"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Numeric",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "d49006409169708b35213dcc1d0bcd20a0d385618ba5fc3b6f8c6e67f578703f"
+}

@@ -1,151 +1,247 @@
-create type side as enum ('bid', 'ask');
+create type side as enum (
+    'bid',
+    'ask'
+);
 
-create type order_state as enum ('open', 'filled', 'cancelled', 'evicted');
+create type order_state as enum (
+    'open',
+    'filled',
+    'cancelled',
+    'evicted'
+);
+
+create type restriction as enum (
+    'no_restriction',
+    'fill_or_abort',
+    'immediate_or_cancel',
+    'post_or_abort'
+);
+
+create type self_match_behavior as enum (
+    'abort',
+    'cancel_both',
+    'cancel_maker',
+    'cancel_taker'
+);
+
+create type cancel_reason as enum (
+    'size_change_internal',
+    'eviction',
+    'immediate_or_cancel',
+    'manual_cancel',
+    'max_quote_traded',
+    'not_enough_liquidity',
+    'self_match_maker',
+    'self_match_taker'
+);
 
 create table orders (
-    market_order_id numeric (39) not null,
-    market_id numeric (20) not null,
+    order_id numeric(39) not null,
+    market_id numeric(20) not null,
     side side not null,
-    size numeric (20) not null,
-    price numeric (20) not null,
-    user_address varchar (70) not null,
-    custodian_id numeric (20),
+    size numeric(20) not null,
+    remaining_size numeric(20) not null,
+    price numeric(20) not null,
+    user_address varchar(70) not null,
+    custodian_id numeric(20),
     order_state order_state not null,
     created_at timestamptz not null,
-    primary key (market_order_id, market_id),
+    primary key (order_id, market_id),
     foreign key (market_id) references markets (market_id)
 );
 
-create type maker_event_type as enum ('cancel', 'change', 'evict', 'place');
-
-create table maker_events (
-    market_id numeric (20) not null,
-    side side not null,
-    market_order_id numeric (39) not null,
-    user_address varchar (70) not null,
-    custodian_id numeric (20),
-    event_type maker_event_type not null,
-    size numeric (20) not null,
-    price numeric (20) not null,
+create table cancel_order_events (
+    market_id numeric(20) not null,
+    order_id numeric(39) not null,
+    user_address varchar(70) not null,
+    custodian_id numeric(20),
+    reason cancel_reason not null,
     time timestamptz not null,
-    primary key (market_order_id, time),
+    primary key (market_id, order_id),
     foreign key (market_id) references markets (market_id),
-    foreign key (
-        market_order_id, market_id
-    ) references orders (market_order_id, market_id)
+    foreign key (order_id, market_id) references orders (order_id, market_id)
 );
 
-create function handle_maker_event() returns trigger
-as $handle_maker_event$ begin
-
--- Inserts a new row into the orders table if the event type is 'place'.
-if new.event_type = 'place' then
-    insert into orders values (
-        new.market_order_id,
-        new.market_id,
-        new.side,
-        new.size,
-        new.price,
-        new.user_address,
-        new.custodian_id,
-        'open',
-        new.time
-    );
-
--- Updates the row of the order if the event type is 'change'.
--- This also updates the remaining_size column based on the updated order size,
--- and if the order size is decreased to the point that there is no amount left
--- to fill, remaining_size will be set to zero, and the order state will be set
--- to 'filled'.
-elsif new.event_type = 'change' then
-    update orders set
-        size = new.size,
-        price = new.price
-    where market_order_id = new.market_order_id and market_id = new.market_id;
-
--- Order state is set to 'cancelled' if the event type is 'cancel'.
-elsif new.event_type = 'cancel' then
-    update orders set
+create function handle_cancel_order_event ()
+    returns trigger
+    as $handle_cancel_order_event$
+begin
+    update
+        orders
+    set
         order_state = 'cancelled'
-    where market_order_id = new.market_order_id and market_id = new.market_id;
-
--- Order state is set to 'evicted' if the event type is 'evict'.
-elsif new.event_type = 'evict' then
-    update orders set
-        order_state = 'evicted'
-    where market_order_id = new.market_order_id and market_id = new.market_id;
-end if;
-return new;
+    where
+        market_id = new.market_id
+        and order_id = new.order_id;
+    return new;
 end;
-$handle_maker_event$ language plpgsql;
+$handle_cancel_order_event$
+language plpgsql;
 
--- The trigger is configured so that it fires upon every row insertion to the
--- maker_events table. The orders table must be updated before the maker_events
--- table in order to satisfy the foreign key constraint on maker_events when
--- a new order is placed.
-create trigger handle_maker_event_trigger
-before
-insert on maker_events for each row
-execute procedure handle_maker_event();
+create trigger handle_cancel_order_event_trigger
+    before insert on cancel_order_events
+    for each row
+    execute procedure handle_cancel_order_event ();
 
-create table taker_events (
-    market_id numeric (20) not null,
+create table change_order_size_events (
+    market_id numeric(20) not null,
+    order_id numeric(39) not null,
+    user_address varchar(70) not null,
+    custodian_id numeric(20),
     side side not null,
-    market_order_id numeric (39) not null,
-    maker varchar (70) not null,
-    custodian_id numeric (30),
-    size numeric (20) not null,
-    price numeric (20) not null,
+    new_size numeric(20) not null,
     time timestamptz not null,
-    primary key (market_order_id, time),
+    primary key (market_id, order_id),
     foreign key (market_id) references markets (market_id),
-    foreign key (
-        market_order_id, market_id
-    ) references orders (market_order_id, market_id)
+    foreign key (order_id, market_id) references orders (order_id, market_id)
 );
 
-create table fills (
-    market_id numeric (20) not null,
-    maker_order_id numeric (39) not null,
-    maker varchar (70) not null,
-    maker_side side not null,
-    custodian_id numeric (30),
-    size numeric (20) not null,
-    price numeric (20) not null,
-    time timestamptz not null,
-    primary key (market_id, maker_order_id, time),
-    foreign key (market_id) references markets (market_id),
-    foreign key (
-        maker_order_id, market_id
-    ) references orders (market_order_id, market_id)
-);
-
--- Decreases the remaining_size on the order by the fill size.
-create function handle_taker_event() returns trigger
-as $handle_taker_event$ begin
-    -- This updates the maker order corresponding to the taker event.
-    -- new.size refers to fill size
-    update orders set
-        size = size - new.size,
-        order_state = (case when size - new.size <= 0
-                       then 'filled' else order_state end)
-    where market_order_id = new.market_order_id and market_id = new.market_id;
-
-    insert into fills values (
-        new.market_id,
-        new.market_order_id,
-        new.maker,
-        new.side,
-        new.custodian_id,
-        new.size,
-        new.price,
-        new.time
-    );
-return new;
+create function handle_change_order_size_event ()
+    returns trigger
+    as $handle_change_order_size_event$
+begin
+    update
+        orders
+    set
+        size = new.size
+    where
+        market_id = new.market_id
+        and order_id = new.order_id;
+    return new;
 end;
-$handle_taker_event$ language plpgsql;
+$handle_change_order_size_event$
+language plpgsql;
 
-create trigger handle_taker_event_trigger
-before
-insert on taker_events for each row
-execute procedure handle_taker_event();
+create trigger handle_change_order_size_event_trigger
+    before insert on change_order_size_events
+    for each row
+    execute procedure handle_change_order_size_event ();
+
+create table fill_events (
+    market_id numeric(20) not null,
+    size numeric(20) not null,
+    price numeric(20) not null,
+    maker_side side not null,
+    maker varchar(70) not null,
+    maker_custodian_id numeric(20),
+    maker_order_id numeric(39) not null,
+    taker varchar(70) not null,
+    taker_custodian_id numeric(20),
+    taker_order_id numeric(39) not null,
+    taker_quote_fees_paid numeric(20) not null,
+    sequence_number_for_trade numeric(20) not null,
+    time timestamptz not null,
+    primary key (market_id, maker_order_id, taker_order_id),
+    foreign key (market_id) references markets (market_id),
+    foreign key (maker_order_id, market_id) references orders (order_id, market_id),
+    foreign key (taker_order_id, market_id) references orders (order_id, market_id)
+);
+
+create function handle_fill_event ()
+    returns trigger
+    as $handle_fill_event$
+begin
+    update
+        orders
+    set
+        remaining_size = remaining_size - new.size,
+        order_state = (
+            case when remaining_size <= 0 then
+                'filled'
+            else
+                order_state
+            end)
+    where
+        market_id = new.market_id
+        and order_id = new.order_id;
+    return new;
+end;
+$handle_fill_event$
+language plpgsql;
+
+create trigger handle_fill_event_trigger
+    before insert on fill_events
+    for each row
+    execute procedure handle_fill_event ();
+
+create table place_limit_order_events (
+    market_id numeric(20) not null,
+    user_address varchar(70) not null,
+    custodian_id numeric(20),
+    integrator varchar(70),
+    side side not null,
+    size numeric(20) not null,
+    price numeric(20) not null,
+    restriction restriction not null,
+    self_match_behavior self_match_behavior not null,
+    remaining_size numeric(20) not null,
+    order_id numeric(39) not null,
+    time timestamptz not null,
+    primary key (market_id, order_id),
+    foreign key (market_id) references markets (market_id),
+    foreign key (order_id, market_id) references orders (order_id, market_id)
+);
+
+create function handle_place_limit_order_event ()
+    returns trigger
+    as $handle_place_limit_order_event$
+begin
+    insert into orders
+        values (new.order_id, new.market_id, new.side, new.size, new.remaining_size, new.price, new.user_address, new.custodian_id, 'open', new.time);
+    return new;
+end;
+$handle_place_limit_order_event$
+language plpgsql;
+
+create trigger handle_place_limit_order_event_trigger
+    before insert on place_limit_order_events
+    for each row
+    execute procedure handle_place_limit_order_event ();
+
+create table place_market_order_events (
+    market_id numeric(20) not null,
+    user_address varchar(70) not null,
+    custodian_id numeric(20),
+    integrator varchar(70),
+    direction side not null,
+    size numeric(20) not null,
+    self_match_behavior self_match_behavior not null,
+    order_id numeric(39) not null,
+    time timestamptz not null,
+    primary key (market_id, order_id),
+    foreign key (market_id) references markets (market_id),
+    foreign key (order_id, market_id) references orders (order_id, market_id)
+);
+
+create function handle_place_market_order_event ()
+    returns trigger
+    as $handle_place_market_order_event$
+begin
+    insert into orders
+        values (new.order_id, new.market_id, new.direction, new.size, new.size, new.remaining_size, new.user_address, new.custodian_id, 'open', new.time);
+    return new;
+end;
+$handle_place_market_order_event$
+language plpgsql;
+
+create trigger handle_place_market_order_event_trigger
+    before insert on place_market_order_events
+    for each row
+    execute procedure handle_place_market_order_event ();
+
+create table place_swap_order_events (
+    market_id numeric(20) not null,
+    signing_account varchar(70) not null,
+    integrator varchar(70),
+    direction side not null,
+    min_base numeric(20) not null,
+    max_base numeric(20) not null,
+    min_quote numeric(20) not null,
+    max_quote numeric(20) not null,
+    limit_price numeric(20) not null,
+    order_id numeric(39) not null,
+    time timestamptz not null,
+    primary key (market_id, order_id),
+    foreign key (market_id) references markets (market_id),
+    foreign key (order_id, market_id) references orders (order_id, market_id)
+);

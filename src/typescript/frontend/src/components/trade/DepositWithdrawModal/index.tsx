@@ -1,10 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import React, { useEffect } from "react";
+import React, { useMemo, useState } from "react";
 
 import { API_URL } from "@/env";
-import { MOCK_MARKETS } from "@/mockdata/markets";
 import { type ApiMarket, type ApiStats } from "@/types/api";
-import { type Orderbook } from "@/types/global";
 
 import { BaseModal } from "../../BaseModal";
 import { DepositWithdrawContent } from "./DepositWithdrawContent";
@@ -17,32 +15,6 @@ enum Step {
   DepositWithdraw,
 }
 
-export const useAllMarketPrices = (allMarketData: ApiMarket[]) => {
-  return useQuery<{ market_id: number; price: number }[]>(
-    ["allMarketPrices", allMarketData],
-    async () => {
-      const data: Promise<Orderbook>[] = [];
-      allMarketData.forEach((market) => {
-        data.push(
-          fetch(
-            new URL(`market/${market.market_id}/orderbook?depth=1`, API_URL)
-              .href,
-          ).then((res) => {
-            return res.json();
-          }),
-        );
-      });
-      const orderBooks = await Promise.all(data);
-      return orderBooks.map((orderBook, i) => {
-        return {
-          market_id: allMarketData[i].market_id,
-          price: (orderBook.asks[0].price + orderBook.bids[0].price) / 2,
-        };
-      });
-    },
-  );
-};
-
 export const useAllMarketStats = () => {
   return useQuery<ApiStats[]>(["allMarketStats"], async () => {
     return fetch(new URL("stats?resolution=1d", API_URL).href).then((res) => {
@@ -50,37 +22,23 @@ export const useAllMarketStats = () => {
     });
   });
 };
-// TODO: remove before PR
-export const useAllMarketData = () => {
-  return useQuery<ApiMarket[]>(["allMarketData"], async () => {
-    return fetch(new URL("markets", API_URL).href).then(async (res) => {
-      // const d = await res.json();
-      // TODO: Remove once real data exists
-      const d = MOCK_MARKETS;
-      return d.map((m: ApiMarket, i: number) => {
-        m.recognized = i % 2 === 0 ? true : false;
-        return m;
-      });
-    });
-  });
-};
 
 export const DepositWithdrawModal: React.FC<{
+  allMarketData: ApiMarket[];
   open: boolean;
   onClose: () => void;
-}> = ({ open, onClose }) => {
-  const [selectedMarket, setSelectedMarket] = React.useState<ApiMarket>();
-  const [step, setStep] = React.useState<Step>(Step.Initial);
-  const allMarketData = useAllMarketData();
-  useEffect(() => {
-    if (
-      allMarketData.data &&
-      allMarketData.data.length > 0 &&
-      selectedMarket === undefined
-    ) {
-      setSelectedMarket(allMarketData.data?.[0]);
-    }
-  }, [allMarketData.data, selectedMarket]);
+}> = ({ allMarketData, open, onClose }) => {
+  const [selectedMarketId, setSelectedMarketId] = useState<number>(
+    allMarketData[0].market_id,
+  );
+  const selectedMarket = useMemo(() => {
+    return allMarketData.find(
+      ({ market_id }) => market_id === selectedMarketId,
+    );
+  }, [selectedMarketId, allMarketData]);
+
+  const [step, setStep] = useState<Step>(Step.Initial);
+
   return (
     <BaseModal
       open={open}
@@ -104,9 +62,10 @@ export const DepositWithdrawModal: React.FC<{
       )}
       {step === Step.SelectMarket && (
         <SelectMarketContent
-          onSelectMarket={(market) => {
-            setSelectedMarket(market);
-            setStep(Step.Initial);
+          allMarketData={allMarketData}
+          onSelectMarket={(marketId: number) => {
+            // TODO clean up once ECO-327 is resolved
+            setSelectedMarketId(marketId);
           }}
         />
       )}

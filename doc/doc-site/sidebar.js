@@ -42,7 +42,19 @@ module.exports = {
                 'apis/utility'
             ]
         },
-        'off-chain',
+        {
+            type: 'category',
+            label: 'Off-chain interfaces',
+            link: {
+                type: 'generated-index'
+            },
+            items: [
+                'off-chain/apis',
+                'off-chain/events',
+                'off-chain/python-sdk',
+                'off-chain/rust-sdk'
+            ]
+        },
         {
             type: 'category',
             label: 'Integrator resources',
@@ -67,6 +79,7 @@ module.exports = {
             ]
         },
         'security',
-        'logo'
+        'logo',
+        'glossary'
     ]
 }

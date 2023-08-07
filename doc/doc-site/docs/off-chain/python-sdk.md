@@ -56,6 +56,104 @@ However, each value in each enum is associated with a constant that exists in th
 
 # Other contents
 
+## `econia_sdk.utils.decimals`
+
+This package contains a few helpers for calculating market parameters (lot size, tick size, and min size).
+The intent is to allow one to express their desired sizes in decimal notation, and have that converted to integer notation.
+Perfect conversions are not always possible due to potential integer division and truncation, so these helpers functions attempt to check for reasonable inputs.
+Price conversion utilities are left out to avoid introducing truncation effects.
+
+Let's walk through an example of configuring a market using these utilities.
+If you'd like to follow along, install the Econia SDK, run the Python interpreter and import the SDK using...
+
+```bash
+pip3 install econia-sdk
+python3
+>>> from econia_sdk.utils.decimals import *
+```
+
+Market configuration (beyond base type and quote type) consists of 3 integer values: lot size, tick size, and min size.
+
+| Value     | Units                  | Description                |
+| --------- | ---------------------- | -------------------------- |
+| Lot size  | Subunits of base type  | Granularity of base sizes  |
+| Tick size | Subunits of quote type | Granularity of quote sizes |
+| Min size  | Number of lots         | Minimum limit order size   |
+
+In order to proceed, we must decide the granularity of base and quote sizes as well as the minimum limit order size for our market.
+Consider that "price" in the exchange is an integer expressed in terms of "ticks per lot", which means that tick size and lot size affect the prices that can be expressed.
+That is: price granularity is a function of lot size _and_ tick size.
+In general the desire is to have one _tick_ be "small" relative to one **_lot_** in terms of value, since the minimum expressible price is 1 tick per lot. The second smallest possible price is 2 ticks per lot, and so on.
+Let's use `eAPT` and `eUSDC` used in the faucet below as example base and quote types, respectively, for a market.
+We know that `eAPT` (the base type) has 8 decimals and `eUSDC` (the quote type) has 6 decimals:
+
+```
+>>> base_decimals = 8
+>>> quote_decimals = 6
+```
+
+We'd like to be able to express small prices with high granularity.
+Let's try using 0.001 `eAPT` for the granularity of base coin sizes, and 0.01 `eUSDC` (one penny) for the granularity of quote coin sizes.
+Does this work?
+Let's find out!
+
+```
+>>> get_min_quote_per_base_nominal("0.001", "0.01")
+10.0
+```
+
+Here, we're asking what the smallest representable price for 1 `eAPT` is in terms of `eUSDC`, given the lot size and tick sizes specified above.
+
+There are 1000 lots in 1 `eAPT` (=1/0.001) and the minimum expressible price is 1 tick per lot.
+Since 1 tick is worth 1 cent, this means that the minimum representable price for 1000 lots (1 `eAPT`) is 1000 ticks, or 10 `eUSDC`.
+The granularity of price in human terms is $10 per `eAPT`.
+That is, the minimum price is $10/`eAPT`, the second-lowest expressible price is $20/`eAPT`, and so on.
+Given that (real) `APT` is right now $7, we can assess that this configuration would not be workable or appropriate!
+
+The problem is fixable by using a more granular tick size, say 0.00001 instead of 0.01.
+Checking our price granularity now shows better results:
+
+```
+>>> get_min_quote_per_base_nominal("0.001", "0.00001")
+0.01
+>>> get_max_quote_per_base_nominal("0.001", "0.00001")
+42949672.95
+```
+
+That's a price granularity of 1 cent, since the result here is in quote units and 1 `eUSDC` is $1.
+For good measure, we also checked the maximum price per `eAPT` using `get_max_quote_per_base_nominal`; it's $42,949,672.95 per `eAPT` so this is fine!
+Be careful: using a more granular price results in a lower maximum price, which may be relevant in some cases.
+Now that we have the minimum base and quote sizes we'd like to use, we're ready to configure the market.
+Let's get the lot size and tick size:
+
+```
+>>> lot_size = get_lot_size_integer("0.001", base_decimals)
+>>> lot_size
+100000
+>>> tick_size = get_tick_size_integer("0.00001", quote_decimals)
+>>> tick_size
+10
+```
+
+We also need a minimum (limit order) size.
+Let's say orders can only be submitted if they are for at least 1 whole `eAPT`, using the lot size of 100000 from above:
+
+```
+>>> get_min_size_integer("1.0", base_decimals, lot_size)
+1000
+```
+
+That means we use use a minimum size of 1000 lots to configure our market, so our market parameters would be:
+
+| Parameter | Value  | Units             |
+| --------- | ------ | ----------------- |
+| Lot size  | 100000 | Subunits of base  |
+| Tick size | 10     | Subunits of quote |
+| Min size  | 1000   | Lots of base      |
+
+This gives us a market with a price granularity of 1 cent and minimum order size of 1 `eAPT`!
+Can you see how one would get a price granularity of 0.1 cents instead?
+
 ## `examples.trade`
 
 This is a script that makes use of both view functions and entry functions to perform a few scenarios in the exchange for the user.

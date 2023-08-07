@@ -57,8 +57,9 @@ However, each value in each enum is associated with a constant that exists in th
 ## `econia_sdk.utils.decimals`
 
 This package contains a few helpers for calculating market parameters (lot size, tick size, and min size).
-The intent is to allow one to express their desired sizes in decimal notation, and have that converted to integer notation. These helpers make an effort to check for reasonable inputs, perfect results in all cases would be impossible due to integer division and decimal truncation.
-Price conversion utilities are left out for this reason: truncation, even a small percent's worth, would make them too dangerous.
+The intent is to allow one to express their desired sizes in decimal notation, and have that converted to integer notation.
+Perfect conversions are not always possible due to potential integer division and truncation, so these helpers functions attempt to check for reasonable inputs.
+Price conversion utilities are left out to avoid introducing truncation effects.
 
 Let's walk through an example of configuring a market using these utilities.
 If you'd like to follow along, install the Econia SDK, run the Python interpreter and import the SDK using...
@@ -71,11 +72,11 @@ python3
 
 Market configuration (beyond base type and quote type) consists of 3 integer values: lot size, tick size, and min size.
 
-| value     | units                  | description                    |
-| --------- | ---------------------- | ------------------------------ |
-| lot size  | subunits of base type  | the granularity of base sizes  |
-| tick size | subunits of quote type | the granularity of quote sizes |
-| min size  | number of lots         | the minimum limit order size   |
+| Value     | Units                  | Description                |
+| --------- | ---------------------- | -------------------------- |
+| Lot size  | Subunits of base type  | Granularity of base sizes  |
+| Tick size | Subunits of quote type | Granularity of quote sizes |
+| Min size  | Number of lots         | Minimum limit order size   |
 
 In order to proceed, we must decide the granularity of base and quote sizes as well as the minimum limit order size for our market.
 Consider that "price" in the exchange is an integer expressed in terms of "ticks per lot", which means that tick size and lot size affect the prices that can be expressed.
@@ -142,7 +143,7 @@ Let's say orders can only be submitted if they are for at least 1 whole `eAPT`, 
 
 That means we use use a minimum size of 1000 lots to configure our market, so our market parameters would be:
 
-| parameter | value  | units             |
+| Parameter | Value  | Units             |
 | --------- | ------ | ----------------- |
 | Lot size  | 100000 | Subunits of base  |
 | Tick size | 10     | Subunits of quote |

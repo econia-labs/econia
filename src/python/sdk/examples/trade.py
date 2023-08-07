@@ -160,9 +160,9 @@ def start():
     else:
         print("There are no open orders on this market right now.")
 
-    input("\n\nPress enter to set-up an Account A with funds.")
+    input("\n\nPress enter to setup an Account A with funds.")
     account_A = setup_new_account(viewer, faucet_client, market_id)
-    print(f"Account A was set-up: {account_A.account_address}")
+    print(f"Account A was setup: {account_A.account_address}")
     dump_txns()
 
     input("\n\nPress enter to place limit orders with Account A.")
@@ -200,9 +200,9 @@ def start():
     dump_txns()
     report_best_price_levels(viewer, market_id)
 
-    input("\n\nPress enter to set-up an Account B with funds.")
+    input("\n\nPress enter to setup an Account B with funds.")
     account_B = setup_new_account(viewer, faucet_client, market_id)
-    print(f"Account B was set-up: {account_B.account_address}")
+    print(f"Account B was setup: {account_B.account_address}")
     dump_txns()
 
     input(

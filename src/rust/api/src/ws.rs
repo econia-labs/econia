@@ -515,6 +515,7 @@ mod tests {
                 market_id,
                 side: types::order::Side::Bid,
                 size: 1000,
+                remaining_size: 1000,
                 price: 1000,
                 user_address,
                 custodian_id: None,
@@ -541,7 +542,7 @@ mod tests {
                 1 => {
                     assert_eq!(
                         msg.to_string(),
-                        r#"{"event":"update","channel":"orders","data":{"market_order_id":100,"market_id":1,"side":"bid","size":1000,"price":1000,"user_address":"0x1","custodian_id":null,"order_state":"open","created_at":"2023-03-01T00:00:00Z"}}"#
+                        r#"{"event":"update","channel":"orders","data":{"order_id":100,"market_id":1,"side":"bid","size":1000,"remaining_size":1000,"price":1000,"user_address":"0x1","custodian_id":null,"order_state":"open","created_at":"2023-03-01T00:00:00Z"}}"#
                     );
                     return;
                 }
@@ -581,16 +582,22 @@ mod tests {
             .unwrap();
 
         tokio::spawn(async move {
-            let fill = types::order::Fill {
+            let fill = types::events::FillEvent {
                 market_id,
-                maker_order_id: 100,
-                maker: user_address,
-                maker_side: types::order::Side::Bid,
-                custodian_id: None,
                 size: 1000,
                 price: 1000,
+                maker_side: types::order::Side::Bid,
+                maker: user_address,
+                maker_custodian_id: None,
+                maker_order_id: 100,
+                taker: "0x2".to_string(),
+                taker_custodian_id: None,
+                taker_order_id: 200,
+                taker_quote_fees_paid: 50,
+                sequence_number_for_trade: 0,
                 time: Utc.with_ymd_and_hms(2023, 3, 1, 0, 0, 0).unwrap(),
             };
+
             let update: Update = Update::Fills(fill);
             let s = serde_json::to_string(&update).unwrap();
 
@@ -611,7 +618,7 @@ mod tests {
                 1 => {
                     assert_eq!(
                         msg.to_string(),
-                        r#"{"event":"update","channel":"fills","data":{"market_id":1,"maker_order_id":100,"maker":"0x1","maker_side":"bid","custodian_id":null,"size":1000,"price":1000,"time":"2023-03-01T00:00:00Z"}}"#
+                        r#"{"event":"update","channel":"fills","data":{"market_id":1,"size":1000,"price":1000,"maker_side":"bid","maker":"0x1","maker_custodian_id":null,"maker_order_id":100,"taker":"0x2","taker_custodian_id":null,"taker_order_id":200,"taker_quote_fees_paid":50,"sequence_number_for_trade":0,"time":"2023-03-01T00:00:00Z"}}"#
                     );
                     return;
                 }
@@ -691,6 +698,7 @@ mod tests {
                 market_id,
                 side: types::order::Side::Bid,
                 size: 1000,
+                remaining_size: 1000,
                 price: 1000,
                 user_address: user_address.clone(),
                 custodian_id: None,
@@ -710,6 +718,7 @@ mod tests {
                 market_id,
                 side: types::order::Side::Bid,
                 size: 1000,
+                remaining_size: 1000,
                 price: 1000,
                 user_address,
                 custodian_id: None,
@@ -736,13 +745,13 @@ mod tests {
                 1 => {
                     assert_eq!(
                         msg.to_string(),
-                        r#"{"event":"update","channel":"orders","data":{"market_order_id":100,"market_id":1,"side":"bid","size":1000,"price":1000,"user_address":"0x1","custodian_id":null,"order_state":"open","created_at":"2023-03-01T00:00:00Z"}}"#
+                        r#"{"event":"update","channel":"orders","data":{"order_id":100,"market_id":1,"side":"bid","size":1000,"remaining_size":1000,"price":1000,"user_address":"0x1","custodian_id":null,"order_state":"open","created_at":"2023-03-01T00:00:00Z"}}"#
                     );
                 }
                 2 => {
                     assert_eq!(
                         msg.to_string(),
-                        r#"{"event":"update","channel":"orders","data":{"market_order_id":100,"market_id":1,"side":"bid","size":1000,"price":1000,"user_address":"0x1","custodian_id":null,"order_state":"cancelled","created_at":"2023-03-01T00:00:00Z"}}"#
+                        r#"{"event":"update","channel":"orders","data":{"order_id":100,"market_id":1,"side":"bid","size":1000,"remaining_size":1000,"price":1000,"user_address":"0x1","custodian_id":null,"order_state":"cancelled","created_at":"2023-03-01T00:00:00Z"}}"#
                     );
                     return;
                 }

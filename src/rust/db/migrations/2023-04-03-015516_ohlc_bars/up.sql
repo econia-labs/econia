@@ -1,66 +1,66 @@
 create table bars_1m (
-    market_id numeric(20) not null,
+    market_id numeric (20) not null,
     start_time timestamptz not null,
-    open numeric(20) not null,
-    high numeric(20) not null,
-    low numeric(20) not null,
-    close numeric(20) not null,
-    volume numeric(20) not null,
+    open numeric (20) not null,
+    high numeric (20) not null,
+    low numeric (20) not null,
+    close numeric (20) not null,
+    volume numeric (20) not null,
     primary key (market_id, start_time),
     foreign key (market_id) references markets (market_id)
 );
 
 create table bars_5m (
-    market_id numeric(20) not null,
+    market_id numeric (20) not null,
     start_time timestamptz not null,
-    open numeric(20) not null,
-    high numeric(20) not null,
-    low numeric(20) not null,
-    close numeric(20) not null,
-    volume numeric(20) not null,
+    open numeric (20) not null,
+    high numeric (20) not null,
+    low numeric (20) not null,
+    close numeric (20) not null,
+    volume numeric (20) not null,
     primary key (market_id, start_time),
     foreign key (market_id) references markets (market_id)
 );
 
 create table bars_15m (
-    market_id numeric(20) not null,
+    market_id numeric (20) not null,
     start_time timestamptz not null,
-    open numeric(20) not null,
-    high numeric(20) not null,
-    low numeric(20) not null,
-    close numeric(20) not null,
-    volume numeric(20) not null,
+    open numeric (20) not null,
+    high numeric (20) not null,
+    low numeric (20) not null,
+    close numeric (20) not null,
+    volume numeric (20) not null,
     primary key (market_id, start_time),
     foreign key (market_id) references markets (market_id)
 );
 
 create table bars_30m (
-    market_id numeric(20) not null,
+    market_id numeric (20) not null,
     start_time timestamptz not null,
-    open numeric(20) not null,
-    high numeric(20) not null,
-    low numeric(20) not null,
-    close numeric(20) not null,
-    volume numeric(20) not null,
+    open numeric (20) not null,
+    high numeric (20) not null,
+    low numeric (20) not null,
+    close numeric (20) not null,
+    volume numeric (20) not null,
     primary key (market_id, start_time),
     foreign key (market_id) references markets (market_id)
 );
 
 create table bars_1h (
-    market_id numeric(20) not null,
+    market_id numeric (20) not null,
     start_time timestamptz not null,
-    open numeric(20) not null,
-    high numeric(20) not null,
-    low numeric(20) not null,
-    close numeric(20) not null,
-    volume numeric(20) not null,
+    open numeric (20) not null,
+    high numeric (20) not null,
+    low numeric (20) not null,
+    close numeric (20) not null,
+    volume numeric (20) not null,
     primary key (market_id, start_time),
     foreign key (market_id) references markets (market_id)
 );
 
-create function handle_1m_interval_end ()
-    returns trigger
-    as $handle_1m_interval_end$
+create function handle_1m_interval_end()
+returns trigger
+as $handle_1m_interval_end$
 declare
     interval_rows bars_1m%rowtype;
 begin
@@ -112,13 +112,13 @@ $handle_1m_interval_end$
 language plpgsql;
 
 create trigger handle_1m_interval_end_trigger
-    after insert on bars_1m
-    for each row
-    execute procedure handle_1m_interval_end ();
+after insert on bars_1m
+for each row
+execute procedure handle_1m_interval_end();
 
-create function handle_5m_interval_end ()
-    returns trigger
-    as $handle_5m_interval_end$
+create function handle_5m_interval_end()
+returns trigger
+as $handle_5m_interval_end$
 declare
     interval_rows bars_5m%rowtype;
 begin
@@ -170,13 +170,13 @@ $handle_5m_interval_end$
 language plpgsql;
 
 create trigger handle_5m_interval_end_trigger
-    after insert on bars_5m
-    for each row
-    execute procedure handle_5m_interval_end ();
+after insert on bars_5m
+for each row
+execute procedure handle_5m_interval_end();
 
-create function handle_15m_interval_end ()
-    returns trigger
-    as $handle_15m_interval_end$
+create function handle_15m_interval_end()
+returns trigger
+as $handle_15m_interval_end$
 declare
     interval_rows bars_15m%rowtype;
 begin
@@ -228,13 +228,13 @@ $handle_15m_interval_end$
 language plpgsql;
 
 create trigger handle_15m_interval_end_trigger
-    after insert on bars_15m
-    for each row
-    execute procedure handle_15m_interval_end ();
+after insert on bars_15m
+for each row
+execute procedure handle_15m_interval_end();
 
-create function handle_30m_interval_end ()
-    returns trigger
-    as $handle_30m_interval_end$
+create function handle_30m_interval_end()
+returns trigger
+as $handle_30m_interval_end$
 declare
     interval_rows bars_30m%rowtype;
 begin
@@ -286,6 +286,6 @@ $handle_30m_interval_end$
 language plpgsql;
 
 create trigger handle_30m_interval_end_trigger
-    after insert on bars_30m
-    for each row
-    execute procedure handle_30m_interval_end ();
+after insert on bars_30m
+for each row
+execute procedure handle_30m_interval_end();

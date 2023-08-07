@@ -76,14 +76,18 @@ export const LimitOrderEntry: React.FC<{
         marketData?.base?.decimals ?? 0, // is this fine?
       ),
     );
+    const _rawValuePrice = BigInt(
+      toRawCoinAmount(values.price ?? 0, marketData?.quote?.decimals ?? 0),
+    );
+    const rawValuePrice = canBeBigInt(_rawValuePrice) // if after conversion is still a decimal, then it's too small anyways
+      ? BigInt(_rawValuePrice)
+      : BigInt(0);
+
     const rawQuoteBalance = BigInt(
       toRawCoinAmount(
         quoteBalance.data ?? 0, // assume if null, user has 0
         marketData?.quote?.decimals ?? 0, // is this fine?
       ),
-    );
-    const rawValuePrice = BigInt(
-      toRawCoinAmount(values.price ?? 0, marketData?.quote?.decimals ?? 0),
     );
 
     // validate tick size

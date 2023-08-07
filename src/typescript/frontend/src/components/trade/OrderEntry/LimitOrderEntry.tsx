@@ -110,7 +110,13 @@ export const LimitOrderEntry: React.FC<{
     // limit buy -- make sure user has enough quote balance
     if (orderSide === "bid") {
       const isValid =
-        rawQuoteBalance >= BigInt(values.size) * BigInt(rawValuePrice); // how to get price? esp if market order
+        BigInt(
+          toRawCoinAmount(
+            rawQuoteBalance.toString(),
+            marketData?.base?.decimals ?? 0,
+          ),
+        ) >=
+        BigInt(rawValueSize) * BigInt(rawValuePrice); // how to get price? esp if market order
       if (!isValid) {
         setError("price", { message: "INSUFFICIENT QUOTE BALANCE" });
         return;

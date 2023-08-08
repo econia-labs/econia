@@ -96,24 +96,17 @@ export const LimitOrderEntry: React.FC<{
       marketData.quote.decimals,
     );
 
-    if (side === "buy") {
-      // check that user has sufficient quote coins on bid
-      if (
+    if (
+      (side === "buy" &&
         rawQuoteBalance.lt(
           rawSize
             .times(rawPrice)
             .div(new BigNumber(10).pow(marketData.base.decimals)),
-        )
-      ) {
-        setError("size", { message: "INSUFFICIENT BALANCE" });
-        return;
-      }
-    } else {
-      // check that user has sufficient base coins on ask
-      if (rawBaseBalance.lt(rawSize)) {
-        setError("size", { message: "INSUFFICIENT BALANCE" });
-        return;
-      }
+        )) ||
+      (side === "sell" && rawBaseBalance.lt(rawSize))
+    ) {
+      setError("size", { message: "INSUFFICIENT BALANCE" });
+      return;
     }
 
     const orderSideMap: Record<Side, order.Side> = {

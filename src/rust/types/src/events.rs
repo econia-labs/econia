@@ -2,7 +2,7 @@ use chrono::{DateTime, Utc};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use crate::order::{Side, Restriction, SelfMatchBehavior};
+use crate::order::{Restriction, SelfMatchBehavior, Side};
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -37,6 +37,8 @@ pub enum CancelReason {
     NotEnoughLiquidity,
     SelfMatchMaker,
     SelfMatchTaker,
+    TooSmallToFillLot,
+    ViolatedLimitPrice,
 }
 
 #[derive(Clone, Debug)]

@@ -11,11 +11,11 @@ import { type ApiMarket } from "@/types/api";
 import { type Side } from "@/types/global";
 import { toRawCoinAmount } from "@/utils/coin";
 import { fromDecimalSize } from "@/utils/econia";
+import { canBeBigInt } from "@/utils/formatter";
 import { TypeTag } from "@/utils/TypeTag";
 
 import { OrderEntryInfo } from "./OrderEntryInfo";
 import { OrderEntryInputWrapper } from "./OrderEntryInputWrapper";
-import { canBeBigInt } from "@/utils/formatter";
 
 type MarketFormValues = {
   size: string;

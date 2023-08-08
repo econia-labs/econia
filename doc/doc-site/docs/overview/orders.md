@@ -130,7 +130,7 @@ And this would require a rotation:
 > 1000    1002    1005
 > ```
 
-This self-balancing behavior reduces lookup cost reductions, since the upper limit on AVL tree height is approximately $1.44 \\log_2 n$, where $n$ is the number of tree nodes.
+This self-balancing behavior reduces lookup cost reductions, since the upper limit on AVL tree height is approximately $1.44 \log_2 n$, where $n$ is the number of tree nodes.
 
 :::tip
 
@@ -575,7 +575,7 @@ Still, however, there are several guidelines that can aid the process:
 1. **Specify a reasonable minimum order size that will help keep gas costs low**:
    when matching against the book, an AVL queue removal is required for each fill, which means that taker orders will require more global storage operations if they have to fill against more maker orders.
    For example, if the minimum order size for a market corresponds to \$0.1 USD nominal, and someone submits a market buy order for \$100 of the base asset, then they may have to pay the gas costs for up to $100 / 0.1 = 1000$ AVL queue operations.
-   In contrast, for a more reasonable minimum order size of \$ 10 USD nominal, at most they will have to pay for 10 AVL queue operations.
+   In contrast, for a more reasonable minimum order size of \$10 USD nominal, at most they will have to pay for 10 AVL queue operations.
 
 1. **Plan for price increases**:
    as shown above, prices must be able to fit into 32-bit integers.
@@ -589,7 +589,7 @@ Econia operates within the bounds of the Aptos virtual machine, a resource-scarc
 In particular, Aptos' gas schedule charges for each "per-item" storage operation, which means that the cost of a transaction increases each time a `key`-able resource or a table entry is accessed.
 
 Since Econia's AVL queue is based on table entries, this means that Econia could become prohibitively expensive if it did not place an upper bound on the number of possible price levels.
-For instance, if Econia were to allow an unbounded number of price levels and 256-bit prices, then an attacker could place orders at integer prices of $1, 2, 3, 4, \\ldots$ and so on, potentially leading to a tree of height $h \\approx 1.44 * 256 \\approx 368$, such that insertion/removal operations would have to access as many as 368 table entries.
+For instance, if Econia were to allow an unbounded number of price levels and 256-bit prices, then an attacker could place orders at integer prices of $1, 2, 3, 4, \ldots$ and so on, potentially leading to a tree of height $h \approx 1.44 * 256 \approx 368$, such that insertion/removal operations would have to access as many as 368 table entries.
 This would lead to prohibitively high gas costs, such that a malicious actor could effectively denial-of-service (DoS) an order book by placing orders across all possible integer prices below/above the spread (depending on the side).
 
 In the interest of preventing such an attack, Econia's AVL queue implementation thus sets an upper bound on the number of price levels, as well as the number of total orders, allowed on a given side of the order book.

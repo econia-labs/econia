@@ -174,6 +174,8 @@ export const OrdersTable: React.FC<{
               </th>
             ))}
           </tr>
+        </thead>
+        <tbody>
           {!connected ? (
             <tr>
               <td colSpan={7}>

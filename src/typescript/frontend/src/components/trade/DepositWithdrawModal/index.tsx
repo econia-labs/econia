@@ -52,7 +52,6 @@ export const DepositWithdrawModal: React.FC<{
       }
       showBackButton={step === Step.DepositWithdraw}
       showCloseButton={step !== Step.SelectMarket}
-      disablePadding={step === Step.SelectMarket}
     >
       {step === Step.Initial && (
         <InitialContent

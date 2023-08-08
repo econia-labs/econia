@@ -12,7 +12,6 @@ export const BaseModal: React.FC<
     onBack?: () => void;
     showCloseButton?: boolean;
     showBackButton?: boolean;
-    disablePadding?: boolean;
   }>
 > = ({ open, onClose, onBack, showBackButton, showCloseButton, children }) => {
   return (

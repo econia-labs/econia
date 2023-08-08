@@ -127,8 +127,8 @@ ECONIA_ADDR = (
     get_econia_address()
 )  # See https://econia.dev/ for up-to-date per-chain addresses
 FAUCET_ADDR = get_faucet_address()  # See (and deploy): /econia/src/move/faucet
-COIN_TYPE_ETH = f"{FAUCET_ADDR}::test_eth::TestETH"
-COIN_TYPE_USDC = f"{FAUCET_ADDR}::test_usdc::TestUSDC"
+COIN_TYPE_EAPT = f"{FAUCET_ADDR}::example_apt::ExampleAPT"
+COIN_TYPE_EUSDC = f"{FAUCET_ADDR}::example_usdc::ExampleUSDC"
 NODE_URL = get_aptos_node_url()
 FAUCET_URL = get_aptos_faucet_url()
 
@@ -147,44 +147,38 @@ def start():
     bids_price, asks_price = get_best_prices(viewer, market_id)
     if bids_price is not None or asks_price is not None:
         input("\n\nPress enter to clean-up open orders on the market.")
-        account_ = setup_new_account(
-            viewer, faucet_client, market_id, 9, 10_000 * 100
-        )
+        account_ = setup_new_account(viewer, faucet_client, market_id, 9, 10_000 * 100)
         if bids_price is not None:
             place_market_order(Side.ASK, account_, market_id, 9000)
         if asks_price is not None:
             place_market_order(Side.BID, account_, market_id, 9000)
 
         dump_txns()
-        n_clears = len(
-            get_fill_events(viewer, account_.account_address, market_id, 0)
-        )
+        n_clears = len(get_fill_events(viewer, account_.account_address, market_id, 0))
         print(f"Cleared {n_clears} orders off of the market!")
         report_best_price_levels(viewer, market_id)
     else:
         print("There are no open orders on this market right now.")
 
-    input("\n\nPress enter to set-up an Account A with funds.")
+    input("\n\nPress enter to setup an Account A with funds.")
     account_A = setup_new_account(viewer, faucet_client, market_id)
-    print(f"Account A was set-up: {account_A.account_address}")
+    print(f"Account A was setup: {account_A.account_address}")
     dump_txns()
 
     input("\n\nPress enter to place limit orders with Account A.")
-    # Bid to purchase 1 whole ETH at a price of 1 whole USDC per lot!
-    # = $1000/ETH since there are 1000 lots in a whole ETH & 1 tick = 0.001 USDC
+    # Bid to purchase 1 whole eAPT at a price of 1 whole eUSDC per lot!
+    # = $1000/eAPT since there are 1000 lots in a whole eAPT & 1 tick = 0.001 USDC
     buy_base_lots = 1 * (10**3)
     buy_ticks_per_lot = 1 * (10**3)
-    place_limit_order(
-        Side.BID, account_A, market_id, buy_base_lots, buy_ticks_per_lot
-    )
+    place_limit_order(Side.BID, account_A, market_id, buy_base_lots, buy_ticks_per_lot)
     events = get_place_limit_order_events(
         viewer, account_A.account_address, market_id, 0
     )
     report_place_limit_order_event(
         list(filter(lambda ev: ev["data"]["side"] == Side.BID, events))[0]
     )
-    # Ask to sell 1 whole ETH at a price of 2 whole USDC per lot!
-    # = $2000/ETH since there are 1000 lots in a whole ETH & 1 tick = 0.001 USDC
+    # Ask to sell 1 whole eAPT at a price of 2 whole eUSDC per lot!
+    # = $2000/eAPT since there are 1000 lots in a whole eAPT & 1 tick = 0.001 USDC
     sell_base_lots = 1 * (10**3)
     sell_ticks_per_lot = 2 * (10**3)
     place_limit_order(
@@ -202,22 +196,20 @@ def start():
     if n_fills == 0:
         print("  * There were no limit orders filled by any orders placed.")
     else:
-        print(
-            f"  * There were {n_fills} limit orders filled by the orders placed."
-        )
+        print(f"  * There were {n_fills} limit orders filled by the orders placed.")
     dump_txns()
     report_best_price_levels(viewer, market_id)
 
-    input("\n\nPress enter to set-up an Account B with funds.")
+    input("\n\nPress enter to setup an Account B with funds.")
     account_B = setup_new_account(viewer, faucet_client, market_id)
-    print(f"Account B was set-up: {account_B.account_address}")
+    print(f"Account B was setup: {account_B.account_address}")
     dump_txns()
 
     input(
         "\n\nPress enter to place market orders (buy and sell) with Account B."
     )
-    place_market_order(Side.BID, account_B, market_id, 500)  # Buy 0.5 ETH
-    place_market_order(Side.ASK, account_B, market_id, 500)  # Sell 0.5 ETH
+    place_market_order(Side.BID, account_B, market_id, 500)  # Buy 0.5 eAPT
+    place_market_order(Side.ASK, account_B, market_id, 500)  # Sell 0.5 eAPT
     fill_size = len(
         get_fill_events(viewer, account_B.account_address, market_id, 0)
     )
@@ -268,9 +260,7 @@ def start():
         "\n\nPress enter to place spread-crossing limit order with Account B (no remainder)."
     )
     equal_volume = 100 + 200 + 300 + 400 + 500
-    place_limit_order(
-        Side.ASK, account_B, market_id, equal_volume, buy_ticks_per_lot
-    )
+    place_limit_order(Side.ASK, account_B, market_id, equal_volume, buy_ticks_per_lot)
     fills = get_fill_events(viewer, account_B.account_address, market_id, 0)
     report_fill_events(fills)
     opens = get_open_orders_all(viewer, market_id)
@@ -282,9 +272,7 @@ def start():
         "\n\nPress enter to place spread-crossing limit order with Account B (w/ remainder)."
     )
     greater_volume = equal_volume * 2
-    place_limit_order(
-        Side.BID, account_B, market_id, greater_volume, start_ask_price
-    )
+    place_limit_order(Side.BID, account_B, market_id, greater_volume, start_ask_price)
     fills = get_fill_events(viewer, account_B.account_address, market_id, 0)
     report_fill_events(fills)
     opens = get_open_orders_all(viewer, market_id)
@@ -303,8 +291,8 @@ def place_market_order(
 ):
     calldata = place_market_order_user_entry(
         ECONIA_ADDR,
-        TypeTag(StructTag.from_str(COIN_TYPE_ETH)),
-        TypeTag(StructTag.from_str(COIN_TYPE_USDC)),
+        TypeTag(StructTag.from_str(COIN_TYPE_EAPT)),
+        TypeTag(StructTag.from_str(COIN_TYPE_EUSDC)),
         market_id,
         ECONIA_ADDR,
         direction,
@@ -328,8 +316,8 @@ def place_limit_order(
 ):
     calldata = place_limit_order_user_entry(
         ECONIA_ADDR,
-        TypeTag(StructTag.from_str(COIN_TYPE_ETH)),
-        TypeTag(StructTag.from_str(COIN_TYPE_USDC)),
+        TypeTag(StructTag.from_str(COIN_TYPE_EAPT)),
+        TypeTag(StructTag.from_str(COIN_TYPE_EUSDC)),
         market_id,
         ECONIA_ADDR,
         direction,
@@ -404,16 +392,16 @@ def setup_new_account(
     account = Account.generate()
     client = EconiaClient(NODE_URL, ECONIA_ADDR, account)
 
-    # Fund with APT, "ETH" and "USDC"
+    # Fund with APT, "eAPT" and "eUSDC"
     faucet.fund_account(account.address(), 1 * (10**8))
-    fund_ETH(account, base_wholes)
+    fund_APT(account, base_wholes)
     fund_USDC(account, quote_wholes)
 
     # Register market account
     calldata = register_market_account(
         ECONIA_ADDR,
-        TypeTag(StructTag.from_str(COIN_TYPE_ETH)),
-        TypeTag(StructTag.from_str(COIN_TYPE_USDC)),
+        TypeTag(StructTag.from_str(COIN_TYPE_EAPT)),
+        TypeTag(StructTag.from_str(COIN_TYPE_EUSDC)),
         market_id,
         0,
     )
@@ -422,63 +410,60 @@ def setup_new_account(
     mkt_account = get_market_account(
         viewer, account.account_address, market_id, 0
     )
-    account_eth_pre = mkt_account["base_available"] // 10**18
+    account_apt_pre = mkt_account["base_available"] // 10**8
     account_usdc_pre = mkt_account["quote_available"] // 10**6
 
-    # Deposit "ETH"
-    teth_subunits = base_wholes * (10**18)
+    # Deposit "eAPT"
+    eapt_subunits = base_wholes * (10**8)
     calldata = deposit_from_coinstore(
         ECONIA_ADDR,
-        TypeTag(StructTag.from_str(COIN_TYPE_ETH)),
+        TypeTag(StructTag.from_str(COIN_TYPE_EAPT)),
         market_id,
         0,
-        teth_subunits,
+        eapt_subunits,
     )
     exec_txn(
         client,
         calldata,
-        f"Deposit {teth_subunits/(10**18)} tETH to market account",
+        f"Deposit {eapt_subunits/(10**8)} eAPT to market account",
     )
 
-    # Deposit "USDC"
-    tusdc_subunits = quote_wholes * (10**6)
+    # Deposit "eUSDC"
+    eusdc_subunits = quote_wholes * (10**6)
     calldata = deposit_from_coinstore(
         ECONIA_ADDR,
-        TypeTag(StructTag.from_str(COIN_TYPE_USDC)),
+        TypeTag(StructTag.from_str(COIN_TYPE_EUSDC)),
         market_id,
         0,
-        tusdc_subunits,
+        eusdc_subunits,
     )
     exec_txn(
         client,
         calldata,
-        f"Deposit {tusdc_subunits/(10**6)} tETH to market account",
+        f"Deposit {eusdc_subunits/(10**6)} eUSDC to market account",
     )
 
-    mkt_account = get_market_account(
-        viewer, account.account_address, market_id, 0
-    )
+    mkt_account = get_market_account(viewer, account.account_address, market_id, 0)
     print("New market account after deposit:")
-    account_eth = mkt_account["base_available"] / 10**18
+    account_apt = mkt_account["base_available"] / 10**8
     account_usdc = mkt_account["quote_available"] / 10**6
-    print(f"  * tETH: {account_eth_pre} -> {account_eth}")
-    print(f"  * tUSDC: {account_usdc_pre} -> {account_usdc}")
+    print(f"  * eAPT: {account_apt_pre} -> {account_apt}")
+    print(f"  * eUSDC: {account_usdc_pre} -> {account_usdc}")
     return account
 
 
-# NOTE: `wholes` must be 18 or under due to u64 sizing restrictions
-def fund_ETH(account: Account, wholes: int):
+def fund_APT(account: Account, wholes: int):
     calldata = EntryFunction(
         ModuleId.from_str(f"{FAUCET_ADDR}::faucet"),  # module
         "mint",  # funcname
-        [TypeTag(StructTag.from_str(COIN_TYPE_ETH))],  # generics
+        [TypeTag(StructTag.from_str(COIN_TYPE_EAPT))],  # generics
         [encoder(wholes * (10**18), Serializer.u64)],  # arguments
     )
 
     return exec_txn(
         EconiaClient(NODE_URL, ECONIA_ADDR, account),
         calldata,
-        f"Mint {wholes/1.0} tETH (yet to be deposited)",
+        f"Mint {wholes/1.0} eAPT (yet to be deposited)",
     )
 
 
@@ -486,25 +471,26 @@ def fund_USDC(account: Account, wholes: int):
     calldata = EntryFunction(
         ModuleId.from_str(f"{FAUCET_ADDR}::faucet"),  # module
         "mint",  # funcname
-        [TypeTag(StructTag.from_str(COIN_TYPE_USDC))],  # generics
+        [TypeTag(StructTag.from_str(COIN_TYPE_EUSDC))],  # generics
         [encoder(wholes * (10**6), Serializer.u64)],  # arguments
     )
     return exec_txn(
         EconiaClient(NODE_URL, ECONIA_ADDR, account),
         calldata,
-        f"Mint {wholes/1.0} tUSDC (yet to be deposited)",
+        f"Mint {wholes/1.0} eUSDC (yet to be deposited)",
     )
 
 
 def setup_market(faucet_client: FaucetClient, viewer: EconiaViewer) -> int:
-    lot_size = 10 ** (18 - 3)  # tETH has 18 decimals, want 1/1000th granularity
-    tick_size = 10 ** (6 - 3)  # tUSDC has 6 decimals, want 1/1000th granularity
-    min_size = 7
+    lot_size = 10 ** (8 - 3)  # eAPT has 8 decimals, want 1/1000th granularity
+    tick_size = 10 ** (6 - 3)  # eUSDC has 6 decimals, want 1/1000th granularity
+    min_size = 1
     market_id = get_market_id_base_coin(
-        viewer, COIN_TYPE_ETH, COIN_TYPE_USDC, lot_size, tick_size, min_size
+        viewer, COIN_TYPE_EAPT, COIN_TYPE_EUSDC, lot_size, tick_size, min_size
     )
     if market_id == None:
         account_XCH = Account.generate()
+        # The faucet only gives out 1 APT at a time, have to go multiple times
         faucet_client.fund_account(account_XCH.address(), 1 * (10**8))
         faucet_client.fund_account(account_XCH.address(), 1 * (10**8))
         faucet_client.fund_account(account_XCH.address(), 1 * (10**8))
@@ -513,8 +499,8 @@ def setup_market(faucet_client: FaucetClient, viewer: EconiaViewer) -> int:
         print("Market does not exist yet, creating one...")
         calldata = register_market_base_coin_from_coinstore(
             ECONIA_ADDR,
-            TypeTag(StructTag.from_str(COIN_TYPE_ETH)),
-            TypeTag(StructTag.from_str(COIN_TYPE_USDC)),
+            TypeTag(StructTag.from_str(COIN_TYPE_EAPT)),
+            TypeTag(StructTag.from_str(COIN_TYPE_EUSDC)),
             TypeTag(StructTag.from_str(COIN_TYPE_APT)),
             lot_size,
             tick_size,
@@ -526,13 +512,11 @@ def setup_market(faucet_client: FaucetClient, viewer: EconiaViewer) -> int:
             "Create a new market",
         )
         market_id = get_market_id_base_coin(
-            viewer, COIN_TYPE_ETH, COIN_TYPE_USDC, lot_size, tick_size, min_size
+            viewer, COIN_TYPE_EAPT, COIN_TYPE_EUSDC, lot_size, tick_size, min_size
         )
         events = get_market_registration_events(viewer)
         report_market_creation_event(
-            list(filter(lambda e: e["data"]["market_id"] == market_id, events))[
-                0
-            ]
+            list(filter(lambda e: e["data"]["market_id"] == market_id, events))[0]
         )
     if market_id == None:
         exit()
@@ -560,7 +544,7 @@ def report_best_price_levels(viewer: EconiaViewer, market_id: int):
     print("CURRENT BEST PRICE LEVELS:")
     price_levels = get_price_levels(viewer, market_id)
     if len(price_levels["bids"]) == 0 and len(price_levels["asks"]) == 0:
-        print("There is no tETH being bought or sold right now!")
+        print("There is no eAPT being bought or sold right now!")
         return
 
     if len(price_levels["bids"]) != 0:
@@ -588,14 +572,10 @@ def report_market_creation_event(event: dict):
     print("EVENT SUMMARY: MarketRegistrationEvent")
     base_mod_name = event["data"]["base_type"]["module_name"]
     base_str_name = event["data"]["base_type"]["struct_name"]
-    print(
-        f"  * Base Type (unit of lots): 0x...::{base_mod_name}::{base_str_name}"
-    )
+    print(f"  * Base Type (unit of lots): 0x...::{base_mod_name}::{base_str_name}")
     quote_mod_name = event["data"]["quote_type"]["module_name"]
     quote_str_name = event["data"]["quote_type"]["struct_name"]
-    print(
-        f"  * Quote Type (unit of ticks): 0x...::{quote_mod_name}::{quote_str_name}"
-    )
+    print(f"  * Quote Type (unit of ticks): 0x...::{quote_mod_name}::{quote_str_name}")
 
 
 def report_place_limit_order_event(event: dict):
@@ -611,8 +591,8 @@ def report_place_limit_order_event(event: dict):
     print(f"  * User address: {user_addr}")
     print(f"  * Order ID: {order_id}")
     print(f"  * Side: {positioning} {positioning_tip}")
-    print(f"  * Price: {ticks_price} tUSDC ticks per tETH lot")
-    print(f"  * Size: {size_available} available tETH lots / {size_original}")
+    print(f"  * Price: {ticks_price} eUSDC ticks per eAPT lot")
+    print(f"  * Size: {size_available} available eAPT lots / {size_original}")
 
 
 def report_fill_events(fill_events: list[dict]):
@@ -630,15 +610,11 @@ def report_fill_events(fill_events: list[dict]):
                 f"  * There were {n_last_events} BID orders filled by the ASK order placement."
             )
 
-        last_events_prices = list(
-            map(lambda ev: ev["data"]["price"], last_events)
-        )
+        last_events_prices = list(map(lambda ev: ev["data"]["price"], last_events))
         price_render = " -> ".join(str(price) for price in last_events_prices)
         print(f"  * Execution prices (ticks/lot): {price_render}")
 
-        last_events_sizes = list(
-            map(lambda ev: ev["data"]["size"], last_events)
-        )
+        last_events_sizes = list(map(lambda ev: ev["data"]["size"], last_events))
         sizes_render = " +> ".join(str(price) for price in last_events_sizes)
         print(f"  * Execution sizes (lots): {sizes_render}")
 
@@ -651,19 +627,15 @@ def report_fill_events(fill_events: list[dict]):
         print("  * There were no order fills for the queried account")
 
 
-def report_order_for_last_fill(
-    fill_events: list[dict], open_orders: list[dict]
-):
+def report_order_for_last_fill(fill_events: list[dict], open_orders: list[dict]):
     order_id = fill_events[-1]["data"]["taker_order_id"]
-    open_order = list(
-        filter(lambda ev: ev["order_id"] == order_id, open_orders)
-    )
+    open_order = list(filter(lambda ev: ev["order_id"] == order_id, open_orders))
     if len(open_order) == 1:
         print("  * The order WAS NOT fully satisfied by initial execution")
     elif len(open_order) == 0:
         print("  * The order WAS fully satisfied by initial execution")
     else:
-        print("  * Put on a hazmat suit because it has two cancel events!")
+        raise SystemError("This is not possible")
 
 
 def find_all_fill_events_with_last_taker_order_id(

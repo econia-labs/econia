@@ -3,7 +3,6 @@ import { useEffect, useMemo, useRef } from "react";
 
 import { useOrderEntry } from "@/contexts/OrderEntryContext";
 import { type ApiMarket } from "@/types/api";
-// import { type Precision } from "@/types/global";
 import { type Orderbook, type PriceLevel } from "@/types/global";
 import { toDecimalPrice, toDecimalSize } from "@/utils/econia";
 import { averageOrOtherPriceLevel } from "@/utils/formatter";
@@ -25,7 +24,7 @@ const Row: React.FC<{
   highestSize: number;
   marketData: ApiMarket;
 }> = ({ level, type, highestSize, marketData }) => {
-  const { setType, setPrice } = useOrderEntry();
+  const { setPrice } = useOrderEntry();
   const price = toDecimalPrice({
     price: new BigNumber(level.price),
     lotSize: BigNumber(marketData.lot_size),
@@ -48,7 +47,6 @@ const Row: React.FC<{
     <div
       className="relative flex h-6 cursor-pointer items-center justify-between py-[1px] hover:ring-1 hover:ring-neutral-600"
       onClick={() => {
-        setType(type === "ask" ? "buy" : "sell");
         setPrice(price.toString());
       }}
       style={{
@@ -88,6 +86,7 @@ export function OrderbookTable({
   // const [precision, setPrecision] = useState<Precision>(precisionOptions[0]);
 
   const centerRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     centerRef.current?.scrollIntoView({
       behavior: "smooth",

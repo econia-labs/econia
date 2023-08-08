@@ -10,7 +10,6 @@ import { toast } from "react-toastify";
 import { DepthChart } from "@/components/DepthChart";
 import { Header } from "@/components/Header";
 import { OrderbookTable } from "@/components/OrderbookTable";
-import { Page } from "@/components/Page";
 import { StatsBar } from "@/components/StatsBar";
 import { OrderEntry } from "@/components/trade/OrderEntry";
 import { OrdersTable } from "@/components/trade/OrdersTable";
@@ -279,7 +278,21 @@ export default function Market({ allMarketData, marketData }: Props) {
     { keepPreviousData: true, refetchOnWindowFocus: false },
   );
 
-  if (!marketData) return <Page>Market not found.</Page>;
+  if (!marketData)
+    return (
+      <>
+        <Head>
+          <title>Not Found</title>
+        </Head>
+        <div className="flex min-h-screen flex-col">
+          <Header
+            allMarketData={allMarketData}
+            logoHref={`${allMarketData[0].name}`}
+          />
+          Market not found.
+        </div>
+      </>
+    );
 
   const defaultTVChartProps = {
     symbol: marketData.name,
@@ -302,8 +315,11 @@ export default function Market({ allMarketData, marketData }: Props) {
         <title>{`${marketData.name} | Econia`}</title>
       </Head>
       <div className="flex min-h-screen flex-col">
-        <Header logoHref={`${allMarketData[0].name}`} />
-        <StatsBar selectedMarket={marketData} />
+        <Header
+          allMarketData={allMarketData}
+          logoHref={`${allMarketData[0].name}`}
+        />
+        <StatsBar allMarketData={allMarketData} selectedMarket={marketData} />
         <main className="flex h-full min-h-[680px] w-full grow">
           <div className="flex grow flex-col p-3">
             <div className="mb-3 flex grow flex-col border border-neutral-600">
@@ -316,7 +332,10 @@ export default function Market({ allMarketData, marketData }: Props) {
               </div>
             </div>
             <div className="border border-neutral-600">
-              <p className="my-3 ml-4 font-jost font-bold text-white">Orders</p>
+              <div className="bg-black py-3 pl-4">
+                <p className="font-jost font-bold text-white">Orders</p>
+              </div>
+
               <OrdersTable allMarketData={allMarketData} />
             </div>
           </div>
@@ -330,7 +349,7 @@ export default function Market({ allMarketData, marketData }: Props) {
               />
             </div>
           </div>
-          <div className="flex min-w-[268px] flex-col py-3 pr-3">
+          <div className="flex min-w-[296px] max-w-[296px] flex-col py-3 pr-3">
             <div className="border border-neutral-600">
               <OrderEntry marketData={marketData} />
             </div>

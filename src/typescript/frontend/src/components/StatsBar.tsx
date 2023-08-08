@@ -1,8 +1,7 @@
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import { useQuery } from "@tanstack/react-query";
 import BigNumber from "bignumber.js";
-import { useRouter } from "next/router";
-import React, { useState } from "react";
+import { useState } from "react";
 
 import { useAptos } from "@/contexts/AptosContext";
 import { API_URL } from "@/env";
@@ -72,10 +71,10 @@ const SocialMediaIcons: React.FC<{ className?: string }> = ({ className }) => {
 };
 
 export const StatsBar: React.FC<{
+  allMarketData: ApiMarket[];
   selectedMarket: ApiMarket;
-}> = ({ selectedMarket }) => {
+}> = ({ allMarketData, selectedMarket }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const router = useRouter();
   const { coinListClient } = useAptos();
 
   const { data } = useQuery(
@@ -144,13 +143,7 @@ export const StatsBar: React.FC<{
         }}
         showCloseButton={false}
       >
-        <SelectMarketContent
-          onSelectMarket={(market) => {
-            setIsModalOpen(false);
-            false;
-            router.push(`/trade/${market.name}`);
-          }}
-        />
+        <SelectMarketContent allMarketData={allMarketData} />
       </BaseModal>
       <div className="flex justify-between border-b border-neutral-600 px-9 py-3">
         <div className="flex overflow-x-clip whitespace-nowrap">

@@ -1,0 +1,58 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        with bars as (\n            select * from bars_1m\n            where start_time >= now() - $1::interval and start_time < now()\n        ),\n        first as (\n            select market_id, start_time, first_value(open) over (\n                partition by market_id order by start_time\n            ) as open from bars\n        ),\n        last as (\n            select market_id, start_time, first_value(close) over (\n                partition by market_id order by start_time desc\n            ) as close from bars\n        )\n        select\n            bars.market_id,\n            min(first.open) as \"open!\",\n            max(high) as \"high!\",\n            min(low) as \"low!\",\n            min(last.close) as \"close!\",\n            round(min(last.close) / min(first.open) - 1, 8) as \"change!\",\n            sum(volume) as \"volume!\"\n        from\n            bars\n            inner join first on bars.start_time = first.start_time\n                and bars.market_id = first.market_id\n            inner join last on bars.start_time = last.start_time\n                and bars.market_id = last.market_id\n        group by bars.market_id order by market_id;\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "market_id",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 1,
+        "name": "open!",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 2,
+        "name": "high!",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 3,
+        "name": "low!",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 4,
+        "name": "close!",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 5,
+        "name": "change!",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 6,
+        "name": "volume!",
+        "type_info": "Numeric"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Interval"
+      ]
+    },
+    "nullable": [
+      false,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "636def1b4176053b65b7532cd8e7cc83468af2f7843332d3e8713a27cc612a87"
+}

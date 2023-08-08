@@ -479,7 +479,7 @@ pub async fn get_fills(
     Path(market_id): Path<u64>,
     Query(params): Query<FillsParams>,
     State(state): State<Arc<AppState>>,
-) -> Result<Json<Vec<types::order::Fill>>, ApiError> {
+) -> Result<Json<Vec<types::events::FillEvent>>, ApiError> {
     if params.from > params.to {
         return Err(ApiError::InvalidTimeRange);
     }
@@ -496,18 +496,23 @@ pub async fn get_fills(
     tracing::debug!("querying range {} to {}", from, to);
 
     let fills_query = sqlx::query_as!(
-        db::models::fill::Fill,
+        db::models::order::FillEvent,
         r#"
         select
             market_id,
-            maker_order_id,
-            maker,
-            maker_side as "maker_side: db::models::order::Side",
-            custodian_id,
             size,
             price,
+            maker_side as "maker_side: db::models::order::Side",
+            maker,
+            maker_custodian_id,
+            maker_order_id,
+            taker,
+            taker_custodian_id,
+            taker_order_id,
+            taker_quote_fees_paid,
+            sequence_number_for_trade,
             time
-        from fills where market_id = $1 and time >= $2 and time < $3 order by time;
+        from fill_events where market_id = $1 and time >= $2 and time < $3 order by time;
         "#,
         market_id,
         from,
@@ -519,7 +524,7 @@ pub async fn get_fills(
     let fills = fills_query
         .into_iter()
         .map(|v| v.try_into())
-        .collect::<Result<Vec<types::order::Fill>, TypeError>>()?;
+        .collect::<Result<Vec<_>, TypeError>>()?;
 
     Ok(Json(fills))
 }
@@ -535,16 +540,17 @@ pub async fn get_order_by_market_order_id(
         db::models::order::Order,
         r#"
         select
-            market_order_id,
+            order_id,
             market_id,
             side as "side: db::models::order::Side",
             size,
+            remaining_size,
             price,
             user_address,
             custodian_id,
             order_state as "order_state: db::models::order::OrderState",
             created_at
-        from orders where market_id = $1 and market_order_id = $2;
+        from orders where market_id = $1 and order_id = $2;
         "#,
         market_id,
         market_order_id

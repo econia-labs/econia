@@ -73,7 +73,7 @@ export const MarketOrderEntry: React.FC<{
     if (side === "sell") {
       // check that user has sufficient base coins on ask
       if (rawBaseBalance.lt(rawSize)) {
-        setError("size", { message: "INSUFFICIENT BASE BALANCE" });
+        setError("size", { message: "INSUFFICIENT BALANCE" });
         return;
       }
     }

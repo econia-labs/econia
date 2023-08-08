@@ -105,13 +105,13 @@ export const LimitOrderEntry: React.FC<{
             .div(new BigNumber(10).pow(marketData.base.decimals)),
         )
       ) {
-        setError("size", { message: "INSUFFICIENT QUOTE BALANCE" });
+        setError("size", { message: "INSUFFICIENT BALANCE" });
         return;
       }
     } else {
       // check that user has sufficient base coins on ask
       if (rawBaseBalance.lt(rawSize)) {
-        setError("size", { message: "INSUFFICIENT BASE BALANCE" });
+        setError("size", { message: "INSUFFICIENT BALANCE" });
         return;
       }
     }

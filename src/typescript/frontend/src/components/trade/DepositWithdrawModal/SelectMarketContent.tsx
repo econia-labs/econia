@@ -22,6 +22,7 @@ import {
   volFormatter,
 } from "@/utils/formatter";
 import { TypeTag } from "@/utils/TypeTag";
+import Skeleton from "react-loading-skeleton";
 
 import { useAllMarketStats } from ".";
 

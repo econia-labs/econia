@@ -8,6 +8,7 @@ import {
 import React from "react";
 
 import { type ApiMarket, type ApiOrder } from "@/types/api";
+import Skeleton from "react-loading-skeleton";
 
 const columnHelper = createColumnHelper<ApiOrder>();
 
@@ -101,13 +102,27 @@ export const TradeHistoryTable: React.FC<{
           </td>
         </tr>
         {isLoading || !data ? (
-          <tr>
-            <td colSpan={7}>
-              <div className="flex h-[150px] flex-col items-center justify-center text-sm font-light uppercase text-neutral-500">
-                Loading...
-              </div>
-            </td>
-          </tr>
+          <>
+            {/* temporarily removing skeletong to help UX and reduce glitchyness. see: ECO-230 */}
+            {/* <tr>
+              {table.getAllColumns().map((column, i) => (
+                <td
+                  className={`text-xs ${
+                    i === 0
+                      ? "pl-4 text-left"
+                      : i === 1
+                      ? "text-left"
+                      : "pr-4 text-right"
+                  }`}
+                  key={column.id}
+                >
+                  <div className={"px-1"}>
+                    <Skeleton />
+                  </div>
+                </td>
+              ))}
+            </tr> */}
+          </>
         ) : data.length === 0 ? (
           <tr>
             <td colSpan={7}>

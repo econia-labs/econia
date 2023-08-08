@@ -6,6 +6,7 @@ import { type ApiMarket } from "@/types/api";
 import { type Orderbook, type PriceLevel } from "@/types/global";
 import { toDecimalPrice, toDecimalSize } from "@/utils/econia";
 import { averageOrOtherPriceLevel } from "@/utils/formatter";
+import Skeleton from "react-loading-skeleton";
 
 // const precisionOptions: Precision[] = [
 //   "0.01",
@@ -114,14 +115,6 @@ export function OrderbookTable({
     );
   }, [data]);
 
-  if (isLoading || data == null) {
-    return (
-      <div className="flex h-full flex-col items-center justify-center text-sm font-light uppercase text-neutral-500">
-        Loading...
-      </div>
-    );
-  }
-
   return (
     <div className="flex grow flex-col">
       {/* title row */}
@@ -164,49 +157,75 @@ export function OrderbookTable({
       </div>
       {/* bids ask spread scrollable container */}
       <div className="scrollbar-none relative grow overflow-y-auto">
-        <div className="absolute w-full">
-          {/* ASK */}
-          {data.asks
-            .slice()
-            .reverse()
-            .map((level) => (
+        {isLoading ? (
+          <div className="absolute w-full">
+            {Array.from({ length: 60 }, (_, i) => (
+              <div
+                className="relative flex h-6 w-full cursor-pointer items-center justify-between py-[1px] hover:ring-1 hover:ring-neutral-600"
+                key={"skeleton-" + i}
+              >
+                <Skeleton
+                  containerClassName={`z-10 ml-2 font-roboto-mono text-xs text-left`}
+                  style={{
+                    width: `${i % 2 == 0 ? 90 : 70}px`,
+                  }}
+                />
+                <Skeleton
+                  containerClassName="z-10 mr-2 py-0.5 font-roboto-mono text-xs text-white text-right"
+                  style={{
+                    width: `${i % 2 == 0 ? 90 : 70}px`,
+                  }}
+                />
+
+                <div className={`absolute right-0 z-0 h-full opacity-30`}></div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="absolute w-full">
+            {/* ASK */}
+            {data?.asks
+              .slice()
+              .reverse()
+              .map((level) => (
+                <Row
+                  level={level}
+                  type={"ask"}
+                  key={`ask-${level.price}-${level.size}`}
+                  highestSize={highestSize}
+                  marketData={marketData}
+                />
+              ))}
+            {/* SPREAD */}
+            <div
+              className="flex items-center justify-between border-y border-neutral-600"
+              ref={centerRef}
+            >
+              <div className="z-10 ml-4 text-right font-roboto-mono text-xs text-white">
+                {toDecimalPrice({
+                  price: new BigNumber(midPrice?.price || 0),
+                  lotSize: BigNumber(marketData.lot_size),
+                  tickSize: BigNumber(marketData.tick_size),
+                  baseCoinDecimals: BigNumber(marketData.base?.decimals || 0),
+                  quoteCoinDecimals: BigNumber(marketData.quote?.decimals || 0),
+                }).toNumber()}
+              </div>
+              <div className="mr-4 font-roboto-mono text-white">
+                {midPrice?.size || "-"}
+              </div>
+            </div>
+            {/* BID */}
+            {data?.bids.map((level) => (
               <Row
                 level={level}
-                type={"ask"}
-                key={`ask-${level.price}-${level.size}`}
+                type={"bid"}
+                key={`bid-${level.price}-${level.size}`}
                 highestSize={highestSize}
                 marketData={marketData}
               />
             ))}
-          {/* SPREAD */}
-          <div
-            className="flex items-center justify-between border-y border-neutral-600"
-            ref={centerRef}
-          >
-            <div className="z-10 ml-4 text-right font-roboto-mono text-xs text-white">
-              {toDecimalPrice({
-                price: new BigNumber(midPrice?.price || 0),
-                lotSize: BigNumber(marketData.lot_size),
-                tickSize: BigNumber(marketData.tick_size),
-                baseCoinDecimals: BigNumber(marketData.base?.decimals || 0),
-                quoteCoinDecimals: BigNumber(marketData.quote?.decimals || 0),
-              }).toNumber()}
-            </div>
-            <div className="mr-4 font-roboto-mono text-white">
-              {midPrice?.size || "-"}
-            </div>
           </div>
-          {/* BID */}
-          {data.bids.map((level) => (
-            <Row
-              level={level}
-              type={"bid"}
-              key={`bid-${level.price}-${level.size}`}
-              highestSize={highestSize}
-              marketData={marketData}
-            />
-          ))}
-        </div>
+        )}
       </div>
     </div>
   );

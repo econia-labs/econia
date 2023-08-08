@@ -1,4 +1,4 @@
-import { useWallet } from "@manahippo/aptos-wallet-adapter";
+import { useWallet } from "@aptos-labs/wallet-adapter-react";
 import React, { type PropsWithChildren } from "react";
 
 import { useConnectWallet } from "@/contexts/ConnectWalletContext";
@@ -15,9 +15,12 @@ export const ConnectedButton: React.FC<
     <>
       {!connected ? (
         <Button
-          className={`whitespace-nowrap py-1.5 text-[14px] ${className}`}
+          className={`whitespace-nowrap text-[16px]/6 ${className}`}
           variant="primary"
-          onClick={connectWallet}
+          onClick={(e) => {
+            e.preventDefault();
+            connectWallet();
+          }}
         >
           Connect Wallet
         </Button>

@@ -14,15 +14,7 @@ export const BaseModal: React.FC<
     showBackButton?: boolean;
     disablePadding?: boolean;
   }>
-> = ({
-  open,
-  onClose,
-  onBack,
-  showBackButton,
-  showCloseButton,
-  children,
-  disablePadding,
-}) => {
+> = ({ open, onClose, onBack, showBackButton, showCloseButton, children }) => {
   return (
     <Transition appear show={open} as={Fragment}>
       <Dialog as="div" className="relative z-50" open={open} onClose={onClose}>
@@ -41,9 +33,7 @@ export const BaseModal: React.FC<
         <div className="fixed inset-0 overflow-y-auto">
           <div className="flex min-h-full items-center justify-center p-4 text-center">
             <Dialog.Panel
-              className={`w-full max-w-4xl transform border border-neutral-600 bg-black ${
-                disablePadding === true ? "" : "p-6"
-              } align-middle shadow-xl transition-all`}
+              className="w-full max-w-4xl transform border border-neutral-600 bg-black align-middle shadow-xl transition-all"
               style={{
                 backgroundImage: `url(${bg.src})`,
               }}

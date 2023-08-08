@@ -18,6 +18,7 @@
 ///
 /// [Function index](#function-index)
 ///
+/// * [View functions](#view-functions)
 /// * [Public functions](#public-functions)
 /// * [Public entry functions](#public-entry-functions)
 /// * [Public friend functions](#public-friend-functions)
@@ -80,13 +81,48 @@
 ///
 /// # Function index
 ///
-/// ## Public functions
+/// ## View functions
 ///
 /// Constant getters:
 ///
 /// * `get_ASK()`
 /// * `get_BID()`
+/// * `get_CANCEL_REASON_EVICTION()`
+/// * `get_CANCEL_REASON_IMMEDIATE_OR_CANCEL()`
+/// * `get_CANCEL_REASON_MANUAL_CANCEL()`
+/// * `get_CANCEL_REASON_MAX_QUOTE_TRADED()`
+/// * `get_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY()`
+/// * `get_CANCEL_REASON_SELF_MATCH_MAKER()`
+/// * `get_CANCEL_REASON_SELF_MATCH_TAKER()`
+/// * `get_CANCEL_REASON_TOO_SMALL_TO_FILL_LOT()`
+/// * `get_CANCEL_REASON_VIOLATED_LIMIT_PRICE()`
 /// * `get_NO_CUSTODIAN()`
+///
+/// Market account lookup:
+///
+/// * `get_all_market_account_ids_for_market_id()`
+/// * `get_all_market_account_ids_for_user()`
+/// * `get_market_account()`
+/// * `get_market_accounts()`
+/// * `get_market_event_handle_creation_numbers()`
+/// * `has_market_account()`
+/// * `has_market_account_by_market_account_id()`
+/// * `has_market_account_by_market_id()`
+///
+/// Market account ID lookup:
+///
+/// * `get_custodian_id()`
+/// * `get_market_account_id()`
+/// * `get_market_id()`
+///
+/// ## Public functions
+///
+/// Market account lookup
+///
+/// * `get_asset_counts_custodian()`
+/// * `get_asset_counts_user()`
+/// * `get_market_account_market_info_custodian()`
+/// * `get_market_account_market_info_user()`
 ///
 /// Asset transfer:
 ///
@@ -97,23 +133,6 @@
 /// * `withdraw_generic_asset_custodian()`
 /// * `withdraw_generic_asset_user()`
 ///
-/// Market account lookup:
-///
-/// * `get_all_market_account_ids_for_market_id()`
-/// * `get_all_market_account_ids_for_user()`
-/// * `get_asset_counts_custodian()`
-/// * `get_asset_counts_user()`
-/// * `get_market_account_market_info_custodian()`
-/// * `get_market_account_market_info_user()`
-/// * `has_market_account_by_market_account_id()`
-/// * `has_market_account_by_market_id()`
-///
-/// Market account ID lookup:
-///
-/// * `get_custodian_id()`
-/// * `get_market_account_id()`
-/// * `get_market_id()`
-///
 /// ## Public entry functions
 ///
 /// Asset transfer:
@@ -123,6 +142,7 @@
 ///
 /// Account registration:
 ///
+/// * `init_market_event_handles_if_missing()`
 /// * `register_market_account()`
 /// * `register_market_account_generic_base()`
 ///
@@ -132,6 +152,7 @@
 ///
 /// * `cancel_order_internal()`
 /// * `change_order_size_internal()`
+/// * `get_open_order_id_internal()`
 /// * `fill_order_internal()`
 /// * `place_order_internal()`
 ///
@@ -145,6 +166,14 @@
 ///
 /// * `get_next_order_access_key_internal()`
 /// * `get_active_market_order_ids_internal()`
+///
+/// Market events:
+///
+/// * `create_cancel_order_event_internal()`
+/// * `create_fill_event_internal()`
+/// * `emit_limit_order_events_internal()`
+/// * `emit_market_order_events_internal()`
+/// * `emit_swap_maker_fill_events_internal()`
 ///
 /// ## Dependency charts
 ///
@@ -211,7 +240,6 @@
 /// get_asset_counts_custodian --> get_asset_counts_internal
 /// get_asset_counts_custodian --> registry::get_custodian_id
 ///
-///
 /// get_market_account_market_info_custodian -->
 ///     get_market_account_market_info
 /// get_market_account_market_info_custodian -->
@@ -219,6 +247,24 @@
 ///
 /// get_market_account_market_info_user -->
 ///     get_market_account_market_info
+///
+/// get_market_accounts --> get_all_market_account_ids_for_user
+/// get_market_accounts --> get_market_id
+/// get_market_accounts --> get_custodian_id
+/// get_market_accounts --> get_market_account
+///
+/// get_market_account --> get_market_account_id
+/// get_market_account --> has_market_account_by_market_account_id
+/// get_market_account --> vectorize_open_orders
+///
+/// get_open_order_id_internal --> get_market_account_id
+/// get_open_order_id_internal -->
+///     has_market_account_by_market_account_id
+///
+/// has_market_account --> has_market_account_by_market_account_id
+/// has_market_account --> get_market_account_id
+///
+/// get_market_event_handle_creation_numbers --> get_market_account_id
 ///
 /// ```
 ///
@@ -231,11 +277,14 @@
 /// register_market_account --> registry::is_registered_custodian_id
 /// register_market_account --> register_market_account_account_entries
 /// register_market_account --> register_market_account_collateral_entry
+/// register_market_account --> init_market_event_handles_if_missing
 ///
 /// register_market_account_generic_base --> register_market_account
 ///
 /// register_market_account_account_entries -->
 ///     registry::get_market_info_for_market_account
+///
+/// init_market_event_handles_if_missing --> has_market_account
 ///
 /// ```
 ///
@@ -250,6 +299,18 @@
 ///
 /// ```
 ///
+/// Market events:
+///
+/// ```mermaid
+///
+/// flowchart LR
+///
+/// emit_limit_order_events_internal --> emit_maker_fill_event
+/// emit_market_order_events_internal --> emit_maker_fill_event
+/// emit_swap_maker_fill_events_internal --> emit_maker_fill_event
+///
+/// ```
+///
 /// # Complete DocGen index
 ///
 /// The below index is automatically generated from source code:
@@ -257,8 +318,11 @@ module econia::user {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    use aptos_framework::account;
     use aptos_framework::coin::{Self, Coin};
+    use aptos_framework::guid;
     use aptos_framework::table::{Self, Table};
+    use aptos_framework::event::{Self, EventHandle};
     use aptos_framework::type_info::{Self, TypeInfo};
     use econia::tablist::{Self, Tablist};
     use econia::registry::{
@@ -279,8 +343,6 @@ module econia::user {
     // Test-only uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
-    use aptos_framework::account;
-    #[test_only]
     use econia::avl_queue::{u_128_by_32, u_64_by_32};
     #[test_only]
     use econia::assets::{Self, BC, QC, UC};
@@ -291,6 +353,37 @@ module econia::user {
 
     // Structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /// Emitted when an order is cancelled.
+    struct CancelOrderEvent has copy, drop, store {
+        /// Market ID for order.
+        market_id: u64,
+        /// Unique ID for order within market.
+        order_id: u128,
+        /// User for market account that placed order.
+        user: address,
+        /// Custodian ID for market account that placed order.
+        custodian_id: u64,
+        /// Reason for the cancel, for example
+        /// `CANCEL_REASON_MANUAL_CANCEL`.
+        reason: u8
+    }
+
+    /// Emitted when the size of an open order is manually changed.
+    struct ChangeOrderSizeEvent has copy, drop, store {
+        /// Market ID for order.
+        market_id: u64,
+        /// Unique ID for order within market.
+        order_id: u128,
+        /// User for market account that placed order.
+        user: address,
+        /// Custodian ID for market account that placed order.
+        custodian_id: u64,
+        /// `ASK` or `BID`.
+        side: bool,
+        /// Order size after manual size change operation.
+        new_size: u64
+    }
+
     /// All of a user's collateral across all market accounts.
     struct Collateral<phantom CoinType> has key {
         /// Map from market account ID to collateral for market account.
@@ -298,6 +391,38 @@ module econia::user {
         /// collisions across markets. Enables off-chain iterated
         /// indexing by market account ID.
         map: Tablist<u128, Coin<CoinType>>
+    }
+
+    /// Emitted when one order fills against another.
+    struct FillEvent has copy, drop, store {
+        /// Market ID for fill.
+        market_id: u64,
+        /// Amount filled, in lots.
+        size: u64,
+        /// Fill price, in ticks per lot.
+        price: u64,
+        /// `ASK` or `BID`, the side of the maker order.
+        maker_side: bool,
+        /// User address associated with market account for maker.
+        maker: address,
+        /// Custodian ID associated with market account for maker.
+        maker_custodian_id: u64,
+        /// Order ID for maker, unique within the market.
+        maker_order_id: u128,
+        /// User address associated with market account for taker.
+        taker: address,
+        /// Custodian ID associated with market account for taker.
+        taker_custodian_id: u64,
+        /// Order ID for taker, unique within the market.
+        taker_order_id: u128,
+        /// Amount of fees paid by taker on the fill, in indivisible
+        /// quote subunits.
+        taker_quote_fees_paid: u64,
+        /// Sequence number (0-indexed) of fill within a single trade,
+        /// which may have more than one fill. For example if a market
+        /// order results in two fills, the first will have sequence
+        /// number 0 and the second will have sequence number 1.
+        sequence_number_for_trade: u64
     }
 
     /// Represents a user's open orders and asset counts for a given
@@ -341,6 +466,30 @@ module econia::user {
         quote_ceiling: u64
     }
 
+    /// User-friendly market account view function return.
+    struct MarketAccountView has store {
+        /// Market ID for given market account.
+        market_id: u64,
+        /// Custodian ID for given market account.
+        custodian_id: u64,
+        /// All open asks.
+        asks: vector<Order>,
+        /// All open bids.
+        bids: vector<Order>,
+        /// `MarketAccount.base_total`.
+        base_total: u64,
+        /// `MarketAccount.base_available`.
+        base_available: u64,
+        /// `MarketAccount.base_ceiling`.
+        base_ceiling: u64,
+        /// `MarketAccount.quote_total`.
+        quote_total: u64,
+        /// `MarketAccount.quote_available`.
+        quote_available: u64,
+        /// `MarketAccount.quote_ceiling`.
+        quote_ceiling: u64
+    }
+
     /// All of a user's market accounts.
     struct MarketAccounts has key {
         /// Map from market account ID to `MarketAccount`.
@@ -352,6 +501,47 @@ module econia::user {
         custodians: Tablist<u64, vector<u64>>
     }
 
+    /// View function return for getting event handle creation numbers
+    /// of a particular `MarketEventHandlesForMarketAccount`.
+    struct MarketEventHandleCreationNumbers has copy, drop {
+        /// Creation number of `cancel_order_events` handle in a
+        /// `MarketEventHandlesForMarketAccount`.
+        cancel_order_events_handle_creation_num: u64,
+        /// Creation number of `change_order_size_events` handle in a
+        /// `MarketEventHandlesForMarketAccount`.
+        change_order_size_events_handle_creation_num: u64,
+        /// Creation number of `fill_events` handle in a
+        /// `MarketEventHandlesForMarketAccount`.
+        fill_events_handle_creation_num: u64,
+        /// Creation number of `place_limit_order_events` handle in a
+        /// `MarketEventHandlesForMarketAccount`.
+        place_limit_order_events_handle_creation_num: u64,
+        /// Creation number of `place_market_order_events` handle in a
+        /// `MarketEventHandlesForMarketAccount`.
+        place_market_order_events_handle_creation_num: u64
+    }
+
+    /// All of a user's `MarketEventHandlesForMarketAccount`.
+    struct MarketEventHandles has key {
+        /// Map from market account ID to
+        /// `MarketEventHandlesForMarketAccount`.
+        map: Table<u128, MarketEventHandlesForMarketAccount>
+    }
+
+    /// Event handles for market events within a unique market account.
+    struct MarketEventHandlesForMarketAccount has store {
+        /// Event handle for `CancelOrderEvent`s.
+        cancel_order_events: EventHandle<CancelOrderEvent>,
+        /// Event handle for `ChangeOrderSizeEvent`s.
+        change_order_size_events: EventHandle<ChangeOrderSizeEvent>,
+        /// Event handle for `FillEvent`s.
+        fill_events: EventHandle<FillEvent>,
+        /// Event handle for `PlaceLimitOrderEvent`s.
+        place_limit_order_events: EventHandle<PlaceLimitOrderEvent>,
+        /// Event handle for `PlaceMarketOrderEvent`s.
+        place_market_order_events: EventHandle<PlaceMarketOrderEvent>
+    }
+
     /// An open order, either ask or bid.
     struct Order has store {
         /// Market order ID. `NIL` if inactive.
@@ -359,6 +549,64 @@ module econia::user {
         /// Order size left to fill, in lots. When `market_order_id` is
         /// `NIL`, indicates access key of next inactive order in stack.
         size: u64
+    }
+
+    /// Emitted when a limit order is placed.
+    struct PlaceLimitOrderEvent has copy, drop, store {
+        /// Market ID for order.
+        market_id: u64,
+        /// User for market account that placed order.
+        user: address,
+        /// Custodian ID for market account that placed order.
+        custodian_id: u64,
+        /// Integrator address passed during limit order placement,
+        /// eligible for a portion of any generated taker fees.
+        integrator: address,
+        /// `ASK` or `BID`.
+        side: bool,
+        /// Size indicated during limit order placement.
+        size: u64,
+        /// Order limit price.
+        price: u64,
+        /// Restriction indicated during limit order placement, either
+        /// `market::FILL_OR_ABORT`, `market::IMMEDIATE_OR_CANCEL`,
+        /// `market::POST_OR_ABORT`, or `market::NO_RESTRICTION`.
+        restriction: u8,
+        /// Self match behavior indicated during limit order placement,
+        /// either `market::ABORT`, `market::CANCEL_BOTH`,
+        /// `market::CANCEL_MAKER`, or `market::CANCEL_TAKER`.
+        self_match_behavior: u8,
+        /// Order size remaining after the function call in which the
+        /// order was placed, which may include fills across the spread.
+        /// For example if an order of size 10 and restriction
+        /// `market::IMMEDIATE_OR_CANCEL` fills 6 lots across the
+        /// spread, the order will be cancelled and remaining size is 4.
+        remaining_size: u64,
+        /// Unique ID for order within market.
+        order_id: u128
+    }
+
+    /// Emitted when a market order is placed.
+    struct PlaceMarketOrderEvent has copy, drop, store {
+        /// Market ID for order.
+        market_id: u64,
+        /// User for market account that placed order.
+        user: address,
+        /// Custodian ID for market account that placed order.
+        custodian_id: u64,
+        /// Integrator address passed during market order placement,
+        /// eligible for a portion of any generated taker fees.
+        integrator: address,
+        /// Either `market::BUY` or `market::SELL`.
+        direction: bool,
+        /// Size indicated during market order placement.
+        size: u64,
+        /// Self match behavior indicated during market order placement,
+        /// either `market::ABORT`, `market::CANCEL_BOTH`,
+        /// `market::CANCEL_MAKER`, or `market::CANCEL_TAKER`.
+        self_match_behavior: u8,
+        /// Unique ID for order within market.
+        order_id: u128
     }
 
     // Structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -385,8 +633,6 @@ module econia::user {
     const E_PRICE_0: u64 = 8;
     /// Price exceeds maximum possible price.
     const E_PRICE_TOO_HIGH: u64 = 9;
-    /// Size is below minimum size for market.
-    const E_SIZE_TOO_LOW: u64 = 10;
     /// Ticks to fill an order overflows a `u64`.
     const E_TICKS_OVERFLOW: u64 = 11;
     /// Filling order would overflow asset received from trade.
@@ -416,6 +662,36 @@ module econia::user {
     const ASK: bool = true;
     /// Flag for bid side
     const BID: bool = false;
+    /// Order cancelled because it was evicted from the price-time
+    /// priority queue.
+    const CANCEL_REASON_EVICTION: u8 = 1;
+    /// Order cancelled because it was an immediate-or-cancel order
+    /// that did not immediately fill.
+    const CANCEL_REASON_IMMEDIATE_OR_CANCEL: u8 = 2;
+    /// Order cancelled because it was manually cancelled by either
+    /// signing user or custodian.
+    const CANCEL_REASON_MANUAL_CANCEL: u8 = 3;
+    /// Order cancelled because no more quote asset could be traded.
+    const CANCEL_REASON_MAX_QUOTE_TRADED: u8 = 4;
+    /// Order cancelled because there was not enough liquidity to take
+    /// from.
+    const CANCEL_REASON_NOT_ENOUGH_LIQUIDITY: u8 = 5;
+    /// Order cancelled because it was on the maker side of an fill
+    /// where self match behavior indicated cancelling the maker order.
+    const CANCEL_REASON_SELF_MATCH_MAKER: u8 = 6;
+    /// Order cancelled because it was on the taker side of an fill
+    /// where self match behavior indicated cancelling the taker order.
+    const CANCEL_REASON_SELF_MATCH_TAKER: u8 = 7;
+    /// Flag to indicate that order is only temporarily cancelled from
+    /// market account memory because it will be subsequently re-placed
+    /// as part of a size change.
+    const CANCEL_REASON_SIZE_CHANGE_INTERNAL: u8 = 0;
+    /// Swap order cancelled because the remaining base asset amount to
+    /// match was too small to fill a single lot.
+    const CANCEL_REASON_TOO_SMALL_TO_FILL_LOT: u8 = 8;
+    /// Swap order cancelled because the next order on the book to match
+    /// against violated the swap order limit price.
+    const CANCEL_REASON_VIOLATED_LIMIT_PRICE: u8 = 9;
     /// `u64` bitmask with all bits set, generated in Python via
     /// `hex(int('1' * 64, 2))`.
     const HI_64: u64 = 0xffffffffffffffff;
@@ -432,6 +708,455 @@ module econia::user {
     const SHIFT_MARKET_ID: u8 = 64;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // View functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[view]
+    /// Public constant getter for `ASK`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_ASK()`
+    public fun get_ASK(): bool {ASK}
+
+    #[view]
+    /// Public constant getter for `BID`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_BID()`
+    public fun get_BID(): bool {BID}
+
+    #[view]
+    /// Public constant getter for `CANCEL_REASON_EVICTION`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_cancel_reasons()`
+    public fun get_CANCEL_REASON_EVICTION(): u8 {
+        CANCEL_REASON_EVICTION
+    }
+
+    #[view]
+    /// Public constant getter for `CANCEL_REASON_IMMEDIATE_OR_CANCEL`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_cancel_reasons()`
+    public fun get_CANCEL_REASON_IMMEDIATE_OR_CANCEL(): u8 {
+        CANCEL_REASON_IMMEDIATE_OR_CANCEL
+    }
+
+    #[view]
+    /// Public constant getter for `CANCEL_REASON_MANUAL_CANCEL`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_cancel_reasons()`
+    public fun get_CANCEL_REASON_MANUAL_CANCEL(): u8 {
+        CANCEL_REASON_MANUAL_CANCEL
+    }
+
+    #[view]
+    /// Public constant getter for `CANCEL_REASON_MAX_QUOTE_TRADED`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_cancel_reasons()`
+    public fun get_CANCEL_REASON_MAX_QUOTE_TRADED(): u8 {
+        CANCEL_REASON_MAX_QUOTE_TRADED
+    }
+
+    #[view]
+    /// Public constant getter for `CANCEL_REASON_NOT_ENOUGH_LIQUIDITY`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_cancel_reasons()`
+    public fun get_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY(): u8 {
+        CANCEL_REASON_NOT_ENOUGH_LIQUIDITY
+    }
+
+    #[view]
+    /// Public constant getter for `CANCEL_REASON_SELF_MATCH_MAKER`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_cancel_reasons()`
+    public fun get_CANCEL_REASON_SELF_MATCH_MAKER(): u8 {
+        CANCEL_REASON_SELF_MATCH_MAKER
+    }
+
+    #[view]
+    /// Public constant getter for `CANCEL_REASON_SELF_MATCH_TAKER`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_cancel_reasons()`
+    public fun get_CANCEL_REASON_SELF_MATCH_TAKER(): u8 {
+        CANCEL_REASON_SELF_MATCH_TAKER
+    }
+
+    #[view]
+    /// Public constant getter for
+    /// `CANCEL_REASON_TOO_SMALL_TO_FILL_LOT`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_cancel_reasons()`
+    public fun get_CANCEL_REASON_TOO_SMALL_TO_FILL_LOT(): u8 {
+        CANCEL_REASON_TOO_SMALL_TO_FILL_LOT
+    }
+
+    #[view]
+    /// Public constant getter for `CANCEL_REASON_VIOLATED_LIMIT_PRICE`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_cancel_reasons()`
+    public fun get_CANCEL_REASON_VIOLATED_LIMIT_PRICE(): u8 {
+        CANCEL_REASON_VIOLATED_LIMIT_PRICE
+    }
+
+    #[view]
+    /// Public constant getter for `NO_CUSTODIAN`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_NO_CUSTODIAN()`
+    public fun get_NO_CUSTODIAN(): u64 {NO_CUSTODIAN}
+
+    #[view]
+    /// Return all market account IDs associated with market ID.
+    ///
+    /// # Parameters
+    ///
+    /// * `user`: Address of user to check market account IDs for.
+    /// * `market_id`: Market ID to check market accounts for.
+    ///
+    /// # Returns
+    ///
+    /// * `vector<u128>`: Vector of user's market account IDs for given
+    ///   market, empty if no market accounts.
+    ///
+    /// # Gas considerations
+    ///
+    /// Loops over all elements within a vector that is itself a single
+    /// item in global storage, and returns a vector via pass-by-value.
+    ///
+    /// # Testing
+    ///
+    /// * `test_market_account_getters()`
+    public fun get_all_market_account_ids_for_market_id(
+        user: address,
+        market_id: u64
+    ): vector<u128>
+    acquires MarketAccounts {
+        let market_account_ids = vector::empty(); // Init empty vector.
+        // Return empty if user has no market accounts resource.
+        if (!exists<MarketAccounts>(user)) return market_account_ids;
+        let custodians_map_ref = // Immutably borrow custodians map.
+            &borrow_global<MarketAccounts>(user).custodians;
+        // Return empty if user has no market accounts for given market.
+        if (!tablist::contains(custodians_map_ref, market_id))
+            return market_account_ids;
+        // Immutably borrow list of custodians for given market.
+        let custodians_ref = tablist::borrow(custodians_map_ref, market_id);
+        // Initialize loop counter and number of elements in vector.
+        let (i, n_custodians) = (0, vector::length(custodians_ref));
+        while (i < n_custodians) { // Loop over all elements.
+            // Get custodian ID.
+            let custodian_id = *vector::borrow(custodians_ref, i);
+            // Get market account ID.
+            let market_account_id = ((market_id as u128) << SHIFT_MARKET_ID) |
+                                    (custodian_id as u128);
+            // Push back onto ongoing market account ID vector.
+            vector::push_back(&mut market_account_ids, market_account_id);
+            i = i + 1; // Increment loop counter
+        };
+        market_account_ids // Return market account IDs.
+    }
+
+    #[view]
+    /// Return all of a user's market account IDs.
+    ///
+    /// # Parameters
+    ///
+    /// * `user`: Address of user to check market account IDs for.
+    ///
+    /// # Returns
+    ///
+    /// * `vector<u128>`: Vector of user's market account IDs, empty if
+    ///   no market accounts.
+    ///
+    /// # Gas considerations
+    ///
+    /// For each market that a user has market accounts for, loops over
+    /// a separate item in global storage, incurring a per-item read
+    /// cost. Additionally loops over a vector for each such per-item
+    /// read, incurring linearly-scaled vector operation costs. Returns
+    /// a vector via pass-by-value.
+    ///
+    /// # Testing
+    ///
+    /// * `test_market_account_getters()`
+    public fun get_all_market_account_ids_for_user(
+        user: address,
+    ): vector<u128>
+    acquires MarketAccounts {
+        let market_account_ids = vector::empty(); // Init empty vector.
+        // Return empty if user has no market accounts resource.
+        if (!exists<MarketAccounts>(user)) return market_account_ids;
+        let custodians_map_ref = // Immutably borrow custodians map.
+            &borrow_global<MarketAccounts>(user).custodians;
+        // Get market ID option at head of market ID list.
+        let market_id_option = tablist::get_head_key(custodians_map_ref);
+        // While market IDs left to loop over:
+        while (option::is_some(&market_id_option)) {
+            // Get market ID.
+            let market_id = *option::borrow(&market_id_option);
+            // Immutably borrow list of custodians for given market and
+            // next market ID option in list.
+            let (custodians_ref, _, next) = tablist::borrow_iterable(
+                custodians_map_ref, market_id);
+            // Initialize loop counter and number of elements in vector.
+            let (i, n_custodians) = (0, vector::length(custodians_ref));
+            while (i < n_custodians) { // Loop over all elements.
+                // Get custodian ID.
+                let custodian_id = *vector::borrow(custodians_ref, i);
+                let market_account_id = // Get market account ID.
+                    ((market_id as u128) << SHIFT_MARKET_ID) |
+                    (custodian_id as u128);
+                // Push back onto ongoing market account ID vector.
+                vector::push_back(&mut market_account_ids, market_account_id);
+                i = i + 1; // Increment loop counter
+            };
+            // Review next market ID option in list.
+            market_id_option = next;
+        };
+        market_account_ids // Return market account IDs.
+    }
+
+    #[view]
+    /// Return custodian ID encoded in market account ID.
+    ///
+    /// # Testing
+    ///
+    /// * `test_market_account_id_getters()`
+    public fun get_custodian_id(
+        market_account_id: u128
+    ): u64 {
+        ((market_account_id & (HI_64 as u128)) as u64)
+    }
+
+    #[view]
+    /// Return human-readable `MarketAccountView`.
+    ///
+    /// Mutates state, so kept as a private view function.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_NO_MARKET_ACCOUNT`: No such specified market account.
+    ///
+    /// # Testing
+    ///
+    /// * `test_deposits()`
+    /// * `test_get_market_account_no_market_account()`
+    /// * `test_get_market_accounts_open_orders()`
+    fun get_market_account(
+        user: address,
+        market_id: u64,
+        custodian_id: u64
+    ): MarketAccountView
+    acquires MarketAccounts {
+        // Get market account ID from market ID, custodian ID.
+        let market_account_id = get_market_account_id(market_id, custodian_id);
+        // Verify user has market account.
+        assert!(has_market_account_by_market_account_id(
+            user, market_account_id), E_NO_MARKET_ACCOUNT);
+        // Mutably borrow market accounts map.
+        let market_accounts_map_ref_mut =
+            &mut borrow_global_mut<MarketAccounts>(user).map;
+        // Mutably borrow market account.
+        let market_account_ref_mut = table::borrow_mut(
+            market_accounts_map_ref_mut, market_account_id);
+        // Return market account view with parsed fields.
+        MarketAccountView{
+            market_id,
+            custodian_id,
+            asks: vectorize_open_orders(&mut market_account_ref_mut.asks),
+            bids: vectorize_open_orders(&mut market_account_ref_mut.bids),
+            base_total: market_account_ref_mut.base_total,
+            base_available: market_account_ref_mut.base_available,
+            base_ceiling: market_account_ref_mut.base_ceiling,
+            quote_total: market_account_ref_mut.quote_total,
+            quote_available: market_account_ref_mut.quote_available,
+            quote_ceiling: market_account_ref_mut.quote_ceiling
+        }
+    }
+
+    #[view]
+    /// Return market account ID with encoded market and custodian IDs.
+    ///
+    /// # Testing
+    ///
+    /// * `test_market_account_id_getters()`
+    public fun get_market_account_id(
+        market_id: u64,
+        custodian_id: u64
+    ): u128 {
+        ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128)
+    }
+
+    #[view]
+    /// Get user-friendly views of all of a `user`'s market accounts.
+    ///
+    /// Mutates state, so kept as a private view function.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_market_accounts_open_orders()`
+    fun get_market_accounts(
+        user: address
+    ): vector<MarketAccountView>
+    acquires MarketAccounts {
+        // Get all of user's market account IDs.
+        let market_account_ids = get_all_market_account_ids_for_user(user);
+        // Initialize empty vector for open order IDs.
+        let market_accounts = vector::empty();
+        // If no market account IDs, return empty vector.
+        if (vector::is_empty(&market_account_ids)) return market_accounts;
+        // For each market account ID:
+        vector::for_each(market_account_ids, |market_account_id| {
+            // Get encoded market ID.
+            let market_id = get_market_id(market_account_id);
+            // Get encoded custodian ID.
+            let custodian_id = get_custodian_id(market_account_id);
+            // Push back struct onto vector of ongoing structs.
+            vector::push_back(&mut market_accounts, get_market_account(
+                user, market_id, custodian_id));
+        });
+        market_accounts // Return market account views.
+    }
+
+    #[view]
+    /// Return a `MarketEventHandleCreationNumbers` for `market_id` and
+    /// `custodian_id`, if `user` has event handles for indicated market
+    /// account.
+    ///
+    /// Restricted to private view function to prevent runtime handle
+    /// contention.
+    ///
+    /// # Testing
+    ///
+    /// * `test_register_market_accounts()`
+    fun get_market_event_handle_creation_numbers(
+        user: address,
+        market_id: u64,
+        custodian_id: u64
+    ): Option<MarketEventHandleCreationNumbers>
+    acquires MarketEventHandles {
+        // Return none if user does not have market event handles map,
+        if (!exists<MarketEventHandles>(user)) return option::none();
+        // Return none if user has no handles for market account.
+        let market_event_handles_map_ref =
+            &borrow_global<MarketEventHandles>(user).map;
+        let market_account_id = get_market_account_id(market_id, custodian_id);
+        let has_handles = table::contains(
+            market_event_handles_map_ref, market_account_id);
+        if (!has_handles) return option::none();
+        // Return option-packed creation numbers for all event handles.
+        let market_account_handles_ref = table::borrow(
+            market_event_handles_map_ref, market_account_id);
+        option::some(MarketEventHandleCreationNumbers{
+            cancel_order_events_handle_creation_num:
+                guid::creation_num(event::guid(
+                    &market_account_handles_ref.cancel_order_events)),
+            change_order_size_events_handle_creation_num:
+                guid::creation_num(event::guid(
+                    &market_account_handles_ref.change_order_size_events)),
+            fill_events_handle_creation_num:
+                guid::creation_num(event::guid(
+                    &market_account_handles_ref.fill_events)),
+            place_limit_order_events_handle_creation_num:
+                guid::creation_num(event::guid(
+                    &market_account_handles_ref.place_limit_order_events)),
+            place_market_order_events_handle_creation_num:
+                guid::creation_num(event::guid(
+                    &market_account_handles_ref.place_market_order_events))
+        })
+    }
+
+    #[view]
+    /// Return market ID encoded in market account ID.
+    ///
+    /// # Testing
+    ///
+    /// * `test_market_account_id_getters()`
+    public fun get_market_id(
+        market_account_id: u128
+    ): u64 {
+        (market_account_id >> SHIFT_MARKET_ID as u64)
+    }
+
+    #[view]
+    /// Return `true` if `user` has market account registered with
+    /// given `market_id` and `custodian_id`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_market_account_getters()`
+    public fun has_market_account(
+        user: address,
+        market_id: u64,
+        custodian_id: u64
+    ): bool
+    acquires MarketAccounts {
+        has_market_account_by_market_account_id(
+            user, get_market_account_id(market_id, custodian_id))
+    }
+
+    #[view]
+    /// Return `true` if `user` has market account registered with
+    /// given `market_account_id`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_market_account_getters()`
+    public fun has_market_account_by_market_account_id(
+        user: address,
+        market_account_id: u128
+    ): bool
+    acquires MarketAccounts {
+        // Return false if user has no market accounts resource.
+        if (!exists<MarketAccounts>(user)) return false;
+        // Immutably borrow market accounts map.
+        let market_accounts_map_ref = &borrow_global<MarketAccounts>(user).map;
+        // Return if map has entry for given market account ID.
+        table::contains(market_accounts_map_ref, market_account_id)
+    }
+
+    #[view]
+    /// Return `true` if `user` has at least one market account
+    /// registered with given `market_id`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_market_account_getters()`
+    public fun has_market_account_by_market_id(
+        user: address,
+        market_id: u64
+    ): bool
+    acquires MarketAccounts {
+        // Return false if user has no market accounts resource.
+        if (!exists<MarketAccounts>(user)) return false;
+        let custodians_map_ref = // Immutably borrow custodians map.
+            &borrow_global<MarketAccounts>(user).custodians;
+        // Return if custodians map has entry for given market ID.
+        tablist::contains(custodians_map_ref, market_id)
+    }
+
+    // View functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -496,126 +1221,6 @@ module econia::user {
             registry::get_underwriter_id(underwriter_capability_ref));
     }
 
-    #[app]
-    /// Return all market account IDs associated with market ID.
-    ///
-    /// # Parameters
-    ///
-    /// * `user`: Address of user to check market account IDs for.
-    /// * `market_id`: Market ID to check market accounts for.
-    ///
-    /// # Returns
-    ///
-    /// * `vector<u128>`: Vector of user's market account IDs for given
-    ///   market, empty if no market accounts.
-    ///
-    /// # Gas considerations
-    ///
-    /// Loops over all elements within a vector that is itself a single
-    /// item in global storage, and returns a vector via pass-by-value.
-    ///
-    /// # Testing
-    ///
-    /// * `test_market_account_getters()`
-    public fun get_all_market_account_ids_for_market_id(
-        user: address,
-        market_id: u64
-    ): vector<u128>
-    acquires MarketAccounts {
-        let market_account_ids = vector::empty(); // Init empty vector.
-        // Return empty if user has no market accounts resource.
-        if (!exists<MarketAccounts>(user)) return market_account_ids;
-        let custodians_map_ref = // Immutably borrow custodians map.
-            &borrow_global<MarketAccounts>(user).custodians;
-        // Return empty if user has no market accounts for given market.
-        if (!tablist::contains(custodians_map_ref, market_id))
-            return market_account_ids;
-        // Immutably borrow list of custodians for given market.
-        let custodians_ref = tablist::borrow(custodians_map_ref, market_id);
-        // Initialize loop counter and number of elements in vector.
-        let (i, n_custodians) = (0, vector::length(custodians_ref));
-        while (i < n_custodians) { // Loop over all elements.
-            // Get custodian ID.
-            let custodian_id = *vector::borrow(custodians_ref, i);
-            // Get market account ID.
-            let market_account_id = ((market_id as u128) << SHIFT_MARKET_ID) |
-                                    (custodian_id as u128);
-            // Push back onto ongoing market account ID vector.
-            vector::push_back(&mut market_account_ids, market_account_id);
-            i = i + 1; // Increment loop counter
-        };
-        market_account_ids // Return market account IDs.
-    }
-
-    #[app]
-    /// Return all of a user's market account IDs.
-    ///
-    /// # Parameters
-    ///
-    /// * `user`: Address of user to check market account IDs for.
-    ///
-    /// # Returns
-    ///
-    /// * `vector<u128>`: Vector of user's market account IDs, empty if
-    ///   no market accounts.
-    ///
-    /// # Gas considerations
-    ///
-    /// For each market that a user has market accounts for, loops over
-    /// a separate item in global storage, incurring a per-item read
-    /// cost. Additionally loops over a vector for each such per-item
-    /// read, incurring linearly-scaled vector operation costs. Returns
-    /// a vector via pass-by-value.
-    ///
-    /// # Testing
-    ///
-    /// * `test_market_account_getters()`
-    public fun get_all_market_account_ids_for_user(
-        user: address,
-    ): vector<u128>
-    acquires MarketAccounts {
-        let market_account_ids = vector::empty(); // Init empty vector.
-        // Return empty if user has no market accounts resource.
-        if (!exists<MarketAccounts>(user)) return market_account_ids;
-        let custodians_map_ref = // Immutably borrow custodians map.
-            &borrow_global<MarketAccounts>(user).custodians;
-        // Get market ID option at head of market ID list.
-        let market_id_option = tablist::get_head_key(custodians_map_ref);
-        // While market IDs left to loop over:
-        while (option::is_some(&market_id_option)) {
-            // Get market ID.
-            let market_id = *option::borrow(&market_id_option);
-            // Immutably borrow list of custodians for given market and
-            // next market ID option in list.
-            let (custodians_ref, _, next) = tablist::borrow_iterable(
-                custodians_map_ref, market_id);
-            // Initialize loop counter and number of elements in vector.
-            let (i, n_custodians) = (0, vector::length(custodians_ref));
-            while (i < n_custodians) { // Loop over all elements.
-                // Get custodian ID.
-                let custodian_id = *vector::borrow(custodians_ref, i);
-                let market_account_id = // Get market account ID.
-                    ((market_id as u128) << SHIFT_MARKET_ID) |
-                    (custodian_id as u128);
-                // Push back onto ongoing market account ID vector.
-                vector::push_back(&mut market_account_ids, market_account_id);
-                i = i + 1; // Increment loop counter
-            };
-            // Review next market ID option in list.
-            market_id_option = next;
-        };
-        market_account_ids // Return market account IDs.
-    }
-
-    #[app]
-    /// Public constant getter for `ASK`.
-    ///
-    /// # Testing
-    ///
-    /// * `test_get_ASK()`
-    public fun get_ASK(): bool {ASK}
-
-    #[app]
     /// Wrapped call to `get_asset_counts_internal()` for custodian.
     ///
     /// Restricted to custodian for given market account to prevent
@@ -641,7 +1246,6 @@ module econia::user {
             registry::get_custodian_id(custodian_capability_ref))
     }
 
-    #[app]
     /// Wrapped call to `get_asset_counts_internal()` for signing user.
     ///
     /// Restricted to signing user for given market account to prevent
@@ -664,40 +1268,6 @@ module econia::user {
         get_asset_counts_internal(address_of(user), market_id, NO_CUSTODIAN)
     }
 
-    #[app]
-    /// Public constant getter for `BID`.
-    ///
-    /// # Testing
-    ///
-    /// * `test_get_BID()`
-    public fun get_BID(): bool {BID}
-
-    #[app]
-    /// Return custodian ID encoded in market account ID.
-    ///
-    /// # Testing
-    ///
-    /// * `test_market_account_id_getters()`
-    public fun get_custodian_id(
-        market_account_id: u128
-    ): u64 {
-        ((market_account_id & (HI_64 as u128)) as u64)
-    }
-
-    #[app]
-    /// Return market account ID with encoded market and custodian IDs.
-    ///
-    /// # Testing
-    ///
-    /// * `test_market_account_id_getters()`
-    public fun get_market_account_id(
-        market_id: u64,
-        custodian_id: u64
-    ): u128 {
-        ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128)
-    }
-
-    #[app]
     /// Wrapped call to `get_market_account_market_info()` for
     /// custodian.
     ///
@@ -725,7 +1295,6 @@ module econia::user {
             registry::get_custodian_id(custodian_capability_ref))
     }
 
-    #[app]
     /// Wrapped call to `get_market_account_market_info()` for signing
     /// user.
     ///
@@ -749,67 +1318,6 @@ module econia::user {
     ) acquires MarketAccounts {
         get_market_account_market_info(
             address_of(user), market_id, NO_CUSTODIAN)
-    }
-
-    #[app]
-    /// Return market ID encoded in market account ID.
-    ///
-    /// # Testing
-    ///
-    /// * `test_market_account_id_getters()`
-    public fun get_market_id(
-        market_account_id: u128
-    ): u64 {
-        (market_account_id >> SHIFT_MARKET_ID as u64)
-    }
-
-    #[app]
-    /// Public constant getter for `NO_CUSTODIAN`.
-    ///
-    /// # Testing
-    ///
-    /// * `test_get_NO_CUSTODIAN()`
-    public fun get_NO_CUSTODIAN(): u64 {NO_CUSTODIAN}
-
-    #[app]
-    /// Return `true` if `user` has market account registered with
-    /// given `market_account_id`.
-    ///
-    /// # Testing
-    ///
-    /// * `test_market_account_getters()`
-    public fun has_market_account_by_market_account_id(
-        user: address,
-        market_account_id: u128
-    ): bool
-    acquires MarketAccounts {
-        // Return false if user has no market accounts resource.
-        if (!exists<MarketAccounts>(user)) return false;
-        // Immutably borrow market accounts map.
-        let market_accounts_map =
-            &borrow_global<MarketAccounts>(user).map;
-        // Return if map has entry for given market account ID.
-        table::contains(market_accounts_map, market_account_id)
-    }
-
-    #[app]
-    /// Return `true` if `user` has at least one market account
-    /// registered with given `market_id`.
-    ///
-    /// # Testing
-    ///
-    /// * `test_market_account_getters()`
-    public fun has_market_account_by_market_id(
-        user: address,
-        market_id: u64
-    ): bool
-    acquires MarketAccounts {
-        // Return false if user has no market accounts resource.
-        if (!exists<MarketAccounts>(user)) return false;
-        let custodians_map_ref = // Immutably borrow custodians map.
-            &borrow_global<MarketAccounts>(user).custodians;
-        // Return if custodians map has entry for given market ID.
-        tablist::contains(custodians_map_ref, market_id)
     }
 
     /// Wrapped call to `withdraw_coins()` for withdrawing under
@@ -912,7 +1420,6 @@ module econia::user {
 
     // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    #[cmd]
     /// Wrapped call to `deposit_coins()` for depositing from an
     /// `aptos_framework::coin::CoinStore`.
     ///
@@ -937,7 +1444,62 @@ module econia::user {
             coin::withdraw<CoinType>(user, amount));
     }
 
-    #[cmd]
+    /// Initialize market event handles for a market account if missing.
+    ///
+    /// Since market event handles were implemented as part of a
+    /// compatible upgrade policy, it is possible for a user to have a
+    /// market account without associated market event handles, if they
+    /// registered a market account before an on-chain upgrade.
+    ///
+    /// # Parameters
+    ///
+    /// * `user`: User for market account.
+    /// * `market_id`: Market ID for market account.
+    /// * `custodian_id`: Custodian ID for market account.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_NO_MARKET_ACCOUNT`: No such specified market account.
+    ///
+    /// # Testing
+    ///
+    /// * `test_init_market_event_handles_if_missing_no_account()`
+    /// * `test_register_market_accounts()`
+    public entry fun init_market_event_handles_if_missing(
+        user: &signer,
+        market_id: u64,
+        custodian_id: u64
+    ) acquires
+        MarketAccounts,
+        MarketEventHandles
+    {
+        // Verify user has specified market account.
+        let user_address = address_of(user);
+        assert!(has_market_account(user_address, market_id, custodian_id),
+                E_NO_MARKET_ACCOUNT);
+        // Create market event handles map if user doesn't have one,
+        // and fill with handles for market account as needed.
+        if (!exists<MarketEventHandles>(address_of(user)))
+            move_to(user, MarketEventHandles{map: table::new()});
+        let market_event_handles_map_ref_mut =
+            &mut borrow_global_mut<MarketEventHandles>(user_address).map;
+        let market_account_id =
+            ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128);
+        let has_handles = table::contains(
+            market_event_handles_map_ref_mut, market_account_id);
+        if (!has_handles) {
+            let handles = MarketEventHandlesForMarketAccount{
+                cancel_order_events: account::new_event_handle(user),
+                change_order_size_events: account::new_event_handle(user),
+                fill_events: account::new_event_handle(user),
+                place_limit_order_events: account::new_event_handle(user),
+                place_market_order_events: account::new_event_handle(user)
+            };
+            table::add(
+                market_event_handles_map_ref_mut, market_account_id, handles);
+        };
+    }
+
     /// Register market account for indicated market and custodian.
     ///
     /// Verifies market ID and asset types via internal call to
@@ -975,7 +1537,8 @@ module econia::user {
         custodian_id: u64
     ) acquires
         Collateral,
-        MarketAccounts
+        MarketAccounts,
+        MarketEventHandles
     {
         // If custodian ID indicated, assert it is registered.
         if (custodian_id != NO_CUSTODIAN) assert!(
@@ -996,9 +1559,9 @@ module econia::user {
         // (quote type for a verified market must be a coin).
         register_market_account_collateral_entry<QuoteType>(
             user, market_account_id);
+        init_market_event_handles_if_missing(user, market_id, custodian_id);
     }
 
-    #[cmd]
     /// Wrapped `register_market_account()` call for generic base asset.
     ///
     /// # Testing
@@ -1012,13 +1575,13 @@ module econia::user {
         custodian_id: u64
     ) acquires
         Collateral,
-        MarketAccounts
+        MarketAccounts,
+        MarketEventHandles
     {
         register_market_account<GenericAsset, QuoteType>(
             user, market_id, custodian_id);
     }
 
-    #[cmd]
     /// Wrapped call to `withdraw_coins_user()` for withdrawing from
     /// market account to user's `aptos_framework::coin::CoinStore`.
     ///
@@ -1077,6 +1640,12 @@ module econia::user {
     /// * `market_order_id`: `NIL` if order cancellation originates from
     ///   an eviction or a self match cancel, otherwise the market order
     ///   ID encoded in the user's `Order`.
+    /// * `cancel_reason`: The reason for the cancel. Note that
+    ///   user-side open order size changes are processed via
+    ///   `change_order_size_internal()` as a cancellation followed by
+    ///   immediate re-placement, corresponding to the cancel reason
+    ///   `CANCEL_REASON_SIZE_CHANGE_INTERNAL`. When this is the case
+    ///   no cancel event is emitted.
     ///
     /// # Returns
     ///
@@ -1095,6 +1664,10 @@ module econia::user {
     ///   operation and actual size before operation.
     /// * `E_INVALID_MARKET_ORDER_ID`: Market order ID mismatch with
     ///   user's open order, when market order ID not passed as `NIL`.
+    ///
+    /// # Emits
+    ///
+    /// * `CancelOrderEvent`: Information about a cancelled order.
     ///
     /// # Assumptions
     ///
@@ -1131,9 +1704,13 @@ module econia::user {
         start_size: u64,
         price: u64,
         order_access_key: u64,
-        market_order_id: u128
+        market_order_id: u128,
+        reason: u8
     ): u128
-    acquires MarketAccounts {
+    acquires
+        MarketAccounts,
+        MarketEventHandles
+    {
         // Mutably borrow market accounts map.
         let market_accounts_map_ref_mut =
             &mut borrow_global_mut<MarketAccounts>(user_address).map;
@@ -1187,6 +1764,24 @@ module econia::user {
         let ceiling_decrement_amount = size * size_multiplier_ceiling;
         *in_ceiling_ref_mut = // Decrement ceiling field.
             *in_ceiling_ref_mut - ceiling_decrement_amount;
+        // If order is actually being cancelled and user has market
+        // event handles for the market account, emit a cancel event.
+        let changing_size = reason == CANCEL_REASON_SIZE_CHANGE_INTERNAL;
+        if (!changing_size && exists<MarketEventHandles>(user_address)) {
+            let market_event_handles_map_ref_mut =
+                &mut borrow_global_mut<MarketEventHandles>(user_address).map;
+            let has_handles_for_market_account = table::contains(
+                market_event_handles_map_ref_mut, market_account_id);
+            if (has_handles_for_market_account) {
+                let handles_ref_mut = table::borrow_mut(
+                    market_event_handles_map_ref_mut, market_account_id);
+                event::emit_event(
+                    &mut handles_ref_mut.cancel_order_events,
+                    CancelOrderEvent{
+                        market_id, order_id: market_order_id,
+                        user: user_address, custodian_id, reason});
+            }
+        };
         market_order_id // Return market order ID.
     }
 
@@ -1208,6 +1803,11 @@ module econia::user {
     /// # Aborts
     ///
     /// * `E_CHANGE_ORDER_NO_CHANGE`: No change in order size.
+    ///
+    /// # Emits
+    ///
+    /// * `ChangeOrderSizeEvent`: Information about an order that had a
+    ///   manual size change.
     ///
     /// # Assumptions
     ///
@@ -1233,7 +1833,10 @@ module econia::user {
         price: u64,
         order_access_key: u64,
         market_order_id: u128
-    ) acquires MarketAccounts {
+    ) acquires
+        MarketAccounts,
+        MarketEventHandles
+    {
         // Mutably borrow market accounts map.
         let market_accounts_map_ref_mut =
             &mut borrow_global_mut<MarketAccounts>(user_address).map;
@@ -1250,10 +1853,76 @@ module econia::user {
         assert!(order_ref.size != new_size, E_CHANGE_ORDER_NO_CHANGE);
         cancel_order_internal( // Cancel order with size to be changed.
             user_address, market_id, custodian_id, side, start_size, price,
-            order_access_key, market_order_id);
+            order_access_key, market_order_id,
+            CANCEL_REASON_SIZE_CHANGE_INTERNAL);
         place_order_internal( // Place order with new size.
             user_address, market_id, custodian_id, side, new_size, price,
             market_order_id, order_access_key);
+        // If user has market event handles for the market account, emit
+        // a change order size event.
+        if (exists<MarketEventHandles>(user_address)) {
+            let market_event_handles_map_ref_mut =
+                &mut borrow_global_mut<MarketEventHandles>(user_address).map;
+            let has_handles_for_market_account = table::contains(
+                market_event_handles_map_ref_mut, market_account_id);
+            if (has_handles_for_market_account) {
+                let handles_ref_mut = table::borrow_mut(
+                    market_event_handles_map_ref_mut, market_account_id);
+                event::emit_event(
+                    &mut handles_ref_mut.change_order_size_events,
+                    ChangeOrderSizeEvent{
+                        market_id, order_id: market_order_id,
+                        user: user_address, custodian_id, side, new_size});
+            }
+        }
+    }
+
+    /// Return a `CancelOrderEvent` with the indicated fields.
+    public(friend) fun create_cancel_order_event_internal(
+        market_id: u64,
+        order_id: u128,
+        user: address,
+        custodian_id: u64,
+        reason: u8
+    ): CancelOrderEvent {
+        CancelOrderEvent{
+            market_id,
+            order_id,
+            user,
+            custodian_id,
+            reason
+        }
+    }
+
+    /// Return a `FillEvent` with the indicated fields.
+    public(friend) fun create_fill_event_internal(
+        market_id: u64,
+        size: u64,
+        price: u64,
+        maker_side: bool,
+        maker: address,
+        maker_custodian_id: u64,
+        maker_order_id: u128,
+        taker: address,
+        taker_custodian_id: u64,
+        taker_order_id: u128,
+        taker_quote_fees_paid: u64,
+        sequence_number_for_trade: u64
+    ): FillEvent {
+        FillEvent{
+            market_id,
+            size,
+            price,
+            maker_side,
+            maker,
+            maker_custodian_id,
+            maker_order_id,
+            taker,
+            taker_custodian_id,
+            taker_order_id,
+            taker_quote_fees_paid,
+            sequence_number_for_trade
+        }
     }
 
     /// Deposit base asset and quote coins when matching.
@@ -1299,6 +1968,186 @@ module econia::user {
             optional_base_coins, underwriter_id);
         deposit_coins<QuoteType>( // Deposit quote coins.
             user_address, market_id, custodian_id, quote_coins);
+    }
+
+    /// Emit limit order events to a user's market event handles.
+    ///
+    /// # Parameters
+    ///
+    /// * `market_id`: `PlaceLimitOrderEvent.market_id`.
+    /// * `user`: `PlaceLimitOrderEvent.user`.
+    /// * `custodian_id`: `PlaceLimitOrderEvent.custodian_id`.
+    /// * `integrator`: `PlaceLimitOrderEvent.integrator`.
+    /// * `side`: `PlaceLimitOrderEvent.side`.
+    /// * `size`: `PlaceLimitOrderEvent.size`.
+    /// * `price`: `PlaceLimitOrderEvent.price`.
+    /// * `restriction`: `PlaceLimitOrderEvent.restriction`.
+    /// * `self_match_behavior`:
+    ///   `PlaceLimitOrderEvent.self_match_behavior`.
+    /// * `remaining_size`: `PlaceLimitOrderEvent.remaining_size`.
+    /// * `order_id`: `PlaceLimitOrderEvent.order_id`.
+    /// * `fill_event_queue_ref`: Immutable reference to a vector of
+    ///   `FillEvent`s to emit as part of a limit order that filled
+    ///   across the spread, may be empty.
+    /// * `cancel_reason_option_ref`: Immutable reference to an optional
+    ///   cancel reason associated with a `CancelOrderEvent`.
+    ///
+    /// # Emits
+    ///
+    /// * `PlaceLimitOrderEvent`: Information about the limit order that
+    ///   was placed.
+    /// * `FillEvent`(s): Information about fill(s) across the spread as
+    ///   a taker.
+    /// * `CancelOrderEvent`: Optionally, information about why the
+    ///   limit order may have had to be cancelled during the
+    ///   transaction in which it was placed.
+    public(friend) fun emit_limit_order_events_internal(
+        market_id: u64,
+        user: address,
+        custodian_id: u64,
+        integrator: address,
+        side: bool,
+        size: u64,
+        price: u64,
+        restriction: u8,
+        self_match_behavior: u8,
+        remaining_size: u64,
+        order_id: u128,
+        fill_event_queue_ref: &vector<FillEvent>,
+        cancel_reason_option_ref: &Option<u8>
+    ) acquires MarketEventHandles {
+        // Only emit events to handles for the market account that
+        // placed the order if they have been initialized.
+        if (exists<MarketEventHandles>(user)) {
+            let market_event_handles_map_ref_mut =
+                &mut borrow_global_mut<MarketEventHandles>(user).map;
+            let market_account_id = (((market_id as u128) << SHIFT_MARKET_ID) |
+                                     (custodian_id as u128));
+            let has_handles_for_market_account = table::contains(
+                market_event_handles_map_ref_mut, market_account_id);
+            if (has_handles_for_market_account) {
+                let handles_ref_mut = table::borrow_mut(
+                    market_event_handles_map_ref_mut, market_account_id);
+                event::emit_event(
+                    &mut handles_ref_mut.place_limit_order_events,
+                    PlaceLimitOrderEvent{
+                        market_id, user, custodian_id, integrator, side, size,
+                        price, restriction, self_match_behavior,
+                        remaining_size, order_id});
+                // Loop over fill events, substituting order ID in case
+                // order posted after fill event creation. Looping here
+                // minimizes borrows from the user's account, but will
+                // require looping again later to emit maker fill events
+                // because the borrow checker prohibits simultaneous
+                // borrowing of the same resource from two addresses.
+                vector::for_each_ref(fill_event_queue_ref, |event_ref| {
+                    let event: FillEvent = *event_ref;
+                    event.taker_order_id = order_id;
+                    event::emit_event(&mut handles_ref_mut.fill_events, event);
+                });
+                if (option::is_some(cancel_reason_option_ref)) {
+                    let event = CancelOrderEvent{
+                        market_id, order_id, user, custodian_id,
+                        reason: *option::borrow(cancel_reason_option_ref)};
+                    event::emit_event(
+                        &mut handles_ref_mut.cancel_order_events, event);
+                };
+            };
+        };
+        // Emit fill events for all makers, similarly substituting
+        // order ID in case order posted after fill event creation.
+        vector::for_each_ref(fill_event_queue_ref, |event_ref| {
+            let event: FillEvent = *event_ref;
+            event.taker_order_id = order_id;
+            emit_maker_fill_event(&event);
+        });
+    }
+
+    /// Emit market order events to a user's market event handles.
+    ///
+    /// # Parameters
+    ///
+    /// * `market_id`: `PlaceMarketOrderEvent.market_id`.
+    /// * `user`: `PlaceMarketOrderEvent.user`.
+    /// * `custodian_id`: `PlaceMarketOrderEvent.custodian_id`.
+    /// * `integrator`: `PlaceMarketOrderEvent.integrator`.
+    /// * `direction`: `PlaceMarketOrderEvent.direction`.
+    /// * `size`: `PlaceMarketOrderEvent.size`.
+    /// * `self_match_behavior`:
+    ///   `PlaceMarketOrderEvent.self_match_behavior`.
+    /// * `order_id`: `PlaceMarketOrderEvent.order_id`.
+    /// * `fill_event_queue_ref`: Immutable reference to a vector of
+    ///   `FillEvent`s to emit, may be empty.
+    /// * `cancel_reason_option_ref`: Immutable reference to an optional
+    ///   cancel reason associated with a `CancelOrderEvent`.
+    ///
+    /// # Emits
+    ///
+    /// * `PlaceMarketOrderEvent`: Information about the market order
+    ///   that was placed.
+    /// * `FillEvent`(s): Information about fill(s).
+    /// * `CancelOrderEvent`: Optionally, information about why the
+    ///   market order was cancelled without completely filling.
+    public(friend) fun emit_market_order_events_internal(
+        market_id: u64,
+        user: address,
+        custodian_id: u64,
+        integrator: address,
+        direction: bool,
+        size: u64,
+        self_match_behavior: u8,
+        order_id: u128,
+        fill_event_queue_ref: &vector<FillEvent>,
+        cancel_reason_option_ref: &Option<u8>
+    ) acquires MarketEventHandles {
+        // Only emit events to handles for the market account that
+        // placed the order if they have been initialized.
+        if (exists<MarketEventHandles>(user)) {
+            let market_event_handles_map_ref_mut =
+                &mut borrow_global_mut<MarketEventHandles>(user).map;
+            let market_account_id = (((market_id as u128) << SHIFT_MARKET_ID) |
+                                     (custodian_id as u128));
+            let has_handles_for_market_account = table::contains(
+                market_event_handles_map_ref_mut, market_account_id);
+            if (has_handles_for_market_account) {
+                let handles_ref_mut = table::borrow_mut(
+                    market_event_handles_map_ref_mut, market_account_id);
+                event::emit_event(
+                    &mut handles_ref_mut.place_market_order_events,
+                    PlaceMarketOrderEvent{
+                        market_id, user, custodian_id, integrator, direction,
+                        size, self_match_behavior, order_id});
+                // Loop over fill events. Looping here minimizes borrows
+                // from the user's account, but will require looping
+                // again later to emit maker fill events because the
+                // borrow checker prohibits simultaneous borrowing of
+                // the same resource from two addresses.
+                vector::for_each_ref(fill_event_queue_ref, |event_ref| {
+                    event::emit_event(
+                        &mut handles_ref_mut.fill_events, *event_ref);
+                });
+                if (option::is_some(cancel_reason_option_ref)) {
+                    let event = CancelOrderEvent{
+                        market_id, order_id, user, custodian_id,
+                        reason: *option::borrow(cancel_reason_option_ref)};
+                    event::emit_event(
+                        &mut handles_ref_mut.cancel_order_events, event);
+                };
+            };
+        };
+        // Emit fill events for all makers.
+        vector::for_each_ref(fill_event_queue_ref, |event_ref| {
+            emit_maker_fill_event(event_ref);
+        });
+    }
+
+    /// Emit a `FillEvent` for each maker associated with a swap.
+    public(friend) fun emit_swap_maker_fill_events_internal(
+        fill_event_queue_ref: &vector<FillEvent>
+    ) acquires MarketEventHandles {
+        vector::for_each_ref(fill_event_queue_ref, |event_ref| {
+            emit_maker_fill_event(event_ref);
+        });
     }
 
     /// Fill a user's order, routing collateral appropriately.
@@ -1658,6 +2507,46 @@ module econia::user {
             *stack_top_ref // Otherwise the top of the inactive stack.
     }
 
+    /// Return optional market order ID corresponding to open order for
+    /// `user`, `market_id`, `custodian_id`, `side`, and
+    /// `order_access_key`, if one exists.
+    ///
+    /// Restricted to public friend to prevent runtime user state
+    /// contention.
+    ///
+    /// # Testing
+    ///
+    /// * `test_market_account_getters()`
+    /// * `test_change_order_size_internal_ask()`
+    /// * `test_change_order_size_internal_bid()`
+    public(friend) fun get_open_order_id_internal(
+        user: address,
+        market_id: u64,
+        custodian_id: u64,
+        side: bool,
+        order_access_key: u64
+    ): Option<u128>
+    acquires MarketAccounts {
+        // Get market account ID.
+        let market_account_id = get_market_account_id(market_id, custodian_id);
+        // Return empty option if no corresponding market account.
+        if (!has_market_account_by_market_account_id(user, market_account_id))
+            return option::none();
+        // Immutably borrow market accounts map.
+        let market_accounts_map_ref = &borrow_global<MarketAccounts>(user).map;
+        // Immutably borrow market account.
+        let market_account_ref = table::borrow(
+            market_accounts_map_ref, market_account_id);
+        // Immutably borrow open orders for given side.
+        let open_orders_ref = if (side == ASK) &market_account_ref.asks else
+            &market_account_ref.bids;
+        // Return empty option if no open order with given access key.
+        if (!tablist::contains(open_orders_ref, order_access_key))
+            return option::none();
+        option::some( // Return option-packed market order ID.
+            tablist::borrow(open_orders_ref, order_access_key).market_order_id)
+    }
+
     /// Place order in user's tablist of open orders on given side.
     ///
     /// Range checks order parameters and updates asset counts
@@ -1702,7 +2591,6 @@ module econia::user {
     ///
     /// * `E_PRICE_0`: Price is zero.
     /// * `E_PRICE_TOO_HIGH`: Price exceeds maximum possible price.
-    /// * `E_SIZE_TOO_LOW`: Size is below minimum size for market.
     /// * `E_TICKS_OVERFLOW`: Ticks to fill order overflows a `u64`.
     /// * `E_OVERFLOW_ASSET_IN`: Filling order would overflow asset
     ///   received from trade.
@@ -1723,7 +2611,6 @@ module econia::user {
     /// * `test_place_order_internal_out_underflow()`
     /// * `test_place_order_internal_price_0()`
     /// * `test_place_order_internal_price_hi()`
-    /// * `test_place_order_internal_size_lo()`
     /// * `test_place_order_internal_ticks_overflow()`
     public(friend) fun place_order_internal(
         user_address: address,
@@ -1745,8 +2632,6 @@ module econia::user {
             ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128);
         let market_account_ref_mut = // Mutably borrow market account.
             table::borrow_mut(market_accounts_map_ref_mut, market_account_id);
-        // Assert order size is greater than or equal to market minimum.
-        assert!(size >= market_account_ref_mut.min_size, E_SIZE_TOO_LOW);
         let base_fill = // Calculate base units needed to fill order.
             (size as u128) * (market_account_ref_mut.lot_size as u128);
         // Calculate ticks to fill order.
@@ -1976,6 +2861,31 @@ module econia::user {
         };
     }
 
+    /// Emit a `FillEvent` for the market account of the maker
+    /// associated with a fill, if market event handles exist for the
+    /// indicated market account.
+    inline fun emit_maker_fill_event(
+        event_ref: &FillEvent
+    ) acquires MarketEventHandles {
+        let maker = event_ref.maker;
+        if (exists<MarketEventHandles>(maker)) {
+            let market_event_handles_map_ref_mut =
+                &mut borrow_global_mut<MarketEventHandles>(maker).map;
+            let market_id = event_ref.market_id;
+            let custodian_id = event_ref.maker_custodian_id;
+            let market_account_id = (((market_id as u128) << SHIFT_MARKET_ID) |
+                                     (custodian_id as u128));
+            let has_handles_for_market_account = table::contains(
+                market_event_handles_map_ref_mut, market_account_id);
+            if (has_handles_for_market_account) {
+                let handles_ref_mut = table::borrow_mut(
+                    market_event_handles_map_ref_mut, market_account_id);
+                event::emit_event(
+                    &mut handles_ref_mut.fill_events, *event_ref);
+            };
+        };
+    }
+
     /// Return `registry::MarketInfo` fields stored in market account.
     ///
     /// # Parameters
@@ -2156,6 +3066,36 @@ module econia::user {
         // Add an empty entry for given market account ID.
         tablist::add(collateral_map_ref_mut, market_account_id,
                      coin::zero<CoinType>());
+    }
+
+    /// Convert a tablist of `Order` into a vector of only open orders.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_market_accounts_open_orders()`
+    fun vectorize_open_orders(
+        tablist_ref_mut: &mut Tablist<u64, Order>,
+    ): vector<Order> {
+        let open_orders = vector::empty(); // Get empty orders vector.
+        // Get optional head key.
+        let optional_access_key = tablist::get_head_key(tablist_ref_mut);
+        // While keys left to iterate on:
+        while (option::is_some(&optional_access_key)) {
+            // Get open order and next optional access key in tablist.
+            let (order, _, next) = tablist::remove_iterable(
+                tablist_ref_mut, *option::borrow(&optional_access_key));
+            // If market order ID flagged as null:
+            if (order.market_order_id == (NIL as u128)) {
+                // Unpack order and drop fields.
+                let Order{market_order_id: _, size: _} = order;
+            } else { // Otherwise, if order is active:
+                // Push back onto vector of open orders.
+                vector::push_back(&mut open_orders, order);
+            };
+            // Review next optional access key.
+            optional_access_key = next;
+        };
+        open_orders // Return vectorized open orders.
     }
 
     /// Withdraw an asset from a user's market account.
@@ -2361,6 +3301,132 @@ module econia::user {
     // Test-only functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
+    /// Immutably borrow market event handles for a market account.
+    inline fun borrow_market_event_handles_for_market_account_test(
+        market_id: u64,
+        user: address,
+        custodian_id: u64
+    ): &MarketEventHandlesForMarketAccount
+    acquires MarketEventHandles {
+        let market_event_handles_map_ref =
+            &borrow_global<MarketEventHandles>(user).map;
+        let market_account_id = get_market_account_id(market_id, custodian_id);
+        table::borrow(market_event_handles_map_ref, market_account_id)
+    }
+
+    #[test_only]
+    /// Return a `ChangeOrderSizeEvent` with the indicated fields.
+    public fun create_change_order_size_event_test(
+        market_id: u64,
+        order_id: u128,
+        user: address,
+        custodian_id: u64,
+        side: bool,
+        new_size: u64
+    ): ChangeOrderSizeEvent {
+        ChangeOrderSizeEvent{
+            market_id,
+            order_id,
+            user,
+            custodian_id,
+            side,
+            new_size
+        }
+    }
+
+    #[test_only]
+    /// Return a `PlaceLimitOrderEvent` with the indicated fields.
+    public fun create_place_limit_order_event_test(
+        market_id: u64,
+        user: address,
+        custodian_id: u64,
+        integrator: address,
+        side: bool,
+        size: u64,
+        price: u64,
+        restriction: u8,
+        self_match_behavior: u8,
+        remaining_size: u64,
+        order_id: u128
+    ): PlaceLimitOrderEvent {
+        PlaceLimitOrderEvent{
+            market_id,
+            user,
+            custodian_id,
+            integrator,
+            side,
+            size,
+            price,
+            restriction,
+            self_match_behavior,
+            remaining_size,
+            order_id
+        }
+    }
+
+    #[test_only]
+    /// Return a `PlaceMarketOrderEvent` with the indicated fields.
+    public fun create_place_market_order_event_test(
+        market_id: u64,
+        user: address,
+        custodian_id: u64,
+        integrator: address,
+        direction: bool,
+        size: u64,
+        self_match_behavior: u8,
+        order_id: u128
+    ): PlaceMarketOrderEvent {
+        PlaceMarketOrderEvent{
+            market_id,
+            user,
+            custodian_id,
+            integrator,
+            direction,
+            size,
+            self_match_behavior,
+            order_id
+        }
+    }
+
+    #[test_only]
+    /// Return `HI_PRICE`, for testing synchronization with
+    /// `market.move`.
+    public fun get_HI_PRICE_test(): u64 {HI_PRICE}
+
+    #[test_only]
+    /// Return `NO_UNDERWRITER`, for testing synchronization with
+    /// `market.move`.
+    public fun get_NO_UNDERWRITER_test(): u64 {NO_UNDERWRITER}
+
+    #[test_only]
+    /// Get `CancelOrderEvent`s at a market account handle.
+    public fun get_cancel_order_events_test(
+        market_id: u64,
+        user: address,
+        custodian_id: u64
+    ): vector<CancelOrderEvent>
+    acquires MarketEventHandles {
+        event::emitted_events(
+            &(borrow_market_event_handles_for_market_account_test(
+                market_id, user, custodian_id).
+                cancel_order_events))
+    }
+
+    #[test_only]
+    /// Get `ChangeOrderSizeEvent`s at a market account handle.
+    public fun get_change_order_size_events_test(
+        market_id: u64,
+        user: address,
+        custodian_id: u64
+    ): vector<ChangeOrderSizeEvent>
+    acquires MarketEventHandles {
+        event::emitted_events(
+            &(borrow_market_event_handles_for_market_account_test(
+                market_id, user, custodian_id).
+                change_order_size_events))
+    }
+
+    #[test_only]
     /// Like `get_collateral_value_test()`, but accepts market id and
     /// custodian ID.
     public fun get_collateral_value_simple_test<
@@ -2393,9 +3459,18 @@ module econia::user {
     }
 
     #[test_only]
-    /// Return `HI_PRICE`, for testing synchronization with
-    /// `market.move`.
-    public fun get_HI_PRICE_test(): u64 {HI_PRICE}
+    /// Get `FillEvent`s at a market account handle.
+    public fun get_fill_events_test(
+        market_id: u64,
+        user: address,
+        custodian_id: u64
+    ): vector<FillEvent>
+    acquires MarketEventHandles {
+        event::emitted_events(
+            &(borrow_market_event_handles_for_market_account_test(
+                market_id, user, custodian_id).
+                fill_events))
+    }
 
     #[test_only]
     /// Get order access key at top of inactive order stack.
@@ -2431,11 +3506,6 @@ module econia::user {
             user_address, market_account_id, side, order_access_key);
         next // Return next inactive order access key.
     }
-
-    #[test_only]
-    /// Return `NO_UNDERWRITER`, for testing synchronization with
-    /// `market.move`.
-    public fun get_NO_UNDERWRITER_test(): u64 {NO_UNDERWRITER}
 
     #[test_only]
     /// Wrapper for `get_order_fields_test()`, accepting market ID and
@@ -2478,6 +3548,34 @@ module econia::user {
         let order_ref = tablist::borrow(orders_ref, order_access_key);
         // Return order fields.
         (order_ref.market_order_id, order_ref.size)
+    }
+
+    #[test_only]
+    /// Get `PlaceLimitOrderEvent`s at a market account handle.
+    public fun get_place_limit_order_events_test(
+        market_id: u64,
+        user: address,
+        custodian_id: u64
+    ): vector<PlaceLimitOrderEvent>
+    acquires MarketEventHandles {
+        event::emitted_events(
+            &(borrow_market_event_handles_for_market_account_test(
+                market_id, user, custodian_id).
+                place_limit_order_events))
+    }
+
+    #[test_only]
+    /// Get `PlaceMarketOrderEvent`s at a market account handle.
+    public fun get_place_market_order_events_test(
+        market_id: u64,
+        user: address,
+        custodian_id: u64
+    ): vector<PlaceMarketOrderEvent>
+    acquires MarketEventHandles {
+        event::emitted_events(
+            &(borrow_market_event_handles_for_market_account_test(
+                market_id, user, custodian_id).
+                place_market_order_events))
     }
 
     #[test_only]
@@ -2535,7 +3633,8 @@ module econia::user {
         u128
     ) acquires
         Collateral,
-        MarketAccounts
+        MarketAccounts,
+        MarketEventHandles
     {
         // Get signer for test user account.
         let user = account::create_signer_with_capability(
@@ -2590,6 +3689,37 @@ module econia::user {
     }
 
     #[test_only]
+    public fun remove_market_event_handles_for_market_account_test(
+        user: address,
+        market_id: u64,
+        custodian_id: u64
+    ) acquires MarketEventHandles {
+        let market_account_id = get_market_account_id(market_id, custodian_id);
+        let market_event_handles_map_ref_mut =
+            &mut borrow_global_mut<MarketEventHandles>(user).map;
+        let MarketEventHandlesForMarketAccount{
+            cancel_order_events,
+            change_order_size_events,
+            fill_events,
+            place_limit_order_events,
+            place_market_order_events
+        } = table::remove(market_event_handles_map_ref_mut, market_account_id);
+        event::destroy_handle(cancel_order_events);
+        event::destroy_handle(change_order_size_events);
+        event::destroy_handle(fill_events);
+        event::destroy_handle(place_limit_order_events);
+        event::destroy_handle(place_market_order_events);
+    }
+
+    #[test_only]
+    public fun remove_market_event_handles_test(
+        user: address
+    ) acquires MarketEventHandles {
+        let MarketEventHandles{map} = move_from(user);
+        table::drop_unchecked(map);
+    }
+
+    #[test_only]
     /// Return `true` if order is active.
     public fun is_order_active_test(
         user_address: address,
@@ -2641,7 +3771,8 @@ module econia::user {
     fun test_cancel_order_internal_invalid_market_order_id()
     acquires
         Collateral,
-        MarketAccounts
+        MarketAccounts,
+        MarketEventHandles
     {
         register_market_accounts_test(); // Register test markets.
         // Define order parameters.
@@ -2659,7 +3790,8 @@ module econia::user {
                              size, price, market_order_id, 1);
         // Attempt invalid cancellation.
         cancel_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
-                              size, price, 1, market_order_id + 1);
+                              size, price, 1, market_order_id + 1,
+                              CANCEL_REASON_MANUAL_CANCEL);
     }
 
     #[test]
@@ -2668,7 +3800,8 @@ module econia::user {
     fun test_cancel_order_internal_start_size_mismatch()
     acquires
         Collateral,
-        MarketAccounts
+        MarketAccounts,
+        MarketEventHandles
     {
         register_market_accounts_test(); // Register test markets.
         // Define order parameters.
@@ -2686,7 +3819,8 @@ module econia::user {
                              size, price, market_order_id, 1);
         // Attempt invalid cancellation.
         cancel_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
-                              size + 1, price, 1, market_order_id);
+                              size + 1, price, 1, market_order_id,
+                              CANCEL_REASON_MANUAL_CANCEL);
     }
 
     #[test]
@@ -2695,7 +3829,8 @@ module econia::user {
     fun test_change_order_size_internal_ask()
     acquires
         Collateral,
-        MarketAccounts
+        MarketAccounts,
+        MarketEventHandles
     {
         register_market_accounts_test(); // Register test markets.
         // Define order parameters.
@@ -2716,6 +3851,9 @@ module econia::user {
         // Place order.
         place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
                              size_old, price, market_order_id, 1);
+        // Remove market event handles.
+        remove_market_event_handles_for_market_account_test(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID);
         change_order_size_internal( // Change order size.
             @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, size_old, size,
             price, order_access_key, market_order_id);
@@ -2730,6 +3868,17 @@ module econia::user {
         assert!(quote_total     == QUOTE_START, 0);
         assert!(quote_available == QUOTE_START, 0);
         assert!(quote_ceiling   == QUOTE_START + quote_delta, 0);
+        // Check market order ID for valid access key.
+        let optional_market_order_id = get_open_order_id_internal(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, order_access_key);
+        assert!( // Verify market order ID match.
+            *option::borrow(&optional_market_order_id) == market_order_id, 0);
+        // Check market order ID for invalid access key.
+        optional_market_order_id = get_open_order_id_internal(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+            order_access_key + 1);
+        // Verify empty option.
+        assert!(option::is_none(&optional_market_order_id), 0);
     }
 
     #[test]
@@ -2738,7 +3887,8 @@ module econia::user {
     fun test_change_order_size_internal_bid()
     acquires
         Collateral,
-        MarketAccounts
+        MarketAccounts,
+        MarketEventHandles
     {
         register_market_accounts_test(); // Register test markets.
         // Define order parameters.
@@ -2773,6 +3923,11 @@ module econia::user {
         assert!(quote_total     == QUOTE_START, 0);
         assert!(quote_available == QUOTE_START - quote_delta, 0);
         assert!(quote_ceiling   == QUOTE_START, 0);
+        // Check market order ID for valid access key.
+        let optional_market_order_id = get_open_order_id_internal(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, order_access_key);
+        assert!( // Verify market order ID match.
+            *option::borrow(&optional_market_order_id) == market_order_id, 0);
     }
 
     #[test]
@@ -2781,7 +3936,8 @@ module econia::user {
     fun test_change_order_size_internal_no_change()
     acquires
         Collateral,
-        MarketAccounts
+        MarketAccounts,
+        MarketEventHandles
     {
         register_market_accounts_test(); // Register test markets.
         // Define order parameters.
@@ -2808,7 +3964,8 @@ module econia::user {
     fun test_deposit_asset_amount_mismatch()
     acquires
         Collateral,
-        MarketAccounts
+        MarketAccounts,
+        MarketEventHandles
     {
         // Register test market accounts.
         register_market_accounts_test();
@@ -2830,7 +3987,8 @@ module econia::user {
     fun test_deposit_asset_no_account()
     acquires
         Collateral,
-        MarketAccounts
+        MarketAccounts,
+        MarketEventHandles
     {
         // Register test market accounts.
         register_market_accounts_test();
@@ -2856,7 +4014,8 @@ module econia::user {
     fun test_deposit_asset_not_in_pair()
     acquires
         Collateral,
-        MarketAccounts
+        MarketAccounts,
+        MarketEventHandles
     {
         // Register test market accounts.
         register_market_accounts_test();
@@ -2871,7 +4030,8 @@ module econia::user {
     fun test_deposit_asset_overflow()
     acquires
         Collateral,
-        MarketAccounts
+        MarketAccounts,
+        MarketEventHandles
     {
         // Register test market accounts.
         register_market_accounts_test();
@@ -2893,7 +4053,8 @@ module econia::user {
     fun test_deposit_asset_underwriter()
     acquires
         Collateral,
-        MarketAccounts
+        MarketAccounts,
+        MarketEventHandles
     {
         // Register test market accounts.
         register_market_accounts_test();
@@ -2933,7 +4094,8 @@ module econia::user {
     fun test_deposit_withdraw_assets_internal()
     acquires
         Collateral,
-        MarketAccounts
+        MarketAccounts,
+        MarketEventHandles
     {
         // Get test market account IDs.
         let (_, _, market_account_id_coin_delegated,
@@ -3050,10 +4212,12 @@ module econia::user {
 
     #[test]
     /// Verify state updates for assorted deposit styles.
-    fun test_deposits()
+    fun test_deposits():
+    vector<MarketAccountView>
     acquires
         Collateral,
-        MarketAccounts
+        MarketAccounts,
+        MarketEventHandles
     {
         // Declare deposit parameters
         let coin_amount = 700;
@@ -3108,6 +4272,39 @@ module econia::user {
             @user, market_account_id_generic_self), 0);
         assert!(get_collateral_value_test<QC>(
             @user, market_account_id_generic_self) == 0, 0);
+        // Initialize empty vector to return instead of dropping.
+        let return_instead_of_dropping = vector::empty();
+        // Get market account view for quote deposit.
+        let market_account_view = get_market_account(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID);
+        // Assert market account view state.
+        assert!(market_account_view.market_id       == MARKET_ID_PURE_COIN, 0);
+        assert!(market_account_view.custodian_id    == CUSTODIAN_ID       , 0);
+        assert!(market_account_view.base_total      == 0                  , 0);
+        assert!(market_account_view.base_available  == 0                  , 0);
+        assert!(market_account_view.base_ceiling    == 0                  , 0);
+        assert!(market_account_view.quote_total     == coin_amount        , 0);
+        assert!(market_account_view.quote_available == coin_amount        , 0);
+        assert!(market_account_view.quote_ceiling   == coin_amount        , 0);
+        // Push back value to return instead of dropping.
+        vector::push_back(
+            &mut return_instead_of_dropping, market_account_view);
+        // Get market account view for base deposit.
+        market_account_view = get_market_account(
+            @user, MARKET_ID_GENERIC, NO_CUSTODIAN);
+        // Assert market account view state.
+        assert!(market_account_view.market_id       == MARKET_ID_GENERIC  , 0);
+        assert!(market_account_view.custodian_id    == NO_CUSTODIAN       , 0);
+        assert!(market_account_view.base_total      == generic_amount     , 0);
+        assert!(market_account_view.base_available  == generic_amount     , 0);
+        assert!(market_account_view.base_ceiling    == generic_amount     , 0);
+        assert!(market_account_view.quote_total     == 0                  , 0);
+        assert!(market_account_view.quote_available == 0                  , 0);
+        assert!(market_account_view.quote_ceiling   == 0                  , 0);
+        // Push back value to return instead of dropping.
+        vector::push_back(
+            &mut return_instead_of_dropping, market_account_view);
+        return_instead_of_dropping // Return instead of dropping.
     }
 
     #[test]
@@ -3120,7 +4317,8 @@ module econia::user {
     fun test_fill_order_internal_ask_complete_base_coin()
     acquires
         Collateral,
-        MarketAccounts
+        MarketAccounts,
+        MarketEventHandles
     {
         // Register test markets, get market account ID for pure coin
         // market with delegated custodian.
@@ -3149,7 +4347,8 @@ module econia::user {
                              size, price, market_order_id, 2);
         cancel_order_internal(
             @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, size, price,
-            order_access_key_cancelled, market_order_id);
+            order_access_key_cancelled, market_order_id,
+            CANCEL_REASON_MANUAL_CANCEL);
         // Initialize external coins passing through matching engine.
         let optional_base_coins = option::some(coin::zero());
         let quote_coins = assets::mint_test(quote_fill);
@@ -3206,7 +4405,8 @@ module econia::user {
     fun test_fill_order_internal_bid_complete_base_coin()
     acquires
         Collateral,
-        MarketAccounts
+        MarketAccounts,
+        MarketEventHandles
     {
         // Register test markets, get market account ID for pure coin
         // market with delegated custodian.
@@ -3284,7 +4484,8 @@ module econia::user {
     fun test_fill_order_internal_bid_partial_base_generic()
     acquires
         Collateral,
-        MarketAccounts
+        MarketAccounts,
+        MarketEventHandles
     {
         // Register test markets, get market account ID for generic
         // market with delegated custodian.
@@ -3361,7 +4562,8 @@ module econia::user {
     fun test_fill_order_internal_start_size_mismatch()
     acquires
         Collateral,
-        MarketAccounts
+        MarketAccounts,
+        MarketEventHandles
     {
         register_market_accounts_test(); // Register test markets.
         // Define order parameters.
@@ -3388,8 +4590,8 @@ module econia::user {
         // Fill order, storing base and quote coins for matching engine.
         (optional_base_coins, quote_coins, _) = fill_order_internal<BC, QC>(
                 @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, access_key,
-                size + 1, size, complete_fill, optional_base_coins, quote_coins,
-                base_fill, quote_fill);
+                size + 1, size, complete_fill, optional_base_coins,
+                quote_coins, base_fill, quote_fill);
         // Destroy external coins.
         assets::burn(option::destroy_some(optional_base_coins));
         assets::burn(quote_coins);
@@ -3400,7 +4602,8 @@ module econia::user {
     fun test_get_active_market_order_ids_internal()
     acquires
         Collateral,
-        MarketAccounts
+        MarketAccounts,
+        MarketEventHandles
     {
         // Register test market accounts.
         register_market_accounts_test();
@@ -3429,7 +4632,8 @@ module econia::user {
         place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, ASK,
                              size, price, market_order_id_3, 3);
         cancel_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, ASK,
-                              size, price, 2, market_order_id_2);
+                              size, price, 2, market_order_id_2,
+                              CANCEL_REASON_MANUAL_CANCEL);
         // Get expected market order IDs vector.
         let expected = vector[market_order_id_1, market_order_id_3];
         // Assert expected return.
@@ -3445,7 +4649,8 @@ module econia::user {
             @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, BID) == expected, 0);
         // Cancel order.
         cancel_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, BID,
-                              size, price, 1, market_order_id_4);
+                              size, price, 1, market_order_id_4,
+                              CANCEL_REASON_MANUAL_CANCEL);
         // Assert expected return.
         assert!(get_active_market_order_ids_internal(
             @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, BID) == vector[], 0);
@@ -3457,7 +4662,8 @@ module econia::user {
     fun test_get_active_market_order_ids_internal_no_account()
     acquires
         Collateral,
-        MarketAccounts
+        MarketAccounts,
+        MarketEventHandles
     {
         // Register test market accounts.
         register_market_accounts_test();
@@ -3486,7 +4692,8 @@ module econia::user {
     fun test_get_asset_counts_internal_no_account()
     acquires
         Collateral,
-        MarketAccounts
+        MarketAccounts,
+        MarketEventHandles
     {
         // Register test market accounts.
         register_market_accounts_test();
@@ -3508,12 +4715,36 @@ module econia::user {
     fun test_get_BID() {assert!(get_BID() == BID, 0)}
 
     #[test]
+    /// Verify constant getter returns.
+    fun test_get_cancel_reasons() {
+        assert!(get_CANCEL_REASON_EVICTION() ==
+                    CANCEL_REASON_EVICTION, 0);
+        assert!(get_CANCEL_REASON_IMMEDIATE_OR_CANCEL() ==
+                    CANCEL_REASON_IMMEDIATE_OR_CANCEL, 0);
+        assert!(get_CANCEL_REASON_MANUAL_CANCEL() ==
+                    CANCEL_REASON_MANUAL_CANCEL, 0);
+        assert!(get_CANCEL_REASON_MAX_QUOTE_TRADED() ==
+                    CANCEL_REASON_MAX_QUOTE_TRADED, 0);
+        assert!(get_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY() ==
+                    CANCEL_REASON_NOT_ENOUGH_LIQUIDITY, 0);
+        assert!(get_CANCEL_REASON_SELF_MATCH_MAKER() ==
+                    CANCEL_REASON_SELF_MATCH_MAKER, 0);
+        assert!(get_CANCEL_REASON_SELF_MATCH_TAKER() ==
+                    CANCEL_REASON_SELF_MATCH_TAKER, 0);
+        assert!(get_CANCEL_REASON_TOO_SMALL_TO_FILL_LOT() ==
+                    CANCEL_REASON_TOO_SMALL_TO_FILL_LOT, 0);
+        assert!(get_CANCEL_REASON_VIOLATED_LIMIT_PRICE() ==
+                    CANCEL_REASON_VIOLATED_LIMIT_PRICE, 0);
+    }
+
+    #[test]
     #[expected_failure(abort_code = E_NO_MARKET_ACCOUNT)]
     /// Verify failure for no market account resource.
     fun test_get_market_account_market_info_no_account()
     acquires
         Collateral,
-        MarketAccounts
+        MarketAccounts,
+        MarketEventHandles
     {
         // Register test market accounts.
         register_market_accounts_test();
@@ -3532,11 +4763,132 @@ module econia::user {
 
     #[test]
     #[expected_failure(abort_code = E_NO_MARKET_ACCOUNT)]
+    /// Verify failure for no market accounts resource.
+    fun test_get_market_account_no_market_account():
+    MarketAccountView
+    acquires MarketAccounts {
+        // Attempt invalid invocation.
+        get_market_account(@user, 0, 0)
+    }
+
+    #[test]
+    /// Verify returns for open order indexing.
+    fun test_get_market_accounts_open_orders():
+    vector<vector<MarketAccountView>>
+    acquires
+        Collateral,
+        MarketAccounts,
+        MarketEventHandles
+    {
+        // Initialize empty vector to return instead of dropping.
+        let return_instead_of_dropping = vector::empty();
+        // Define order parameters.
+        let market_order_id_ask_0  = 123;
+        let market_order_id_bid_0  = 456;
+        let market_order_id_bid_1  = 789;
+        let order_access_key_ask_0 = 1;
+        let order_access_key_bid_0 = 1;
+        let order_access_key_bid_1 = 2;
+        let size                   = MIN_SIZE_PURE_COIN;
+        let price                  = 1;
+        let market_id              = MARKET_ID_PURE_COIN;
+        let user                   = @user;
+        // Get user's market account views.
+        let market_account_views = get_market_accounts(user);
+        // Assert empty vector.
+        assert!(vector::is_empty(&market_account_views), 0);
+        // Push back value to return instead of dropping.
+        vector::push_back(
+            &mut return_instead_of_dropping, market_account_views);
+        // Register test market accounts.
+        register_market_accounts_test();
+        // Deposit starting base and quote coins.
+        deposit_coins<BC>(
+            user, market_id, NO_CUSTODIAN, assets::mint_test(BASE_START));
+        deposit_coins<BC>(
+            user, market_id, CUSTODIAN_ID, assets::mint_test(BASE_START));
+        deposit_coins<QC>(
+            user, market_id, NO_CUSTODIAN, assets::mint_test(QUOTE_START));
+        deposit_coins<QC>(
+            user, market_id, CUSTODIAN_ID, assets::mint_test(QUOTE_START));
+        // Place single ask for market account without custodian.
+        place_order_internal(
+            user, market_id, NO_CUSTODIAN, ASK, size, price,
+            market_order_id_ask_0, order_access_key_ask_0);
+        // Get user's market account views.
+        market_account_views = get_market_accounts(user);
+        // Immutably borrow first market account open orders element.
+        let market_account_view_ref = vector::borrow(&market_account_views, 0);
+        // Assert element state.
+        assert!(market_account_view_ref.market_id == market_id, 0);
+        assert!(market_account_view_ref.custodian_id == NO_CUSTODIAN, 0);
+        let asks_ref = &market_account_view_ref.asks;
+        assert!(vector::length(asks_ref) == 1, 0);
+        let bids_ref = &market_account_view_ref.bids;
+        assert!(vector::length(bids_ref) == 0, 0);
+        let order_ref = vector::borrow(asks_ref, 0);
+        assert!(order_ref.market_order_id == market_order_id_ask_0, 0);
+        assert!(order_ref.size == size, 0);
+        // Push back value to return instead of dropping.
+        vector::push_back(
+            &mut return_instead_of_dropping, market_account_views);
+        // Place single ask for market account without custodian, since
+        // consumed during previous operation.
+        place_order_internal(
+            user, market_id, NO_CUSTODIAN, ASK, size, price,
+            market_order_id_ask_0, order_access_key_ask_0);
+        // Place bids for market account with custodian.
+        place_order_internal(
+            user, market_id, CUSTODIAN_ID, BID, size, price,
+            market_order_id_bid_0, order_access_key_bid_0);
+        place_order_internal(
+            user, market_id, CUSTODIAN_ID, BID, size, price,
+            market_order_id_bid_1, order_access_key_bid_1);
+        // Cancel the first placed bid.
+        cancel_order_internal(
+            user, market_id, CUSTODIAN_ID, BID, size, price,
+            order_access_key_bid_0, market_order_id_bid_0,
+            CANCEL_REASON_MANUAL_CANCEL);
+        // Get all of user's market account views.
+        market_account_views = get_market_accounts(user);
+        // Immutably borrow first market account view element.
+        market_account_view_ref = vector::borrow(&market_account_views, 0);
+        // Assert element state.
+        assert!(market_account_view_ref.market_id == market_id, 0);
+        assert!(market_account_view_ref.custodian_id == NO_CUSTODIAN, 0);
+        let asks_ref = &market_account_view_ref.asks;
+        assert!(vector::length(asks_ref) == 1, 0);
+        let bids_ref = &market_account_view_ref.bids;
+        assert!(vector::length(bids_ref) == 0, 0);
+        let order_ref = vector::borrow(asks_ref, 0);
+        assert!(order_ref.market_order_id == market_order_id_ask_0, 0);
+        assert!(order_ref.size == size, 0);
+        // Immutably borrow second market account view element.
+        market_account_view_ref = vector::borrow(&market_account_views, 1);
+        // Assert element state.
+        assert!(market_account_view_ref.market_id == market_id, 0);
+        assert!(market_account_view_ref.custodian_id == CUSTODIAN_ID, 0);
+        let asks_ref = &market_account_view_ref.asks;
+        assert!(vector::length(asks_ref) == 0, 0);
+        let bids_ref = &market_account_view_ref.bids;
+        assert!(vector::length(bids_ref) == 1, 0);
+        let order_ref = vector::borrow(bids_ref, 0);
+        assert!(order_ref.market_order_id == market_order_id_bid_1, 0);
+        assert!(order_ref.size == size, 0);
+        // Push back value to return instead of dropping.
+        vector::push_back(
+            &mut return_instead_of_dropping, market_account_views);
+        return_instead_of_dropping // Return instead of dropping.
+    }
+
+    #[test]
+    #[expected_failure(abort_code = E_NO_MARKET_ACCOUNT)]
     /// Verify failure for no market account.
     fun test_get_next_order_access_key_internal_no_account()
     acquires
         Collateral,
-        MarketAccounts
+        MarketAccounts,
+        MarketEventHandles
     {
         // Register test market accounts.
         register_market_accounts_test();
@@ -3560,12 +4912,25 @@ module econia::user {
         assert!(get_NO_CUSTODIAN() == registry::get_NO_CUSTODIAN(), 0)
     }
 
+    #[test(user = @user)]
+    #[expected_failure(abort_code = E_NO_MARKET_ACCOUNT)]
+    /// Verify abort for user has no market account.
+    fun test_init_market_event_handles_if_missing_no_account(
+        user: &signer
+    ) acquires
+        MarketAccounts,
+        MarketEventHandles
+    {
+        init_market_event_handles_if_missing(user, 0, 0);
+    }
+
     #[test]
     /// Verify valid returns.
     fun test_market_account_getters()
     acquires
         Collateral,
-        MarketAccounts
+        MarketAccounts,
+        MarketEventHandles
     {
         // Get market account IDs for test accounts.
         let market_account_id_coin_self = get_market_account_id(
@@ -3583,6 +4948,8 @@ module econia::user {
                 @user, MARKET_ID_GENERIC) == vector[], 0);
         assert!(get_all_market_account_ids_for_user(
                 @user) == vector[], 0);
+        assert!(option::is_none(&get_open_order_id_internal(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, ASK, 0)), 0);
         // Assert false returns.
         assert!(!has_market_account_by_market_account_id(
                 @user, market_account_id_coin_self), 0);
@@ -3596,6 +4963,14 @@ module econia::user {
                 @user, MARKET_ID_PURE_COIN), 0);
         assert!(!has_market_account_by_market_id(
                 @user, MARKET_ID_GENERIC), 0);
+        assert!(!has_market_account(
+                @user, MARKET_ID_PURE_COIN, NO_CUSTODIAN), 0);
+        assert!(!has_market_account(
+                @user, MARKET_ID_GENERIC  , NO_CUSTODIAN), 0);
+        assert!(!has_market_account(
+                @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID), 0);
+        assert!(!has_market_account(
+                @user, MARKET_ID_GENERIC  , CUSTODIAN_ID), 0);
         register_market_accounts_test(); // Register market accounts.
         // Assert empty returns.
         assert!(get_all_market_account_ids_for_market_id(
@@ -3637,6 +5012,14 @@ module econia::user {
                 @user, MARKET_ID_PURE_COIN), 0);
         assert!(has_market_account_by_market_id(
                 @user, MARKET_ID_GENERIC), 0);
+        assert!(has_market_account(
+                @user, MARKET_ID_PURE_COIN, NO_CUSTODIAN), 0);
+        assert!(has_market_account(
+                @user, MARKET_ID_GENERIC  , NO_CUSTODIAN), 0);
+        assert!(has_market_account(
+                @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID), 0);
+        assert!(has_market_account(
+                @user, MARKET_ID_GENERIC  , CUSTODIAN_ID), 0);
         // Assert false returns.
         assert!(!has_market_account_by_market_account_id(
                 @user_1, market_account_id_coin_self), 0);
@@ -3675,7 +5058,8 @@ module econia::user {
     fun test_place_cancel_order_ask()
     acquires
         Collateral,
-        MarketAccounts
+        MarketAccounts,
+        MarketEventHandles
     {
         // Register test markets, get market account ID for pure coin
         // market with delegated custodian.
@@ -3725,10 +5109,13 @@ module econia::user {
             @user, market_account_id, side, order_access_key);
         assert!(market_order_id_r == market_order_id, 0);
         assert!(size_r == size, 0);
+        // Remove market event handles.
+        remove_market_event_handles_for_market_account_test(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID);
         // Evict order, storing returned market order ID.
         market_order_id_r = cancel_order_internal(
             @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, size, price,
-            order_access_key, (NIL as u128));
+            order_access_key, (NIL as u128), CANCEL_REASON_MANUAL_CANCEL);
         // Assert returned market order ID.
         assert!(market_order_id_r == market_order_id, 0);
         // Assert next order access key.
@@ -3761,7 +5148,8 @@ module econia::user {
     fun test_place_cancel_order_bid()
     acquires
         Collateral,
-        MarketAccounts
+        MarketAccounts,
+        MarketEventHandles
     {
         // Register test markets, get market account ID for pure coin
         // market with delegated custodian.
@@ -3808,7 +5196,7 @@ module econia::user {
         // Cancel order, storing returned market order ID.
         market_order_id_r = cancel_order_internal(
             @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, size, price,
-            order_access_key, market_order_id);
+            order_access_key, market_order_id, CANCEL_REASON_MANUAL_CANCEL);
         // Assert returned market order ID.
         assert!(market_order_id_r == market_order_id, 0);
         // Assert asset counts.
@@ -3839,7 +5227,8 @@ module econia::user {
     fun test_place_cancel_order_stack()
     acquires
         Collateral,
-        MarketAccounts
+        MarketAccounts,
+        MarketEventHandles
     {
         // Register test markets, get market account ID for pure coin
         // market with delegated custodian.
@@ -3876,7 +5265,7 @@ module econia::user {
         // Cancel first order, storing market order ID.
         let market_order_id = cancel_order_internal(
             @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, size, price, 1,
-            market_order_id_1);
+            market_order_id_1, CANCEL_REASON_MANUAL_CANCEL);
         // Assert returned market order ID.
         assert!(market_order_id == market_order_id_1, 0);
         // Assert inactive stack top on given side.
@@ -3888,7 +5277,7 @@ module econia::user {
         // Cancel second order, storting market order ID.
         market_order_id = cancel_order_internal(
             @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, size, price, 2,
-            market_order_id_2);
+            market_order_id_2, CANCEL_REASON_MANUAL_CANCEL);
         // Assert returned market order ID.
         assert!(market_order_id == market_order_id_2, 0);
         // Assert inactive stack top on given side.
@@ -3927,7 +5316,8 @@ module econia::user {
     fun test_place_order_internal_access_key_mismatch()
     acquires
         Collateral,
-        MarketAccounts
+        MarketAccounts,
+        MarketEventHandles
     {
         register_market_accounts_test(); // Register market accounts.
         // Declare order parameters
@@ -3955,7 +5345,8 @@ module econia::user {
     fun test_place_order_internal_in_overflow()
     acquires
         Collateral,
-        MarketAccounts
+        MarketAccounts,
+        MarketEventHandles
     {
         register_market_accounts_test(); // Register market accounts.
         // Declare order parameters
@@ -3984,7 +5375,8 @@ module econia::user {
     fun test_place_order_internal_out_underflow()
     acquires
         Collateral,
-        MarketAccounts
+        MarketAccounts,
+        MarketEventHandles
     {
         register_market_accounts_test(); // Register market accounts.
         // Declare order parameters
@@ -4032,31 +5424,13 @@ module econia::user {
     }
 
     #[test]
-    #[expected_failure(abort_code = E_SIZE_TOO_LOW)]
-    /// Verify failure for size too low.
-    fun test_place_order_internal_size_lo()
-    acquires
-        Collateral,
-        MarketAccounts
-    {
-        register_market_accounts_test(); // Register market accounts.
-        // Declare order parameters
-        let market_order_id  = 123;
-        let size             = MIN_SIZE_PURE_COIN - 1;
-        let price            = HI_PRICE;
-        let side             = ASK;
-        // Attempt invalid invocation.
-        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
-                             size, price, market_order_id, 1);
-    }
-
-    #[test]
     #[expected_failure(abort_code = E_TICKS_OVERFLOW)]
     /// Verify failure for overflowed ticks.
     fun test_place_order_internal_ticks_overflow()
     acquires
         Collateral,
-        MarketAccounts
+        MarketAccounts,
+        MarketEventHandles
     {
         register_market_accounts_test(); // Register market accounts.
         // Declare order parameters
@@ -4076,8 +5450,10 @@ module econia::user {
         user: &signer
     ) acquires
         Collateral,
-        MarketAccounts
+        MarketAccounts,
+        MarketEventHandles
     {
+        account::create_account_for_test(address_of(user));
         // Register test markets, storing pure coin market ID.
         let (market_id_pure_coin, _, _, _, _, _, _, _, _, _, _, _) =
             registry::register_markets_test();
@@ -4096,7 +5472,8 @@ module econia::user {
         user: &signer
     ) acquires
         Collateral,
-        MarketAccounts
+        MarketAccounts,
+        MarketEventHandles
     {
         registry::init_test(); // Initialize registry.
         // Attempt invalid invocation.
@@ -4108,6 +5485,8 @@ module econia::user {
     ///
     /// Exercises all non-assert conditional branches for:
     ///
+    /// * `get_market_event_handle_creation_numbers()`
+    /// * `init_market_event_handles_if_missing()`
     /// * `register_market_account()`
     /// * `register_market_account_account_entries()`
     /// * `register_market_account_collateral_entry()`
@@ -4115,8 +5494,10 @@ module econia::user {
         user: &signer
     ) acquires
         Collateral,
-        MarketAccounts
+        MarketAccounts,
+        MarketEventHandles
     {
+        account::create_account_for_test(address_of(user));
         // Register test markets, storing market info.
         let (market_id_pure_coin, base_name_generic_pure_coin,
              lot_size_pure_coin, tick_size_pure_coin, min_size_pure_coin,
@@ -4124,13 +5505,37 @@ module econia::user {
              base_name_generic_generic, lot_size_generic, tick_size_generic,
              min_size_generic, underwriter_id_generic) =
              registry::register_markets_test();
+        // Verify no event handle creation numbers.
+        assert!(get_market_event_handle_creation_numbers(
+            @user, market_id_pure_coin, NO_CUSTODIAN) == option::none(), 0);
         // Set custodian ID as registered.
         registry::set_registered_custodian_test(CUSTODIAN_ID);
         // Register pure coin market account.
         register_market_account<BC, QC>(
             user, market_id_pure_coin, NO_CUSTODIAN);
+        assert!(get_market_event_handle_creation_numbers(
+            @user, market_id_pure_coin, NO_CUSTODIAN) == option::some(
+                MarketEventHandleCreationNumbers{
+                    cancel_order_events_handle_creation_num: 2,
+                    change_order_size_events_handle_creation_num: 3,
+                    fill_events_handle_creation_num: 4,
+                    place_limit_order_events_handle_creation_num: 5,
+                    place_market_order_events_handle_creation_num: 6}), 0);
+        // Invoke init call for handles already initialized.
+        init_market_event_handles_if_missing(
+            user, market_id_pure_coin, NO_CUSTODIAN);
+        assert!(get_market_event_handle_creation_numbers(
+            @user, market_id_pure_coin, CUSTODIAN_ID) == option::none(), 0);
         register_market_account<BC, QC>( // Register delegated account.
             user, market_id_pure_coin, CUSTODIAN_ID);
+        assert!(get_market_event_handle_creation_numbers(
+            @user, market_id_pure_coin, CUSTODIAN_ID) == option::some(
+                MarketEventHandleCreationNumbers{
+                    cancel_order_events_handle_creation_num: 7,
+                    change_order_size_events_handle_creation_num: 8,
+                    fill_events_handle_creation_num: 9,
+                    place_limit_order_events_handle_creation_num: 10,
+                    place_market_order_events_handle_creation_num: 11}), 0);
         // Register generic asset account.
         register_market_account_generic_base<QC>(
             user, market_id_generic, NO_CUSTODIAN);
@@ -4294,7 +5699,8 @@ module econia::user {
     fun test_withdraw_asset_no_account()
     acquires
         Collateral,
-        MarketAccounts
+        MarketAccounts,
+        MarketEventHandles
     {
         // Register test market accounts.
         let (user, _, _, _, _) = register_market_accounts_test();
@@ -4321,7 +5727,8 @@ module econia::user {
     fun test_withdraw_asset_not_in_pair()
     acquires
         Collateral,
-        MarketAccounts
+        MarketAccounts,
+        MarketEventHandles
     {
         // Register test market accounts.
         let (user, _, _, _, _) = register_market_accounts_test();
@@ -4335,7 +5742,8 @@ module econia::user {
     fun test_withdraw_asset_underflow()
     acquires
         Collateral,
-        MarketAccounts
+        MarketAccounts,
+        MarketEventHandles
     {
         // Register test market accounts.
         let (user, _, _, _, _) = register_market_accounts_test();
@@ -4349,7 +5757,8 @@ module econia::user {
     fun test_withdraw_asset_underwriter()
     acquires
         Collateral,
-        MarketAccounts
+        MarketAccounts,
+        MarketEventHandles
     {
         // Register test market accounts.
         let (user, _, _, _, _) = register_market_accounts_test();
@@ -4367,7 +5776,8 @@ module econia::user {
     fun test_withdrawals()
     acquires
         Collateral,
-        MarketAccounts
+        MarketAccounts,
+        MarketEventHandles
     {
         // Declare start amount parameters.
         let amount_start_coin = 700;

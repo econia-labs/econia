@@ -1,10 +1,17 @@
-import { useWallet, WalletReadyState } from "@manahippo/aptos-wallet-adapter";
+import {
+  useWallet,
+  type Wallet,
+  WalletReadyState,
+} from "@aptos-labs/wallet-adapter-react";
+import Image from "next/image";
 import {
   createContext,
+  type MouseEventHandler,
   type PropsWithChildren,
   useContext,
   useState,
 } from "react";
+import { toast } from "react-toastify";
 
 import { BaseModal } from "@/components/BaseModal";
 import { ArrowIcon } from "@/components/icons/ArrowIcon";
@@ -17,8 +24,25 @@ export const ConnectWalletContext = createContext<
   ConnectWalletContextState | undefined
 >(undefined);
 
+const WalletItem: React.FC<
+  {
+    wallet: Wallet;
+    className?: string;
+    onClick?: MouseEventHandler<HTMLButtonElement>;
+  } & PropsWithChildren
+> = ({ wallet, className, onClick, children }) =>
+  wallet.readyState === WalletReadyState.NotDetected ? (
+    <a href={wallet.url} className={className} target="_blank" rel="noreferrer">
+      {children}
+    </a>
+  ) : (
+    <button className={className} onClick={onClick}>
+      {children}
+    </button>
+  );
+
 export function ConnectWalletContextProvider({ children }: PropsWithChildren) {
-  const { select, wallets } = useWallet();
+  const { connect, wallets } = useWallet();
   const [open, setOpen] = useState<boolean>(false);
   const value: ConnectWalletContextState = {
     connectWallet: () => setOpen(true),
@@ -32,46 +56,49 @@ export function ConnectWalletContextProvider({ children }: PropsWithChildren) {
         onClose={() => setOpen(false)}
         onBack={() => setOpen(false)}
       >
-        <h2 className="mt-4 text-center font-jost text-3xl font-bold text-white">
-          Connect a Wallet
-        </h2>
-        <p className="mt-4 text-center font-roboto-mono text-sm font-light text-white">
-          In order to use this site you must connect a wallet and allow the site
-          to access your account.
-        </p>
-        <div className="mt-8 flex flex-col gap-4">
-          {wallets.map((wallet) => (
-            <div
-              key={wallet.adapter.name}
-              className="relative flex w-full cursor-pointer items-center gap-2 border border-neutral-600 p-4 font-jost text-lg font-medium  text-neutral-500 transition-all hover:border-blue [&:hover>#arrow-wrapper]:border-blue [&:hover>#arrow-wrapper]:bg-blue [&:hover>#token-icon]:border-blue [&:hover>div>#arrow]:rotate-[-45deg]"
-              onClick={() => {
-                select(wallet.adapter.name);
-                setOpen(false);
-              }}
-            >
-              <img
-                src={wallet.adapter.icon}
-                height={36}
-                width={36}
-                className=""
-                alt={"Wallet Icon"}
-                id={"token-icon"}
-              />
-              <p>
-                {wallet.readyState === WalletReadyState.NotDetected
-                  ? `Install ${wallet.adapter.name} Wallet`
-                  : `${wallet.adapter.name} Wallet`}
-              </p>
-              <div
-                className={
-                  "absolute bottom-[-1px] right-[-1px] border border-neutral-600 p-[7px] transition-all"
-                }
-                id={"arrow-wrapper"}
+        <div className="p-6">
+          <h2 className="mt-4 text-center font-jost text-3xl font-bold text-white">
+            Connect a Wallet
+          </h2>
+          <p className="mt-4 text-center font-roboto-mono text-sm font-light text-white">
+            In order to use this site you must connect a wallet and allow the
+            site to access your account.
+          </p>
+          <div className="mt-8 flex flex-col gap-4">
+            {wallets.map((wallet) => (
+              <WalletItem
+                wallet={wallet}
+                key={wallet.name}
+                className="relative flex w-full items-center p-4 ring-1 ring-neutral-600 transition-all hover:ring-blue [&:hover>.arrow-wrapper]:bg-blue [&:hover>.arrow-wrapper]:ring-blue [&:hover>div>.arrow]:-rotate-45"
+                onClick={() => {
+                  try {
+                    connect(wallet.name);
+                  } catch (e) {
+                    if (e instanceof Error) {
+                      toast.error(e.message);
+                    }
+                  } finally {
+                    setOpen(false);
+                  }
+                }}
               >
-                <ArrowIcon id={"arrow"} className={"transition-all"} />
-              </div>
-            </div>
-          ))}
+                <Image
+                  src={wallet.icon}
+                  height={36}
+                  width={36}
+                  alt={`${wallet.name} Wallet Icon`}
+                />
+                <p className="ml-4 font-jost text-lg font-medium text-neutral-500">
+                  {wallet.readyState === WalletReadyState.NotDetected
+                    ? `Install ${wallet.name} Wallet`
+                    : `${wallet.name} Wallet`}
+                </p>
+                <div className="arrow-wrapper absolute bottom-0 right-0 p-[7px] ring-1 ring-neutral-600 transition-all">
+                  <ArrowIcon className="arrow transition-all" />
+                </div>
+              </WalletItem>
+            ))}
+          </div>
         </div>
       </BaseModal>
     </ConnectWalletContext.Provider>
@@ -82,7 +109,7 @@ export const useConnectWallet = (): ConnectWalletContextState => {
   const context = useContext(ConnectWalletContext);
   if (context == null) {
     throw new Error(
-      "useAccountContext must be used within a AccountContextProvider."
+      "useAccountContext must be used within a AccountContextProvider.",
     );
   }
   return context;

@@ -27,7 +27,8 @@ pub struct Market {
     pub created_at: DateTime<Utc>,
 }
 
-#[derive(Clone, Debug, Queryable)]
+#[derive(Clone, Debug, Queryable, Identifiable)]
+#[diesel(table_name = market_registration_events, primary_key(market_id))]
 pub struct MarketRegistrationEvent {
     pub market_id: BigDecimal,
     pub time: DateTime<Utc>,
@@ -90,8 +91,8 @@ impl TryFrom<MarketRegistrationEvent> for events::MarketRegistrationEvent {
     }
 }
 
-#[derive(Insertable, Debug, FieldCount)]
-#[diesel(table_name = market_registration_events)]
+#[derive(Insertable, Debug, FieldCount, AsChangeset)]
+#[diesel(table_name = market_registration_events, primary_key(market_id))]
 pub struct NewMarketRegistrationEvent<'a> {
     pub market_id: &'a BigDecimal,
     pub time: DateTime<Utc>,
@@ -139,7 +140,8 @@ pub enum MarketEventType {
     Update,
 }
 
-#[derive(Clone, Debug, Queryable)]
+#[derive(Clone, Debug, Queryable, Identifiable)]
+#[diesel(table_name = recognized_market_events, primary_key(market_id))]
 pub struct RecognizedMarketEvent {
     pub market_id: BigDecimal,
     pub time: DateTime<Utc>,
@@ -149,8 +151,8 @@ pub struct RecognizedMarketEvent {
     pub min_size: Option<BigDecimal>,
 }
 
-#[derive(Insertable, Debug, FieldCount)]
-#[diesel(table_name = recognized_market_events)]
+#[derive(Insertable, Debug, FieldCount, AsChangeset)]
+#[diesel(table_name = recognized_market_events, primary_key(market_id))]
 pub struct NewRecognizedMarketEvent<'a> {
     pub market_id: &'a BigDecimal,
     pub time: DateTime<Utc>,

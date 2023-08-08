@@ -5,17 +5,11 @@ import {
   type SetStateAction,
   useContext,
   useState,
-  useEffect,
 } from "react";
 
-import { type Side } from "@/types/global";
-
-type SetSideType = React.Dispatch<React.SetStateAction<Side>> | undefined;
 export type OrderEntryContextState = {
-  type: "buy" | "sell";
-  setType: Dispatch<SetStateAction<"buy" | "sell">>;
-  price: string;
-  setPrice: Dispatch<SetStateAction<string>>;
+  price: string | undefined;
+  setPrice: Dispatch<SetStateAction<string | undefined>>;
 };
 
 export const OrderEntryContext = createContext<
@@ -23,13 +17,10 @@ export const OrderEntryContext = createContext<
 >(undefined);
 
 export function OrderEntryContextProvider({ children }: PropsWithChildren) {
-  const [type, setType] = useState<"buy" | "sell">("buy");
-  const [price, setPrice] = useState<string>("");
+  const [price, setPrice] = useState<string | undefined>(undefined);
 
   const value: OrderEntryContextState = {
-    type,
     price,
-    setType,
     setPrice,
   };
   return (
@@ -43,7 +34,7 @@ export const useOrderEntry = (): OrderEntryContextState => {
   const context = useContext(OrderEntryContext);
   if (context == null) {
     throw new Error(
-      "useOrderEntry must be used within a OrderEntryContextProvider."
+      "useOrderEntry must be used within a OrderEntryContextProvider.",
     );
   }
   return context;

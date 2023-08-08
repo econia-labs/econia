@@ -15,6 +15,9 @@ const config = {
         jost: ["var(--font-jost)", ...fontFamily.sans],
         "roboto-mono": ["var(--font-roboto-mono)", ...fontFamily.sans],
       },
+      screens: {
+        tall: { raw: "(min-height: 960px)" },
+      },
     },
     colors: {
       ...colors,

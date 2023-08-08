@@ -1,11 +1,8 @@
 import "@/styles/globals.css";
 import "react-toastify/dist/ReactToastify.css";
 
-import {
-  AptosWalletAdapter,
-  PontemWalletAdapter,
-  WalletProvider,
-} from "@manahippo/aptos-wallet-adapter";
+import { AptosWalletAdapterProvider } from "@aptos-labs/wallet-adapter-react";
+import { PontemWallet } from "@pontem/wallet-adapter-plugin";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import {
@@ -21,11 +18,13 @@ import {
 } from "chart.js";
 import { type AppProps } from "next/app";
 import { Jost, Roboto_Mono } from "next/font/google";
+import { PetraWallet } from "petra-plugin-wallet-adapter";
 import { useMemo } from "react";
 import { ToastContainer } from "react-toastify";
 
 import { AptosContextProvider } from "@/contexts/AptosContext";
 import { ConnectWalletContextProvider } from "@/contexts/ConnectWalletContext";
+
 import bg from "../../public/bg.png";
 
 Chart.register(
@@ -36,7 +35,7 @@ Chart.register(
   Title,
   Tooltip,
   Filler,
-  Legend
+  Legend,
 );
 
 Chart.defaults.font.family = "Roboto Mono";
@@ -55,13 +54,10 @@ const robotoMono = Roboto_Mono({
 const queryClient = new QueryClient();
 
 export default function App({ Component, pageProps }: AppProps) {
-  const wallets = useMemo(
-    () => [new AptosWalletAdapter(), new PontemWalletAdapter()],
-    []
-  );
+  const wallets = useMemo(() => [new PetraWallet(), new PontemWallet()], []);
   return (
     <QueryClientProvider client={queryClient}>
-      <WalletProvider wallets={wallets} autoConnect>
+      <AptosWalletAdapterProvider plugins={wallets} autoConnect>
         <AptosContextProvider>
           <ConnectWalletContextProvider>
             <style jsx global>{`
@@ -97,7 +93,7 @@ export default function App({ Component, pageProps }: AppProps) {
             </div>
           </ConnectWalletContextProvider>
         </AptosContextProvider>
-      </WalletProvider>
+      </AptosWalletAdapterProvider>
       <ReactQueryDevtools initialIsOpen={false} />
       <ToastContainer theme="dark" />
     </QueryClientProvider>

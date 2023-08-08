@@ -1,5 +1,6 @@
 use std::collections::{BTreeMap, HashMap};
 
+use chrono::{DateTime, Utc};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
@@ -52,7 +53,7 @@ impl OrderBook {
         self.get_book_side_price_level(order_id).and_then(|(s, p)| {
             self.get_side(s)
                 .get(&p)
-                .and_then(|o| o.iter().find(|o| o.market_order_id == order_id))
+                .and_then(|o| o.iter().find(|o| o.order_id == order_id))
         })
     }
 
@@ -60,12 +61,12 @@ impl OrderBook {
         self.get_book_side_price_level(order_id).and_then(|(s, p)| {
             self.get_side_mut(s)
                 .get_mut(&p)
-                .and_then(|o| o.iter_mut().find(|o| o.market_order_id == order_id))
+                .and_then(|o| o.iter_mut().find(|o| o.order_id == order_id))
         })
     }
 
     pub fn add_order(&mut self, order: Order) {
-        let market_order_id = order.market_order_id;
+        let market_order_id = order.order_id;
         let side = order.side;
         let price = order.price;
 
@@ -89,7 +90,7 @@ impl OrderBook {
 
         let order = level
             .iter()
-            .position(|o| o.market_order_id == order_id)
+            .position(|o| o.order_id == order_id)
             .map(|i| level.remove(i))
             .expect("invalid state, order missing");
 
@@ -105,8 +106,10 @@ impl OrderBook {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct PriceLevelWithId {
     pub market_id: u64,
+    pub side: Side,
     pub price: u64,
     pub size: u64,
+    pub timestamp: DateTime<Utc>,
 }
 
 #[derive(Debug, Clone)]

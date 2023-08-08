@@ -1,20 +1,21 @@
+import { useQuery } from "@tanstack/react-query";
+import { type MaybeHexString } from "aptos";
+import { type U128 } from "aptos/src/generated";
+
 import { NO_CUSTODIAN } from "@/constants";
 import { useAptos } from "@/contexts/AptosContext";
 import { ECONIA_ADDR } from "@/env";
-import { ApiCoin } from "@/types/api";
-import { Collateral, TabListNode } from "@/types/econia";
-import { MoveCoin } from "@/types/move";
-import { TypeTag } from "@/utils/TypeTag";
+import { type ApiCoin } from "@/types/api";
+import { type Collateral, type TabListNode } from "@/types/econia";
+import { type MoveCoin } from "@/types/move";
 import { fromRawCoinAmount } from "@/utils/coin";
 import { makeMarketAccountId } from "@/utils/econia";
-import { Address } from "@manahippo/aptos-wallet-adapter";
-import { useQuery } from "@tanstack/react-query";
-import { U128 } from "aptos/src/generated";
+import { TypeTag } from "@/utils/TypeTag";
 
 export const useMarketAccountBalance = (
-  addr: Address | undefined | null,
+  addr: MaybeHexString | undefined | null,
   marketId: number | undefined | null,
-  coin: ApiCoin | undefined | null
+  coin: ApiCoin | undefined | null,
 ) => {
   const { aptosClient } = useAptos();
   return useQuery(
@@ -25,7 +26,7 @@ export const useMarketAccountBalance = (
       const collateral = await aptosClient
         .getAccountResource(
           addr,
-          `${ECONIA_ADDR}::user::Collateral<${selectedCoinTypeTag}>`
+          `${ECONIA_ADDR}::user::Collateral<${selectedCoinTypeTag}>`,
         )
         .then(({ data }) => data as Collateral);
       return await aptosClient
@@ -38,8 +39,8 @@ export const useMarketAccountBalance = (
           key: makeMarketAccountId(marketId, NO_CUSTODIAN),
         })
         .then((node: TabListNode<U128, MoveCoin>) =>
-          fromRawCoinAmount(node.value.value, coin.decimals)
+          fromRawCoinAmount(node.value.value, coin.decimals),
         );
-    }
+    },
   );
 };

@@ -2,16 +2,15 @@ use bigdecimal::{
     num_bigint::{BigInt, ToBigInt},
     BigDecimal, FromPrimitive, ToPrimitive,
 };
+use diesel::associations::HasTable;
 
 pub mod bar;
 pub mod coin;
-pub mod events;
-pub mod fill;
 pub mod market;
 pub mod order;
 
-pub trait ToInsertable {
-    type Insertable<'a>
+pub trait ToInsertable: HasTable {
+    type Insertable<'a>: diesel::Insertable<<Self as HasTable>::Table>
     where
         Self: 'a;
 

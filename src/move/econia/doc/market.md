@@ -858,45 +858,44 @@ The below index is automatically generated from source code:
     -  [Returns](#@Returns_121)
     -  [Aborts](#@Aborts_122)
     -  [Restrictions](#@Restrictions_123)
-    -  [Minimum size](#@Minimum_size_124)
-    -  [Self matching](#@Self_matching_125)
-    -  [Expected value testing](#@Expected_value_testing_126)
-    -  [Failure testing](#@Failure_testing_127)
+    -  [Self matching](#@Self_matching_124)
+    -  [Expected value testing](#@Expected_value_testing_125)
+    -  [Failure testing](#@Failure_testing_126)
 -  [Function `place_limit_order_passive_advance`](#0xc0deb00c_market_place_limit_order_passive_advance)
-    -  [Price calculations](#@Price_calculations_128)
-    -  [Type Parameters](#@Type_Parameters_129)
-    -  [Parameters](#@Parameters_130)
-    -  [Returns](#@Returns_131)
-    -  [Aborts](#@Aborts_132)
-    -  [Expected value testing](#@Expected_value_testing_133)
-    -  [Failure testing](#@Failure_testing_134)
+    -  [Price calculations](#@Price_calculations_127)
+    -  [Type Parameters](#@Type_Parameters_128)
+    -  [Parameters](#@Parameters_129)
+    -  [Returns](#@Returns_130)
+    -  [Aborts](#@Aborts_131)
+    -  [Expected value testing](#@Expected_value_testing_132)
+    -  [Failure testing](#@Failure_testing_133)
 -  [Function `place_market_order`](#0xc0deb00c_market_place_market_order)
-    -  [Type Parameters](#@Type_Parameters_135)
-    -  [Parameters](#@Parameters_136)
-    -  [Returns](#@Returns_137)
-    -  [Aborts](#@Aborts_138)
-    -  [Expected value testing](#@Expected_value_testing_139)
-    -  [Failure testing](#@Failure_testing_140)
+    -  [Type Parameters](#@Type_Parameters_134)
+    -  [Parameters](#@Parameters_135)
+    -  [Returns](#@Returns_136)
+    -  [Aborts](#@Aborts_137)
+    -  [Expected value testing](#@Expected_value_testing_138)
+    -  [Failure testing](#@Failure_testing_139)
 -  [Function `range_check_trade`](#0xc0deb00c_market_range_check_trade)
-    -  [Terminology](#@Terminology_141)
-    -  [Parameters](#@Parameters_142)
-    -  [Aborts](#@Aborts_143)
-    -  [Failure testing](#@Failure_testing_144)
+    -  [Terminology](#@Terminology_140)
+    -  [Parameters](#@Parameters_141)
+    -  [Aborts](#@Aborts_142)
+    -  [Failure testing](#@Failure_testing_143)
 -  [Function `register_market`](#0xc0deb00c_market_register_market)
-    -  [Type parameters](#@Type_parameters_145)
-    -  [Parameters](#@Parameters_146)
-    -  [Returns](#@Returns_147)
-    -  [Testing](#@Testing_148)
+    -  [Type parameters](#@Type_parameters_144)
+    -  [Parameters](#@Parameters_145)
+    -  [Returns](#@Returns_146)
+    -  [Testing](#@Testing_147)
 -  [Function `swap`](#0xc0deb00c_market_swap)
-    -  [Type Parameters](#@Type_Parameters_149)
-    -  [Parameters](#@Parameters_150)
-    -  [Returns](#@Returns_151)
-    -  [Emits](#@Emits_152)
-    -  [Aborts](#@Aborts_153)
-    -  [Expected value testing](#@Expected_value_testing_154)
-    -  [Failure testing](#@Failure_testing_155)
+    -  [Type Parameters](#@Type_Parameters_148)
+    -  [Parameters](#@Parameters_149)
+    -  [Returns](#@Returns_150)
+    -  [Emits](#@Emits_151)
+    -  [Aborts](#@Aborts_152)
+    -  [Expected value testing](#@Expected_value_testing_153)
+    -  [Failure testing](#@Failure_testing_154)
 -  [Function `index_orders_sdk`](#0xc0deb00c_market_index_orders_sdk)
-    -  [Coverage testing](#@Coverage_testing_156)
+    -  [Coverage testing](#@Coverage_testing_155)
 
 
 <pre><code><b>use</b> <a href="">0x1::account</a>;
@@ -1920,6 +1919,28 @@ where self match behavior indicated cancelling the taker order.
 
 
 <pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_CANCEL_REASON_SELF_MATCH_TAKER">CANCEL_REASON_SELF_MATCH_TAKER</a>: u8 = 7;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_CANCEL_REASON_TOO_SMALL_TO_FILL_LOT"></a>
+
+Swap order cancelled because the remaining base asset amount to
+match was too small to fill a single lot.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_CANCEL_REASON_TOO_SMALL_TO_FILL_LOT">CANCEL_REASON_TOO_SMALL_TO_FILL_LOT</a>: u8 = 8;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_CANCEL_REASON_VIOLATED_LIMIT_PRICE"></a>
+
+Swap order cancelled because the next order on the book to match
+against violated the swap order limit price.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_CANCEL_REASON_VIOLATED_LIMIT_PRICE">CANCEL_REASON_VIOLATED_LIMIT_PRICE</a>: u8 = 9;
 </code></pre>
 
 
@@ -4455,8 +4476,8 @@ the case of a buy, base coins in the case of a sell.
 
 
 * <code>test_swap_coins_buy_max_base_limiting()</code>
-* <code>test_swap_coins_buy_no_max_quote_limiting()</code>
 * <code>test_swap_coins_buy_no_max_base_limiting()</code>
+* <code>test_swap_coins_buy_no_max_quote_limiting()</code>
 * <code>test_swap_coins_sell_max_quote_limiting()</code>
 * <code>test_swap_coins_sell_no_max_base_limiting()</code>
 * <code>test_swap_coins_sell_no_max_quote_limiting()</code>
@@ -5349,7 +5370,8 @@ custodian ID of order on order book having market order ID.
     // and new size.
     <a href="user.md#0xc0deb00c_user_change_order_size_internal">user::change_order_size_internal</a>(
         <a href="user.md#0xc0deb00c_user">user</a>, market_id, custodian_id, side, order_ref_mut.size, new_size,
-        order_ref_mut.price, order_ref_mut.order_access_key, market_order_id);
+        order_ref_mut.price, order_ref_mut.order_access_key,
+        market_order_id);
     // Get order price.
     <b>let</b> price = <a href="avl_queue.md#0xc0deb00c_avl_queue_get_access_key_insertion_key">avl_queue::get_access_key_insertion_key</a>(avlq_access_key);
     // If size change is for a size decrease or <b>if</b> order is at tail
@@ -5404,6 +5426,9 @@ the taker side of an order due to a self match.
 match.
 * <code>liquidity_gone</code>: If the matching engine halted due to
 insufficient liquidity.
+* <code>lot_size</code>: The lot size for the market.
+* <code>violated_limit_price</code>: <code><b>true</b></code> if matching halted due to a
+violated limit price
 
 
 <a name="@Returns_109"></a>
@@ -5415,7 +5440,7 @@ insufficient liquidity.
 to be cancelled.
 
 
-<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_get_cancel_reason_option_for_market_order_or_swap">get_cancel_reason_option_for_market_order_or_swap</a>(self_match_taker_cancel: bool, base_traded: u64, max_base: u64, liquidity_gone: bool): <a href="_Option">option::Option</a>&lt;u8&gt;
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_get_cancel_reason_option_for_market_order_or_swap">get_cancel_reason_option_for_market_order_or_swap</a>(self_match_taker_cancel: bool, base_traded: u64, max_base: u64, liquidity_gone: bool, lot_size: u64, limit_price_violated: bool): <a href="_Option">option::Option</a>&lt;u8&gt;
 </code></pre>
 
 
@@ -5427,15 +5452,21 @@ to be cancelled.
     self_match_taker_cancel: bool,
     base_traded: u64,
     max_base: u64,
-    liquidity_gone: bool
+    liquidity_gone: bool,
+    lot_size: u64,
+    limit_price_violated: bool
 ): Option&lt;u8&gt; {
     <b>let</b> need_to_cancel =
         ((self_match_taker_cancel) || (base_traded &lt; max_base));
     <b>if</b> (need_to_cancel) {
         <b>if</b> (self_match_taker_cancel) {
             <a href="_some">option::some</a>(<a href="market.md#0xc0deb00c_market_CANCEL_REASON_SELF_MATCH_TAKER">CANCEL_REASON_SELF_MATCH_TAKER</a>)
+        } <b>else</b> <b>if</b> (limit_price_violated) {
+            <a href="_some">option::some</a>(<a href="market.md#0xc0deb00c_market_CANCEL_REASON_VIOLATED_LIMIT_PRICE">CANCEL_REASON_VIOLATED_LIMIT_PRICE</a>)
         } <b>else</b> <b>if</b> (liquidity_gone) {
             <a href="_some">option::some</a>(<a href="market.md#0xc0deb00c_market_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY">CANCEL_REASON_NOT_ENOUGH_LIQUIDITY</a>)
+        } <b>else</b> <b>if</b> ((max_base - base_traded) &lt; lot_size) {
+            <a href="_some">option::some</a>(<a href="market.md#0xc0deb00c_market_CANCEL_REASON_TOO_SMALL_TO_FILL_LOT">CANCEL_REASON_TOO_SMALL_TO_FILL_LOT</a>)
         } <b>else</b> {
             <a href="_some">option::some</a>(<a href="market.md#0xc0deb00c_market_CANCEL_REASON_MAX_QUOTE_TRADED">CANCEL_REASON_MAX_QUOTE_TRADED</a>)
         }
@@ -5721,6 +5752,7 @@ net change in taker's quote coin holdings.
 * <code>bool</code>: <code><b>true</b></code> if a self match that results in a taker cancel.
 * <code>bool</code>: <code><b>true</b></code> if liquidity is gone from order book on
 corresponding side after matching.
+* <code>bool</code>: <code><b>true</b></code> if matching halted due to violated limit price.
 
 
 <a name="@Aborts_116"></a>
@@ -5774,7 +5806,7 @@ requirement not met.
 * <code>test_match_self_match_invalid()</code>
 
 
-<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_match">match</a>&lt;BaseType, QuoteType&gt;(market_id: u64, fill_event_queue_ref_mut: &<b>mut</b> <a href="">vector</a>&lt;<a href="user.md#0xc0deb00c_user_FillEvent">user::FillEvent</a>&gt;, order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">market::OrderBook</a>, taker: <b>address</b>, custodian_id: u64, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64, self_match_behavior: u8, optional_base_coins: <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, quote_coins: <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;): (<a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;, u64, u64, u64, bool, bool)
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_match">match</a>&lt;BaseType, QuoteType&gt;(market_id: u64, fill_event_queue_ref_mut: &<b>mut</b> <a href="">vector</a>&lt;<a href="user.md#0xc0deb00c_user_FillEvent">user::FillEvent</a>&gt;, order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">market::OrderBook</a>, taker: <b>address</b>, custodian_id: u64, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64, self_match_behavior: u8, optional_base_coins: <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, quote_coins: <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;): (<a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;, u64, u64, u64, bool, bool, bool)
 </code></pre>
 
 
@@ -5808,6 +5840,7 @@ requirement not met.
     u64,
     u64,
     bool,
+    bool,
     bool
 ) {
     // Assert price is not too high.
@@ -5837,13 +5870,17 @@ requirement not met.
     <b>let</b> order_id = ((order_book_ref_mut.counter <b>as</b> u128) &lt;&lt; <a href="market.md#0xc0deb00c_market_SHIFT_COUNTER">SHIFT_COUNTER</a>);
     // Initialize counters for fill iteration.
     <b>let</b> (fill_count, fees_paid) = (0, 0);
+    <b>let</b> violated_limit_price = <b>false</b>; // Assume no price violation.
     // While there are orders <b>to</b> match against:
     <b>while</b> (!<a href="avl_queue.md#0xc0deb00c_avl_queue_is_empty">avl_queue::is_empty</a>(orders_ref_mut)) {
         <b>let</b> price = // Get price of order at head of AVL queue.
             *<a href="_borrow">option::borrow</a>(&<a href="avl_queue.md#0xc0deb00c_avl_queue_get_head_key">avl_queue::get_head_key</a>(orders_ref_mut));
         // Break <b>if</b> price too high <b>to</b> buy at or too low <b>to</b> sell at.
         <b>if</b> (((direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a> ) && (price &gt; limit_price)) ||
-            ((direction == <a href="market.md#0xc0deb00c_market_SELL">SELL</a>) && (price &lt; limit_price))) <b>break</b>;
+            ((direction == <a href="market.md#0xc0deb00c_market_SELL">SELL</a>) && (price &lt; limit_price))) {
+                violated_limit_price = <b>true</b>;
+                <b>break</b>
+        };
         // Calculate max number of lots that could be filled
         // at order price, limited by ticks left <b>to</b> fill until max.
         <b>let</b> max_fill_size_ticks = ticks_until_max / price;
@@ -5967,9 +6004,11 @@ requirement not met.
     // Assert minimum quote <a href="">coin</a> trade amount met.
     <b>assert</b>!(quote_traded &gt;= min_quote, <a href="market.md#0xc0deb00c_market_E_MIN_QUOTE_NOT_TRADED">E_MIN_QUOTE_NOT_TRADED</a>);
     // Return optional base <a href="">coin</a>, quote coins, trade amounts,
-    // self match taker cancel flag, and <b>if</b> liquidity is gone.
+    // self match taker cancel flag, <b>if</b> liquidity is gone, and <b>if</b>
+    // limit price was violated.
     (optional_base_coins, quote_coins, base_fill, quote_traded, fees_paid,
-     self_match_taker_cancel, <a href="avl_queue.md#0xc0deb00c_avl_queue_is_empty">avl_queue::is_empty</a>(orders_ref_mut))
+     self_match_taker_cancel, <a href="avl_queue.md#0xc0deb00c_avl_queue_is_empty">avl_queue::is_empty</a>(orders_ref_mut),
+     violated_limit_price)
 }
 </code></pre>
 
@@ -6070,17 +6109,7 @@ amount is not filled.
 then returns.
 
 
-<a name="@Minimum_size_124"></a>
-
-### Minimum size
-
-
-* If order partially fills as a taker and there is still size
-left as a maker, minimum order size condition must be met
-again for the maker portion.
-
-
-<a name="@Self_matching_125"></a>
+<a name="@Self_matching_124"></a>
 
 ### Self matching
 
@@ -6094,7 +6123,7 @@ restriction, and
 3. Self match behavior indicates taker cancellation.
 
 
-<a name="@Expected_value_testing_126"></a>
+<a name="@Expected_value_testing_125"></a>
 
 ### Expected value testing
 
@@ -6110,11 +6139,12 @@ restriction, and
 * <code>test_place_limit_order_no_cross_ask_user()</code>
 * <code>test_place_limit_order_no_cross_ask_user_ioc()</code>
 * <code>test_place_limit_order_no_cross_bid_custodian()</code>
+* <code>test_place_limit_order_remove_event_handles()</code>
 * <code>test_place_limit_order_still_crosses_ask()</code>
 * <code>test_place_limit_order_still_crosses_bid()</code>
 
 
-<a name="@Failure_testing_127"></a>
+<a name="@Failure_testing_126"></a>
 
 ### Failure testing
 
@@ -6275,6 +6305,7 @@ restriction, and
             fees,
             self_match_cancel,
             _,
+            _
         ) = <a href="market.md#0xc0deb00c_market_match">match</a>(
             market_id,
             &<b>mut</b> fill_event_queue,
@@ -6414,7 +6445,7 @@ order that aborts for a self match. Advance price is then
 range-checked by <code><a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>()</code>.
 
 
-<a name="@Price_calculations_128"></a>
+<a name="@Price_calculations_127"></a>
 
 ### Price calculations
 
@@ -6426,7 +6457,7 @@ operation during the advance amount calculation for the percent
 case.
 
 
-<a name="@Type_Parameters_129"></a>
+<a name="@Type_Parameters_128"></a>
 
 ### Type Parameters
 
@@ -6435,7 +6466,7 @@ case.
 * <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Parameters_130"></a>
+<a name="@Parameters_129"></a>
 
 ### Parameters
 
@@ -6454,7 +6485,7 @@ percent of the spread to advance, else the number of ticks to
 advance.
 
 
-<a name="@Returns_131"></a>
+<a name="@Returns_130"></a>
 
 ### Returns
 
@@ -6462,7 +6493,7 @@ advance.
 * <code>u128</code>: Market order ID, same as for <code><a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>()</code>.
 
 
-<a name="@Aborts_132"></a>
+<a name="@Aborts_131"></a>
 
 ### Aborts
 
@@ -6474,7 +6505,7 @@ advance.
 <code>target_advance_amount</code> is not less than or equal to 100.
 
 
-<a name="@Expected_value_testing_133"></a>
+<a name="@Expected_value_testing_132"></a>
 
 ### Expected value testing
 
@@ -6490,7 +6521,7 @@ advance.
 * <code>test_place_limit_order_passive_advance_ticks_bid()</code>
 
 
-<a name="@Failure_testing_134"></a>
+<a name="@Failure_testing_133"></a>
 
 ### Failure testing
 
@@ -6627,7 +6658,7 @@ advance.
 Place market order against order book from user market account.
 
 
-<a name="@Type_Parameters_135"></a>
+<a name="@Type_Parameters_134"></a>
 
 ### Type Parameters
 
@@ -6636,7 +6667,7 @@ Place market order against order book from user market account.
 * <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Parameters_136"></a>
+<a name="@Parameters_135"></a>
 
 ### Parameters
 
@@ -6650,7 +6681,7 @@ Place market order against order book from user market account.
 * <code>self_match_behavior</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Returns_137"></a>
+<a name="@Returns_136"></a>
 
 ### Returns
 
@@ -6660,7 +6691,7 @@ Place market order against order book from user market account.
 * <code>u64</code>: Quote coin fees paid, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Aborts_138"></a>
+<a name="@Aborts_137"></a>
 
 ### Aborts
 
@@ -6673,19 +6704,22 @@ size for market.
 lot size results in a base asset unit overflow.
 
 
-<a name="@Expected_value_testing_139"></a>
+<a name="@Expected_value_testing_138"></a>
 
 ### Expected value testing
 
 
-* <code>test_place_market_order_max_base_adjust_buy_user()</code>
+* <code>test_place_market_order_max_base_below_buy_user()</code>
 * <code>test_place_market_order_max_base_buy_user()</code>
 * <code>test_place_market_order_max_base_sell_custodian()</code>
 * <code>test_place_market_order_max_quote_buy_custodian()</code>
 * <code>test_place_market_order_max_quote_sell_user()</code>
+* <code>test_place_market_order_max_quote_traded()</code>
+* <code>test_place_market_order_not_enough_liquidity()</code>
+* <code>test_place_market_order_remove_event_handles()</code>
 
 
-<a name="@Failure_testing_140"></a>
+<a name="@Failure_testing_139"></a>
 
 ### Failure testing
 
@@ -6777,7 +6811,8 @@ lot size results in a base asset unit overflow.
         quote_traded,
         fees,
         self_match_taker_cancel,
-        liquidity_gone
+        liquidity_gone,
+        _
     ) = <a href="market.md#0xc0deb00c_market_match">match</a>(
         market_id,
         &<b>mut</b> fill_event_queue,
@@ -6809,7 +6844,7 @@ lot size results in a base asset unit overflow.
     <b>let</b> cancel_reason_option =
         <a href="market.md#0xc0deb00c_market_get_cancel_reason_option_for_market_order_or_swap">get_cancel_reason_option_for_market_order_or_swap</a>(
             self_match_taker_cancel, base_traded, max_base,
-            liquidity_gone);
+            liquidity_gone, order_book_ref_mut.lot_size, <b>false</b>);
     // Emit relevant events <b>to</b> <a href="user.md#0xc0deb00c_user">user</a> <a href="">event</a> handles.
     <a href="user.md#0xc0deb00c_user_emit_market_order_events_internal">user::emit_market_order_events_internal</a>(
         market_id, user_address, custodian_id, integrator, direction, size,
@@ -6831,7 +6866,7 @@ Range check minimum and maximum asset trade amounts.
 Should be called before <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Terminology_141"></a>
+<a name="@Terminology_140"></a>
 
 ### Terminology
 
@@ -6854,7 +6889,7 @@ user's <code>aptos_framework::coin::CoinStore</code> or from standalone
 coins, is the same as available amount.
 
 
-<a name="@Parameters_142"></a>
+<a name="@Parameters_141"></a>
 
 ### Parameters
 
@@ -6875,7 +6910,7 @@ trade.
 <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>.
 
 
-<a name="@Aborts_143"></a>
+<a name="@Aborts_142"></a>
 
 ### Aborts
 
@@ -6891,7 +6926,7 @@ received from trade.
 * <code><a href="market.md#0xc0deb00c_market_E_NOT_ENOUGH_ASSET_OUT">E_NOT_ENOUGH_ASSET_OUT</a></code>: Not enough asset to trade away.
 
 
-<a name="@Failure_testing_144"></a>
+<a name="@Failure_testing_143"></a>
 
 ### Failure testing
 
@@ -6965,7 +7000,7 @@ See <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketI
 size, minimum size, and 32-bit prices.
 
 
-<a name="@Type_parameters_145"></a>
+<a name="@Type_parameters_144"></a>
 
 ### Type parameters
 
@@ -6974,7 +7009,7 @@ size, minimum size, and 32-bit prices.
 * <code>QuoteType</code>: Quote coin type for market.
 
 
-<a name="@Parameters_146"></a>
+<a name="@Parameters_145"></a>
 
 ### Parameters
 
@@ -6988,7 +7023,7 @@ for market.
 * <code>underwriter_id</code>: <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>.min_size</code> for market.
 
 
-<a name="@Returns_147"></a>
+<a name="@Returns_146"></a>
 
 ### Returns
 
@@ -6996,7 +7031,7 @@ for market.
 * <code>u64</code>: Market ID for new market.
 
 
-<a name="@Testing_148"></a>
+<a name="@Testing_147"></a>
 
 ### Testing
 
@@ -7061,7 +7096,7 @@ for market.
 Match a taker's swap order against order book for given market.
 
 
-<a name="@Type_Parameters_149"></a>
+<a name="@Type_Parameters_148"></a>
 
 ### Type Parameters
 
@@ -7070,7 +7105,7 @@ Match a taker's swap order against order book for given market.
 * <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Parameters_150"></a>
+<a name="@Parameters_149"></a>
 
 ### Parameters
 
@@ -7094,7 +7129,7 @@ is <code><a href="registry.md#0xc0deb00c_registry_GenericAsset">registry::Generi
 * <code>quote_coins</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Returns_151"></a>
+<a name="@Returns_150"></a>
 
 ### Returns
 
@@ -7113,7 +7148,7 @@ if swap is from a signing swapper.
 swapper.
 
 
-<a name="@Emits_152"></a>
+<a name="@Emits_151"></a>
 
 ### Emits
 
@@ -7125,7 +7160,7 @@ cancellation, if order was cancelled without completely
 filling, when swap is from non-signing swapper.
 
 
-<a name="@Aborts_153"></a>
+<a name="@Aborts_152"></a>
 
 ### Aborts
 
@@ -7136,7 +7171,7 @@ filling, when swap is from non-signing swapper.
 * <code><a href="market.md#0xc0deb00c_market_E_INVALID_QUOTE">E_INVALID_QUOTE</a></code>: Quote asset type is invalid.
 
 
-<a name="@Expected_value_testing_154"></a>
+<a name="@Expected_value_testing_153"></a>
 
 ### Expected value testing
 
@@ -7145,7 +7180,7 @@ filling, when swap is from non-signing swapper.
 <code><a href="market.md#0xc0deb00c_market_swap_generic">swap_generic</a>()</code> testing.
 
 
-<a name="@Failure_testing_155"></a>
+<a name="@Failure_testing_154"></a>
 
 ### Failure testing
 
@@ -7218,7 +7253,8 @@ filling, when swap is from non-signing swapper.
         quote_traded,
         fees,
         self_match_taker_cancel,
-        liquidity_gone
+        liquidity_gone,
+        violated_limit_price
     ) = <a href="market.md#0xc0deb00c_market_match">match</a>(
         market_id,
         fill_event_queue_ref_mut,
@@ -7276,7 +7312,8 @@ filling, when swap is from non-signing swapper.
     <b>let</b> cancel_reason_option =
         <a href="market.md#0xc0deb00c_market_get_cancel_reason_option_for_market_order_or_swap">get_cancel_reason_option_for_market_order_or_swap</a>(
             self_match_taker_cancel, base_traded, max_base,
-            liquidity_gone);
+            liquidity_gone, order_book_ref_mut.lot_size,
+            violated_limit_price);
     <b>let</b> need_to_cancel = <a href="_is_some">option::is_some</a>(&cancel_reason_option);
     <b>let</b> cancel_order_event_option = <b>if</b> (need_to_cancel)
         <a href="_some">option::some</a>(<a href="user.md#0xc0deb00c_user_create_cancel_order_event_internal">user::create_cancel_order_event_internal</a>(
@@ -7313,7 +7350,7 @@ filling, when swap is from non-signing swapper.
 Deprecated function retained for compatible upgrade policy.
 
 
-<a name="@Coverage_testing_156"></a>
+<a name="@Coverage_testing_155"></a>
 
 ### Coverage testing
 

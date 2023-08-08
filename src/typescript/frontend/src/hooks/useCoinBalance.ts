@@ -8,7 +8,7 @@ import { type TypeTag } from "@/utils/TypeTag";
 
 import { useCoinInfo } from "./useCoinInfo";
 
-type CoinStore = {
+export type CoinStore = {
   coin: {
     value: number;
   };

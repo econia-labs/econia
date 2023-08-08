@@ -37,7 +37,9 @@ export const LimitOrderEntry: React.FC<{
   } = useForm<LimitFormValues>();
 
   useEffect(() => {
-    setValue("price", price);
+    if (price != null) {
+      setValue("price", price);
+    }
   }, [price, setValue]);
 
   const baseBalance = useMarketAccountBalance(
@@ -127,7 +129,7 @@ export const LimitOrderEntry: React.FC<{
           />
         </OrderEntryInputWrapper>
         <div className="relative">
-          <p className="absolute text-xs uppercase text-red">
+          <p className="absolute top-[-1rem] text-xs uppercase text-red">
             {errors.price != null && errors.price.message}
           </p>
         </div>
@@ -162,7 +164,7 @@ export const LimitOrderEntry: React.FC<{
           />
         </OrderEntryInputWrapper>
         <div className="relative">
-          <p className="absolute text-xs uppercase text-red">
+          <p className="absolute top-[-1rem] text-xs uppercase text-red">
             {errors.size != null && errors.size.message}
           </p>
         </div>
@@ -186,7 +188,7 @@ export const LimitOrderEntry: React.FC<{
           <Button
             type="submit"
             variant={side === "buy" ? "green" : "red"}
-            className={`w-full`}
+            className="w-full text-[16px]/6"
           >
             {side === "buy" ? "Buy" : "Sell"} {marketData.base?.symbol}
           </Button>

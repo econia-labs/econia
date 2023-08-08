@@ -15,6 +15,20 @@ export const plusMinus = (num: number | undefined): string => {
   return num >= 0 ? `+` : ``;
 };
 
+export const priceFormatter = Intl.NumberFormat("en", {
+  notation: "compact",
+  compactDisplay: "short",
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+});
+
+export const volFormatter = Intl.NumberFormat("en", {
+  notation: "compact",
+  compactDisplay: "short",
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+});
+
 export const formatNumber = (
   num: number | undefined,
   digits: number,

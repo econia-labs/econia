@@ -42,12 +42,12 @@ type MarketStats = {
 const SocialMediaIcons: React.FC<{ className?: string }> = ({ className }) => {
   return (
     <div className={className}>
-      <div className="flex [&>a]:h-[18px] [&>a]:min-w-[18px] ">
+      <div className="flex">
         <a
           href="https://twitter.com/EconiaLabs"
           target="_blank"
           rel="noreferrer"
-          className="mx-3 aspect-square h-4 w-4 cursor-pointer text-white hover:text-blue"
+          className="mx-3 aspect-square h-[18px] w-[18px] cursor-pointer text-white hover:text-blue"
         >
           <TwitterIcon />
         </a>
@@ -55,7 +55,7 @@ const SocialMediaIcons: React.FC<{ className?: string }> = ({ className }) => {
           href="https://discord.com/invite/Z7gXcMgX8A"
           target="_blank"
           rel="noreferrer"
-          className="mx-3 aspect-square h-4 w-4 cursor-pointer text-white hover:text-blue"
+          className="mx-3 aspect-square h-[18px] w-[18px] cursor-pointer text-white hover:text-blue"
         >
           <DiscordIcon />
         </a>
@@ -63,7 +63,7 @@ const SocialMediaIcons: React.FC<{ className?: string }> = ({ className }) => {
           href="https://medium.com/econialabs"
           target="_blank"
           rel="noreferrer"
-          className="mx-3 aspect-square h-4 w-4 cursor-pointer text-white hover:text-blue"
+          className="mx-3 aspect-square h-[18px] w-[18px] cursor-pointer text-white hover:text-blue"
         >
           <MediumIcon />
         </a>
@@ -73,10 +73,10 @@ const SocialMediaIcons: React.FC<{ className?: string }> = ({ className }) => {
 };
 
 export const StatsBar: React.FC<{
+  allMarketData: ApiMarket[];
   selectedMarket: ApiMarket;
-}> = ({ selectedMarket }) => {
+}> = ({ allMarketData, selectedMarket }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const router = useRouter();
   const { coinListClient } = useAptos();
 
   const { data } = useQuery(
@@ -145,13 +145,7 @@ export const StatsBar: React.FC<{
         }}
         showCloseButton={false}
       >
-        <SelectMarketContent
-          onSelectMarket={(market) => {
-            setIsModalOpen(false);
-            false;
-            router.push(`/trade/${market.name}`);
-          }}
-        />
+        <SelectMarketContent allMarketData={allMarketData} />
       </BaseModal>
       <div className="flex justify-between border-b border-neutral-600 px-9 py-3">
         <div className="flex overflow-x-clip whitespace-nowrap">
@@ -168,7 +162,7 @@ export const StatsBar: React.FC<{
                 }}
               >
                 {selectedMarket.name}
-                <ChevronDownIcon className="my-auto ml-1 h-5 w-5 text-white" />
+                <ChevronDownIcon className="my-auto ml-1 h-[18px] w-[18px] text-white" />
               </button>
             </div>
           </div>

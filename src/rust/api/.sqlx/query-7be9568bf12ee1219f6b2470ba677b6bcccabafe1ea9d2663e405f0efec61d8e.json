@@ -1,0 +1,20 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select market_id from markets",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "market_id",
+        "type_info": "Numeric"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "7be9568bf12ee1219f6b2470ba677b6bcccabafe1ea9d2663e405f0efec61d8e"
+}

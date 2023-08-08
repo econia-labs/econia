@@ -1,11 +1,10 @@
 use chrono::Utc;
 use db::{
-    create_coin, establish_connection,
+    establish_connection,
     models::{
         coin::NewCoin,
         market::{Market, MarketRegistrationEvent, NewMarketRegistrationEvent},
-    },
-    register_market,
+    }, create_coin, add_market_registration_event,
 };
 use diesel::prelude::*;
 use helpers::{load_config, reset_tables};
@@ -15,14 +14,14 @@ mod helpers;
 #[test]
 fn test_register_coin_market() {
     let config = load_config();
-    let conn = &mut establish_connection(config.database_url).unwrap();
+    let mut conn = establish_connection(&config.database_url).unwrap();
 
     // Delete all entries in the tables used before running tests.
-    reset_tables(conn);
+    reset_tables(&mut conn);
 
     // Register coins first, so we can satisfy the foreign key constraint in markets.
     let aptos_coin = create_coin(
-        conn,
+        &mut conn,
         &NewCoin {
             account_address: "0x1",
             module_name: "aptos_coin",
@@ -35,7 +34,7 @@ fn test_register_coin_market() {
     .unwrap();
 
     let tusdc_coin = create_coin(
-        conn,
+        &mut conn,
         &NewCoin {
             account_address: "0x7c36a610d1cde8853a692c057e7bd2479ba9d5eeaeceafa24f125c23d2abf942",
             module_name: "test_usdc",
@@ -49,8 +48,8 @@ fn test_register_coin_market() {
 
     // Register the market. Adding a new market registration event should create a new entry
     // in the markets table as well.
-    register_market(
-        conn,
+    add_market_registration_event(
+        &mut conn,
         &NewMarketRegistrationEvent {
             market_id: &0.into(),
             time: Utc::now(),
@@ -72,33 +71,33 @@ fn test_register_coin_market() {
     // Check that the market registration events table has one entry.
     let db_market_registration_events =
         db::schema::market_registration_events::dsl::market_registration_events
-            .load::<MarketRegistrationEvent>(conn)
+            .load::<MarketRegistrationEvent>(&mut conn)
             .expect("Could not query market registration events.");
 
     assert_eq!(db_market_registration_events.len(), 1);
 
     // Check that the markets table has one entry.
     let db_markets = db::schema::markets::dsl::markets
-        .load::<Market>(conn)
+        .load::<Market>(&mut conn)
         .expect("Could not query markets.");
 
     assert_eq!(db_markets.len(), 1);
 
     // Clean up tables.
-    reset_tables(conn);
+    reset_tables(&mut conn);
 }
 
 #[test]
 fn test_register_generic_market() {
     let config = load_config();
-    let conn = &mut establish_connection(config.database_url).unwrap();
+    let mut conn = establish_connection(&config.database_url).unwrap();
 
     // Delete all entries in the tables used before running tests.
-    reset_tables(conn);
+    reset_tables(&mut conn);
 
     // Register quote coin.
     let tusdc_coin = create_coin(
-        conn,
+        &mut conn,
         &NewCoin {
             account_address: "0x7c36a610d1cde8853a692c057e7bd2479ba9d5eeaeceafa24f125c23d2abf942",
             module_name: "test_usdc",
@@ -112,8 +111,8 @@ fn test_register_generic_market() {
 
     // Register the market. Adding a new market registration event should create a new entry
     // in the markets table as well.
-    register_market(
-        conn,
+    add_market_registration_event(
+        &mut conn,
         &NewMarketRegistrationEvent {
             market_id: &1.into(),
             time: Utc::now(),
@@ -135,32 +134,32 @@ fn test_register_generic_market() {
     // Check that the market registration events table has one entry.
     let db_market_registration_events =
         db::schema::market_registration_events::dsl::market_registration_events
-            .load::<MarketRegistrationEvent>(conn)
+            .load::<MarketRegistrationEvent>(&mut conn)
             .expect("Could not query market registration events.");
 
     assert_eq!(db_market_registration_events.len(), 1);
 
     // Check that the markets table has one entry.
     let db_markets = db::schema::markets::dsl::markets
-        .load::<Market>(conn)
+        .load::<Market>(&mut conn)
         .expect("Could not query markets.");
 
     assert_eq!(db_markets.len(), 1);
 
     // Clean up tables.
-    reset_tables(conn);
+    reset_tables(&mut conn);
 }
 
 #[test]
 fn test_register_multiple_markets() {
     let config = load_config();
-    let conn = &mut establish_connection(config.database_url).unwrap();
+    let mut conn = establish_connection(&config.database_url).unwrap();
 
     // Delete all entries in the tables used before running tests.
-    reset_tables(conn);
+    reset_tables(&mut conn);
 
     let aptos_coin = create_coin(
-        conn,
+        &mut conn,
         &NewCoin {
             account_address: "0x1",
             module_name: "aptos_coin",
@@ -173,7 +172,7 @@ fn test_register_multiple_markets() {
     .unwrap();
 
     let tusdc_coin = create_coin(
-        conn,
+        &mut conn,
         &NewCoin {
             account_address: "0x7c36a610d1cde8853a692c057e7bd2479ba9d5eeaeceafa24f125c23d2abf942",
             module_name: "test_usdc",
@@ -186,7 +185,7 @@ fn test_register_multiple_markets() {
     .unwrap();
 
     let teth_coin = create_coin(
-        conn,
+        &mut conn,
         &NewCoin {
             account_address: "0x7c36a610d1cde8853a692c057e7bd2479ba9d5eeaeceafa24f125c23d2abf942",
             module_name: "test_eth",
@@ -199,8 +198,8 @@ fn test_register_multiple_markets() {
     .unwrap();
 
     // APT-tUSDC market
-    register_market(
-        conn,
+    add_market_registration_event(
+        &mut conn,
         &NewMarketRegistrationEvent {
             market_id: &0.into(),
             time: Utc::now(),
@@ -220,8 +219,8 @@ fn test_register_multiple_markets() {
     .unwrap();
 
     // tETH-tUSDC market
-    register_market(
-        conn,
+    add_market_registration_event(
+        &mut conn,
         &NewMarketRegistrationEvent {
             market_id: &1.into(),
             time: Utc::now(),
@@ -241,8 +240,8 @@ fn test_register_multiple_markets() {
     .unwrap();
 
     // APT-tETH market
-    register_market(
-        conn,
+    add_market_registration_event(
+        &mut conn,
         &NewMarketRegistrationEvent {
             market_id: &2.into(),
             time: Utc::now(),
@@ -264,33 +263,33 @@ fn test_register_multiple_markets() {
     // Check that the market registration events table has three entries.
     let db_market_registration_events =
         db::schema::market_registration_events::dsl::market_registration_events
-            .load::<MarketRegistrationEvent>(conn)
+            .load::<MarketRegistrationEvent>(&mut conn)
             .expect("Could not query market registration events.");
 
     assert_eq!(db_market_registration_events.len(), 3);
 
     // Check that the markets table has one entry.
     let db_markets = db::schema::markets::dsl::markets
-        .load::<Market>(conn)
+        .load::<Market>(&mut conn)
         .expect("Could not query markets.");
 
     assert_eq!(db_markets.len(), 3);
 
     // Clean up tables.
-    reset_tables(conn);
+    reset_tables(&mut conn);
 }
 
 #[test]
 fn test_register_coin_and_generic_market() {
     let config = load_config();
-    let conn = &mut establish_connection(config.database_url).unwrap();
+    let mut conn = establish_connection(&config.database_url).unwrap();
 
     // Delete all entries in the tables used before running tests.
-    reset_tables(conn);
+    reset_tables(&mut conn);
 
     // Register coins first, so we can satisfy the foreign key constraint in markets.
     let aptos_coin = create_coin(
-        conn,
+        &mut conn,
         &NewCoin {
             account_address: "0x1",
             module_name: "aptos_coin",
@@ -303,7 +302,7 @@ fn test_register_coin_and_generic_market() {
     .unwrap();
 
     let tusdc_coin = create_coin(
-        conn,
+        &mut conn,
         &NewCoin {
             account_address: "0x7c36a610d1cde8853a692c057e7bd2479ba9d5eeaeceafa24f125c23d2abf942",
             module_name: "test_usdc",
@@ -316,8 +315,8 @@ fn test_register_coin_and_generic_market() {
     .unwrap();
 
     // Register a new coin market.
-    register_market(
-        conn,
+    add_market_registration_event(
+        &mut conn,
         &NewMarketRegistrationEvent {
             market_id: &0.into(),
             time: Utc::now(),
@@ -337,8 +336,8 @@ fn test_register_coin_and_generic_market() {
     .unwrap();
 
     // Register a new generic market.
-    register_market(
-        conn,
+    add_market_registration_event(
+        &mut conn,
         &NewMarketRegistrationEvent {
             market_id: &1.into(),
             time: Utc::now(),
@@ -360,34 +359,34 @@ fn test_register_coin_and_generic_market() {
     // Check that the market registration events table has one entry.
     let db_market_registration_events =
         db::schema::market_registration_events::dsl::market_registration_events
-            .load::<MarketRegistrationEvent>(conn)
+            .load::<MarketRegistrationEvent>(&mut conn)
             .expect("Could not query market registration events.");
 
     assert_eq!(db_market_registration_events.len(), 2);
 
     // Check that the markets table has one entry.
     let db_markets = db::schema::markets::dsl::markets
-        .load::<Market>(conn)
+        .load::<Market>(&mut conn)
         .expect("Could not query markets.");
 
     assert_eq!(db_markets.len(), 2);
 
     // Clean up tables.
-    reset_tables(conn);
+    reset_tables(&mut conn);
 }
 
 #[test]
 #[should_panic]
 fn test_register_generic_market_with_base_coin_fails() {
     let config = load_config();
-    let conn = &mut establish_connection(config.database_url).unwrap();
+    let mut conn = establish_connection(&config.database_url).unwrap();
 
     // Delete all entries in the tables used before running tests.
-    reset_tables(conn);
+    reset_tables(&mut conn);
 
     // Register coins first, so we can satisfy the foreign key constraint in markets.
     let aptos_coin = create_coin(
-        conn,
+        &mut conn,
         &NewCoin {
             account_address: "0x1",
             module_name: "aptos_coin",
@@ -400,7 +399,7 @@ fn test_register_generic_market_with_base_coin_fails() {
     .unwrap();
 
     let tusdc_coin = create_coin(
-        conn,
+        &mut conn,
         &NewCoin {
             account_address: "0x7c36a610d1cde8853a692c057e7bd2479ba9d5eeaeceafa24f125c23d2abf942",
             module_name: "test_usdc",
@@ -415,8 +414,8 @@ fn test_register_generic_market_with_base_coin_fails() {
     // Attempt to register the market.
     // Any market with a base_name_generic should not include a reference to
     // a base coin, so this should fail.
-    register_market(
-        conn,
+    add_market_registration_event(
+        &mut conn,
         &NewMarketRegistrationEvent {
             market_id: &1.into(),
             time: Utc::now(),

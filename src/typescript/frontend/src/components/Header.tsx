@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import React, { type PropsWithChildren, useState } from "react";
 
+import { type ApiMarket } from "@/types/api";
+
 import { Button } from "./Button";
 import { ConnectedButton } from "./ConnectedButton";
 import { DepositWithdrawModal } from "./trade/DepositWithdrawModal";
@@ -53,10 +55,11 @@ const NavItemDivider: React.FC = () => {
 };
 
 type HeaderProps = {
+  allMarketData: ApiMarket[];
   logoHref: string;
 };
 
-export function Header({ logoHref }: HeaderProps) {
+export function Header({ allMarketData, logoHref }: HeaderProps) {
   const { disconnect } = useWallet();
   const router = useRouter();
   const [depositWithdrawOpen, setDepositWithdrawOpen] = useState(false);
@@ -108,11 +111,15 @@ export function Header({ logoHref }: HeaderProps) {
               <Button
                 variant="secondary"
                 onClick={() => setDepositWithdrawOpen(true)}
-                className="whitespace-nowrap"
+                className="whitespace-nowrap text-[16px]/6"
               >
                 Deposit / Withdraw
               </Button>
-              <Button variant="outlined" onClick={() => disconnect()}>
+              <Button
+                variant="outlined"
+                onClick={disconnect}
+                className="whitespace-nowrap text-[16px]/6"
+              >
                 Disconnect
               </Button>
             </div>
@@ -120,6 +127,7 @@ export function Header({ logoHref }: HeaderProps) {
         </div>
       </nav>
       <DepositWithdrawModal
+        allMarketData={allMarketData}
         open={depositWithdrawOpen}
         onClose={() => setDepositWithdrawOpen(false)}
       />

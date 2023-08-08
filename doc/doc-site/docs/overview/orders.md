@@ -130,7 +130,7 @@ And this would require a rotation:
 > 1000    1002    1005
 > ```
 
-This self-balancing behavior reduces lookup cost reductions, since the upper limit on AVL tree height is approximately $1.44 \log_2 n$, where $n$ is the number of tree nodes.
+This self-balancing behavior reduces lookup cost reductions, since the upper limit on AVL tree height is approximately $1.44 \\log_2 n$, where $n$ is the number of tree nodes.
 
 :::tip
 
@@ -241,10 +241,10 @@ On this market, an order for 7.8 `APT` at a price of 5.23 `USDC` per `APT` would
 
 Econia's matching engine uses integers rather than decimals, such that conversion from decimal amounts to integer amounts requires the `aptos_framework::coin::CoinInfo.decimals` for a given `CoinType`:
 
-| Term           | Symbol       | Coin   | Amount |
-| -------------- | ------------ | ------ | ------ |
-| Base decimals  | $\large d_b$ | `APT`  | 8      |
-| Quote decimals | $\large d_q$ | `USDC` | 6      |
+| Term           | Coin   | Amount |
+| -------------- | ------ | ------ |
+| Base decimals  | `APT`  | 8      |
+| Quote decimals | `USDC` | 6      |
 
 Here, a decimal amount of coins (e.g. 7.8 `APT`), can be converted to an integer amount of indivisible coin subunits (`aptos_framework::coin::Coin.value`):
 
@@ -259,109 +259,80 @@ Here, a decimal amount of coins (e.g. 7.8 `APT`), can be converted to an integer
 
 Similarly, other terms can be converted as follows:
 
-| Variable                   | Decimal symbol | Integer symbol |
-| -------------------------- | -------------- | -------------- |
-| Lot size                   | $\large l_d$   | $\large l_i$   |
-| Tick size                  | $\large t_d$   | $\large t_i$   |
-| Minimum order size         | $\large m_d$   | $\large m_i$   |
-| Size                       | $\large s_d$   | $\large s_i$   |
-| Price                      | $\large p_d$   | $\large p_i$   |
-| Total quote amount to fill | $\large a_d$   | $\large a_i$   |
+| Variable                   | Units           | Description                                      |
+| -------------------------- | --------------- | ------------------------------------------------ |
+| Lot size                   | Subunits        | Subunits of base (granularity of base amounts)   |
+| Tick size                  | Subunits        | Subunits of quote (granularity of quote amounts) |
+| Minimum order size         | Lots            | Minimum number of lots in an order               |
+| Size                       | Lots            | Number of lots an order is worth                 |
+| Price                      | Ticks (per lot) | Number of ticks one lot is worth                 |
+| Total quote amount to fill | Subunits        | Value of whole order in quote subunits           |
 
-1. $$\LARGE l_i = l_d 10 ^ {d_b}$$
+This section utilizes helpers from the Econia Python SDK.
+If you'd like to follow along, run:
+
+```bash
+pip3 install econia-sdk
+python3
+>>> from econia_sdk.utils.decimals import *
+```
+
+See implementations of the helpers that get used [here] for the math behind each conversion.
+
+1. Lot size (subunits of base)
+
    ```python
    >>> decimals_base = 8
-   >>> lot_size_decimal = dec('0.1')
-   >>> lot_size_integer = int(lot_size_decimal * 10 ** decimals_base)
+   >>> lot_size_decimal = '0.1' # base units
+   >>> lot_size_integer = get_lot_size_integer(lot_size_decimal, decimals_base)
    >>> lot_size_integer
    10000000
    ```
-1. $$\LARGE l_d = l_i 10 ^ {-d_b}$$
-   ```python
-   >>> lot_size_decimal = dec(lot_size_integer) / 10 ** decimals_base
-   >>> lot_size_decimal
-   Decimal('0.1')
-   ```
-1. $$\LARGE t_i = l_d t_d 10 ^ {d_q}$$
+
+1. Tick size (subunits of quote)
+
    ```python
    >>> decimals_quote = 6
-   >>> tick_size_decimal = dec('0.01')
-   >>> tick_size_integer = int(lot_size_decimal * tick_size_decimal
-   ...                         * 10 ** decimals_quote)
+   >>> tick_size_decimal = '0.01' # quote units
+   >>> tick_size_integer = get_tick_size_integer(tick_size_decimal, decimals_quote)
    >>> tick_size_integer
    1000
    ```
-1. $$\LARGE t_d = \frac{t_i}{l_i} 10 ^ {d_b - d_q}$$
+
+1. Minimum order size (lots)
+
    ```python
-   >>> tick_size_decimal = (dec(tick_size_integer) / dec(lot_size_integer)
-   ...                      * 10 ** (decimals_base - decimals_quote)).normalize()
-   >>> tick_size_decimal
-   Decimal('0.01')
-   ```
-1. $$\LARGE m_i = m_d 10 ^ {d_b}$$
-   ```python
-   >>> min_size_decimal = dec('0.5')
-   >>> min_size_integer = int(min_size_decimal * 10 ** decimals_base)
+   >>> min_size_decimal = '0.5' # base units
+   >>> min_size_integer = get_min_size_integer(min_size_decimal, decimals_base, lot_size_integer)
    >>> min_size_integer
    50000000
    ```
-1. $$\LARGE m_d = m_i 10 ^ {-d_b}$$
-   ```python
-   >>> min_size_decimal = dec(min_size_integer) / 10 ** decimals_base
-   >>> min_size_decimal
-   Decimal('0.5')
-   ```
-1. $$\LARGE s_i = \frac{s_d}{l_d}$$
+
+1. Size (lots)
+
    ```python
    >>> size_decimal = dec('7.8')
    >>> size_integer = int(size_decimal / lot_size_decimal)
    >>> size_integer
    78
    ```
-1. $$\LARGE s_d = s_i l_i 10 ^ {-d_b}$$
-   ```python
-   >>> size_decimal = dec(size_integer) * lot_size_integer / 10 ** decimals_base
-   >>> size_decimal
-   Decimal('7.8')
-   ```
-1. $$\LARGE p_i = \frac{p_d}{t_d}$$
+
+1. Price (ticks per lot)
+
    ```python
    >>> price_decimal = dec('5.23')
    >>> price_integer = int(price_decimal / tick_size_decimal)
    >>> price_integer
    523
    ```
-1. $$\LARGE p_d = \frac{p_i t_i}{l_i} 10 ^ {d_b - d_q}$$
-   ```python
-   >>> price_decimal = (dec(price_integer) * dec(tick_size_integer)
-   ...                  / dec(lot_size_integer)
-   ...                  * 10 ** (decimals_base - decimals_quote)).normalize()
-   >>> price_decimal
-   Decimal('5.23')
-   ```
-1. $$\LARGE a_d = s_d p_d$$
+
+1. Total quote amount to fill (subunits of quote)
+
    ```python
    >>> amount_decimal = size_decimal * price_decimal
-   >>> amount_decimal
-   Decimal('40.794')
-   ```
-1. $$\LARGE a_i = a_d 10 ^ {d_q}$$
-   ```python
    >>> amount_integer = int(amount_decimal * 10 ** decimals_quote)
    >>> amount_integer
    40794000
-   ```
-1. $$\LARGE a_i = s_i p_i t_i$$
-   ```python
-   >>> amount_integer = size_integer * price_integer * tick_size_integer
-   >>> amount_integer
-   40794000
-   ```
-1. $$\LARGE a_d = a_i 10 ^ {-d_q}$$
-   ```python
-   >>> amount_decimal = dec(amount_integer) / 10 ** decimals_quote
-   >>> amount_decimal
-   Decimal('40.794')
    ```
 
 Hence:
@@ -376,7 +347,7 @@ Hence:
 | Total quote amount to fill | 40.794 `USDC`  | 40794000       |
 
 Note that Econia can only support precision down to a single indivisible subunit for either base or quote.
-This means, for example, that a market may not have a decimal lot size of $10^{-9} = 0.000000001$ `APT`, as each increment in size would correspond to a number of base asset subunits that could not be represented as an integer (0.1 indivisible subunits of `APT`):
+This means, for example, that a market cannot have a decimal lot size of $10^{-9} = 0.000000001$ `APT`, as each increment in size would correspond to a number of base asset subunits that could not be represented as an integer (0.1 indivisible subunits of `APT`):
 
 ```python
 >>> lot_size_decimal = dec('0.000000001')
@@ -592,13 +563,18 @@ Hence decimal tick size must be reduced so that integer prices can fit into a 32
 As shown above, picking the "correct" lot size, tick size, and minimum order size for a given market is ultimately a judgement call.
 Still, however, there are several guidelines that can aid the process:
 
+1. **One tick should be small in value relative to one lot**:
+   since the minimum expressible price is 1 tick per lot, followed by 2, 3 and so on, it's ideal for these prices to be small relative to the value of one lot.
+
 1. **Only specify as much granularity as needed**:
    overly-granular lot size and tick size combinations do not properly translate to integer tick sizes, and may make indexing more difficult.
    Three orders at price 12.34 is easier to interpret than one order each at 12.3401, 12.3404, and 12.3407.
+   In addition, note that lowering the tick size also decreases the maximum expressible price (always worth $2^{32}-1$ ticks).
+   There is a Python helper, among those above, for calculating the maximum price in decimal unit terms: `get_max_quote_per_base_nominal` (see `get_min_quote_per_base_nominal`).
 
 1. **Specify a reasonable minimum order size that will help keep gas costs low**:
    when matching against the book, an AVL queue removal is required for each fill, which means that taker orders will require more global storage operations if they have to fill against more maker orders.
-   For example, if the minimum order size for a market corresponds to \$ 0.1 USD nominal, and someone submits a market buy order for \$100 of the base asset, then they may have to pay the gas costs for up to $100 / 0.1 = 1000$ AVL queue operations.
+   For example, if the minimum order size for a market corresponds to \$0.1 USD nominal, and someone submits a market buy order for \$100 of the base asset, then they may have to pay the gas costs for up to $100 / 0.1 = 1000$ AVL queue operations.
    In contrast, for a more reasonable minimum order size of \$ 10 USD nominal, at most they will have to pay for 10 AVL queue operations.
 
 1. **Plan for price increases**:
@@ -613,7 +589,7 @@ Econia operates within the bounds of the Aptos virtual machine, a resource-scarc
 In particular, Aptos' gas schedule charges for each "per-item" storage operation, which means that the cost of a transaction increases each time a `key`-able resource or a table entry is accessed.
 
 Since Econia's AVL queue is based on table entries, this means that Econia could become prohibitively expensive if it did not place an upper bound on the number of possible price levels.
-For instance, if Econia were to allow an unbounded number of price levels and 256-bit prices, then an attacker could place orders at integer prices of $1, 2, 3, 4, \ldots$ and so on, potentially leading to a tree of height $h \approx 1.44 * 256 \approx 368$, such that insertion/removal operations would have to access as many as 368 table entries.
+For instance, if Econia were to allow an unbounded number of price levels and 256-bit prices, then an attacker could place orders at integer prices of $1, 2, 3, 4, \\ldots$ and so on, potentially leading to a tree of height $h \\approx 1.44 * 256 \\approx 368$, such that insertion/removal operations would have to access as many as 368 table entries.
 This would lead to prohibitively high gas costs, such that a malicious actor could effectively denial-of-service (DoS) an order book by placing orders across all possible integer prices below/above the spread (depending on the side).
 
 In the interest of preventing such an attack, Econia's AVL queue implementation thus sets an upper bound on the number of price levels, as well as the number of total orders, allowed on a given side of the order book.
@@ -663,6 +639,7 @@ Whether in a [`MarketAccount`] or an [`OrderBook`], the inactive node stack appr
 
 [avl queue]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/avl_queue.md
 [avl queue height spec]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/avl_queue.md#height
+[here]: https://github.com/econia-labs/econia/blob/main/src/python/sdk/econia_sdk/utils/decimals.py
 [market module documentation]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md
 [`critical_height`]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#0xc0deb00c_market_CRITICAL_HEIGHT
 [`market::order`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_Order

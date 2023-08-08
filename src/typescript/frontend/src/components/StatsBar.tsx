@@ -142,7 +142,6 @@ export const StatsBar: React.FC<{
           false;
         }}
         showCloseButton={false}
-        disablePadding={true}
       >
         <SelectMarketContent allMarketData={allMarketData} />
       </BaseModal>

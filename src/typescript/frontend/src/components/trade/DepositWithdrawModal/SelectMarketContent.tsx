@@ -195,7 +195,7 @@ export const SelectMarketContent: React.FC<{
   });
 
   return (
-    <div className="flex w-full flex-col items-center">
+    <div className="flex max-h-[560px] min-h-[560px] w-full flex-col items-center overflow-y-hidden">
       <Tab.Group
         onChange={(index) => {
           setSelectedTab(index);

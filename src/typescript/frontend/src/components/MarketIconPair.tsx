@@ -7,7 +7,7 @@ interface ImageWithFallbackProps extends ImageProps {
   // [key: string]: any; // allow any other props
 }
 
-export const ImageWithFallback: React.FC<ImageWithFallbackProps> = ({
+const ImageWithFallback: React.FC<ImageWithFallbackProps> = ({
   fallback = "/tokenImages/default.png",
   alt,
   src,

@@ -1,6 +1,5 @@
-import { entryFunctions, order } from "@econia-labs/sdk";
+import { entryFunctions, type order } from "@econia-labs/sdk";
 import { useForm } from "react-hook-form";
-import { toast } from "react-toastify";
 
 import { Button } from "@/components/Button";
 import { ConnectedButton } from "@/components/ConnectedButton";
@@ -10,12 +9,10 @@ import { useMarketAccountBalance } from "@/hooks/useMarketAccountBalance";
 import { type ApiMarket } from "@/types/api";
 import { type Side } from "@/types/global";
 import { toRawCoinAmount } from "@/utils/coin";
-import { fromDecimalSize } from "@/utils/econia";
 import { TypeTag } from "@/utils/TypeTag";
 
 import { OrderEntryInfo } from "./OrderEntryInfo";
 import { OrderEntryInputWrapper } from "./OrderEntryInputWrapper";
-import { canBeBigInt } from "@/utils/formatter";
 
 type MarketFormValues = {
   size: string;
@@ -44,74 +41,64 @@ export const MarketOrderEntry: React.FC<{
     marketData.quote,
   );
 
-  const onSubmit = async (values: MarketFormValues) => {
+  const onSubmit = async ({ size }: MarketFormValues) => {
+    if (marketData.base == null) {
+      throw new Error("Markets without base coin not supported");
+    }
+
+    if (baseBalance.data == null || quoteBalance.data == null) {
+      throw new Error("Could not read wallet balances");
+    }
+
+    const rawSize = toRawCoinAmount(size, marketData.base.decimals);
+
+    // check that size satisfies lot size
+    if (!rawSize.modulo(marketData.lot_size).eq(0)) {
+      setError("size", { message: "INVALID LOT SIZE" });
+      return;
+    }
+
+    // check that size satisfies min size
+    if (rawSize.lt(marketData.min_size)) {
+      setError("size", { message: "INVALID MIN SIZE" });
+      return;
+    }
+
+    const rawBaseBalance = toRawCoinAmount(
+      baseBalance.data,
+      marketData.base.decimals,
+    );
+
+    // market sell -- make sure user has enough base balance
+    if (side === "sell") {
+      // check that user has sufficient base coins on ask
+      if (rawBaseBalance.lt(rawSize)) {
+        setError("size", { message: "INSUFFICIENT BASE BALANCE" });
+        return;
+      }
+    }
+
     const orderSideMap: Record<Side, order.Side> = {
       buy: "bid",
       sell: "ask",
     };
     const orderSide = orderSideMap[side];
 
-    // validation
-    const _rawValueSize = toRawCoinAmount(
-      values.size ?? 0,
-      marketData?.base?.decimals ?? 0,
-    );
-    const rawValueSize = canBeBigInt(_rawValueSize) // if after conversion is still a decimal, then it's too small anyways
-      ? BigInt(_rawValueSize)
-      : BigInt(0);
-
-    const rawBaseBalance = BigInt(
-      toRawCoinAmount(
-        baseBalance.data ?? 0, // assume if null, user has 0
-        marketData?.base?.decimals ?? 0, // is this fine?
-      ),
+    const payload = entryFunctions.placeMarketOrderUserEntry(
+      ECONIA_ADDR,
+      TypeTag.fromApiCoin(marketData.base).toString(),
+      TypeTag.fromApiCoin(marketData.quote).toString(),
+      BigInt(marketData.market_id), // market id
+      "0x1", // TODO get integrator ID
+      orderSide,
+      BigInt(rawSize.div(marketData.lot_size).toString()),
+      "abort", // TODO don't hardcode this either
     );
 
-    // validate Lot size
-    if (rawValueSize % BigInt(marketData.lot_size) != BigInt(0)) {
-      setError("size", { message: "INVALID LOT SIZE" });
-      return;
-    }
-    // validate min size
-    if (rawValueSize < BigInt(marketData.min_size)) {
-      setError("size", { message: "INVALID MIN SIZE" });
-      return;
-    }
-
-    // market sell -- make sure user has enough base balance
-    if (orderSide === "ask") {
-      const isValid = rawBaseBalance >= rawValueSize; // is gte fine?
-      if (!isValid) {
-        setError("size", { message: "INSUFFICIENT BASE BALANCE" });
-        return;
-      }
-    }
-
-    if (marketData.base == null) {
-      // TODO: handle generic markets
-    } else {
-      const payload = entryFunctions.placeMarketOrderUserEntry(
-        ECONIA_ADDR,
-        TypeTag.fromApiCoin(marketData.base).toString(),
-        TypeTag.fromApiCoin(marketData.quote).toString(),
-        BigInt(marketData.market_id), // market id
-        "0x1", // TODO get integrator ID
-        orderSide,
-        BigInt(
-          fromDecimalSize({
-            size: values.size,
-            lotSize: marketData.lot_size,
-            baseCoinDecimals: marketData.base.decimals,
-          }).toString(),
-        ),
-        "abort", // TODO don't hardcode this either
-      );
-
-      await signAndSubmitTransaction({
-        type: "entry_function_payload",
-        ...payload,
-      });
-    }
+    await signAndSubmitTransaction({
+      type: "entry_function_payload",
+      ...payload,
+    });
   };
 
   return (

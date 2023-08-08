@@ -76,12 +76,3 @@ export const averageOrOtherPriceLevel = (
   // no prices (orderbook empty) maybe should get the last sale price then?
   return { price: 0, size: 0 };
 };
-
-export const canBeBigInt = (num: string | number | bigint | boolean) => {
-  try {
-    BigInt(num);
-    return true;
-  } catch (e) {
-    return false;
-  }
-};

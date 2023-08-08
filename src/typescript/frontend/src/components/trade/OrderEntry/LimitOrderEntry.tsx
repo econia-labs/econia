@@ -74,7 +74,7 @@ export const LimitOrderEntry: React.FC<{
 
     // check that size satisfies min size
     if (rawSize.lt(marketData.min_size)) {
-      setError("size", { message: "INVALID MIN SIZE" });
+      setError("size", { message: "SIZE TOO SMALL" });
       return;
     }
 

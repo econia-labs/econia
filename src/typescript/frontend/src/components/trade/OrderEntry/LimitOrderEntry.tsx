@@ -12,8 +12,6 @@ import { useMarketAccountBalance } from "@/hooks/useMarketAccountBalance";
 import { type ApiMarket } from "@/types/api";
 import { type Side } from "@/types/global";
 import { toRawCoinAmount } from "@/utils/coin";
-import { fromDecimalPrice, fromDecimalSize } from "@/utils/econia";
-import { canBeBigInt } from "@/utils/formatter";
 import { TypeTag } from "@/utils/TypeTag";
 
 import { OrderEntryInfo } from "./OrderEntryInfo";
@@ -66,9 +64,7 @@ export const LimitOrderEntry: React.FC<{
       throw new Error("Could not read wallet balances");
     }
 
-    const rawSize = new BigNumber(size).times(
-      new BigNumber(10).pow(marketData.base.decimals),
-    );
+    const rawSize = toRawCoinAmount(size, marketData.base.decimals);
 
     // check that size satisfies lot size
     if (!rawSize.modulo(marketData.lot_size).eq(0)) {
@@ -82,9 +78,7 @@ export const LimitOrderEntry: React.FC<{
       return;
     }
 
-    const rawPrice = new BigNumber(price).times(
-      new BigNumber(10).pow(marketData.quote.decimals),
-    );
+    const rawPrice = toRawCoinAmount(price, marketData.quote.decimals);
 
     // validate tick size
     if (!rawPrice.modulo(marketData.tick_size).eq(0)) {
@@ -92,12 +86,14 @@ export const LimitOrderEntry: React.FC<{
       return;
     }
 
-    const rawBaseBalance = new BigNumber(baseBalance.data).times(
-      new BigNumber(10).pow(marketData.base.decimals),
+    const rawBaseBalance = toRawCoinAmount(
+      baseBalance.data,
+      marketData.base.decimals,
     );
 
-    const rawQuoteBalance = new BigNumber(quoteBalance.data).times(
-      new BigNumber(10).pow(marketData.quote.decimals),
+    const rawQuoteBalance = toRawCoinAmount(
+      quoteBalance.data,
+      marketData.quote.decimals,
     );
 
     if (side === "buy") {

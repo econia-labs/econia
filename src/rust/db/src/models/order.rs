@@ -120,6 +120,8 @@ pub enum CancelReason {
     NotEnoughLiquidity,
     SelfMatchMaker,
     SelfMatchTaker,
+    TooSmallToFillLot,
+    ViolatedLimitPrice,
 }
 
 impl From<CancelReason> for types::events::CancelReason {
@@ -133,6 +135,8 @@ impl From<CancelReason> for types::events::CancelReason {
             CancelReason::NotEnoughLiquidity => types::events::CancelReason::NotEnoughLiquidity,
             CancelReason::SelfMatchMaker => types::events::CancelReason::SelfMatchMaker,
             CancelReason::SelfMatchTaker => types::events::CancelReason::SelfMatchTaker,
+            CancelReason::TooSmallToFillLot => types::events::CancelReason::TooSmallToFillLot,
+            CancelReason::ViolatedLimitPrice => types::events::CancelReason::ViolatedLimitPrice,
         }
     }
 }

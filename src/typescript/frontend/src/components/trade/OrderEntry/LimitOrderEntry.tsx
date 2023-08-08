@@ -1,4 +1,5 @@
 import { entryFunctions, type order } from "@econia-labs/sdk";
+import BigNumber from "bignumber.js";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 
@@ -10,7 +11,7 @@ import { ECONIA_ADDR } from "@/env";
 import { useMarketAccountBalance } from "@/hooks/useMarketAccountBalance";
 import { type ApiMarket } from "@/types/api";
 import { type Side } from "@/types/global";
-import { fromDecimalPrice, fromDecimalSize } from "@/utils/econia";
+import { toRawCoinAmount } from "@/utils/coin";
 import { TypeTag } from "@/utils/TypeTag";
 
 import { OrderEntryInfo } from "./OrderEntryInfo";
@@ -34,6 +35,7 @@ export const LimitOrderEntry: React.FC<{
     formState: { errors },
     getValues,
     setValue,
+    setError,
   } = useForm<LimitFormValues>();
 
   useEffect(() => {
@@ -53,48 +55,83 @@ export const LimitOrderEntry: React.FC<{
     marketData.quote,
   );
 
-  const onSubmit = async (values: LimitFormValues) => {
+  const onSubmit = async ({ price, size }: LimitFormValues) => {
+    if (marketData.base == null) {
+      throw new Error("Markets without base coin not supported");
+    }
+
+    if (baseBalance.data == null || quoteBalance.data == null) {
+      throw new Error("Could not read wallet balances");
+    }
+
+    const rawSize = toRawCoinAmount(size, marketData.base.decimals);
+
+    // check that size satisfies lot size
+    if (!rawSize.modulo(marketData.lot_size).eq(0)) {
+      setError("size", { message: "INVALID LOT SIZE" });
+      return;
+    }
+
+    // check that size satisfies min size
+    if (rawSize.lt(marketData.min_size)) {
+      setError("size", { message: "SIZE TOO SMALL" });
+      return;
+    }
+
+    const rawPrice = toRawCoinAmount(price, marketData.quote.decimals);
+
+    // validate tick size
+    if (!rawPrice.modulo(marketData.tick_size).eq(0)) {
+      setError("price", { message: "INVALID TICK SIZE" });
+      return;
+    }
+
+    const rawBaseBalance = toRawCoinAmount(
+      baseBalance.data,
+      marketData.base.decimals,
+    );
+
+    const rawQuoteBalance = toRawCoinAmount(
+      quoteBalance.data,
+      marketData.quote.decimals,
+    );
+
+    if (
+      (side === "buy" &&
+        rawQuoteBalance.lt(
+          rawSize
+            .times(rawPrice)
+            .div(new BigNumber(10).pow(marketData.base.decimals)),
+        )) ||
+      (side === "sell" && rawBaseBalance.lt(rawSize))
+    ) {
+      setError("size", { message: "INSUFFICIENT BALANCE" });
+      return;
+    }
+
     const orderSideMap: Record<Side, order.Side> = {
       buy: "bid",
       sell: "ask",
     };
     const orderSide = orderSideMap[side];
 
-    if (marketData.base == null) {
-      // TODO: handle generic markets
-    } else {
-      const payload = entryFunctions.placeLimitOrderUserEntry(
-        ECONIA_ADDR,
-        TypeTag.fromApiCoin(marketData.base).toString(),
-        TypeTag.fromApiCoin(marketData.quote).toString(),
-        BigInt(marketData.market_id), // market id
-        "0x1", // TODO get integrator ID
-        orderSide,
-        BigInt(
-          fromDecimalSize({
-            size: values.size,
-            lotSize: marketData.lot_size,
-            baseCoinDecimals: marketData.base.decimals,
-          }).toString(),
-        ),
-        BigInt(
-          fromDecimalPrice({
-            price: values.price,
-            lotSize: marketData.lot_size,
-            tickSize: marketData.tick_size,
-            baseCoinDecimals: marketData.base.decimals,
-            quoteCoinDecimals: marketData.quote.decimals,
-          }).toString(),
-        ),
-        "immediateOrCancel", // TODO don't hardcode
-        "abort", // don't hardcode this either
-      );
+    const payload = entryFunctions.placeLimitOrderUserEntry(
+      ECONIA_ADDR,
+      TypeTag.fromApiCoin(marketData.base).toString(),
+      TypeTag.fromApiCoin(marketData.quote).toString(),
+      BigInt(marketData.market_id), // market id
+      "0x1", // TODO get integrator ID
+      orderSide,
+      BigInt(rawSize.div(marketData.lot_size).toString()),
+      BigInt(rawPrice.div(marketData.tick_size).toString()),
+      "immediateOrCancel", // TODO don't hardcode
+      "abort", // don't hardcode this either
+    );
 
-      await signAndSubmitTransaction({
-        type: "entry_function_payload",
-        ...payload,
-      });
-    }
+    await signAndSubmitTransaction({
+      type: "entry_function_payload",
+      ...payload,
+    });
   };
 
   return (

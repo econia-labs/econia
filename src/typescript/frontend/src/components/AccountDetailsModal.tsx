@@ -10,6 +10,8 @@ import { ECONIA_ADDR } from "@/env";
 import { type ApiMarket } from "@/types/api";
 
 import { MarketIconPair } from "./MarketIconPair";
+import { CopyIcon } from "./icons/CopyIcon";
+import { toast } from "react-toastify";
 
 export const AccountDetailsModal: React.FC<{
   selectedMarket: ApiMarket;
@@ -17,10 +19,12 @@ export const AccountDetailsModal: React.FC<{
   const { account } = useWallet();
 
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(ECONIA_ADDR);
+    toast.success("Copied to clipboard");
+    console.log("copying to clipboard");
+    navigator.clipboard.writeText(account?.address || "");
   };
   return (
-    <div className="relative flex w-full flex-col items-center gap-6">
+    <div className="relative flex w-full flex-col items-center gap-6 font-roboto-mono">
       <div>
         <p className="font-jost text-3xl font-bold text-white">
           Account Details
@@ -28,15 +32,25 @@ export const AccountDetailsModal: React.FC<{
         {/* card */}
         <div className={"flex"}>
           <div>
-            <div className="border-[1px] border-neutral-600 text-white">
-              {shorten(account?.address)}
+            {/* input copy row */}
+            <div className="flex items-center">
+              <div className="flex-1 border-[1px] border-neutral-600 px-3 py-2 uppercase text-white">
+                {/* invisible character,  */}
+                {shorten(account?.address) || "‎"}
+              </div>
+              <CopyIcon
+                className={"ml-4 h-5 w-5 cursor-pointer"}
+                onClick={() => {
+                  copyToClipboard();
+                }}
+              />
             </div>
             <Button
               variant="secondary"
               onClick={() => {}}
               className={"flex items-center"}
             >
-              Disconnect{" "}
+              Disconnect
               <ArrowRightOnRectangleIcon className="ml-2 inline-block h-4 w-4 text-center" />
             </Button>
           </div>

@@ -1,7 +1,7 @@
 import { entryFunctions } from "@econia-labs/sdk";
 import { Menu, Tab } from "@headlessui/react";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 
 import { Button } from "@/components/Button";
 import { Input } from "@/components/Input";
@@ -65,22 +65,25 @@ const DepositWithdrawForm: React.FC<{
     selectedCoin,
   );
 
+  // TODO add form validation (ECO-353)
   const [amount, setAmount] = useState<string>("");
   const { data: balance } = useCoinBalance(
     TypeTag.fromApiCoin(selectedCoin),
     account?.address,
   );
 
-  const disabledReason =
-    balance == null || marketAccountBalance == null
-      ? "Loading balance..."
-      : (mode === "deposit" && parseFloat(amount) > balance) ||
-        (mode === "withdraw" && parseFloat(amount) > marketAccountBalance)
-      ? "Not enough coins"
-      : null;
-
+  const disabledReason = useMemo(
+    () =>
+      balance == null || marketAccountBalance == null
+        ? "Loading balance..."
+        : (mode === "deposit" && parseFloat(amount) > balance) ||
+          (mode === "withdraw" && parseFloat(amount) > marketAccountBalance)
+        ? "Not enough coins"
+        : null,
+    [amount, balance, marketAccountBalance, mode],
+  );
   return (
-    <div className="flex flex-col gap-4">
+    <div className="w-full">
       <SelectCoinInput
         coins={[
           ...(selectedMarket?.base ? [selectedMarket.base] : []),
@@ -90,14 +93,16 @@ const DepositWithdrawForm: React.FC<{
         onSelectCoin={setSelectedCoin}
         startAdornment={mode === "deposit" ? "DEPOSIT COIN" : "WITHDRAW COIN"}
       />
-      <Input
-        value={amount}
-        onChange={setAmount}
-        placeholder="0.00"
-        startAdornment="AMOUNT"
-        type="number"
-      />
-      <div className="flex w-full justify-between">
+      <div className="mt-6">
+        <Input
+          value={amount}
+          onChange={setAmount}
+          placeholder="0.00"
+          startAdornment="AMOUNT"
+          type="number"
+        />
+      </div>
+      <div className="mt-10 flex w-full justify-between">
         <p className="font-roboto-mono uppercase text-neutral-500">
           Available in market account
         </p>
@@ -105,7 +110,7 @@ const DepositWithdrawForm: React.FC<{
           {marketAccountBalance ?? "--"} {selectedCoin.symbol}
         </p>
       </div>
-      <div className="flex w-full justify-between">
+      <div className="mt-4 flex w-full justify-between">
         <p className="font-roboto-mono uppercase text-neutral-500">In Wallet</p>
         <p className="font-roboto-mono text-neutral-500">
           {balance ?? "--"} {selectedCoin.symbol}
@@ -114,29 +119,32 @@ const DepositWithdrawForm: React.FC<{
       <Button
         variant="primary"
         onClick={async () => {
-          let payload;
-          if (mode === "deposit") {
-            payload = entryFunctions.depositFromCoinstore(
-              ECONIA_ADDR,
-              TypeTag.fromApiCoin(selectedCoin).toString(),
-              BigInt(selectedMarket.market_id),
-              BigInt(NO_CUSTODIAN),
-              BigInt(toRawCoinAmount(amount, selectedCoin.decimals).toString()),
-            );
-          } else {
-            payload = entryFunctions.withdrawToCoinstore(
-              ECONIA_ADDR,
-              TypeTag.fromApiCoin(selectedCoin).toString(),
-              BigInt(selectedMarket.market_id),
-              BigInt(toRawCoinAmount(amount, selectedCoin.decimals).toString()),
-            );
-          }
+          const payload =
+            mode === "deposit"
+              ? entryFunctions.depositFromCoinstore(
+                  ECONIA_ADDR,
+                  TypeTag.fromApiCoin(selectedCoin).toString(),
+                  BigInt(selectedMarket.market_id),
+                  BigInt(NO_CUSTODIAN),
+                  BigInt(
+                    toRawCoinAmount(amount, selectedCoin.decimals).toString(),
+                  ),
+                )
+              : entryFunctions.withdrawToCoinstore(
+                  ECONIA_ADDR,
+                  TypeTag.fromApiCoin(selectedCoin).toString(),
+                  BigInt(selectedMarket.market_id),
+                  BigInt(
+                    toRawCoinAmount(amount, selectedCoin.decimals).toString(),
+                  ),
+                );
           await signAndSubmitTransaction({
             type: "entry_function_payload",
             ...payload,
           });
         }}
         disabledReason={disabledReason}
+        className="mt-8 w-full"
       >
         {mode === "deposit" ? "Deposit" : "Withdraw"}
       </Button>
@@ -148,7 +156,7 @@ export const DepositWithdrawContent: React.FC<{
   selectedMarket: ApiMarket;
 }> = ({ selectedMarket }) => {
   return (
-    <div className="w-full px-12 py-8">
+    <div className="w-full px-12 pb-10 pt-8">
       <h2 className="font-jost text-3xl font-bold text-white">
         {selectedMarket.name.replace("-", " / ")}
       </h2>

@@ -1,17 +1,14 @@
 import { useWallet } from "@aptos-labs/wallet-adapter-react";
-import {
-  ArrowRightOnRectangleIcon,
-  ChevronDownIcon,
-} from "@heroicons/react/20/solid";
+import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import React from "react";
+import { toast } from "react-toastify";
 
 import { Button } from "@/components/Button";
-import { ECONIA_ADDR } from "@/env";
 import { type ApiMarket } from "@/types/api";
 
-import { MarketIconPair } from "./MarketIconPair";
 import { CopyIcon } from "./icons/CopyIcon";
-import { toast } from "react-toastify";
+import { ExitIcon } from "./icons/ExitIcon";
+import { MarketIconPair } from "./MarketIconPair";
 
 export const AccountDetailsModal: React.FC<{
   selectedMarket: ApiMarket;
@@ -30,11 +27,16 @@ export const AccountDetailsModal: React.FC<{
           Account Details
         </p>
         {/* card */}
-        <div className={"flex"}>
-          <div>
-            {/* input copy row */}
-            <div className="flex items-center">
-              <div className="flex-1 border-[1px] border-neutral-600 px-3 py-2 uppercase text-white">
+        <div
+          className={
+            "flex h-[105px] w-[378px] justify-between border-[1px] border-neutral-600 px-[21px] py-[18px]"
+          }
+        >
+          {/* left side */}
+          <div className="flex-1">
+            {/* input copy row 1 */}
+            <div className="mb-[15px] flex w-full items-center">
+              <div className="flex-1 border-[1px] border-neutral-600 px-2 py-1 text-xs uppercase tracking-[0.24px] text-white">
                 {/* invisible character,  */}
                 {shorten(account?.address) || "‎"}
               </div>
@@ -45,27 +47,33 @@ export const AccountDetailsModal: React.FC<{
                 }}
               />
             </div>
+            {/* row 2 */}
             <Button
               variant="secondary"
               onClick={() => {}}
-              className={"flex items-center"}
+              className={
+                "flex items-center !px-2 !py-1 text-[10px] leading-[18px]"
+              }
             >
               Disconnect
-              <ArrowRightOnRectangleIcon className="ml-2 inline-block h-4 w-4 text-center" />
+              <ExitIcon className="ml-2 inline-block h-4 w-4 text-center" />
             </Button>
           </div>
-          <div>
-            <div className="ml-8 text-left md:block">
-              <span className="font-roboto-mono text-xs font-light text-neutral-500">
-                24H CHANGE
+          {/* right side */}
+          <div className="ml-[39px] flex-1">
+            <div className="ml-8 flex flex-col text-left">
+              <span className="align-text-top font-roboto-mono text-[10px] font-light text-neutral-500">
+                WALLET BALANCE
               </span>
               <p className="font-roboto-mono text-xs font-light text-white">
-                <span className="inline-block text-white">000.1.2</span>
+                <span className="inline-block align-text-top text-white">
+                  000.1.2
+                </span>
               </p>
             </div>
-            <div className="ml-8 text-left md:block">
-              <span className="font-roboto-mono text-xs font-light text-neutral-500">
-                24H CHANGE
+            <div className="ml-8 text-left">
+              <span className="font-roboto-mono text-[10px] font-light text-neutral-500">
+                TOTAL IN ECONIA
               </span>
               <p className="font-roboto-mono text-xs font-light text-white">
                 <span className="inline-block text-white">000.1.2</span>

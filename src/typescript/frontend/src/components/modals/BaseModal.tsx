@@ -2,21 +2,33 @@ import { Dialog, Transition } from "@headlessui/react";
 import { ChevronLeftIcon } from "@heroicons/react/20/solid";
 import React, { Fragment, type PropsWithChildren } from "react";
 
-import bg from "../../public/bg.png";
-import { XIcon } from "./icons/XIcon";
+import bg from "../../../public/bg.png";
+import { XIcon } from "../icons/XIcon";
 
 export const BaseModal: React.FC<
   PropsWithChildren<{
-    open: boolean;
+    isOpen: boolean;
     onClose: () => void;
     onBack?: () => void;
     showCloseButton?: boolean;
     showBackButton?: boolean;
   }>
-> = ({ open, onClose, onBack, showBackButton, showCloseButton, children }) => {
+> = ({
+  isOpen,
+  onClose,
+  onBack,
+  showBackButton,
+  showCloseButton,
+  children,
+}) => {
   return (
-    <Transition appear show={open} as={Fragment}>
-      <Dialog as="div" className="relative z-50" open={open} onClose={onClose}>
+    <Transition appear show={isOpen} as={Fragment}>
+      <Dialog
+        as="div"
+        className="relative z-50"
+        open={isOpen}
+        onClose={onClose}
+      >
         <Transition.Child
           as={Fragment}
           enter="ease-out duration-150"

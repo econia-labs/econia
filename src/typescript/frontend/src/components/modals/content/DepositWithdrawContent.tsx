@@ -34,20 +34,7 @@ const SelectCoinInput: React.FC<{
             <ChevronDownIcon className="h-[24px] w-[24px] fill-white" />
           </div>
         </Menu.Button>
-        <Menu.Items
-          className={`
-          absolute
-          right-0
-          top-0
-          rounded-md
-          bg-neutral-800
-          shadow-lg
-          ring-1
-          ring-black
-          ring-opacity-5
-          focus:outline-none
-          `}
-        >
+        <Menu.Items className="absolute right-0 top-0 rounded-md bg-neutral-800 ring-1 ring-black ring-opacity-5 focus:outline-none">
           {coins.map((coin) => (
             <Menu.Item
               as="div"
@@ -161,17 +148,20 @@ export const DepositWithdrawContent: React.FC<{
   selectedMarket: ApiMarket;
 }> = ({ selectedMarket }) => {
   return (
-    <div className="mt-12 flex w-full flex-col items-center gap-6">
+    <div className="w-full px-12 py-8">
+      <h2 className="font-jost text-3xl font-bold text-white">
+        {selectedMarket.name.replace("-", " / ")}
+      </h2>
       <Tab.Group>
-        <Tab.List className="w-full">
-          <Tab className="w-1/2 border-b border-b-neutral-600 py-4 text-center font-jost font-bold text-neutral-600 ui-selected:border-b-white ui-selected:text-white">
+        <Tab.List className="mt-8 w-full">
+          <Tab className="w-1/2 border-b border-b-neutral-600 py-6 font-jost font-bold text-neutral-600 ui-selected:border-b-white ui-selected:text-white">
             Deposit
           </Tab>
-          <Tab className="w-1/2 border-b border-b-neutral-600 py-4 text-center font-jost font-bold text-neutral-600 ui-selected:border-b-white ui-selected:text-white">
+          <Tab className="w-1/2 border-b border-b-neutral-600 py-6 font-jost font-bold text-neutral-600 ui-selected:border-b-white ui-selected:text-white">
             Withdraw
           </Tab>
         </Tab.List>
-        <Tab.Panels className="w-full">
+        <Tab.Panels className="mt-12 w-full">
           <Tab.Panel>
             <DepositWithdrawForm
               selectedMarket={selectedMarket}

@@ -4,8 +4,8 @@ import React, { useMemo, useState } from "react";
 import { API_URL } from "@/env";
 import { type ApiMarket, type ApiStats } from "@/types/api";
 
-import { BaseModal } from "../../BaseModal";
-import { DepositWithdrawContent } from "./DepositWithdrawContent";
+import { BaseModal } from "../../modals/BaseModal";
+import { DepositWithdrawContent } from "../../modals/content/DepositWithdrawContent";
 import { InitialContent } from "./InitialContent";
 import { SelectMarketContent } from "./SelectMarketContent";
 
@@ -41,7 +41,7 @@ export const DepositWithdrawModal: React.FC<{
 
   return (
     <BaseModal
-      open={open}
+      isOpen={open}
       onClose={onClose}
       onBack={
         step === Step.SelectMarket

@@ -3,13 +3,10 @@ import { ArrowRightIcon } from "@heroicons/react/20/solid";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import React, { type PropsWithChildren, useState } from "react";
-
-import { type ApiMarket } from "@/types/api";
+import React, { type MouseEventHandler, type PropsWithChildren } from "react";
 
 import { Button } from "./Button";
 import { ConnectedButton } from "./ConnectedButton";
-import { DepositWithdrawModal } from "./trade/DepositWithdrawModal";
 
 const NavItem: React.FC<
   PropsWithChildren<{
@@ -55,14 +52,14 @@ const NavItemDivider: React.FC = () => {
 };
 
 type HeaderProps = {
-  allMarketData: ApiMarket[];
   logoHref: string;
+  onDepositWithdrawClick?: MouseEventHandler<HTMLButtonElement>;
+  onWalletButtonClick?: MouseEventHandler<HTMLButtonElement>;
 };
 
-export function Header({ allMarketData, logoHref }: HeaderProps) {
+export function Header({ logoHref, onDepositWithdrawClick }: HeaderProps) {
   const { disconnect } = useWallet();
   const router = useRouter();
-  const [depositWithdrawOpen, setDepositWithdrawOpen] = useState(false);
 
   return (
     <header className="border-b border-neutral-600">
@@ -108,13 +105,15 @@ export function Header({ allMarketData, logoHref }: HeaderProps) {
         <div className="flex flex-1 justify-end">
           <ConnectedButton className="py-1">
             <div className="flex items-center gap-4">
-              <Button
-                variant="secondary"
-                onClick={() => setDepositWithdrawOpen(true)}
-                className="whitespace-nowrap text-[16px]/6"
-              >
-                Deposit / Withdraw
-              </Button>
+              {onDepositWithdrawClick != null && (
+                <Button
+                  variant="secondary"
+                  className="whitespace-nowrap text-[16px]/6"
+                  onClick={onDepositWithdrawClick}
+                >
+                  Deposit / Withdraw
+                </Button>
+              )}
               <Button
                 variant="outlined"
                 onClick={disconnect}
@@ -126,11 +125,6 @@ export function Header({ allMarketData, logoHref }: HeaderProps) {
           </ConnectedButton>
         </div>
       </nav>
-      <DepositWithdrawModal
-        allMarketData={allMarketData}
-        open={depositWithdrawOpen}
-        onClose={() => setDepositWithdrawOpen(false)}
-      />
     </header>
   );
 }

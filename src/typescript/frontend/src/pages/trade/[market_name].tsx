@@ -9,6 +9,7 @@ import { toast } from "react-toastify";
 
 import { DepthChart } from "@/components/DepthChart";
 import { Header } from "@/components/Header";
+import { DepositWithdrawFlowModal } from "@/components/modals/flows/DepositWithdrawFlowModal";
 import { OrderbookTable } from "@/components/OrderbookTable";
 import { StatsBar } from "@/components/StatsBar";
 import { OrderEntry } from "@/components/trade/OrderEntry";
@@ -50,6 +51,10 @@ export default function Market({ allMarketData, marketData }: Props) {
   const queryClient = useQueryClient();
   const ws = useRef<WebSocket | undefined>(undefined);
   const prevAddress = useRef<MaybeHexString | undefined>(undefined);
+
+  const [depositWithdrawModalOpen, setDepositWithdrawModalOpen] =
+    useState<boolean>(true);
+
   const [isScriptReady, setIsScriptReady] = useState(false);
 
   // Set up WebSocket API connection
@@ -285,10 +290,7 @@ export default function Market({ allMarketData, marketData }: Props) {
           <title>Not Found</title>
         </Head>
         <div className="flex min-h-screen flex-col">
-          <Header
-            allMarketData={allMarketData}
-            logoHref={`${allMarketData[0].name}`}
-          />
+          <Header logoHref={`${allMarketData[0].name}`} />
           Market not found.
         </div>
       </>
@@ -316,8 +318,8 @@ export default function Market({ allMarketData, marketData }: Props) {
       </Head>
       <div className="flex min-h-screen flex-col">
         <Header
-          allMarketData={allMarketData}
           logoHref={`${allMarketData[0].name}`}
+          onDepositWithdrawClick={() => setDepositWithdrawModalOpen(true)}
         />
         <StatsBar allMarketData={allMarketData} selectedMarket={marketData} />
         <main className="flex h-full min-h-[680px] w-full grow">
@@ -362,6 +364,11 @@ export default function Market({ allMarketData, marketData }: Props) {
           </div>
         </main>
       </div>
+      <DepositWithdrawFlowModal
+        selectedMarket={marketData}
+        isOpen={depositWithdrawModalOpen}
+        onClose={() => setDepositWithdrawModalOpen(false)}
+      />
       <Script
         src="/static/datafeeds/udf/dist/bundle.js"
         strategy="lazyOnload"

@@ -28,7 +28,7 @@ where
     T::from_str(&s).map_err(serde::de::Error::custom)
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct MarketEventHandleCreationInfo {
     pub ressource_account_address: AccountAddress,
     #[serde(deserialize_with = "from_str")]
@@ -37,7 +37,7 @@ pub struct MarketEventHandleCreationInfo {
     pub place_swap_order_events_handle_creation_num: u64,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct OrderView {
     #[serde(deserialize_with = "from_str")]
     pub market_id: u64,
@@ -53,13 +53,13 @@ pub struct OrderView {
     pub custodian_id: u64,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct OrdersView {
     pub asks: Vec<OrderView>,
     pub bids: Vec<OrderView>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PriceLevel {
     #[serde(deserialize_with = "from_str")]
     pub price: u64,
@@ -67,7 +67,7 @@ pub struct PriceLevel {
     pub size: u128,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PriceLevels {
     #[serde(deserialize_with = "from_str")]
     pub market_id: u64,
@@ -75,7 +75,7 @@ pub struct PriceLevels {
     pub bids: Vec<PriceLevel>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SwapperEventHandleCreationNumbers {
     #[serde(deserialize_with = "from_str")]
     pub cancel_order_events_handle_creation_num: u64,
@@ -85,7 +85,7 @@ pub struct SwapperEventHandleCreationNumbers {
     pub place_swap_order_events_handle_creation_num: u64,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct MarketCounts {
     #[serde(deserialize_with = "from_str")]
     pub n_markets: u64,
@@ -93,14 +93,14 @@ pub struct MarketCounts {
     pub n_recognized_markets: u64,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AssetTypeView {
     pub package_address: AccountAddress,
     pub module_name: String,
     pub type_name: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct MarketInfoView {
     #[serde(deserialize_with = "from_str")]
     pub market_id: u64,
@@ -118,7 +118,7 @@ pub struct MarketInfoView {
     pub underwriter_id: u64,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct MarketAccountView {
     #[serde(deserialize_with = "from_str")]
     pub market_id: u64,
@@ -140,7 +140,7 @@ pub struct MarketAccountView {
     pub quote_ceiling: u64,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct MarketEventHandleCreationNumbers {
     #[serde(deserialize_with = "from_str")]
     pub cancel_order_events_handle_creation_num: u64,

@@ -6,6 +6,14 @@
   .scrollbar-none::-webkit-scrollbar {
     width: 0px;
   }
+  .reveal-container {
+    margin-top: -100%;
+    transition: all 0.4s;
+    transition-timing-function: ease-in-out;
+  }
+  .revealed {
+    margin-top: 0;
+  }
 }
 @layer base {
   input[type="number"]::-webkit-outer-spin-button,

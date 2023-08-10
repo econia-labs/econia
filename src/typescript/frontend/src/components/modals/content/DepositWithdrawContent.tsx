@@ -162,10 +162,10 @@ export const DepositWithdrawContent: React.FC<{
       </h2>
       <Tab.Group>
         <Tab.List className="mt-8 w-full">
-          <Tab className="w-1/2 border-b border-b-neutral-600 py-6 font-jost font-bold text-neutral-600 ui-selected:border-b-white ui-selected:text-white">
+          <Tab className="w-1/2 border-b border-b-neutral-600 py-6 font-jost font-bold text-neutral-600 outline-none ui-selected:border-b-white ui-selected:text-white">
             Deposit
           </Tab>
-          <Tab className="w-1/2 border-b border-b-neutral-600 py-6 font-jost font-bold text-neutral-600 ui-selected:border-b-white ui-selected:text-white">
+          <Tab className="w-1/2 border-b border-b-neutral-600 py-6 font-jost font-bold text-neutral-600 outline-none ui-selected:border-b-white ui-selected:text-white">
             Withdraw
           </Tab>
         </Tab.List>

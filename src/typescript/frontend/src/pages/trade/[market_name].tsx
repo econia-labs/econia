@@ -10,6 +10,7 @@ import { toast } from "react-toastify";
 import { DepthChart } from "@/components/DepthChart";
 import { Header } from "@/components/Header";
 import { DepositWithdrawFlowModal } from "@/components/modals/flows/DepositWithdrawFlowModal";
+import { WalletButtonFlowModal } from "@/components/modals/flows/WalletButtonFlowModal";
 import { OrderbookTable } from "@/components/OrderbookTable";
 import { StatsBar } from "@/components/StatsBar";
 import { OrderEntry } from "@/components/trade/OrderEntry";
@@ -53,6 +54,8 @@ export default function Market({ allMarketData, marketData }: Props) {
   const prevAddress = useRef<MaybeHexString | undefined>(undefined);
 
   const [depositWithdrawModalOpen, setDepositWithdrawModalOpen] =
+    useState<boolean>(false);
+  const [walletButtonModalOpen, setWalletButtonModalOpen] =
     useState<boolean>(true);
 
   const [isScriptReady, setIsScriptReady] = useState(false);
@@ -320,6 +323,7 @@ export default function Market({ allMarketData, marketData }: Props) {
         <Header
           logoHref={`${allMarketData[0].name}`}
           onDepositWithdrawClick={() => setDepositWithdrawModalOpen(true)}
+          onWalletButtonClick={() => setWalletButtonModalOpen(true)}
         />
         <StatsBar allMarketData={allMarketData} selectedMarket={marketData} />
         <main className="flex h-full min-h-[680px] w-full grow">
@@ -368,6 +372,11 @@ export default function Market({ allMarketData, marketData }: Props) {
         selectedMarket={marketData}
         isOpen={depositWithdrawModalOpen}
         onClose={() => setDepositWithdrawModalOpen(false)}
+      />
+      <WalletButtonFlowModal
+        allMarketData={allMarketData}
+        isOpen={walletButtonModalOpen}
+        onClose={() => setWalletButtonModalOpen(false)}
       />
       <Script
         src="/static/datafeeds/udf/dist/bundle.js"

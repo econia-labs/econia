@@ -57,8 +57,12 @@ type HeaderProps = {
   onWalletButtonClick?: MouseEventHandler<HTMLButtonElement>;
 };
 
-export function Header({ logoHref, onDepositWithdrawClick }: HeaderProps) {
-  const { disconnect } = useWallet();
+export function Header({
+  logoHref,
+  onDepositWithdrawClick,
+  onWalletButtonClick,
+}: HeaderProps) {
+  const { account } = useWallet();
   const router = useRouter();
 
   return (
@@ -103,7 +107,7 @@ export function Header({ logoHref, onDepositWithdrawClick }: HeaderProps) {
           </NavItem>
         </div>
         <div className="flex flex-1 justify-end">
-          <ConnectedButton className="py-1">
+          <ConnectedButton className="w-[156px] py-1">
             <div className="flex items-center gap-4">
               {onDepositWithdrawClick != null && (
                 <Button
@@ -115,11 +119,11 @@ export function Header({ logoHref, onDepositWithdrawClick }: HeaderProps) {
                 </Button>
               )}
               <Button
-                variant="outlined"
-                onClick={disconnect}
-                className="whitespace-nowrap text-[16px]/6"
+                variant="primary"
+                onClick={onWalletButtonClick}
+                className="w-[156px] whitespace-nowrap text-[16px]/6"
               >
-                Disconnect
+                {`${account?.address.slice(0, 10)}...`}
               </Button>
             </div>
           </ConnectedButton>

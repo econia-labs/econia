@@ -9,6 +9,7 @@ import { type ApiMarket } from "@/types/api";
 import { CopyIcon } from "./icons/CopyIcon";
 import { ExitIcon } from "./icons/ExitIcon";
 import { MarketIconPair } from "./MarketIconPair";
+import { RecognizedIcon } from "./icons/RecognizedIcon";
 
 export const AccountDetailsModal: React.FC<{
   selectedMarket: ApiMarket;
@@ -23,13 +24,13 @@ export const AccountDetailsModal: React.FC<{
   return (
     <div className="relative flex w-full flex-col items-center gap-6 font-roboto-mono">
       <div>
-        <p className="font-jost text-3xl font-bold text-white">
+        <p className="mb-4 font-jost text-xl font-bold text-white">
           Account Details
         </p>
         {/* card */}
         <div
           className={
-            "flex h-[105px] w-[378px] justify-between border-[1px] border-neutral-600 px-[21px] py-[18px]"
+            "mb-4 flex h-[105px] w-[378px] justify-between border-[1px] border-neutral-600 px-[21px] py-[18px]"
           }
         >
           {/* left side */}
@@ -41,7 +42,7 @@ export const AccountDetailsModal: React.FC<{
                 {shorten(account?.address) || "‎"}
               </div>
               <CopyIcon
-                className={"ml-4 h-5 w-5 cursor-pointer"}
+                className={"ml-4 h-4 w-4 cursor-pointer"}
                 onClick={() => {
                   copyToClipboard();
                 }}
@@ -52,7 +53,7 @@ export const AccountDetailsModal: React.FC<{
               variant="secondary"
               onClick={() => {}}
               className={
-                "flex items-center !px-2 !py-1 text-[10px] leading-[18px]"
+                "flex items-center !px-3 !py-1 !text-[10px] !leading-[18px]"
               }
             >
               Disconnect
@@ -81,9 +82,10 @@ export const AccountDetailsModal: React.FC<{
             </div>
           </div>
         </div>
-        <p className="font-jost text-3xl font-bold text-white">
+        <p className="mb-3 font-jost text-sm font-bold text-white">
           Market Accounts
         </p>
+        <DepositWithdrawCard />
         <DepositWithdrawCard />
       </div>
       <div>
@@ -99,36 +101,79 @@ const DepositWithdrawCard: React.FC = () => {
   const [expanded, setExpanded] = React.useState(false);
   const toggleExpanded = () => setExpanded(!expanded);
   return (
-    <div className="flex text-white">
-      {/* card */}
-      {/* left column */}
-      <div>
-        <div>
-          <MarketIconPair /> APT/USDC <span>verified icon</span>
+    <div
+      className={
+        "mb-4 flex min-h-[105px] w-[378px] justify-between  border-[1px] border-neutral-600 px-[21px] py-[18px]"
+      }
+    >
+      {/* left side */}
+      <div className="flex-1">
+        {/* input copy row 1 */}
+        <div className="mb-[15px] flex items-center">
+          <div className="text-white">
+            <div className="flex items-center text-sm font-bold">
+              <MarketIconPair size={16} />
+              APT/USDC
+              <RecognizedIcon className="ml-1 inline-block h-[9px] w-[9px] text-center" />
+            </div>
+            {/* row2 within row1 */}
+            <div>
+              <div
+                className="ml-[27.42px] cursor-pointer text-left text-[10px] text-neutral-500"
+                onClick={toggleExpanded}
+              >
+                LAYERZERO
+                <ChevronDownIcon
+                  className={`inline-block h-4 w-4 text-center duration-150 ${
+                    expanded && "rotate-180"
+                  }`}
+                />
+              </div>
+              {/* expand container */}
+              <div className="relative overflow-hidden">
+                <div
+                  className={`reveal-container ml-[27.42px] ${
+                    expanded && "revealed"
+                  } line-clamp-[10px] text-left text-[8px] text-neutral-500`}
+                >
+                  <div>MARKET ID: 2</div>
+                  <div>LOT SIZE: </div>
+                  <div>TICK SIZE: </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="text-neutral-500">
-          LAYERZERO
-          <ChevronDownIcon className="inline-block h-4 w-4 text-center" />
-        </div>
-        <Button variant="secondary" onClick={() => {}}>
+        {/* row 2 */}
+        <Button
+          variant="secondary"
+          onClick={() => {}}
+          className={
+            "flex items-center !px-3 !py-1 !text-[10px] !leading-[18px]"
+          }
+        >
           Deposit / Withdraw
-        </Button>{" "}
+        </Button>
       </div>
-      {/* right column */}
-      <div>
-        {/* right column first row BASE balance */}
-        <div>
-          <div className="font-roboto-mono text-xs font-light text-neutral-500">
-            APT BALANCE
-          </div>
-          <div className="inline-block text-white">111.00</div>
+      {/* right side */}
+      <div className="ml-[39px] flex-1">
+        <div className="ml-8 flex flex-col text-left">
+          <span className="align-text-top font-roboto-mono text-[10px] font-light text-neutral-500">
+            WALLET BALANCE
+          </span>
+          <p className="font-roboto-mono text-xs font-light text-white">
+            <span className="inline-block align-text-top text-white">
+              000.1.2
+            </span>
+          </p>
         </div>
-        {/* right column second row QUOTE balance*/}
-        <div>
-          <div className="font-roboto-mono text-xs font-light text-neutral-500">
-            APT BALANCE
-          </div>
-          <div className="inline-block text-white">111.00</div>
+        <div className="ml-8 text-left">
+          <span className="font-roboto-mono text-[10px] font-light text-neutral-500">
+            TOTAL IN ECONIA
+          </span>
+          <p className="font-roboto-mono text-xs font-light text-white">
+            <span className="inline-block text-white">000.1.2</span>
+          </p>
         </div>
       </div>
     </div>

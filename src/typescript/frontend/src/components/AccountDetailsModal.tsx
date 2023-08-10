@@ -88,8 +88,19 @@ export const AccountDetailsModal: React.FC<{
         <DepositWithdrawCard />
         <DepositWithdrawCard />
       </div>
-      <div>
-        <Button variant="secondary" onClick={() => {}}>
+      {/* spacer to compensate for sticky bottom row */}
+      {/* note, has to be same height as the sticky row -- iirc no way to do this dynamically as absolutely positioned elements take up 0 space */}
+      <div className="h-[56px]" />
+      {/* sticky bottom row */}
+      {/* todo, height 80px but negative margin due to modal padding */}
+      <div className="absolute bottom-0 mx-[-234px] mb-[-24px] flex h-[56px] w-full items-center justify-center border-[1px] border-neutral-600">
+        <Button
+          variant="secondary"
+          onClick={() => {}}
+          className={
+            "flex items-center !px-3 !py-1 !text-[10px] !leading-[18px]"
+          }
+        >
           Add New Account
         </Button>
       </div>
@@ -109,7 +120,7 @@ const DepositWithdrawCard: React.FC = () => {
       {/* left side */}
       <div className="flex-1">
         {/* input copy row 1 */}
-        <div className="mb-[15px] flex items-center">
+        <div className="mb-[9px] flex items-center">
           <div className="text-white">
             <div className="flex items-center text-sm font-bold">
               <MarketIconPair size={16} />

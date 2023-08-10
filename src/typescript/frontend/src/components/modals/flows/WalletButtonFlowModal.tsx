@@ -41,7 +41,7 @@ export const WalletButtonFlowModal: React.FC<Props> = ({
           showBackButton={false}
           showCloseButton={true}
         >
-          <AccountDetailsContent />
+          <AccountDetailsContent onClose={onClose} />
         </BaseModal>
       )}
       {state === "registerAccount" && (

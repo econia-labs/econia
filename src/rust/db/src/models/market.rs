@@ -3,7 +3,10 @@ use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 use diesel_derive_enum::DbEnum;
 use field_count::FieldCount;
-use types::{error::TypeError, events};
+use types::{
+    error::TypeError,
+    events::{self, Type},
+};
 
 use crate::schema::{market_registration_events, recognized_market_events};
 
@@ -49,6 +52,18 @@ impl TryFrom<MarketRegistrationEvent> for events::MarketRegistrationEvent {
     type Error = TypeError;
 
     fn try_from(value: MarketRegistrationEvent) -> Result<Self, Self::Error> {
+        let base_type = if value.base_account_address.is_some()
+            && value.base_module_name.is_some()
+            && value.base_struct_name.is_some()
+        {
+            Some(Type {
+                account_address: value.base_account_address.unwrap(),
+                module_name: value.base_module_name.unwrap(),
+                struct_name: value.base_struct_name.unwrap(),
+            })
+        } else {
+            None
+        };
         Ok(Self {
             market_id: value
                 .market_id
@@ -56,14 +71,13 @@ impl TryFrom<MarketRegistrationEvent> for events::MarketRegistrationEvent {
                 .ok_or_else(|| TypeError::ConversionError {
                     name: "market_id".to_string(),
                 })?,
-            time: value.time,
-            base_account_address: value.base_account_address,
-            base_module_name: value.base_module_name,
-            base_struct_name: value.base_struct_name,
+            base_type,
             base_name_generic: value.base_name_generic,
-            quote_account_address: value.quote_account_address,
-            quote_module_name: value.quote_module_name,
-            quote_struct_name: value.quote_struct_name,
+            quote_type: Type {
+                account_address: value.quote_account_address,
+                module_name: value.quote_module_name,
+                struct_name: value.quote_struct_name,
+            },
             lot_size: value
                 .lot_size
                 .to_u64()

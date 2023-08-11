@@ -100,9 +100,9 @@ pub struct TakerEvent {
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Type {
-    account_address: String,
-    module_name: String,
-    struct_name: String,
+    pub account_address: String,
+    pub module_name: String,
+    pub struct_name: String,
 }
 
 #[derive(Clone, Debug)]
@@ -111,7 +111,7 @@ pub struct MarketRegistrationEvent {
     pub market_id: u64,
     pub base_type: Option<Type>,
     pub base_name_generic: Option<String>,
-    pub quote_type: Option<Type>,
+    pub quote_type: Type,
     pub lot_size: u64,
     pub tick_size: u64,
     pub min_size: u64,
@@ -133,7 +133,7 @@ pub struct RecognizedMarketInfo {
 pub struct RecognizedMarketEvent {
     pub base_type: Option<Type>,
     pub base_name_generic: Option<String>,
-    pub quote_type: Option<Type>,
+    pub quote_type: Type,
     pub recognized_market_info: Option<RecognizedMarketInfo>,
 }
 

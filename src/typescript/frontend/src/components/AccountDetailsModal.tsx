@@ -9,6 +9,7 @@ import { CopyIcon } from "./icons/CopyIcon";
 import { ExitIcon } from "./icons/ExitIcon";
 import { RecognizedIcon } from "./icons/RecognizedIcon";
 import { MarketIconPair } from "./MarketIconPair";
+import { shorten } from "@/utils/formatter";
 
 export const AccountDetailsModal: React.FC<{
   selectedMarket: ApiMarket;
@@ -199,10 +200,3 @@ const DepositWithdrawCard: React.FC = () => {
     </div>
   );
 };
-
-// generated
-function shorten(str: string | undefined, maxLen = 10, separator = "") {
-  if (str == undefined) return "";
-  if (str.length <= maxLen) return str;
-  return str.substr(0, str.lastIndexOf(separator, maxLen)) + "..";
-}

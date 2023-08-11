@@ -1,6 +1,6 @@
 import { useWallet } from "@aptos-labs/wallet-adapter-react";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
-import React from "react";
+import React, { useState } from "react";
 import { toast } from "react-toastify";
 
 import { Button } from "@/components/Button";
@@ -8,17 +8,22 @@ import { type ApiMarket } from "@/types/api";
 
 import { CopyIcon } from "./icons/CopyIcon";
 import { ExitIcon } from "./icons/ExitIcon";
-import { MarketIconPair } from "./MarketIconPair";
 import { RecognizedIcon } from "./icons/RecognizedIcon";
+import { MarketIconPair } from "./MarketIconPair";
 
 export const AccountDetailsModal: React.FC<{
   selectedMarket: ApiMarket;
 }> = ({ selectedMarket }) => {
   const { account } = useWallet();
+  const [showCopiedNotif, setShowCopiedNotif] = useState<boolean>(false);
 
   const copyToClipboard = () => {
-    toast.success("Copied to clipboard");
-    console.log("copying to clipboard");
+    setShowCopiedNotif(true);
+    // remove notif after 1 second
+    setTimeout(() => {
+      setShowCopiedNotif(false);
+    }, 1000);
+
     navigator.clipboard.writeText(account?.address || "");
   };
   return (
@@ -39,7 +44,7 @@ export const AccountDetailsModal: React.FC<{
             <div className="mb-[15px] flex w-full items-center">
               <div className="flex-1 border-[1px] border-neutral-600 px-2 py-1 text-xs uppercase tracking-[0.24px] text-white">
                 {/* invisible character,  */}
-                {shorten(account?.address) || "‎"}
+                {showCopiedNotif ? "COPIED!" : shorten(account?.address) || "‎"}
               </div>
               <CopyIcon
                 className={"ml-4 h-4 w-4 cursor-pointer"}

@@ -1,7 +1,6 @@
 import { useWallet } from "@aptos-labs/wallet-adapter-react";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import React, { useState } from "react";
-import { toast } from "react-toastify";
 
 import { Button } from "@/components/Button";
 import { type ApiMarket } from "@/types/api";
@@ -13,7 +12,9 @@ import { MarketIconPair } from "./MarketIconPair";
 
 export const AccountDetailsModal: React.FC<{
   selectedMarket: ApiMarket;
-}> = ({ selectedMarket }) => {
+  onClose: () => void;
+  disconnect: () => void;
+}> = ({ selectedMarket, onClose, disconnect }) => {
   const { account } = useWallet();
   const [showCopiedNotif, setShowCopiedNotif] = useState<boolean>(false);
 
@@ -25,6 +26,11 @@ export const AccountDetailsModal: React.FC<{
     }, 1000);
 
     navigator.clipboard.writeText(account?.address || "");
+  };
+
+  const disconnectWallet = () => {
+    onClose();
+    disconnect();
   };
   return (
     <div className="relative flex w-full flex-col items-center gap-6 font-roboto-mono">
@@ -48,15 +54,13 @@ export const AccountDetailsModal: React.FC<{
               </div>
               <CopyIcon
                 className={"ml-4 h-4 w-4 cursor-pointer"}
-                onClick={() => {
-                  copyToClipboard();
-                }}
+                onClick={copyToClipboard}
               />
             </div>
             {/* row 2 */}
             <Button
               variant="secondary"
-              onClick={() => {}}
+              onClick={disconnectWallet}
               className={
                 "flex items-center !px-3 !py-1 !text-[10px] !leading-[18px]"
               }

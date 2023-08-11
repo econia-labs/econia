@@ -7,11 +7,11 @@ import React, { type PropsWithChildren, useState } from "react";
 
 import { type ApiMarket } from "@/types/api";
 
+import { AccountDetailsModal } from "./AccountDetailsModal";
+import { BaseModal } from "./BaseModal";
 import { Button } from "./Button";
 import { ConnectedButton } from "./ConnectedButton";
 import { DepositWithdrawModal } from "./trade/DepositWithdrawModal";
-import { AccountDetailsModal } from "./AccountDetailsModal";
-import { BaseModal } from "./BaseModal";
 
 const NavItem: React.FC<
   PropsWithChildren<{
@@ -148,8 +148,9 @@ export function Header({ allMarketData, logoHref }: HeaderProps) {
       >
         <AccountDetailsModal
           allMarketData={allMarketData}
-          open={depositWithdrawOpen}
-          onClose={() => setDepositWithdrawOpen(false)}
+          open={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          disconnect={disconnect}
         />
         {/* <SelectMarketContent
           allMarketData={allMarketData}

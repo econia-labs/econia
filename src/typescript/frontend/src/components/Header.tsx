@@ -12,6 +12,7 @@ import { BaseModal } from "./BaseModal";
 import { Button } from "./Button";
 import { ConnectedButton } from "./ConnectedButton";
 import { DepositWithdrawModal } from "./trade/DepositWithdrawModal";
+import { shorten } from "@/utils/formatter";
 
 const NavItem: React.FC<
   PropsWithChildren<{
@@ -62,14 +63,10 @@ type HeaderProps = {
 };
 
 export function Header({ allMarketData, logoHref }: HeaderProps) {
-  const { disconnect } = useWallet();
+  const { disconnect, account } = useWallet();
   const router = useRouter();
   const [depositWithdrawOpen, setDepositWithdrawOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(true);
-
-  const onClickDisconnect = () => {
-    disconnect();
-  };
 
   return (
     <header className="border-b border-neutral-600">
@@ -123,11 +120,13 @@ export function Header({ allMarketData, logoHref }: HeaderProps) {
                 Deposit / Withdraw
               </Button>
               <Button
-                variant="outlined"
-                onClick={disconnect}
-                className="whitespace-nowrap text-[16px]/6"
+                variant="primary"
+                onClick={() => {
+                  setIsModalOpen(true);
+                }}
+                className="whitespace-nowrap font-roboto-mono text-[16px]/6 !font-medium uppercase"
               >
-                Disconnect
+                {shorten(account?.address)}
               </Button>
             </div>
           </ConnectedButton>
@@ -152,14 +151,6 @@ export function Header({ allMarketData, logoHref }: HeaderProps) {
           onClose={() => setIsModalOpen(false)}
           disconnect={disconnect}
         />
-        {/* <SelectMarketContent
-          allMarketData={allMarketData}
-          onSelectMarket={(market) => {
-            setIsModalOpen(false);
-            false;
-            router.push(`/trade/${market.name}`);
-          }}
-        /> */}
       </BaseModal>
     </header>
   );

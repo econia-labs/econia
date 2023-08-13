@@ -143,7 +143,9 @@ export function Header({ allMarketData, logoHref }: HeaderProps) {
           setIsModalOpen(false);
           false;
         }}
-        showCloseButton={false}
+        showCloseButton={true}
+        customWidth="w-[500px]"
+        // customHeight="max-h-[600px]"
       >
         <AccountDetailsModal
           allMarketData={allMarketData}

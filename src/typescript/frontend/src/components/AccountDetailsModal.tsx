@@ -34,9 +34,9 @@ export const AccountDetailsModal: React.FC<{
     disconnect();
   };
   return (
-    <div className="relative flex w-full flex-col items-center gap-6 font-roboto-mono">
-      <div>
-        <p className="mb-4 font-jost text-xl font-bold text-white">
+    <div className="relative flex flex-col items-center gap-6 font-roboto-mono">
+      <div className="max-h-[486px] overflow-scroll">
+        <p className="mb-8 font-jost text-xl font-bold text-white">
           Account Details
         </p>
         {/* card */}
@@ -97,18 +97,22 @@ export const AccountDetailsModal: React.FC<{
         </p>
         <DepositWithdrawCard />
         <DepositWithdrawCard />
+        <DepositWithdrawCard />
+        <DepositWithdrawCard />
+        <DepositWithdrawCard />
+        <DepositWithdrawCard />
       </div>
       {/* spacer to compensate for sticky bottom row */}
       {/* note, has to be same height as the sticky row -- iirc no way to do this dynamically as absolutely positioned elements take up 0 space */}
-      <div className="h-[56px]" />
+      <div className="h-[36px]" />
       {/* sticky bottom row */}
       {/* todo, height 80px but negative margin due to modal padding */}
-      <div className="absolute bottom-0 mx-[-234px] mb-[-24px] flex h-[56px] w-full items-center justify-center border-[1px] border-neutral-600">
+      <div className="absolute bottom-0 mx-[-234px] mb-[-24px] flex h-[84px] w-full min-w-[500px] items-center justify-center border-[1px] border-neutral-600">
         <Button
           variant="secondary"
           onClick={() => {}}
           className={
-            "flex items-center !px-3 !py-1 !text-[10px] !leading-[18px]"
+            "flex h-[35px] w-[144px] items-center justify-center !px-3 !py-1 text-center !text-xs"
           }
         >
           Add New Account

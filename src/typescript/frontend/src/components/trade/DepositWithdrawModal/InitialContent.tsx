@@ -66,6 +66,8 @@ export const InitialContent: React.FC<{
     },
   );
 
+  console.log(marketAccounts, marketAccount, "market stuff");
+
   return (
     <div className="flex w-full flex-col items-center gap-6">
       <p className="font-jost text-3xl font-bold text-white">Select a Market</p>

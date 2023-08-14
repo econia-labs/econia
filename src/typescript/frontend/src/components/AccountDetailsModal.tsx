@@ -35,8 +35,8 @@ export const AccountDetailsModal: React.FC<{
   };
   return (
     <div className="relative flex flex-col items-center gap-6 font-roboto-mono">
-      <div className="max-h-[486px] overflow-scroll">
-        <p className="mb-8 font-jost text-xl font-bold text-white">
+      <div className="mt-[-24px] max-h-[486px] overflow-scroll">
+        <p className="mb-8 mt-[36px] font-jost text-xl font-bold text-white">
           Account Details
         </p>
         {/* card */}
@@ -118,6 +118,9 @@ export const AccountDetailsModal: React.FC<{
           Add New Account
         </Button>
       </div>
+
+      {/* sticky fade out header */}
+      <div className="absolute top-[-24px] mx-[-234px] mb-[-24px] flex h-[48px] w-full min-w-[500px] border-[1px] border-b-0 border-neutral-600 bg-gradient-to-t from-transparent to-black"></div>
     </div>
   );
 };

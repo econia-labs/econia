@@ -221,9 +221,12 @@ There are a few important properties one cares about when creating and configuri
 
 Market participants should be able to express prices that are close enough together to be effectively continuous while being far enough apart to reflect meaningful movement with a single increment.
 
-- **Too granular:** Almost every order occupies its own price level, and user interfaces struggle to display a useful segment of the order book before running out of visual real-estate. Maximum price may be too low (not common).
-- **Too coarse:** A single increment (or decrement) in price reflects a dramatic shift in value whose magnitude exceeds those of smaller movements that are still meaningful to market participants. Minimum price may be too high (common).
-- **Just right:** Prices are effectively continuous in that any meaningful movement is always expressible as some increment or decrement in price. Orders coalesce into useful price levels, and the minimum/maximum prices are not relevant concerns to market action.
+- **Too granular:** Almost every order occupies its own price level, and user interfaces struggle to display a useful segment of the order book before running out of visual real-estate.
+  Maximum price may be too low (not common).
+- **Too coarse:** A single increment (or decrement) in price reflects a dramatic shift in value whose magnitude exceeds those of smaller movements that are still meaningful to market participants.
+  Minimum price may be too high (common).
+- **Just right:** Prices are effectively continuous in that any meaningful movement is always expressible as some increment or decrement in price.
+  Orders coalesce into useful price levels, and the minimum/maximum prices are not relevant concerns to market action.
 
 #### Minimum order size
 
@@ -231,16 +234,17 @@ Market participants should be able to create a limit order as long as it's for a
 Each individual limit order affected by a market order adds to the network fee cost of the market order's execution.
 Thus, it's in every participant's interest that every limit order has a meaningful enough size to include in the execution of a market order.
 
-- **Too low:** The limit order books become polluted with small orders and it becomes difficult or impossible to execute a market order without paying a significant network fee. Denial-of-Service is a concern at this point because it becomes possible to "shut down" trading by spamming limit orders.
+- **Too low:** The limit order books become polluted with small orders and it becomes difficult or impossible to execute a market order without paying a significant network fee.
+  Malicious actors may conduct a denial-of-service attack by sending in lots of orders with negligible size.
 - **Too high:** Some or many meaningful market participants are cut out of trading action and thus must take their liquidity somewhere else.
-- **Just right:** Nobody with good intentions is cut out of liquidity provision based on the amount of asset available to them, as long as their amount is meaningful.
+- **Just right:** Anyone who wants to provide liquidity can, even at smaller amounts, but malicious actors are denied an attack vector.
 
 #### Order size granularity
 
 Market participants should be able to express any amount as an order size that is close to or equal to the amount it reflects.
 One increment or decrement in order size should be a meaningful but not overwhelming difference in value.
 
-- **Too granular:** Price granularity is too coarse due to lack of ability to express the price of one size increment (or decrement) in terms smaller than a single subunit of asset.
+- **Too granular:** Size granularity is too coarse due to lack of ability to express the price of one size increment (or decrement) in terms smaller than a single subunit of asset.
 - **Too coarse:** A single increment (or decrement) in size reflects a dramatic shift in value whose magnitude exceeds those of smaller changes that are still meaningful to market participants. Minimum order size may be too high (not common).
 - **Just right:** Every amount of asset is expressible as a size with an equivalent asset amount that's close enough to the original amount so as to not change its value by a meaningful amount.
 
@@ -298,7 +302,7 @@ Let's now get that in subunit terms using the SDK:
 ```
 
 It's easy to tell if this lot size and tick size combination is reasonable by checking the minimum and maximum price under these conditions in nominal (unit) terms.
-Note that the minimum price is also equivalent to price granularity--this tells us the granularity of value for a whole unit of `APT` as opposed to just one lot (equal here to 100000 subunits of `APT`).
+Note that the minimum price is also equivalent to price granularity, which tells us the granularity of value for a whole unit of APT as opposed to just one lot (equal here to 100000 subunits of `APT`).
 Now, using the SDK:
 
 ```python
@@ -308,7 +312,7 @@ Now, using the SDK:
 42949672.95
 ```
 
-It looks like our price granularity is one penny and our maximum price is "plenty" high.
+It looks like our price granularity is one penny and our maximum price is plenty high: if we configure a market this way, it will support `APT` prices up to \$42M `USDC` per `APT`.
 Since the current price of `APT` is \$7.32, this price granularity might be too coarse for higher-frequency traders.
 It's a good thing we checked!
 Fixing this is easy enough: we could increase our lot size which would make our size granularity more coarse than we desire, or we could decrease our tick size by one order of magnitude:
@@ -330,14 +334,14 @@ Now let's plug this tick size back into the minimum and maximum price formulas t
 4294967.295
 ```
 
-Notice the maximum price has gone down by one order of magnitude, but it's still "plenty" high.
+Notice the maximum price has gone down by one order of magnitude, but it's still plenty high: this market would support `APT` prices up to \$4.2M `USDC` per `APT`.
 We're almost done at this point: we just need a minimum order size.
-Let's require a minimum limit order value of \$50, that is ~6.83 `APT`, equal to $\$50 / \$7.32$.
+Let's require a minimum limit order value of 0.5 `APT` (our base type), which has a market value of \$3.66 ($0.5 * \$7.32$).
 Using the SDK:
 
 ```python
->>> get_min_size_integer("6.83", base_decimals, lot_size)
-6830
+>>> get_min_size_integer("0.5", base_decimals, lot_size)
+500
 ```
 
 Above is the minimum number of lots that a limit order must have before it can be placed.
@@ -349,7 +353,7 @@ These are our results:
 | ------------ | -------------------- | ------ | ------------------------ |
 | Lot size     | Subunits (of `APT`)  | 100000 | Order size granularity   |
 | Tick size    | Subunits (of `USDC`) | 1      | Lot value granularity    |
-| Minimum size | Lots (of `APT`)      | 6830   | Minimum limit order lots |
+| Minimum size | Lots (of `APT`)      | 500    | Minimum limit order lots |
 
 Always remember to check the minimum and maximum price of your configuration to ensure adequate price granularity and room for movement both upwards and downwards!
 
@@ -358,8 +362,8 @@ Always remember to check the minimum and maximum price of your configuration to 
 Consider the trading pair `wBTC/USDC`:
 as of the time of this writing, one `BTC` costs approximately 17792.27 `USD`, so initial choices for lot size and tick size might be:
 
-1. 0.00001 `wBTC` decimal lot size (a value of 0.1779227 `USDC`).
-1. 0.01 `USDC` decimal tick size.
+1. 0.00001 `wBTC` lot size (a value of 0.1779227 `USDC`).
+1. 0.01 `USDC` tick size.
 
 Notably, these choices yield a price granularity that's far too coarse (using the SDK from above):
 
@@ -387,7 +391,7 @@ Let's check the minimum and maximum expressible prices with this configuration:
 4294967295.0
 ```
 
-That's a minimum price (and price granularity) of \$1, as well as a maximum price that's "plenty" high.
+That's a minimum price (and price granularity) of \$1, as well as a maximum price that's plenty high.
 This could work; if a price granularity of one penny is desired, then lower the tick size by a further factor of 100:
 
 ```python
@@ -405,11 +409,7 @@ We can see that this tick size is problematic by using `get_tick_size_integer` f
 ```
 >>> get_tick_size_integer("0.0000001", 6)
 Traceback (most recent call last):
-  File "<stdin>", line 1, in <module>
-  File "/Users/egd/projects/econia/src/python/sdk/econia_sdk/utils/decimals.py", line 46, in get_tick_size_integer
-    return get_lot_size_integer(smallest_decimal_unit, coin_decimals)
-  File "/Users/egd/projects/econia/src/python/sdk/econia_sdk/utils/decimals.py", line 31, in get_lot_size_integer
-    raise ValueError("Decimal unit too small to represent with 1 subunit")
+...
 ValueError: Decimal unit too small to represent with 1 subunit
 ```
 
@@ -424,15 +424,38 @@ If we increase lot size by a factor of 10 to 0.0001 `WBTC` which corresponds to 
 0.01
 ```
 
-:::note
+To finish, let's calculate the lot and tick sizes as well as a minimum size (worth \$5 of the base, `WBTC`) for this market:
 
-Size granularity restrictions only apply to limit orders.
-Market orders and swaps allow users to specify precise trade amounts down to a single integer subunit.
+```python
+>>> base_decimals = 9
+>>> lot_size_decimal = "0.0001"
+>>> quote_decimals = 6
+>>> tick_size_decimal = "0.000001"
+>>> lot_size = get_lot_size_integer(lot_size_decimal, base_decimals)
+>>> lot_size
+100000
+>>> tick_size = get_tick_size_integer(tick_size_decimal, quote_decimals)
+>>> tick_size
+1
+>>> min_size_float = 5/17792.27
+>>> min_size_decimal = f"{min_size_float}"
+>>> min_size = get_min_size_integer(min_size_decimal, base_decimals, lot_size)
+>>> min_size
+3
+```
 
-:::
+Therefore our final market parameters are as follows:
+
+| Parameter    | Units                | Value  | Meaning                  |
+| ------------ | -------------------- | ------ | ------------------------ |
+| Lot size     | Subunits (of `WBTC`) | 100000 | Order size granularity   |
+| Tick size    | Subunits (of `USDC`) | 1      | Lot value granularity    |
+| Minimum size | Lots (of `WBTC`)     | 3      | Minimum limit order lots |
+
+______________________________________________________________________
 
 Next, consider a liquid staking derivative `sAPT` trading against `APT`, `sAPT/APT`, both having 8 decimals.
-Here, very-high price granularity is necessary because the pair is "mean reverting" (to a ratio of 1):
+Since the two assets have almost the same nominal price, price granularity will need to be higher here:
 
 | Variable          | Value          |
 | ----------------- | -------------- |
@@ -455,8 +478,8 @@ Let's check the minimum and maximum price here using the SDK:
 This gives us a price precision of 1/100th of a penny, with room to go even more precise should we desire.
 However we recall that the most granular possible price isn't necessarily desirable due to almost every order then occupying its own price level, cluttering user interfaces.
 Some coarseness is desirable for that reason.
-Although it is possible for user interfaces to summarize orders into price levels that don't actually exist, this would diverge what the user sees from reality in a way that can't be guaranteed safe.
-Should we use the maximum precision of 0.00000001 `APT` then we observe that the maximum price lowers but remains high enough to facilitate this "mean reverting" pair:
+Although it is possible for user interfaces to summarize orders into price levels that don't actually exist, this approach would represent to the user information that is not accurate, and is not recommended.
+Should we use the maximum precision of 0.00000001 `APT` then we observe that the maximum price lowers but remains high enough for this pair, where the assets have almost the same value:
 
 ```python
 >>> lot_size = "0.01"
@@ -467,7 +490,36 @@ Should we use the maximum precision of 0.00000001 `APT` then we observe that the
 4294.967295
 ```
 
-Next, consider `wBTC` trading against a hypothetical stable coin `USDX` with 10 decimals: `wBTC/USDX`.
+Last, let's calculate market parameters again using \$5 as our minimum order size:
+
+```python
+>>> base_decimals = 8
+>>> lot_size_decimal = "0.01"
+>>> quote_decimals = 8
+>>> tick_size_decimal = "0.00000001"
+>>> lot_size = get_lot_size_integer(lot_size_decimal, base_decimals)
+>>> lot_size
+1000000
+>>> tick_size = get_tick_size_integer(tick_size_decimal, quote_decimals)
+>>> tick_size
+1
+>>> min_size_float = 5/7.23 # price of sAPT = $7.23
+>>> min_size_decimal = f"{min_size_float}"
+>>> get_min_size_integer(min_size_decimal, base_decimals, lot_size)
+70
+```
+
+Thus our final market parameters are:
+
+| Parameter    | Units                | Value   | Meaning                  |
+| ------------ | -------------------- | ------- | ------------------------ |
+| Lot size     | Subunits (of `sAPT`) | 1000000 | Order size granularity   |
+| Tick size    | Subunits (of `APT`)  | 1       | Lot value granularity    |
+| Minimum size | Lots (of `sAPT`)     | 70      | Minimum limit order lots |
+
+______________________________________________________________________
+
+Last, consider `wBTC` trading against a hypothetical stable coin `USDX` with 10 decimals: `wBTC/USDX`.
 Here, a market registrant may again opt for high price precision, but if they specify too much, they may not be able to encode the corresponding integer price in 32 bits:
 
 :::tip
@@ -516,6 +568,33 @@ Another option would have been to decrease lot size by a factor of 10000:
 >>> get_max_quote_per_base_nominal(lot_size, tick_size)
 42949672.95
 ```
+
+Last and finally, let's calculate market parameters using a \$5 minimum order size using the lot and tick sizes immediately above:
+
+```python
+>>> base_decimals = 9
+>>> lot_size_decimal = "0.00000001"
+>>> quote_decimals = 10
+>>> tick_size_decimal = "0.0000000001"
+>>> lot_size = get_lot_size_integer(lot_size_decimal, base_decimals)
+>>> lot_size
+10
+>>> tick_size = get_tick_size_integer(tick_size_decimal, quote_decimals)
+>>> tick_size
+1
+>>> min_size_float = 5/17792.27 # price of WBTC = $17792.27
+>>> min_size_decimal = f"{min_size_float}"
+>>> get_min_size_integer(min_size_decimal, base_decimals, lot_size)
+28103
+```
+
+In summary, these market parameters are:
+
+| Parameter    | Units                | Value | Meaning                  |
+| ------------ | -------------------- | ----- | ------------------------ |
+| Lot size     | Subunits (of `WBTC`) | 10    | Order size granularity   |
+| Tick size    | Subunits (of `USDX`) | 1     | Lot value granularity    |
+| Minimum size | Lots (of `WBTC`)     | 28103 | Minimum limit order lots |
 
 ## Adversarial considerations
 

@@ -12,10 +12,10 @@ import { MarketIconPair } from "./MarketIconPair";
 import { shorten } from "@/utils/formatter";
 
 export const AccountDetailsModal: React.FC<{
-  selectedMarket: ApiMarket;
+  selectedMarket?: ApiMarket;
   onClose: () => void;
   disconnect: () => void;
-}> = ({ selectedMarket, onClose, disconnect }) => {
+}> = ({ onClose, disconnect }) => {
   const { account } = useWallet();
   const [showCopiedNotif, setShowCopiedNotif] = useState<boolean>(false);
 

@@ -148,8 +148,7 @@ export function Header({ allMarketData, logoHref }: HeaderProps) {
         // customHeight="max-h-[600px]"
       >
         <AccountDetailsModal
-          allMarketData={allMarketData}
-          open={isModalOpen}
+          // allMarketData={allMarketData}
           onClose={() => setIsModalOpen(false)}
           disconnect={disconnect}
         />

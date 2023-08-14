@@ -35,7 +35,7 @@ export const AccountDetailsModal: React.FC<{
   };
   return (
     <div className="relative flex flex-col items-center gap-6 font-roboto-mono">
-      <div className="mt-[-24px] max-h-[486px] overflow-scroll">
+      <div className="scrollbar-none mt-[-24px] max-h-[524px] overflow-auto">
         <p className="mb-8 mt-[36px] font-jost text-xl font-bold text-white">
           Account Details
         </p>
@@ -107,7 +107,7 @@ export const AccountDetailsModal: React.FC<{
       <div className="h-[36px]" />
       {/* sticky bottom row */}
       {/* todo, height 80px but negative margin due to modal padding */}
-      <div className="absolute bottom-0 mx-[-234px] mb-[-24px] flex h-[84px] w-full min-w-[500px] items-center justify-center border-[1px] border-neutral-600">
+      <div className="absolute bottom-0 left-[50%] mb-[-24px] flex h-[84px] w-full min-w-[500px] translate-x-[-50%] items-center justify-center border-[1px] border-neutral-600 text-center">
         <Button
           variant="secondary"
           onClick={() => {}}
@@ -120,7 +120,7 @@ export const AccountDetailsModal: React.FC<{
       </div>
 
       {/* sticky fade out header */}
-      <div className="absolute top-[-24px] mx-[-234px] mb-[-24px] flex h-[48px] w-full min-w-[500px] border-[1px] border-b-0 border-neutral-600 bg-gradient-to-t from-transparent to-black"></div>
+      <div className="absolute left-[50%] top-[-24px] mb-[-24px] flex h-[48px] w-full min-w-[500px] translate-x-[-50%] border-[1px] border-b-0 border-neutral-600 bg-gradient-to-t from-transparent to-black"></div>
     </div>
   );
 };

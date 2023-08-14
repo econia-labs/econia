@@ -66,7 +66,9 @@ export const TradeHistoryTable: React.FC<{
   });
 
   return (
-    <table className={"w-full" + (className ? ` ${className}` : "")}>
+    <table
+      className={"w-full table-fixed" + (className ? ` ${className}` : "")}
+    >
       <thead>
         {table.getHeaderGroups().map((headerGroup) => (
           <tr
@@ -81,7 +83,7 @@ export const TradeHistoryTable: React.FC<{
                     : i === 1
                     ? "text-left"
                     : "pr-4 text-right"
-                }`}
+                } w-full`}
                 key={header.id}
               >
                 {header.isPlaceholder

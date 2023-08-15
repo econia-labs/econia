@@ -50,13 +50,13 @@ macro_rules! wait_for_enter {
 
 /// Creates the initial variables needed
 async fn init(args: &Args) -> Init {
-    // Create EAPT and EUSDC `TypeTag`s
+    // Create eAPT and eUSDC `TypeTag`s
     let faucet_address = AccountAddress::from_hex_literal(&args.faucet_address).unwrap();
     let e_apt = TypeTag::Struct(Box::new(
-        StructTag::from_str(&format!("0x{faucet_address}::test_eth::TestETH")).unwrap(),
+        StructTag::from_str(&format!("0x{faucet_address}::example_apt::ExampleAPT")).unwrap(),
     ));
     let e_usdc = TypeTag::Struct(Box::new(
-        StructTag::from_str(&format!("0x{faucet_address}::test_usdc::TestUSDC")).unwrap(),
+        StructTag::from_str(&format!("0x{faucet_address}::example_usdc::ExampleUSDC")).unwrap(),
     ));
 
     // Create a `FaucetClient`
@@ -152,7 +152,7 @@ pub async fn report_best_price_levels(view_client: EconiaViewClient<'_>, market_
     let (best_bid_level, best_ask_level) = get_best_levels(view_client, market_id).await?;
 
     if best_bid_level.is_none() && best_ask_level.is_none() {
-        println!("There is no EAPT being bought or sold right now");
+        println!("There is no eAPT being bought or sold right now");
         return Ok(());
     }
 
@@ -183,7 +183,7 @@ async fn main() -> EconiaResult<()> {
 
     let Init { e_apt, e_usdc, faucet_address, faucet_client, econia_address, mut econia_client } = init(&args).await;
 
-    print_title!("Create a market for EAPT/EUSDC");
+    print_title!("Create a market for eAPT/eUSDC");
 
     let lot_size = 10u64.pow(8 - 3); // eAPT has 8 decimals, want 1/1000th granularity
     let tick_size = 10u64.pow(6 - 3); // eAPT has 6 decimals, want 1/1000th granularity
@@ -292,9 +292,9 @@ async fn main() -> EconiaResult<()> {
 
     print_title!("Check the events for filled orders");
 
-    let market_event_handle_cleation_numbers = econia_client_b.view_client().get_market_event_handle_creation_numbers(account_address_b, market_id, 0).await?.unwrap();
+    let market_event_handle_creation_numbers = econia_client_b.view_client().get_market_event_handle_creation_numbers(account_address_b, market_id, 0).await?.unwrap();
 
-    let events = econia_client_b.get_events_by_creation_number(market_event_handle_cleation_numbers.fill_events_handle_creation_num, econia_client_b.user_account.address(), None, None).await?;
+    let events = econia_client_b.get_events_by_creation_number(market_event_handle_creation_numbers.fill_events_handle_creation_num, econia_client_b.user_account.address(), None, None).await?;
 
     println!("{} orders were filled", events.len());
 
@@ -309,9 +309,9 @@ async fn main() -> EconiaResult<()> {
     let entry = cancel_all_orders_user(econia_address, market_id, Side::Bid)?;
     econia_client_a.submit_tx(entry).await?;
 
-    let market_event_handle_cleation_numbers = econia_client_b.view_client().get_market_event_handle_creation_numbers(account_address_b, market_id, 0).await?.unwrap();
+    let market_event_handle_creation_numbers = econia_client_b.view_client().get_market_event_handle_creation_numbers(account_address_b, market_id, 0).await?.unwrap();
 
-    let events = econia_client_a.get_events_by_creation_number(market_event_handle_cleation_numbers.cancel_order_events_handle_creation_num, econia_client_a.user_account.address(), None, None).await?;
+    let events = econia_client_a.get_events_by_creation_number(market_event_handle_creation_numbers.cancel_order_events_handle_creation_num, econia_client_a.user_account.address(), None, None).await?;
 
     println!("{} orders were cancelled", events.len());
 

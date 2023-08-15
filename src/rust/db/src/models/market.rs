@@ -5,7 +5,7 @@ use diesel_derive_enum::DbEnum;
 use field_count::FieldCount;
 use types::{
     error::TypeError,
-    events::{self, Type},
+    events::{self, TypeInfo},
 };
 
 use crate::schema::{market_registration_events, recognized_market_events};
@@ -56,7 +56,7 @@ impl TryFrom<MarketRegistrationEvent> for events::MarketRegistrationEvent {
             && value.base_module_name.is_some()
             && value.base_struct_name.is_some()
         {
-            Some(Type {
+            Some(TypeInfo {
                 account_address: value.base_account_address.unwrap(),
                 module_name: value.base_module_name.unwrap(),
                 struct_name: value.base_struct_name.unwrap(),
@@ -73,7 +73,7 @@ impl TryFrom<MarketRegistrationEvent> for events::MarketRegistrationEvent {
                 })?,
             base_type,
             base_name_generic: value.base_name_generic,
-            quote_type: Type {
+            quote_type: TypeInfo {
                 account_address: value.quote_account_address,
                 module_name: value.quote_module_name,
                 struct_name: value.quote_struct_name,

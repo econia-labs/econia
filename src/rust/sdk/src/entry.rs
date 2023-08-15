@@ -216,7 +216,7 @@ pub fn change_order_size_user(
 /// * `base`: Aptos [`TypeTag`](https://docs.rs/move-core-types/0.0.3/move_core_types/language_storage/enum.TypeTag.html) for base coin.
 /// * `quote`: Aptos [`TypeTag`](https://docs.rs/move-core-types/0.0.3/move_core_types/language_storage/enum.TypeTag.html) for quote coin.
 /// * `market_id`: Market ID for corresponding market.
-/// * `integrator`: Integrator's AccountAddress.
+/// * `integrator`: Integrator's `AccountAddress`.
 /// * `side`: Order [`Side`].
 /// * `size`: Size of the order in lots.
 /// * `advance_style`: The [`AdvanceStyle`] of the order.
@@ -600,7 +600,7 @@ pub fn init_market_event_handles_if_missing(
     );
     Ok(EntryFunction::new(
         module,
-        ident_str!("init_market_event_handle_if_missing").to_owned(),
+        ident_str!("init_market_event_handles_if_missing").to_owned(),
         vec![],
         vec![bcs::to_bytes(&market_id)?, bcs::to_bytes(&custodian_id)?],
     ))

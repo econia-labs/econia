@@ -29,6 +29,15 @@ impl From<bool> for Side {
     }
 }
 
+impl From<Side> for bool {
+    fn from(value: Side) -> Self {
+        match value {
+            Side::Bid => false,
+            Side::Ask => true,
+        }
+    }
+}
+
 impl TryFrom<u8> for Side {
     type Error = TypeError;
 
@@ -153,7 +162,7 @@ pub enum Restriction {
     NoRestriction,
     FillOrAbort,
     ImmediateOrCancel,
-    PostOrAbort
+    PostOrAbort,
 }
 
 impl TryFrom<u8> for Restriction {
@@ -213,44 +222,6 @@ impl TryFrom<u8> for CancelType {
             2 => Ok(Self::Taker),
             _ => Err(TypeError::ConversionError {
                 name: "CancelType".to_string(),
-            }),
-        }
-    }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-#[cfg_attr(
-    feature = "serde",
-    derive(Serialize, Deserialize),
-    serde(rename_all = "snake_case")
-)]
-#[repr(u8)]
-pub enum CancelReason {
-    Eviction,
-    ImmediateOrCancel,
-    ManualCancel,
-    MaxQuoteTraded,
-    NotEnoughLiquidity,
-    SelfMatchMaker,
-    SelfMatchTaker,
-    TooSmallAfterMatching,
-}
-
-impl TryFrom<u8> for CancelReason {
-    type Error = TypeError;
-
-    fn try_from(value: u8) -> Result<Self, Self::Error> {
-        match value {
-            1 => Ok(CancelReason::Eviction),
-            2 => Ok(CancelReason::ImmediateOrCancel),
-            3 => Ok(CancelReason::ManualCancel),
-            4 => Ok(CancelReason::MaxQuoteTraded),
-            5 => Ok(CancelReason::NotEnoughLiquidity),
-            6 => Ok(CancelReason::SelfMatchMaker),
-            7 => Ok(CancelReason::SelfMatchTaker),
-            8 => Ok(CancelReason::TooSmallAfterMatching),
-            _ => Err(TypeError::ConversionError {
-                name: "CancelReason".to_string(),
             }),
         }
     }

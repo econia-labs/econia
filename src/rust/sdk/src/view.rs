@@ -30,7 +30,7 @@ where
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct MarketEventHandleCreationInfo {
-    pub ressource_account_address: AccountAddress,
+    pub resource_account_address: AccountAddress,
     #[serde(deserialize_with = "from_str")]
     pub cancel_order_events_handle_creation_num: u64,
     #[serde(deserialize_with = "from_str")]
@@ -340,29 +340,13 @@ impl<'a> EconiaViewClient<'a> {
     /// Arguments:
     /// * `user`: the address of the user to check market account ids for.
     /// * `market_id`: the id of the market to check market accounts for.
-    pub async fn get_posted_order_id_side(&self, order_id: u64) -> EconiaResult<bool> {
-        let managed_coin = format!("{}::market", self.econia_address);
-        let module = MoveModuleId::from_str(&managed_coin)
-            .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?;
-        let name = IdentifierWrapper::from_str("get_posted_order_id_side").unwrap();
-        let response = self
-            .client
-            .view(
-                &ViewRequest {
-                    function: aptos_api_types::EntryFunctionId { module, name },
-                    type_arguments: vec![],
-                    arguments: vec![json!(order_id.to_string())],
-                },
-                None,
-            )
-            .await?;
-        let value = response
-            .inner()
-            .get(0)
-            .ok_or(EconiaError::InvalidResponse)?
-            .as_bool()
-            .ok_or(EconiaError::InvalidResponse)?;
-        Ok(value)
+    ///
+    /// This will not actually reach out to the blockchain. It will compute the result locally as it
+    /// does not need blockchain data.
+    ///
+    /// This function just calls the standalone one. It is also exposed here for API consistency.
+    pub fn get_posted_order_id_side(&self, order_id: u128) -> EconiaResult<bool> {
+        get_posted_order_id_side(order_id)
     }
 
     /// Call `get_price_levels` view function.
@@ -370,7 +354,7 @@ impl<'a> EconiaViewClient<'a> {
     /// Arguments:
     /// * `market_id`: the id of the market to get the price levels from.
     /// * `n_ask_levels_max`: the maximum number of ask price levels to index.
-    /// * `n_bid_levels_max`: the maximum number of bidsprice levels to index.
+    /// * `n_bid_levels_max`: the maximum number of bid price levels to index.
     pub async fn get_price_levels(
         &self,
         market_id: u64,
@@ -760,7 +744,7 @@ impl<'a> EconiaViewClient<'a> {
 
     // User related view functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Call `get_all_market_account_ids_for_market_id` view fuction.
+    /// Call `get_all_market_account_ids_for_market_id` view function.
     ///
     /// Arguments:
     /// * `user`: the address of the user to check market account ids for.
@@ -1091,12 +1075,30 @@ pub fn get_market_order_id_counter(market_order_id: u128) -> u64 {
     ((market_order_id >> SHIFT_COUNTER) & (HI_64 as u128)) as u64
 }
 
+/// Call `get_posted_order_id_side` view function.
+///
+/// This will not actually reach out to the blockchain. It will compute the result locally as it
+/// does not need blockchain data.
+pub fn get_posted_order_id_side(order_id: u128) -> EconiaResult<bool> {
+    if !did_order_post(order_id) {
+        Err(EconiaError::MarketError(MarketError::OrderDidNotPost))
+    } else {
+        let avlq_access_key = (order_id & (HI_64 as u128)) as u64;
+        let result = if ((avlq_access_key >> 32u8) & 1u64) as u8 == 1 {
+            Side::Ask
+        } else {
+            Side::Bid
+        };
+        Ok(result.into())
+    }
+}
+
 /// Call `get_market_order_id_price` view function.
 ///
 /// This will not actually reach out to the blockchain. It will compute the result locally as it
 /// does not need blockchain data.
 pub fn get_market_order_id_price(market_order_id: u128) -> EconiaResult<u64> {
-    if did_order_post(market_order_id) {
+    if !did_order_post(market_order_id) {
         Err(EconiaError::MarketError(MarketError::OrderDidNotPost))
     } else {
         Ok((market_order_id & (HI_PRICE as u128)) as u64)

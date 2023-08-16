@@ -11,12 +11,12 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { type ReactNode, useMemo, useState } from "react";
+import Skeleton from "react-loading-skeleton";
 
 import { type ApiMarket, type ApiOrder } from "@/types/api";
 
-import { ConnectedButton } from "../ConnectedButton";
-import Skeleton from "react-loading-skeleton";
 import bg from "../../../public/bg.png";
+import { ConnectedButton } from "../ConnectedButton";
 
 type TableOrder = ApiOrder & { total: number };
 

@@ -16,6 +16,7 @@ import { type ApiMarket, type ApiOrder } from "@/types/api";
 
 import { ConnectedButton } from "../ConnectedButton";
 import Skeleton from "react-loading-skeleton";
+import bg from "../../../public/bg.png";
 
 type TableOrder = ApiOrder & { total: number };
 
@@ -156,11 +157,16 @@ export const OrdersTable: React.FC<{
       <table
         className={"w-full table-auto" + (className ? ` ${className}` : "")}
       >
-        <thead className="sticky top-0 h-8 bg-transparent shadow-[inset_0_-1px_0_theme(colors.neutral.600)]">
+        <thead
+          className="sticky top-0 h-8  bg-[#020202] shadow-[inset_0_-1px_0_theme(colors.neutral.600)]"
+          style={{
+            backgroundImage: `url(${bg.src})`,
+          }}
+        >
           <tr>
             {table.getFlatHeaders().map((header) => (
               <th
-                className="cursor-pointer select-none py-0.5 text-left font-roboto-mono text-sm font-light uppercase text-neutral-500"
+                className="cursor-pointer select-none py-0.5 text-left font-roboto-mono text-sm font-light uppercase text-neutral-500 shadow-[inset_0_-1px_0_theme(colors.neutral.600)]"
                 key={header.id}
                 onClick={header.column.getToggleSortingHandler()}
               >

@@ -6,8 +6,8 @@ Econia Move source code adheres to [Semantic Versioning] and [Keep a Changelog] 
 
 ### Added
 
-- Assorted view functions ([#287], [#301], [#308], [#321], [#334]).
-- Assorted user- and market-level events with common order ID ([#321], [#347], [#360], [#366]).
+- Assorted view functions ([#287], [#301], [#308], [#321], [#334], [#428]).
+- Assorted user- and market-level events with common order ID ([#321], [#347], [#360], [#366], [#428]).
 - Authors field on manifest ([#380]).
 
 ### Changed
@@ -42,6 +42,7 @@ Econia Move source code adheres to [Semantic Versioning] and [Keep a Changelog] 
 [#366]: https://github.com/econia-labs/econia/pull/366
 [#368]: https://github.com/econia-labs/econia/pull/368
 [#380]: https://github.com/econia-labs/econia/pull/380
+[#428]: https://github.com/econia-labs/econia/pull/428
 [keep a changelog]: https://keepachangelog.com/en/1.0.0/
 [semantic versioning]: https://semver.org/spec/v2.0.0.html
 [unreleased]: https://github.com/econia-labs/econia/compare/v4.0.2-audited...HEAD

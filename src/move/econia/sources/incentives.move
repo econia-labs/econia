@@ -571,7 +571,7 @@ module econia::incentives {
         let integrator_fee_stores_map_ref =
             &borrow_global<IntegratorFeeStores<QuoteCoinType>>(
                 integrator_address).map;
-        // Immutalbly borrow corresponding integrator fee store for
+        // Immutably borrow corresponding integrator fee store for
         // given market ID.
         let integrator_fee_store_ref = tablist::borrow(
             integrator_fee_stores_map_ref, market_id);

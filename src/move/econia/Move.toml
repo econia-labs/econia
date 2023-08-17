@@ -17,5 +17,5 @@ git = "https://github.com/aptos-labs/aptos-core.git"
 # You may need to change this to `main` to run event unit tests, since
 # event unit tests for this package were added before Aptos' event unit
 # testing framework was incorporated into the `mainnet` branch.
-rev = "main"
+rev = "mainnet"
 subdir = "aptos-move/framework/aptos-framework"

@@ -1206,26 +1206,30 @@ module econia::market {
         if (!has_open_order(market_id, order_id)) return option::none();
         // Get address of resource account where order books are stored.
         let resource_address = resource_account::get_address();
-        // Mutably borrow order books map.
-        let order_books_map_ref_mut =
-            &mut borrow_global_mut<OrderBooks>(resource_address).map;
-        // Mutably borrow market order book.
-        let order_book_ref_mut = tablist::borrow_mut(
-            order_books_map_ref_mut, market_id);
+        // Immutably borrow order books map.
+        let order_books_map_ref =
+            &borrow_global<OrderBooks>(resource_address).map;
+        // Immutably borrow market order book.
+        let order_book_ref = tablist::borrow(
+            order_books_map_ref, market_id);
         // Get order ID side.
         let side = get_posted_order_id_side(order_id);
         // Get open orders for given side.
-        let orders_ref_mut = if (side == ASK) &mut order_book_ref_mut.asks else
-            &mut order_book_ref_mut.bids;
+        let orders_ref = if (side == ASK) &order_book_ref.asks else
+            &order_book_ref.bids;
         let avlq_access_key = // Get AVL queue access key.
             get_order_id_avl_queue_access_key(order_id);
-        // Remove and unpack order with given access key, discarding
-        // order access key.
-        let Order{size, price, user, custodian_id, order_access_key: _} =
-            avl_queue::remove(orders_ref_mut, avlq_access_key);
+        // Immutably borrow order with given access key.
+        let order_ref = avl_queue::borrow(orders_ref, avlq_access_key);
         // Pack and return an order view in an option.
-        option::some(OrderView{market_id, side, order_id, remaining_size: size,
-                               price, user, custodian_id})
+        option::some(OrderView{
+            market_id,
+            side,
+            order_id,
+            remaining_size: order_ref.size,
+            price: order_ref.price,
+            user: order_ref.user,
+            custodian_id: order_ref.custodian_id})
     }
 
     #[view]

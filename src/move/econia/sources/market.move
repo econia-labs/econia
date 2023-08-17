@@ -4401,7 +4401,7 @@ module econia::market {
         market_id: u64
     ): vector<CancelOrderEvent>
     acquires MarketEventHandles {
-        event::emitted_events(
+        event::emitted_events_by_handle(
             &(borrow_market_event_handles_for_market_test(market_id).
                 cancel_order_events))
     }
@@ -4413,7 +4413,7 @@ module econia::market {
         swapper: address
     ): vector<CancelOrderEvent>
     acquires SwapperEventHandles {
-        event::emitted_events(
+        event::emitted_events_by_handle(
             &(borrow_swapper_event_handles_for_market_test(market_id, swapper).
                 cancel_order_events))
     }
@@ -4425,7 +4425,7 @@ module econia::market {
         swapper: address
     ): vector<FillEvent>
     acquires SwapperEventHandles {
-        event::emitted_events(
+        event::emitted_events_by_handle(
             &(borrow_swapper_event_handles_for_market_test(market_id, swapper).
                 fill_events))
     }
@@ -4436,7 +4436,7 @@ module econia::market {
         market_id: u64
     ): vector<PlaceSwapOrderEvent>
     acquires MarketEventHandles {
-        event::emitted_events(
+        event::emitted_events_by_handle(
             &(borrow_market_event_handles_for_market_test(market_id).
                 place_swap_order_events))
     }
@@ -4448,7 +4448,7 @@ module econia::market {
         swapper: address
     ): vector<PlaceSwapOrderEvent>
     acquires SwapperEventHandles {
-        event::emitted_events(
+        event::emitted_events_by_handle(
             &(borrow_swapper_event_handles_for_market_test(market_id, swapper).
                 place_swap_order_events))
     }

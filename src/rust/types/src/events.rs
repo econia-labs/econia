@@ -1,11 +1,37 @@
+use std::{fmt::Display, str::FromStr};
+
 use chrono::{DateTime, Utc};
 #[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 
 use crate::{
     error::TypeError,
-    order::{Restriction, SelfMatchBehavior, Side},
+    order::{CancelReason, Restriction, SelfMatchBehavior, Side},
 };
+
+fn from_str<'de, T, D>(deserializer: D) -> Result<T, D::Error>
+where
+    T: FromStr,
+    T::Err: Display,
+    D: Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+    T::from_str(&s).map_err(serde::de::Error::custom)
+}
+
+fn from_str_opt<'de, T, D>(deserializer: D) -> Result<Option<T>, D::Error>
+where
+    T: FromStr,
+    T::Err: Display,
+    D: Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+    Ok(if s.is_empty() {
+        None
+    } else {
+        Some(T::from_str(&s).map_err(serde::de::Error::custom)?)
+    })
+}
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -21,30 +47,6 @@ pub enum EconiaEvent {
     PlaceSwapOrder(Box<PlaceSwapOrderEvent>),
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-#[cfg_attr(
-    feature = "serde",
-    derive(Serialize, Deserialize),
-    serde(rename_all = "snake_case")
-)]
-#[cfg_attr(
-    feature = "sqlx",
-    derive(sqlx::Type),
-    sqlx(type_name = "cancel_reason", rename_all = "snake_case")
-)]
-pub enum CancelReason {
-    SizeChangeInternal,
-    Eviction,
-    ImmediateOrCancel,
-    ManualCancel,
-    MaxQuoteTraded,
-    NotEnoughLiquidity,
-    SelfMatchMaker,
-    SelfMatchTaker,
-    TooSmallToFillLot,
-    ViolatedLimitPrice,
-}
-
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct TypeInfo {
@@ -56,23 +58,33 @@ pub struct TypeInfo {
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct MarketRegistrationEvent {
+    #[serde(deserialize_with = "from_str")]
     pub market_id: u64,
     pub base_type: Option<TypeInfo>,
     pub base_name_generic: Option<String>,
     pub quote_type: TypeInfo,
+    #[serde(deserialize_with = "from_str")]
     pub lot_size: u64,
+    #[serde(deserialize_with = "from_str")]
     pub tick_size: u64,
+    #[serde(deserialize_with = "from_str")]
     pub min_size: u64,
+    #[serde(deserialize_with = "from_str")]
     pub underwriter_id: u64,
 }
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct RecognizedMarketInfo {
+    #[serde(deserialize_with = "from_str")]
     pub market_id: u64,
+    #[serde(deserialize_with = "from_str")]
     pub lot_size: u64,
+    #[serde(deserialize_with = "from_str")]
     pub tick_size: u64,
+    #[serde(deserialize_with = "from_str")]
     pub min_size: u64,
+    #[serde(deserialize_with = "from_str")]
     pub underwriter_id: u64,
 }
 
@@ -88,87 +100,114 @@ pub struct RecognizedMarketEvent {
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct CancelOrderEvent {
+    #[serde(deserialize_with = "from_str")]
     pub market_id: u64,
+    #[serde(deserialize_with = "from_str")]
     pub order_id: u128,
     pub user: String,
+    #[serde(deserialize_with = "from_str_opt")]
     pub custodian_id: Option<u64>,
     pub reason: CancelReason,
-    pub time: DateTime<Utc>,
 }
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ChangeOrderSizeEvent {
+    #[serde(deserialize_with = "from_str")]
     pub market_id: u64,
+    #[serde(deserialize_with = "from_str")]
     pub order_id: u128,
     pub user: String,
+    #[serde(deserialize_with = "from_str_opt")]
     pub custodian_id: Option<u64>,
     pub side: Side,
+    #[serde(deserialize_with = "from_str")]
     pub new_size: u64,
-    pub time: DateTime<Utc>,
 }
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct FillEvent {
+    #[serde(deserialize_with = "from_str")]
     pub market_id: u64,
+    #[serde(deserialize_with = "from_str")]
     pub size: u64,
+    #[serde(deserialize_with = "from_str")]
     pub price: u64,
     pub maker_side: Side,
     pub maker: String,
+    #[serde(deserialize_with = "from_str_opt")]
     pub maker_custodian_id: Option<u64>,
+    #[serde(deserialize_with = "from_str")]
     pub maker_order_id: u128,
     pub taker: String,
+    #[serde(deserialize_with = "from_str_opt")]
     pub taker_custodian_id: Option<u64>,
+    #[serde(deserialize_with = "from_str")]
     pub taker_order_id: u128,
+    #[serde(deserialize_with = "from_str")]
     pub taker_quote_fees_paid: u64,
+    #[serde(deserialize_with = "from_str")]
     pub sequence_number_for_trade: u64,
-    pub time: DateTime<Utc>,
 }
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct PlaceLimitOrderEvent {
+    #[serde(deserialize_with = "from_str")]
     pub market_id: u64,
     pub user: String,
+    #[serde(deserialize_with = "from_str_opt")]
     pub custodian_id: Option<u64>,
     pub integrator: Option<String>,
     pub side: Side,
+    #[serde(deserialize_with = "from_str")]
     pub size: u64,
+    #[serde(deserialize_with = "from_str")]
     pub price: u64,
     pub restriction: Restriction,
     pub self_match_behavior: SelfMatchBehavior,
+    #[serde(deserialize_with = "from_str")]
     pub remaining_size: u64,
+    #[serde(deserialize_with = "from_str")]
     pub order_id: u128,
-    pub time: DateTime<Utc>,
 }
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct PlaceMarketOrderEvent {
+    #[serde(deserialize_with = "from_str")]
     pub market_id: u64,
     pub user: String,
+    #[serde(deserialize_with = "from_str_opt")]
     pub custodian_id: Option<u64>,
     pub integrator: Option<String>,
     pub direction: Side,
+    #[serde(deserialize_with = "from_str")]
     pub size: u64,
     pub self_match_behavior: SelfMatchBehavior,
+    #[serde(deserialize_with = "from_str")]
     pub order_id: u128,
-    pub time: DateTime<Utc>,
 }
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct PlaceSwapOrderEvent {
+    #[serde(deserialize_with = "from_str")]
     pub market_id: u64,
     pub signing_account: String,
     pub integrator: Option<String>,
     pub direction: Side,
+    #[serde(deserialize_with = "from_str")]
     pub min_base: u64,
+    #[serde(deserialize_with = "from_str")]
     pub max_base: u64,
+    #[serde(deserialize_with = "from_str")]
     pub min_quote: u64,
+    #[serde(deserialize_with = "from_str")]
     pub max_quote: u64,
+    #[serde(deserialize_with = "from_str")]
     pub limit_price: u64,
+    #[serde(deserialize_with = "from_str")]
     pub order_id: u128,
-    pub time: DateTime<Utc>,
 }

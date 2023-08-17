@@ -151,8 +151,8 @@ pub async fn get_best_levels(
         None
     };
 
-    let best_ask_level = if !levels.bids.is_empty() {
-        Some(levels.bids.get(0).unwrap().clone())
+    let best_ask_level = if !levels.asks.is_empty() {
+        Some(levels.asks.get(0).unwrap().clone())
     } else {
         None
     };
@@ -297,6 +297,20 @@ async fn main() -> EconiaResult<()> {
 
     let market_id = if let Some(market_id) = market_id {
         println!("Market already exists, ID: {market_id}");
+
+        let (account_address, mut econia_client) =
+            account(&faucet_client, &args.node_url, econia_address.clone()).await;
+        fund(&e_apt, 10u64.pow(19), &mut econia_client, faucet_address).await?;
+        fund(&e_usdc, 10u64.pow(19), &mut econia_client, faucet_address).await?;
+        let entry = register_market_account(econia_address, &e_apt, &e_usdc, market_id, 0)?;
+        econia_client.submit_tx(entry).await?;
+        let e_apt_subunits = 1000 * 10u64.pow(8);
+        let entry = deposit_from_coinstore(econia_address, &e_apt, market_id, 0, e_apt_subunits)?;
+        econia_client.submit_tx(entry).await?;
+
+        let e_usdc_subunits = 10_000_000 * 10u64.pow(6);
+        let entry = deposit_from_coinstore(econia_address, &e_usdc, market_id, 0, e_usdc_subunits)?;
+        econia_client.submit_tx(entry).await?;
 
         let (bids_level, asks_level) = get_best_levels(econia_client.view_client(), market_id).await?;
 

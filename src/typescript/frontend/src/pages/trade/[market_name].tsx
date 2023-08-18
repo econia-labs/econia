@@ -332,7 +332,7 @@ export default function Market({ allMarketData, marketData }: Props) {
               </div>
             </div>
             <div className="border border-neutral-600">
-              <div className="bg-black py-3 pl-4">
+              <div className="bg-transparent py-3 pl-4">
                 <p className="font-jost font-bold text-white">Orders</p>
               </div>
 

@@ -20,6 +20,49 @@ use econia_sdk::{
     EconiaClient, EconiaResult,
 };
 
+/*
+Running the script:
+
+This script is documented at https://econia.dev/off-chain/rust-sdk.
+
+For a quick start, run the following:
+
+# install and run an aptos node
+brew install aptos # only if necessary
+mkdir aptos && cd aptos
+aptos node run-local-testnet --with-faucet
+
+# export urls in env
+export APTOS_NODE_URL=http://0.0.0.0:8080
+export APTOS_FAUCET_URL=http://0.0.0.0:8081
+
+# get the econia code
+git clone https://github.com/econia-labs/econia.git
+
+# deploy a faucet
+cd ./econia/src/move/faucet
+aptos init --profile econia_faucet_deploy
+export FAUCET_ADDR=<ACCOUNT-FROM-ABOVE>
+aptos move publish \
+        --named-addresses econia_faucet=$FAUCET_ADDR \
+        --profile econia_faucet_deploy \
+        --assume-yes
+
+# deploy an exchange
+cd ./econia/src/move/econia
+aptos init --profile econia_exchange_deploy # enter "local" for the chain
+export ECONIA_ADDR=<ACCOUNT-FROM-ABOVE>
+aptos move publish \
+        --override-size-check \
+        --included-artifacts none \
+        --named-addresses econia=$ECONIA_ADDR \
+        --profile econia_exchange_deploy \
+        --assume-yes
+
+# run the script
+cargo run -- $APTOS_NODE_URL $APTOS_FAUCET_URL $ECONIA_ADDR $FAUCET_ADDR
+*/
+
 #[derive(Parser, Debug)]
 pub struct Args {
     /// The URL of the Aptos node
@@ -312,7 +355,8 @@ async fn main() -> EconiaResult<()> {
         let entry = deposit_from_coinstore(econia_address, &e_usdc, market_id, 0, e_usdc_subunits)?;
         econia_client.submit_tx(entry).await?;
 
-        let (bids_level, asks_level) = get_best_levels(econia_client.view_client(), market_id).await?;
+        let (bids_level, asks_level) =
+            get_best_levels(econia_client.view_client(), market_id).await?;
 
         if bids_level.is_some() {
             let entry = place_market_order_user_entry(

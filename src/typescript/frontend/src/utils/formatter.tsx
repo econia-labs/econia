@@ -1,3 +1,6 @@
+import { type ReactElement } from "react";
+import Skeleton from "react-loading-skeleton";
+
 import { type PriceLevel } from "@/types/global";
 
 export const getLang = () => {
@@ -30,8 +33,8 @@ export const formatNumber = (
   num: number | undefined,
   digits: number,
   signDisplay: Intl.NumberFormatOptions["signDisplay"] = "never",
-): string => {
-  if (!num) return "-";
+): undefined | string => {
+  if (num == undefined) return undefined;
   const lang =
     typeof window === "undefined"
       ? "en"

@@ -2,10 +2,14 @@ use chrono::{DateTime, Utc};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use crate::order::{Side, Restriction, SelfMatchBehavior};
+use crate::{
+    error::TypeError,
+    order::{Restriction, SelfMatchBehavior, Side},
+};
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(untagged))]
 pub enum EconiaEvent {
     MarketRegistration(Box<MarketRegistrationEvent>),
     RecognizedMarket(Box<RecognizedMarketEvent>),
@@ -37,24 +41,29 @@ pub enum CancelReason {
     NotEnoughLiquidity,
     SelfMatchMaker,
     SelfMatchTaker,
+    TooSmallToFillLot,
+    ViolatedLimitPrice,
+}
+
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct TypeInfo {
+    pub account_address: String,
+    pub module_name: String,
+    pub struct_name: String,
 }
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct MarketRegistrationEvent {
     pub market_id: u64,
-    pub base_account_address: Option<String>,
-    pub base_module_name: Option<String>,
-    pub base_struct_name: Option<String>,
+    pub base_type: Option<TypeInfo>,
     pub base_name_generic: Option<String>,
-    pub quote_account_address: String,
-    pub quote_module_name: String,
-    pub quote_struct_name: String,
+    pub quote_type: TypeInfo,
     pub lot_size: u64,
     pub tick_size: u64,
     pub min_size: u64,
     pub underwriter_id: u64,
-    pub time: DateTime<Utc>,
 }
 
 #[derive(Clone, Debug)]
@@ -70,15 +79,10 @@ pub struct RecognizedMarketInfo {
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct RecognizedMarketEvent {
-    pub base_account_address: Option<String>,
-    pub base_module_name: Option<String>,
-    pub base_struct_name: Option<String>,
+    pub base_type: Option<TypeInfo>,
     pub base_name_generic: Option<String>,
-    pub quote_account_address: String,
-    pub quote_module_name: String,
-    pub quote_struct_name: String,
+    pub quote_type: TypeInfo,
     pub recognized_market_info: Option<RecognizedMarketInfo>,
-    pub time: DateTime<Utc>,
 }
 
 #[derive(Clone, Debug)]

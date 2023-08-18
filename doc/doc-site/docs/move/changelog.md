@@ -6,17 +6,19 @@ Econia Move source code adheres to [Semantic Versioning] and [Keep a Changelog] 
 
 ### Added
 
-- Assorted view functions ([#287], [#301], [#321], [#334]).
-- Assorted user- and market-level events with common order ID ([#321], [#347], [#360], [#366]).
+- Assorted view functions ([#287], [#301], [#308], [#321], [#334], [#428]).
+- Assorted user- and market-level events with common order ID ([#321], [#347], [#360], [#366], [#428]).
+- Authors field on manifest ([#380]).
 
 ### Changed
 
+- Use generic `econia` named address ([#368])
 - Fee assessment updated to be processed per fill, rather than per trade ([#321]).
 - Market order size is no longer automatically adjusted based on available market account holdings ([#321]).
 - Default self match behavior for swaps (signing swapper self match against signing market account) changed from `ABORT` to `CANCEL_TAKER` ([#321]).
 - Started using `order_id` instead of `market_order_id` for new implementations ([#321]).
 - Replaced `market::NO_MARKET_ACCOUNT` with `market::NO_TAKER_ADDRESS` to account for signing swappers ([#321]).
-- Allow limit orders to post less than minimum size if they first fill across the spread ([#347]).
+- Allow limit orders to post less than minimum size if they first fill across the spread ([#347], [#365]).
 
 ### Deprecated
 
@@ -31,11 +33,16 @@ Econia Move source code adheres to [Semantic Versioning] and [Keep a Changelog] 
 [#287]: https://github.com/econia-labs/econia/pull/287
 [#292]: https://github.com/econia-labs/econia/pull/292
 [#301]: https://github.com/econia-labs/econia/pull/301
+[#308]: https://github.com/econia-labs/econia/pull/308
 [#321]: https://github.com/econia-labs/econia/pull/321
 [#334]: https://github.com/econia-labs/econia/pull/334
 [#347]: https://github.com/econia-labs/econia/pull/347
 [#360]: https://github.com/econia-labs/econia/pull/360
+[#365]: https://github.com/econia-labs/econia/pull/365
 [#366]: https://github.com/econia-labs/econia/pull/366
+[#368]: https://github.com/econia-labs/econia/pull/368
+[#380]: https://github.com/econia-labs/econia/pull/380
+[#428]: https://github.com/econia-labs/econia/pull/428
 [keep a changelog]: https://keepachangelog.com/en/1.0.0/
 [semantic versioning]: https://semver.org/spec/v2.0.0.html
 [unreleased]: https://github.com/econia-labs/econia/compare/v4.0.2-audited...HEAD

@@ -3406,7 +3406,7 @@ module econia::user {
         custodian_id: u64
     ): vector<CancelOrderEvent>
     acquires MarketEventHandles {
-        event::emitted_events(
+        event::emitted_events_by_handle(
             &(borrow_market_event_handles_for_market_account_test(
                 market_id, user, custodian_id).
                 cancel_order_events))
@@ -3420,7 +3420,7 @@ module econia::user {
         custodian_id: u64
     ): vector<ChangeOrderSizeEvent>
     acquires MarketEventHandles {
-        event::emitted_events(
+        event::emitted_events_by_handle(
             &(borrow_market_event_handles_for_market_account_test(
                 market_id, user, custodian_id).
                 change_order_size_events))
@@ -3466,7 +3466,7 @@ module econia::user {
         custodian_id: u64
     ): vector<FillEvent>
     acquires MarketEventHandles {
-        event::emitted_events(
+        event::emitted_events_by_handle(
             &(borrow_market_event_handles_for_market_account_test(
                 market_id, user, custodian_id).
                 fill_events))
@@ -3558,7 +3558,7 @@ module econia::user {
         custodian_id: u64
     ): vector<PlaceLimitOrderEvent>
     acquires MarketEventHandles {
-        event::emitted_events(
+        event::emitted_events_by_handle(
             &(borrow_market_event_handles_for_market_account_test(
                 market_id, user, custodian_id).
                 place_limit_order_events))
@@ -3572,7 +3572,7 @@ module econia::user {
         custodian_id: u64
     ): vector<PlaceMarketOrderEvent>
     acquires MarketEventHandles {
-        event::emitted_events(
+        event::emitted_events_by_handle(
             &(borrow_market_event_handles_for_market_account_test(
                 market_id, user, custodian_id).
                 place_market_order_events))

@@ -566,17 +566,17 @@ module econia::incentives {
         IncentiveParameters,
         IntegratorFeeStores
     {
-        // Borrow mutable reference to integrator fee stores map for
-        // given quote coin type.
-        let integrator_fee_stores_map_ref_mut =
-            &mut borrow_global_mut<IntegratorFeeStores<QuoteCoinType>>(
+        // Immutably borrow integrator fee stores map for given quote
+        // coin type.
+        let integrator_fee_stores_map_ref =
+            &borrow_global<IntegratorFeeStores<QuoteCoinType>>(
                 integrator_address).map;
-        // Borrow mutable reference to corresponding integrator fee
-        // store for given market ID.
-        let integrator_fee_store_ref_mut = tablist::borrow_mut(
-            integrator_fee_stores_map_ref_mut, market_id);
+        // Immutably borrow corresponding integrator fee store for
+        // given market ID.
+        let integrator_fee_store_ref = tablist::borrow(
+            integrator_fee_stores_map_ref, market_id);
         // Get current tier number.
-        let current_tier = integrator_fee_store_ref_mut.tier;
+        let current_tier = integrator_fee_store_ref.tier;
         // Assert actually attempting to upgrade to new tier.
         assert!(new_tier > current_tier, E_NOT_AN_UPGRADE);
         // Get cumulative activation fee for current tier.

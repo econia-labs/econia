@@ -1,6 +1,7 @@
 [workspace]
-members = ["aggregator", "api", "db", "types"]
-exclude = ["dependencies", "sdk"]
+resolver = "2"
+members = ["aggregator", "api", "db", "types", "sdk"]
+exclude = ["dependencies"]
 
 [workspace.dependencies]
 axum = "0.6.19"
@@ -24,3 +25,10 @@ tower = "0.4.13"
 tower-http = "0.4.3"
 tracing = "0.1.37"
 tracing-subscriber = "0.3.17"
+
+
+# Work around dependency issues.
+# Check this: https://github.com/aptos-labs/aptos-core/blob/4bddd6ca5b65b12f1890ead29392e76b971ad031/Cargo.toml#L703-L710
+[patch.crates-io]
+merlin = { git = "https://github.com/aptos-labs/merlin" }
+x25519-dalek = { git = "https://github.com/aptos-labs/x25519-dalek", branch = "zeroize_v1" }

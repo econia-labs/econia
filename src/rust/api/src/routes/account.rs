@@ -385,7 +385,7 @@ mod tests {
         assert_eq!(response.status(), StatusCode::OK);
 
         let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
-        let res = serde_json::from_slice::<Vec<types::order::Fill>>(&body);
+        let res = serde_json::from_slice::<Vec<types::events::FillEvent>>(&body);
         assert!(res.is_ok());
     }
 

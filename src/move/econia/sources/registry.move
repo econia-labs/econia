@@ -2481,7 +2481,7 @@ module econia::registry {
         assert!(get_market_id_base_coin<BC, QC>(
                     lot_size_2, tick_size_2, min_size_2) == option::none(), 0);
         // Assert events.
-        let market_registration_events = event::emitted_events(
+        let market_registration_events = event::emitted_events_by_handle(
             &borrow_global<Registry>(@econia).market_registration_events);
         assert!(market_registration_events == vector[], 0);
         // Register markets.
@@ -2491,7 +2491,7 @@ module econia::registry {
         register_market_base_coin_internal<BC, QC, UC>(
             lot_size_2, tick_size_2, min_size_2, assets::mint_test(fee));
         // Assert events.
-        market_registration_events = event::emitted_events(
+        market_registration_events = event::emitted_events_by_handle(
             &borrow_global<Registry>(@econia).market_registration_events);
         assert!(market_registration_events == vector[
             MarketRegistrationEvent{
@@ -2541,14 +2541,14 @@ module econia::registry {
         // Drop underwriter capability.
         drop_underwriter_capability_test(underwriter_capability);
         // Assert events.
-        let recognized_market_events = event::emitted_events(
+        let recognized_market_events = event::emitted_events_by_handle(
             &borrow_global<RecognizedMarkets>(@econia).
             recognized_market_events);
         assert!(recognized_market_events == vector[], 0);
         // Set both as recognized markets.
         set_recognized_markets(econia, vector[1, 2]);
         // Assert events.
-        recognized_market_events = event::emitted_events(
+        recognized_market_events = event::emitted_events_by_handle(
             &borrow_global<RecognizedMarkets>(@econia).
             recognized_market_events);
         assert!(recognized_market_events == vector[
@@ -2642,7 +2642,7 @@ module econia::registry {
         // Remove both recognized markets.
         remove_recognized_markets(econia, vector[1, 2]);
         // Assert events.
-        recognized_market_events = event::emitted_events(
+        recognized_market_events = event::emitted_events_by_handle(
             &borrow_global<RecognizedMarkets>(@econia).
             recognized_market_events);
         assert!(vector::length(&recognized_market_events) == 4, 0);
@@ -2691,7 +2691,7 @@ module econia::registry {
             underwriter_id: NO_UNDERWRITER
         }, 0);
         // Assert events.
-        market_registration_events = event::emitted_events(
+        market_registration_events = event::emitted_events_by_handle(
             &borrow_global<Registry>(@econia).market_registration_events);
         assert!(vector::length(&market_registration_events) == 3, 0);
         assert!(vector::pop_back(&mut market_registration_events) ==
@@ -2705,7 +2705,7 @@ module econia::registry {
                 min_size: min_size_3,
                 underwriter_id: NO_UNDERWRITER
             }, 0);
-        recognized_market_events = event::emitted_events(
+        recognized_market_events = event::emitted_events_by_handle(
             &borrow_global<RecognizedMarkets>(@econia).
             recognized_market_events);
         assert!(vector::length(&recognized_market_events) == 5, 0);
@@ -2727,7 +2727,7 @@ module econia::registry {
         // Set the second market as the recognized market, thus removing
         // the third market as recognized, and assert event.
         set_recognized_markets(econia, vector[2]);
-        recognized_market_events = event::emitted_events(
+        recognized_market_events = event::emitted_events_by_handle(
             &borrow_global<RecognizedMarkets>(@econia).
             recognized_market_events);
         assert!(vector::length(&recognized_market_events) == 6, 0);

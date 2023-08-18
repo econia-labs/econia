@@ -8,7 +8,7 @@ import { ECONIA_ADDR } from "@/env";
 import { useMarketAccountBalance } from "@/hooks/useMarketAccountBalance";
 import { type ApiMarket } from "@/types/api";
 import { type Side } from "@/types/global";
-import { fromDecimalSize } from "@/utils/econia";
+import { toRawCoinAmount } from "@/utils/coin";
 import { TypeTag } from "@/utils/TypeTag";
 
 import { OrderEntryInfo } from "./OrderEntryInfo";
@@ -27,6 +27,7 @@ export const MarketOrderEntry: React.FC<{
     handleSubmit,
     register,
     setValue,
+    setError,
     formState: { errors },
   } = useForm<MarketFormValues>();
   const baseBalance = useMarketAccountBalance(
@@ -40,38 +41,64 @@ export const MarketOrderEntry: React.FC<{
     marketData.quote,
   );
 
-  const onSubmit = async (values: MarketFormValues) => {
+  const onSubmit = async ({ size }: MarketFormValues) => {
+    if (marketData.base == null) {
+      throw new Error("Markets without base coin not supported");
+    }
+
+    if (baseBalance.data == null || quoteBalance.data == null) {
+      throw new Error("Could not read wallet balances");
+    }
+
+    const rawSize = toRawCoinAmount(size, marketData.base.decimals);
+
+    // check that size satisfies lot size
+    if (!rawSize.modulo(marketData.lot_size).eq(0)) {
+      setError("size", { message: "INVALID LOT SIZE" });
+      return;
+    }
+
+    // check that size satisfies min size
+    if (rawSize.lt(marketData.min_size)) {
+      setError("size", { message: "SIZE TOO SMALL" });
+      return;
+    }
+
+    const rawBaseBalance = toRawCoinAmount(
+      baseBalance.data,
+      marketData.base.decimals,
+    );
+
+    // market sell -- make sure user has enough base balance
+    if (side === "sell") {
+      // check that user has sufficient base coins on ask
+      if (rawBaseBalance.lt(rawSize)) {
+        setError("size", { message: "INSUFFICIENT BALANCE" });
+        return;
+      }
+    }
+
     const orderSideMap: Record<Side, order.Side> = {
       buy: "bid",
       sell: "ask",
     };
     const orderSide = orderSideMap[side];
 
-    if (marketData.base == null) {
-      // TODO: handle generic markets
-    } else {
-      const payload = entryFunctions.placeMarketOrderUserEntry(
-        ECONIA_ADDR,
-        TypeTag.fromApiCoin(marketData.base).toString(),
-        TypeTag.fromApiCoin(marketData.quote).toString(),
-        BigInt(marketData.market_id), // market id
-        "0x1", // TODO get integrator ID
-        orderSide,
-        BigInt(
-          fromDecimalSize({
-            size: values.size,
-            lotSize: marketData.lot_size,
-            baseCoinDecimals: marketData.base.decimals,
-          }).toString(),
-        ),
-        "abort", // TODO don't hardcode this either
-      );
+    const payload = entryFunctions.placeMarketOrderUserEntry(
+      ECONIA_ADDR,
+      TypeTag.fromApiCoin(marketData.base).toString(),
+      TypeTag.fromApiCoin(marketData.quote).toString(),
+      BigInt(marketData.market_id), // market id
+      "0x1", // TODO get integrator ID
+      orderSide,
+      BigInt(rawSize.div(marketData.lot_size).toString()),
+      "abort", // TODO don't hardcode this either
+    );
 
-      await signAndSubmitTransaction({
-        type: "entry_function_payload",
-        ...payload,
-      });
-    }
+    await signAndSubmitTransaction({
+      type: "entry_function_payload",
+      ...payload,
+    });
   };
 
   return (

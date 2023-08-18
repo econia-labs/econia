@@ -1415,17 +1415,17 @@ collisions with the matching engine.
     <a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a>,
     <a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStores">IntegratorFeeStores</a>
 {
-    // Borrow mutable reference <b>to</b> integrator fee stores map for
-    // given quote <a href="">coin</a> type.
-    <b>let</b> integrator_fee_stores_map_ref_mut =
-        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStores">IntegratorFeeStores</a>&lt;QuoteCoinType&gt;&gt;(
+    // Immutably borrow integrator fee stores map for given quote
+    // <a href="">coin</a> type.
+    <b>let</b> integrator_fee_stores_map_ref =
+        &<b>borrow_global</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStores">IntegratorFeeStores</a>&lt;QuoteCoinType&gt;&gt;(
             integrator_address).map;
-    // Borrow mutable reference <b>to</b> corresponding integrator fee
-    // store for given <a href="market.md#0xc0deb00c_market">market</a> ID.
-    <b>let</b> integrator_fee_store_ref_mut = <a href="tablist.md#0xc0deb00c_tablist_borrow_mut">tablist::borrow_mut</a>(
-        integrator_fee_stores_map_ref_mut, market_id);
+    // Immutably borrow corresponding integrator fee store for
+    // given <a href="market.md#0xc0deb00c_market">market</a> ID.
+    <b>let</b> integrator_fee_store_ref = <a href="tablist.md#0xc0deb00c_tablist_borrow">tablist::borrow</a>(
+        integrator_fee_stores_map_ref, market_id);
     // Get current tier number.
-    <b>let</b> current_tier = integrator_fee_store_ref_mut.tier;
+    <b>let</b> current_tier = integrator_fee_store_ref.tier;
     // Assert actually attempting <b>to</b> upgrade <b>to</b> new tier.
     <b>assert</b>!(new_tier &gt; current_tier, <a href="incentives.md#0xc0deb00c_incentives_E_NOT_AN_UPGRADE">E_NOT_AN_UPGRADE</a>);
     // Get cumulative activation fee for current tier.

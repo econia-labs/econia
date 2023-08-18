@@ -2216,6 +2216,16 @@ Order ID corresponds to an order that did not post.
 
 
 
+<a name="0xc0deb00c_market_E_ORDER_PRICE_MISMATCH"></a>
+
+Order price field does not match AVL queue insertion key price.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_ORDER_PRICE_MISMATCH">E_ORDER_PRICE_MISMATCH</a>: u64 = 32;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_market_E_POST_OR_ABORT_CROSSES_SPREAD"></a>
 
 Post-or-abort limit order price crosses spread.
@@ -5583,6 +5593,7 @@ book.
 
 
 * <code>test_get_price_levels()</code>
+* <code>test_get_price_levels_mismatch()</code>
 
 
 <pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_get_price_levels_for_side">get_price_levels_for_side</a>(order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">market::OrderBook</a>, side: bool, n_price_levels_max: u64): <a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_PriceLevel">market::PriceLevel</a>&gt;
@@ -5617,10 +5628,16 @@ book.
                 // If order at head of the queue is in price level:
                 <b>if</b> (<a href="_contains">option::contains</a>(
                         &<a href="avl_queue.md#0xc0deb00c_avl_queue_get_head_key">avl_queue::get_head_key</a>(avlq_ref_mut), &price)) {
-                    // Pop order, storing only its size.
-                    <b>let</b> <a href="market.md#0xc0deb00c_market_Order">Order</a>{size: order_size, price: _, <a href="user.md#0xc0deb00c_user">user</a>: _,
-                              custodian_id: _, order_access_key: _} =
-                        <a href="avl_queue.md#0xc0deb00c_avl_queue_pop_head">avl_queue::pop_head</a>(avlq_ref_mut);
+                    // Pop order, storing only its size and price.
+                    <b>let</b> <a href="market.md#0xc0deb00c_market_Order">Order</a>{
+                        size: order_size,
+                        price: order_price,
+                        <a href="user.md#0xc0deb00c_user">user</a>: _,
+                        custodian_id: _,
+                        order_access_key: _
+                    } = <a href="avl_queue.md#0xc0deb00c_avl_queue_pop_head">avl_queue::pop_head</a>(avlq_ref_mut);
+                    // Verify order price equals insertion key.
+                    <b>assert</b>!(order_price == price, <a href="market.md#0xc0deb00c_market_E_ORDER_PRICE_MISMATCH">E_ORDER_PRICE_MISMATCH</a>);
                     // Increment tracker for price level size. Note
                     // that no overflow is checked because an open
                     // order's size is a u64, and an AVL queue can

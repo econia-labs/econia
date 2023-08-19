@@ -7,39 +7,42 @@ ARG FAUCET_ROOT=$MOVE_ROOT/faucet
 ARG ACCOUNTS_ROOT=src/docker/local-testnet/accounts
 
 # Copy in files.
-WORKDIR /app
-COPY $ECONIA_ROOT/Move.toml econia/
-COPY $ECONIA_ROOT/sources/* econia/sources/
-COPY $FAUCET_ROOT/Move.toml faucet/
-COPY $FAUCET_ROOT/sources/* faucet/sources/
-COPY $ACCOUNTS_ROOT accounts/
+COPY $ECONIA_ROOT/Move.toml /app/econia/
+COPY $ECONIA_ROOT/sources/* /app/econia/sources/
+COPY $FAUCET_ROOT/Move.toml /app/faucet/
+COPY $FAUCET_ROOT/sources/* /app/faucet/sources/
+COPY $ACCOUNTS_ROOT /app/accounts/
 
 # Start a local testnet, initialize profiles, publish Econia and faucet packages.
 RUN aptos node run-local-testnet \
-        --test-dir data \
+        --test-dir /app/data \
         --with-faucet \
-        & sleep 30 \
-    && aptos init \
+        & \
+    sleep 30 && \
+    aptos init \
         --network local \
-        --private-key-file accounts/econia.key \
+        --private-key-file /app/accounts/econia.key \
         --profile econia \
-    && aptos move publish \
+        && \
+    aptos move publish \
         --assume-yes \
         --included-artifacts none \
-        --named-addresses econia=$(cat accounts/econia.address) \
+        --named-addresses econia=$(cat /app/accounts/econia.address) \
         --override-size-check \
-        --package-dir econia \
+        --package-dir /app/econia \
         --profile econia \
-    && aptos init \
+        && \
+    aptos init \
         --network local \
-        --private-key-file accounts/faucet.key \
+        --private-key-file /app/accounts/faucet.key \
         --profile faucet \
-    && aptos move publish \
+        && \
+    aptos move publish \
         --assume-yes \
         --included-artifacts none \
-        --named-addresses econia_faucet=$(cat accounts/faucet.address) \
+        --named-addresses econia_faucet=$(cat /app/accounts/faucet.address) \
         --override-size-check \
-        --package-dir faucet \
+        --package-dir /app/faucet \
         --profile faucet
 
 # Copy over chain data only.
@@ -47,6 +50,8 @@ FROM aptos-cli as runtime
 COPY --from=publish /app/data /app/data
 
 # Serve local testnet.
-CMD aptos node run-local-testnet \
-        --test-dir /app/data \
-        --with-faucet
+ENTRYPOINT [ \
+    "usr/local/bin/aptos", "node", "run-local-testnet", \
+    "--test-dir", "/app/data", \
+    "--with-faucet" \
+]

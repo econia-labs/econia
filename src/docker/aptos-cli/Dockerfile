@@ -25,7 +25,7 @@ RUN git clone \
         --profile cli
 
 # Copy over combiled binary only and get runtime dependency.
-FROM debian:bookworm AS runtime
+FROM debian:bookworm-slim AS runtime
 COPY --from=compile /aptos-core/target/cli/aptos /usr/local/bin
 RUN apt-get update && \
     apt-get install \

@@ -22,11 +22,11 @@ RUN git clone \
     RUSTFLAGS="--cfg tokio_unstable" cargo build \
         --manifest-path aptos-core/Cargo.toml \
         --package aptos \
-        --release
+        --profile cli
 
 # Copy over only combiled binary and get runtime dependencies.
 FROM debian:bookworm AS runtime
-COPY --from=compile /aptos-core/target/release/aptos /usr/local/bin
+COPY --from=compile /aptos-core/target/cli/aptos /usr/local/bin
 RUN apt-get update && \
     apt-get install \
         git \

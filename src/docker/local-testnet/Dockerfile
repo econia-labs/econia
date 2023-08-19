@@ -7,42 +7,43 @@ ARG FAUCET_ROOT=$MOVE_ROOT/faucet
 ARG ACCOUNTS_ROOT=src/docker/local-testnet/accounts
 
 # Copy in files.
-COPY $ECONIA_ROOT/Move.toml /app/econia/
-COPY $ECONIA_ROOT/sources/* /app/econia/sources/
-COPY $FAUCET_ROOT/Move.toml /app/faucet/
-COPY $FAUCET_ROOT/sources/* /app/faucet/sources/
-COPY $ACCOUNTS_ROOT /app/accounts/
+WORKDIR /app/
+COPY $ECONIA_ROOT/Move.toml econia/
+COPY $ECONIA_ROOT/sources/* econia/sources/
+COPY $FAUCET_ROOT/Move.toml faucet/
+COPY $FAUCET_ROOT/sources/* faucet/sources/
+COPY $ACCOUNTS_ROOT accounts/
 
 # Start a local testnet, initialize profiles, publish Econia and faucet packages.
 RUN aptos node run-local-testnet \
-        --test-dir /app/data \
+        --test-dir data \
         --with-faucet \
         & \
     sleep 30 && \
     aptos init \
         --network local \
-        --private-key-file /app/accounts/econia.key \
+        --private-key-file accounts/econia.key \
         --profile econia \
         && \
     aptos move publish \
         --assume-yes \
         --included-artifacts none \
-        --named-addresses econia=$(cat /app/accounts/econia.address) \
+        --named-addresses econia=$(cat accounts/econia.address) \
         --override-size-check \
-        --package-dir /app/econia \
+        --package-dir econia \
         --profile econia \
         && \
     aptos init \
         --network local \
-        --private-key-file /app/accounts/faucet.key \
+        --private-key-file accounts/faucet.key \
         --profile faucet \
         && \
     aptos move publish \
         --assume-yes \
         --included-artifacts none \
-        --named-addresses econia_faucet=$(cat /app/accounts/faucet.address) \
+        --named-addresses econia_faucet=$(cat accounts/faucet.address) \
         --override-size-check \
-        --package-dir /app/faucet \
+        --package-dir faucet \
         --profile faucet
 
 # Copy over chain data only.

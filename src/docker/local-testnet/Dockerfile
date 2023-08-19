@@ -1,52 +1,52 @@
-FROM aptos-cli
+FROM aptos-cli as publish
 
-# Publication addresses and private keys.
-ARG ECONIA_ADDRESS=0xeeee0dd966cd4fc739f76006591239b32527edbb7c303c431f8c691bda150b40
-ARG FAUCET_ADDRESS=0xffff094ef8ccfa9137adcb13a2fae2587e83c348b32c63f811cc19fcc9fc5878
-ARG ECONIA_PRIVATE_KEY=0x8eeb9bd1808d99ef54758060f5067b5707be379058cfd83cd983fe7e47063a09
-ARG FAUCET_PRIVATE_KEY=0x3a85635d893dd29f0764d5269b39531085e3f2642608baa05ba8f5f6a6f9ff6e
-
-# Move package folders.
+# Declare source paths relative to Econia repository root.
 ARG MOVE_ROOT=src/move
 ARG ECONIA_ROOT=$MOVE_ROOT/econia
 ARG FAUCET_ROOT=$MOVE_ROOT/faucet
+ARG ACCOUNTS_ROOT=src/docker/local-testnet/accounts
 
-# Copy Move packages into image.
-COPY $ECONIA_ROOT/Move.toml /chain/econia/
-COPY $ECONIA_ROOT/sources/* /chain/econia/sources/
-COPY $FAUCET_ROOT/Move.toml /chain/faucet/
-COPY $FAUCET_ROOT/sources/* /chain/faucet/sources/
+# Copy in files.
+WORKDIR /app
+COPY $ECONIA_ROOT/Move.toml econia/
+COPY $ECONIA_ROOT/sources/* econia/sources/
+COPY $FAUCET_ROOT/Move.toml faucet/
+COPY $FAUCET_ROOT/sources/* faucet/sources/
+COPY $ACCOUNTS_ROOT accounts/
 
 # Start a local testnet, initialize profiles, publish Econia and faucet packages.
-WORKDIR /chain/
 RUN aptos node run-local-testnet \
         --test-dir data \
         --with-faucet \
         & sleep 30 \
     && aptos init \
         --network local \
-        --private-key $ECONIA_PRIVATE_KEY \
+        --private-key-file accounts/econia.key \
         --profile econia \
     && aptos move publish \
         --assume-yes \
         --included-artifacts none \
-        --named-addresses econia=$ECONIA_ADDRESS \
+        --named-addresses econia=$(cat accounts/econia.address) \
         --override-size-check \
         --package-dir econia \
         --profile econia \
     && aptos init \
         --network local \
-        --private-key $FAUCET_PRIVATE_KEY \
+        --private-key-file accounts/faucet.key \
         --profile faucet \
     && aptos move publish \
         --assume-yes \
         --included-artifacts none \
-        --named-addresses econia_faucet=$FAUCET_ADDRESS \
+        --named-addresses econia_faucet=$(cat accounts/faucet.address) \
         --override-size-check \
         --package-dir faucet \
         --profile faucet
 
+# Copy over chain data only.
+FROM aptos-cli as runtime
+COPY --from=publish /app/data /app/data
+
 # Serve local testnet.
 CMD aptos node run-local-testnet \
-        --test-dir data \
+        --test-dir /app/data \
         --with-faucet

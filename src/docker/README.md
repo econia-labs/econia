@@ -6,9 +6,7 @@ All commands should be run from the Econia repository root, to ensure that any r
 
 # Aptos CLI
 
-This Dockerfile builds an image with the most up-to-date `aptos` CLI, along with `git`.
-
-The `--platform` flag is pinned here to ensure that the solver can find the corresponding local image, rather than trying to pull it from Docker Hub, when using this image as a parent image for other local builds.
+This Dockerfile builds an image containing the Aptos CLI compiled from source, to avoid potential platform issues that could ensue from other image generation methods.
 
 ## Build
 
@@ -16,8 +14,7 @@ The `--platform` flag is pinned here to ensure that the solver can find the corr
 # From Econia repo root
 docker build . \
     --file src/docker/aptos-cli/Dockerfile \
-    --tag aptos-cli \
-    --platform=linux/amd64
+    --tag aptos-cli
 ```
 
 ## Version check
@@ -36,21 +33,21 @@ After building the Aptos CLI image locally:
 # From Econia repo root
 docker build . \
     --file src/docker/local-testnet/Dockerfile \
-    --tag local-testnet \
-    --platform=linux/amd64
+    --tag local-testnet
 ```
 
-This command uses plaintext (compromised) private keys to publish Econia and the faucet under the following single-signer vanity address accounts:
+This command uses plaintext (compromised) private keys to publish Econia and the Econia faucet under the following single-signer vanity address accounts:
 
 ```bash
-ECONIA_ADDRESS=0xeeee0dd966cd4fc739f76006591239b32527edbb7c303c431f8c691bda150b40
-FAUCET_ADDRESS=0xffff094ef8ccfa9137adcb13a2fae2587e83c348b32c63f811cc19fcc9fc5878
+# From Econia repo root
+ECONIA_ADDRESS=$(cat src/docker/local-testnet/accounts/econia.address)
+FAUCET_ADDRESS=$(cat src/docker/local-testnet/accounts/faucet.address)
 ```
 
 ## Serve
 
-Once the image is built, you can serve a local testnet containing the Econia and faucet packages as a background process (via detached container mode).
-This command publishes the local testnet node REST API on port 8080 and the faucet API on port 8081:
+Once the image is built, you can serve a local testnet containing the Econia and Econia faucet packages as a background process (via detached container mode).
+This command publishes the local testnet node REST API on port 8080 and the Aptos faucet API on port 8081:
 
 ```bash
 CONTAINER_ID=$(docker run \
@@ -60,7 +57,9 @@ CONTAINER_ID=$(docker run \
     local-testnet)
 ```
 
-While the local testnet is running, you can look up the faucet account using the published node REST API port (note that the faucet API may take longer to start up than the node REST API):
+docker run local-testnet
+
+While the local testnet is running, you can look up the Econia faucet account using the published node REST API port (note that the Aptos faucet API may take longer to start up than the node REST API):
 
 ```bash
 aptos account list --account $FAUCET_ADDRESS --url http://localhost:8080

@@ -1,4 +1,4 @@
-FROM aptos-cli as genesis
+FROM aptos-cli
 
 # Publication addresses and private keys.
 ARG ECONIA_ADDRESS=0xeeee0dd966cd4fc739f76006591239b32527edbb7c303c431f8c691bda150b40
@@ -47,7 +47,6 @@ RUN aptos node run-local-testnet \
         --profile faucet
 
 # Serve local testnet.
-WORKDIR /chain/
 CMD aptos node run-local-testnet \
         --test-dir data \
         --with-faucet

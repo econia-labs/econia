@@ -14,8 +14,11 @@ COPY $FAUCET_ROOT/Move.toml faucet/
 COPY $FAUCET_ROOT/sources/* faucet/sources/
 COPY $ACCOUNTS_ROOT accounts/
 
-# Start a local testnet, initialize profiles, publish Econia and faucet packages.
-RUN aptos node run-local-testnet \
+# Get git, start a local testnet, initialize profiles, publish packages.
+RUN apt-get update && \
+    apt-get install git -y && \
+    rm -rf /var/lib/apt/lists/* && \
+    aptos node run-local-testnet \
         --test-dir data \
         --with-faucet \
         & \

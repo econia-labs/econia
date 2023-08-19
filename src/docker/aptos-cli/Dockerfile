@@ -24,12 +24,11 @@ RUN git clone \
         --package aptos \
         --profile cli
 
-# Copy over only combiled binary and get runtime dependencies.
+# Copy over combiled binary only and get runtime dependency.
 FROM debian:bookworm AS runtime
 COPY --from=compile /aptos-core/target/cli/aptos /usr/local/bin
 RUN apt-get update && \
     apt-get install \
-        git \
         libssl-dev \
         -y \
         && \

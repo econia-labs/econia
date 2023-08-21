@@ -57,8 +57,6 @@ CONTAINER_ID=$(docker run \
     local-testnet)
 ```
 
-docker run local-testnet
-
 While the local testnet is running, you can look up the Econia faucet account using the published node REST API port (note that the Aptos faucet API may take longer to start up than the node REST API):
 
 ```bash

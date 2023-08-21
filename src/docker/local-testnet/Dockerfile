@@ -49,9 +49,11 @@ RUN apt-get update && \
         --package-dir faucet \
         --profile faucet
 
-# Copy over chain data only.
+# Copy over chain data only, expose REST API and Aptos Faucet API.
 FROM aptos-cli as runtime
 COPY --from=publish /app/data /app/data
+EXPOSE 8080
+EXPOSE 8081
 
 # Serve local testnet.
 ENTRYPOINT [ \

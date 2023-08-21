@@ -1,22 +1,23 @@
 # Rust SDK
 
-The code for the Rust SDK lives in `/econia/src/rust/sdk`.
-This code provides programmatic access to Econia exchanges, in addition to offering an example to put it all together shown later in this document.
+The code for the Rust SDK lives in [`/econia/src/rust/sdk`](https://github.com/econia-labs/econia/tree/main/src/rust/sdk/example).
+The SDK provides direct access to the Econia protocol, and comes with an example script described below.
 
 # Structure
 
 - The main struct of the SDK is `EconiaClient`.
   This allows you to submit transactions, query events and get a view client (`EconiaViewClient`).
-  To create a new `EconiaClient`, you need a node URL, the Econia contract's address, an `aptos_sdk::types::LocalAccount` and you can optionally pass a client config.
+  To create a new `EconiaClient`, you need a node URL, the Econia package address, an `aptos_sdk::types::LocalAccount`, and you can optionally pass a client config.
 
-- In `econia_sdk::entry`, you can find helper functions to create transactions for every entry function of the Econia contract.
+- In `econia_sdk::entry`, you can find helper functions to create transactions for every entry function of the Econia package.
   These can then be submitted using the `EconiaClient::submit_tx`.
 
 - To access view functions, you can use `EconiaClient::view_client`, which will return an `EconiaViewClient`, which has bindings for every view function in the Econia client.
 
 # Example script
 
-You can see the source of the script [here](https://github.com/econia-labs/econia/blob/main/src/rust/sdk/example/src/main.rs). It is recommended that you follow the tutorial with the source code opened in another window.
+You can see the source of the script [here](https://github.com/econia-labs/econia/blob/main/src/rust/sdk/example/src/main.rs).
+It is recommended that you follow the tutorial with the source code opened in another window.
 
 ## Setup
 
@@ -65,7 +66,8 @@ aptos move publish \
         --assume-yes
 ```
 
-It's time to run the script! Setting our environment variables will have cleared the initial setup prompts for us.
+It's time to run the script!
+Setting our environment variables will have cleared the initial setup prompts for us.
 In order to run, go into the `econia/src/rust/sdk/example` folder and run `cargo run -- $APTOS_NODE_URL $APTOS_FAUCET_URL $ECONIA_ADDR $FAUCET_ADDR`.
 
 ## Understanding the example script
@@ -81,7 +83,7 @@ The `account` helper function creates a new Aptos account and funds it through t
 
 ### Step 1: Create a market
 
-First, we'll create a new market on the freshly deployed Econia contract.
+First, we'll create a new market on the freshly deployed Econia package.
 
 To do this, we will create an `EntryFunction`.
 This is a struct passed to `EconiaClient::submit_tx` in order to call a contract's function.
@@ -154,14 +156,14 @@ Press enter to continue (next step: Set up account B)
 
 This is a bit more complex than previous code.
 Let's inspect the `place_limit_order_user_entry` function.
-It's first argument, as all first arguments of functions in the `entry` module is the Econia contract address.
+Its first argument is the Econia package address, as is the case for all other functions in the `entry` module.
 Then comes two type arguments, base and quote.
-These are Aptos type arguments, you can see in the `init` function how to create a type argument, or look into the Aptos docs for more details.
+These are Aptos type arguments: see in the `init` function to review how they are created, or look into the Aptos docs for more details.
 Next we have the market ID which is a simple integer.
 Then comes the integrator.
 You can read more about integrators [here](../overview/incentives.md), but for now, we'll just set this to the Econia address.
-We then have side, size and price which are all pretty self-explanatory.
-Next up is restrictions and self match behavior.
+We then have side, size, and price which are integer values. You can read more about these [here](https://github.com/econia-labs/econia/overview/orders.md#units-and-market-parameters).
+Next up is [restrictions](../overview/matching#restrictions) and [self match behavior](../overview/matching#self-match-behavior).
 You can read more about each of these enums variants [here](https://github.com/econia-labs/econia/blob/6256710b2ebe306d2861e6d02d72f95373500ab6/src/move/econia/sources/market.move#L859-L942).
 
 ### Step 4: Set up account B
@@ -180,7 +182,7 @@ Press enter to continue (next step: Place two market orders with account B)
 
 ### Step 5: Place two market orders with account A
 
-We'll now place to market orders.
+We'll now place two market orders.
 For this, you've probably guessed it, we'll use the `place_market_order_user_entry` function.
 
 ```

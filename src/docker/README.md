@@ -1,6 +1,6 @@
 # Dockerfiles
 
-This directory contains Dockerfiles arranged into subdirectories of the form `purpose/Dockerfile` (instead of having many `<purpose>.Dockerfile`s in one directory), such that purpose-specific `.dockerignore` files can be added later without introducing conflict.
+This directory arranges Dockerfiles into subdirectories of the form `purpose/Dockerfile` (instead of having many `<purpose>.Dockerfile`s in one directory), such that purpose-specific `.dockerignore` files can be added later without introducing conflict.
 
 # End-to-end compose
 
@@ -8,12 +8,15 @@ This Docker compose file specifies an end-to-end testing environment based on a 
 
 ## Start up
 
+> This command may take up to 10 minutes or so the first time you run it, since it will have to compile the Aptos CLI from source then run several commands against a local testnet.
+> Subsequent calls should be much faster, however, due to Docker's caching mechanism.
+
 ```bash
 # From Econia repo root
 docker compose --file src/docker/compose.e2e.yml up --detach
 ```
 
-While the local testnet is running, you can look up the Econia faucet account using the published node REST API port (note that the Aptos faucet API may take longer to start up than the node REST API):
+While the local testnet is running, you can look up published Move resources using the published node REST API port (note that the Aptos faucet API may take longer to start up than the node REST API):
 
 ```bash
 # From Econia repo root
@@ -70,24 +73,24 @@ docker stop $CONTAINER_ID
 
 - List all images:
 
-    ```
-    docker images -a
-    ```
+  ```
+  docker images -a
+  ```
 
 - List all containers:
 
-    ```
-    docker ps -a
-    ```
+  ```
+  docker ps -a
+  ```
 
 - Stop and remove all containers:
 
-    ```
-    docker ps -aq | xargs docker stop | xargs docker rm
-    ```
+  ```
+  docker ps -aq | xargs docker stop | xargs docker rm
+  ```
 
 - Prune all containers, images, and volumes:
 
-    ```
-    docker system prune -a --volumes
-    ```
+  ```
+  docker system prune -a --volumes
+  ```

@@ -1,9 +1,17 @@
-FROM rust:1-bookworm AS compile-cli
-
+# Aptos CLI metadata.
 ARG GIT_TAG=aptos-cli-v2.0.3
 ARG GIT_REPO=https://github.com/aptos-labs/aptos-core.git
 
+# Paths relative to Econia repository root.
+ARG MOVE_ROOT=src/move
+ARG ECONIA_ROOT=$MOVE_ROOT/econia
+ARG FAUCET_ROOT=$MOVE_ROOT/faucet
+ARG ACCOUNT_FILES=src/docker/chain/accounts/
+
 # Get Aptos repo and build dependencies, then compile.
+FROM rust:1-bookworm AS compile-cli
+ARG GIT_TAG
+ARG GIT_REPO
 RUN git clone \
         $GIT_REPO \
         --branch $GIT_TAG \
@@ -24,9 +32,9 @@ RUN git clone \
         --package aptos \
         --profile cli
 
-# Copy over combiled binary only and get runtime dependency.
+# Copy over combiled CLI binary only and get runtime dependency.
 FROM debian:bookworm-slim AS run-cli
-COPY --from=compile /aptos-core/target/cli/aptos /usr/local/bin
+COPY --from=compile-cli /aptos-core/target/cli/aptos /usr/local/bin
 RUN apt-get update && \
     apt-get install \
         libssl-dev \
@@ -34,21 +42,20 @@ RUN apt-get update && \
         && \
     rm -rf /var/lib/apt/lists/*
 
+# Publish Econia and Econia faucet to local testnet.
 FROM run-cli as publish-packages
 
-# Declare paths relative to Econia repository root.
-ARG MOVE_ROOT=src/move
-ARG ECONIA_ROOT=$MOVE_ROOT/econia
-ARG FAUCET_ROOT=$MOVE_ROOT/faucet
-ARG ACCOUNTS_ROOT=src/docker/chain/accounts/
-
-# Copy in files.
+# Copy in Move and account files.
+ARG MOVE_ROOT
+ARG ECONIA_ROOT
+ARG FAUCET_ROOT
+ARG ACCOUNTS_ROOT
 WORKDIR /app/
 COPY $ECONIA_ROOT/Move.toml econia/
 COPY $ECONIA_ROOT/sources/* econia/sources/
 COPY $FAUCET_ROOT/Move.toml faucet/
 COPY $FAUCET_ROOT/sources/* faucet/sources/
-COPY $ACCOUNTS_ROOT accounts/
+COPY $ACCOUNT_FILES accounts/
 
 # Get git, start a local testnet, initialize profiles, publish packages.
 RUN apt-get update && \
@@ -85,8 +92,8 @@ RUN apt-get update && \
         --package-dir faucet \
         --profile faucet
 
-# Copy over chain data only, expose REST API and Aptos Faucet API.
-FROM run-cli as runtime
+# Copy over chain data to fresh CLI, expose REST API and Aptos Faucet API.
+FROM run-cli as run
 COPY --from=publish-packages /app/data /app/data
 EXPOSE 8080
 EXPOSE 8081

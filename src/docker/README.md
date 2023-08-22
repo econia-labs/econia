@@ -6,6 +6,14 @@ This directory arranges Dockerfiles into subdirectories of the form `purpose/Doc
 
 This Docker compose file specifies an end-to-end testing environment based on a local testnet compiled from source, with Econia and the Econia faucet published under single-signer vanity address accounts generated from plaintext (compromised) private keys.
 
+Note that before you can use this file you will have to update the indexer submodule:
+
+```bash
+# From Econia repo root
+git submodule init
+git submodule update src/rust/dependencies/aptos-core
+```
+
 ## Start up
 
 > This command may take up to 10 minutes or so the first time you run it, since it will have to compile the Aptos CLI from source then run several commands against a local testnet.
@@ -16,7 +24,7 @@ This Docker compose file specifies an end-to-end testing environment based on a 
 docker compose --file src/docker/compose.e2e.yml up --detach
 ```
 
-While the local testnet is running, you can look up published Move resources using the published node REST API port (note that the Aptos faucet API may take longer to start up than the node REST API):
+While the local testnet is running, you can look up on-chain Move resources using the published node REST API port (note that the Aptos faucet API may take longer to start up than the node REST API):
 
 ```bash
 # From Econia repo root

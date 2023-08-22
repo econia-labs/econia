@@ -86,7 +86,7 @@ The `account` helper function creates a new Aptos account and funds it through t
 First, we'll create a new market on the freshly deployed Econia package.
 
 To do this, we will create an `EntryFunction`.
-This is a struct passed to `EconiaClient::submit_tx` in order to call a contract's function.
+This is a struct passed to `EconiaClient::submit_tx` in order to call a Move package's function.
 To do this, we use the helper function `econia_sdk::entry::register_market_base_coin_from_store`.
 
 Once that is done, we can use the result to call the `submit_tx` function.
@@ -158,11 +158,13 @@ This is a bit more complex than previous code.
 Let's inspect the `place_limit_order_user_entry` function.
 Its first argument is the Econia package address, as is the case for all other functions in the `entry` module.
 Then comes two type arguments, base and quote.
-These are Aptos type arguments: see in the `init` function to review how they are created, or look into the Aptos docs for more details.
+These are Aptos type arguments: see the `init` function to review how they are created,
+or look into the Aptos docs for more details.
 Next we have the market ID which is a simple integer.
 Then comes the integrator.
 You can read more about integrators [here](../overview/incentives.md), but for now, we'll just set this to the Econia address.
-We then have side, size, and price which are integer values. You can read more about these [here](https://github.com/econia-labs/econia/overview/orders.md#units-and-market-parameters).
+We then have side, size, and price which are integer values.
+You can read more about these [here](../overview/orders.md#units-and-market-parameters).
 Next up is [restrictions](../overview/matching#restrictions) and [self match behavior](../overview/matching#self-match-behavior).
 You can read more about each of these enums variants [here](https://github.com/econia-labs/econia/blob/6256710b2ebe306d2861e6d02d72f95373500ab6/src/move/econia/sources/market.move#L859-L942).
 

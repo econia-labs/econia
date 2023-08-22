@@ -13,14 +13,14 @@ This Dockerfile builds an image containing the Aptos CLI compiled from source, t
 ```bash
 # From Econia repo root
 docker build . \
-    --file src/docker/aptos-cli/Dockerfile \
-    --tag aptos-cli
+    --file src/docker/cli/Dockerfile \
+    --tag cli
 ```
 
 ## Version check
 
 ```bash
-docker run aptos-cli
+docker run cli
 ```
 
 # Local testnet
@@ -32,16 +32,16 @@ After building the Aptos CLI image locally:
 ```bash
 # From Econia repo root
 docker build . \
-    --file src/docker/local-testnet/Dockerfile \
-    --tag local-testnet
+    --file src/docker/chain/Dockerfile \
+    --tag chain
 ```
 
 This command uses plaintext (compromised) private keys to publish Econia and the Econia faucet under the following single-signer vanity address accounts:
 
 ```bash
 # From Econia repo root
-ECONIA_ADDRESS=$(cat src/docker/local-testnet/accounts/econia.address)
-FAUCET_ADDRESS=$(cat src/docker/local-testnet/accounts/faucet.address)
+ECONIA_ADDRESS=$(cat src/docker/chain/accounts/econia.address)
+FAUCET_ADDRESS=$(cat src/docker/chain/accounts/faucet.address)
 ```
 
 ## Serve
@@ -54,7 +54,7 @@ CONTAINER_ID=$(docker run \
     --detach \
     --publish 8080:8080 \
     --publish 8081:8081 \
-    local-testnet)
+    chain)
 ```
 
 While the local testnet is running, you can look up the Econia faucet account using the published node REST API port (note that the Aptos faucet API may take longer to start up than the node REST API):
@@ -70,3 +70,52 @@ To shut down the container:
 ```bash
 docker stop $CONTAINER_ID
 ```
+
+# End-to-end compose
+
+This Docker compose file specifies an end-to-end testing environment and uses the above images as dependencies.
+
+## Start up
+
+```bash
+# From Econia repo root
+docker compose \
+    --file src/docker/compose.e2e.yml \
+    up \
+    --detach
+```
+
+## Shut down
+
+```bash
+# From Econia repo root
+docker compose \
+    --file src/docker/compose.e2e.yml \
+    down
+```
+
+# Helpful Docker commands
+
+- List all images:
+
+    ```
+    docker images -a
+    ```
+
+- List all containers:
+
+    ```
+    docker ps -a
+    ```
+
+- Stop and remove all containers:
+
+    ```
+    docker ps -aq | xargs docker stop | xargs docker rm
+    ```
+
+- Prune all containers, images, and volumes:
+
+    ```
+    docker system prune -a --volumes
+    ```

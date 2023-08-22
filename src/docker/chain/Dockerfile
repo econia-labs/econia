@@ -4,7 +4,7 @@ FROM aptos-cli as publish
 ARG MOVE_ROOT=src/move
 ARG ECONIA_ROOT=$MOVE_ROOT/econia
 ARG FAUCET_ROOT=$MOVE_ROOT/faucet
-ARG ACCOUNTS_ROOT=src/docker/local-testnet/accounts
+ARG ACCOUNTS_ROOT=src/docker/chain/accounts/
 
 # Copy in files.
 WORKDIR /app/

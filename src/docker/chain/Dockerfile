@@ -49,7 +49,7 @@ FROM run-cli as publish-packages
 ARG MOVE_ROOT
 ARG ECONIA_ROOT
 ARG FAUCET_ROOT
-ARG ACCOUNTS_ROOT
+ARG ACCOUNT_FILES
 WORKDIR /app/
 COPY $ECONIA_ROOT/Move.toml econia/
 COPY $ECONIA_ROOT/sources/* econia/sources/

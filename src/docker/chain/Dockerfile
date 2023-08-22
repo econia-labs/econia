@@ -1,6 +1,42 @@
-FROM aptos-cli as publish
+FROM rust:1-bookworm AS compile-cli
 
-# Declare source paths relative to Econia repository root.
+ARG GIT_TAG=aptos-cli-v2.0.3
+ARG GIT_REPO=https://github.com/aptos-labs/aptos-core.git
+
+# Get Aptos repo and build dependencies, then compile.
+RUN git clone \
+        $GIT_REPO \
+        --branch $GIT_TAG \
+        --depth 1 \
+        && \
+    apt-get update && \
+    apt-get install \
+        build-essential \
+        libclang-dev \
+        libpq-dev \
+        libssl-dev \
+        lld \
+        -y \
+        && \
+    rm -rf /var/lib/apt/lists/* && \
+    RUSTFLAGS="--cfg tokio_unstable" cargo build \
+        --manifest-path aptos-core/Cargo.toml \
+        --package aptos \
+        --profile cli
+
+# Copy over combiled binary only and get runtime dependency.
+FROM debian:bookworm-slim AS run-cli
+COPY --from=compile /aptos-core/target/cli/aptos /usr/local/bin
+RUN apt-get update && \
+    apt-get install \
+        libssl-dev \
+        -y \
+        && \
+    rm -rf /var/lib/apt/lists/*
+
+FROM run-cli as publish-packages
+
+# Declare paths relative to Econia repository root.
 ARG MOVE_ROOT=src/move
 ARG ECONIA_ROOT=$MOVE_ROOT/econia
 ARG FAUCET_ROOT=$MOVE_ROOT/faucet
@@ -50,8 +86,8 @@ RUN apt-get update && \
         --profile faucet
 
 # Copy over chain data only, expose REST API and Aptos Faucet API.
-FROM aptos-cli as runtime
-COPY --from=publish /app/data /app/data
+FROM run-cli as runtime
+COPY --from=publish-packages /app/data /app/data
 EXPOSE 8080
 EXPOSE 8081
 

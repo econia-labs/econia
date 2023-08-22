@@ -1,6 +1,26 @@
+version: '3.9'
 services:
+
   chain:
+    build:
+      context: ../../
+      dockerfile: src/docker/chain/Dockerfile
     image: chain
     ports:
       - 127.0.0.1:8080:8080
       - 127.0.0.1:8081:8081
+
+  postgres:
+    image: postgres:14-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=econia
+      - POSTGRES_PASSWORD=econia
+    ports:
+      - '5432:5432'
+    volumes:
+      - db:/var/lib/postgresql/data
+
+volumes:
+  db:
+    driver: local

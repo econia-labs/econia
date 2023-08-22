@@ -2,46 +2,47 @@
 
 This directory contains Dockerfiles arranged into subdirectories of the form `purpose/Dockerfile` (instead of having many `<purpose>.Dockerfile`s in one directory), such that purpose-specific `.dockerignore` files can be added later without introducing conflict.
 
-All commands should be run from the Econia repository root, to ensure that any required source files are exposed during the build context.
+# End-to-end compose
 
-# Aptos CLI
+This Docker compose file specifies an end-to-end testing environment based on a local testnet compiled from source, with Econia and the Econia faucet published under single-signer vanity address accounts generated from plaintext (compromised) private keys.
 
-This Dockerfile builds an image containing the Aptos CLI compiled from source, to avoid potential platform issues that could ensue from other image generation methods.
-
-## Build
+## Start up
 
 ```bash
 # From Econia repo root
-docker build . \
-    --file src/docker/cli/Dockerfile \
-    --tag cli
+docker compose --file src/docker/compose.e2e.yml up --detach
 ```
 
-## Version check
+While the local testnet is running, you can look up the Econia faucet account using the published node REST API port (note that the Aptos faucet API may take longer to start up than the node REST API):
 
 ```bash
-docker run cli
+# From Econia repo root
+ECONIA_ADDRESS=$(cat src/docker/chain/accounts/econia.address)
+FAUCET_ADDRESS=$(cat src/docker/chain/accounts/faucet.address)
+aptos account list --account $FAUCET_ADDRESS --url http://localhost:8080
+```
+
+## Shut down
+
+```bash
+# From Econia repo root
+docker compose --file src/docker/compose.e2e.yml down
 ```
 
 # Local testnet
 
+If you run the end-to-end compose environment, the local testnet image will be automatically handled for you.
+However, you can still use it manually.
+
 ## Build
 
-After building the Aptos CLI image locally:
+Since this Dockerfile relies on Move source files elsewhere in the Econia repository, build it from the Econia repository root to expose the Move files during the build context:
 
 ```bash
 # From Econia repo root
 docker build . \
     --file src/docker/chain/Dockerfile \
     --tag chain
-```
-
-This command uses plaintext (compromised) private keys to publish Econia and the Econia faucet under the following single-signer vanity address accounts:
-
-```bash
-# From Econia repo root
-ECONIA_ADDRESS=$(cat src/docker/chain/accounts/econia.address)
-FAUCET_ADDRESS=$(cat src/docker/chain/accounts/faucet.address)
 ```
 
 ## Serve
@@ -57,41 +58,12 @@ CONTAINER_ID=$(docker run \
     chain)
 ```
 
-While the local testnet is running, you can look up the Econia faucet account using the published node REST API port (note that the Aptos faucet API may take longer to start up than the node REST API):
-
-```bash
-aptos account list --account $FAUCET_ADDRESS --url http://localhost:8080
-```
-
 ## Shut down
 
 To shut down the container:
 
 ```bash
 docker stop $CONTAINER_ID
-```
-
-# End-to-end compose
-
-This Docker compose file specifies an end-to-end testing environment and uses the above images as dependencies.
-
-## Start up
-
-```bash
-# From Econia repo root
-docker compose \
-    --file src/docker/compose.e2e.yml \
-    up \
-    --detach
-```
-
-## Shut down
-
-```bash
-# From Econia repo root
-docker compose \
-    --file src/docker/compose.e2e.yml \
-    down
 ```
 
 # Helpful Docker commands

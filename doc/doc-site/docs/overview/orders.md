@@ -666,9 +666,9 @@ Whether in a [`MarketAccount`] or an [`OrderBook`], the inactive node stack appr
 
 [avl queue]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/avl_queue.md
 [avl queue height spec]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/avl_queue.md#height
+[here]: https://github.com/econia-labs/econia/blob/main/src/python/sdk/econia_sdk/utils/decimals.py
 [market module documentation]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md
 [`critical_height`]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#0xc0deb00c_market_CRITICAL_HEIGHT
-[here]: https://github.com/econia-labs/econia/blob/main/src/python/sdk/econia_sdk/utils/decimals.py
 [`market::order`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_Order
 [`marketaccount`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/user.md#0xc0deb00c_user_MarketAccount
 [`n_nodes_max`]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/avl_queue.md#0xc0deb00c_avl_queue_N_NODES_MAX

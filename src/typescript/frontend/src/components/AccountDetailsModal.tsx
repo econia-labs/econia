@@ -11,7 +11,7 @@ import { RecognizedIcon } from "./icons/RecognizedIcon";
 import { MarketIconPair } from "./MarketIconPair";
 import { shorten } from "@/utils/formatter";
 import { useQuery } from "@tanstack/react-query";
-import { ECONIA_ADDR } from "@/env";
+import { API_URL, ECONIA_ADDR } from "@/env";
 import { toast } from "react-toastify";
 import { MarketAccount, MarketAccounts } from "@/types/econia";
 import { useAptos } from "@/contexts/AptosContext";
@@ -140,7 +140,7 @@ export const AccountDetailsModal: React.FC<{
           <DepositWithdrawCard
             // marketID={Number(id.toString())}
             // TODO: when audit comes back update hardcode
-            marketID={1}
+            marketID={2}
             key={id.toString() + "deposit card"}
           />
         ))}
@@ -206,7 +206,7 @@ const DepositWithdrawCard: React.FC<{ marketID: number }> = ({ marketID }) => {
           {
             key_type: "u128",
             value_type: `${ECONIA_ADDR}::user::MarketAccount`,
-            key: makeMarketAccountId(marketID, NO_CUSTODIAN),
+            key: makeMarketAccountId(marketID - 1, NO_CUSTODIAN),
           },
         );
         return marketAccount as MarketAccount;
@@ -221,6 +221,24 @@ const DepositWithdrawCard: React.FC<{ marketID: number }> = ({ marketID }) => {
     },
     {
       enabled: !!marketAccounts,
+    },
+  );
+
+  const { data: marketPair } = useQuery(
+    ["market", marketID],
+    async () => {
+      const resProm = fetch(`${API_URL}/markets/${marketID}`).then((res) =>
+        res.json(),
+      );
+
+      const res = await resProm;
+
+      return { base: res.base.symbol, quote: res.quote.symbol };
+    },
+    {
+      keepPreviousData: true,
+      refetchOnWindowFocus: false,
+      refetchInterval: 10 * 1000,
     },
   );
   const DEFAULT_TOKEN_ICON = "/tokenImages/default.png";
@@ -254,7 +272,7 @@ const DepositWithdrawCard: React.FC<{ marketID: number }> = ({ marketID }) => {
                 baseAssetIcon={baseAssetIcon}
                 quoteAssetIcon={quoteAssetIcon}
               />
-              APT/USDC
+              {marketPair?.base}/{marketPair?.quote}
               <RecognizedIcon className="ml-1 inline-block h-[9px] w-[9px] text-center" />
             </div>
             {/* row2 within row1 */}
@@ -300,7 +318,7 @@ const DepositWithdrawCard: React.FC<{ marketID: number }> = ({ marketID }) => {
       <div className="ml-[39px] flex-1">
         <div className="ml-8 flex flex-col text-left">
           <span className="align-text-top font-roboto-mono text-[10px] font-light text-neutral-500">
-            BALANCE
+            {marketPair?.base} BALANCE
           </span>
           <p className="font-roboto-mono text-xs font-light text-white">
             <span className="inline-block align-text-top text-white">
@@ -310,7 +328,7 @@ const DepositWithdrawCard: React.FC<{ marketID: number }> = ({ marketID }) => {
         </div>
         <div className="ml-8 text-left">
           <span className="font-roboto-mono text-[10px] font-light text-neutral-500">
-            BALANCE
+            {marketPair?.quote} BALANCE
           </span>
           <p className="font-roboto-mono text-xs font-light text-white">
             <span className="inline-block text-white">

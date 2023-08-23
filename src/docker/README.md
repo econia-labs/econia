@@ -16,7 +16,7 @@ git submodule update src/rust/dependencies/aptos-core
 
 ## Start up
 
-> This command may take up to 10 minutes or so the first time you run it, since it will have to compile the Aptos CLI from source then run several commands against a local testnet.
+> This command may a while the first time you run it, since it will have to compile the Aptos CLI and an indexer node from source before running several commands against a local testnet.
 > Subsequent calls should be much faster, however, due to Docker's caching mechanism.
 
 ```bash

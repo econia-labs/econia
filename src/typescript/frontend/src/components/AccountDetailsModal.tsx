@@ -10,14 +10,50 @@ import { ExitIcon } from "./icons/ExitIcon";
 import { RecognizedIcon } from "./icons/RecognizedIcon";
 import { MarketIconPair } from "./MarketIconPair";
 import { shorten } from "@/utils/formatter";
+import { useQuery } from "@tanstack/react-query";
+import { ECONIA_ADDR } from "@/env";
+import { toast } from "react-toastify";
+import { MarketAccount, MarketAccounts } from "@/types/econia";
+import { useAptos } from "@/contexts/AptosContext";
+import { makeMarketAccountId } from "@/utils/econia";
+import { NO_CUSTODIAN } from "@/constants";
+import { TypeTag } from "@/utils/TypeTag";
+
+// get_all_market_account_ids_for_user
 
 export const AccountDetailsModal: React.FC<{
   selectedMarket?: ApiMarket;
   onClose: () => void;
   disconnect: () => void;
 }> = ({ onClose, disconnect }) => {
+  const { aptosClient, signAndSubmitTransaction } = useAptos();
   const { account } = useWallet();
   const [showCopiedNotif, setShowCopiedNotif] = useState<boolean>(false);
+
+  const { data } = useQuery(
+    ["userMarketIdsForUser", account?.address],
+    async () => {
+      if (!account?.address) return null;
+      try {
+        const test = await aptosClient.view({
+          // TODO: change with real when audit comes back
+          function: `0x2920c3eee1e25f16313246b3df82ee95619d334d90ae162fc64b9cb9779d9b3f::user::get_all_market_account_ids_for_user`,
+          arguments: [account?.address],
+          type_arguments: [],
+        });
+        return test;
+      } catch (e) {
+        if (e instanceof Error) {
+          toast.error(e.message);
+          console.log(e.message);
+        } else {
+          console.error(e);
+        }
+        return null;
+      }
+    },
+  );
+  console.log("market ids for user", data);
 
   const copyToClipboard = () => {
     setShowCopiedNotif(true);
@@ -35,7 +71,7 @@ export const AccountDetailsModal: React.FC<{
   };
   return (
     <div className="relative flex flex-col items-center gap-6 font-roboto-mono">
-      <div className="scrollbar-none mt-[-24px] max-h-[524px] overflow-auto">
+      <div className="scrollbar-none mt-[-24px] max-h-[524px] min-h-[524px] overflow-auto">
         <p className="mb-8 mt-[36px] font-jost text-xl font-bold text-white">
           Account Details
         </p>
@@ -78,6 +114,7 @@ export const AccountDetailsModal: React.FC<{
               </span>
               <p className="font-roboto-mono text-xs font-light text-white">
                 <span className="inline-block align-text-top text-white">
+                  {/* TODO wallet value */}
                   000.1.2
                 </span>
               </p>
@@ -87,7 +124,10 @@ export const AccountDetailsModal: React.FC<{
                 TOTAL IN ECONIA
               </span>
               <p className="font-roboto-mono text-xs font-light text-white">
-                <span className="inline-block text-white">000.1.2</span>
+                <span className="inline-block text-white">
+                  {/* TODO wallet value */}
+                  000.1.2
+                </span>
               </p>
             </div>
           </div>
@@ -95,12 +135,15 @@ export const AccountDetailsModal: React.FC<{
         <p className="mb-3 font-jost text-sm font-bold text-white">
           Market Accounts
         </p>
-        <DepositWithdrawCard />
-        <DepositWithdrawCard />
-        <DepositWithdrawCard />
-        <DepositWithdrawCard />
-        <DepositWithdrawCard />
-        <DepositWithdrawCard />
+        {/* market accounts */}
+        {data?.map((id) => (
+          <DepositWithdrawCard
+            // marketID={Number(id.toString())}
+            // TODO: when audit comes back update hardcode
+            marketID={1}
+            key={id.toString() + "deposit card"}
+          />
+        ))}
       </div>
       {/* spacer to compensate for sticky bottom row */}
       {/* note, has to be same height as the sticky row -- iirc no way to do this dynamically as absolutely positioned elements take up 0 space */}
@@ -125,9 +168,75 @@ export const AccountDetailsModal: React.FC<{
   );
 };
 
-const DepositWithdrawCard: React.FC = () => {
+const DepositWithdrawCard: React.FC<{ marketID: number }> = ({ marketID }) => {
   const [expanded, setExpanded] = React.useState(false);
   const toggleExpanded = () => setExpanded(!expanded);
+  const { account } = useWallet();
+  const { aptosClient, coinListClient } = useAptos();
+
+  // move into parent, this is inefficient
+  const { data: marketAccounts } = useQuery(
+    ["useMarketAccounts", account?.address],
+    async () => {
+      if (!account?.address) return null;
+      try {
+        const resource = await aptosClient.getAccountResource(
+          account.address,
+          `${ECONIA_ADDR}::user::MarketAccounts`,
+        );
+        return resource.data as MarketAccounts;
+      } catch (e) {
+        if (e instanceof Error) {
+          toast.error(e.message);
+        } else {
+          console.error(e);
+        }
+        return null;
+      }
+    },
+  );
+
+  const { data: marketAccount } = useQuery(
+    ["useMarketAccount", account?.address, marketID],
+    async () => {
+      if (!account?.address) return null;
+      try {
+        const marketAccount = await aptosClient.getTableItem(
+          marketAccounts!.map.handle,
+          {
+            key_type: "u128",
+            value_type: `${ECONIA_ADDR}::user::MarketAccount`,
+            key: makeMarketAccountId(marketID, NO_CUSTODIAN),
+          },
+        );
+        return marketAccount as MarketAccount;
+      } catch (e) {
+        if (e instanceof Error) {
+          toast.error(e.message);
+        } else {
+          console.error(e);
+        }
+        return null;
+      }
+    },
+    {
+      enabled: !!marketAccounts,
+    },
+  );
+  const DEFAULT_TOKEN_ICON = "/tokenImages/default.png";
+
+  // could refactor
+  const baseAssetIcon = marketAccount
+    ? coinListClient.getCoinInfoByFullName(
+        TypeTag.fromMoveTypeInfo(marketAccount.base_type).toString(),
+      )?.logo_url
+    : DEFAULT_TOKEN_ICON;
+  const quoteAssetIcon = marketAccount
+    ? coinListClient.getCoinInfoByFullName(
+        TypeTag.fromMoveTypeInfo(marketAccount.quote_type).toString(),
+      )?.logo_url
+    : DEFAULT_TOKEN_ICON;
+
   return (
     <div
       className={
@@ -140,7 +249,11 @@ const DepositWithdrawCard: React.FC = () => {
         <div className="mb-[9px] flex items-center">
           <div className="text-white">
             <div className="flex items-center text-sm font-bold">
-              <MarketIconPair size={16} />
+              <MarketIconPair
+                size={16}
+                baseAssetIcon={baseAssetIcon}
+                quoteAssetIcon={quoteAssetIcon}
+              />
               APT/USDC
               <RecognizedIcon className="ml-1 inline-block h-[9px] w-[9px] text-center" />
             </div>
@@ -150,7 +263,7 @@ const DepositWithdrawCard: React.FC = () => {
                 className="ml-[27.42px] cursor-pointer text-left text-[10px] text-neutral-500"
                 onClick={toggleExpanded}
               >
-                LAYERZERO
+                LAYERZERO {/** TODO */}
                 <ChevronDownIcon
                   className={`inline-block h-4 w-4 text-center duration-150 ${
                     expanded && "rotate-180"
@@ -164,9 +277,9 @@ const DepositWithdrawCard: React.FC = () => {
                     expanded && "revealed"
                   } line-clamp-[10px] text-left text-[8px] text-neutral-500`}
                 >
-                  <div>MARKET ID: 2</div>
-                  <div>LOT SIZE: </div>
-                  <div>TICK SIZE: </div>
+                  <div>MARKET ID: {marketID}</div>
+                  <div>LOT SIZE: {marketAccount?.lot_size}</div>
+                  <div>TICK SIZE: {marketAccount?.tick_size}</div>
                 </div>
               </div>
             </div>
@@ -187,20 +300,22 @@ const DepositWithdrawCard: React.FC = () => {
       <div className="ml-[39px] flex-1">
         <div className="ml-8 flex flex-col text-left">
           <span className="align-text-top font-roboto-mono text-[10px] font-light text-neutral-500">
-            WALLET BALANCE
+            BALANCE
           </span>
           <p className="font-roboto-mono text-xs font-light text-white">
             <span className="inline-block align-text-top text-white">
-              000.1.2
+              {marketAccount?.base_total}
             </span>
           </p>
         </div>
         <div className="ml-8 text-left">
           <span className="font-roboto-mono text-[10px] font-light text-neutral-500">
-            TOTAL IN ECONIA
+            BALANCE
           </span>
           <p className="font-roboto-mono text-xs font-light text-white">
-            <span className="inline-block text-white">000.1.2</span>
+            <span className="inline-block text-white">
+              {marketAccount?.quote_total}
+            </span>
           </p>
         </div>
       </div>

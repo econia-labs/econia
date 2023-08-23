@@ -18,10 +18,21 @@ export class TypeTag {
   }
 
   static fromMoveTypeInfo(moveTypeInfo: MoveTypeInfo) {
+    function hexToString(hex: string) {
+      if (hex.startsWith("0x")) {
+        hex = hex.slice(2);
+      }
+      let str = "";
+      for (let i = 0; i < hex.length; i += 2) {
+        const charCode = parseInt(hex.substr(i, 2), 16);
+        str += String.fromCharCode(charCode);
+      }
+      return str;
+    }
     return new TypeTag(
       moveTypeInfo.account_address,
-      moveTypeInfo.module_name,
-      moveTypeInfo.struct_name,
+      hexToString(moveTypeInfo.module_name),
+      hexToString(moveTypeInfo.struct_name),
     );
   }
 

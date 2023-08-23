@@ -166,7 +166,6 @@ You can read more about integrators [here](../overview/incentives.md), but for n
 We then have side, size, and price which are integer values.
 You can read more about these [here](../overview/orders.md#units-and-market-parameters).
 Next up is [restrictions](../overview/matching#restrictions) and [self match behavior](../overview/matching#self-match-behavior).
-You can read more about each of these enums variants [here](https://github.com/econia-labs/econia/blob/6256710b2ebe306d2861e6d02d72f95373500ab6/src/move/econia/sources/market.move#L859-L942).
 
 ### Step 4: Set up account B
 

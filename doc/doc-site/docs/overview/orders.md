@@ -278,6 +278,7 @@ python3
 >>> from econia_sdk.utils.decimals import *
 ```
 
+Take a look at the code [here] to see what's available in that package.
 We'd like the value of one increment in order size to be worth about a penny, say \$0.00732.
 That means our lot size (in unit terms) should be 0.001 `APT`, which is worth said amount.
 To get the lot size in subunit terms so as to configure the market, we can use the SDK:
@@ -298,6 +299,19 @@ Let's now get that in subunit terms using the SDK:
 >>> tick_size_unit = "0.00001"
 >>> quote_decimals = 6
 >>> get_tick_size_integer(tick_size_unit, quote_decimals)
+10
+```
+
+Note that we can also get the same result by coming up with a price granularity target and using `get_tick_size_integer_for_price_granularity`.
+If we choose a price granularity of one penny (0.01 `USDC`) then the function call would be as follows:
+
+```python
+>>> price_granularity = "0.01"
+>>> get_tick_size_integer_for_price_granularity( \
+  lot_size_unit, \
+  price_granularity, \
+  quote_decimals \
+)
 10
 ```
 
@@ -654,6 +668,7 @@ Whether in a [`MarketAccount`] or an [`OrderBook`], the inactive node stack appr
 [avl queue height spec]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/avl_queue.md#height
 [market module documentation]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md
 [`critical_height`]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#0xc0deb00c_market_CRITICAL_HEIGHT
+[here]: https://github.com/econia-labs/econia/blob/main/src/python/sdk/econia_sdk/utils/decimals.py
 [`market::order`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/market.md#0xc0deb00c_market_Order
 [`marketaccount`]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/user.md#0xc0deb00c_user_MarketAccount
 [`n_nodes_max`]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/avl_queue.md#0xc0deb00c_avl_queue_N_NODES_MAX

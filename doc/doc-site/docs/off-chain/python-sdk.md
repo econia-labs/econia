@@ -82,12 +82,12 @@ Market configuration (beyond base type and quote type) consists of 3 integer val
 
 In order to proceed, we must decide the granularity of base and quote sizes as well as the minimum limit order size for our market.
 Consider that "price" in the exchange is an integer expressed in terms of "ticks per lot", which means that tick size and lot size affect the prices that can be expressed.
-That is: price granularity is a function of lot size _and_ tick size.
+**That is: price granularity is a function of lot size _and_ tick size.**
 In general the desire is to have one _tick_ be "small" relative to one **_lot_** in terms of value, since the minimum expressible price is 1 tick per lot. The second smallest possible price is 2 ticks per lot, and so on.
 Let's use `eAPT` and `eUSDC` used in the faucet below as example base and quote types, respectively, for a market.
 We know that `eAPT` (the base type) has 8 decimals and `eUSDC` (the quote type) has 6 decimals:
 
-```
+```python
 >>> base_decimals = 8
 >>> quote_decimals = 6
 ```
@@ -97,8 +97,10 @@ Let's try using 0.001 `eAPT` for the granularity of base coin sizes, and 0.01 `e
 Does this work?
 Let's find out!
 
-```
->>> get_min_quote_per_base_nominal("0.001", "0.01")
+```python
+>>> lot_size_unit = "0.001"
+>>> tick_size_unit = "0.01"
+>>> get_min_quote_per_base_nominal(lot_size_unit, tick_size_unit)
 10.0
 ```
 
@@ -106,11 +108,23 @@ Here, we're asking what the smallest representable price for 1 `eAPT` is in term
 
 There are 1000 lots in 1 `eAPT` (=1/0.001) and the minimum expressible price is 1 tick per lot.
 Since 1 tick is worth 1 cent, this means that the minimum representable price for 1000 lots (1 `eAPT`) is 1000 ticks, or 10 `eUSDC`.
-The granularity of price in human terms is $10 per `eAPT`.
-That is, the minimum price is $10/`eAPT`, the second-lowest expressible price is $20/`eAPT`, and so on.
+The granularity of price in human terms is \$10 per `eAPT`.
+That is, the minimum price is \$10/`eAPT`, the second-lowest expressible price is \$20/`eAPT`, and so on.
 Given that (real) `APT` is right now $7, we can assess that this configuration would not be workable or appropriate!
 
-The problem is fixable by using a more granular tick size, say 0.00001 instead of 0.01.
+Note that if you have a price granularity and lot size in mind, `get_tick_size_integer_for_price_granularity` can be used to determine a tick size.
+For example, we could choose a price granularity of 0.01 `USDC` (one penny) and the lot size from above:
+```python
+>>> get_tick_size_integer_for_price_granularity( \
+  lot_size_unit, \
+  "0.01", \
+  quote_decimals, \
+)
+10
+```
+
+This is useful, but let's proceed with the manual approach because it will explain to us better what lot size and tick size mean and how they relate to price granularity.
+Our problem (price too coarse) is fixable by using a more granular tick size, say 0.00001 instead of 0.01.
 Checking our price granularity now shows better results:
 
 ```
@@ -120,7 +134,7 @@ Checking our price granularity now shows better results:
 42949672.95
 ```
 
-That's a price granularity of 1 cent, since the result here is in quote units and 1 `eUSDC` is $1.
+That's a price granularity of 1 cent, since the result here is in quote units and 1 `eUSDC` is \$1.
 For good measure, we also checked the maximum price per `eAPT` using `get_max_quote_per_base_nominal`; it's $42,949,672.95 per `eAPT` so this is fine!
 Be careful: using a more granular price results in a lower maximum price, which may be relevant in some cases.
 Now that we have the minimum base and quote sizes we'd like to use, we're ready to configure the market.

@@ -58,6 +58,9 @@ ARG WAYPOINT_TXT
 WORKDIR $APP_ROOT
 COPY --from=builder $NODE_BIN .
 
+#
+# This should be uncommented once the indexer submodule branch adds a yaml file.
+#
 # COPY --from=builder $NODE_YAML .
 
 COPY --from=chain-files $WAYPOINT_TXT .

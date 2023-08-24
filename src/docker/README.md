@@ -12,7 +12,7 @@ git submodule update src/rust/dependencies/aptos-core
 
 ## Start up
 
-> This command may a while the first time you run it, since it will have to compile the Aptos CLI and an indexer node from source before running several commands against a local testnet.
+> This command may take a while the first time you run it, since it will have to compile the Aptos CLI and an indexer node from source before running several commands against a local testnet.
 > Subsequent calls should be much faster, however, due to Docker's caching mechanism.
 
 ```sh
@@ -38,6 +38,9 @@ docker compose --file src/docker/compose.e2e.yml down
 
 # Helpful Docker commands
 
+The [Docker docs](https://docs.docker.com/) offer an extensive collection of helpful tutorials, examples, and references.
+For convenience, here is a consolidated list of some of the most helpful commands for working with Econia.
+
 - List all images:
 
   ```
@@ -60,6 +63,12 @@ docker compose --file src/docker/compose.e2e.yml down
 
   ```
   docker ps -aq | xargs docker stop | xargs docker rm
+  ```
+
+- Show disk usage:
+
+  ```
+  docker system df
   ```
 
 - Prune all containers, images, and volumes:

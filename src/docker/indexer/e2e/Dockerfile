@@ -26,7 +26,6 @@ RUN cargo chef prepare --recipe-path recipe.json
 FROM chef as builder
 ARG APP_ROOT
 ARG CRATE_ROOT
-ARG INDEXER_ROOT
 ARG NODE_BIN
 ARG RUST_ROOT
 RUN apt-get update && apt-get install -y \

@@ -3,10 +3,10 @@ ARG RUST_ROOT=src/rust
 
 # Relative to image root.
 ARG APP_ROOT=/app
-ARG INDEXER_ROOT=$APP_ROOT/dependencies/aptos-core
-ARG CRATE_ROOT=$INDEXER_ROOT/aptos-node
-ARG NODE_BIN=$INDEXER_ROOT/target/release/aptos-node
-ARG NODE_YAML=$INDEXER_ROOT/aptos-node/indexer-node.yaml
+ARG APTOS_CORE_ROOT=$APP_ROOT/dependencies/aptos-core
+ARG CRATE_ROOT=$APTOS_CORE_ROOT/aptos-node
+ARG NODE_BIN=$APTOS_CORE_ROOT/target/release/aptos-node
+ARG NODE_YAML=$APTOS_CORE_ROOT/aptos-node/indexer-node.yaml
 
 # Relative to chain image root.
 ARG WAYPOINT_TXT=/app/data/waypoint.txt
@@ -35,9 +35,9 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     lld \
     && rm -rf /var/lib/apt/lists/*
-COPY $RUST_ROOT .
-COPY --from=planner $APP_ROOT/recipe.json $APP_ROOT/recipe.json
+COPY --from=planner $APP_ROOT/recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
+COPY $RUST_ROOT .
 WORKDIR $CRATE_ROOT
 RUN cargo build \
     --bin aptos-node \
@@ -57,7 +57,9 @@ ARG NODE_YAML
 ARG WAYPOINT_TXT
 WORKDIR $APP_ROOT
 COPY --from=builder $NODE_BIN .
-COPY --from=builder $NODE_YAML .
+
+# COPY --from=builder $NODE_YAML .
+
 COPY --from=chain-files $WAYPOINT_TXT .
 COPY --from=chain-files $GENESIS_BLOB .
 RUN apt-get update && apt-get install -y \

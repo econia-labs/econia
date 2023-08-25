@@ -343,7 +343,7 @@ impl EconiaClient {
             .events
             .iter()
             .filter(|e| matches!(&e.typ, MoveType::Struct(s) if s.address.inner() == &self.econia_address))
-            .map(|e| serde_json::from_value((e.data.clone())))
+            .map(|e| serde_json::from_value(e.data.clone()))
             .collect::<Result<Vec<EconiaEvent>, serde_json::Error>>()?;
 
         Ok(EconiaTransaction {

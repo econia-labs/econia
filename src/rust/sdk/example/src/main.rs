@@ -341,7 +341,7 @@ async fn main() -> EconiaResult<()> {
     let market_id = if let Some(market_id) = market_id {
         println!("Market already exists, ID: {market_id}");
 
-        let (account_address, mut econia_client) =
+        let (_, mut econia_client) =
             account(&faucet_client, &args.node_url, econia_address.clone()).await;
         fund(&e_apt, 10u64.pow(19), &mut econia_client, faucet_address).await?;
         fund(&e_usdc, 10u64.pow(19), &mut econia_client, faucet_address).await?;

@@ -5476,6 +5476,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3e52c148ef37f8c375d49d5a73aa70713125b7f19095948a923f80afdeb22ec2"
 
 [[package]]
+name = "rust-sdk"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "aptos-sdk",
+ "clap 4.3.21",
+ "econia-sdk",
+ "rand 0.7.3",
+ "reqwest",
+ "tokio",
+]
+
+[[package]]
 name = "rustc-demangle"
 version = "0.1.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"

@@ -1,13 +1,9 @@
 use std::{fmt::Display, str::FromStr};
 
-use chrono::{DateTime, Utc};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Deserializer, Serialize};
 
-use crate::{
-    error::TypeError,
-    order::{CancelReason, Restriction, SelfMatchBehavior, Side},
-};
+use crate::order::{CancelReason, Restriction, SelfMatchBehavior, Side};
 
 fn from_str<'de, T, D>(deserializer: D) -> Result<T, D::Error>
 where

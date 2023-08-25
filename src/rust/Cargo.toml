@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["aggregator", "api", "db", "types", "sdk"]
+members = ["aggregator", "api", "db", "types", "sdk", "sdk/example"]
 exclude = ["dependencies"]
 
 [workspace.dependencies]

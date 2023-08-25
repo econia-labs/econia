@@ -1,0 +1,41 @@
+version: '3.9'
+services:
+
+  cargo-chef:
+    build:
+      context: cargo-chef
+    image: cargo-chef
+
+  chain:
+    build:
+      context: ../../
+      dockerfile: src/docker/chain/Dockerfile
+    ports:
+      - 8080:8080
+      - 8081:8081
+    image: chain
+
+  indexer:
+    build:
+      context: ../../
+      dockerfile: src/docker/indexer/e2e/Dockerfile
+      args:
+        build-context:
+    depends_on:
+      - chain
+      - cargo-chef
+
+  postgres:
+    image: postgres:14-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=econia
+      - POSTGRES_PASSWORD=econia
+    ports:
+      - 5432:5432
+    volumes:
+      - db:/var/lib/postgresql/data
+
+volumes:
+  db:
+    driver: local

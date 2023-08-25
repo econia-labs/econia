@@ -2166,6 +2166,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "dbv2"
+version = "0.1.0"
+dependencies = [
+ "bigdecimal",
+ "chrono",
+ "diesel",
+ "serde 1.0.175",
+ "sqlx",
+]
+
+[[package]]
 name = "der"
 version = "0.7.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"

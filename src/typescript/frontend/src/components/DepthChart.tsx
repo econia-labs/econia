@@ -5,6 +5,7 @@ import { Line } from "react-chartjs-2";
 
 import { useOrderBook } from "@/hooks/useOrderbook";
 import { type ApiMarket } from "@/types/api";
+import { toDecimalPrice, toDecimalSize } from "@/utils/econia";
 import { formatNumber } from "@/utils/formatter";
 
 export const ZERO_BIGNUMBER = new BigNumber(0);
@@ -121,11 +122,13 @@ export const DepthChart: React.FC<{
   }, [marketData, baseCoinInfo, quoteCoinInfo, data, isFetching]);
 
   return (
-    <div className="relative h-1/5 flex-[1_1_0%]">
-      <p className={"absolute ml-4 mt-2 font-jost text-white"}>Depth</p>
+    <>
+      <p className={"absolute ml-4 mt-2 font-jost font-bold text-white"}>
+        Depth
+      </p>
       <div
         className={
-          "relative h-full min-w-0 [&>canvas]:!h-full [&>canvas]:!w-full"
+          "relative h-full min-w-0 py-2 pr-2 [&>canvas]:!h-full [&>canvas]:!w-full"
         }
       >
         <Line
@@ -158,10 +161,17 @@ export const DepthChart: React.FC<{
               },
               title: {
                 display: true,
-                text: `MID MARKET $${formatNumber(
-                  labels[labels.length / 2],
-                  2
-                )}`,
+                text: `MID MARKET $${
+                  // labels length should never be odd
+                  labels.length % 2 === 0
+                    ? formatNumber(
+                        (labels[labels.length / 2] +
+                          labels[labels.length / 2 - 1]) /
+                          2,
+                        2,
+                      ) ?? "-"
+                    : formatNumber(labels[labels.length / 2], 2) ?? "-"
+                }`,
                 color: "white",
               },
               animation: {
@@ -194,7 +204,7 @@ export const DepthChart: React.FC<{
                   maxRotation: 0,
                   color: "white",
                   autoSkip: false,
-                  padding: 8,
+                  padding: 0,
                   minRotation: 0,
                   callback: function (value, index, values) {
                     // show 1/3 and 2/3 of the way through
@@ -202,7 +212,7 @@ export const DepthChart: React.FC<{
                       index === Math.floor(values.length / 4) ||
                       index === Math.floor((3 * values.length) / 4)
                     ) {
-                      return formatNumber(labels[index], 2);
+                      return formatNumber(labels[index], 2) ?? "-";
                     } else {
                       return "";
                     }
@@ -213,7 +223,7 @@ export const DepthChart: React.FC<{
                 position: "right",
                 max: Math.max(
                   bidData[0] || 0,
-                  askData[askData.length - 1] || 0
+                  askData[askData.length - 1] || 0,
                 ),
                 ticks: {
                   padding: 5,
@@ -229,7 +239,7 @@ export const DepthChart: React.FC<{
                     const formatted = formatter.format(Number(value));
 
                     // show 0.0 as <0.1
-                    return value === "0"
+                    return value === 0
                       ? "0"
                       : formatted === "0.0"
                       ? "<0.1"
@@ -263,42 +273,8 @@ export const DepthChart: React.FC<{
           }}
         />
       </div>
-    </div>
+    </>
   );
-};
-
-// depth chart related util
-const TEN = new BigNumber(10);
-export const toDecimalPrice = ({
-  price,
-  lotSize,
-  tickSize,
-  baseCoinDecimals,
-  quoteCoinDecimals,
-}: {
-  price: BigNumber;
-  lotSize: BigNumber;
-  tickSize: BigNumber;
-  baseCoinDecimals: BigNumber;
-  quoteCoinDecimals: BigNumber;
-}) => {
-  const lotsPerUnit = TEN.exponentiatedBy(baseCoinDecimals).div(lotSize);
-  const pricePerLot = price
-    .multipliedBy(tickSize)
-    .div(TEN.exponentiatedBy(quoteCoinDecimals));
-  return pricePerLot.multipliedBy(lotsPerUnit);
-};
-
-export const toDecimalSize = ({
-  size,
-  lotSize,
-  baseCoinDecimals,
-}: {
-  size: BigNumber;
-  lotSize: BigNumber;
-  baseCoinDecimals: BigNumber;
-}) => {
-  return size.multipliedBy(lotSize).div(TEN.exponentiatedBy(baseCoinDecimals));
 };
 
 // crosshair plugin
@@ -318,7 +294,7 @@ const plugin = {
   afterInit: (
     chart: { corsair: { x: number; y: number } },
     args: any,
-    opts: any
+    opts: any,
   ) => {
     chart.corsair = {
       x: 0,
@@ -327,7 +303,7 @@ const plugin = {
   },
   afterEvent: (
     chart: { corsair: { x: any; y: any; draw: any }; draw: () => void },
-    args: { event?: any; inChartArea?: any }
+    args: { event?: any; inChartArea?: any },
   ) => {
     const { inChartArea } = args;
     const { type, x, y } = args.event;
@@ -343,7 +319,7 @@ const plugin = {
       ctx?: any;
     },
     args: any,
-    opts: { width: any; color: any; dash: any }
+    opts: { width: any; color: any; dash: any },
   ) => {
     const { ctx } = chart;
     const { top, bottom, left, right } = chart.chartArea;

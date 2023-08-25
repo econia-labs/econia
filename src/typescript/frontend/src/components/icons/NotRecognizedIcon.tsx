@@ -10,18 +10,18 @@ export const NotRecognizedIcon: React.FC<React.SVGProps<SVGSVGElement>> = ({
       className={className}
     >
       <circle cx="11.6102" cy="12.2328" r="11.3778" fill="#565656" />
-      <g clip-path="url(#clip0_5188_11744)">
+      <g clipPath="url(#clip0_5188_11744)">
         <path
           d="M7.17773 16.7328L16.1777 7.73279"
           stroke="#AAAAAA"
-          stroke-width="1.5"
-          stroke-linecap="square"
+          strokeWidth="1.5"
+          strokeLinecap="square"
         />
         <path
           d="M16.1777 16.7328L7.17773 7.73279"
           stroke="#AAAAAA"
-          stroke-width="1.5"
-          stroke-linecap="square"
+          strokeWidth="1.5"
+          strokeLinecap="square"
         />
       </g>
       <defs>

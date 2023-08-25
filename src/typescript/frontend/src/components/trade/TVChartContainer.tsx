@@ -32,6 +32,12 @@ export interface ChartContainerProps {
   theme: ChartingLibraryWidgetOptions["theme"];
 }
 
+const GREEN = "rgba(110, 213, 163, 1.0)";
+const RED = "rgba(240, 129, 129, 1.0)";
+
+const GREEN_OPACITY_HALF = "rgba(110, 213, 163, 0.5)";
+const RED_OPACITY_HALF = "rgba(240, 129, 129, 0.5)";
+
 const resolutions = [
   "1",
   "5",
@@ -165,7 +171,7 @@ export const TVChartContainer: React.FC<
         userInput,
         exchange,
         symbolType,
-        onResultReadyCallback
+        onResultReadyCallback,
       ) => {
         if (exchange !== "Econia" || symbolType !== "crypto") {
           throw new Error("Parameters not supported.");
@@ -178,24 +184,28 @@ export const TVChartContainer: React.FC<
           (symbol) =>
             symbol.full_name.toLowerCase().indexOf(userInput.toLowerCase()) !==
               -1 ||
-            symbol.symbol.toLowerCase().indexOf(userInput.toLowerCase()) !== -1
+            symbol.symbol.toLowerCase().indexOf(userInput.toLowerCase()) !== -1,
         );
         onResultReadyCallback(searchResults);
       },
       resolveSymbol: async (
         symbolName,
         onSymbolResolvedCallback,
-        onResolveErrorCallback
+        onResolveErrorCallback,
       ) => {
         const marketInfo: ApiMarket | undefined = props.allMarketData.find(
-          ({ name }) => name === symbolName
+          ({ name }) => name === symbolName,
         );
 
         if (marketInfo != null) {
           const symbolInfo = getSymbolInfo(marketInfo);
-          onSymbolResolvedCallback(symbolInfo);
+          setTimeout(() => {
+            onSymbolResolvedCallback(symbolInfo);
+          }, 0);
         } else {
-          onResolveErrorCallback(`Market "${symbolName}" not found.`);
+          setTimeout(() => {
+            onResolveErrorCallback(`Market "${symbolName}" not found.`);
+          }, 0);
         }
       },
       getBars: async (
@@ -203,11 +213,11 @@ export const TVChartContainer: React.FC<
         resolution,
         periodParams,
         onHistoryCallback,
-        onErrorCallback
+        onErrorCallback,
       ) => {
         // TODO find a better way to pass market ID
         const market = props.allMarketData.find(
-          ({ name }) => name === symbolInfo.name
+          ({ name }) => name === symbolInfo.name,
         );
         if (market == null) {
           throw new Error("market not found.");
@@ -217,13 +227,13 @@ export const TVChartContainer: React.FC<
         try {
           const res = await fetch(
             new URL(
-              `/market/${market.market_id}/history?${new URLSearchParams({
+              `/markets/${market.market_id}/history?${new URLSearchParams({
                 resolution: resolutionMap[resolution],
                 from: from.toString(),
                 to: to.toString(),
               })}`,
-              API_URL
-            ).href
+              API_URL,
+            ).href,
           );
           const data = await res.json();
 
@@ -231,7 +241,7 @@ export const TVChartContainer: React.FC<
             (bar: ApiBar): Bar => ({
               time: new Date(bar.start_time).getTime(),
               ...bar,
-            })
+            }),
           );
 
           onHistoryCallback(bars, { noData: bars.length === 0 });
@@ -246,7 +256,7 @@ export const TVChartContainer: React.FC<
         _resolution,
         _onRealtimeCallback,
         _subscribeUID,
-        _onResetCacheNeededCallback
+        _onResetCacheNeededCallback,
       ) => {
         // TODO
       },
@@ -254,7 +264,7 @@ export const TVChartContainer: React.FC<
         // TODO
       },
     }),
-    [props.allMarketData]
+    [props.allMarketData],
   );
 
   useEffect(() => {
@@ -290,8 +300,64 @@ export const TVChartContainer: React.FC<
         "paneProperties.backgroundType": "solid",
         "paneProperties.background": "#000000",
         "scalesProperties.backgroundColor": "#000000",
+        "mainSeriesProperties.barStyle.upColor": GREEN,
+        "mainSeriesProperties.barStyle.downColor": RED,
+        "mainSeriesProperties.candleStyle.upColor": GREEN,
+        "mainSeriesProperties.candleStyle.downColor": RED,
+        "mainSeriesProperties.candleStyle.borderUpColor": GREEN,
+        "mainSeriesProperties.candleStyle.borderDownColor": RED,
+        "mainSeriesProperties.candleStyle.wickUpColor": GREEN,
+        "mainSeriesProperties.candleStyle.wickDownColor": RED,
+        "mainSeriesProperties.columnStyle.upColor": GREEN_OPACITY_HALF,
+        "mainSeriesProperties.columnStyle.downColor": RED_OPACITY_HALF,
+        "mainSeriesProperties.hollowCandleStyle.upColor": GREEN,
+        "mainSeriesProperties.hollowCandleStyle.downColor": RED,
+        "mainSeriesProperties.rangeStyle.upColor": GREEN,
+        "mainSeriesProperties.rangeStyle.downColor": RED,
+        "paneProperties.legendProperties.showVolume": true,
       },
-      studies_overrides: props.studiesOverrides,
+      studies_overrides: {
+        ...props.studiesOverrides,
+        "volume.volume.color.0": RED_OPACITY_HALF,
+        "volume.volume.color.1": GREEN_OPACITY_HALF,
+      },
+      time_frames: [
+        // defaults
+        {
+          text: "1D",
+          resolution: "1" as ResolutionString,
+        },
+        {
+          text: "5D",
+          resolution: "5" as ResolutionString,
+        },
+        {
+          text: "1M",
+          resolution: "30" as ResolutionString,
+        },
+        {
+          text: "3M",
+          resolution: "60" as ResolutionString,
+        },
+        {
+          text: "6M",
+          resolution: "120" as ResolutionString,
+        },
+        {
+          text: "1y",
+          resolution: "D" as ResolutionString,
+        },
+        {
+          text: "5y",
+          resolution: "W" as ResolutionString,
+        },
+        {
+          text: "1000y", // custom ALL timeframe
+          resolution: "60" as ResolutionString, // may want to specify a different resolution here for server load purposes
+          description: "All",
+          title: "All",
+        },
+      ],
     };
 
     tvWidget.current = new widget(widgetOptions);
@@ -314,5 +380,5 @@ export const TVChartContainer: React.FC<
     props.libraryPath,
   ]);
 
-  return <div ref={ref} className="h-4/5 flex-[4_1_0%]" />;
+  return <div ref={ref} className="w-full" />;
 };

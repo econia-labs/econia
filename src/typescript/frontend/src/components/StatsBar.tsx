@@ -1,21 +1,23 @@
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import { useQuery } from "@tanstack/react-query";
-import Image from "next/image";
+import BigNumber from "bignumber.js";
 import { useRouter } from "next/router";
 import React, { useState } from "react";
+import Skeleton from "react-loading-skeleton";
 
 import { useAptos } from "@/contexts/AptosContext";
 import { API_URL } from "@/env";
 import { type ApiMarket } from "@/types/api";
+import { toDecimalPrice } from "@/utils/econia";
+import { averageOrOther, formatNumber } from "@/utils/formatter";
 import { TypeTag } from "@/utils/TypeTag";
 
 import { BaseModal } from "./BaseModal";
 import { DiscordIcon } from "./icons/DiscordIcon";
 import { MediumIcon } from "./icons/MediumIcon";
 import { TwitterIcon } from "./icons/TwitterIcon";
-import { SelectMarketContent } from "./trade/DepositWithdrawModal/SelectMarketContent";
 import { MarketIconPair } from "./MarketIconPair";
-import { averageOrOther, formatNumber } from "@/utils/formatter";
+import { SelectMarketContent } from "./trade/DepositWithdrawModal/SelectMarketContent";
 
 const DEFAULT_TOKEN_ICON = "/tokenImages/default.png";
 
@@ -40,12 +42,12 @@ type MarketStats = {
 const SocialMediaIcons: React.FC<{ className?: string }> = ({ className }) => {
   return (
     <div className={className}>
-      <div className="flex [&>a]:h-[18px] [&>a]:min-w-[18px] ">
+      <div className="flex">
         <a
           href="https://twitter.com/EconiaLabs"
           target="_blank"
           rel="noreferrer"
-          className="mx-3 aspect-square h-4 w-4 cursor-pointer text-white hover:text-blue"
+          className="mx-3 aspect-square h-[18px] w-[18px] cursor-pointer text-white hover:text-blue"
         >
           <TwitterIcon />
         </a>
@@ -53,7 +55,7 @@ const SocialMediaIcons: React.FC<{ className?: string }> = ({ className }) => {
           href="https://discord.com/invite/Z7gXcMgX8A"
           target="_blank"
           rel="noreferrer"
-          className="mx-3 aspect-square h-4 w-4 cursor-pointer text-white hover:text-blue"
+          className="mx-3 aspect-square h-[18px] w-[18px] cursor-pointer text-white hover:text-blue"
         >
           <DiscordIcon />
         </a>
@@ -61,7 +63,7 @@ const SocialMediaIcons: React.FC<{ className?: string }> = ({ className }) => {
           href="https://medium.com/econialabs"
           target="_blank"
           rel="noreferrer"
-          className="mx-3 aspect-square h-4 w-4 cursor-pointer text-white hover:text-blue"
+          className="mx-3 aspect-square h-[18px] w-[18px] cursor-pointer text-white hover:text-blue"
         >
           <MediumIcon />
         </a>
@@ -71,41 +73,44 @@ const SocialMediaIcons: React.FC<{ className?: string }> = ({ className }) => {
 };
 
 export const StatsBar: React.FC<{
+  allMarketData: ApiMarket[];
   selectedMarket: ApiMarket;
-}> = ({ selectedMarket }) => {
+}> = ({ allMarketData, selectedMarket }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const router = useRouter();
   const { coinListClient } = useAptos();
 
   const { data } = useQuery(
     ["marketStats", selectedMarket],
     async () => {
-      // TODO: MOCK API CALL
       const resProm = fetch(
-        `${API_URL}/market/${selectedMarket.market_id}/stats?resolution=1d`
+        `${API_URL}/markets/${selectedMarket.market_id}/stats?resolution=1d`,
       ).then((res) => res.json());
       const priceProm = fetch(
-        `${API_URL}/market/${selectedMarket.market_id}/orderbook?depth=1`
+        `${API_URL}/markets/${selectedMarket.market_id}/orderbook?depth=1`,
       ).then((res) => res.json());
       const res = await resProm;
       const priceRes = await priceProm;
 
       const baseAssetIcon = selectedMarket.base
         ? coinListClient.getCoinInfoByFullName(
-            TypeTag.fromApiCoin(selectedMarket.base).toString()
+            TypeTag.fromApiCoin(selectedMarket.base).toString(),
           )?.logo_url
         : DEFAULT_TOKEN_ICON;
       const quoteAssetIcon =
         coinListClient.getCoinInfoByFullName(
-          TypeTag.fromApiCoin(selectedMarket.quote).toString()
+          TypeTag.fromApiCoin(selectedMarket.quote).toString(),
         )?.logo_url ?? DEFAULT_TOKEN_ICON;
 
-      // END MOCK API CALL
       return {
-        lastPrice: averageOrOther(
-          priceRes.asks[0].price,
-          priceRes.bids[0].price
-        ),
+        lastPrice: toDecimalPrice({
+          price: new BigNumber(
+            averageOrOther(priceRes.asks[0].price, priceRes.bids[0].price) || 0,
+          ),
+          lotSize: BigNumber(selectedMarket.lot_size),
+          tickSize: BigNumber(selectedMarket.tick_size),
+          baseCoinDecimals: BigNumber(selectedMarket.base?.decimals || 0),
+          quoteCoinDecimals: BigNumber(selectedMarket.quote?.decimals || 0),
+        }).toNumber(),
         lastPriceChange: 10.1738, // TODO: Mock data
         change24h: res.close,
         change24hPercent: res.change * 100,
@@ -127,7 +132,7 @@ export const StatsBar: React.FC<{
       keepPreviousData: true,
       refetchOnWindowFocus: false,
       refetchInterval: 10 * 1000,
-    }
+    },
   );
 
   return (
@@ -140,15 +145,9 @@ export const StatsBar: React.FC<{
         }}
         showCloseButton={false}
       >
-        <SelectMarketContent
-          onSelectMarket={(market) => {
-            setIsModalOpen(false);
-            false;
-            router.push(`/trade/${market.name}`);
-          }}
-        />
+        <SelectMarketContent allMarketData={allMarketData} />
       </BaseModal>
-      <div className="flex justify-between border-b border-neutral-600 bg-black px-9 py-3">
+      <div className="flex justify-between border-b border-neutral-600 px-9 py-3">
         <div className="flex overflow-x-clip whitespace-nowrap">
           <div className="flex items-center">
             <MarketIconPair
@@ -163,7 +162,7 @@ export const StatsBar: React.FC<{
                 }}
               >
                 {selectedMarket.name}
-                <ChevronDownIcon className="my-auto ml-1 h-5 w-5 text-white" />
+                <ChevronDownIcon className="my-auto ml-1 h-[18px] w-[18px] text-white" />
               </button>
             </div>
           </div>
@@ -171,14 +170,17 @@ export const StatsBar: React.FC<{
           <div className="block md:hidden">
             <p className="font-roboto-mono font-light">
               <span className="inline-block min-w-[4em] text-xl text-white">
-                ${formatNumber(data?.lastPrice, 4)}
+                {data?.lastPrice && "$"}
+                {formatNumber(data?.lastPrice, 2) ?? <Skeleton />}
               </span>
               <span
                 className={`ml-1 inline-block min-w-[6em] text-base ${
                   (data?.lastPriceChange || 0) < 0 ? "text-red" : "text-green"
                 }`}
               >
-                {formatNumber(data?.lastPriceChange, 4, "always")}
+                {formatNumber(data?.lastPriceChange, 2, "always") ?? (
+                  <Skeleton />
+                )}
               </span>
             </p>
           </div>
@@ -188,7 +190,8 @@ export const StatsBar: React.FC<{
               LAST PRICE
             </span>
             <p className="font-roboto-mono text-xs font-light text-white">
-              ${formatNumber(data?.lastPrice, 4)}
+              {data?.lastPrice && "$"}
+              {formatNumber(data?.lastPrice, 2) ?? <Skeleton />}
             </p>
           </div>
           {/* 24 hr */}
@@ -197,16 +200,23 @@ export const StatsBar: React.FC<{
               24H CHANGE
             </span>
             <p className="font-roboto-mono text-xs font-light text-white">
-              <span className="inline-block text-white">
-                {formatNumber(data?.change24h, 4)}
+              <span className="inline-block min-w-[70px] text-white">
+                {formatNumber(data?.change24h, 2) ?? <Skeleton />}
               </span>
-              <span
-                className={`ml-3 ${
-                  (data?.change24hPercent || 0) < 0 ? "text-red" : "text-green"
-                }`}
-              >
-                {formatNumber(data?.change24hPercent, 4, "always")}%
-              </span>
+              {data?.change24hPercent && (
+                <span
+                  className={`ml-2 ${
+                    (data?.change24hPercent || 0) < 0
+                      ? "text-red"
+                      : "text-green"
+                  }`}
+                >
+                  {formatNumber(data?.change24hPercent, 2, "always") ?? (
+                    <Skeleton />
+                  )}
+                  %
+                </span>
+              )}
             </p>
           </div>
           {/* 24 hr high */}
@@ -215,7 +225,7 @@ export const StatsBar: React.FC<{
               24h high
             </span>
             <p className="font-roboto-mono text-xs font-light text-white">
-              {formatNumber(data?.high24h, 4)}
+              {formatNumber(data?.high24h, 2) ?? <Skeleton />}
             </p>
           </div>
           {/* 24 hr low */}
@@ -224,7 +234,7 @@ export const StatsBar: React.FC<{
               24h low
             </span>
             <p className="font-roboto-mono text-xs font-light text-white">
-              {formatNumber(data?.low24h, 4)}
+              {formatNumber(data?.low24h, 2) ?? <Skeleton />}
             </p>
           </div>
           {/* 24 hr main */}
@@ -233,7 +243,7 @@ export const StatsBar: React.FC<{
               24H VOLUME ({data?.pairData.baseAsset || "-"})
             </span>
             <p className="font-roboto-mono text-xs font-light text-white">
-              {formatNumber(data?.pairData.baseVolume, 4)}
+              {formatNumber(data?.pairData.baseVolume, 2) ?? <Skeleton />}
             </p>
           </div>
           {/* 24 hr pair */}
@@ -242,7 +252,7 @@ export const StatsBar: React.FC<{
               24H VOLUME ({data?.pairData.quoteAsset || "-"})
             </span>
             <p className="font-roboto-mono text-xs font-light text-white">
-              {formatNumber(data?.pairData.quoteVolume, 4)}
+              {formatNumber(data?.pairData.quoteVolume, 2) ?? <Skeleton />}
             </p>
           </div>
         </div>

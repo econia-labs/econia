@@ -6,14 +6,14 @@ export class TypeTag {
   constructor(
     public addr: string,
     public module: string,
-    public name: string
+    public name: string,
   ) {}
 
   static fromApiCoin(apiCoin: ApiCoin) {
     return new TypeTag(
       apiCoin.account_address,
       apiCoin.module_name,
-      apiCoin.struct_name
+      apiCoin.struct_name,
     );
   }
 
@@ -24,7 +24,7 @@ export class TypeTag {
     return new TypeTag(
       ECONIA_ADDR,
       "tablist",
-      `Node<${tablistNode.key},${tablistNode.value.toString()}>`
+      `Node<${tablistNode.key},${tablistNode.value.toString()}>`,
     );
   }
 

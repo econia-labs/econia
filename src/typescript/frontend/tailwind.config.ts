@@ -7,6 +7,7 @@ const config = {
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/contexts/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
     extend: {
@@ -14,11 +15,15 @@ const config = {
         jost: ["var(--font-jost)", ...fontFamily.sans],
         "roboto-mono": ["var(--font-roboto-mono)", ...fontFamily.sans],
       },
+      screens: {
+        tall: { raw: "(min-height: 960px)" },
+      },
     },
     colors: {
       ...colors,
       purple: "#8c3dd8",
-      blue: "#62c6f8",
+      blue: "#086cd9",
+      "light-blue": "#62c6f8",
       green: "#6ed5a3",
       yellow: "#eef081",
       red: "#d56e6e",

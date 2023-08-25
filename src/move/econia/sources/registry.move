@@ -18,9 +18,13 @@
 ///
 /// # General overview sections
 ///
-/// [Public function index](#public-function-index)
+/// [View functions](#view-functions)
 ///
 /// * [Constant getters](#constant-getters)
+/// * [Market lookup](#market-lookup)
+///
+/// [Public function index](#public-function-index)
+///
 /// * [Capability management](#capability-management)
 /// * [Integrator fee store setup](#integrator-fee-store-setup)
 /// * [Recognized market lookup](#recognized-market-lookup)
@@ -30,13 +34,13 @@
 ///
 /// * [Capability registration](#capability-registration)
 /// * [Fee store registration](#fee-store-registration)
-/// * [Recognized market getters](#recognized-market-getters)
+/// * [Market getters](#market-getters)
 /// * [Recognized market setters](#recognized-market-setters)
 /// * [Internal market registration](#internal-market-registration)
 ///
 /// [Complete DocGen index](#complete-docgen-index)
 ///
-/// # Public function index
+/// # View functions
 ///
 /// ## Constant getters
 ///
@@ -44,6 +48,19 @@
 /// * `get_MIN_CHARACTERS_GENERIC()`
 /// * `get_NO_CUSTODIAN()`
 /// * `get_NO_UNDERWRITER()`
+///
+/// ## Market lookup
+///
+/// * `get_market_counts()`
+/// * `get_market_info()`
+/// * `get_market_id_base_coin()`
+/// * `get_market_id_base_generic()`
+/// * `get_recognized_market_id_base_coin()`
+/// * `get_recognized_market_id_base_generic()`
+/// * `has_recognized_market_base_coin_by_type()`
+/// * `has_recognized_market_base_generic_by_type()`
+///
+/// # Public function index
 ///
 /// ## Capability management
 ///
@@ -65,9 +82,7 @@
 /// * `get_recognized_market_info_base_generic()`
 /// * `get_recognized_market_info_base_generic_by_type()`
 /// * `has_recognized_market_base_coin()`
-/// * `has_recognized_market_base_coin_by_type()`
 /// * `has_recognized_market_base_generic()`
-/// * `has_recognized_market_base_generic_by_type()`
 ///
 /// ## Recognized market management
 ///
@@ -112,7 +127,7 @@
 ///
 /// ```
 ///
-/// ## Recognized market getters
+/// ## Market getters
 ///
 /// ```mermaid
 ///
@@ -130,10 +145,21 @@
 /// has_recognized_market_base_coin --> has_recognized_market
 /// has_recognized_market_base_coin_by_type -->
 ///     has_recognized_market_base_coin
-/// has_recognized_market_base_generic -->
-///     has_recognized_market
+/// has_recognized_market_base_generic --> has_recognized_market
 /// has_recognized_market_base_generic_by_type -->
 ///     has_recognized_market_base_generic
+///
+/// get_recognized_market_id_base_coin -->
+///     get_recognized_market_info_base_coin_by_type
+///
+/// get_recognized_market_id_base_generic -->
+///     get_recognized_market_info_base_generic_by_type
+///
+/// get_market_info --> has_recognized_market
+/// get_market_info --> get_recognized_market_info
+///
+/// get_market_id_base_coin --> get_market_id
+/// get_market_id_base_generic --> get_market_id
 ///
 /// ```
 ///
@@ -199,6 +225,17 @@ module econia::registry {
 
     // Structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /// Human-readable asset type descriptor for view functions.
+    struct AssetTypeView has copy, drop {
+        /// Address of package containing type definition.
+        package_address: address,
+        /// Module name where type is defined.
+        module_name: String,
+        /// Struct type name, either a phantom `CoinType` or
+        /// `GenericAsset`
+        type_name: String
+    }
+
     /// Custodian capability required to approve order operations and
     /// withdrawals. Administered to third-party registrants who may
     /// store it as they wish.
@@ -212,6 +249,15 @@ module econia::registry {
     /// argument for generic market operations. Has key ability to
     /// restrict unexpected malicious attack vectors.
     struct GenericAsset has key {}
+
+    /// View function return specifying number of markets and recognized
+    /// markets that have been registered.
+    struct MarketCounts has copy, drop {
+        /// Number of markets.
+        n_markets: u64,
+        /// Number of recognized markets.
+        n_recognized_markets: u64
+    }
 
     /// Information about a market.
     struct MarketInfo has copy, drop, store {
@@ -241,6 +287,28 @@ module econia::registry {
         /// underwriter capability required to verify generic asset
         /// amounts. A market-wide ID that only applies to markets
         /// having a generic base asset.
+        underwriter_id: u64
+    }
+
+    /// Human-readable market info return for view functions.
+    struct MarketInfoView has copy, drop {
+        /// 1-indexed Market ID.
+        market_id: u64,
+        /// Marked `true` if market is recognized.
+        is_recognized: bool,
+        /// `MarketInfo.base_type` as an `AssetTypeView`.
+        base_type: AssetTypeView,
+        /// `MarketInfo.base_name_generic`.
+        base_name_generic: String,
+        /// `MarketInfo.quote_type` as an `AssetTypeView`.
+        quote_type: AssetTypeView,
+        /// `MarketInfo.lot_size`.
+        lot_size: u64,
+        /// `MarketInfo.tick_size`.
+        tick_size: u64,
+        /// `MarketInfo.min_size`.
+        min_size: u64,
+        /// `MarketInfo.underwriter_id`.
         underwriter_id: u64
     }
 
@@ -389,9 +457,272 @@ module econia::registry {
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+    // View functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[view]
+    /// Public constant getter for `MAX_CHARACTERS_GENERIC`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_MAX_CHARACTERS_GENERIC()`
+    public fun get_MAX_CHARACTERS_GENERIC(): u64 {MAX_CHARACTERS_GENERIC}
+
+    #[view]
+    /// Public constant getter for `MIN_CHARACTERS_GENERIC`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_MIN_CHARACTERS_GENERIC()`
+    public fun get_MIN_CHARACTERS_GENERIC(): u64 {MIN_CHARACTERS_GENERIC}
+
+    #[view]
+    /// Public constant getter for `NO_CUSTODIAN`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_NO_CUSTODIAN()`
+    public fun get_NO_CUSTODIAN(): u64 {NO_CUSTODIAN}
+
+    #[view]
+    /// Public constant getter for `NO_UNDERWRITER`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_NO_UNDERWRITER()`
+    public fun get_NO_UNDERWRITER(): u64 {NO_UNDERWRITER}
+
+    #[view]
+    /// Return a `MarketCounts` for current registry state.
+    ///
+    /// Restricted to private view function to prevent runtime
+    /// transaction collisions against the registry.
+    ///
+    /// # Testing
+    ///
+    /// * `test_set_remove_check_recognized_markets()`
+    fun get_market_counts():
+    MarketCounts
+    acquires
+        RecognizedMarkets,
+        Registry
+    {
+        let markets_map_ref = // Immutably borrow markets map.
+            &borrow_global<Registry>(@econia).market_id_to_info;
+        // Get number of markets.
+        let n_markets = tablist::length(markets_map_ref);
+        // Immutably borrow recognized markets map.
+        let recognized_markets_map_ref =
+            &borrow_global<RecognizedMarkets>(@econia).map;
+        // Get number of recognized markets.
+        let n_recognized_markets = tablist::length(recognized_markets_map_ref);
+        // Return market counts.
+        MarketCounts{n_markets, n_recognized_markets}
+    }
+
+    #[view]
+    /// Return optional market ID corresponding to given market
+    /// parameters when the base asset is a coin type.
+    ///
+    /// Restricted to private view function to prevent runtime
+    /// transaction collisions against the registry.
+    ///
+    /// # Testing
+    ///
+    /// * `test_set_remove_check_recognized_markets()`
+    fun get_market_id_base_coin<BaseType, QuoteType>(
+        lot_size: u64,
+        tick_size: u64,
+        min_size: u64,
+    ): Option<u64>
+    acquires Registry {
+        get_market_id(MarketInfo{
+            base_type: type_info::type_of<BaseType>(),
+            base_name_generic: string::utf8(b""),
+            quote_type: type_info::type_of<QuoteType>(),
+            lot_size,
+            tick_size,
+            min_size,
+            underwriter_id: NO_UNDERWRITER
+        })
+    }
+
+    #[view]
+    /// Return optional market ID corresponding to given market
+    /// parameters when the base asset is generic.
+    ///
+    /// Restricted to private view function to prevent runtime
+    /// transaction collisions against the registry.
+    ///
+    /// # Testing
+    ///
+    /// * `test_set_remove_check_recognized_markets()`
+    fun get_market_id_base_generic<QuoteType>(
+        base_name_generic: String,
+        lot_size: u64,
+        tick_size: u64,
+        min_size: u64,
+        underwriter_id: u64
+    ): Option<u64>
+    acquires Registry {
+        get_market_id(MarketInfo{
+            base_type: type_info::type_of<GenericAsset>(),
+            base_name_generic,
+            quote_type: type_info::type_of<QuoteType>(),
+            lot_size,
+            tick_size,
+            min_size,
+            underwriter_id
+        })
+    }
+
+    #[view]
+    /// Return a `MarketInfoView` for given `market_id`.
+    ///
+    /// Restricted to private view function to prevent runtime
+    /// transaction collisions against the registry.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_market_info_invalid_market_id()`
+    /// * `test_set_remove_check_recognized_markets()`
+    fun get_market_info(
+        market_id: u64
+    ): MarketInfoView
+    acquires
+        RecognizedMarkets,
+        Registry
+    {
+        let markets_map_ref = // Immutably borrow markets map.
+            &borrow_global<Registry>(@econia).market_id_to_info;
+        assert!( // Assert market ID corresponds to registered market.
+            tablist::contains(markets_map_ref, market_id),
+            E_INVALID_MARKET_ID);
+        // Immutably borrow market info for market ID.
+        let market_info_ref = tablist::borrow(markets_map_ref, market_id);
+        // Get base type for market.
+        let base_type = market_info_ref.base_type;
+        // Get generic base name for market.
+        let base_name_generic = market_info_ref.base_name_generic;
+        // Get quote type for market.
+        let quote_type = market_info_ref.quote_type;
+        let trading_pair = // Get trading pair for market.
+            TradingPair{base_type, base_name_generic, quote_type};
+        // Check if market is recognized. If a recognized market exists
+        // for given trading pair:
+        let is_recognized = if (has_recognized_market(trading_pair)) {
+            // Get recognized market ID for given trading pair.
+            let (recognized_market_id_for_trading_pair, _, _, _, _) =
+                get_recognized_market_info(trading_pair);
+            // Indicated market ID is recognized if it is the same as
+            // the recognized market ID for the given trading pair.
+            market_id == recognized_market_id_for_trading_pair
+        } else { // If no recognized market for given trading pair:
+            false // Market is necessarily not recognized.
+        };
+        // Pack and return a human-readable market info view.
+        MarketInfoView{
+            market_id,
+            is_recognized,
+            base_type: to_asset_type_view(&base_type),
+            base_name_generic,
+            quote_type: to_asset_type_view(&quote_type),
+            lot_size: market_info_ref.lot_size,
+            tick_size: market_info_ref.tick_size,
+            min_size: market_info_ref.min_size,
+            underwriter_id: market_info_ref.underwriter_id
+        }
+    }
+
+    #[view]
+    /// Return recognized market ID for a pure coin trading pair.
+    ///
+    /// # Testing
+    ///
+    /// * `test_set_remove_check_recognized_markets()`
+    public fun get_recognized_market_id_base_coin<
+        BaseCoinType,
+        QuoteCoinType
+    >(): u64
+    acquires RecognizedMarkets {
+        // Check market info for coin types, dropping all but market ID.
+        let (market_id, _, _, _, _) =
+            get_recognized_market_info_base_coin_by_type<
+                BaseCoinType, QuoteCoinType>();
+        market_id // Return resultant market ID
+    }
+
+    #[view]
+    /// Return recognized market ID for trading pair with generic base
+    /// asset.
+    ///
+    /// # Testing
+    ///
+    /// * `test_set_remove_check_recognized_markets()`
+    public fun get_recognized_market_id_base_generic<
+        QuoteCoinType
+    >(
+        base_name_generic: String
+    ): u64
+    acquires RecognizedMarkets {
+        // Check market info for coin types, dropping all but market ID.
+        let (market_id, _, _, _, _) =
+            get_recognized_market_info_base_generic_by_type<QuoteCoinType>(
+                base_name_generic);
+        market_id // Return resultant market ID
+    }
+
+    #[view]
+    /// Wrapper for `has_recognized_market_base_coin()` with type
+    /// parameters.
+    ///
+    /// # Type parameters
+    ///
+    /// * `BaseCoinType`: Base asset phantom coin type.
+    /// * `QuoteCoinType`: Quote asset phantom coin type.
+    ///
+    /// # Testing
+    ///
+    /// * `test_set_remove_check_recognized_markets()`
+    public fun has_recognized_market_base_coin_by_type<
+        BaseCoinType,
+        QuoteCoinType
+    >(): bool
+    acquires RecognizedMarkets {
+        has_recognized_market_base_coin(
+            type_info::type_of<BaseCoinType>(),
+            type_info::type_of<QuoteCoinType>())
+    }
+
+    #[view]
+    /// Wrapper for `has_recognized_market_base_generic()` with quote
+    /// type parameter.
+    ///
+    /// # Type parameters
+    ///
+    /// * `QuoteCoinType`: Quote asset phantom coin type.
+    ///
+    /// # Parameters
+    ///
+    /// * `base_name_generic`: Generic base asset name.
+    ///
+    /// # Testing
+    ///
+    /// * `test_set_remove_check_recognized_markets()`
+    public fun has_recognized_market_base_generic_by_type<
+        QuoteCoinType
+    >(
+        base_name_generic: String
+    ): bool
+    acquires RecognizedMarkets {
+        has_recognized_market_base_generic(
+            base_name_generic,
+            type_info::type_of<QuoteCoinType>())
+    }
+
+    // View functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
     // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    #[app]
     /// Return serial ID of given `CustodianCapability`.
     ///
     /// # Testing
@@ -403,7 +734,6 @@ module econia::registry {
         custodian_capability_ref.custodian_id
     }
 
-    #[app]
     /// Wrapper for `get_recognized_market_info()` for coin base asset.
     ///
     /// # Parameters
@@ -432,7 +762,6 @@ module econia::registry {
         get_recognized_market_info(trading_pair)
     }
 
-    #[app]
     /// Wrapper for `get_recognized_market_info_base_coin()` with
     /// type parameters.
     ///
@@ -459,7 +788,6 @@ module econia::registry {
             type_info::type_of<QuoteCoinType>())
     }
 
-    #[app]
     /// Wrapper for `get_recognized_market_info()` for generic base
     /// asset.
     ///
@@ -489,7 +817,6 @@ module econia::registry {
         get_recognized_market_info(trading_pair)
     }
 
-    #[app]
     /// Wrapper for `get_recognized_market_info_base_generic()` with
     /// quote type parameter.
     ///
@@ -520,39 +847,6 @@ module econia::registry {
             type_info::type_of<QuoteCoinType>())
     }
 
-    #[app]
-    /// Public constant getter for `MAX_CHARACTERS_GENERIC`.
-    ///
-    /// # Testing
-    ///
-    /// * `test_get_MAX_CHARACTERS_GENERIC()`
-    public fun get_MAX_CHARACTERS_GENERIC(): u64 {MAX_CHARACTERS_GENERIC}
-
-    #[app]
-    /// Public constant getter for `MIN_CHARACTERS_GENERIC`.
-    ///
-    /// # Testing
-    ///
-    /// * `test_get_MIN_CHARACTERS_GENERIC()`
-    public fun get_MIN_CHARACTERS_GENERIC(): u64 {MIN_CHARACTERS_GENERIC}
-
-    #[app]
-    /// Public constant getter for `NO_CUSTODIAN`.
-    ///
-    /// # Testing
-    ///
-    /// * `test_get_NO_CUSTODIAN()`
-    public fun get_NO_CUSTODIAN(): u64 {NO_CUSTODIAN}
-
-    #[app]
-    /// Public constant getter for `NO_UNDERWRITER`.
-    ///
-    /// # Testing
-    ///
-    /// * `test_get_NO_UNDERWRITER()`
-    public fun get_NO_UNDERWRITER(): u64 {NO_UNDERWRITER}
-
-    #[app]
     /// Return serial ID of given `UnderwriterCapability`.
     ///
     /// # Testing
@@ -564,7 +858,6 @@ module econia::registry {
         underwriter_capability_ref.underwriter_id
     }
 
-    #[app]
     /// Wrapper for `has_recognized_market()` for coin base asset.
     ///
     /// # Parameters
@@ -588,29 +881,6 @@ module econia::registry {
         has_recognized_market(trading_pair)
     }
 
-    #[app]
-    /// Wrapper for `has_recognized_market_base_coin()` with type
-    /// parameters.
-    ///
-    /// # Type parameters
-    ///
-    /// * `BaseCoinType`: Base asset phantom coin type.
-    /// * `QuoteCoinType`: Quote asset phantom coin type.
-    ///
-    /// # Testing
-    ///
-    /// * `test_set_remove_check_recognized_markets()`
-    public fun has_recognized_market_base_coin_by_type<
-        BaseCoinType,
-        QuoteCoinType
-    >(): bool
-    acquires RecognizedMarkets {
-        has_recognized_market_base_coin(
-            type_info::type_of<BaseCoinType>(),
-            type_info::type_of<QuoteCoinType>())
-    }
-
-    #[app]
     /// Wrapper for `has_recognized_market()` for generic base asset.
     ///
     /// # Parameters
@@ -632,32 +902,6 @@ module econia::registry {
             TradingPair{base_type, base_name_generic, quote_type};
         // Check if trading pair has recognized market.
         has_recognized_market(trading_pair)
-    }
-
-    #[app]
-    /// Wrapper for `has_recognized_market_base_generic()` with quote
-    /// type parameter.
-    ///
-    /// # Type parameters
-    ///
-    /// * `QuoteCoinType`: Quote asset phantom coin type.
-    ///
-    /// # Parameters
-    ///
-    /// * `base_name_generic`: Generic base asset name.
-    ///
-    /// # Testing
-    ///
-    /// * `test_set_remove_check_recognized_markets()`
-    public fun has_recognized_market_base_generic_by_type<
-        QuoteCoinType
-    >(
-        base_name_generic: String,
-    ): bool
-    acquires RecognizedMarkets {
-        has_recognized_market_base_generic(
-            base_name_generic,
-            type_info::type_of<QuoteCoinType>())
     }
 
     /// Return a unique `CustodianCapability`.
@@ -763,7 +1007,6 @@ module econia::registry {
 
     // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    #[cmd]
     /// Wrapped call to `register_integrator_fee_store()` for activating
     /// to base tier, which does not require utility coins.
     ///
@@ -781,7 +1024,6 @@ module econia::registry {
             integrator, market_id, 0, coin::zero<UtilityCoinType>());
     }
 
-    #[cmd]
     /// Wrapped call to `register_integrator_fee_store()` for paying
     /// utility coins from an `aptos_framework::coin::CoinStore`.
     ///
@@ -801,7 +1043,6 @@ module econia::registry {
                 integrator, incentives::get_tier_activation_fee(tier)));
     }
 
-    #[cmd]
     /// Remove market having given ID from recognized markets list.
     ///
     /// # Parameters
@@ -874,7 +1115,6 @@ module econia::registry {
             trading_pair, recognized_market_info: option::none()});
     }
 
-    #[cmd]
     /// Wrapper for `remove_recognized_market()` with market IDs vector.
     ///
     /// # Testing
@@ -899,7 +1139,6 @@ module econia::registry {
         }
     }
 
-    #[cmd]
     /// Set market having given ID as recognized market.
     ///
     /// # Parameters
@@ -973,7 +1212,6 @@ module econia::registry {
             trading_pair, recognized_market_info: optional_market_info});
     }
 
-    #[cmd]
     /// Wrapper for `set_recognized_market()` with market IDs vector.
     ///
     /// # Testing
@@ -1163,6 +1401,23 @@ module econia::registry {
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /// Return optional market ID corresponding to given `MarketInfo`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_set_remove_check_recognized_markets()`
+    fun get_market_id(
+        market_info: MarketInfo
+    ): Option<u64>
+    acquires Registry {
+        let market_id_map_ref = // Immutably borrow market ID map.
+            &borrow_global<Registry>(@econia).market_info_to_id;
+        // Return optional market ID if one exists, else empty option.
+        if (table::contains(market_id_map_ref, market_info))
+            option::some(*table::borrow(market_id_map_ref, market_info)) else
+            option::none()
+    }
+
     /// Return recognized market info for given trading pair.
     ///
     /// # Parameters
@@ -1351,6 +1606,21 @@ module econia::registry {
         incentives::deposit_market_registration_utility_coins<UtilityCoinType>(
                 utility_coins); // Deposit utility coins.
         market_id // Return market ID.
+    }
+
+    /// Convert a `TypeInfo` to an `AssetTypeView`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_set_remove_check_recognized_markets()`
+    fun to_asset_type_view(
+        type_info_ref: &TypeInfo
+    ): AssetTypeView {
+        AssetTypeView{
+            package_address: type_info::account_address(type_info_ref),
+            module_name: string::utf8(type_info::module_name(type_info_ref)),
+            type_name: string::utf8(type_info::struct_name(type_info_ref)),
+        }
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1646,6 +1916,18 @@ module econia::registry {
     /// Verify constant getter return.
     fun test_get_NO_UNDERWRITER() {
         assert!(get_NO_UNDERWRITER() == NO_UNDERWRITER, 0)
+    }
+
+    #[test]
+    #[expected_failure(abort_code = E_INVALID_MARKET_ID)]
+    /// Verify failure for no such market ID.
+    fun test_get_market_info_invalid_market_id()
+    acquires
+        RecognizedMarkets,
+        Registry
+    {
+        init_test(); // Initialize for testing.
+        get_market_info(1); // Attempt invalid invocation.
     }
 
     #[test]
@@ -2152,6 +2434,9 @@ module econia::registry {
         Registry
     {
         init_test(); // Initialize for testing.
+        // Assert market counts.
+        assert!(get_market_counts() ==
+                MarketCounts{n_markets: 0, n_recognized_markets: 0}, 0);
         // Get generic market underwriter capability.
         let underwriter_id_generic = 123;
         let underwriter_capability = // Get underwriter capability.
@@ -2164,6 +2449,24 @@ module econia::registry {
         let lot_size_2 = lot_size_1 - 1;
         let tick_size_2 = tick_size_1 - 1;
         let min_size_2 = min_size_1 - 1;
+        let lot_size_3 = lot_size_2 - 1;
+        let tick_size_3 = tick_size_2 - 1;
+        let min_size_3 = min_size_2 - 1;
+        let base_type_view = AssetTypeView{
+            package_address: @econia,
+            module_name: string::utf8(b"assets"),
+            type_name: string::utf8(b"BC"),
+        };
+        let base_type_view_generic = AssetTypeView{
+            package_address: @econia,
+            module_name: string::utf8(b"registry"),
+            type_name: string::utf8(b"GenericAsset"),
+        };
+        let quote_type_view = AssetTypeView{
+            package_address: @econia,
+            module_name: string::utf8(b"assets"),
+            type_name: string::utf8(b"QC"),
+        };
         // Get market registration fee.
         let fee = incentives::get_market_registration_fee();
         // Assert existence checks.
@@ -2171,21 +2474,125 @@ module econia::registry {
             !has_recognized_market_base_generic_by_type<QC>(base_name_generic),
             0);
         assert!(!has_recognized_market_base_coin_by_type<BC, QC>(), 0);
+        assert!(get_market_id_base_generic<QC>(
+                    base_name_generic, lot_size_1, tick_size_1, min_size_1,
+                    underwriter_id_generic)
+                == option::none(), 0);
+        assert!(get_market_id_base_coin<BC, QC>(
+                    lot_size_2, tick_size_2, min_size_2) == option::none(), 0);
+        // Assert events.
+        let market_registration_events = event::emitted_events_by_handle(
+            &borrow_global<Registry>(@econia).market_registration_events);
+        assert!(market_registration_events == vector[], 0);
         // Register markets.
         register_market_base_generic_internal<QC, UC>(
             base_name_generic, lot_size_1, tick_size_1, min_size_1,
             &underwriter_capability, assets::mint_test(fee));
         register_market_base_coin_internal<BC, QC, UC>(
             lot_size_2, tick_size_2, min_size_2, assets::mint_test(fee));
+        // Assert events.
+        market_registration_events = event::emitted_events_by_handle(
+            &borrow_global<Registry>(@econia).market_registration_events);
+        assert!(market_registration_events == vector[
+            MarketRegistrationEvent{
+                market_id: 1,
+                base_type: type_info::type_of<GenericAsset>(),
+                base_name_generic,
+                quote_type: type_info::type_of<QC>(),
+                lot_size: lot_size_1,
+                tick_size: tick_size_1,
+                min_size: min_size_1,
+                underwriter_id: underwriter_id_generic
+            },
+            MarketRegistrationEvent{
+                market_id: 2,
+                base_type: type_info::type_of<BC>(),
+                base_name_generic: string::utf8(b""),
+                quote_type: type_info::type_of<QC>(),
+                lot_size: lot_size_2,
+                tick_size: tick_size_2,
+                min_size: min_size_2,
+                underwriter_id: NO_UNDERWRITER
+            },
+        ], 0);
+        // Verify market info.
+        assert!(get_market_info(1) == MarketInfoView{
+            market_id: 1,
+            is_recognized: false,
+            base_type: base_type_view_generic,
+            base_name_generic,
+            quote_type: quote_type_view,
+            lot_size: lot_size_1,
+            tick_size: tick_size_1,
+            min_size: min_size_1,
+            underwriter_id: underwriter_id_generic
+        }, 0);
+        assert!(get_market_info(2) == MarketInfoView{
+            market_id: 2,
+            is_recognized: false,
+            base_type: base_type_view,
+            base_name_generic: string::utf8(b""),
+            quote_type: quote_type_view,
+            lot_size: lot_size_2,
+            tick_size: tick_size_2,
+            min_size: min_size_2,
+            underwriter_id: NO_UNDERWRITER
+        }, 0);
         // Drop underwriter capability.
         drop_underwriter_capability_test(underwriter_capability);
+        // Assert events.
+        let recognized_market_events = event::emitted_events_by_handle(
+            &borrow_global<RecognizedMarkets>(@econia).
+            recognized_market_events);
+        assert!(recognized_market_events == vector[], 0);
         // Set both as recognized markets.
         set_recognized_markets(econia, vector[1, 2]);
+        // Assert events.
+        recognized_market_events = event::emitted_events_by_handle(
+            &borrow_global<RecognizedMarkets>(@econia).
+            recognized_market_events);
+        assert!(recognized_market_events == vector[
+            RecognizedMarketEvent{
+                trading_pair: TradingPair{
+                    base_type: type_info::type_of<GenericAsset>(),
+                    base_name_generic,
+                    quote_type: type_info::type_of<QC>()
+                },
+                recognized_market_info: option::some(RecognizedMarketInfo{
+                    market_id: 1,
+                    lot_size: lot_size_1,
+                    tick_size: tick_size_1,
+                    min_size: min_size_1,
+                    underwriter_id: underwriter_id_generic
+                })
+            },
+            RecognizedMarketEvent{
+                trading_pair: TradingPair{
+                    base_type: type_info::type_of<BC>(),
+                    base_name_generic: string::utf8(b""),
+                    quote_type: type_info::type_of<QC>()
+                },
+                recognized_market_info: option::some(RecognizedMarketInfo{
+                    market_id: 2,
+                    lot_size: lot_size_2,
+                    tick_size: tick_size_2,
+                    min_size: min_size_2,
+                    underwriter_id: NO_UNDERWRITER
+                })
+            },
+        ], 0);
         // Assert existence checks.
         assert!(
             has_recognized_market_base_generic_by_type<QC>(base_name_generic),
             0);
         assert!(has_recognized_market_base_coin_by_type<BC, QC>(), 0);
+        assert!(get_market_id_base_generic<QC>(
+                    base_name_generic, lot_size_1, tick_size_1, min_size_1,
+                    underwriter_id_generic)
+                == option::some(1), 0);
+        assert!(get_market_id_base_coin<BC, QC>(
+                    lot_size_2, tick_size_2, min_size_2)
+                == option::some(2), 0);
         // Assert generic asset market info.
         let (market_id, lot_size, tick_size, min_size, underwriter_id) =
             get_recognized_market_info_base_generic_by_type<QC>(
@@ -2195,6 +2602,8 @@ module econia::registry {
         assert!(tick_size == tick_size_1, 0);
         assert!(min_size == min_size_1, 0);
         assert!(underwriter_id == underwriter_id_generic, 0);
+        assert!(get_recognized_market_id_base_generic<QC>(base_name_generic)
+                == 1, 0);
         // Assert pure coin asset market info.
         let (market_id, lot_size, tick_size, min_size, underwriter_id) =
             get_recognized_market_info_base_coin_by_type<BC, QC>();
@@ -2203,13 +2612,140 @@ module econia::registry {
         assert!(tick_size == tick_size_2, 0);
         assert!(min_size == min_size_2, 0);
         assert!(underwriter_id == NO_UNDERWRITER, 0);
+        assert!(get_recognized_market_id_base_coin<BC, QC>() == 2, 0);
+        // Assert market counts.
+        assert!(get_market_counts() ==
+                MarketCounts{n_markets: 2, n_recognized_markets: 2}, 0);
+        // Verify market info.
+        assert!(get_market_info(1) == MarketInfoView{
+            market_id: 1,
+            is_recognized: true,
+            base_type: base_type_view_generic,
+            base_name_generic,
+            quote_type: quote_type_view,
+            lot_size: lot_size_1,
+            tick_size: tick_size_1,
+            min_size: min_size_1,
+            underwriter_id: underwriter_id_generic
+        }, 0);
+        assert!(get_market_info(2) == MarketInfoView{
+            market_id: 2,
+            is_recognized: true,
+            base_type: base_type_view,
+            base_name_generic: string::utf8(b""),
+            quote_type: quote_type_view,
+            lot_size: lot_size_2,
+            tick_size: tick_size_2,
+            min_size: min_size_2,
+            underwriter_id: NO_UNDERWRITER
+        }, 0);
         // Remove both recognized markets.
         remove_recognized_markets(econia, vector[1, 2]);
+        // Assert events.
+        recognized_market_events = event::emitted_events_by_handle(
+            &borrow_global<RecognizedMarkets>(@econia).
+            recognized_market_events);
+        assert!(vector::length(&recognized_market_events) == 4, 0);
+        assert!(vector::pop_back(&mut recognized_market_events) ==
+            RecognizedMarketEvent{
+                trading_pair: TradingPair{
+                    base_type: type_info::type_of<BC>(),
+                    base_name_generic: string::utf8(b""),
+                    quote_type: type_info::type_of<QC>()
+                },
+            recognized_market_info: option::none()
+            }, 0);
+        assert!(vector::pop_back(&mut recognized_market_events) ==
+            RecognizedMarketEvent{
+                trading_pair: TradingPair{
+                    base_type: type_info::type_of<GenericAsset>(),
+                    base_name_generic,
+                    quote_type: type_info::type_of<QC>()
+                },
+            recognized_market_info: option::none()
+            }, 0);
         // Assert existence checks.
         assert!(
             !has_recognized_market_base_generic_by_type<QC>(base_name_generic),
             0);
         assert!(!has_recognized_market_base_coin_by_type<BC, QC>(), 0);
+        // Assert market counts.
+        assert!(get_market_counts() ==
+                MarketCounts{n_markets: 2, n_recognized_markets: 0}, 0);
+        // Register a third market having the same trading pair as the
+        // second market, and set it as recognized.
+        register_market_base_coin_internal<BC, QC, UC>(
+            lot_size_3, tick_size_3, min_size_3, assets::mint_test(fee));
+        set_recognized_markets(econia, vector[3]);
+        // Verify that second market, which has same trading pair, is
+        // not marked as recognized.
+        assert!(get_market_info(2) == MarketInfoView{
+            market_id: 2,
+            is_recognized: false,
+            base_type: base_type_view,
+            base_name_generic: string::utf8(b""),
+            quote_type: quote_type_view,
+            lot_size: lot_size_2,
+            tick_size: tick_size_2,
+            min_size: min_size_2,
+            underwriter_id: NO_UNDERWRITER
+        }, 0);
+        // Assert events.
+        market_registration_events = event::emitted_events_by_handle(
+            &borrow_global<Registry>(@econia).market_registration_events);
+        assert!(vector::length(&market_registration_events) == 3, 0);
+        assert!(vector::pop_back(&mut market_registration_events) ==
+            MarketRegistrationEvent{
+                market_id: 3,
+                base_type: type_info::type_of<BC>(),
+                base_name_generic: string::utf8(b""),
+                quote_type: type_info::type_of<QC>(),
+                lot_size: lot_size_3,
+                tick_size: tick_size_3,
+                min_size: min_size_3,
+                underwriter_id: NO_UNDERWRITER
+            }, 0);
+        recognized_market_events = event::emitted_events_by_handle(
+            &borrow_global<RecognizedMarkets>(@econia).
+            recognized_market_events);
+        assert!(vector::length(&recognized_market_events) == 5, 0);
+        assert!(vector::pop_back(&mut recognized_market_events) ==
+            RecognizedMarketEvent{
+                trading_pair: TradingPair{
+                    base_type: type_info::type_of<BC>(),
+                    base_name_generic: string::utf8(b""),
+                    quote_type: type_info::type_of<QC>()
+                },
+                recognized_market_info: option::some(RecognizedMarketInfo{
+                    market_id: 3,
+                    lot_size: lot_size_3,
+                    tick_size: tick_size_3,
+                    min_size: min_size_3,
+                    underwriter_id: NO_UNDERWRITER
+                })
+            }, 0);
+        // Set the second market as the recognized market, thus removing
+        // the third market as recognized, and assert event.
+        set_recognized_markets(econia, vector[2]);
+        recognized_market_events = event::emitted_events_by_handle(
+            &borrow_global<RecognizedMarkets>(@econia).
+            recognized_market_events);
+        assert!(vector::length(&recognized_market_events) == 6, 0);
+        assert!(vector::pop_back(&mut recognized_market_events) ==
+            RecognizedMarketEvent{
+                trading_pair: TradingPair{
+                    base_type: type_info::type_of<BC>(),
+                    base_name_generic: string::utf8(b""),
+                    quote_type: type_info::type_of<QC>()
+                },
+                recognized_market_info: option::some(RecognizedMarketInfo{
+                    market_id: 2,
+                    lot_size: lot_size_2,
+                    tick_size: tick_size_2,
+                    min_size: min_size_2,
+                    underwriter_id: NO_UNDERWRITER
+                })
+            }, 0);
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

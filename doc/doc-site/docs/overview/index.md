@@ -15,6 +15,6 @@ For example: [`OrderBook`].
 [aptos]: https://aptos.dev
 [block-stm]: https://arxiv.org/abs/2203.06871
 [move]: https://move-language.github.io/move/
-[move module]: ../modules
+[move module]: ../move/modules
 [the registry]: registry
 [`orderbook`]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#struct-orderbook

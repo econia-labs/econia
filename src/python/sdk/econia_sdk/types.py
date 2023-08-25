@@ -22,3 +22,16 @@ class Restriction(IntEnum):
     NoRestriction = 0
     FillOrAbort = 1
     ImmediateOrCancel = 2
+    PostOrAbort = 3
+
+
+class CancelReason(IntEnum):
+    Eviction = 1
+    ImmediateOrCancel = 2
+    ManualCancel = 3
+    MaxQuoteTraded = 4
+    NotEnoughLiquidity = 5
+    SelfMatchMaker = 6
+    SelfMatchTaker = 7
+    TooSmallToFillLot = 8
+    ViolatedLimitPrice = 9

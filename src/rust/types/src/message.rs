@@ -3,7 +3,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     book::PriceLevelWithId,
-    order::{Fill, Order},
+    order::Order,
+    events::FillEvent,
 };
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
@@ -32,7 +33,7 @@ pub enum Channel {
     Ticker3h {
         market_id: u64,
     },
-    PriceLevel {
+    PriceLevels {
         market_id: u64,
     }, // TODO add more channels
 }
@@ -50,7 +51,7 @@ pub enum Channel {
 )]
 pub enum Update {
     Orders(Order),
-    Fills(Fill),
+    Fills(FillEvent),
     PriceLevels(PriceLevelWithId), // TODO add more update types
 }
 

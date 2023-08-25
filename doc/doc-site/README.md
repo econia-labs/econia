@@ -1,23 +1,16 @@
 # Econia Docs
 
-Econia's docs are built using [Docusaurus], and are served through [Cloudflare Pages] via the following build configurations:
-
-| Config                              | Value           |
-| ----------------------------------- | --------------- |
-| Build command                       | `yarn build`    |
-| Build output directory              | `/build`        |
-| Root directory                      | `/doc/doc-site` |
-| Environment variable `NODE_VERSION` | 16              |
+Econia's docs are built using [Docusaurus].
 
 ## Building locally
 
 1. Install [Homebrew] or a similar package manager.
 
-1. Install [Yarn]:
+1. Install [pnpm]:
 
    ```zsh
 
-   brew install yarn
+   brew install pnpm
 
    ```
 
@@ -25,15 +18,7 @@ Econia's docs are built using [Docusaurus], and are served through [Cloudflare P
 
    ```zsh
 
-   yarn
-
-   ```
-
-1. To build locally:
-
-   ```zsh
-
-   yarn build
+   pnpm install
 
    ```
 
@@ -41,13 +26,12 @@ Econia's docs are built using [Docusaurus], and are served through [Cloudflare P
 
    ```zsh
 
-   yarn start
+   pnpm start
 
    ```
 
 1. Open http://localhost:3000
 
-[cloudflare pages]: https://pages.cloudflare.com/
 [docusaurus]: https://docusaurus.io/
 [homebrew]: https://brew.sh
-[yarn]: https://yarnpkg.com/
+[pnpm]: https://pnpm.io/

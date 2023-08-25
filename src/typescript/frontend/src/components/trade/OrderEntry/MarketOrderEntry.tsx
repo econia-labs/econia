@@ -1,17 +1,17 @@
 import { entryFunctions, type order } from "@econia-labs/sdk";
+import { useForm } from "react-hook-form";
+
 import { Button } from "@/components/Button";
 import { ConnectedButton } from "@/components/ConnectedButton";
-import { Input } from "@/components/Input";
+import { useAptos } from "@/contexts/AptosContext";
+import { ECONIA_ADDR } from "@/env";
+import { useMarketAccountBalance } from "@/hooks/useMarketAccountBalance";
 import { type ApiMarket } from "@/types/api";
 import { type Side } from "@/types/global";
+import { toRawCoinAmount } from "@/utils/coin";
+import { TypeTag } from "@/utils/TypeTag";
 
 import { OrderEntryInfo } from "./OrderEntryInfo";
-import { useMarketAccountBalance } from "@/hooks/useMarketAccountBalance";
-import { useAptos } from "@/contexts/AptosContext";
-import { useForm } from "react-hook-form";
-import { ECONIA_ADDR } from "@/env";
-import { TypeTag } from "@/utils/TypeTag";
-import { fromDecimalSize, fromDecimalPrice } from "@/utils/econia";
 import { OrderEntryInputWrapper } from "./OrderEntryInputWrapper";
 
 type MarketFormValues = {
@@ -26,58 +26,86 @@ export const MarketOrderEntry: React.FC<{
   const {
     handleSubmit,
     register,
+    setValue,
+    setError,
     formState: { errors },
   } = useForm<MarketFormValues>();
   const baseBalance = useMarketAccountBalance(
     account?.address,
     marketData.market_id,
-    marketData.base
+    marketData.base,
   );
   const quoteBalance = useMarketAccountBalance(
     account?.address,
     marketData.market_id,
-    marketData.quote
+    marketData.quote,
   );
 
-  const onSubmit = async (values: MarketFormValues) => {
+  const onSubmit = async ({ size }: MarketFormValues) => {
+    if (marketData.base == null) {
+      throw new Error("Markets without base coin not supported");
+    }
+
+    if (baseBalance.data == null || quoteBalance.data == null) {
+      throw new Error("Could not read wallet balances");
+    }
+
+    const rawSize = toRawCoinAmount(size, marketData.base.decimals);
+
+    // check that size satisfies lot size
+    if (!rawSize.modulo(marketData.lot_size).eq(0)) {
+      setError("size", { message: "INVALID LOT SIZE" });
+      return;
+    }
+
+    // check that size satisfies min size
+    if (rawSize.lt(marketData.min_size)) {
+      setError("size", { message: "SIZE TOO SMALL" });
+      return;
+    }
+
+    const rawBaseBalance = toRawCoinAmount(
+      baseBalance.data,
+      marketData.base.decimals,
+    );
+
+    // market sell -- make sure user has enough base balance
+    if (side === "sell") {
+      // check that user has sufficient base coins on ask
+      if (rawBaseBalance.lt(rawSize)) {
+        setError("size", { message: "INSUFFICIENT BALANCE" });
+        return;
+      }
+    }
+
     const orderSideMap: Record<Side, order.Side> = {
       buy: "bid",
       sell: "ask",
     };
     const orderSide = orderSideMap[side];
 
-    if (marketData.base == null) {
-      // TODO: handle generic markets
-    } else {
-      const payload = entryFunctions.placeMarketOrderUserEntry(
-        ECONIA_ADDR,
-        TypeTag.fromApiCoin(marketData.base).toString(),
-        TypeTag.fromApiCoin(marketData.quote).toString(),
-        BigInt(marketData.market_id), // market id
-        "0x1", // TODO get integrator ID
-        orderSide,
-        BigInt(
-          fromDecimalSize({
-            size: values.size,
-            lotSize: marketData.lot_size,
-            baseCoinDecimals: marketData.base.decimals,
-          }).toString()
-        ),
-        "abort" // TODO don't hardcode this either
-      );
+    const payload = entryFunctions.placeMarketOrderUserEntry(
+      ECONIA_ADDR,
+      TypeTag.fromApiCoin(marketData.base).toString(),
+      TypeTag.fromApiCoin(marketData.quote).toString(),
+      BigInt(marketData.market_id), // market id
+      "0x1", // TODO get integrator ID
+      orderSide,
+      BigInt(rawSize.div(marketData.lot_size).toString()),
+      "abort", // TODO don't hardcode this either
+    );
 
-      await signAndSubmitTransaction({
-        type: "entry_function_payload",
-        ...payload,
-      });
-    }
+    await signAndSubmitTransaction({
+      type: "entry_function_payload",
+      ...payload,
+    });
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <div className="mx-4 flex flex-col gap-4">
+      <div className="mx-4 flex flex-col">
         <OrderEntryInputWrapper
-          startAdornment="AMOUNT"
+          startAdornment="Amount"
           endAdornment={marketData.base?.symbol}
         >
           <input
@@ -85,13 +113,17 @@ export const MarketOrderEntry: React.FC<{
             step="any"
             placeholder="0.00"
             {...register("size", {
-              required: "required",
+              required: "REQUIRED",
               min: 0,
             })}
-            className="h-full w-[100px] flex-1 bg-transparent text-right font-roboto-mono font-light text-neutral-400 outline-none"
+            className="z-30 w-full bg-transparent pb-3 pl-14 pr-14 pt-3 text-right font-roboto-mono text-xs font-light text-neutral-400 outline-none"
           />
         </OrderEntryInputWrapper>
-        <p className="text-red">{errors.size != null && errors.size.message}</p>
+        <div className="relative mb-4">
+          <p className="absolute text-xs text-red">
+            {errors.size != null && errors.size.message}
+          </p>
+        </div>
       </div>
       <hr className="my-4 border-neutral-600" />
       <div className="mx-4 mb-4 flex flex-col gap-4">
@@ -105,11 +137,18 @@ export const MarketOrderEntry: React.FC<{
           </Button>
         </ConnectedButton>
         <OrderEntryInfo
-          label={`${marketData.base?.symbol} AVAIABLE`}
+          label={`${marketData.base?.symbol} AVAILABLE`}
           value={`${baseBalance.data ?? "--"} ${marketData.base?.symbol}`}
+          className="cursor-pointer"
+          onClick={() => {
+            setValue(
+              "size",
+              baseBalance.data ? baseBalance.data.toString() : "",
+            );
+          }}
         />
         <OrderEntryInfo
-          label={`${marketData.quote?.symbol} AVAIABLE`}
+          label={`${marketData.quote?.symbol} AVAILABLE`}
           value={`${quoteBalance.data ?? "--"} ${marketData.quote?.symbol}`}
         />
       </div>

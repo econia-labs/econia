@@ -8,6 +8,7 @@ import {
 import React from "react";
 
 import { type ApiMarket, type ApiOrder } from "@/types/api";
+import Skeleton from "react-loading-skeleton";
 
 const columnHelper = createColumnHelper<ApiOrder>();
 
@@ -33,11 +34,11 @@ export const TradeHistoryTable: React.FC<{
       ] as ApiOrder[];
       // TODO: Endpoint needs to return data
       // return await fetch(
-      //   `${API_URL}/market/${
+      //   `${API_URL}/markets/${
       //     marketData.market_id
       //   }/fills?from=${0}&to=${Math.floor(Date.now() / 1000)}`
       // ).then((res) => res.json());
-    }
+    },
   );
   const table = useReactTable({
     columns: [
@@ -65,16 +66,49 @@ export const TradeHistoryTable: React.FC<{
   });
 
   return (
-    <div className="min-h-[200px]">
-      <table className={"w-full" + (className ? ` ${className}` : "")}>
-        <thead>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <tr
-              className="text-left font-roboto-mono text-sm text-neutral-500 [&>th]:font-light"
-              key={headerGroup.id}
-            >
-              {headerGroup.headers.map((header, i) => (
-                <th
+    <table
+      className={"w-full table-fixed" + (className ? ` ${className}` : "")}
+    >
+      <thead>
+        {table.getHeaderGroups().map((headerGroup) => (
+          <tr
+            className="text-left font-roboto-mono text-sm text-neutral-500 [&>th]:font-light"
+            key={headerGroup.id}
+          >
+            {headerGroup.headers.map((header, i) => (
+              <th
+                className={`text-xs ${
+                  i === 0
+                    ? "pl-4 text-left"
+                    : i === 1
+                    ? "text-left"
+                    : "pr-4 text-right"
+                } w-full`}
+                key={header.id}
+              >
+                {header.isPlaceholder
+                  ? null
+                  : flexRender(
+                      header.column.columnDef.header,
+                      header.getContext(),
+                    )}
+              </th>
+            ))}
+          </tr>
+        ))}
+      </thead>
+      <tbody>
+        <tr>
+          <td colSpan={7} className="py-2">
+            <div className="h-[1px] bg-neutral-600"></div>
+          </td>
+        </tr>
+        {isLoading || !data ? (
+          <>
+            {/* temporarily removing skeletong to help UX and reduce glitchyness. see: ECO-230 */}
+            {/* <tr>
+              {table.getAllColumns().map((column, i) => (
+                <td
                   className={`text-xs ${
                     i === 0
                       ? "pl-4 text-left"
@@ -82,66 +116,47 @@ export const TradeHistoryTable: React.FC<{
                       ? "text-left"
                       : "pr-4 text-right"
                   }`}
-                  key={header.id}
+                  key={column.id}
                 >
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
-                </th>
+                  <div className={"px-1"}>
+                    <Skeleton />
+                  </div>
+                </td>
               ))}
-            </tr>
-          ))}
-        </thead>
-        <tbody>
+            </tr> */}
+          </>
+        ) : data.length === 0 ? (
           <tr>
-            <td colSpan={7} className="py-2">
-              <div className="h-[1px] bg-neutral-600"></div>
+            <td colSpan={7}>
+              <div className="flex h-[150px] flex-col items-center justify-center text-sm font-light uppercase text-neutral-500">
+                No orders to show
+              </div>
             </td>
           </tr>
-          {isLoading || !data ? (
-            <tr>
-              <td colSpan={7}>
-                <div className="flex h-[150px] flex-col items-center justify-center text-sm font-light uppercase text-neutral-500">
-                  Loading...
-                </div>
-              </td>
+        ) : (
+          table.getRowModel().rows.map((row) => (
+            <tr
+              className="text-left font-roboto-mono text-sm uppercase text-white [&>th]:font-light"
+              key={row.id}
+            >
+              {row.getVisibleCells().map((cell, i) => (
+                <td
+                  className={`text-xs ${
+                    i === 0
+                      ? "pl-4 text-left"
+                      : i === 1
+                      ? "text-left"
+                      : "pr-4 text-right"
+                  }`}
+                  key={cell.id}
+                >
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </td>
+              ))}
             </tr>
-          ) : data.length === 0 ? (
-            <tr>
-              <td colSpan={7}>
-                <div className="flex h-[150px] flex-col items-center justify-center text-sm font-light uppercase text-neutral-500">
-                  No orders to show
-                </div>
-              </td>
-            </tr>
-          ) : (
-            table.getRowModel().rows.map((row) => (
-              <tr
-                className="text-left font-roboto-mono text-sm uppercase text-white [&>th]:font-light"
-                key={row.id}
-              >
-                {row.getVisibleCells().map((cell, i) => (
-                  <td
-                    className={`text-xs ${
-                      i === 0
-                        ? "pl-4 text-left"
-                        : i === 1
-                        ? "text-left"
-                        : "pr-4 text-right"
-                    }`}
-                    key={cell.id}
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-    </div>
+          ))
+        )}
+      </tbody>
+    </table>
   );
 };

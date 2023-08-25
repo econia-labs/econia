@@ -5,7 +5,7 @@ export type PriceLevel = {
   size: number;
 };
 
-export type OrderBook = {
+export type Orderbook = {
   bids: PriceLevel[];
   asks: PriceLevel[];
 };

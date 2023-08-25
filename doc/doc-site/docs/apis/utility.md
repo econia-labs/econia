@@ -2,8 +2,10 @@
 
 ## Market order ID getters
 
+- [`did_order_post()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#function-did_order_post)
 - [`get_market_order_id_counter()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#function-get_market_order_id_counter)
 - [`get_market_order_id_price()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#function-get_market_order_id_price)
+- [`get_posted_order_id_side()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#function-get_posted_order_id_side)
 
 ## Market account ID getters
 
@@ -16,9 +18,15 @@
 - [`registry::get_custodian_id()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/registry.md#function-get_custodian_id)
 - [`get_underwriter_id()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/registry.md#function-get_underwriter_id)
 
+## Event handle lookup
+
+- [`market::get_market_event_handle_creation_info()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#function-get_market_event_handle_creation_info)
+- [`market::get_swapper_event_handle_creation_numbers()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#function-get_swapper_event_handle_creation_numbers)
+- [`user::get_market_event_handle_creation_numbers()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/user.md#function-get_market_event_handle_creation_numbers)
+
 ## Constant getters
 
-## Market module
+### Market module
 
 - [`get_ABORT()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#function-get_abort)
 - [`get_ASK()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#function-get_ask)
@@ -39,15 +47,26 @@
 - [`get_SELL()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#function-get_sell)
 - [`get_TICKS()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#function-get_ticks)
 
-## Registry module
+### Registry module
 
 - [`get_MAX_CHARACTERS_GENERIC()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/registry.md#function-get_max_characters_generic)
 - [`get_MIN_CHARACTERS_GENERIC()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/registry.md#function-get_min_characters_generic)
 - [`get_NO_CUSTODIAN()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/registry.md#function-get_no_custodian)
 - [`get_NO_UNDERWRITER()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/registry.md#function-get_no_underwriter)
 
-## User module
+### Resource account module
+
+- [`get_address()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/resource_account.md#function-get_address)
+
+### User module
 
 - [`get_ASK()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/user.md#function-get_ask)
 - [`get_BID()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/user.md#function-get_bid)
+- [`get_CANCEL_REASON_EVICTION()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/user.md#function-get_CANCEL_REASON_EVICTION)
+- [`get_CANCEL_REASON_IMMEDIATE_OR_CANCEL()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/user.md#function-get_CANCEL_REASON_IMMEDIATE_OR_CANCEL)
+- [`get_CANCEL_REASON_MANUAL_CANCEL()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/user.md#function-get_CANCEL_REASON_MANUAL_CANCEL)
+- [`get_CANCEL_REASON_MAX_QUOTE_TRADED()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/user.md#function-get_CANCEL_REASON_MAX_QUOTE_TRADED)
+- [`get_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/user.md#function-get_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY)
+- [`get_CANCEL_REASON_SELF_MATCH_MAKER()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/user.md#function-get_CANCEL_REASON_SELF_MATCH_MAKER)
+- [`get_CANCEL_REASON_SELF_MATCH_TAKER()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/user.md#function-get_CANCEL_REASON_SELF_MATCH_TAKER)
 - [`get_NO_CUSTODIAN()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/user.md#function-get_no_custodian)

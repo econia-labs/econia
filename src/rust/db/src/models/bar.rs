@@ -5,7 +5,10 @@ use types::error::TypeError;
 
 use crate::schema::bars_1m;
 
-#[derive(Clone, Debug, Queryable)]
+use super::ToInsertable;
+
+#[derive(Clone, Debug, Queryable, Identifiable)]
+#[diesel(table_name = bars_1m, primary_key(market_id, start_time))]
 pub struct Bar {
     pub market_id: BigDecimal,
     pub start_time: DateTime<Utc>,
@@ -16,8 +19,8 @@ pub struct Bar {
     pub volume: BigDecimal,
 }
 
-#[derive(Debug, Insertable)]
-#[diesel(table_name = bars_1m)]
+#[derive(Debug, Insertable, AsChangeset)]
+#[diesel(table_name = bars_1m, primary_key(market_id, start_time))]
 pub struct NewBar {
     pub market_id: BigDecimal,
     pub start_time: DateTime<Utc>,
@@ -57,5 +60,21 @@ impl TryFrom<Bar> for types::bar::Bar {
             close,
             volume,
         })
+    }
+}
+
+impl ToInsertable for Bar {
+    type Insertable<'a> = NewBar;
+
+    fn to_insertable(&self) -> Self::Insertable<'_> {
+        NewBar {
+            market_id: self.market_id.clone(),
+            start_time: self.start_time,
+            open: self.open.clone(),
+            high: self.high.clone(),
+            low: self.low.clone(),
+            close: self.close.clone(),
+            volume: self.volume.clone(),
+        }
     }
 }

@@ -851,6 +851,8 @@ module econia::market {
     const E_SIZE_CHANGE_INSERTION_ERROR: u64 = 30;
     /// Order ID corresponds to an order that did not post.
     const E_ORDER_DID_NOT_POST: u64 = 31;
+    /// Order price field does not match AVL queue insertion key price.
+    const E_ORDER_PRICE_MISMATCH: u64 = 32;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -2815,6 +2817,7 @@ module econia::market {
     /// # Testing
     ///
     /// * `test_get_price_levels()`
+    /// * `test_get_price_levels_mismatch()`
     fun get_price_levels_for_side(
         order_book_ref_mut: &mut OrderBook,
         side: bool,
@@ -2839,10 +2842,16 @@ module econia::market {
                     // If order at head of the queue is in price level:
                     if (option::contains(
                             &avl_queue::get_head_key(avlq_ref_mut), &price)) {
-                        // Pop order, storing only its size.
-                        let Order{size: order_size, price: _, user: _,
-                                  custodian_id: _, order_access_key: _} =
-                            avl_queue::pop_head(avlq_ref_mut);
+                        // Pop order, storing only its size and price.
+                        let Order{
+                            size: order_size,
+                            price: order_price,
+                            user: _,
+                            custodian_id: _,
+                            order_access_key: _
+                        } = avl_queue::pop_head(avlq_ref_mut);
+                        // Verify order price equals insertion key.
+                        assert!(order_price == price, E_ORDER_PRICE_MISMATCH);
                         // Increment tracker for price level size. Note
                         // that no overflow is checked because an open
                         // order's size is a u64, and an AVL queue can
@@ -6071,6 +6080,60 @@ module econia::market {
                 PriceLevel{price: bid_0_price, size: (bid_0_size as u128)}, 0);
         assert!(*vector::borrow(&bids, 1) ==
                 PriceLevel{price: bid_1_price, size: (bid_1_size as u128)}, 0);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = E_ORDER_PRICE_MISMATCH)]
+    /// Verify failure for price mismatch results.
+    fun test_get_price_levels_mismatch() acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (maker, _) = init_markets_users_integrator_test();
+        // Declare common order parameters.
+        let market_id           = MARKET_ID_COIN;
+        let integrator          = @integrator;
+        let custodian_id        = NO_CUSTODIAN;
+        let maker_address       = address_of(&maker);
+        let restriction         = NO_RESTRICTION;
+        let self_match_behavior = ABORT;
+        // Declare ask and bid parameters.
+        let bid_1_size = MIN_SIZE_COIN + 1;
+        let bid_0_size = bid_1_size + 1;
+        let ask_0_size = bid_0_size + 1;
+        let ask_1_size = ask_0_size + 1;
+        let bid_1_price = 1;
+        let bid_0_price = bid_1_price + 1;
+        let ask_0_price = bid_0_price + 1;
+        let ask_1_price = ask_0_price + 1;
+        // Deposit maker coins.
+        user::deposit_coins<BC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(HI_64 / 2));
+        user::deposit_coins<QC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(HI_64 / 2));
+        // Place maker orders, storing order ID of final order.
+        place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, BID, bid_1_size, bid_1_price,
+            restriction, self_match_behavior);
+        place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, BID, bid_0_size, bid_0_price,
+            restriction, self_match_behavior);
+        place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, ASK, ask_0_size, ask_0_price,
+            restriction, self_match_behavior);
+        let (order_id, _, _, _) = place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, ASK, ask_1_size, ask_1_price,
+            restriction, self_match_behavior);
+        // Manually doctor price of final order.
+        let resource_address = resource_account::get_address();
+        let order_books_map_ref_mut =
+            &mut borrow_global_mut<OrderBooks>(resource_address).map;
+        let order_book_ref_mut =
+            tablist::borrow_mut(order_books_map_ref_mut, market_id);
+        let avlq_access_key = ((order_id & (HI_64 as u128)) as u64);
+        let order_ref_mut = avl_queue::borrow_mut(
+            &mut order_book_ref_mut.asks, avlq_access_key);
+        order_ref_mut.price = ask_1_price + 1;
+        // Attempt invalid indexing operation.
+        get_price_levels_all(market_id);
     }
 
     #[test]

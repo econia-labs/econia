@@ -1,26 +1,40 @@
-import { ApiCoin } from "./api";
+type NumericString = `${
+  | "0"
+  | "1"
+  | "2"
+  | "3"
+  | "4"
+  | "5"
+  | "6"
+  | "7"
+  | "8"
+  | "9"}+`;
+export type U64 = NumericString;
+export type U128 = NumericString;
 
-export class TypeTag {
-  constructor(
-    public addr: string,
-    public module: string,
-    public name: string
-  ) {}
-
-  static fromApiCoin(apiCoin: ApiCoin) {
-    return new TypeTag(
-      apiCoin.account_address,
-      apiCoin.module_name,
-      apiCoin.struct_name
-    );
-  }
-
-  static fromString(typeTag: string) {
-    const [addr, module, name] = typeTag.split("::");
-    return new TypeTag(addr, module, name);
-  }
-
-  toString() {
-    return `${this.addr}::${this.module}::${this.name}`;
-  }
-}
+export type MoveOption<T> = [] | [T];
+export type MovePrimitive = "u8" | "u64" | "u128" | "bool" | "address";
+export type MoveEventHandle = {
+  counter: U64;
+  guid: {
+    id: {
+      addr: string;
+      creation_num: U64;
+    };
+  };
+};
+export type MoveTableHandle = {
+  handle: string;
+};
+export type MoveTypeInfo = {
+  account_address: string;
+  module_name: string;
+  struct_name: string;
+};
+export type MoveCoin = {
+  value: U64;
+};
+export type MoveTableWithLength = {
+  handle: string;
+  length: number;
+};

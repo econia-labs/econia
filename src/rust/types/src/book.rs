@@ -1,5 +1,6 @@
 use std::collections::{BTreeMap, HashMap};
 
+use chrono::{DateTime, Utc};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
@@ -10,7 +11,7 @@ use crate::order::{Order, Side};
 pub struct OrderBook {
     asks: BTreeMap<u64, Vec<Order>>,
     bids: BTreeMap<u64, Vec<Order>>,
-    orders_to_price_level: HashMap<u64, (Side, u64)>,
+    orders_to_price_level: HashMap<u128, (Side, u64)>,
 }
 
 impl Default for OrderBook {
@@ -42,30 +43,30 @@ impl OrderBook {
         }
     }
 
-    pub fn get_book_side_price_level(&self, order_id: u64) -> Option<(Side, u64)> {
+    pub fn get_book_side_price_level(&self, order_id: u128) -> Option<(Side, u64)> {
         self.orders_to_price_level
             .get(&order_id)
             .map(|(s, p)| (*s, *p))
     }
 
-    pub fn get_order(&self, order_id: u64) -> Option<&Order> {
+    pub fn get_order(&self, order_id: u128) -> Option<&Order> {
         self.get_book_side_price_level(order_id).and_then(|(s, p)| {
             self.get_side(s)
                 .get(&p)
-                .and_then(|o| o.iter().find(|o| o.market_order_id == order_id))
+                .and_then(|o| o.iter().find(|o| o.order_id == order_id))
         })
     }
 
-    pub fn get_order_mut(&mut self, order_id: u64) -> Option<&mut Order> {
+    pub fn get_order_mut(&mut self, order_id: u128) -> Option<&mut Order> {
         self.get_book_side_price_level(order_id).and_then(|(s, p)| {
             self.get_side_mut(s)
                 .get_mut(&p)
-                .and_then(|o| o.iter_mut().find(|o| o.market_order_id == order_id))
+                .and_then(|o| o.iter_mut().find(|o| o.order_id == order_id))
         })
     }
 
     pub fn add_order(&mut self, order: Order) {
-        let market_order_id = order.market_order_id;
+        let market_order_id = order.order_id;
         let side = order.side;
         let price = order.price;
 
@@ -80,12 +81,8 @@ impl OrderBook {
     }
 
     // removes an order if it exists
-    pub fn remove_order(&mut self, order_id: u64) -> Option<Order> {
-        self.orders_to_price_level.remove(&order_id)?;
-        let (side, price) = self
-            .get_book_side_price_level(order_id)
-            .expect("invalid state");
-
+    pub fn remove_order(&mut self, order_id: u128) -> Option<Order> {
+        let (side, price) = self.orders_to_price_level.remove(&order_id)?;
         let book_side = self.get_side_mut(side);
         let level = book_side
             .get_mut(&price)
@@ -93,7 +90,7 @@ impl OrderBook {
 
         let order = level
             .iter()
-            .position(|o| o.market_order_id == order_id)
+            .position(|o| o.order_id == order_id)
             .map(|i| level.remove(i))
             .expect("invalid state, order missing");
 
@@ -109,8 +106,10 @@ impl OrderBook {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct PriceLevelWithId {
     pub market_id: u64,
+    pub side: Side,
     pub price: u64,
     pub size: u64,
+    pub timestamp: DateTime<Utc>,
 }
 
 #[derive(Debug, Clone)]

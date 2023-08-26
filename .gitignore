@@ -17,14 +17,6 @@ src/typescript/dialect/secret.key
 # Do not track LaTeX PDF output, just sourcefile and assets
 doc/litepaper/main.pdf
 
-# Python
-*.pyc
-*.egg-info
-
-# Jupyter
-*.ipynb_checkpoints/*
-*-checkpoint.ipynb*
-
 # Move
 *.abi
 *.trace
@@ -33,25 +25,13 @@ doc/litepaper/main.pdf
 *.mv
 *.mvsm
 
-# Sample Move projects
-src/move/move-cli-readme/*
-src/move/TestExample/*
-src/move/tutorials/*
-
-# Econia Move project ignores
+# Econia Move projects
 src/move/*/build/*
 src/move/governance_scripts/*/build/*
 
 # Cargo
 src/move/econia/target/*
-
-# Sphinx
-doc/sphinx/build/*
+**/target
 
 # Temporary markdown file for prototyping
 temp.md
-
-# IntelliJ settings
-.idea/
-
-**/target

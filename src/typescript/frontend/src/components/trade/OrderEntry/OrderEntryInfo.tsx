@@ -1,9 +1,14 @@
 export const OrderEntryInfo: React.FC<{
   label: string;
   value: string;
-}> = ({ label, value }) => {
+  onClick?: () => void;
+  className?: string;
+}> = ({ label, value, onClick, className }) => {
   return (
-    <div className="flex justify-between font-roboto-mono font-light text-neutral-500">
+    <div
+      className={`flex justify-between font-roboto-mono text-xs font-light text-neutral-500 ${className}`}
+      onClick={onClick}
+    >
       <p>{label}</p>
       <p>{value}</p>
     </div>

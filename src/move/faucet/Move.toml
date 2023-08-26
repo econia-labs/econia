@@ -1,0 +1,12 @@
+[package]
+name = "EconiaFaucet"
+version = '1.0.0'             # Per SemVer
+upgrade_policy = 'compatible'
+
+[addresses]
+econia_faucet = "_"
+
+[dependencies.AptosFramework]
+git = "https://github.com/aptos-labs/aptos-core.git"
+rev = "mainnet"
+subdir = "aptos-move/framework/aptos-framework"

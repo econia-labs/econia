@@ -25,16 +25,25 @@
 - [`register_market_base_generic()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#function-register_market_base_generic)
 - [`register_market_base_coin_from_coinstore()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#function-register_market_base_coin_from_coinstore)
 
-## Recognized markets
+## Markets
 
-### Existence checkers
+### Market lookup
 
+- [`get_market_counts()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/registry.md#function-get_market_counts)
+- [`get_market_info()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/registry.md#function-get_market_info)
+- [`get_market_id_base_coin()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/registry.md#function-get_market_id_base_coin)
+- [`get_market_id_base_generic()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/registry.md#function-get_market_id_base_generic)
+
+### Recognized markets existence checkers
+
+- [`get_recognized_market_id_base_coin()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/registry.md#function-get_recognized_market_id_base_coin)
+- [`get_recognized_market_id_base_generic()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/registry.md#function-get_recognized_market_id_base_generic)
 - [`has_recognized_market_base_coin()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/registry.md#function-has_recognized_market_base_coin)
 - [`has_recognized_market_base_coin_by_type()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/registry.md#function-has_recognized_market_base_coin_by_type)
 - [`has_recognized_market_base_generic()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/registry.md#function-has_recognized_market_base_generic)
 - [`has_recognized_market_base_generic_by_type()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/registry.md#function-has_recognized_market_base_generic_by_type)
 
-### Market info getters
+### Recognized market info getters
 
 - [`get_recognized_market_info_base_coin()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/registry.md#function-get_recognized_market_info_base_coin)
 - [`get_recognized_market_info_base_coin_by_type()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/registry.md#function-get_recognized_market_info_base_coin_by_type)
@@ -45,6 +54,7 @@
 
 ### Registration
 
+- [`init_market_event_handles_if_missing()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/user.md#function-init_market_event_handles_if_missing)
 - [`register_market_account()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/user.md#function-register_market_account)
 - [`register_market_account_generic_base()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/user.md#function-register_market_account_generic_base)
 
@@ -59,3 +69,9 @@
 - [`get_all_market_account_ids_for_user()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/user.md#function-get_all_market_account_ids_for_user)
 - [`has_market_account_by_market_account_id()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/user.md#function-has_market_account_by_market_account_id)
 - [`has_market_account_by_market_id()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/user.md#function-has_market_account_by_market_id)
+
+### Market account lookup
+
+- [`get_market_account()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/user.md#function-get_market_account)
+- [`get_market_accounts()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/user.md#function-get_market_accounts)
+- [`has_market_account()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/user.md#function-has_market_account)

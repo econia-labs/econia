@@ -36,20 +36,36 @@ If you haven't already, consider checking out Econia Labs' [Teach yourself Move 
 Econia is a protocol that lets anyone in the world trade a digital asset with anyone else in the world, at whatever price they want.
 More specifically, Econia is an order book, a fundamental financial tool utilized by financial institutions like stock markets, except unlike the New York Stock Exchange or the NASDAQ, Econia is decentralized, open-source, and permissionless.
 
-## Econia v4 just got audited
+## Econia v4 is audited
 
-After an iterated build cycle, the fourth major version of Econia has just completed [three independent audits], and planning for testnet deployment rehearsals is now underway.
+Econia has completed [three independent audits].
 
-Stand by for more documentation, and in the meantime, check out the [modules page] for a breakdown of Econia's Move code!
+## Account addresses
 
-## Testnet account
+The [Econia repo] uses branches to track the Move package source code published across Aptos Mainnet, Testnet, and Devnet:
 
-As of 2022-04-21, Econia is initialized on the Aptos Testnet as follows:
+| Chain     | Account address                                                      | Multisig? |
+| --------- | -------------------------------------------------------------------- | --------- |
+| [mainnet] | [0xc0deb00c405f84c85dc13442e305df75d1288100cdd82675695f6148c7ece51c] | Yes       |
+| [testnet] | [0x40b119411c6a975fca28f1ba5800a8a418bba1e16a3f13b1de92f731e023d135] | No        |
+| [devnet]  | [0xc0de0000fe693e08f668613c502360dc48508197401d2ac1ae79571498cd8b74] | Yes       |
 
-| Field      | Value                                                                |
-| ---------- | -------------------------------------------------------------------- |
-| Account    | [0x40b119411c6a975fca28f1ba5800a8a418bba1e16a3f13b1de92f731e023d135] |
-| Public key | `0x91a50d9a266133c1921bb3be982af33eae1c661a1ae80fafde8f46d1fddcd2d2` |
+If you would like to use Econia as a dependency in your Move package, use the corresponding branch name in your package's `Move.toml`:
+
+```toml
+[dependencies.Econia]
+git = "https://github.com/econia-labs/econia"
+subdir = "src/move/econia"
+rev = "mainnet"
+```
+
+:::caution
+The Econia Testnet account will soon be migrated from a single-signer account to a multisig (with a different address), to ensure similar conditions to mainnet.
+:::
+
+:::tip
+Aptos Devnet resets about once weekly, and there may be a slight delay between a weekly reset and the re-publication of Econia.
+:::
 
 ## External resources
 
@@ -59,11 +75,16 @@ As of 2022-04-21, Econia is initialized on the Aptos Testnet as follows:
 - [Twitter]
 
 [0x40b119411c6a975fca28f1ba5800a8a418bba1e16a3f13b1de92f731e023d135]: https://explorer.aptoslabs.com/account/0x40b119411c6a975fca28f1ba5800a8a418bba1e16a3f13b1de92f731e023d135?network=testnet
+[0xc0de0000fe693e08f668613c502360dc48508197401d2ac1ae79571498cd8b74]: https://explorer.aptoslabs.com/account/0xc0de0000fe693e08f668613c502360dc48508197401d2ac1ae79571498cd8b74?network=devnet
+[0xc0deb00c405f84c85dc13442e305df75d1288100cdd82675695f6148c7ece51c]: https://aptos-explorer.netlify.app/account/0xc0deb00c405f84c85dc13442e305df75d1288100cdd82675695f6148c7ece51c/transactions?network=mainnet
 [aptos]: https://aptos.dev
+[devnet]: https://github.com/econia-labs/econia/tree/devnet
 [discord]: https://discord.gg/econia
+[econia repo]: https://github.com/econia-labs/econia
 [github]: https://github.com/econia-labs/econia
+[mainnet]: https://github.com/econia-labs/econia/tree/mainnet
 [medium]: https://medium.com/econialabs
-[modules page]: modules
 [teach yourself move on aptos]: https://github.com/econia-labs/teach-yourself-move
+[testnet]: https://github.com/econia-labs/econia/tree/testnet
 [three independent audits]: security
 [twitter]: https://twitter.com/econialabs

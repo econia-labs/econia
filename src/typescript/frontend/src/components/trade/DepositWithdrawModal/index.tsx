@@ -1,7 +1,9 @@
-import { API_URL } from "@/env";
-import { ApiMarket } from "@/types/api";
 import { useQuery } from "@tanstack/react-query";
-import React, { useEffect } from "react";
+import React, { useMemo, useState } from "react";
+
+import { API_URL } from "@/env";
+import { type ApiMarket, type ApiStats } from "@/types/api";
+
 import { BaseModal } from "../../BaseModal";
 import { DepositWithdrawContent } from "./DepositWithdrawContent";
 import { InitialContent } from "./InitialContent";
@@ -13,28 +15,30 @@ enum Step {
   DepositWithdraw,
 }
 
-export const useAllMarketData = () => {
-  return useQuery<ApiMarket[]>(["allMarketData"], async () => {
-    return fetch(new URL("markets", API_URL).href).then((res) => res.json());
+export const useAllMarketStats = () => {
+  return useQuery<ApiStats[]>(["allMarketStats"], async () => {
+    return fetch(new URL("stats?resolution=1d", API_URL).href).then((res) => {
+      return res.json();
+    });
   });
 };
 
 export const DepositWithdrawModal: React.FC<{
+  allMarketData: ApiMarket[];
   open: boolean;
   onClose: () => void;
-}> = ({ open, onClose }) => {
-  const [selectedMarket, setSelectedMarket] = React.useState<ApiMarket>();
-  const [step, setStep] = React.useState<Step>(Step.Initial);
-  const allMarketData = useAllMarketData();
-  useEffect(() => {
-    if (
-      allMarketData.data &&
-      allMarketData.data.length > 0 &&
-      selectedMarket === undefined
-    ) {
-      setSelectedMarket(allMarketData.data?.[0]);
-    }
-  }, [allMarketData.data]);
+}> = ({ allMarketData, open, onClose }) => {
+  const [selectedMarketId, setSelectedMarketId] = useState<number>(
+    allMarketData[0].market_id,
+  );
+  const selectedMarket = useMemo(() => {
+    return allMarketData.find(
+      ({ market_id }) => market_id === selectedMarketId,
+    );
+  }, [selectedMarketId, allMarketData]);
+
+  const [step, setStep] = useState<Step>(Step.Initial);
+
   return (
     <BaseModal
       open={open}
@@ -46,6 +50,8 @@ export const DepositWithdrawModal: React.FC<{
           ? () => setStep(Step.Initial)
           : undefined
       }
+      showBackButton={step === Step.DepositWithdraw}
+      showCloseButton={step !== Step.SelectMarket}
     >
       {step === Step.Initial && (
         <InitialContent
@@ -56,9 +62,10 @@ export const DepositWithdrawModal: React.FC<{
       )}
       {step === Step.SelectMarket && (
         <SelectMarketContent
-          onSelectMarket={(market) => {
-            setSelectedMarket(market);
-            setStep(Step.Initial);
+          allMarketData={allMarketData}
+          onSelectMarket={(marketId: number) => {
+            // TODO clean up once ECO-327 is resolved
+            setSelectedMarketId(marketId);
           }}
         />
       )}

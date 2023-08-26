@@ -3,11 +3,14 @@ use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 use diesel_derive_enum::DbEnum;
 use field_count::FieldCount;
-use types::{error::TypeError, events};
+use types::{
+    error::TypeError,
+    events::{self, TypeInfo},
+};
 
 use crate::schema::{market_registration_events, recognized_market_events};
 
-use super::IntoInsertable;
+use super::ToInsertable;
 
 #[derive(Clone, Debug, Queryable)]
 pub struct Market {
@@ -27,7 +30,8 @@ pub struct Market {
     pub created_at: DateTime<Utc>,
 }
 
-#[derive(Clone, Debug, Queryable)]
+#[derive(Clone, Debug, Queryable, Identifiable)]
+#[diesel(table_name = market_registration_events, primary_key(market_id))]
 pub struct MarketRegistrationEvent {
     pub market_id: BigDecimal,
     pub time: DateTime<Utc>,
@@ -48,6 +52,18 @@ impl TryFrom<MarketRegistrationEvent> for events::MarketRegistrationEvent {
     type Error = TypeError;
 
     fn try_from(value: MarketRegistrationEvent) -> Result<Self, Self::Error> {
+        let base_type = if value.base_account_address.is_some()
+            && value.base_module_name.is_some()
+            && value.base_struct_name.is_some()
+        {
+            Some(TypeInfo {
+                account_address: value.base_account_address.unwrap(),
+                module_name: value.base_module_name.unwrap(),
+                struct_name: value.base_struct_name.unwrap(),
+            })
+        } else {
+            None
+        };
         Ok(Self {
             market_id: value
                 .market_id
@@ -55,14 +71,13 @@ impl TryFrom<MarketRegistrationEvent> for events::MarketRegistrationEvent {
                 .ok_or_else(|| TypeError::ConversionError {
                     name: "market_id".to_string(),
                 })?,
-            time: value.time,
-            base_account_address: value.base_account_address,
-            base_module_name: value.base_module_name,
-            base_struct_name: value.base_struct_name,
+            base_type,
             base_name_generic: value.base_name_generic,
-            quote_account_address: value.quote_account_address,
-            quote_module_name: value.quote_module_name,
-            quote_struct_name: value.quote_struct_name,
+            quote_type: TypeInfo {
+                account_address: value.quote_account_address,
+                module_name: value.quote_module_name,
+                struct_name: value.quote_struct_name,
+            },
             lot_size: value
                 .lot_size
                 .to_u64()
@@ -90,8 +105,8 @@ impl TryFrom<MarketRegistrationEvent> for events::MarketRegistrationEvent {
     }
 }
 
-#[derive(Insertable, Debug, FieldCount)]
-#[diesel(table_name = market_registration_events)]
+#[derive(Insertable, Debug, FieldCount, AsChangeset)]
+#[diesel(table_name = market_registration_events, primary_key(market_id))]
 pub struct NewMarketRegistrationEvent<'a> {
     pub market_id: &'a BigDecimal,
     pub time: DateTime<Utc>,
@@ -108,11 +123,11 @@ pub struct NewMarketRegistrationEvent<'a> {
     pub underwriter_id: &'a BigDecimal,
 }
 
-impl<'a> IntoInsertable for &'a MarketRegistrationEvent {
-    type Insertable = NewMarketRegistrationEvent<'a>;
+impl ToInsertable for MarketRegistrationEvent {
+    type Insertable<'a> = NewMarketRegistrationEvent<'a>;
 
-    fn into_insertable(self) -> Self::Insertable {
-        NewMarketRegistrationEvent::<'a> {
+    fn to_insertable(&self) -> Self::Insertable<'_> {
+        NewMarketRegistrationEvent {
             market_id: &self.market_id,
             time: self.time,
             base_account_address: self.base_account_address.as_deref(),
@@ -139,7 +154,8 @@ pub enum MarketEventType {
     Update,
 }
 
-#[derive(Clone, Debug, Queryable)]
+#[derive(Clone, Debug, Queryable, Identifiable)]
+#[diesel(table_name = recognized_market_events, primary_key(market_id))]
 pub struct RecognizedMarketEvent {
     pub market_id: BigDecimal,
     pub time: DateTime<Utc>,
@@ -149,8 +165,8 @@ pub struct RecognizedMarketEvent {
     pub min_size: Option<BigDecimal>,
 }
 
-#[derive(Insertable, Debug, FieldCount)]
-#[diesel(table_name = recognized_market_events)]
+#[derive(Insertable, Debug, FieldCount, AsChangeset)]
+#[diesel(table_name = recognized_market_events, primary_key(market_id))]
 pub struct NewRecognizedMarketEvent<'a> {
     pub market_id: &'a BigDecimal,
     pub time: DateTime<Utc>,
@@ -160,11 +176,11 @@ pub struct NewRecognizedMarketEvent<'a> {
     pub min_size: Option<&'a BigDecimal>,
 }
 
-impl<'a> IntoInsertable for &'a RecognizedMarketEvent {
-    type Insertable = NewRecognizedMarketEvent<'a>;
+impl ToInsertable for RecognizedMarketEvent {
+    type Insertable<'a> = NewRecognizedMarketEvent<'a>;
 
-    fn into_insertable(self) -> Self::Insertable {
-        NewRecognizedMarketEvent::<'a> {
+    fn to_insertable(&self) -> Self::Insertable<'_> {
+        NewRecognizedMarketEvent {
             market_id: &self.market_id,
             time: self.time,
             event_type: self.event_type,

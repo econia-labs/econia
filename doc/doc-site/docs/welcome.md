@@ -49,6 +49,12 @@ The Econia Move package is persisted indefinitely on both Aptos mainnet and test
 | [mainnet] | [0xc0deb00c405f84c85dc13442e305df75d1288100cdd82675695f6148c7ece51c] |
 | [testnet] | [0xc0de11113b427d35ece1d8991865a941c0578b0f349acabbe9753863c24109ff] |
 
+:::tip
+
+The testnet account also contains a [permissionless faucet] for example assets `eAPT` and `eUSDC`.
+
+:::
+
 If you would like to use Econia as a dependency in your Move package, use the corresponding branch name in your package's `Move.toml`:
 
 ```toml
@@ -73,6 +79,7 @@ rev = "mainnet"
 [independent audits]: security
 [mainnet]: https://github.com/econia-labs/econia/tree/mainnet
 [medium]: https://medium.com/econialabs
+[permissionless faucet]: https://github.com/econia-labs/econia/tree/v4.1.0-audited/src/move/faucet/sources
 [teach yourself move on aptos]: https://github.com/econia-labs/teach-yourself-move
 [testnet]: https://github.com/econia-labs/econia/tree/testnet
 [twitter]: https://twitter.com/econialabs

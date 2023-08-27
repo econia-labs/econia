@@ -9,22 +9,41 @@ import { Button } from "@/components/Button";
 import { MOCK_MARKETS } from "@/mockdata/markets";
 import { type ApiMarket } from "@/types/api";
 
-const MarketCard = ({ market }: { market: ApiMarket }) => {
+const MarketCard = ({
+  market,
+  onDepositWithdrawClick,
+}: {
+  market: ApiMarket;
+  onDepositWithdrawClick: (selected: ApiMarket) => void;
+}) => {
   return (
     <div className="mt-4 border border-neutral-600 px-6 py-4">
       <h4 className="font-jost font-bold text-white">
         {market.name.replace("-", "/")}
       </h4>
+      <Button
+        variant="secondary"
+        className={"flex items-center !px-3 !py-1 !text-[10px] !leading-[18px]"}
+        onClick={() => {
+          onDepositWithdrawClick(market);
+        }}
+      >
+        Deposit / Withdraw
+      </Button>
     </div>
   );
 };
 
 type AccountDetailsContentProps = {
   onClose: () => void;
+  onDepositWithdrawClick: (selected: ApiMarket) => void;
+  onRegisterAccountClick: () => void;
 };
 
 export const AccountDetailsContent: React.FC<AccountDetailsContentProps> = ({
   onClose,
+  onDepositWithdrawClick,
+  onRegisterAccountClick,
 }) => {
   const { account, disconnect } = useWallet();
   const { data: registeredMarkets } = useQuery(
@@ -81,12 +100,24 @@ export const AccountDetailsContent: React.FC<AccountDetailsContentProps> = ({
       <div>
         {registeredMarkets != null ? (
           registeredMarkets.map((market) => (
-            <MarketCard market={market} key={market.market_id} />
+            <MarketCard
+              market={market}
+              key={market.market_id}
+              onDepositWithdrawClick={onDepositWithdrawClick}
+            />
           ))
         ) : (
           <p className="font-roboto-mono text-white">Loading...</p>
         )}
       </div>
+      <Button
+        variant="secondary"
+        className="flex align-middle text-[15px]/6"
+        onClick={onRegisterAccountClick}
+      >
+        Register Account
+        <ArrowRightOnRectangleIcon className="my-auto ml-2 h-6 w-6 text-neutral-600" />
+      </Button>
     </div>
   );
 };

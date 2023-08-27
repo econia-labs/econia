@@ -66,7 +66,7 @@ export function Header({ allMarketData, logoHref }: HeaderProps) {
   const { disconnect, account } = useWallet();
   const router = useRouter();
   const [depositWithdrawOpen, setDepositWithdrawOpen] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
     <header className="border-b border-neutral-600">
@@ -144,8 +144,7 @@ export function Header({ allMarketData, logoHref }: HeaderProps) {
           false;
         }}
         showCloseButton={true}
-        customWidth="w-[500px]"
-        // customHeight="max-h-[600px]"
+        className="!w-[500px]"
       >
         <AccountDetailsModal
           // allMarketData={allMarketData}

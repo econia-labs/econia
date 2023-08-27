@@ -12,8 +12,7 @@ export const BaseModal: React.FC<
     onBack?: () => void;
     showCloseButton?: boolean;
     showBackButton?: boolean;
-    customWidth?: string;
-    customHeight?: string;
+    className?: string;
   }>
 > = ({
   open,
@@ -22,8 +21,7 @@ export const BaseModal: React.FC<
   showBackButton,
   showCloseButton,
   children,
-  customWidth,
-  customHeight,
+  className,
 }) => {
   return (
     <Transition appear show={open} as={Fragment}>
@@ -43,9 +41,8 @@ export const BaseModal: React.FC<
         <div className="fixed inset-0 overflow-y-auto">
           <div className="flex min-h-full items-center justify-center p-4 text-center">
             <Dialog.Panel
-              className={`${customWidth ? customWidth : "w-full"} ${
-                customHeight && customHeight
-              } max-w-4xl transform border border-neutral-600 bg-black p-6 align-middle shadow-xl transition-all`}
+              className={`w-full
+              ${className} max-w-4xl transform border border-neutral-600 bg-black p-6 align-middle shadow-xl transition-all`}
               style={{
                 backgroundImage: `url(${bg.src})`,
               }}

@@ -11,13 +11,14 @@ import { RecognizedIcon } from "./icons/RecognizedIcon";
 import { MarketIconPair } from "./MarketIconPair";
 import { shorten } from "@/utils/formatter";
 import { useQuery } from "@tanstack/react-query";
-import { API_URL, ECONIA_ADDR } from "@/env";
+import { API_URL, AUDIT_ADDR, ECONIA_ADDR } from "@/env";
 import { toast } from "react-toastify";
 import { MarketAccount, MarketAccounts } from "@/types/econia";
 import { useAptos } from "@/contexts/AptosContext";
 import { makeMarketAccountId } from "@/utils/econia";
 import { NO_CUSTODIAN } from "@/constants";
 import { TypeTag } from "@/utils/TypeTag";
+import { fromRawCoinAmount } from "@/utils/coin";
 
 // get_all_market_account_ids_for_user
 
@@ -37,7 +38,7 @@ export const AccountDetailsModal: React.FC<{
       try {
         const test = await aptosClient.view({
           // TODO: change with real when audit comes back
-          function: `0x2920c3eee1e25f16313246b3df82ee95619d334d90ae162fc64b9cb9779d9b3f::user::get_all_market_account_ids_for_user`,
+          function: `${AUDIT_ADDR}::user::get_all_market_account_ids_for_user`,
           arguments: [account?.address],
           type_arguments: [],
         });
@@ -53,7 +54,6 @@ export const AccountDetailsModal: React.FC<{
       }
     },
   );
-  console.log("market ids for user", data);
 
   const copyToClipboard = () => {
     setShowCopiedNotif(true);
@@ -209,6 +209,7 @@ const DepositWithdrawCard: React.FC<{ marketID: number }> = ({ marketID }) => {
             key: makeMarketAccountId(marketID - 1, NO_CUSTODIAN),
           },
         );
+        console.log(marketAccount);
         return marketAccount as MarketAccount;
       } catch (e) {
         if (e instanceof Error) {
@@ -233,7 +234,10 @@ const DepositWithdrawCard: React.FC<{ marketID: number }> = ({ marketID }) => {
 
       const res = await resProm;
 
-      return { base: res.base.symbol, quote: res.quote.symbol };
+      return {
+        base: { symbol: res.base.symbol, decimals: res.base.decimals },
+        quote: { symbol: res.quote.symbol, decimals: res.quote.decimals },
+      };
     },
     {
       keepPreviousData: true,
@@ -272,7 +276,7 @@ const DepositWithdrawCard: React.FC<{ marketID: number }> = ({ marketID }) => {
                 baseAssetIcon={baseAssetIcon}
                 quoteAssetIcon={quoteAssetIcon}
               />
-              {marketPair?.base}/{marketPair?.quote}
+              {marketPair?.base.symbol}/{marketPair?.quote.symbol}
               <RecognizedIcon className="ml-1 inline-block h-[9px] w-[9px] text-center" />
             </div>
             {/* row2 within row1 */}
@@ -318,21 +322,29 @@ const DepositWithdrawCard: React.FC<{ marketID: number }> = ({ marketID }) => {
       <div className="ml-[39px] flex-1">
         <div className="ml-8 flex flex-col text-left">
           <span className="align-text-top font-roboto-mono text-[10px] font-light text-neutral-500">
-            {marketPair?.base} BALANCE
+            {marketPair?.base.symbol} BALANCE
           </span>
           <p className="font-roboto-mono text-xs font-light text-white">
             <span className="inline-block align-text-top text-white">
-              {marketAccount?.base_total}
+              {fromRawCoinAmount(
+                marketAccount?.base_total || 0,
+                marketPair?.base.decimals,
+              )}
+
+              {/* {marketAccount?.base_total} */}
             </span>
           </p>
         </div>
         <div className="ml-8 text-left">
           <span className="font-roboto-mono text-[10px] font-light text-neutral-500">
-            {marketPair?.quote} BALANCE
+            {marketPair?.quote.symbol} BALANCE
           </span>
           <p className="font-roboto-mono text-xs font-light text-white">
             <span className="inline-block text-white">
-              {marketAccount?.quote_total}
+              {fromRawCoinAmount(
+                marketAccount?.quote_total || 0,
+                marketPair?.quote.decimals,
+              )}
             </span>
           </p>
         </div>

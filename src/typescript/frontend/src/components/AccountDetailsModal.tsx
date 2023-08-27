@@ -115,7 +115,7 @@ export const AccountDetailsModal: React.FC<{
               <p className="font-roboto-mono text-xs font-light text-white">
                 <span className="inline-block align-text-top text-white">
                   {/* TODO wallet value */}
-                  000.1.2
+                  $35.03
                 </span>
               </p>
             </div>
@@ -126,7 +126,7 @@ export const AccountDetailsModal: React.FC<{
               <p className="font-roboto-mono text-xs font-light text-white">
                 <span className="inline-block text-white">
                   {/* TODO wallet value */}
-                  000.1.2
+                  $222,222.00
                 </span>
               </p>
             </div>

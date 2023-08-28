@@ -36,6 +36,15 @@ services:
     volumes:
       - db:/var/lib/postgresql/data
 
+  diesel:
+    build:
+      context: ../../
+      dockerfile: src/docker/database/Dockerfile
+    environment:
+      - DATABASE_URL="postgres://econia:econia@localhost/econia"
+    depends_on:
+      - postgres
+
 volumes:
   db:
     driver: local

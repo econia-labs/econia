@@ -6,7 +6,7 @@ The aggregator furthermore adds tables to this database under the `aggregator` s
 
 # Contributing
 
-When creating a new migration, before commiting, please make sure to use [sql-formatter](https://github.com/sql-formatter-org/sql-formatter) with the provided configuration.
+When creating a new migration, before committing, please make sure to use [sql-formatter](https://github.com/sql-formatter-org/sql-formatter) with the provided configuration.
 
 Also make sure to add the corresponding documentation to `models.md`.
 

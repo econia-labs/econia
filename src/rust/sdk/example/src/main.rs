@@ -61,6 +61,8 @@ aptos move publish \
 
 # run the script
 cargo run -- $APTOS_NODE_URL $APTOS_FAUCET_URL $ECONIA_ADDR $FAUCET_ADDR
+
+# note that when passing addresses to the executable, they must be of the form 0x1234...
 */
 
 #[derive(Parser, Debug)]
@@ -71,10 +73,10 @@ pub struct Args {
     /// The URL of the faucet
     pub faucet_url: String,
 
-    /// The address of the Econia contract
+    /// The address of the Econia contract (e.g. 0x1234...)
     pub econia_address: String,
 
-    /// The address of the Aptos faucet
+    /// The address of the Aptos faucet (e.g. 0x1234...)
     pub faucet_address: String,
 }
 

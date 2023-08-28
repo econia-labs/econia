@@ -23,7 +23,7 @@ flowchart TD
 ```
 
 This is the flow of data going from the contract to the API.
-You can see how the aggregator uses data what role the aggregator plays in Econia's data service stack.
+You can see how the aggregator uses data and what role the aggregator plays in Econia's data service stack.
 
 We now zoom into the aggregator's architecture.
 There is a trait called `Data`, which represents any type of data that is outputted by the aggregator.

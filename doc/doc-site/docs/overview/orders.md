@@ -261,7 +261,7 @@ Here, `APT` is considered the "base" asset and `USDC` is considered the "quote a
 | Quote asset | Order price | `USDC` | 6             | \$1.00     |
 
 We'd like to find a market configuration that makes sense given the above economic state.
-Configuring a market requires three values beyond the base and quote type:
+Configuring a market requires three _integer_ values beyond the base and quote type:
 
 | Parameter          | Meaning                  | Units                      |
 | ------------------ | ------------------------ | -------------------------- |
@@ -331,7 +331,7 @@ Since the two assets have almost the same nominal price, price granularity will 
 
 | Variable                | Value          |
 | ----------------------- | -------------- |
-| Nominal lot size        | 0.001 `sAPT`   |
+| Nominal size precision  | 0.001 `sAPT`   |
 | Nominal price precision | 0.000001 `APT` |
 | Nominal minimum size    | 0.5 `sAPT`     |
 | Base decimals           | 8              |
@@ -377,7 +377,7 @@ However we recall that the most granular possible price isn't necessarily desira
 Some coarseness is desirable for that reason, therefore the market creator might instead use less price granularity and choose to preserve size precision.
 Although it is possible for user interfaces to summarize orders into price levels that don't actually exist, this approach would represent to the user information that is not accurate, and is not recommended.
 
-Let's check the maximum price of this market, keeping in mind that it should revert to 1 since the assets have equal value:
+Let's check the maximum price of this market, keeping in mind that it should hover around 1 since the assets have almost the same value:
 
 ```python
 >>> get_max_price_nominal(price_precision_nominal)

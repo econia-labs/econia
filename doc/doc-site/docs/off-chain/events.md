@@ -16,8 +16,6 @@ Hence they can be easily queried via the Aptos node [events by event handle API]
 
 ### Schemas
 
-Market events were recently incorporated per [#321] and will soon be deployed under a mainnet contract upgrade, pending an audit.
-
 Econia emits the following market events:
 
 - [`user::CancelOrderEvent`]
@@ -109,7 +107,6 @@ When a [signing user or a custodian][market account] manually changes the size o
 
 When a [signing user or a custodian][market account] manually cancels an open order, a [`user::CancelOrderEvent`] is emitted to the associated [`user::MarketEventHandlesForMarketAccount`] with [`CANCEL_REASON_MANUAL_CANCEL`].
 
-[#321]: https://github.com/econia-labs/econia/pull/321
 [events by creation number api]: https://fullnode.mainnet.aptoslabs.com/v1/spec#/operations/get_events_by_creation_number
 [events by event handle api]: https://fullnode.mainnet.aptoslabs.com/v1/spec#/operations/get_events_by_event_handle
 [limit orders]: ../overview/matching.md#limit-orders

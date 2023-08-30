@@ -15,6 +15,15 @@ services:
       - 8081:8081
     image: chain
 
+  diesel:
+    build:
+      context: ../../
+      dockerfile: src/docker/database/Dockerfile
+    environment:
+      - DATABASE_URL="postgres://econia:econia@localhost/econia"
+    depends_on:
+      - postgres
+
   indexer:
     build:
       context: ../../
@@ -35,15 +44,6 @@ services:
       - 5432:5432
     volumes:
       - db:/var/lib/postgresql/data
-
-  diesel:
-    build:
-      context: ../../
-      dockerfile: src/docker/database/Dockerfile
-    environment:
-      - DATABASE_URL="postgres://econia:econia@localhost/econia"
-    depends_on:
-      - postgres
 
 volumes:
   db:

@@ -2,7 +2,7 @@
 
 This repository provides migrations to create the Econia event database, and Rust types to work with the event database.
 
-The aggregator furthermore adds tables to this database under the `aggregator` schema. Those are disucssed in the `src/rust/aggregator` crate.
+The aggregator furthermore adds tables to this database under the `aggregator` schema. Those are discussed in the `src/rust/aggregator` crate.
 
 # Contributing
 

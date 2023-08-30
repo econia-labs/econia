@@ -261,7 +261,7 @@ Here, `APT` is considered the "base" asset and `USDC` is considered the "quote a
 | Quote asset | Order price | `USDC` | 6             | \$1.00     |
 
 We'd like to find a market configuration that makes sense given the above economic state.
-Configuring a market requires three _integer_ values beyond the base and quote type:
+Configuring a market requires three _integer_ values beyond the base and quote type, since the Econia Move package uses only integer arithmetic:
 
 | Parameter          | Meaning                  | Units                      |
 | ------------------ | ------------------------ | -------------------------- |

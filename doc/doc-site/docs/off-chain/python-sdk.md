@@ -139,7 +139,7 @@ So, our market parameters would be:
 
 This gives us a market with a price granularity of 0.1 cent and minimum order size of 0.5 `eAPT`!
 We'd get an error if we tried to use a more granular price, or more granular size without changing price granularity.
-This is because our tick size is 1, which represents the minimum--the highest possible granularity of the quote asset.
+This is because our tick size is 1, which represents the most possible price precision for the given size and the highest possible granularity of the quote asset.
 
 ## `examples.trade`
 

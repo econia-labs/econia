@@ -2,7 +2,6 @@ import math
 from decimal import Decimal
 from typing import Tuple
 
-
 MAX_TICKS_INTEGER = (2**32) - 1
 
 
@@ -114,10 +113,12 @@ def get_price_integer(
     quote_decimals: int,
 ) -> int:
     """
-    Returns the "ticks per lot" price given a nominal price and other configuration variables.
+    Returns the "ticks per lot" price given a nominal price and other configuration
+    variables.
 
     Parameters:
-    * `nominal_price`: The price of one nominal unit of base in terms of nominal quote units.
+    * `nominal_price`: The price of one nominal unit of base in terms of nominal quote
+      units.
     * `lot_size_integer`: The subunits of base that make up one lot.
     * `tick_size_integer`: The subunits of quote that make up one tick.
     * `base_decimals`: The number of decimals in one nominal unit of base.
@@ -149,7 +150,8 @@ def get_price_nominal(
     quote_decimals: int,
 ) -> Decimal:
     """
-    Returns the "quote per base" price given an integer price and other configuration variables.
+    Returns the "quote per base" price given an integer price and other configuration
+    variables.
 
     Parameters:
     * `integer_price`: The number of ticks of quote per lot representing the price.

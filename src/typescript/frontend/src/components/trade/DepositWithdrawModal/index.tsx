@@ -23,58 +23,58 @@ export const useAllMarketStats = () => {
   });
 };
 
-export const DepositWithdrawModal: React.FC<{
-  allMarketData: ApiMarket[];
-  open: boolean;
-  onClose: () => void;
-}> = ({ allMarketData, open, onClose }) => {
-  const [selectedMarketId, setSelectedMarketId] = useState<number>(
-    allMarketData[0].market_id,
-  );
-  const selectedMarket = useMemo(() => {
-    return allMarketData.find(
-      ({ market_id }) => market_id === selectedMarketId,
-    );
-  }, [selectedMarketId, allMarketData]);
+// export const DepositWithdrawModal: React.FC<{
+//   allMarketData: ApiMarket[];
+//   open: boolean;
+//   onClose: () => void;
+// }> = ({ allMarketData, open, onClose }) => {
+//   const [selectedMarketId, setSelectedMarketId] = useState<number>(
+//     allMarketData[0].market_id,
+//   );
+//   const selectedMarket = useMemo(() => {
+//     return allMarketData.find(
+//       ({ market_id }) => market_id === selectedMarketId,
+//     );
+//   }, [selectedMarketId, allMarketData]);
 
-  const [step, setStep] = useState<Step>(Step.Initial);
+//   const [step, setStep] = useState<Step>(Step.Initial);
 
-  return (
-    <BaseModal
-      isOpen={open}
-      onClose={onClose}
-      onBack={
-        step === Step.SelectMarket
-          ? () => setStep(Step.Initial)
-          : step === Step.DepositWithdraw
-          ? () => setStep(Step.Initial)
-          : undefined
-      }
-      showBackButton={step === Step.DepositWithdraw}
-      showCloseButton={step !== Step.SelectMarket}
-    >
-      {step === Step.Initial && (
-        <InitialContent
-          selectedMarket={selectedMarket}
-          selectMarket={() => setStep(Step.SelectMarket)}
-          depositWithdraw={() => setStep(Step.DepositWithdraw)}
-        />
-      )}
-      {step === Step.SelectMarket && (
-        <SelectMarketContent
-          allMarketData={allMarketData}
-          onSelectMarket={(marketId: number) => {
-            // TODO clean up once ECO-327 is resolved
-            setSelectedMarketId(marketId);
-          }}
-        />
-      )}
-      {step === Step.DepositWithdraw &&
-        (selectedMarket !== undefined ? (
-          <DepositWithdrawContent selectedMarket={selectedMarket} />
-        ) : (
-          <div>Unexpected error: no market selected</div>
-        ))}
-    </BaseModal>
-  );
-};
+//   return (
+//     <BaseModal
+//       isOpen={open}
+//       onClose={onClose}
+//       onBack={
+//         step === Step.SelectMarket
+//           ? () => setStep(Step.Initial)
+//           : step === Step.DepositWithdraw
+//           ? () => setStep(Step.Initial)
+//           : undefined
+//       }
+//       showBackButton={step === Step.DepositWithdraw}
+//       showCloseButton={step !== Step.SelectMarket}
+//     >
+//       {step === Step.Initial && (
+//         <InitialContent
+//           selectedMarket={selectedMarket}
+//           selectMarket={() => setStep(Step.SelectMarket)}
+//           depositWithdraw={() => setStep(Step.DepositWithdraw)}
+//         />
+//       )}
+//       {step === Step.SelectMarket && (
+//         <SelectMarketContent
+//           allMarketData={allMarketData}
+//           onSelectMarket={(marketId: number) => {
+//             // TODO clean up once ECO-327 is resolved
+//             setSelectedMarketId(marketId);
+//           }}
+//         />
+//       )}
+//       {step === Step.DepositWithdraw &&
+//         (selectedMarket !== undefined ? (
+//           <DepositWithdrawContent selectedMarket={selectedMarket} />
+//         ) : (
+//           <div>Unexpected error: no market selected</div>
+//         ))}
+//     </BaseModal>
+//   );
+// };

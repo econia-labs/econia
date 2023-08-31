@@ -4,3 +4,6 @@
 [submodule "src/typescript/frontend/public/static"]
 	path = src/typescript/frontend/public/static
 	url = git@github.com:tradingview/charting_library.git
+[submodule "src/rust/dependencies/aptos-indexer-processors"]
+	path = src/rust/dependencies/aptos-indexer-processors
+	url = https://github.com/aptos-labs/aptos-indexer-processors.git

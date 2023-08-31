@@ -1,11 +1,9 @@
 use chrono::Utc;
 use db::{
-    create_coin,
     models::{
         coin::NewCoin,
         market::{MarketRegistrationEvent, NewMarketRegistrationEvent},
-    },
-    register_market,
+    }, create_coin, add_market_registration_event,
 };
 use diesel::prelude::*;
 use serde::Deserialize;
@@ -48,17 +46,37 @@ fn reset_bar_tables(conn: &mut PgConnection) {
 pub fn reset_tables(conn: &mut PgConnection) {
     reset_bar_tables(conn);
 
-    diesel::delete(db::schema::fills::table)
+    diesel::delete(db::schema::market_registration_events::table)
         .execute(conn)
-        .expect("Error deleting fills events table");
+        .expect("Error deleting market registration events table");
 
-    diesel::delete(db::schema::taker_events::table)
+    diesel::delete(db::schema::recognized_market_events::table)
         .execute(conn)
-        .expect("Error deleting taker events table");
+        .expect("Error deleting recognized market events table");
 
-    diesel::delete(db::schema::maker_events::table)
+    diesel::delete(db::schema::change_order_size_events::table)
         .execute(conn)
-        .expect("Error deleting maker events table");
+        .expect("Error deleting change order size events table");
+
+    diesel::delete(db::schema::cancel_order_events::table)
+        .execute(conn)
+        .expect("Error deleting cancel order events table");
+
+    diesel::delete(db::schema::fill_events::table)
+        .execute(conn)
+        .expect("Error deleting fill events table");
+
+    diesel::delete(db::schema::place_limit_order_events::table)
+        .execute(conn)
+        .expect("Error deleting place limit order events table");
+
+    diesel::delete(db::schema::place_market_order_events::table)
+        .execute(conn)
+        .expect("Error deleting place market order events table");
+
+    diesel::delete(db::schema::place_swap_order_events::table)
+        .execute(conn)
+        .expect("Error deleting place swap order events table");
 
     diesel::delete(db::schema::orders::table)
         .execute(conn)
@@ -105,7 +123,7 @@ pub fn setup_market(conn: &mut PgConnection) -> MarketRegistrationEvent {
     )
     .unwrap();
 
-    register_market(
+    add_market_registration_event(
         conn,
         &NewMarketRegistrationEvent {
             market_id: &0.into(),

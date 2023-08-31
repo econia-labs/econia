@@ -1,14 +1,29 @@
 [tool.poetry]
 name = "econia-sdk"
-version = "0.1.0"
+version = "1.0.3"
 description = ""
-authors = ["qdrs <qdrs@proton.me>"]
+authors = ["Econia Labs <developers@econialabs.com>"]
 readme = "README.md"
 packages = [{ include = "econia_sdk" }]
 
+[tool.isort]
+profile = "black"
+
 [tool.poetry.dependencies]
-aptos-sdk = "^0.5.1"
-python = "^3.11"
+aptos-sdk = "^0.6.4"
+python = "^3.8"
+
+[tool.poetry.group.dev.dependencies]
+autoflake = "^2.2.0"
+black = "^23.7.0"
+isort = "^5.12.0"
+mypy = "^1.4.1"
+
+[tool.poetry.group.docs.dependencies]
+pdoc = "^14.0.0"
+
+[tool.poetry.scripts]
+trade = "examples.trade:start"
 
 [build-system]
 requires = ["poetry-core"]

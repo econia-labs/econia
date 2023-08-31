@@ -1,10 +1,11 @@
 [package]
 name = "Econia"
-version = "4.1.0"             # Per SemVer.
+version = "4.1.0"                                     # Per SemVer.
 upgrade_policy = "compatible"
+authors = ["Econia Labs (developers@econialabs.com)"]
 
 [addresses]
-econia = "0xc0deb00c405f84c85dc13442e305df75d1288100cdd82675695f6148c7ece51c"
+econia = "_"
 # Mock addresses for testing.
 user = "0x1234"
 user_0 = "0x2345"
@@ -13,5 +14,8 @@ integrator = "0x4567"
 
 [dependencies.AptosFramework]
 git = "https://github.com/aptos-labs/aptos-core.git"
+# You may need to change this to `main` to run event unit tests, pending
+# https://github.com/aptos-labs/aptos-core/pull/9181 merging from `main`
+# into `mainnet`.
 rev = "mainnet"
 subdir = "aptos-move/framework/aptos-framework"

@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAptos } from "@/contexts/AptosContext";
 import { type TypeTag } from "@/utils/TypeTag";
 
-type CoinInfo = {
+export type CoinInfo = {
   decimals: 6;
   name: string;
   symbol: string;

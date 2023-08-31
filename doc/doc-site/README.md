@@ -6,11 +6,11 @@ Econia's docs are built using [Docusaurus].
 
 1. Install [Homebrew] or a similar package manager.
 
-1. Install [Yarn]:
+1. Install [pnpm]:
 
    ```zsh
 
-   brew install yarn
+   brew install pnpm
 
    ```
 
@@ -18,15 +18,7 @@ Econia's docs are built using [Docusaurus].
 
    ```zsh
 
-   yarn
-
-   ```
-
-1. To build locally:
-
-   ```zsh
-
-   yarn build
+   pnpm install
 
    ```
 
@@ -34,7 +26,7 @@ Econia's docs are built using [Docusaurus].
 
    ```zsh
 
-   yarn start
+   pnpm start
 
    ```
 
@@ -42,4 +34,4 @@ Econia's docs are built using [Docusaurus].
 
 [docusaurus]: https://docusaurus.io/
 [homebrew]: https://brew.sh
-[yarn]: https://yarnpkg.com/
+[pnpm]: https://pnpm.io/

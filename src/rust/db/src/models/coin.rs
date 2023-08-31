@@ -4,7 +4,8 @@ use crate::schema::coins;
 
 use super::ToInsertable;
 
-#[derive(Clone, Debug, Queryable)]
+#[derive(Clone, Debug, Queryable, Identifiable)]
+#[diesel(table_name = coins, primary_key(account_address, module_name, struct_name))]
 pub struct Coin {
     pub account_address: String,
     pub module_name: String,
@@ -27,8 +28,8 @@ impl From<Coin> for types::Coin {
     }
 }
 
-#[derive(Insertable, Debug)]
-#[diesel(table_name = coins)]
+#[derive(Insertable, Debug, AsChangeset)]
+#[diesel(table_name = coins, primary_key(account_address, module_name, struct_name))]
 pub struct NewCoin<'a> {
     pub account_address: &'a str,
     pub module_name: &'a str,

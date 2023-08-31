@@ -11,11 +11,13 @@ import { TypeTag } from "@/utils/TypeTag";
 type RegisterAccountContentProps = {
   selectedMarket?: ApiMarket;
   selectMarket: () => void;
+  createAccountCallback?: (status: boolean) => void;
 };
 
 export const RegisterAccountContent: React.FC<RegisterAccountContentProps> = ({
   selectedMarket,
   selectMarket,
+  createAccountCallback,
 }) => {
   const { signAndSubmitTransaction } = useAptos();
   return (
@@ -43,10 +45,14 @@ export const RegisterAccountContent: React.FC<RegisterAccountContentProps> = ({
             BigInt(selectedMarket.market_id),
             BigInt(NO_CUSTODIAN),
           );
-          await signAndSubmitTransaction({
+          const res = await signAndSubmitTransaction({
             ...payload,
             type: "entry_function_payload",
           });
+
+          if (createAccountCallback) {
+            createAccountCallback(res);
+          }
         }}
         variant="primary"
       >

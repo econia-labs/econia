@@ -56,7 +56,7 @@ export default function Market({ allMarketData, marketData }: Props) {
   const [depositWithdrawModalOpen, setDepositWithdrawModalOpen] =
     useState<boolean>(false);
   const [walletButtonModalOpen, setWalletButtonModalOpen] =
-    useState<boolean>(true);
+    useState<boolean>(false);
 
   const [isScriptReady, setIsScriptReady] = useState(false);
 

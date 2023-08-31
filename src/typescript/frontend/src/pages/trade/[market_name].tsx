@@ -377,11 +377,6 @@ export default function Market({ allMarketData, marketData }: Props) {
         }}
         allMarketData={allMarketData}
       />
-      {/* <DepositWithdrawFlowModal
-        selectedMarket={marketData}
-        isOpen={depositWithdrawModalOpen}
-        onClose={() => setDepositWithdrawModalOpen(false)}
-      /> */}
       <WalletButtonFlowModal
         selectedMarket={marketData}
         isOpen={walletButtonModalOpen}

@@ -368,15 +368,27 @@ export default function Market({ allMarketData, marketData }: Props) {
           </div>
         </main>
       </div>
+      {/* temp */}
       <DepositWithdrawFlowModal
         selectedMarket={marketData}
         isOpen={depositWithdrawModalOpen}
-        onClose={() => setDepositWithdrawModalOpen(false)}
-      />
-      <WalletButtonFlowModal
+        onClose={() => {
+          setDepositWithdrawModalOpen(false);
+        }}
         allMarketData={allMarketData}
+      />
+      {/* <DepositWithdrawFlowModal
+        selectedMarket={marketData}
+        isOpen={depositWithdrawModalOpen}
+        onClose={() => setDepositWithdrawModalOpen(false)}
+      /> */}
+      <WalletButtonFlowModal
+        selectedMarket={marketData}
         isOpen={walletButtonModalOpen}
-        onClose={() => setWalletButtonModalOpen(false)}
+        onClose={() => {
+          setWalletButtonModalOpen(false);
+        }}
+        allMarketData={allMarketData}
       />
       <Script
         src="/static/datafeeds/udf/dist/bundle.js"

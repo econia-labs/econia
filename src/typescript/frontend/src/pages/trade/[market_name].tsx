@@ -4,7 +4,7 @@ import type { GetStaticPaths, GetStaticProps } from "next";
 import dynamic from "next/dynamic";
 import Head from "next/head";
 import Script from "next/script";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
 
 import { DepthChart } from "@/components/DepthChart";
@@ -285,22 +285,25 @@ export default function Market({ allMarketData, marketData }: Props) {
     { keepPreviousData: true, refetchOnWindowFocus: false },
   );
 
-  if (!marketData) return <Page>Market not found.</Page>;
+  const defaultTVChartProps = useMemo(() => {
+    return {
+      symbol: marketData?.name ?? "",
+      interval: "1" as ResolutionString,
+      datafeedUrl: "https://dev.api.econia.exchange",
+      libraryPath: "/static/charting_library/",
+      clientId: "econia.exchange",
+      userId: "public_user_id",
+      fullscreen: false,
+      autosize: true,
+      studiesOverrides: {},
+      theme: "Dark" as ThemeName,
+      // antipattern if we render market not found? need ! for typescript purposes
+      selectedMarket: marketData!,
+      allMarketData,
+    };
+  }, [marketData, allMarketData]);
 
-  const defaultTVChartProps = {
-    symbol: marketData.name,
-    interval: "1" as ResolutionString,
-    datafeedUrl: "https://dev.api.econia.exchange",
-    libraryPath: "/static/charting_library/",
-    clientId: "econia.exchange",
-    userId: "public_user_id",
-    fullscreen: false,
-    autosize: true,
-    studiesOverrides: {},
-    theme: "Dark" as ThemeName,
-    selectedMarket: marketData,
-    allMarketData,
-  };
+  if (!marketData) return <Page>Market not found.</Page>;
 
   return (
     <OrderEntryContextProvider>

@@ -1,62 +1,169 @@
-import { useMemo, useState } from "react";
-
 import { type ApiMarket } from "@/types/api";
 
 import { BaseModal } from "../BaseModal";
+import { DepositWithdrawContent } from "../content/DepositWithdrawContent";
 import { AccountDetailsContent } from "../content/AccountDetailsContent";
+import { useEffect, useState } from "react";
 import { RegisterAccountContent } from "../content/RegisterAccountContent";
+import { SelectMarketContent } from "@/components/trade/DepositWithdrawModal/SelectMarketContent";
+import { useQuery } from "@tanstack/react-query";
+import { useWallet } from "@aptos-labs/wallet-adapter-react";
+import { MOCK_MARKETS } from "@/mockdata/markets";
+import { set } from "react-hook-form";
+import { toast } from "react-toastify";
 
 type Props = {
+  selectedMarket: ApiMarket;
   allMarketData: ApiMarket[];
   isOpen: boolean;
   onClose: () => void;
 };
 
-type WalletButtonModalState =
-  | "accountDetails"
-  | "registerAccount"
-  | "selectMarket"
-  | "depositWithdraw";
+/**
+ * Modal flows:
+ * 1. Account Details -> Deposit/Withdraw
+ * 2. Account Details -> Register Account -> Select Market -> Account Details // wait for on chain registration / loader
+ *
+ * edge cases:
+ * - filtered markets is empty
+ *    - show "no markets available" message
+ *    - no unregistered markets available
+ */
+enum FlowStep {
+  AccountDetails,
+  DepositWithdraw,
+  RegisterAccount,
+  MarketSelect,
+  Closed,
+}
 
-export const WalletButtonFlowModal: React.FC<Props> = ({
-  allMarketData,
+export const DepositWithdrawFlowModal: React.FC<Props> = ({
+  selectedMarket,
   isOpen,
   onClose,
+  allMarketData,
 }) => {
-  const [state, setState] = useState<WalletButtonModalState>("accountDetails");
-  const [selectedMarketId, setSelectedMarketId] = useState<number>(
-    allMarketData[0].market_id,
+  const [market, setMarket] = useState(selectedMarket);
+  const [flowStep, setFlowStep] = useState(FlowStep.Closed);
+  const [filteredMarkets, setFilteredMarkets] = useState<ApiMarket[]>([]);
+  const [selectedMarketToRegister, setSelectedMarketToRegister] =
+    useState<ApiMarket>();
+  const { account } = useWallet();
+
+  // TODO: change this after merge with ECO-319
+  const { data: registeredMarkets } = useQuery(
+    ["temp key", account?.address],
+    () => {
+      // TODO pull registered markets from SDK (ECO-355)
+      return MOCK_MARKETS;
+    },
   );
-  const selectedMarket = useMemo(
-    () => allMarketData.find(({ market_id }) => market_id === selectedMarketId),
-    [allMarketData, selectedMarketId],
-  );
+
+  const onDepositWithdrawClick = (selected: ApiMarket) => {
+    setMarket(selected);
+    // assumes that market selected is valid
+    setFlowStep(FlowStep.DepositWithdraw);
+  };
+  const onRegisterAccountClick = () => {
+    if (filteredMarkets.length == 0) {
+      toast.info("No unregistered markets available!");
+      return;
+    }
+    setFlowStep(FlowStep.RegisterAccount);
+  };
+  const onMarketSelectClick = () => {
+    setFlowStep(FlowStep.MarketSelect);
+  };
+  const selectMarketCallback = (selected: number) => {
+    setFlowStep(FlowStep.RegisterAccount);
+    setSelectedMarketToRegister(
+      allMarketData.find(({ market_id }) => market_id === selected),
+    );
+  };
+
+  useEffect(() => {
+    if (isOpen && flowStep === FlowStep.Closed) {
+      setFlowStep(FlowStep.AccountDetails);
+    }
+
+    // if the modal is closed, we want to reset the flow step and trigger the onClose callback
+    if (!isOpen) {
+      onClose();
+      setFlowStep(FlowStep.Closed);
+    }
+
+    // on modal action, we want to refetch the user's registered markets
+    if (allMarketData && registeredMarkets) {
+      const filtered = allMarketData.filter(({ market_id }) => {
+        if (
+          registeredMarkets.find(
+            (registeredMarket) => registeredMarket.market_id === market_id,
+          )
+        ) {
+          return false;
+        }
+        return true;
+      });
+      setFilteredMarkets(filtered);
+    }
+
+    // TODO: refetch registered markets on chain registration OR flow step change
+  }, [isOpen, flowStep, onClose, allMarketData, registeredMarkets]);
 
   return (
     <>
-      {state === "accountDetails" && (
+      {flowStep === FlowStep.AccountDetails && (
         <BaseModal
           isOpen={isOpen}
           onClose={onClose}
-          showBackButton={false}
           showCloseButton={true}
+          showBackButton={false}
         >
-          <AccountDetailsContent onClose={onClose} />
+          <AccountDetailsContent
+            onClose={onClose}
+            onDepositWithdrawClick={onDepositWithdrawClick}
+            onRegisterAccountClick={onRegisterAccountClick}
+          />
         </BaseModal>
       )}
-      {state === "registerAccount" && (
+      {flowStep === FlowStep.DepositWithdraw && (
         <BaseModal
-          isOpen={isOpen}
-          onBack={() => setState("accountDetails")}
+          isOpen={flowStep === FlowStep.DepositWithdraw}
           onClose={onClose}
-          showBackButton={true}
+          // custom step, so we don't want to close the modal when the user clicks the close button
+          // rather we go back to the account details step
+          onBack={() => {
+            setFlowStep(FlowStep.AccountDetails);
+          }}
           showCloseButton={true}
+          showBackButton={true}
         >
+          <DepositWithdrawContent
+            selectedMarket={market}
+          ></DepositWithdrawContent>
+        </BaseModal>
+      )}
+      {/* todo */}
+      {flowStep === FlowStep.RegisterAccount && (
+        <BaseModal isOpen={isOpen} onClose={onClose} showCloseButton={true}>
           <RegisterAccountContent
-            selectedMarket={selectedMarket}
-            selectMarket={() => {
-              console.error("TODO");
+            // if user hasn't selected one through modal, automatically select the first one that user doesnt have an account for
+            selectedMarket={selectedMarketToRegister || filteredMarkets[0]}
+            selectMarket={onMarketSelectClick}
+            createAccountCallback={(status: boolean) => {
+              if (status) {
+                setFlowStep(FlowStep.AccountDetails);
+              }
             }}
+          />
+        </BaseModal>
+      )}
+      {/* todo */}
+      {flowStep === FlowStep.MarketSelect && (
+        <BaseModal isOpen={isOpen} onClose={onClose} showCloseButton={true}>
+          <SelectMarketContent
+            allMarketData={filteredMarkets}
+            onSelectMarket={selectMarketCallback}
           />
         </BaseModal>
       )}

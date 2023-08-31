@@ -37,7 +37,7 @@ enum FlowStep {
   Closed,
 }
 
-export const DepositWithdrawFlowModal: React.FC<Props> = ({
+export const WalletButtonFlowModal: React.FC<Props> = ({
   selectedMarket,
   isOpen,
   onClose,

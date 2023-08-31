@@ -6,7 +6,7 @@ import { AccountDetailsContent } from "../content/AccountDetailsContent";
 import { useEffect, useState } from "react";
 import { RegisterAccountContent } from "../content/RegisterAccountContent";
 import { SelectMarketContent } from "@/components/trade/DepositWithdrawModal/SelectMarketContent";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useWallet } from "@aptos-labs/wallet-adapter-react";
 import { MOCK_MARKETS } from "@/mockdata/markets";
 import { set } from "react-hook-form";
@@ -49,10 +49,11 @@ export const WalletButtonFlowModal: React.FC<Props> = ({
   const [selectedMarketToRegister, setSelectedMarketToRegister] =
     useState<ApiMarket>();
   const { account } = useWallet();
+  const queryClient = useQueryClient();
 
   // TODO: change this after merge with ECO-319
   const { data: registeredMarkets } = useQuery(
-    ["temp key", account?.address],
+    ["userMarketAccounts", account?.address],
     () => {
       // TODO pull registered markets from SDK (ECO-355)
       return MOCK_MARKETS;
@@ -139,6 +140,7 @@ export const WalletButtonFlowModal: React.FC<Props> = ({
           showBackButton={true}
         >
           <DepositWithdrawContent
+            isRegistered={true}
             selectedMarket={market}
           ></DepositWithdrawContent>
         </BaseModal>
@@ -151,6 +153,9 @@ export const WalletButtonFlowModal: React.FC<Props> = ({
             selectMarket={onMarketSelectClick}
             createAccountCallback={(status: boolean) => {
               if (status) {
+                queryClient.invalidateQueries({
+                  queryKey: ["userMarketAccounts"],
+                });
                 setFlowStep(FlowStep.AccountDetails);
               }
             }}

@@ -36,7 +36,7 @@ export const DepositWithdrawFlowModal: React.FC<Props> = ({
 
   // TODO: change this after merge with ECO-319
   const { data: registeredMarkets } = useQuery(
-    ["temp key", account?.address],
+    ["userMarketAccounts", account?.address],
     () => {
       // TODO pull registered markets from SDK (ECO-355)
       return MOCK_MARKETS;
@@ -62,7 +62,10 @@ export const DepositWithdrawFlowModal: React.FC<Props> = ({
         showCloseButton={true}
         showBackButton={false}
       >
-        <DepositWithdrawContent selectedMarket={selectedMarket} />
+        <DepositWithdrawContent
+          isRegistered={isRegistered}
+          selectedMarket={selectedMarket}
+        />
       </BaseModal>
     </>
   );

@@ -143,7 +143,6 @@ export const WalletButtonFlowModal: React.FC<Props> = ({
           ></DepositWithdrawContent>
         </BaseModal>
       )}
-      {/* todo */}
       {flowStep === FlowStep.RegisterAccount && (
         <BaseModal isOpen={isOpen} onClose={onClose} showCloseButton={true}>
           <RegisterAccountContent
@@ -158,7 +157,6 @@ export const WalletButtonFlowModal: React.FC<Props> = ({
           />
         </BaseModal>
       )}
-      {/* todo */}
       {flowStep === FlowStep.MarketSelect && (
         <BaseModal isOpen={isOpen} onClose={onClose} showCloseButton={true}>
           <SelectMarketContent

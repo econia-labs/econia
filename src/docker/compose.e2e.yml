@@ -19,8 +19,8 @@ services:
     build:
       context: ../../
       dockerfile: src/docker/database/Dockerfile
-    environment:
-      - DATABASE_URL="postgres://econia:econia@localhost/econia"
+      args:
+        - DATABASE_URL=postgres://econia:econia@docker_default/econia
     depends_on:
       - postgres
 

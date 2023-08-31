@@ -1,12 +1,12 @@
 # This docker file is used to run the database migrations
 FROM rust:slim-bookworm
 
-ARG RUST_ROOT=src/rust
+ARG DATABASE_ROOT=src/rust/dbv2
 ARG DATABASE_URL
 ENV DATABASE_URL=$DATABASE_URL
-WORKDIR $RUST_ROOT/dbv2
+COPY $DATABASE_ROOT /db/
 
-COPY . .
+WORKDIR /db/
 
 RUN apt-get update && apt-get install -y \
     libpq-dev \

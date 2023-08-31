@@ -5,9 +5,16 @@ import { DepositWithdrawContent } from "../content/DepositWithdrawContent";
 import { AccountDetailsContent } from "../content/AccountDetailsContent";
 import { useEffect, useState } from "react";
 import { RegisterAccountContent } from "../content/RegisterAccountContent";
+import { SelectMarketContent } from "@/components/trade/DepositWithdrawModal/SelectMarketContent";
+import { useQuery } from "@tanstack/react-query";
+import { useWallet } from "@aptos-labs/wallet-adapter-react";
+import { MOCK_MARKETS } from "@/mockdata/markets";
+import { set } from "react-hook-form";
+import { toast } from "react-toastify";
 
 type Props = {
   selectedMarket: ApiMarket;
+  allMarketData: ApiMarket[];
   isOpen: boolean;
   onClose: () => void;
 };
@@ -16,6 +23,11 @@ type Props = {
  * Modal flows:
  * 1. Account Details -> Deposit/Withdraw
  * 2. Account Details -> Register Account -> Select Market -> Account Details // wait for on chain registration / loader
+ *
+ * edge cases:
+ * - filtered markets is empty
+ *    - show "no markets available" message
+ *    - no unregistered markets available
  */
 enum FlowStep {
   AccountDetails,
@@ -29,9 +41,23 @@ export const DepositWithdrawFlowModal: React.FC<Props> = ({
   selectedMarket,
   isOpen,
   onClose,
+  allMarketData,
 }) => {
   const [market, setMarket] = useState(selectedMarket);
   const [flowStep, setFlowStep] = useState(FlowStep.Closed);
+  const [filteredMarkets, setFilteredMarkets] = useState<ApiMarket[]>([]);
+  const [selectedMarketToRegister, setSelectedMarketToRegister] =
+    useState<ApiMarket>();
+  const { account } = useWallet();
+
+  // TODO: change this after merge with ECO-319
+  const { data: registeredMarkets } = useQuery(
+    ["temp key", account?.address],
+    () => {
+      // TODO pull registered markets from SDK (ECO-355)
+      return MOCK_MARKETS;
+    },
+  );
 
   const onDepositWithdrawClick = (selected: ApiMarket) => {
     setMarket(selected);
@@ -39,7 +65,20 @@ export const DepositWithdrawFlowModal: React.FC<Props> = ({
     setFlowStep(FlowStep.DepositWithdraw);
   };
   const onRegisterAccountClick = () => {
+    if (filteredMarkets.length == 0) {
+      toast.info("No unregistered markets available!");
+      return;
+    }
     setFlowStep(FlowStep.RegisterAccount);
+  };
+  const onMarketSelectClick = () => {
+    setFlowStep(FlowStep.MarketSelect);
+  };
+  const selectMarketCallback = (selected: number) => {
+    setFlowStep(FlowStep.RegisterAccount);
+    setSelectedMarketToRegister(
+      allMarketData.find(({ market_id }) => market_id === selected),
+    );
   };
 
   useEffect(() => {
@@ -52,7 +91,24 @@ export const DepositWithdrawFlowModal: React.FC<Props> = ({
       onClose();
       setFlowStep(FlowStep.Closed);
     }
-  }, [isOpen, flowStep, onClose]);
+
+    // on modal action, we want to refetch the user's registered markets
+    if (allMarketData && registeredMarkets) {
+      const filtered = allMarketData.filter(({ market_id }) => {
+        if (
+          registeredMarkets.find(
+            (registeredMarket) => registeredMarket.market_id === market_id,
+          )
+        ) {
+          return false;
+        }
+        return true;
+      });
+      setFilteredMarkets(filtered);
+    }
+
+    // TODO: refetch registered markets on chain registration OR flow step change
+  }, [isOpen, flowStep, onClose, allMarketData, registeredMarkets]);
 
   return (
     <>
@@ -91,9 +147,13 @@ export const DepositWithdrawFlowModal: React.FC<Props> = ({
       {flowStep === FlowStep.RegisterAccount && (
         <BaseModal isOpen={isOpen} onClose={onClose} showCloseButton={true}>
           <RegisterAccountContent
-            selectedMarket={selectedMarket}
-            selectMarket={() => {
-              console.error("TODO");
+            // if user hasn't selected one through modal, automatically select the first one that user doesnt have an account for
+            selectedMarket={selectedMarketToRegister || filteredMarkets[0]}
+            selectMarket={onMarketSelectClick}
+            createAccountCallback={(status: boolean) => {
+              if (status) {
+                setFlowStep(FlowStep.AccountDetails);
+              }
             }}
           />
         </BaseModal>
@@ -101,9 +161,9 @@ export const DepositWithdrawFlowModal: React.FC<Props> = ({
       {/* todo */}
       {flowStep === FlowStep.MarketSelect && (
         <BaseModal isOpen={isOpen} onClose={onClose} showCloseButton={true}>
-          <RegisterAccountContent
-            selectedMarket={selectedMarket}
-            selectMarket={onRegisterAccountClick}
+          <SelectMarketContent
+            allMarketData={filteredMarkets}
+            onSelectMarket={selectMarketCallback}
           />
         </BaseModal>
       )}

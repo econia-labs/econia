@@ -65,14 +65,16 @@ const Row: React.FC<{
       onClick={() => {
         setPrice(price.toString());
       }}
-      style={{
-        background: `linear-gradient(
-          to left,
-          ${barColor},
-          ${barColor} ${barPercentage}%,
-          transparent ${barPercentage}%
-        )`,
-      }}
+      // https://github.com/econia-labs/econia/pull/371
+      // commenting out this change because it overrides orderbook flash
+      // style={{
+      //   background: `linear-gradient(
+      //     to left,
+      //     ${barColor},
+      //     ${barColor} ${barPercentage}%,
+      //     transparent ${barPercentage}%
+      //   )`,
+      // }}
     >
       <div
         className={`z-10 ml-4 text-right font-roboto-mono text-xs ${

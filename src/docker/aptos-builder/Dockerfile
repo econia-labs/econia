@@ -9,15 +9,13 @@ WORKDIR /aptos-core
 # Plan dependency recipe.
 FROM chef AS planner
 ARG APTOS_CORE_ROOT
-COPY --link $APTOS_CORE_ROOT .
+COPY $APTOS_CORE_ROOT .
 RUN cargo chef prepare --recipe-path recipe.json
 
 # Get build dependencies then compile recipe.
 FROM chef AS builder
 ARG APTOS_CORE_ROOT
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    apt update && apt-get --no-install-recommends install -y \
+RUN apt update && apt-get --no-install-recommends install -y \
         binutils \
         build-essential \
         clang \
@@ -31,7 +29,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         lld \
     && rm -rf /var/lib/apt/lists/*
 COPY $APTOS_CORE_ROOT .
-COPY --from=planner --link /aptos-core/recipe.json recipe.json
+COPY --from=planner /aptos-core/recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
 
 # Build release binaries.

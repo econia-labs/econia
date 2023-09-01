@@ -6,13 +6,11 @@ ARG DATABASE_ROOT=src/rust/dbv2
 
 ARG DATABASE_URL
 ENV DATABASE_URL=$DATABASE_URL
-COPY --link $DATABASE_ROOT /db/
+COPY $DATABASE_ROOT /db/
 
 WORKDIR /db/
 
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    apt-get update && apt-get --no-install-recommends install -y \
+RUN apt-get update && apt-get --no-install-recommends install -y \
         libpq-dev \
         postgresql-client \
     && rm -rf /var/lib/apt/lists/*

@@ -11,9 +11,7 @@ ARG NODE_BIN=/aptos-core/target/cli/aptos
 FROM debian:bookworm-slim AS config-cli
 ARG NODE_BIN
 COPY --from=aptos-builder $NODE_BIN /usr/local/bin
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    apt update && apt-get --no-install-recommends install -y \
+RUN apt update && apt-get --no-install-recommends install -y \
         libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
@@ -26,16 +24,14 @@ ARG ECONIA_ROOT
 ARG FAUCET_ROOT
 ARG ACCOUNT_FILES
 WORKDIR /app/
-COPY --link $ECONIA_ROOT/Move.toml econia/
-COPY --link $ECONIA_ROOT/sources/* econia/sources/
-COPY --link $FAUCET_ROOT/Move.toml faucet/
-COPY --link $FAUCET_ROOT/sources/* faucet/sources/
-COPY --link $ACCOUNT_FILES accounts/
+COPY $ECONIA_ROOT/Move.toml econia/
+COPY $ECONIA_ROOT/sources/* econia/sources/
+COPY $FAUCET_ROOT/Move.toml faucet/
+COPY $FAUCET_ROOT/sources/* faucet/sources/
+COPY $ACCOUNT_FILES accounts/
 
 # Get git, start a local testnet, initialize profiles, publish packages.
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    apt-get update && apt-get --no-install-recommends install -y \
+RUN apt-get update && apt-get --no-install-recommends install -y \
         git \
     && rm -rf /var/lib/apt/lists/*
 RUN aptos node run-local-testnet \
@@ -71,7 +67,7 @@ RUN aptos node run-local-testnet \
 
 # Copy over chain data to fresh CLI, expose REST API and Aptos Faucet API.
 FROM config-cli AS run
-COPY --from=publish-packages --link /app/data /app/data
+COPY --from=publish-packages /app/data /app/data
 EXPOSE 8080
 EXPOSE 8081
 

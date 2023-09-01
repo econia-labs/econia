@@ -76,6 +76,7 @@ export const StatsBar: React.FC<{
   allMarketData: ApiMarket[];
   selectedMarket: ApiMarket;
 }> = ({ allMarketData, selectedMarket }) => {
+  const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { coinListClient } = useAptos();
 
@@ -141,11 +142,16 @@ export const StatsBar: React.FC<{
         open={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
-          false;
         }}
         showCloseButton={false}
       >
-        <SelectMarketContent allMarketData={allMarketData} />
+        <SelectMarketContent
+          allMarketData={allMarketData}
+          onSelectMarket={(id, name) => {
+            setIsModalOpen(false);
+            router.push(`/trade/${name}`);
+          }}
+        />
       </BaseModal>
       <div className="flex justify-between border-b border-neutral-600 px-9 py-3">
         <div className="flex overflow-x-clip whitespace-nowrap">

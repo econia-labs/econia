@@ -1,49 +1,24 @@
-# Aptos CLI git metadata.
-ARG GIT_REPO=https://github.com/aptos-labs/aptos-core.git
-ARG GIT_TAG=aptos-cli-v2.0.3
-
 # Relative to Econia repository root.
 ARG MOVE_ROOT=src/move
 ARG ECONIA_ROOT=$MOVE_ROOT/econia
 ARG FAUCET_ROOT=$MOVE_ROOT/faucet
 ARG ACCOUNT_FILES=src/docker/chain/accounts/
 
-# Relative to image root.
+# Relative to Aptos builder image root.
 ARG NODE_BIN=/aptos-core/target/cli/aptos
 
-# Get Aptos repo and build dependencies, then compile.
-FROM rust:1-bookworm AS compile-cli
-ARG GIT_REPO
-ARG GIT_TAG
+# Copy over combiled CLI binary and get runtime dependency.
+FROM debian:bookworm-slim AS config-cli
 ARG NODE_BIN
-RUN git clone \
-    $GIT_REPO \
-    --branch $GIT_TAG \
-    --depth 1
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    libclang-dev \
-    libpq-dev \
-    libssl-dev \
-    lld \
-    && rm -rf /var/lib/apt/lists/*
-RUN RUSTFLAGS="--cfg tokio_unstable" cargo build \
-    --bin aptos \
-    --manifest-path aptos-core/Cargo.toml \
-    --package aptos \
-    --profile cli
-RUN strip -s $NODE_BIN
-
-# Copy over combiled CLI binary only and get runtime dependency.
-FROM debian:bookworm-slim AS run-cli
-ARG NODE_BIN
-COPY --from=compile-cli $NODE_BIN /usr/local/bin
-RUN apt-get update && apt-get install -y \
-    libssl-dev \
+COPY --from=aptos-builder $NODE_BIN /usr/local/bin
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt update && apt-get --no-install-recommends install -y \
+        libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Publish Econia and Econia faucet to local testnet.
-FROM run-cli as publish-packages
+FROM config-cli AS publish-packages
 
 # Copy in Move and account files.
 ARG MOVE_ROOT
@@ -51,15 +26,17 @@ ARG ECONIA_ROOT
 ARG FAUCET_ROOT
 ARG ACCOUNT_FILES
 WORKDIR /app/
-COPY $ECONIA_ROOT/Move.toml econia/
-COPY $ECONIA_ROOT/sources/* econia/sources/
-COPY $FAUCET_ROOT/Move.toml faucet/
-COPY $FAUCET_ROOT/sources/* faucet/sources/
-COPY $ACCOUNT_FILES accounts/
+COPY --link $ECONIA_ROOT/Move.toml econia/
+COPY --link $ECONIA_ROOT/sources/* econia/sources/
+COPY --link $FAUCET_ROOT/Move.toml faucet/
+COPY --link $FAUCET_ROOT/sources/* faucet/sources/
+COPY --link $ACCOUNT_FILES accounts/
 
 # Get git, start a local testnet, initialize profiles, publish packages.
-RUN apt-get update && apt-get install -y \
-    git \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get --no-install-recommends install -y \
+        git \
     && rm -rf /var/lib/apt/lists/*
 RUN aptos node run-local-testnet \
         --test-dir data \
@@ -93,8 +70,8 @@ RUN aptos node run-local-testnet \
         --profile faucet
 
 # Copy over chain data to fresh CLI, expose REST API and Aptos Faucet API.
-FROM run-cli as run
-COPY --from=publish-packages /app/data /app/data
+FROM config-cli AS run
+COPY --from=publish-packages --link /app/data /app/data
 EXPOSE 8080
 EXPOSE 8081
 

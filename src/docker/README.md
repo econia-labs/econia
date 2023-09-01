@@ -2,7 +2,7 @@
 
 This Docker compose file specifies an end-to-end testing environment based on a local testnet compiled from source, with Econia and the Econia faucet published under single-signer vanity address accounts generated from plaintext (compromised) private keys.
 
-Note that before you can use this file you will have to update the indexer submodule:
+Note that before you can use this file you will have to update the `aptos-core` submodule:
 
 ```sh
 # From Econia repo root
@@ -12,7 +12,7 @@ git submodule update src/rust/dependencies/aptos-core
 
 ## Start up
 
-> This command may take a while the first time you run it, since it will have to compile the Aptos CLI and an indexer node from source before running several commands against a local testnet.
+> This command may take a while the first time you run it, since it will have to compile several Aptos binaries and run several commands against a local testnet.
 > Subsequent calls should be much faster, however, due to Docker's caching mechanism.
 
 ```sh

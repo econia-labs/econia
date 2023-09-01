@@ -10,7 +10,7 @@ COPY $DATABASE_ROOT /db/
 
 WORKDIR /db/
 
-RUN apt-get update && apt-get --no-install-recommends install -y \
+RUN apt-get update && apt-get install -y \
         libpq-dev \
         postgresql-client \
     && rm -rf /var/lib/apt/lists/*

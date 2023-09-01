@@ -1,26 +1,21 @@
-# Relative to Econia repository root.
-ARG APTOS_CORE_ROOT=src/rust/dependencies/aptos-core
+# Aptos core git metadata.
+ARG GIT_REPO=https://github.com/aptos-labs/aptos-core.git
+ARG GIT_TAG=aptos-node-v1.6.3
 
-# Get cargo chef, set working directory.
-FROM rust:slim-bookworm as chef
-RUN cargo install cargo-chef
-WORKDIR /aptos-core
+# Binary compilation directory.
+ARG BIN_DIR=/aptos-core/target/release
 
-# Plan dependency recipe.
-FROM chef AS planner
-ARG APTOS_CORE_ROOT
-COPY $APTOS_CORE_ROOT .
-RUN cargo chef prepare --recipe-path recipe.json
-
-# Get build dependencies then compile recipe.
-FROM chef AS builder
-ARG APTOS_CORE_ROOT
-RUN apt update && apt-get --no-install-recommends install -y \
+# Download Aptos Core, get build dependencies, and compile.
+FROM rust:slim-bookworm AS compile
+ARG GIT_REPO
+ARG GIT_TAG
+RUN apt update && apt-get install -y \
         binutils \
         build-essential \
         clang \
         cmake \
         curl \
+        git \
         pkg-config \
         libclang-dev \
         libpq-dev \
@@ -28,24 +23,27 @@ RUN apt update && apt-get --no-install-recommends install -y \
         libudev-dev \
         lld \
     && rm -rf /var/lib/apt/lists/*
-COPY $APTOS_CORE_ROOT .
-COPY --from=planner /aptos-core/recipe.json recipe.json
-RUN cargo chef cook --release --recipe-path recipe.json
-
-# Build release binaries.
+RUN git clone $GIT_REPO --branch $GIT_TAG --depth 1
+WORKDIR /aptos-core
 RUN cargo build \
-    --bin aptos-indexer-grpc-cache-worker \
+    --package aptos-db-bootstrapper \
+    --package aptos-db-tool \
+    --package aptos-node \
+    --package aptos-faucet-service \
     --package aptos-indexer-grpc-cache-worker \
-    --bin aptos-indexer-grpc-data-service \
     --package aptos-indexer-grpc-data-service \
-    --bin aptos-indexer-grpc-file-store \
     --package aptos-indexer-grpc-file-store \
-    --bin aptos-indexer-grpc-post-processor \
     --package aptos-indexer-grpc-post-processor \
     --release
 
-# Build CLI binary with requisite profile.
-RUN RUSTFLAGS="--cfg tokio_unstable" cargo build \
-    --bin aptos \
-    --package aptos \
-    --profile cli
+# Store binaries in lightweight image.
+FROM scratch AS store
+ARG BIN_DIR
+COPY --from=compile $BIN_DIR/aptos-db-bootstrapper .
+COPY --from=compile $BIN_DIR/aptos-db-tool .
+COPY --from=compile $BIN_DIR/aptos-node .
+COPY --from=compile $BIN_DIR/aptos-faucet-service .
+COPY --from=compile $BIN_DIR/aptos-indexer-grpc-cache-worker .
+COPY --from=compile $BIN_DIR/aptos-indexer-grpc-data-service .
+COPY --from=compile $BIN_DIR/aptos-indexer-grpc-file-store .
+COPY --from=compile $BIN_DIR/aptos-indexer-grpc-post-processor .

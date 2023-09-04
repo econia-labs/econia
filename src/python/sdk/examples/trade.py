@@ -45,7 +45,7 @@ RECOMMENDED: Use a local development chain (else you might hit rate-limiting iss
 REQUIRED: Deploy an Econia Faucet.
 1. Run: cd .../econia/src/move/faucet # (whatever its full path is)
 2. Run: aptos init --profile econia_faucet_deploy
-3. Run: export FAUCET_ADDR=<ADDR-FROM-ABOVE>
+3. Run: export FAUCET_ADDR=<ADDR-FROM-ABOVE> # make sure to put 0x at the start
 4. Run: aptos move publish \
         --named-addresses econia_faucet=$FAUCET_ADDR \
         --profile econia_faucet_deploy \
@@ -54,7 +54,7 @@ REQUIRED: Deploy an Econia Faucet.
 OPTIONAL: Deploy an Econia Exchange.
 1. Run: cd /econia/src/move/econia # (or whatever its full path is)
 2. Run: aptos init --profile econia_exchange_deploy
-3. Run: export ECONIA_ADDR=<ADDR-FROM-ABOVE> # (see above steps)
+3. Run: export ECONIA_ADDR=<ADDR-FROM-ABOVE> # make sure to put 0x at the start
 4. Run: aptos move publish \
         --override-size-check \
         --included-artifacts none \
@@ -484,7 +484,7 @@ def setup_market(faucet_client: FaucetClient, viewer: EconiaViewer) -> int:
     # The settings here give a size precision of 0.001 eAPT and a price precision of
     # 0.001 eUSDC given eAPT 8 decimals / eUSDC 6 decimals. The minimum order size is
     # 0.5 eAPT.
-    lot_size = 100000 
+    lot_size = 100000
     tick_size = 1
     min_size = 500
     market_id = get_market_id_base_coin(

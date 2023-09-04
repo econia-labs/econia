@@ -42,7 +42,7 @@ git clone https://github.com/econia-labs/econia.git
 # deploy a faucet
 cd ./econia/src/move/faucet
 aptos init --profile econia_faucet_deploy
-export FAUCET_ADDR=<ACCOUNT-FROM-ABOVE>
+export FAUCET_ADDR=<ACCOUNT-FROM-ABOVE> # make sure to put 0x at the start
 aptos move publish \
         --named-addresses econia_faucet=$FAUCET_ADDR \
         --profile econia_faucet_deploy \
@@ -51,7 +51,7 @@ aptos move publish \
 # deploy an exchange
 cd ./econia/src/move/econia
 aptos init --profile econia_exchange_deploy # enter "local" for the chain
-export ECONIA_ADDR=<ACCOUNT-FROM-ABOVE>
+export ECONIA_ADDR=<ACCOUNT-FROM-ABOVE> # make sure to put 0x at the start
 aptos move publish \
         --override-size-check \
         --included-artifacts none \

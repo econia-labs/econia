@@ -75,7 +75,7 @@ def get_econia_address() -> AccountAddress:
     addr = environ.get("ECONIA_ADDR")
     if addr == None:
         addr_in = input(
-            "Please enter the address of an Econia deployment (enter nothing to default to devnet OR re-run with ECONIA_ADDR environment variable)\n"
+            "Please enter the 0x-prefixed address of an Econia deployment (enter nothing to default to devnet OR re-run with ECONIA_ADDR environment variable)\n"
         ).strip()
         if addr_in == "":
             return AccountAddress.from_hex(ECONIA_ADDR_DEVNET)
@@ -89,7 +89,7 @@ def get_faucet_address() -> AccountAddress:
     addr = environ.get("FAUCET_ADDR")
     if addr == None:
         return input(
-            "Please enter the address of an Econia faucet (or re-run with FAUCET_ADDR environment variable)\n"
+            "Please enter the 0x-prefixed address of an Econia faucet (or re-run with FAUCET_ADDR environment variable)\n"
         ).strip()
     else:
         return AccountAddress.from_hex(addr)
@@ -166,8 +166,7 @@ def start():
     dump_txns()
 
     input("\n\nPress enter to place limit orders with Account A.")
-    # Bid to purchase 1 whole eAPT at a price of 1 whole eUSDC per lot!
-    # = $1000/eAPT since there are 1000 lots in a whole eAPT & 1 tick = 0.001 USDC
+    # Bid to purchase 1 whole eAPT
     buy_base_lots = 1 * (10**3)
     buy_ticks_per_lot = 1 * (10**3)
     place_limit_order(Side.BID, account_A, market_id, buy_base_lots, buy_ticks_per_lot)
@@ -177,8 +176,7 @@ def start():
     report_place_limit_order_event(
         list(filter(lambda ev: ev["data"]["side"] == Side.BID, events))[0]
     )
-    # Ask to sell 1 whole eAPT at a price of 2 whole eUSDC per lot!
-    # = $2000/eAPT since there are 1000 lots in a whole eAPT & 1 tick = 0.001 USDC
+    # Ask to sell 1 whole eAPT
     sell_base_lots = 1 * (10**3)
     sell_ticks_per_lot = 2 * (10**3)
     place_limit_order(
@@ -235,19 +233,19 @@ def start():
         "\n\nPress enter to place competitive limit orders (top-of-book) with Account A."
     )
     _, start_ask_price = place_limit_orders_at_market(
-        viewer, account_A, market_id, 100, buy_ticks_per_lot, sell_ticks_per_lot
-    )
-    place_limit_orders_at_market(
-        viewer, account_A, market_id, 200, buy_ticks_per_lot, sell_ticks_per_lot
-    )
-    place_limit_orders_at_market(
-        viewer, account_A, market_id, 300, buy_ticks_per_lot, sell_ticks_per_lot
-    )
-    place_limit_orders_at_market(
-        viewer, account_A, market_id, 400, buy_ticks_per_lot, sell_ticks_per_lot
-    )
-    place_limit_orders_at_market(
         viewer, account_A, market_id, 500, buy_ticks_per_lot, sell_ticks_per_lot
+    )
+    place_limit_orders_at_market(
+        viewer, account_A, market_id, 600, buy_ticks_per_lot, sell_ticks_per_lot
+    )
+    place_limit_orders_at_market(
+        viewer, account_A, market_id, 700, buy_ticks_per_lot, sell_ticks_per_lot
+    )
+    place_limit_orders_at_market(
+        viewer, account_A, market_id, 800, buy_ticks_per_lot, sell_ticks_per_lot
+    )
+    place_limit_orders_at_market(
+        viewer, account_A, market_id, 900, buy_ticks_per_lot, sell_ticks_per_lot
     )
     print("Account A has created multiple competitive limit orders!")
     dump_txns()
@@ -259,7 +257,7 @@ def start():
     input(
         "\n\nPress enter to place spread-crossing limit order with Account B (no remainder)."
     )
-    equal_volume = 100 + 200 + 300 + 400 + 500
+    equal_volume = 500 + 600 + 700 + 800 + 900
     place_limit_order(Side.ASK, account_B, market_id, equal_volume, buy_ticks_per_lot)
     fills = get_fill_events(viewer, account_B.account_address, market_id, 0)
     report_fill_events(fills)
@@ -482,9 +480,13 @@ def fund_USDC(account: Account, wholes: int):
 
 
 def setup_market(faucet_client: FaucetClient, viewer: EconiaViewer) -> int:
-    lot_size = 10 ** (8 - 3)  # eAPT has 8 decimals, want 1/1000th granularity
-    tick_size = 10 ** (6 - 3)  # eUSDC has 6 decimals, want 1/1000th granularity
-    min_size = 1
+    # Use econia_sdk.utils.decimals.get_market_parameters_integer for these settings.
+    # The settings here give a size precision of 0.001 eAPT and a price precision of
+    # 0.001 eUSDC given eAPT 8 decimals / eUSDC 6 decimals. The minimum order size is
+    # 0.5 eAPT.
+    lot_size = 100000 
+    tick_size = 1
+    min_size = 500
     market_id = get_market_id_base_coin(
         viewer, COIN_TYPE_EAPT, COIN_TYPE_EUSDC, lot_size, tick_size, min_size
     )

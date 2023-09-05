@@ -45,7 +45,7 @@ RECOMMENDED: Use a local development chain (else you might hit rate-limiting iss
 REQUIRED: Deploy an Econia Faucet.
 1. Run: cd .../econia/src/move/faucet # (whatever its full path is)
 2. Run: aptos init --profile econia_faucet_deploy
-3. Run: export FAUCET_ADDR=<ADDR-FROM-ABOVE> # make sure to put 0x at the start
+3. Run: export FAUCET_ADDR=<ACCOUNT-FROM-ABOVE> # make sure to put 0x at the start
 4. Run: aptos move publish \
         --named-addresses econia_faucet=$FAUCET_ADDR \
         --profile econia_faucet_deploy \
@@ -54,7 +54,7 @@ REQUIRED: Deploy an Econia Faucet.
 OPTIONAL: Deploy an Econia Exchange.
 1. Run: cd /econia/src/move/econia # (or whatever its full path is)
 2. Run: aptos init --profile econia_exchange_deploy
-3. Run: export ECONIA_ADDR=<ADDR-FROM-ABOVE> # make sure to put 0x at the start
+3. Run: export ECONIA_ADDR=<ACCOUNT-FROM-ABOVE> # make sure to put 0x at the start
 4. Run: aptos move publish \
         --override-size-check \
         --included-artifacts none \

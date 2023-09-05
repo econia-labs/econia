@@ -7,9 +7,9 @@ RUN apt-get update && apt-get --no-install-recommends install -y \
         curl \
         iproute2 \
         libpq-dev \
-        libssl1.1 \
+        libssl-dev \
         net-tools \
-        netcat \
+        netcat-traditional \
         tcpdump \
     && rm -rf /var/lib/apt/lists/*
 

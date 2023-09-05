@@ -1,0 +1,10 @@
+# Config file based on Aptos Core indexer-grpc environment.
+
+health_check_port: 8082
+
+server_config:
+  file_store_config:
+    file_store_type: "LocalFileStore"
+    local_file_store_path: "/opt/aptos/file-store"
+  fullnode_grpc_address: "172.16.1.10:50051"
+  redis_main_instance_address: "172.16.1.12:6379" # Use the primary.

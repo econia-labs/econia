@@ -4,7 +4,7 @@ This Docker compose file specifies an end-to-end testing environment based on a 
 
 Since the relevant Aptos binaries all use similar dependencies, they are compiled in a batched `aptos-builder` Dockerfile based on the [`aptos-core` builder](https://github.com/aptos-labs/aptos-core/tree/main/docker/builder), then copied over to service-specific images.
 
-Note that since [`aptos-core indexer-grpc`](https://github.com/aptos-labs/aptos-core/blob/main/docker/compose/indexer-grpc) relies on [`aptos-core validator-testnet`](https://github.com/aptos-labs/aptos-core/blob/main/docker/compose/indexer-grpc), the two Docker compose environments are here consolidated into one Docker compose environment, to reduce instantiation overhead.
+Note that since [`aptos-core indexer-grpc`](https://github.com/aptos-labs/aptos-core/blob/main/docker/compose/indexer-grpc) relies on [`aptos-core validator-testnet`](https://github.com/aptos-labs/aptos-core/blob/main/docker/compose/validator-testnet), the two Docker compose environments are here consolidated into one Docker compose environment, to reduce instantiation overhead (for more, see the [`aptos-core` Docker compose README](https://github.com/aptos-labs/aptos-core/blob/main/docker/compose/README.md)).
 
 ## Start up
 
@@ -13,7 +13,7 @@ Note that since [`aptos-core indexer-grpc`](https://github.com/aptos-labs/aptos-
 
 ```sh
 # From Econia repo root
-docker compose --file src/docker/compose.e2e.yml up --detach
+docker compose --file src/docker/compose.e2e.yaml up --detach
 ```
 
 While the local testnet is running, you can look up on-chain Move resources using the published node REST API port (note that the Aptos faucet API may take longer to start up than the node REST API):
@@ -29,7 +29,7 @@ aptos account list --account $FAUCET_ADDRESS --url http://localhost:8080
 
 ```sh
 # From Econia repo root
-docker compose --file src/docker/compose.e2e.yml down
+docker compose --file src/docker/compose.e2e.yaml down
 ```
 
 # Helpful Docker commands

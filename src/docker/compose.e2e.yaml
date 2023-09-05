@@ -1,0 +1,228 @@
+# End-to-end testing environment, combining two Aptos Core environments:
+# - indexer-grpc/docker-compose.yaml
+# - validator-testnet/docker-compose.yaml
+version: "3.9"
+
+services:
+
+  aptos-builder:
+    build:
+      context: ../../
+      dockerfile: src/docker/aptos-builder/Dockerfile
+    image: aptos-builder
+
+  diesel:
+    build:
+      args:
+        - "DATABASE_URL=postgres://econia:econia@docker_default/econia"
+      context: ../../
+      dockerfile: src/docker/database/Dockerfile
+    depends_on:
+      - postgres
+
+  # Based on Aptos Core validator-testnet/docker-compose.yaml.
+  faucet:
+    build:
+      context: ../../
+      dockerfile: src/docker/faucet/Dockerfile
+    command: >
+      /bin/bash -c "
+        for i in {1..10}; do
+          if [[ ! -s /opt/aptos/var/mint.key ]]; then
+            echo 'Validator has not populated mint.key yet. Is it running?'
+            sleep 1
+          else
+            sleep 1
+            /usr/local/bin/aptos-faucet-service \\
+              run-simple \\
+              --key-file-path /opt/aptos/var/mint.key \\
+              --chain-id TESTING \\
+              --node-url http://172.16.1.10:8080
+            echo 'Faucet failed to run likely due to the Validator still starting. Will try again.'
+          fi
+        done
+        exit 1
+      "
+    depends_on:
+      - validator
+    image: faucet
+    networks:
+      shared:
+        ipv4_address: "172.16.1.11"
+    ports:
+      - "8081:8081"
+    volumes:
+      - type: volume
+        source: aptos-shared
+        target: /opt/aptos/var
+
+  # Based on Aptos Core indexer-grpc/docker-compose.yaml.
+  indexer-grpc-cache-worker:
+    build:
+      context: ../../
+      dockerfile: src/docker/indexer-grpc/Dockerfile
+    command:
+      - /usr/local/bin/aptos-indexer-grpc-cache-worker
+      - --config-path
+      - /opt/aptos/cache-worker-config.yaml
+    depends_on:
+      - aptos-builder
+      - redis
+    image: indexer-grpc-cache-worker
+    networks:
+      shared:
+        ipv4_address: "172.16.1.13"
+    restart: unless-stopped
+    volumes:
+      - type: bind
+        source: indexer-grpc/cache-worker-config.yaml
+        target: /opt/aptos/cache-worker-config.yaml
+      - type: volume
+        source: indexer-grpc-file-store
+        target: /opt/aptos/file-store
+
+  # Based on Aptos Core indexer-grpc/docker-compose.yaml.
+  indexer-grpc-data-service:
+    build:
+      context: ../../
+      dockerfile: src/docker/indexer-grpc/Dockerfile
+    command:
+      - /usr/local/bin/aptos-indexer-grpc-data-service
+      - --config-path
+      - /opt/aptos/data-service-config.yaml
+    depends_on:
+      - aptos-builder
+      - indexer-grpc-cache-worker
+      - redis-replica
+    image: indexer-grpc-data-service
+    networks:
+      shared:
+        ipv4_address: "172.16.1.15"
+    ports:
+      - "18084:8084" # Health.
+      - "50052:50052" # gRPC.
+    restart: unless-stopped
+    volumes:
+      - type: bind
+        source: indexer-grpc/data-service-config.yaml
+        target: /opt/aptos/data-service-config.yaml
+      - type: volume
+        source: indexer-grpc-file-store
+        target: /opt/aptos/file-store
+
+  # Based on Aptos Core indexer-grpc/docker-compose.yaml.
+  indexer-grpc-file-store:
+    build:
+      context: ../../
+      dockerfile: src/docker/indexer-grpc/Dockerfile
+    command:
+      - /usr/local/bin/aptos-indexer-grpc-file-store
+      - --config-path
+      - /opt/aptos/file-store-config.yaml
+    depends_on:
+      - aptos-builder
+      - indexer-grpc-cache-worker
+    image: indexer-grpc-file-store
+    networks:
+      shared:
+        ipv4_address: "172.16.1.14"
+    restart: unless-stopped
+    volumes:
+      - type: bind
+        source: indexer-grpc/file-store-config.yaml
+        target: /opt/aptos/file-store-config.yaml
+      - type: volume
+        source: indexer-grpc-file-store
+        target: /opt/aptos/file-store
+
+  postgres:
+    environment:
+      - POSTGRES_USER=econia
+      - POSTGRES_PASSWORD=econia
+    image: postgres:14-alpine
+    ports:
+      - "5432:5432"
+    restart: always
+    volumes:
+      - db:/var/lib/postgresql/data
+
+  # Based on Aptos Core indexer-grpc/docker-compose.yaml.
+  redis:
+    expose:
+      - 6379
+    image: redis:6.2-alpine
+    networks:
+      shared:
+        ipv4_address: "172.16.1.12"
+    ports:
+      - "6379:6379"
+    restart: "unless-stopped"
+
+  # Based on Aptos Core indexer-grpc/docker-compose.yaml.
+  redis-replica:
+    command:
+      - redis-server
+      - --replicaof
+      - redis
+      - "6379"
+    depends_on:
+      - redis
+    expose:
+      - 6379
+    image: redis:6.2-alpine
+    networks:
+      shared:
+        ipv4_address: "172.16.1.22"
+    restart: unless-stopped
+
+  # Based on Aptos Core validator-testnet/docker-compose.yaml.
+  validator:
+    build:
+      context: ../../
+      dockerfile: src/docker/validator/Dockerfile
+    command:
+      - /usr/local/bin/aptos-node
+      - --test
+      - --test-dir
+      - /opt/aptos/var/
+      - --test-config-override
+      - /opt/aptos/config.yaml
+    depends_on:
+      - aptos-builder
+    expose:
+      - 9101
+    image: validator
+    networks:
+      shared:
+        ipv4_address: "172.16.1.10"
+    ports:
+      - "8080:8080" # REST API.
+      - "50051:50051" # Indexer GRPC.
+    volumes:
+      - type: volume
+        source: aptos-shared
+        target: /opt/aptos/var
+      - type: bind
+        source: validator/e2e_config.yaml
+        target: /opt/aptos/config.yaml
+
+# Based on Aptos Core:
+# - indexer-grpc/docker-compose.yaml
+# - validator-testnet/docker-compose.yaml
+networks:
+  shared:
+    name: aptos-docker-compose-shared
+    ipam:
+      config:
+        - subnet: "172.16.1.0/24"
+
+# Based on Aptos Core:
+# - indexer-grpc/docker-compose.yaml
+# - validator-testnet/docker-compose.yaml
+volumes:
+  aptos-shared:
+    name: aptos-shared
+  db:
+    driver: local
+  indexer-grpc-file-store:
+    name: indexer-grpc-file-store

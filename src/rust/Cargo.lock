@@ -5332,6 +5332,7 @@ dependencies = [
  "bigdecimal",
  "chrono",
  "clap 4.3.21",
+ "dbv2",
  "diesel",
  "diesel_migrations",
  "field_count",

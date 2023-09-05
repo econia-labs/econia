@@ -1,3 +1,7 @@
+# End-to-end testing environment, combining two Aptos Core environments:
+# - indexer-grpc/docker-compose.yaml
+# - validator-testnet/docker-compose.yaml
+
 version: '3.9'
 services:
 
@@ -16,7 +20,7 @@ services:
     depends_on:
       - postgres
 
-  # Modeled off of Aptos Core validator-testnet Docker compose.
+  # Based on Aptos Core validator-testnet/docker-compose.yaml
   faucet:
     build:
       context: ../../
@@ -63,7 +67,7 @@ services:
     volumes:
       - db:/var/lib/postgresql/data
 
-  # Modeled off of Aptos Core validator-testnet Docker compose.
+  # Based on Aptos Core validator-testnet/docker-compose.yaml
   validator:
     build:
       context: ../../

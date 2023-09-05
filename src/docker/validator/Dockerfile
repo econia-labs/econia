@@ -1,4 +1,4 @@
-# Validator image based on Aptos Core docker file.
+# Validator image based on Aptos Core validator.Dockerfile.
 FROM debian:bookworm-slim
 
 # Install build dependencies.

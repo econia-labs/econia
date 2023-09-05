@@ -1,3 +1,5 @@
+# Aptos binary builder image based on Aptos Core builder.
+
 # Aptos core git metadata.
 ARG GIT_REPO=https://github.com/aptos-labs/aptos-core.git
 ARG GIT_TAG=aptos-node-v1.6.3
@@ -9,7 +11,7 @@ ARG BIN_DIR=/aptos-core/target/release
 FROM rust:slim-bookworm AS compile
 ARG GIT_REPO
 ARG GIT_TAG
-RUN apt update && apt-get install -y \
+RUN apt-get update && apt-get install -y \
         binutils \
         build-essential \
         clang \

@@ -1,4 +1,4 @@
-# Faucet image based on Aptos Core docker file.
+# Faucet image based on Aptos Core faucet.Dockerfile.
 FROM debian:bookworm-slim
 
 # Install build dependencies.

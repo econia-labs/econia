@@ -1,4 +1,4 @@
-# Indexer gRPC image based on Aptos Core docker file.
+# Indexer gRPC image based on Aptos Core indexer-grpc.Dockerfile.
 FROM debian:bookworm-slim
 
 # Install build dependencies.
@@ -15,8 +15,8 @@ RUN apt-get update && apt-get --no-install-recommends install -y \
 
 # Copy over relevant binaries.
 COPY --from=aptos-builder /aptos-indexer-grpc-cache-worker /usr/local/bin/
-COPY --from=aptos-builder /aptos-indexer-grpc-file-store /usr/local/bin/
 COPY --from=aptos-builder /aptos-indexer-grpc-data-service /usr/local/bin/
+COPY --from=aptos-builder /aptos-indexer-grpc-file-store /usr/local/bin/
 COPY --from=aptos-builder /aptos-indexer-grpc-post-processor /usr/local/bin/
 
 # The health check port.

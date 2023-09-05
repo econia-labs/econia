@@ -1,18 +1,14 @@
 # End-to-end compose
 
-This Docker compose file specifies an end-to-end testing environment based on a local testnet compiled from source, with Econia and the Econia faucet published under single-signer vanity address accounts generated from plaintext (compromised) private keys.
+This Docker compose file specifies an end-to-end testing environment based on a local chain, compiled from source.
 
-Note that before you can use this file you will have to update the `aptos-core` submodule:
+Since the relevant Aptos binaries all use similar dependencies, they are compiled in a batched `aptos-builder` Dockerfile based on the [`aptos-core` builder](https://github.com/aptos-labs/aptos-core/tree/main/docker/builder), then copied over to service-specific images.
 
-```sh
-# From Econia repo root
-git submodule init
-git submodule update src/rust/dependencies/aptos-core
-```
+Note that since [`aptos-core indexer-grpc`](https://github.com/aptos-labs/aptos-core/blob/main/docker/compose/indexer-grpc) relies on [`aptos-core validator-testnet`](https://github.com/aptos-labs/aptos-core/blob/main/docker/compose/indexer-grpc), the two Docker compose environments are here consolidated into one Docker compose environment, to reduce instantiation overhead.
 
 ## Start up
 
-> This command may take a while the first time you run it, since it will have to compile several Aptos binaries and run several commands against a local testnet.
+> This command may take a while the first time you run it, since it will have to compile several Aptos binaries.
 > Subsequent calls should be much faster, however, due to Docker's caching mechanism.
 
 ```sh

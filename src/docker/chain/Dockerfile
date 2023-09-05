@@ -21,11 +21,11 @@ RUN git clone \
     --branch $GIT_TAG \
     --depth 1
 RUN apt-get update && apt-get install -y \
-    build-essential \
-    libclang-dev \
-    libpq-dev \
-    libssl-dev \
-    lld \
+        build-essential \
+        libclang-dev \
+        libpq-dev \
+        libssl-dev \
+        lld \
     && rm -rf /var/lib/apt/lists/*
 RUN RUSTFLAGS="--cfg tokio_unstable" cargo build \
     --bin aptos \
@@ -39,7 +39,7 @@ FROM debian:bookworm-slim AS run-cli
 ARG NODE_BIN
 COPY --from=compile-cli $NODE_BIN /usr/local/bin
 RUN apt-get update && apt-get install -y \
-    libssl-dev \
+        libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Publish Econia and Econia faucet to local testnet.
@@ -59,7 +59,7 @@ COPY $ACCOUNT_FILES accounts/
 
 # Get git, start a local testnet, initialize profiles, publish packages.
 RUN apt-get update && apt-get install -y \
-    git \
+        git \
     && rm -rf /var/lib/apt/lists/*
 RUN aptos node run-local-testnet \
         --test-dir data \

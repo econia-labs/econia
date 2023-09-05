@@ -1,8 +1,9 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
-    market_registration_events (id) {
-        id -> Int4,
+    market_registration_events (txn_version, event_idx) {
+        txn_version -> Numeric,
+        event_idx -> Numeric,
         market_id -> Numeric,
         time -> Timestamptz,
         #[max_length = 70]

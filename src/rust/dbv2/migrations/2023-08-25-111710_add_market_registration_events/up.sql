@@ -1,8 +1,18 @@
 -- Your SQL goes here
 -- Corresponds to econia::registry::MarketRegistrationEvent
+
+CREATE TABLE ledger_infos (chain_id BIGINT UNIQUE PRIMARY KEY NOT NULL);
+
+CREATE TABLE processor_status (
+  processor VARCHAR(50) UNIQUE PRIMARY KEY NOT NULL,
+  last_success_version BIGINT NOT NULL,
+  last_updated TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE
   market_registration_events (
-    id serial NOT NULL PRIMARY KEY,
+    txn_version NUMERIC(20) NOT NULL,
+    event_idx NUMERIC(20) NOT NULL,
     market_id NUMERIC(20) NOT NULL,
     time timestamptz NOT NULL,
     base_account_address VARCHAR(70),
@@ -15,7 +25,8 @@ CREATE TABLE
     lot_size NUMERIC(20) NOT NULL,
     tick_size NUMERIC(20) NOT NULL,
     min_size NUMERIC(20) NOT NULL,
-    underwriter_id NUMERIC(20) NOT NULL
+    underwriter_id NUMERIC(20) NOT NULL,
+    PRIMARY KEY (txn_version, event_idx)
   );
 
 

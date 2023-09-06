@@ -13,6 +13,7 @@ CREATE TABLE
   market_registration_events (
     txn_version NUMERIC(20) NOT NULL,
     event_idx NUMERIC(20) NOT NULL,
+    PRIMARY KEY (txn_version, event_idx),
     market_id NUMERIC(20) NOT NULL,
     time timestamptz NOT NULL,
     base_account_address VARCHAR(70),
@@ -25,8 +26,7 @@ CREATE TABLE
     lot_size NUMERIC(20) NOT NULL,
     tick_size NUMERIC(20) NOT NULL,
     min_size NUMERIC(20) NOT NULL,
-    underwriter_id NUMERIC(20) NOT NULL,
-    PRIMARY KEY (txn_version, event_idx)
+    underwriter_id NUMERIC(20) NOT NULL
   );
 
 

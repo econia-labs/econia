@@ -1,55 +1,52 @@
-### Indexer Processor Image ###
+# Based on aptos-labs/aptos-indexer-processors/Dockerfile.
 
-# Stage 1: Build the binary
+# Relative to Econia repo root.
+ARG RUST_ROOT=src/rust
 
-FROM rust:slim-bullseye as builder
+# Relative to builder layer root.
+ARG APP_DIR=/app
+ARG PROCESSOR_DIR=$APP_DIR/dependencies/aptos-indexer-processors/rust
+ARG BIN_PATH=$PROCESSOR_DIR/target/release/processor
 
-WORKDIR /app
-
-COPY --link src/rust /app
-WORKDIR /app/dependencies/aptos-indexer-processors/rust
-
-RUN apt-get update && apt-get install -y cmake curl clang git pkg-config libssl-dev libpq-dev lld
-RUN cargo build --locked --release -p processor
-RUN cp target/release/processor /usr/local/bin
-
-# add build info
-ARG GIT_TAG
-ENV GIT_TAG ${GIT_TAG}
-ARG GIT_BRANCH
-ENV GIT_BRANCH ${GIT_BRANCH}
-ARG GIT_SHA
-ENV GIT_SHA ${GIT_SHA}
-
-# Stage 2: Create the final image
-
-FROM debian:bullseye-slim
-
-COPY --from=builder /usr/local/bin/processor /usr/local/bin
-
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    apt-get update && apt-get install --no-install-recommends -y \
-        libssl1.1 \
-        ca-certificates \
-        net-tools \
-        tcpdump \
-        iproute2 \
-        netcat \
+# Install build dependencies, compile binary.
+FROM rust:slim-bullseye AS builder
+ARG APP_DIR
+ARG PROCESSOR_DIR
+ARG RUST_ROOT
+COPY $RUST_ROOT $APP_DIR
+WORKDIR $PROCESSOR_DIR
+RUN apt-get update && apt-get install -y \
+        clang \
+        cmake \
+        curl \
+        git \
         libpq-dev \
-        curl
+        libssl-dev \
+        lld \
+        pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+RUN cargo build --release -p processor
 
+# Install dependencies, copy over compiled binary.
+FROM debian:bullseye-slim AS runtime
+ARG BIN_PATH
+RUN apt-get update && apt-get install --no-install-recommends -y \
+        ca-certificates \
+        curl \
+        iproute2 \
+        libpq-dev \
+        libssl1.1 \
+        net-tools \
+        netcat \
+        tcpdump \
+    && rm -rf /var/lib/apt/lists/*
+COPY --from=builder $BIN_PATH /usr/local/bin
+
+# Use JSON Rust logging.
 ENV RUST_LOG_FORMAT=json
 
-# add build info
-ARG GIT_TAG
-ENV GIT_TAG ${GIT_TAG}
-ARG GIT_BRANCH
-ENV GIT_BRANCH ${GIT_BRANCH}
-ARG GIT_SHA
-ENV GIT_SHA ${GIT_SHA}
-
-# The health check port
+# Health check port.
 EXPOSE 8084
 
-ENTRYPOINT ["/usr/local/bin/processor"]
+# Run processor with config file.
+ENTRYPOINT ["/usr/local/bin/processor", "-c", "/config.yaml"]

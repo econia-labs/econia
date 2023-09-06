@@ -1,0 +1,10 @@
+health_check_port: 8084
+server_config:
+  processor_name: econia_processor
+  postgres_connection_string: postgres://econia:econia@postgres:5432/econia
+  indexer_grpc_data_service_address: <MODIFY_ME>
+  indexer_grpc_http2_ping_interval_in_secs: 60
+  indexer_grpc_http2_ping_timeout_in_secs: 10
+  auth_token: <MODIFY_ME>
+  econia_address: <MODIFY_ME>
+  starting_version: <MODIFY_ME>

@@ -1,6 +1,6 @@
 # Data service stack local Docker compose
 
-The `dss-local.yaml` Docker compose file specifies the Econia data service stack in its most basic form, which can be run locally.
+The `compose.dss-local.yaml` Docker compose file specifies the Econia data service stack in its most basic form, which can be run locally.
 
 ## Configuration
 
@@ -21,14 +21,14 @@ The `dss-local.yaml` Docker compose file specifies the Econia data service stack
 
 ```sh
 # From Econia repo root
-docker compose --file src/docker/dss-local.yaml up --detach
+docker compose --file src/docker/compose.dss-local.yaml up --detach
 ```
 
 ## Shut down
 
 ```sh
 # From Econia repo root
-docker compose --file src/docker/dss-local.yaml down
+docker compose --file src/docker/compose.dss-local.yaml down
 ```
 
 # End-to-end docker compose

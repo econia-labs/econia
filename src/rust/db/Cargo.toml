@@ -7,9 +7,10 @@ edition = "2021"
 [dependencies]
 bigdecimal = { workspace = true }
 chrono = { workspace = true }
-diesel = { version = "2.0.4", features = ["chrono", "numeric", "postgres"] }
-diesel-derive-enum = { version = "2.0.1", features = ["postgres"] }
-field_count = "0.1.1"
+diesel = { workspace = true, features = ["chrono", "numeric", "postgres"] }
+diesel-derive-enum = { workspace = true, features = ["postgres"] }
+field_count = { workspace = true }
+serde = { workspace = true, optional = true }
 sqlx = { workspace = true, optional = true }
 thiserror = { workspace = true }
 types = { path = "../types" }
@@ -17,7 +18,7 @@ types = { path = "../types" }
 [dev-dependencies]
 dotenvy = { workspace = true }
 envy = { workspace = true }
-indicatif = "0.17.3"
+indicatif = "0.17.5"
 rand = { version = "0.8.5", features = ["std_rng"] }
 serde = { workspace = true }
 

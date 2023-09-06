@@ -215,397 +215,386 @@ Econia does not use a critical height of 1. The actual critical height is define
 
 ## Units and market parameters
 
+There are a few important properties one cares about when creating and configuring a market, in rough order of priority:
+
+#### Price granularity
+
+Market participants should be able to express prices that are close enough together to be effectively continuous while being far enough apart to reflect meaningful movement with a single increment.
+
+- **Too granular:** Almost every order occupies its own price level, and user interfaces struggle to display a useful segment of the order book before running out of visual real-estate.
+  Maximum price may be too low (not common).
+- **Too coarse:** A single increment (or decrement) in price reflects a dramatic shift in value whose magnitude exceeds those of smaller movements that are still meaningful to market participants.
+  Minimum price may be too high (common).
+- **Just right:** Prices are effectively continuous in that any meaningful movement is always expressible as some increment or decrement in price.
+  Orders coalesce into useful price levels, and the minimum/maximum prices are not relevant concerns to market action.
+
+#### Minimum order size
+
+Market participants should be able to create a limit order as long as it's for a meaningful amount of asset.
+Each individual limit order affected by a market order adds to the network fee cost of the market order's execution.
+Thus, it's in every participant's interest that every limit order has a meaningful enough size to include in the execution of a market order.
+
+- **Too low:** The limit order books become polluted with small orders and it becomes difficult or impossible to execute a market order without paying a significant network fee.
+  Malicious actors may conduct a denial-of-service attack by sending in lots of orders with negligible size.
+- **Too high:** Some or many meaningful market participants are cut out of trading action and thus must take their liquidity somewhere else.
+- **Just right:** Anyone who wants to provide liquidity can, even at smaller amounts, but malicious actors are denied an attack vector.
+
+#### Order size granularity
+
+Market participants should be able to express any amount as an order size that is close to or equal to the amount it reflects.
+One increment or decrement in order size should be a meaningful but not overwhelming difference in value.
+
+- **Too granular:** Size granularity is too coarse due to lack of ability to express the price of one size increment (or decrement) in terms smaller than a single subunit of asset.
+- **Too coarse:** A single increment (or decrement) in size reflects a dramatic shift in value whose magnitude exceeds those of smaller changes that are still meaningful to market participants. Minimum order size may be too high (not common).
+- **Just right:** Every amount of asset is expressible as a size with an equivalent asset amount that's close enough to the original amount so as to not change its value by a meaningful amount.
+
+Let's create a market with these key properties in mind, and find a configuration that makes sense in light of these concerns.
+
+### Creating a hypothetical market
+
 Consider a hypothetical trading pair `APT/USDC`, `APT` denominated in `USDC`.
 Here, `APT` is considered the "base" asset and `USDC` is considered the "quote asset", meaning that orders sized in `APT` are quoted in `USDC` per `APT`:
 
-| Term        | Specifies   | Symbol |
-| ----------- | ----------- | ------ |
-| Base asset  | Order size  | `APT`  |
-| Quote asset | Order price | `USDC` |
+| Term        | Specifies   | Symbol | Unit Decimals | Unit Price |
+| ----------- | ----------- | ------ | ------------- | ---------- |
+| Base asset  | Order size  | `APT`  | 8             | \$7.32     |
+| Quote asset | Order price | `USDC` | 6             | \$1.00     |
 
-In addition to a base/quote trading pair, each market in Econia additionally contains the following parameters, which are selected by the market registrant during registration:
+We'd like to find a market configuration that makes sense given the above economic state.
+Configuring a market requires three values beyond the base and quote type:
 
-| Parameter          | Meaning                     | Example     |
-| ------------------ | --------------------------- | ----------- |
-| Lot size           | Order size granularity      | 0.1 `APT`   |
-| Tick size          | Price granularity           | 0.01 `USDC` |
-| Minimum order size | Smallest allowed order size | 0.5 `APT`   |
+| Parameter          | Meaning                  | Units                      |
+| ------------------ | ------------------------ | -------------------------- |
+| Lot size           | Order size granularity   | Subunits of base (`APT`)   |
+| Tick size          | Lot value granularity    | Subunits of quote (`USDC`) |
+| Minimum order size | Minimum limit order lots | Number of lots             |
 
-On this market, an order for 7.8 `APT` at a price of 5.23 `USDC` per `APT` would be valid, but the following would be invalid:
+This section utilizes helpers from the Econia Python SDK.
+If you'd like to follow along, run in the nearest terminal:
 
-| Size | Price | Reason             |
-| ---- | ----- | ------------------ |
-| 7.85 | 5.23  | Size too granular  |
-| 7.8  | 5.235 | Price too granular |
-| 0.4  | 5.23  | Size too small     |
-
-Econia's matching engine uses integers rather than decimals, such that conversion from decimal amounts to integer amounts requires the `aptos_framework::coin::CoinInfo.decimals` for a given `CoinType`:
-
-| Term           | Symbol       | Coin   | Amount |
-| -------------- | ------------ | ------ | ------ |
-| Base decimals  | $\large d_b$ | `APT`  | 8      |
-| Quote decimals | $\large d_q$ | `USDC` | 6      |
-
-Here, a decimal amount of coins (e.g. 7.8 `APT`), can be converted to an integer amount of indivisible coin subunits (`aptos_framework::coin::Coin.value`):
-
-```python
->>> from decimal import Decimal as dec
->>> decimals = 8
->>> coins = dec('123.456')
->>> subunits = int(coins * 10 ** decimals)
->>> subunits
-12345600000
+```bash
+pip3 install econia-sdk
+python3
+>>> from econia_sdk.utils.decimals import *
 ```
 
-Similarly, other terms can be converted as follows:
-
-| Variable                   | Decimal symbol | Integer symbol |
-| -------------------------- | -------------- | -------------- |
-| Lot size                   | $\large l_d$   | $\large l_i$   |
-| Tick size                  | $\large t_d$   | $\large t_i$   |
-| Minimum order size         | $\large m_d$   | $\large m_i$   |
-| Size                       | $\large s_d$   | $\large s_i$   |
-| Price                      | $\large p_d$   | $\large p_i$   |
-| Total quote amount to fill | $\large a_d$   | $\large a_i$   |
-
-1. $$\LARGE l_i = l_d 10 ^ {d_b}$$
-   ```python
-   >>> decimals_base = 8
-   >>> lot_size_decimal = dec('0.1')
-   >>> lot_size_integer = int(lot_size_decimal * 10 ** decimals_base)
-   >>> lot_size_integer
-   10000000
-   ```
-1. $$\LARGE l_d = l_i 10 ^ {-d_b}$$
-   ```python
-   >>> lot_size_decimal = dec(lot_size_integer) / 10 ** decimals_base
-   >>> lot_size_decimal
-   Decimal('0.1')
-   ```
-1. $$\LARGE t_i = l_d t_d 10 ^ {d_q}$$
-   ```python
-   >>> decimals_quote = 6
-   >>> tick_size_decimal = dec('0.01')
-   >>> tick_size_integer = int(lot_size_decimal * tick_size_decimal
-   ...                         * 10 ** decimals_quote)
-   >>> tick_size_integer
-   1000
-   ```
-1. $$\LARGE t_d = \frac{t_i}{l_i} 10 ^ {d_b - d_q}$$
-   ```python
-   >>> tick_size_decimal = (dec(tick_size_integer) / dec(lot_size_integer)
-   ...                      * 10 ** (decimals_base - decimals_quote)).normalize()
-   >>> tick_size_decimal
-   Decimal('0.01')
-   ```
-1. $$\LARGE m_i = m_d 10 ^ {d_b}$$
-   ```python
-   >>> min_size_decimal = dec('0.5')
-   >>> min_size_integer = int(min_size_decimal * 10 ** decimals_base)
-   >>> min_size_integer
-   50000000
-   ```
-1. $$\LARGE m_d = m_i 10 ^ {-d_b}$$
-   ```python
-   >>> min_size_decimal = dec(min_size_integer) / 10 ** decimals_base
-   >>> min_size_decimal
-   Decimal('0.5')
-   ```
-1. $$\LARGE s_i = \frac{s_d}{l_d}$$
-   ```python
-   >>> size_decimal = dec('7.8')
-   >>> size_integer = int(size_decimal / lot_size_decimal)
-   >>> size_integer
-   78
-   ```
-1. $$\LARGE s_d = s_i l_i 10 ^ {-d_b}$$
-   ```python
-   >>> size_decimal = dec(size_integer) * lot_size_integer / 10 ** decimals_base
-   >>> size_decimal
-   Decimal('7.8')
-   ```
-1. $$\LARGE p_i = \frac{p_d}{t_d}$$
-   ```python
-   >>> price_decimal = dec('5.23')
-   >>> price_integer = int(price_decimal / tick_size_decimal)
-   >>> price_integer
-   523
-   ```
-1. $$\LARGE p_d = \frac{p_i t_i}{l_i} 10 ^ {d_b - d_q}$$
-   ```python
-   >>> price_decimal = (dec(price_integer) * dec(tick_size_integer)
-   ...                  / dec(lot_size_integer)
-   ...                  * 10 ** (decimals_base - decimals_quote)).normalize()
-   >>> price_decimal
-   Decimal('5.23')
-   ```
-1. $$\LARGE a_d = s_d p_d$$
-   ```python
-   >>> amount_decimal = size_decimal * price_decimal
-   >>> amount_decimal
-   Decimal('40.794')
-   ```
-1. $$\LARGE a_i = a_d 10 ^ {d_q}$$
-   ```python
-   >>> amount_integer = int(amount_decimal * 10 ** decimals_quote)
-   >>> amount_integer
-   40794000
-   ```
-1. $$\LARGE a_i = s_i p_i t_i$$
-   ```python
-   >>> amount_integer = size_integer * price_integer * tick_size_integer
-   >>> amount_integer
-   40794000
-   ```
-1. $$\LARGE a_d = a_i 10 ^ {-d_q}$$
-   ```python
-   >>> amount_decimal = dec(amount_integer) / 10 ** decimals_quote
-   >>> amount_decimal
-   Decimal('40.794')
-   ```
-
-Hence:
-
-| Variable                   | Decimal amount | Integer amount |
-| -------------------------- | -------------- | -------------- |
-| Lot size                   | 0.1 `APT`      | 10000000       |
-| Tick size                  | 0.01 `USDC`    | 1000           |
-| Minimum order size         | 0.5  `APT`     | 50000000       |
-| Size                       | 7.8 `APT`      | 78             |
-| Price                      | 5.23 `USDC`    | 523            |
-| Total quote amount to fill | 40.794 `USDC`  | 40794000       |
-
-Note that Econia can only support precision down to a single indivisible subunit for either base or quote.
-This means, for example, that a market may not have a decimal lot size of $10^{-9} = 0.000000001$ `APT`, as each increment in size would correspond to a number of base asset subunits that could not be represented as an integer (0.1 indivisible subunits of `APT`):
+We'd like the value of one increment in order size to be worth about a penny, say \$0.00732.
+That means our lot size (in unit terms) should be 0.001 `APT`, which is worth said amount.
+To get the lot size in subunit terms so as to configure the market, we can use the SDK:
 
 ```python
->>> lot_size_decimal = dec('0.000000001')
->>> (lot_size_decimal * 10 ** decimals_base).normalize()
-Decimal('0.1')
+>>> lot_size_unit = "0.001"
+>>> base_decimals = 8
+>>> lot_size = get_lot_size_integer(lot_size_unit, base_decimals)
+>>> lot_size
+100000
 ```
 
-Similarly, if a market has a decimal lot size of 0.0001 `APT`, than it can only support a decimal tick size down to 0.01 `USDC` per `APT`, because the increment in total quote amount for each additional lot or tick corresponds to a single `USDC` subunit:
+Now to configure the tick size; we know that this is the granularity in value of one lot, which is worth \$0.00732 per above.
+Therefore, we want a tick size of 0.00001 to achieve the lot value granularity required to express a price of \$0.00732 for one lot.
+Let's now get that in subunit terms using the SDK:
 
 ```python
->>> lot_size_decimal = dec('0.0001')
->>> tick_size_decimal = dec('0.01')
->>> quote_increment_decimal = lot_size_decimal * tick_size_decimal
->>> to_check = (quote_increment_decimal * 10 ** decimals_quote).normalize()
->>> to_check
-Decimal('1')
+>>> tick_size_unit = "0.00001"
+>>> quote_decimals = 6
+>>> get_tick_size_integer(tick_size_unit, quote_decimals)
+10
 ```
 
-Notably, this check amount is equivalent to the integer tick size:
+It's easy to tell if this lot size and tick size combination is reasonable by checking the minimum and maximum price under these conditions in nominal (unit) terms.
+Note that the minimum price is also equivalent to price granularity, which tells us the granularity of value for a whole unit of APT as opposed to just one lot (equal here to 100000 subunits of `APT`).
+Now, using the SDK:
 
 ```python
->>> tick_size_integer = int(lot_size_decimal * tick_size_decimal
-...                         * 10 ** decimals_quote)
->>> tick_size_integer
+>>> get_min_quote_per_base_nominal(lot_size_unit, tick_size_unit)
+0.01
+>>> get_max_quote_per_base_nominal(lot_size_unit, tick_size_unit)
+42949672.95
+```
+
+It looks like our price granularity is one penny and our maximum price is plenty high: if we configure a market this way, it will support `APT` prices up to \$42M `USDC` per `APT`.
+Since the current price of `APT` is \$7.32, this price granularity might be too coarse for higher-frequency traders.
+It's a good thing we checked!
+Fixing this is easy enough: we could increase our lot size which would make our size granularity more coarse than we desire, or we could decrease our tick size by one order of magnitude:
+
+```python
+>>> tick_size_unit_new = "0.000001"
+>>> get_tick_size_integer(tick_size_unit_new, quote_decimals)
 1
 ```
 
-A decimal tick size of 0.001 `USDC` per `APT` would not be supported, however, because at the lowest possible price of 1 tick, the increment in total quote amount for each additional lot could not be represented as an integer multiple of subunits:
+Great!
+That just so happens to be the smallest possible tick size in this case.
+Now let's plug this tick size back into the minimum and maximum price formulas to check our work:
 
 ```python
->>> tick_size_decimal = dec('0.001')
->>> quote_increment_decimal = lot_size_decimal * tick_size_decimal
->>> (quote_increment_decimal * 10 ** decimals_quote).normalize()
-Decimal('0.1')
+>>> get_min_quote_per_base_nominal(lot_size_unit, tick_size_unit_new)
+0.001
+>>> get_max_quote_per_base_nominal(lot_size_unit, tick_size_unit_new)
+4294967.295
 ```
 
-Hence to check that a lot size/tick size combination is even possible for a market:
+Notice the maximum price has gone down by one order of magnitude, but it's still plenty high: this market would support `APT` prices up to \$4.2M `USDC` per `APT`.
+We're almost done at this point: we just need a minimum order size.
+Let's require a minimum limit order value of 0.5 `APT` (our base type), which has a market value of \$3.66 ($0.5 * \$7.32$).
+Using the SDK:
 
-1. Pick a decimal lot size.
+```python
+>>> get_min_size_integer("0.5", base_decimals, lot_size)
+500
+```
 
-   ```python
-   >>> lot_size_decimal = dec('0.1')
-   ```
+Above is the minimum number of lots that a limit order must have before it can be placed.
+Remember that market orders can be of any size!
+We are done configuring the market now.
+These are our results:
 
-1. Assert that integer lot size corresponds to an integer multiple of base subunits.
+| Parameter    | Units                | Value  | Meaning                  |
+| ------------ | -------------------- | ------ | ------------------------ |
+| Lot size     | Subunits (of `APT`)  | 100000 | Order size granularity   |
+| Tick size    | Subunits (of `USDC`) | 1      | Lot value granularity    |
+| Minimum size | Lots (of `APT`)      | 500    | Minimum limit order lots |
 
-   ```python
-   >>> to_check = lot_size_decimal * 10 ** decimals_base
-   >>> lot_size_integer = int(to_check)
-   >>> assert to_check >= 1 and to_check == lot_size_integer
-   ```
-
-1. Pick a decimal tick size.
-
-   ```python
-   >>> tick_size_decimal = dec('0.01')
-   ```
-
-1. Assert that the integer tick size corresponds to an integer multiple of quote subunits.
-
-   ```python
-   >>> to_check = (lot_size_decimal * tick_size_decimal
-   ...             * 10 ** decimals_quote).normalize()
-   >>> tick_size_integer = int(to_check)
-   >>> assert to_check >= 1 and to_check == tick_size_integer
-   ```
+Always remember to check the minimum and maximum price of your configuration to ensure adequate price granularity and room for movement both upwards and downwards!
 
 ### Noteworthy examples
 
 Consider the trading pair `wBTC/USDC`:
-as of the time of this writing, one `BTC` costs approximately 17792.27 `USD`, so initial choices for lot size and tick size might entail:
+as of the time of this writing, one `BTC` costs approximately 17792.27 `USD`, so initial choices for lot size and tick size might be:
 
-1. 0.00001 `wBTC` decimal lot size (corresponding to 0.1779227 `USDC` nominal).
-1. 0.01 `USDC` decimal tick size.
+1. 0.00001 `wBTC` lot size (a value of 0.1779227 `USDC`).
+1. 0.01 `USDC` tick size.
 
-Notably, these choices yield a total quote amount increment that does not correspond to an integer multiple of `USDC` subunits:
+Notably, these choices yield a price granularity that's far too coarse (using the SDK from above):
 
 ```python
->>> lot_size_decimal = dec('0.00001')
->>> tick_size_decimal = dec('0.01')
->>> to_check = (lot_size_decimal * tick_size_decimal
-...             * 10 ** decimals_quote).normalize()
->>> tick_size_integer = int(to_check)
->>> to_check
-Decimal('0.1')
->>> assert to_check >= 1 and to_check == tick_size_integer
+>>> lot_size = "0.00001"
+>>> tick_size = "0.01"
+>>> get_min_quote_per_base_nominal(lot_size, tick_size)
+1000.0
+```
+
+That means only prices that are a multiple of \$1000 can be expressed in this configuration.
+Thus a different combination must be chosen, for example, by decreasing decimal tick size by a factor of 1000:
+
+1. 0.00001 `wBTC` decimal lot size (a value of 0.1779227 `USDC`).
+1. 0.00001 `USDC` decimal tick size.
+
+Let's check the minimum and maximum expressible prices with this configuration:
+
+```python
+>>> lot_size = "0.00001"
+>>> tick_size = "0.00001" # changed by / 1000
+>>> get_min_quote_per_base_nominal(lot_size, tick_size)
+1.0
+>>> get_max_quote_per_base_nominal(lot_size, tick_size)
+4294967295.0
+```
+
+That's a minimum price (and price granularity) of \$1, as well as a maximum price that's plenty high.
+This could work; if a price granularity of one penny is desired, then lower the tick size by a further factor of 100:
+
+```python
+>>> lot_size = "0.00001"
+>>> tick_size = "0.0000001" # changed by / 1000 / 100
+>>> get_min_quote_per_base_nominal(lot_size, tick_size)
+0.01
+>>> get_max_quote_per_base_nominal(lot_size, tick_size)
+42949672.95
+```
+
+**...but wait a second!** `USDC` *has 6 decimals and above, we've used 7*.
+We can see that this tick size is problematic by using `get_tick_size_integer` from the SDK:
+
+```
+>>> get_tick_size_integer("0.0000001", 6)
 Traceback (most recent call last):
-  File "<stdin>", line 1, in <module>
-AssertionError
+...
+ValueError: Decimal unit too small to represent with 1 subunit
 ```
 
-Thus a different combination must be chosen, for example, by increasing decimal lot size by a factor of 10:
+Thus, holding lot size constant, the most price granularity possible is \$0.10 which corresponds to a tick size of 0.000001 `USDC` (the minimum possible) and lot size of 0.00001 `WBTC`.
 
-1. 0.0001 `wBTC` decimal lot size (corresponding to 1.779227 `USDC` nominal).
-1. 0.01 `USDC` decimal tick size.
-
-Here, the resultant quote amount increment corresponds to 1 `USDC` subunit, for a tick size of 1:
+If we increase lot size by a factor of 10 to 0.0001 `WBTC` which corresponds to an order value granularity of \$1.779 instead of \$0.1779, and keep the above tick size, then we have a price granularity of one penny:
 
 ```python
->>> lot_size_decimal = dec('0.0001')
->>> to_check = (lot_size_decimal * tick_size_decimal
-...             * 10 ** decimals_quote).normalize()
->>> tick_size_integer = int(to_check)
->>> assert to_check >= 1 and to_check == tick_size_integer
->>> tick_size_integer
+>>> lot_size = "0.0001" # changed by * 10
+>>> tick_size = "0.000001"
+>>> get_min_quote_per_base_nominal(lot_size, tick_size)
+0.01
+```
+
+To finish, let's calculate the lot and tick sizes as well as a minimum size (worth \$5 of the base, `WBTC`) for this market:
+
+```python
+>>> base_decimals = 9
+>>> lot_size_decimal = "0.0001"
+>>> quote_decimals = 6
+>>> tick_size_decimal = "0.000001"
+>>> lot_size = get_lot_size_integer(lot_size_decimal, base_decimals)
+>>> lot_size
+100000
+>>> tick_size = get_tick_size_integer(tick_size_decimal, quote_decimals)
+>>> tick_size
 1
+>>> min_size_float = 5/17792.27
+>>> min_size_decimal = f"{min_size_float}"
+>>> min_size = get_min_size_integer(min_size_decimal, base_decimals, lot_size)
+>>> min_size
+3
 ```
 
-However, the new decimal order size granularity corresponds to 1.779227 `USDC` nominal, which may not be considered granular enough.
-Hence alternative parametric inputs might entail:
+Therefore our final market parameters are as follows:
 
-1. 0.00005 `wBTC` decimal order size granularity (corresponding to 0.8896135 `USDC` nominal).
-1. 0.02 `USDC` decimal price granularity.
+| Parameter    | Units                | Value  | Meaning                  |
+| ------------ | -------------------- | ------ | ------------------------ |
+| Lot size     | Subunits (of `WBTC`) | 100000 | Order size granularity   |
+| Tick size    | Subunits (of `USDC`) | 1      | Lot value granularity    |
+| Minimum size | Lots (of `WBTC`)     | 3      | Minimum limit order lots |
 
-Here, the total quote amount increment again corresponds to an integer multiple of `USDC` subunits, for a tick size of 1:
-
-```python
->>> lot_size_decimal = dec('0.00005')
->>> tick_size_decimal = dec('0.02')
->>> to_check = (lot_size_decimal * tick_size_decimal
-...             * 10 ** decimals_quote).normalize()
->>> tick_size_integer = int(to_check)
->>> assert to_check >= 1 and to_check == tick_size_integer
->>> tick_size_integer
-1
-```
-
-Note, however, that compared with the other viable parameter set, this set trades off size precision for price precision:
-twice as much size granularity entails one half as much price granularity.
-
-:::note
-
-Size granularity restrictions only apply to limit orders.
-Market orders and swaps allow users to specify precise trade amounts down to a single integer subunit.
-
-:::
-
-Hence the nominal price of 17792.27 `USD` per `BTC` must be truncated to either 17792.26 or 17792.28.
-For the latter case, this entails an integer price of 889614:
-
-```python
->>> price_decimal = dec('17792.28')
->>> price_integer = int(price_decimal / tick_size_decimal)
->>> price_integer
-889614
-```
+______________________________________________________________________
 
 Next, consider a liquid staking derivative `sAPT` trading against `APT`, `sAPT/APT`, both having 8 decimals.
-Here, high price precision may be appropriate:
+Since the two assets have almost the same nominal price, price granularity will need to be higher here:
 
-| Variable          | Value                     |
-| ----------------- | ------------------------- |
-| Decimal lot size  | 0.01 `sAPT`               |
-| Decimal tick size | 0.000001 `APT` per `sAPT` |
-| Base decimals     | 8                         |
-| Quote decimals    | 8                         |
-| Decimal price     | 1.000012 `APT` per `sAPT` |
+| Variable          | Value          |
+| ----------------- | -------------- |
+| Decimal lot size  | 0.01 `sAPT`    |
+| Decimal tick size | 0.000001 `APT` |
+| Base decimals     | 8              |
+| Quote decimals    | 8              |
+
+Let's check the minimum and maximum price here using the SDK:
 
 ```python
->>> decimals_base = 8
->>> decimals_quote = 8
->>> lot_size_decimal = dec('0.01')
->>> tick_size_decimal = dec('0.000001')
->>> price_decimal = dec('1.000012')
->>> lot_size_integer = int(lot_size_decimal * 10 ** decimals_base)
->>> lot_size_integer
-1000000
->>> tick_size_integer = int(lot_size_decimal * tick_size_decimal
-...                         * 10 ** decimals_quote)
->>> tick_size_integer
-1
->>> price_integer = int(price_decimal / tick_size_decimal)
->>> price_integer
-1000012
+>>> lot_size = "0.01"
+>>> tick_size = "0.000001"
+>>> get_min_quote_per_base_nominal(lot_size, tick_size)
+0.0001
+>>> get_max_quote_per_base_nominal(lot_size, tick_size)
+429496.7295
 ```
 
-Next, consider `wBTC` trading against a hypothetical stable coin `USDX` with 10 decimals: `wBTC/USDX`.
+This gives us a price precision of 1/100th of a penny, with room to go even more precise should we desire.
+However we recall that the most granular possible price isn't necessarily desirable due to almost every order then occupying its own price level, cluttering user interfaces.
+Some coarseness is desirable for that reason.
+Although it is possible for user interfaces to summarize orders into price levels that don't actually exist, this approach would represent to the user information that is not accurate, and is not recommended.
+Should we use the maximum precision of 0.00000001 `APT` then we observe that the maximum price lowers but remains high enough for this pair, where the assets have almost the same value:
+
+```python
+>>> lot_size = "0.01"
+>>> tick_size = "0.00000001"
+>>> get_min_quote_per_base_nominal(lot_size, tick_size)
+1e-06 # 0.000001
+>>> get_max_quote_per_base_nominal(lot_size, tick_size)
+4294.967295
+```
+
+Last, let's calculate market parameters again using \$5 as our minimum order size:
+
+```python
+>>> base_decimals = 8
+>>> lot_size_decimal = "0.01"
+>>> quote_decimals = 8
+>>> tick_size_decimal = "0.00000001"
+>>> lot_size = get_lot_size_integer(lot_size_decimal, base_decimals)
+>>> lot_size
+1000000
+>>> tick_size = get_tick_size_integer(tick_size_decimal, quote_decimals)
+>>> tick_size
+1
+>>> min_size_float = 5/7.23 # price of sAPT = $7.23
+>>> min_size_decimal = f"{min_size_float}"
+>>> get_min_size_integer(min_size_decimal, base_decimals, lot_size)
+70
+```
+
+Thus our final market parameters are:
+
+| Parameter    | Units                | Value   | Meaning                  |
+| ------------ | -------------------- | ------- | ------------------------ |
+| Lot size     | Subunits (of `sAPT`) | 1000000 | Order size granularity   |
+| Tick size    | Subunits (of `APT`)  | 1       | Lot value granularity    |
+| Minimum size | Lots (of `sAPT`)     | 70      | Minimum limit order lots |
+
+______________________________________________________________________
+
+Last, consider `wBTC` trading against a hypothetical stable coin `USDX` with 10 decimals: `wBTC/USDX`.
 Here, a market registrant may again opt for high price precision, but if they specify too much, they may not be able to encode the corresponding integer price in 32 bits:
 
 :::tip
 
-Prices in Econia are represented as 32-bit integers, such that the maximum possible integer price is $2^{32} = 4294967296$ ticks per lot.
+Prices in Econia are represented as 32-bit integers, such that the maximum possible integer price is $2^{32}-1 = 4294967295$ ticks per lot.
 
 :::
 
-| Variable             | Value                          |
-| -------------------- | ------------------------------ |
-| Decimal lot size     | 0.0001 `wBTC`                  |
-| Quote asset decimals | 10                             |
-| Decimal tick size    | 0.000001 `USDX` per `wBTC`     |
-| Decimal price        | 17792.280012 `USDX` per `wBTC` |
+| Variable                | Value                          |
+| ----------------------- | ------------------------------ |
+| Decimal lot size        | 0.0001 `wBTC`                  |
+| Quote asset decimals    | 10                             |
+| Decimal tick size       | 0.0000000001 `USDX` per `wBTC` |
+| Decimal price           | 17792.280012 `USDX` per `wBTC` |
+| Order value granularity | \$1.779                        |
 
 ```python
->>> lot_size_decimal = dec('0.0001')
->>> decimals_quote = 10
->>> tick_size_decimal = dec('0.000001')
->>> price_decimal = dec('17792.280012')
->>> tick_size_integer = int(lot_size_decimal * tick_size_decimal
-...                         * 10 ** decimals_quote)
->>> tick_size_integer
-1
->>> price_integer = int(price_decimal / tick_size_decimal)
->>> price_integer
-17792280012
->>> price_integer <= 2 ** 32
-False
+>>> lot_size = "0.0001"
+>>> tick_size = "0.0000000001"
+>>> get_min_quote_per_base_nominal(lot_size, tick_size)
+1e-06 # 0.000001
+>>> get_max_quote_per_base_nominal(lot_size, tick_size)
+4294.967295
 ```
 
-Hence decimal tick size must be reduced so that integer prices can fit into a 32-bit integer.
+Observe that the maximum expressible price under the above conditions is less than the current price, and that the price granularity is far too granular.
+Tick size can be increased by a factor of 10000 such that the current (and future) price fits into a 32-bit integer:
 
-### Picking the right parameters
+```python
+>>> lot_size = "0.0001"
+>>> tick_size = "0.000001" # changed by * 10000
+>>> get_min_quote_per_base_nominal(lot_size, tick_size)
+0.01
+>>> get_max_quote_per_base_nominal(lot_size, tick_size)
+42949672.95
+```
 
-As shown above, picking the "correct" lot size, tick size, and minimum order size for a given market is ultimately a judgement call.
-Still, however, there are several guidelines that can aid the process:
+Notice that price granularity has become more coarse as a result of this change, which was desirable.
+Another option would have been to decrease lot size by a factor of 10000:
 
-1. **Only specify as much granularity as needed**:
-   overly-granular lot size and tick size combinations do not properly translate to integer tick sizes, and may make indexing more difficult.
-   Three orders at price 12.34 is easier to interpret than one order each at 12.3401, 12.3404, and 12.3407.
+```python
+>>> lot_size = "0.00000001" # changed by / 10000
+>>> tick_size = "0.0000000001"
+>>> get_min_quote_per_base_nominal(lot_size, tick_size)
+0.01
+>>> get_max_quote_per_base_nominal(lot_size, tick_size)
+42949672.95
+```
 
-1. **Specify a reasonable minimum order size that will help keep gas costs low**:
-   when matching against the book, an AVL queue removal is required for each fill, which means that taker orders will require more global storage operations if they have to fill against more maker orders.
-   For example, if the minimum order size for a market corresponds to \$ 0.1 USD nominal, and someone submits a market buy order for \$100 of the base asset, then they may have to pay the gas costs for up to $100 / 0.1 = 1000$ AVL queue operations.
-   In contrast, for a more reasonable minimum order size of \$ 10 USD nominal, at most they will have to pay for 10 AVL queue operations.
+Last and finally, let's calculate market parameters using a \$5 minimum order size using the lot and tick sizes immediately above:
 
-1. **Plan for price increases**:
-   as shown above, prices must be able to fit into 32-bit integers.
-   If a market's parameters have been calibrated such that a 3x price increase will lead to a 32-bit integer overflow, then a different lot size/tick size combination should be chosen.
-   Notably, if prices go up on the order of 100x, for instance, then a new market will likely be necessary anyways, due to changes in the appropriate level of granularity for a lot size/tick size combination.
-   Hence initial market parameters should be chosen to support the maximum price swing possible before the registration of a new market becomes necessary due to granularity considerations alone.
+```python
+>>> base_decimals = 9
+>>> lot_size_decimal = "0.00000001"
+>>> quote_decimals = 10
+>>> tick_size_decimal = "0.0000000001"
+>>> lot_size = get_lot_size_integer(lot_size_decimal, base_decimals)
+>>> lot_size
+10
+>>> tick_size = get_tick_size_integer(tick_size_decimal, quote_decimals)
+>>> tick_size
+1
+>>> min_size_float = 5/17792.27 # price of WBTC = $17792.27
+>>> min_size_decimal = f"{min_size_float}"
+>>> get_min_size_integer(min_size_decimal, base_decimals, lot_size)
+28103
+```
+
+In summary, these market parameters are:
+
+| Parameter    | Units                | Value | Meaning                  |
+| ------------ | -------------------- | ----- | ------------------------ |
+| Lot size     | Subunits (of `WBTC`) | 10    | Order size granularity   |
+| Tick size    | Subunits (of `USDX`) | 1     | Lot value granularity    |
+| Minimum size | Lots (of `WBTC`)     | 28103 | Minimum limit order lots |
 
 ## Adversarial considerations
 

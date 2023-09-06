@@ -1,6 +1,7 @@
-use std::{collections::HashSet, net::SocketAddr};
+use std::{collections::HashSet, net::SocketAddr, sync::Arc};
 
 use bigdecimal::ToPrimitive;
+use db::query::market::MarketIdQuery;
 use futures_util::StreamExt;
 use serde::Deserialize;
 use sqlx::{PgPool, Pool, Postgres};
@@ -8,10 +9,11 @@ use tokio::sync::broadcast;
 use tracing_subscriber::prelude::*;
 use types::message::Update;
 
-use crate::routes::router;
+use crate::{routes::router, util::redact_postgres_password};
 
 mod error;
 mod routes;
+mod util;
 mod ws;
 
 #[derive(Deserialize, Debug)]
@@ -55,7 +57,7 @@ async fn main() {
         .unwrap_or_else(|_| {
             panic!(
                 "Could not connect to DATABASE_URL `{}`",
-                &config.database_url
+                redact_postgres_password(&config.database_url)
             )
         });
 
@@ -67,11 +69,11 @@ async fn main() {
     let (btx, brx) = broadcast::channel(16);
     let _conn = start_redis_channels(config.redis_url, market_ids.clone(), btx.clone()).await;
 
-    let state = AppState {
+    let state = Arc::new(AppState {
         pool,
         sender: btx,
         market_ids: HashSet::from_iter(market_ids.into_iter()),
-    };
+    });
     let app = router(state);
     let addr = SocketAddr::from(([0, 0, 0, 0], config.port));
 
@@ -106,12 +108,13 @@ fn init_tracing(env: Env) {
             let fmt_layer = tracing_subscriber::fmt::layer()
                 .with_target(true)
                 .with_ansi(false)
+                .json()
                 .without_time();
 
             tracing_subscriber::registry()
                 .with(
                     tracing_subscriber::EnvFilter::try_from_default_env()
-                        .unwrap_or_else(|_| "api=debug,sqlx=debug,tower_http=debug".into()),
+                        .unwrap_or_else(|_| "api=debug,sqlx=warn,tower_http=debug".into()),
                 )
                 .with(fmt_layer)
                 .init();
@@ -120,16 +123,13 @@ fn init_tracing(env: Env) {
 }
 
 async fn get_market_ids(pool: Pool<Postgres>) -> Vec<u64> {
-    sqlx::query_as!(
-        types::query::MarketIdQuery,
-        r#"select market_id from markets;"#
-    )
-    .fetch_all(&pool)
-    .await
-    .unwrap()
-    .into_iter()
-    .map(|v| v.market_id.to_u64().unwrap())
-    .collect::<Vec<u64>>()
+    sqlx::query_as!(MarketIdQuery, r#"select market_id from markets"#)
+        .fetch_all(&pool)
+        .await
+        .unwrap()
+        .into_iter()
+        .map(|v| v.market_id.to_u64().unwrap())
+        .collect::<Vec<u64>>()
 }
 
 async fn start_redis_channels(
@@ -149,7 +149,7 @@ async fn start_redis_channels(
 
     for market_id in market_ids {
         // TODO add more channels
-        let channels = vec!["orders", "fills"];
+        let channels = vec!["orders", "fills", "price_levels"];
         for channel in channels {
             // Note: support for pubsub over a multiplexed connection should be coming soon.
             let pubsub_ch = format!("{}:{}", channel, market_id);
@@ -209,11 +209,11 @@ pub mod tests {
         let (btx, mut brx) = broadcast::channel(16);
         let _conn = start_redis_channels(config.redis_url, market_ids.clone(), btx.clone()).await;
 
-        let state = AppState {
+        let state = Arc::new(AppState {
             pool,
             sender: btx,
             market_ids: HashSet::from_iter(market_ids.into_iter()),
-        };
+        });
 
         tokio::spawn(async move {
             // keep broadcast channel alive

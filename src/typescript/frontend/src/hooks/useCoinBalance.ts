@@ -1,10 +1,14 @@
-import { useAptos } from "@/contexts/AptosContext";
-import { Address } from "@manahippo/aptos-wallet-adapter";
+// import { type Address } from "@aptos-labs/wallet-adapter-react";
 import { useQuery } from "@tanstack/react-query";
-import { useCoinInfo } from "./useCoinInfo";
-import { TypeTag } from "@/types/move";
+import { type MaybeHexString } from "aptos";
 
-type CoinStore = {
+import { useAptos } from "@/contexts/AptosContext";
+import { fromRawCoinAmount } from "@/utils/coin";
+import { type TypeTag } from "@/utils/TypeTag";
+
+import { useCoinInfo } from "./useCoinInfo";
+
+export type CoinStore = {
   coin: {
     value: number;
   };
@@ -12,12 +16,12 @@ type CoinStore = {
 
 export const CoinBalanceQueryKey = (
   coinTypeTag?: TypeTag | null,
-  userAddr?: Address | null
+  userAddr?: MaybeHexString | null,
 ) => ["useCoinBalance", coinTypeTag?.toString(), userAddr];
 
 export const useCoinBalance = (
   coinTypeTag?: TypeTag | null,
-  userAddr?: Address | null
+  userAddr?: MaybeHexString | null,
 ) => {
   const { aptosClient } = useAptos();
   const coinInfo = useCoinInfo(coinTypeTag);
@@ -25,16 +29,16 @@ export const useCoinBalance = (
     CoinBalanceQueryKey(coinTypeTag, userAddr),
     async () => {
       if (!userAddr || !coinTypeTag) return null;
-      const coinStore = await aptosClient.getAccountResource(
-        userAddr,
-        `0x1::coin::CoinStore<${coinTypeTag.toString()}>`
-      );
-      return (
-        (coinStore.data as CoinStore).coin.value / 10 ** coinInfo.data!.decimals
-      );
+      const coinStore = await aptosClient
+        .getAccountResource(
+          userAddr,
+          `0x1::coin::CoinStore<${coinTypeTag.toString()}>`,
+        )
+        .then(({ data }) => data as CoinStore);
+      return fromRawCoinAmount(coinStore.coin.value, coinInfo.data!.decimals);
     },
     {
       enabled: !!coinInfo.data,
-    }
+    },
   );
 };

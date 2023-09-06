@@ -1,5 +1,5 @@
 ---
-title: API Reference
+title: Econia API Reference
 
 language_tabs:
   - shell
@@ -71,7 +71,7 @@ main();
 ```json
 [
   {
-    "market_id": 0,
+    "market_id": 1,
     "name": "APT-tUSDC",
     "base": {
       "account_address": "0x1",
@@ -97,7 +97,7 @@ main();
     "created_at": "2023-05-01T12:34:56.789012Z"
   },
   {
-    "market_id": 1,
+    "market_id": 2,
     "name": "APT-PERP",
     "base": null,
     "base_name_generic": "APT-PERP",
@@ -141,16 +141,15 @@ documentation <a href="https://econia.dev/overview/registry/" target="_blank" re
 
 Get information about a specific market.
 
-
 ```shell
-curl "https://dev.api.econia.exchange/market/0"
+curl "https://dev.api.econia.exchange/markets/1"
 ```
 
 ```python
 import requests
 
-market_id = 0
-res = requests.get(f"https://dev.api.econia.exchange/market/{market_id}")
+market_id = 1
+res = requests.get(f"https://dev.api.econia.exchange/markets/{market_id}")
 data = res.json()
 
 print(data)
@@ -158,8 +157,8 @@ print(data)
 
 ```javascript
 async function main() {
-  const marketId = 0;
-  const res = await fetch(`https://dev.api.econia.exchange/market/${marketId}`);
+  const marketId = 1;
+  const res = await fetch(`https://dev.api.econia.exchange/markets/${marketId}`);
   const data = await res.json();
   console.log(data);
 }
@@ -170,7 +169,7 @@ main();
 
 ```json
 {
-  "market_id": 0,
+  "market_id": 1,
   "name": "APT-tUSDC",
   "base": {
     "account_address": "0x1",
@@ -199,20 +198,20 @@ main();
 
 ### HTTP Request
 
-`GET /market/:market_id`
+`GET /markets/:market_id`
 
 ### Path Parameters
 
-Parameter | Type | Description
---------- | ---- | -----------
-market_id | u64  | The ID of the market to retrieve
+| Parameter | Type | Description                      |
+| --------- | ---- | -------------------------------- |
+| market_id | u64  | The ID of the market to retrieve |
 
 ### Errors
 
-Error Code | Description
----------- | -------
-400        | Bad Request: the provided market ID was not a valid u64
-404        | Not Found: no market with the specified ID was found
+| Error Code | Description                                             |
+| ---------- | ------------------------------------------------------- |
+| 400        | Bad Request: the provided market ID was not a valid u64 |
+| 404        | Not Found: no market with the specified ID was found    |
 
 ## Get orderbook
 
@@ -221,17 +220,17 @@ prices for each level on the orderbook, and the total size of the orders
 available at that price.
 
 ```shell
-curl "https://dev.api.econia.exchange/market/0/orderbook?depth=1"
+curl "https://dev.api.econia.exchange/markets/1/orderbook?depth=1"
 ```
 
 ```python
 import requests
 
-market_id = 0
+market_id = 1
 params = {"depth": 1}
 
 res = requests.get(
-    f"https://dev.api.econia.exchange/market/{market_id}/orderbook", params=params)
+    f"https://dev.api.econia.exchange/markets/{market_id}/orderbook", params=params)
 data = res.json()
 
 print(data)
@@ -239,10 +238,10 @@ print(data)
 
 ```javascript
 async function main() {
-  const marketId = 0;
+  const marketId = 1;
   const params = new URLSearchParams({ depth: 1 });
   const res = await fetch(
-    `https://dev.api.econia.exchange/market/${marketId}/orderbook?${params}`
+    `https://dev.api.econia.exchange/markets/${marketId}/orderbook?${params}`
   );
   const data = await res.json();
   console.log(data);
@@ -272,26 +271,26 @@ main();
 
 ### HTTP Request
 
-`GET /market/:market_id/orderbook`
+`GET /markets/:market_id/orderbook`
 
 ### Path Parameters
 
-Parameter | Type | Description
---------- | ---- | -----------
-market_id | u64  |  The ID of the market to retrieve
+| Parameter | Type | Description                      |
+| --------- | ---- | -------------------------------- |
+| market_id | u64  | The ID of the market to retrieve |
 
 ### Query Parameters
 
-Parameter | Type | Description
---------- | ---- | -----------
-depth     | u32  | The number of orderbook levels to retrieve
+| Parameter | Type | Description                                |
+| --------- | ---- | ------------------------------------------ |
+| depth     | u32  | The number of orderbook levels to retrieve |
 
 ### Errors
 
-Error Code | Description
----------- | -------
-400        | Bad Request: invalid parameters
-404        | Not Found: no market with the specified ID was found
+| Error Code | Description                                          |
+| ---------- | ---------------------------------------------------- |
+| 400        | Bad Request: invalid parameters                      |
+| 404        | Not Found: no market with the specified ID was found |
 
 The depth parameter must be a number greater than or equal to 1.
 
@@ -302,7 +301,7 @@ open, high, low, and close prices for each interval, as well as the total volume
 for that interval.
 
 ```shell
-curl -G "https://dev.api.econia.exchange/market/0/history" \
+curl -G "https://dev.api.econia.exchange/markets/1/history" \
   -d resolution=1m \
   -d from=1683018300 \
   -d to=1683024240
@@ -311,7 +310,7 @@ curl -G "https://dev.api.econia.exchange/market/0/history" \
 ```python
 import requests
 
-market_id = 0
+market_id = 1
 params = {
     "resolution": "1m",
     "from": 1683018300,
@@ -319,7 +318,7 @@ params = {
 }
 
 res = requests.get(
-    f"https://dev.api.econia.exchange/market/{market_id}/history", params=params)
+    f"https://dev.api.econia.exchange/markets/{market_id}/history", params=params)
 data = res.json()
 
 print(data)
@@ -327,14 +326,14 @@ print(data)
 
 ```javascript
 async function main() {
-  const marketId = 0;
+  const marketId = 1;
   const params = new URLSearchParams({
     resolution: "1m",
     from: 1683018300,
     to: 1683024240,
   });
   const res = await fetch(
-    `https://dev.api.econia.exchange/market/${marketId}/history?${params}`
+    `https://dev.api.econia.exchange/markets/${marketId}/history?${params}`
   );
   const data = await res.json();
   console.log(data);
@@ -367,28 +366,28 @@ main();
 
 ### HTTP Request
 
-`GET /market/:market_id/orderbook`
+`GET /markets/:market_id/orderbook`
 
 ### Path Parameters
 
-Parameter | Type | Description
---------- | ---- | -----------
-market_id | u64  |  The ID of the market to retrieve
+| Parameter | Type | Description                      |
+| --------- | ---- | -------------------------------- |
+| market_id | u64  | The ID of the market to retrieve |
 
 ### Query Parameters
 
-Parameter  | Type | Description
----------  | ---- | -----------
-resolution | enum | The resolution of the requested historical data. Accepted values are 1m, 5m, 15m, 30m, and 1h.
-from       | i64  | Unix timestamp (in seconds) for the start of the requested time range
-to         | i64  | Unix timestamp (in seconds) for the end of the requested time range
+| Parameter  | Type | Description                                                                                    |
+| ---------- | ---- | ---------------------------------------------------------------------------------------------- |
+| resolution | enum | The resolution of the requested historical data. Accepted values are 1m, 5m, 15m, 30m, and 1h. |
+| from       | i64  | Unix timestamp (in seconds) for the start of the requested time range                          |
+| to         | i64  | Unix timestamp (in seconds) for the end of the requested time range                            |
 
 ### Errors
 
-Error Code | Description
----------- | -------
-400        | Bad Request: invalid parameters
-404        | Not Found: no market with the specified ID was found
+| Error Code | Description                                          |
+| ---------- | ---------------------------------------------------- |
+| 400        | Bad Request: invalid parameters                      |
+| 404        | Not Found: no market with the specified ID was found |
 
 The resolution parameter must be one of the options listed above. Additionally,
 the `to` and `from` timestamps must be valid Unix timestamps denoted in seconds,
@@ -399,7 +398,7 @@ and the `from` timestamp must come before the `to` timestamp.
 Get the fills for a particular market.
 
 ```shell
-curl -G "https://dev.api.econia.exchange/market/0/fills" \
+curl -G "https://dev.api.econia.exchange/markets/1/fills" \
   -d from=1682944490 \
   -d to=1682944500
 ```
@@ -407,14 +406,14 @@ curl -G "https://dev.api.econia.exchange/market/0/fills" \
 ```python
 import requests
 
-market_id = 0
+market_id = 1
 params = {
     "from": 1682944490,
     "to": 1682944500,
 }
 
 res = requests.get(
-    f"https://dev.api.econia.exchange/market/{market_id}/fills", params=params)
+    f"https://dev.api.econia.exchange/markets/{market_id}/fills", params=params)
 data = res.json()
 
 print(data)
@@ -422,13 +421,13 @@ print(data)
 
 ```javascript
 async function main() {
-  const marketId = 0;
+  const marketId = 1;
   const params = new URLSearchParams({
     from: 1682944490,
     to: 1682944500,
   });
   const res = await fetch(
-    `https://dev.api.econia.exchange/market/${marketId}/fills?${params}`
+    `https://dev.api.econia.exchange/markets/${marketId}/fills?${params}`
   );
   const data = await res.json();
   console.log(data);
@@ -441,7 +440,7 @@ main();
 ```json
 [
   {
-    "market_id": 0,
+    "market_id": 1,
     "maker_order_id": 0,
     "maker": "0x3",
     "maker_side": "buy",
@@ -455,30 +454,99 @@ main();
 
 ### HTTP Request
 
-`GET /market/:market_id/fills`
+`GET /markets/:market_id/fills`
 
 ### Path Parameters
 
-Parameter | Type | Description
---------- | ---- | -----------
-market_id | u64  |  The ID of the market to retrieve
+| Parameter | Type | Description                      |
+| --------- | ---- | -------------------------------- |
+| market_id | u64  | The ID of the market to retrieve |
 
 ### Query Parameters
 
-Parameter  | Type | Description
----------  | ---- | -----------
-from       | i64  | Unix timestamp (in seconds) for the start of the requested time range
-to         | i64  | Unix timestamp (in seconds) for the end of the requested time range
+| Parameter | Type | Description                                                           |
+| --------- | ---- | --------------------------------------------------------------------- |
+| from      | i64  | Unix timestamp (in seconds) for the start of the requested time range |
+| to        | i64  | Unix timestamp (in seconds) for the end of the requested time range   |
 
 ### Errors
 
-Error Code | Description
----------- | -------
-400        | Bad Request: invalid parameters
-404        | Not Found: no market with the specified ID was found
+| Error Code | Description                                          |
+| ---------- | ---------------------------------------------------- |
+| 400        | Bad Request: invalid parameters                      |
+| 404        | Not Found: no market with the specified ID was found |
 
 The `to` and `from` timestamps must be valid Unix timestamps denoted in seconds,
 and the `from` timestamp must come before the `to` timestamp.
+
+## Get order status
+
+Get the status for an individual order.
+
+```shell
+curl -G "https://dev.api.econia.exchange/markets/1/order/100"
+```
+
+```python
+import requests
+
+market_id = 1
+market_order_id = 100
+
+res = requests.get(
+    f"https://dev.api.econia.exchange/markets/{market_id}/order/{market_order_id}")
+data = res.json()
+
+print(data)
+```
+
+```javascript
+async function main() {
+  const marketId = 1;
+  const marketOrderId = 100;
+
+  const res = await fetch(
+    `https://dev.api.econia.exchange/markets/${marketId}/order/${marketOrderId}`
+  );
+  const data = await res.json();
+  console.log(data);
+}
+main();
+```
+
+> The above request returns JSON structured like this:
+
+```json
+{
+  "market_order_id": 100,
+  "market_id": 1,
+  "side": "ask",
+  "size": 1000,
+  "price": 2000,
+  "user_address": "0x1",
+  "custodian_id": null,
+  "order_state": "open",
+  "created_at": "2023-05-01T12:34:56.789012Z"
+}
+```
+
+### HTTP Request
+
+`GET /markets/:market_id/order/:market_order_id`
+
+### Path Parameters
+
+| Parameter       | Type | Description                      |
+| --------------- | ---- | -------------------------------- |
+| market_id       | u64  | The ID of the market to retrieve |
+| market_order_id | u64  | The ID of the order to retrieve  |
+
+### Errors
+
+| Error Code | Description                                         |
+| ---------- | --------------------------------------------------- |
+| 400        | Bad Request: invalid parameters                     |
+| 404        | Not Found: no order with the specified ID was found |
 
 ## Get stats
 
@@ -523,7 +591,7 @@ main();
 ```json
 [
   {
-    "market_id": 0,
+    "market_id": 1,
     "open": 30891,
     "high": 39427,
     "low": 30380,
@@ -532,7 +600,7 @@ main();
     "volume": 116906256
   },
   {
-    "market_id": 1,
+    "market_id": 2,
     "open": 30891,
     "high": 36681,
     "low": 28596,
@@ -549,15 +617,15 @@ main();
 
 ### Query Parameters
 
-Parameter  | Type | Description
----------  | ---- | -----------
-resolution | enum | The resolution of the requested stats. Accepted values are 1m, 5m, 15m, 30m, and 1h.
+| Parameter  | Type | Description                                                                          |
+| ---------- | ---- | ------------------------------------------------------------------------------------ |
+| resolution | enum | The resolution of the requested stats. Accepted values are 1m, 5m, 15m, 30m, and 1h. |
 
 ### Errors
 
-Error Code | Description
----------- | -------
-400        | Bad Request: invalid parameters
+| Error Code | Description                     |
+| ---------- | ------------------------------- |
+| 400        | Bad Request: invalid parameters |
 
 ### Notes
 
@@ -581,19 +649,19 @@ The change field is given in decimals, so a value of `1.2345` would indicate a
 Get stats for a specific market.
 
 ```shell
-curl "https://dev.api.econia.exchange/market/0/stats?resolution=1d"
+curl "https://dev.api.econia.exchange/markets/1/stats?resolution=1d"
 ```
 
 ```python
 import requests
 
-market_id = 0
+market_id = 1
 params = {
     "resolution": "1d",
 }
 
 res = requests.get(
-    f"https://dev.api.econia.exchange/market/{market_id}/stats", params=params)
+    f"https://dev.api.econia.exchange/markets/{market_id}/stats", params=params)
 data = res.json()
 
 print(data)
@@ -601,12 +669,12 @@ print(data)
 
 ```javascript
 async function main() {
-  const marketId = 0;
+  const marketId = 1;
   const params = new URLSearchParams({
     resolution: "1d",
   });
   const res = await fetch(
-    `https://dev.api.econia.exchange/market/${marketId}/stats?${params}`
+    `https://dev.api.econia.exchange/markets/${marketId}/stats?${params}`
   );
   const data = await res.json();
   console.log(data);
@@ -618,7 +686,7 @@ main();
 
 ```json
 {
-  "market_id": 0,
+  "market_id": 1,
   "open": 30891,
   "high": 39427,
   "low": 30380,
@@ -630,26 +698,26 @@ main();
 
 ### HTTP Request
 
-`GET /market/:market_id/stats`
+`GET /markets/:market_id/stats`
 
 ### Path Parameters
 
-Parameter | Type | Description
---------- | ---- | -----------
-market_id | u64  |  The ID of the market to retrieve
+| Parameter | Type | Description                      |
+| --------- | ---- | -------------------------------- |
+| market_id | u64  | The ID of the market to retrieve |
 
 ### Query Parameters
 
-Parameter  | Type | Description
----------  | ---- | -----------
-resolution | enum | The resolution of the requested stats. Accepted values are 1m, 5m, 15m, 30m, and 1h.
+| Parameter  | Type | Description                                                                          |
+| ---------- | ---- | ------------------------------------------------------------------------------------ |
+| resolution | enum | The resolution of the requested stats. Accepted values are 1m, 5m, 15m, 30m, and 1h. |
 
 ### Errors
 
-Error Code | Description
----------- | -------
-400        | Bad Request: invalid parameters
-404        | Not Found: no market with the specified ID was found
+| Error Code | Description                                          |
+| ---------- | ---------------------------------------------------- |
+| 400        | Bad Request: invalid parameters                      |
+| 404        | Not Found: no market with the specified ID was found |
 
 ## Get open orders
 
@@ -662,10 +730,10 @@ curl "https://dev.api.econia.exchange/account/0x1/open-orders"
 ```python
 import requests
 
-account_id = "0x1"
+account_address = "0x1"
 
 res = requests.get(
-    f"https://dev.api.econia.exchange/account/{account_id}/open-orders")
+    f"https://dev.api.econia.exchange/account/{account_address}/open-orders")
 data = res.json()
 
 print(data)
@@ -673,9 +741,9 @@ print(data)
 
 ```javascript
 async function main() {
-  const accountId = "0x1";
+  const accountAddress = "0x1";
   const res = await fetch(
-    `https://dev.api.econia.exchange/account/${accountId}/open-orders`
+    `https://dev.api.econia.exchange/account/${accountAddress}/open-orders`
   );
   const data = await res.json();
   console.log(data);
@@ -689,8 +757,8 @@ main();
 ```json
 [
   {
-    "market_order_id": 0,
-    "market_id": 0,
+    "market_order_id": 100,
+    "market_id": 1,
     "side": "bid",
     "size": 1000,
     "price": 1000,
@@ -700,8 +768,8 @@ main();
     "created_at": "2023-05-01T12:34:56.789012Z"
   },
   {
-    "market_order_id": 1,
-    "market_id": 0,
+    "market_order_id": 101,
+    "market_id": 1,
     "side": "ask",
     "size": 1000,
     "price": 2000,
@@ -715,19 +783,38 @@ main();
 
 ### HTTP Request
 
-`GET /account/:account_id/open-orders`
+`GET /account/:account_address/open-orders`
 
 ### Path Parameters
 
-Parameter  | Type   | Description
----------  | ----   | -----------
-account_id | String | The ID of the account to retrieve open orders for
+| Parameter       | Type   | Description                                       |
+| --------------- | ------ | ------------------------------------------------- |
+| account_address | String | The ID of the account to retrieve open orders for |
+
+### Query Parameters
+
+| Parameter | Type           | Description                                  |
+| --------- | -------------- | -------------------------------------------- |
+| limit     | u32 (optional) | The number of orders to retrieve             |
+| offset    | u32 (optional) | The position to start retrieving record from |
 
 ### Errors
 
-Error Code | Description
----------- | -------
-404        | Not Found: no account with the specified ID was found
+| Error Code | Description                                           |
+| ---------- | ----------------------------------------------------- |
+| 400        | Bad Request: invalid parameters                       |
+| 404        | Not Found: no account with the specified ID was found |
+
+### Notes
+
+- Open orders are sorted by the `created_at` timestamp, starting from the most
+  recent order.
+- Offset is zero-based, so in order to retrieve orders starting at the second
+  most recent order, send a request with `offset` set to `1`.
+- Both `limit` and `offset` are optional parameters, and it is possible to set
+  one without the other.
+- When a request is sent without a `limit` query parameter, the endpoint returns all open orders under the
+  specified account. When `offset` is not set, the results start at the most recent order.
 
 ## Get order history
 
@@ -740,10 +827,10 @@ curl "https://dev.api.econia.exchange/account/0x1/order-history"
 ```python
 import requests
 
-account_id = "0x1"
+account_address = "0x1"
 
 res = requests.get(
-    f"https://dev.api.econia.exchange/account/{account_id}/order-history")
+    f"https://dev.api.econia.exchange/account/{account_address}/order-history")
 data = res.json()
 
 print(data)
@@ -751,9 +838,9 @@ print(data)
 
 ```javascript
 async function main() {
-  const accountId = "0x1";
+  const accountAddress = "0x1";
   const res = await fetch(
-    `https://dev.api.econia.exchange/account/${accountId}/order-history`
+    `https://dev.api.econia.exchange/account/${accountAddress}/order-history`
   );
   const data = await res.json();
   console.log(data);
@@ -767,8 +854,8 @@ main();
 ```json
 [
   {
-    "market_order_id": 0,
-    "market_id": 0,
+    "market_order_id": 100,
+    "market_id": 1,
     "side": "bid",
     "size": 1000,
     "price": 1000,
@@ -778,8 +865,8 @@ main();
     "created_at": "2023-04-30T12:34:56.789012Z"
   },
   {
-    "market_order_id": 1,
-    "market_id": 0,
+    "market_order_id": 101,
+    "market_id": 1,
     "side": "ask",
     "size": 1000,
     "price": 2000,
@@ -793,19 +880,109 @@ main();
 
 ### HTTP Request
 
-`GET /account/:account_id/order-history`
+`GET /account/:account_address/order-history`
 
 ### Path Parameters
 
-Parameter  | Type   | Description
----------  | ----   | -----------
-account_id | String | The ID of the account to retrieve order history for
+| Parameter       | Type   | Description                                         |
+| --------------- | ------ | --------------------------------------------------- |
+| account_address | String | The ID of the account to retrieve order history for |
+
+### Query Parameters
+
+| Parameter | Type           | Description                                  |
+| --------- | -------------- | -------------------------------------------- |
+| limit     | u32 (optional) | The number of orders to retrieve             |
+| offset    | u32 (optional) | The position to start retrieving record from |
 
 ### Errors
 
-Error Code | Description
----------- | -------
-404        | Not Found: no account with the specified ID was found
+| Error Code | Description                                           |
+| ---------- | ----------------------------------------------------- |
+| 400        | Bad Request: invalid parameters                       |
+| 404        | Not Found: no account with the specified ID was found |
+
+### Notes
+
+- Orders are sorted by the `created_at` timestamp, starting from the most
+  recent order.
+- Offset is zero-based, so in order to retrieve orders starting at the second
+  most recent order, send a request with `offset` set to `1`.
+- Both `limit` and `offset` are optional parameters, and it is possible to set
+  one without the other.
+- When a request is sent without a `limit` query parameter, the endpoint returns
+  the complete order history under the specified account. When `offset` is not set,
+  the results start at the most recent order.
+
+## Get fills by account and market
+
+Get fills for a particular account and market.
+
+```shell
+curl "https://dev.api.econia.exchange/account/0x1/markets/1/fills"
+```
+
+```python
+import requests
+
+account_address = "0x1"
+market_id = 1
+
+res = requests.get(
+    f"https://dev.api.econia.exchange/account/{account_address}/markets/{market_id}/fills")
+data = res.json()
+
+print(data)
+```
+
+```javascript
+async function main() {
+  const accountAddress = "0x1";
+  const marketId = 1;
+  const res = await fetch(
+    `https://dev.api.econia.exchange/account/${accountAddress}/markets/${marketId}/fills`
+  );
+  const data = await res.json();
+  console.log(data);
+}
+main();
+
+```
+
+> The above request returns JSON structured like this:
+
+```json
+[
+  {
+    "market_id": 1,
+    "maker_order_id": 100,
+    "maker": "0x3",
+    "maker_side": "buy",
+    "custodian_id": null,
+    "size": 1000,
+    "price": 1000,
+    "time": "2023-05-01T12:34:56.789012Z"
+  }
+]
+```
+
+### HTTP Request
+
+`GET /account/:account_address/markets/:market_id/fills`
+
+### Path Parameters
+
+| Parameter       | Type   | Description                                         |
+| --------------- | ------ | --------------------------------------------------- |
+| account_address | String | The ID of the account to retrieve order history for |
+| market_id       | u64    | The ID of the market to retrieve                    |
+
+### Errors
+
+| Error Code | Description                                                     |
+| ---------- | --------------------------------------------------------------- |
+| 400        | Bad Request: invalid parameters                                 |
+| 404        | Not Found: no account or market with the specified ID was found |
 
 # WebSocket API
 
@@ -842,7 +1019,7 @@ the connection.
   "method": "subscribe",
   "channel": "orders",
   "params": {
-    "market_id": 0,
+    "market_id": 1,
     "user_address": "0x1"
   }
 }
@@ -856,7 +1033,7 @@ the connection.
   "channel": "orders",
   "method": "subscribe",
   "params": {
-    "market_id": 0,
+    "market_id": 1,
     "user_address": "0x1"
   }
 }
@@ -871,7 +1048,7 @@ the connection.
   "channel": "orders",
   "data": {
     "market_order_id": 1,
-    "market_id": 0,
+    "market_id": 1,
     "side": "bid",
     "size": 1000,
     "price": 1000,
@@ -897,10 +1074,10 @@ the connection.
 
 ```json
 {
-  "method": "subscribe",
+  "method": "unsubscribe",
   "channel": "orders",
   "params": {
-    "market_id": 0,
+    "market_id": 1,
     "user_address": "0x1"
   }
 }
@@ -925,7 +1102,7 @@ them that this is the case.
   "method": "subscribe",
   "channel": "fills",
   "params": {
-    "market_id": 0,
+    "market_id": 1,
     "user_address": "0x1"
   }
 }
@@ -939,7 +1116,7 @@ them that this is the case.
   "channel": "fills",
   "method": "subscribe",
   "params": {
-    "market_id": 0,
+    "market_id": 1,
     "user_address": "0x1"
   }
 }
@@ -954,7 +1131,7 @@ them that this is the case.
   "channel": "fills",
   "data": {
     "market_order_id": 1,
-    "market_id": 0,
+    "market_id": 1,
     "side": "bid",
     "size": 500,
     "price": 1000,
@@ -970,10 +1147,10 @@ them that this is the case.
 
 ```json
 {
-  "method": "subscribe",
+  "method": "unsubscribe",
   "channel": "fills",
   "params": {
-    "market_id": 0,
+    "market_id": 1,
     "user_address": "0x1"
   }
 }
@@ -996,7 +1173,7 @@ them that this is the case.
   "method": "subscribe",
   "channel": "price_levels",
   "params": {
-    "market_id": 0,
+    "market_id": 1,
   }
 }
 ```
@@ -1009,7 +1186,7 @@ them that this is the case.
   "channel": "price_levels",
   "method": "subscribe",
   "params": {
-    "market_id": 0,
+    "market_id": 1,
   }
 }
 ```
@@ -1022,9 +1199,11 @@ them that this is the case.
   "event": "update",
   "channel": "price_levels",
   "data": {
-    "market_id": 0,
+    "market_id": 1,
+    "side": "bid",
     "size": 1000,
-    "price": 1000
+    "price": 1000,
+    "timestamp": "2023-05-01T12:34:56.789012Z"
   }
 }
 ```
@@ -1033,10 +1212,10 @@ them that this is the case.
 
 ```json
 {
-  "method": "subscribe",
+  "method": "unsubscribe",
   "channel": "price_levels",
   "params": {
-    "market_id": 0
+    "market_id": 1
   }
 }
 ```
@@ -1048,3 +1227,7 @@ available to fill at a price changes, or orders become available at a new price.
 
 The client can use the updates available from this channel along with the results
 of the GET orderbook endpoint to keep track of the current state of the orderbook.
+
+The price level update message contains the side of the orderbook, and a timestamp
+so that users can be sure whether or not an update should be applied to the
+locally tracking state to reach the correct current orderbook state.

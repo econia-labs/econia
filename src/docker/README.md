@@ -21,14 +21,14 @@ The `dss-local.yaml` Docker compose file specifies the Econia data service stack
 
 ```sh
 # From Econia repo root
-docker compose --file src/docker/data-service-stack.yaml up detach
+docker compose --file src/docker/dss-local.yaml up --detach
 ```
 
 ## Shut down
 
 ```sh
 # From Econia repo root
-docker compose --file src/docker/data-service-stack.yaml down
+docker compose --file src/docker/dss-local.yaml down
 ```
 
 # End-to-end docker compose

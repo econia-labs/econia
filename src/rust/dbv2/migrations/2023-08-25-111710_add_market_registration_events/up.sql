@@ -41,3 +41,8 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER market_registration_events_trigger
 AFTER INSERT ON market_registration_events FOR EACH ROW
 EXECUTE PROCEDURE notify_market_registration_event ();
+
+
+CREATE ROLE anon;
+GRANT USAGE ON SCHEMA public TO anon;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon;

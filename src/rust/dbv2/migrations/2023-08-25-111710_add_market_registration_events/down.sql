@@ -12,3 +12,8 @@ DROP TABLE IF EXISTS processor_status;
 
 
 DROP TABLE IF EXISTS ledger_infos;
+
+
+REVOKE SELECT ON ALL TABLES IN SCHEMA public FROM anon;
+REVOKE USAGE ON SCHEMA public FROM anon;
+DROP ROLE anon;

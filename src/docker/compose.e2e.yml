@@ -1,38 +1,28 @@
 version: '3.9'
 services:
 
-  cargo-chef:
-    build:
-      context: cargo-chef
-    image: cargo-chef
-
-  chain:
-    build:
-      context: ../../
-      dockerfile: src/docker/chain/Dockerfile
-    ports:
-      - 8080:8080
-      - 8081:8081
-    image: chain
-
   diesel:
     build:
       context: ../../
       dockerfile: src/docker/database/Dockerfile
       args:
-        - DATABASE_URL=postgres://econia:econia@docker_default/econia
+        - DATABASE_URL=postgres://econia:econia@postgres:5432/econia
     depends_on:
       - postgres
 
-  indexer:
+  processor:
     build:
       context: ../../
-      dockerfile: src/docker/indexer/e2e/Dockerfile
+      dockerfile: src/docker/processor/Dockerfile
       args:
-        build-context:
+        GIT_TAG: abc
+        GIT_BRANCH: xyz
+        GIT_SHA: qrs
+    volumes:
+      - /tmp/config.yaml:/config.yaml
     depends_on:
-      - chain
-      - cargo-chef
+      - postgres
+    command: ["-c", "/config.yaml"]
 
   postgres:
     image: postgres:14-alpine
@@ -44,6 +34,18 @@ services:
       - 5432:5432
     volumes:
       - db:/var/lib/postgresql/data
+
+  postgrest:
+    image: postgrest/postgrest
+    depends_on:
+      - postgres
+    environment:
+      PGRST_DB_URI: postgres://econia:econia@postgres:5432/econia
+      PGRST_DB_ANON_ROLE: postgres
+      PGRST_DB_SCHEMA: public
+      # You can add other PostgREST configurations here if needed
+    ports:
+      - "3000:3000"  # Expose PostgREST on port 3000
 
 volumes:
   db:

@@ -1,24 +1,39 @@
-# End-to-end compose
+# Data service stack local Docker compose
 
-This Docker compose file specifies an end-to-end testing environment based on a local testnet compiled from source, with Econia and the Econia faucet published under single-signer vanity address accounts generated from plaintext (compromised) private keys.
+The `compose.dss-local.yaml` Docker compose file specifies the Econia data service stack in its most basic form, which can be run locally.
 
-Note that before you can use this file you will have to update the indexer submodule:
+## Configuration
 
-```sh
-# From Econia repo root
-git submodule init
-git submodule update src/rust/dependencies/aptos-core
-```
+1. Note that before you can use this file you will have to update the indexer submodule:
+
+   ```sh
+   # From Econia repo root
+   git submodule init
+   git submodule update src/rust/dependencies/aptos-indexer-processors
+   ```
+
+1. You'll also need to provide a `processor/config.yaml` based on `processor/config-template.yaml`.
 
 ## Start up
 
-> This command may take a while the first time you run it, since it will have to compile the Aptos CLI and an indexer node from source before running several commands against a local testnet.
+> This command may take a while the first time you run it, since it will have to compile several binaries.
 > Subsequent calls should be much faster, however, due to Docker's caching mechanism.
 
 ```sh
 # From Econia repo root
-docker compose --file src/docker/compose.e2e.yml up --detach
+docker compose --file src/docker/compose.dss-local.yaml up --detach
 ```
+
+## Shut down
+
+```sh
+# From Econia repo root
+docker compose --file src/docker/compose.dss-local.yaml down
+```
+
+# End-to-end docker compose
+
+This Docker compose is designed to work with an end-to-end testing environment, with Econia and the Econia faucet published under single-signer vanity address accounts generated from plaintext (compromised) private keys.
 
 While the local testnet is running, you can look up on-chain Move resources using the published node REST API port (note that the Aptos faucet API may take longer to start up than the node REST API):
 
@@ -27,13 +42,6 @@ While the local testnet is running, you can look up on-chain Move resources usin
 ECONIA_ADDRESS=$(cat src/docker/chain/accounts/econia.address)
 FAUCET_ADDRESS=$(cat src/docker/chain/accounts/faucet.address)
 aptos account list --account $FAUCET_ADDRESS --url http://localhost:8080
-```
-
-## Shut down
-
-```sh
-# From Econia repo root
-docker compose --file src/docker/compose.e2e.yml down
 ```
 
 # Helpful Docker commands
@@ -74,5 +82,6 @@ For convenience, here is a consolidated list of some of the most helpful command
 - Prune all containers, images, and volumes:
 
   ```
-  docker system prune -af --volumes
+  docker system prune -af
+  docker volume prune -af
   ```

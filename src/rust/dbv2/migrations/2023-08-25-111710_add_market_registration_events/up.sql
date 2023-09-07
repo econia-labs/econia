@@ -1,8 +1,19 @@
 -- Your SQL goes here
 -- Corresponds to econia::registry::MarketRegistrationEvent
+
+CREATE TABLE ledger_infos (chain_id BIGINT UNIQUE PRIMARY KEY NOT NULL);
+
+CREATE TABLE processor_status (
+  processor VARCHAR(50) UNIQUE PRIMARY KEY NOT NULL,
+  last_success_version BIGINT NOT NULL,
+  last_updated TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE
   market_registration_events (
-    id serial NOT NULL PRIMARY KEY,
+    txn_version NUMERIC(20) NOT NULL,
+    event_idx NUMERIC(20) NOT NULL,
+    PRIMARY KEY (txn_version, event_idx),
     market_id NUMERIC(20) NOT NULL,
     time timestamptz NOT NULL,
     base_account_address VARCHAR(70),
@@ -30,3 +41,8 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER market_registration_events_trigger
 AFTER INSERT ON market_registration_events FOR EACH ROW
 EXECUTE PROCEDURE notify_market_registration_event ();
+
+
+CREATE ROLE anon;
+GRANT USAGE ON SCHEMA public TO anon;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon;

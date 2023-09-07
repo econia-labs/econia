@@ -1,0 +1,49 @@
+version: "3.9"
+
+services:
+
+  diesel:
+    build:
+      args:
+        DATABASE_URL: "postgres://econia:econia@postgres:5432/econia"
+      context: ../../
+      dockerfile: src/docker/database/Dockerfile
+    depends_on:
+      - postgres
+
+  postgres:
+    environment:
+      POSTGRES_USER: "econia"
+      POSTGRES_PASSWORD: "econia"
+    image: postgres:14-alpine
+    ports:
+      - "5432:5432"
+    restart: always
+    volumes:
+      - "db:/var/lib/postgresql/data"
+
+  postgrest:
+    depends_on:
+      - postgres
+    environment:
+      PGRST_DB_URI: "postgres://econia:econia@postgres:5432/econia"
+      PGRST_DB_ANON_ROLE: postgres
+      PGRST_DB_SCHEMA: public
+    image: postgrest/postgrest
+    ports:
+      - "3000:3000"
+
+  processor:
+    build:
+      context: ../../
+      dockerfile: src/docker/processor/Dockerfile
+    depends_on:
+      - postgres
+    ports:
+      - "8084:8084"
+    volumes:
+      - "./processor/config.yaml:/config.yaml"
+
+volumes:
+  db:
+    driver: local

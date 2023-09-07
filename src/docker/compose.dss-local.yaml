@@ -27,7 +27,7 @@ services:
       - postgres
     environment:
       PGRST_DB_URI: "postgres://econia:econia@postgres:5432/econia"
-      PGRST_DB_ANON_ROLE: postgres
+      PGRST_DB_ANON_ROLE: anon
       PGRST_DB_SCHEMA: public
     image: postgrest/postgrest
     ports:

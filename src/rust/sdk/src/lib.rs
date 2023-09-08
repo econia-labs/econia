@@ -50,7 +50,7 @@ impl AptosConfig {
             .get("profiles")
             .expect("profiles section missing in config file");
         profiles
-            .get(profile_name)
+.get(profile_name)
             .expect("given profile name is missing in config file")
             .clone()
     }

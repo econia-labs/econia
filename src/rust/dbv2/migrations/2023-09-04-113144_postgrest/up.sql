@@ -19,3 +19,12 @@ GRANT usage ON SCHEMA api TO web_anon;
 GRANT
 SELECT
   ON api.market_registration_events TO web_anon;
+
+
+CREATE EXTENSION pgjwt CASCADE;
+
+
+CREATE FUNCTION api.jwt(json) RETURNS text AS $$
+  SELECT sign((CONCAT(CONCAT('{"channels": ', $1->>'channels'::text),'}'))::json, 'econia_is_dope')
+$$ LANGUAGE SQL;
+

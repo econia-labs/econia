@@ -104,7 +104,6 @@ pub struct CancelOrderEvent {
     #[serde(deserialize_with = "from_str_opt")]
     pub custodian_id: Option<u64>,
     pub reason: CancelReason,
-    pub time: chrono::DateTime<chrono::Utc>,
 }
 
 #[derive(Clone, Debug)]
@@ -120,7 +119,6 @@ pub struct ChangeOrderSizeEvent {
     pub side: Side,
     #[serde(deserialize_with = "from_str")]
     pub new_size: u64,
-    pub time: chrono::DateTime<chrono::Utc>,
 }
 
 #[derive(Clone, Debug)]
@@ -147,7 +145,6 @@ pub struct FillEvent {
     pub taker_quote_fees_paid: u64,
     #[serde(deserialize_with = "from_str")]
     pub sequence_number_for_trade: u64,
-    pub time: chrono::DateTime<chrono::Utc>,
 }
 
 #[derive(Clone, Debug)]
@@ -170,7 +167,6 @@ pub struct PlaceLimitOrderEvent {
     pub remaining_size: u64,
     #[serde(deserialize_with = "from_str")]
     pub order_id: u128,
-    pub time: chrono::DateTime<chrono::Utc>,
 }
 
 #[derive(Clone, Debug)]
@@ -188,7 +184,6 @@ pub struct PlaceMarketOrderEvent {
     pub self_match_behavior: SelfMatchBehavior,
     #[serde(deserialize_with = "from_str")]
     pub order_id: u128,
-    pub time: chrono::DateTime<chrono::Utc>,
 }
 
 #[derive(Clone, Debug)]
@@ -211,5 +206,4 @@ pub struct PlaceSwapOrderEvent {
     pub limit_price: u64,
     #[serde(deserialize_with = "from_str")]
     pub order_id: u128,
-    pub time: chrono::DateTime<chrono::Utc>,
 }

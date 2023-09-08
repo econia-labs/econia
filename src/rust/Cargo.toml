@@ -2,15 +2,13 @@
 resolver = "2"
 members = [
   "aggregator",
-  "api",
-  "db",
   "dbv2",
   "types",
   "sdk",
   "sdk/example",
   "dependencies/aptos-indexer-processors/rust/processor",
 ]
-exclude = ["dependencies"]
+exclude = ["api", "db", "dependencies"]
 
 [workspace.package]
 authors = ["Econia Labs <developers@econialabs.com>"]

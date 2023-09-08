@@ -5,22 +5,28 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bigdecimal = { workspace = true }
-chrono = { workspace = true }
-diesel = { workspace = true, features = ["chrono", "numeric", "postgres"] }
-diesel-derive-enum = { workspace = true, features = ["postgres"] }
-field_count = { workspace = true }
-serde = { workspace = true, optional = true }
-sqlx = { workspace = true, optional = true }
-thiserror = { workspace = true }
+bigdecimal = { version = "0.3.1", features = ["serde"] }
+chrono = { version = "0.4.26", features = ["clock", "serde"] }
+diesel = { version = "=2.1.0", features = [
+    "chrono",
+    "postgres",
+    "r2d2",
+    "numeric",
+    "serde_json",
+] }
+diesel-derive-enum = { version = "2.1.0", features = ["postgres"] }
+field_count = "0.1.1"
+serde = { version = "1.0.175", features = ["derive", "rc"], optional = true }
+sqlx = { version = "0.7.1", features = ["runtime-tokio-rustls"], optional = true }
+thiserror = "1.0.44"
 types = { path = "../types" }
 
 [dev-dependencies]
-dotenvy = { workspace = true }
-envy = { workspace = true }
+dotenvy = "0.15.7"
+envy = "0.4.2"
 indicatif = "0.17.5"
 rand = { version = "0.8.5", features = ["std_rng"] }
-serde = { workspace = true }
+serde = { version = "1.0.175", features = ["derive", "rc"] }
 
 [features]
 sqlx = ["dep:sqlx"]

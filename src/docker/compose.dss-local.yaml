@@ -2,6 +2,18 @@ version: "3.9"
 
 services:
 
+  streamer:
+    privileged: true
+    build:
+      context: ../../
+      dockerfile: src/docker/tss/Dockerfile
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:18084/readiness"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
   diesel:
     build:
       args:
@@ -13,6 +25,7 @@ services:
 
   postgres:
     environment:
+      POSTGRES_DB: "econia"
       POSTGRES_USER: "econia"
       POSTGRES_PASSWORD: "econia"
     image: postgres:14-alpine
@@ -39,8 +52,9 @@ services:
       dockerfile: src/docker/processor/Dockerfile
     depends_on:
       - postgres
+      - streamer
     ports:
-      - "8084:8084"
+      - "8085:8085"
     volumes:
       - "./processor/config.yaml:/config.yaml"
 

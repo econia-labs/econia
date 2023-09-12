@@ -65,8 +65,6 @@ export default function Market({ allMarketData, marketData }: Props) {
         return;
       }
 
-      console.log(ws.current.readyState, "state");
-
       // Subscribe to orderbook price level updates
       ws.current.send(
         JSON.stringify({

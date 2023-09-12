@@ -27,7 +27,7 @@ const Row: React.FC<{
   updatedLevel: PriceLevel | undefined;
 }> = ({ level, type, highestSize, marketData, updatedLevel }) => {
   const { setPrice } = useOrderEntry();
-  const [flash, setFlash] = useState<string>("");
+  const [flash, setFlash] = useState<"flash-red" | "flash-green" | "">("");
 
   useEffect(() => {
     if (updatedLevel == undefined) {

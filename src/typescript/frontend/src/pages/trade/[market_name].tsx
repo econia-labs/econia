@@ -164,7 +164,7 @@ export default function Market({ allMarketData, marketData }: Props) {
         prevAddress.current = undefined;
       }
     }
-  }, [marketData?.market_id, account?.address, ws.current?.readyState]);
+  }, [marketData?.market_id, account?.address]);
 
   // Handle incoming WebSocket messages
   useEffect(() => {

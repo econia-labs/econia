@@ -56,7 +56,12 @@ export default function Market({ allMarketData, marketData }: Props) {
   useEffect(() => {
     ws.current = new WebSocket(WS_URL);
     ws.current.onopen = () => {
-      if (marketData?.market_id == null || ws.current == null) {
+      // because useEffects can fire more than once and onopen is an async function, we still want to check readystate when we send a message
+      if (
+        marketData?.market_id == null ||
+        ws.current == null ||
+        ws.current.readyState !== WebSocket.OPEN
+      ) {
         return;
       }
 
@@ -82,19 +87,26 @@ export default function Market({ allMarketData, marketData }: Props) {
 
   // Handle wallet connect and disconnect
   useEffect(() => {
-    if (marketData?.market_id == null || ws.current == null) {
+    if (
+      marketData?.market_id == null ||
+      ws.current == null ||
+      ws.current.readyState !== WebSocket.OPEN
+    ) {
       return;
     }
     if (account?.address != null) {
+      //  commenting this out because it doesn't seem to be doing what it's supposed to
+      //  maybe if we made it synchronous it would work?
+
       // If the WebSocket connection is not ready,
       // wait for the WebSocket connection to be opened.
-      if (ws.current.readyState === WebSocket.CONNECTING) {
-        const interval = setInterval(() => {
-          if (ws.current?.readyState === WebSocket.OPEN) {
-            clearInterval(interval);
-          }
-        }, 500);
-      }
+      // if (ws.current.readyState === WebSocket.CONNECTING) {
+      //   const interval = setInterval(() => {
+      //     if (ws.current?.readyState === WebSocket.OPEN) {
+      //       clearInterval(interval);
+      //     }
+      //   }, 500);
+      // }
 
       // Subscribe to orders by account channel
       ws.current.send(

@@ -18,6 +18,7 @@ import { MediumIcon } from "./icons/MediumIcon";
 import { TwitterIcon } from "./icons/TwitterIcon";
 import { MarketIconPair } from "./MarketIconPair";
 import { SelectMarketContent } from "./trade/DepositWithdrawModal/SelectMarketContent";
+import { toast } from "react-toastify";
 
 const DEFAULT_TOKEN_ICON = "/tokenImages/default.png";
 
@@ -149,6 +150,11 @@ export const StatsBar: React.FC<{
           allMarketData={allMarketData}
           onSelectMarket={(id, name) => {
             setIsModalOpen(false);
+            if (name == undefined) {
+              // selected an undefined market
+              toast.error("Selected market is undefined, please try again.");
+              return;
+            }
             router.push(`/trade/${name}`);
           }}
         />

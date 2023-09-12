@@ -4,19 +4,19 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-axum = { workspace = true, features = ["query", "ws"] }
-bigdecimal = { workspace = true }
-chrono = { workspace = true }
+axum = { version = "0.6.19", features = ["query", "ws"] }
+bigdecimal = { version = "0.3.1", features = ["serde"] }
+chrono = { version = "0.4.26", features = ["clock", "serde"] }
 db = { path = "../db", features = ["sqlx"] }
-dotenvy = { workspace = true }
-envy = { workspace = true }
-futures-util = { workspace = true }
-once_cell = { workspace = true }
-redis = { workspace = true, features = ["tokio-rustls-comp", "r2d2"] }
-regex = { workspace = true }
-serde = { workspace = true, features = ["derive"] }
-serde_json = { workspace = true }
-sqlx = { workspace = true, features = [
+dotenvy = "0.15.7"
+envy = "0.4.2"
+futures-util = "0.3.28"
+once_cell = "1.18.0"
+redis = { version = "0.23.0", features = ["tokio-rustls-comp", "r2d2"] }
+regex = "1.9.1"
+serde = { version = "1.0.175", features = ["derive", "rc"] }
+serde_json = { version = "1.0.103", features = ["preserve_order"] }
+sqlx = { version = "0.7.1", features = [
     "bigdecimal",
     "chrono",
     "macros",
@@ -24,16 +24,16 @@ sqlx = { workspace = true, features = [
     "runtime-tokio-rustls",
     "time",
 ] }
-thiserror = { workspace = true }
-tokio = { workspace = true, features = ["full"] }
-tower = { workspace = true }
-tower-http = { workspace = true, features = [
+thiserror = "1.0.44"
+tokio = { version = "1.29.1", features = ["full"] }
+tower = "0.4.13"
+tower-http = { version = "0.4.3", features = [
     "compression-br",
     "cors",
     "trace",
 ] }
-tracing = { workspace = true }
-tracing-subscriber = { workspace = true, features = ["env-filter", "json"] }
+tracing = "0.1.37"
+tracing-subscriber = { version = "0.3.17", features = ["json", "env-filter"] }
 types = { path = "../types", features = ["serde"] }
 
 [dev-dependencies]

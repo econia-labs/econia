@@ -15,8 +15,8 @@ use crate::error::TypeError;
     derive(sqlx::Type),
     sqlx(type_name = "side", rename_all = "snake_case")
 )]
-#[serde(from = "bool")]
-#[serde(into = "bool")]
+#[cfg_attr(feature = "serde", serde(from = "bool"))]
+#[cfg_attr(feature = "serde", serde(into = "bool"))]
 pub enum Side {
     Bid,
     Ask,
@@ -60,7 +60,7 @@ impl TryFrom<u8> for Side {
     derive(Serialize, Deserialize),
     serde(rename_all = "snake_case")
 )]
-#[serde(from = "bool")]
+#[cfg_attr(feature = "serde", serde(from = "bool"))]
 pub enum Direction {
     Buy,
     Sell,
@@ -117,7 +117,7 @@ impl TryFrom<u8> for AdvanceStyle {
     serde(rename_all = "snake_case")
 )]
 #[repr(u8)]
-#[serde(try_from = "u8")]
+#[cfg_attr(feature = "serde", serde(try_from = "u8"))]
 pub enum SelfMatchBehavior {
     Abort,
     CancelBoth,
@@ -147,7 +147,7 @@ impl TryFrom<u8> for SelfMatchBehavior {
     derive(Serialize, Deserialize),
     serde(rename_all = "snake_case")
 )]
-#[serde(try_from = "u8")]
+#[cfg_attr(feature = "serde", serde(try_from = "u8"))]
 #[repr(u8)]
 pub enum Restriction {
     NoRestriction,
@@ -229,7 +229,7 @@ impl TryFrom<u8> for CancelType {
     derive(sqlx::Type),
     sqlx(type_name = "cancel_reason", rename_all = "snake_case")
 )]
-#[serde(try_from = "u8")]
+#[cfg_attr(feature = "serde", serde(try_from = "u8"))]
 pub enum CancelReason {
     SizeChangeInternal,
     Eviction,

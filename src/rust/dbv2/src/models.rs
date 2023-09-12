@@ -21,4 +21,3 @@ pub struct MarketRegistrationEvent {
     pub min_size: BigDecimal,
     pub underwriter_id: BigDecimal,
 }
-

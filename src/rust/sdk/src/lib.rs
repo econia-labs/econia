@@ -264,7 +264,7 @@ impl EconiaClient {
     pub async fn does_coin_exist(&self, coin: &TypeTag) -> EconiaResult<bool> {
         let coin_info = format!("0x1::coin::CoinInfo<{}>", coin);
         let TypeTag::Struct(tag) = coin else {
-            return Err(EconiaError::InvalidTypeTag(coin.clone()))
+            return Err(EconiaError::InvalidTypeTag(coin.clone()));
         };
 
         self.fetch_resource(tag.address, &coin_info)
@@ -336,7 +336,7 @@ impl EconiaClient {
             .into_inner();
 
         let Transaction::UserTransaction(ut) = tx else {
-            return Err(EconiaError::InvalidTransaction)
+            return Err(EconiaError::InvalidTransaction);
         };
 
         let events = ut

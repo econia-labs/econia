@@ -1,8 +1,8 @@
 use bigdecimal::BigDecimal;
 use chrono::{TimeZone, Utc};
 use db::{
-    establish_connection,
-    models::bar::{Bar, NewBar}, add_bar,
+    add_bar, establish_connection,
+    models::bar::{Bar, NewBar},
 };
 use diesel::prelude::*;
 use helpers::{load_config, reset_tables, setup_market};

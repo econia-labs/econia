@@ -1,9 +1,10 @@
 use chrono::Utc;
 use db::{
+    add_market_registration_event, create_coin,
     models::{
         coin::NewCoin,
         market::{MarketRegistrationEvent, NewMarketRegistrationEvent},
-    }, create_coin, add_market_registration_event,
+    },
 };
 use diesel::prelude::*;
 use serde::Deserialize;

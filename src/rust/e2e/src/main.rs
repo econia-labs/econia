@@ -1,5 +1,6 @@
-use std::str::FromStr;
+use std::{str::FromStr, time::Duration};
 
+use anyhow::{ensure, Result};
 use aptos_sdk::{
     bcs,
     move_types::{
@@ -17,6 +18,9 @@ use econia_sdk::{
     errors::EconiaError,
     EconiaClient, EconiaResult,
 };
+use sqlx::{PgPool, query};
+
+const TIMEOUT: Duration = Duration::from_secs(1);
 
 #[derive(Parser, Debug)]
 pub struct Args {
@@ -31,6 +35,9 @@ pub struct Args {
 
     /// The address of the Aptos faucet
     pub faucet_address: String,
+
+    /// The database URL
+    pub db_url: String,
 }
 
 pub struct Init {
@@ -40,6 +47,7 @@ pub struct Init {
     faucet_client: FaucetClient,
     econia_address: AccountAddress,
     econia_client: EconiaClient,
+    db_pool: PgPool
 }
 
 /// Creates the initial variables needed
@@ -65,6 +73,8 @@ async fn init(args: &Args) -> Init {
 
     let (_, econia_client) = account(&faucet_client, &args.node_url, econia_address.clone()).await;
 
+    let db_pool = PgPool::connect(&args.db_url).await.expect("Could not connect to the database.");
+
     Init {
         e_apt,
         e_usdc,
@@ -72,6 +82,7 @@ async fn init(args: &Args) -> Init {
         faucet_client,
         econia_address,
         econia_client,
+        db_pool,
     }
 }
 
@@ -123,7 +134,7 @@ pub async fn fund(
 }
 
 #[tokio::main]
-async fn main() -> EconiaResult<()> {
+async fn main() -> Result<()> {
     let args = Args::parse();
 
     let Init {
@@ -133,6 +144,7 @@ async fn main() -> EconiaResult<()> {
         faucet_client,
         econia_address,
         mut econia_client,
+        db_pool,
     } = init(&args).await;
 
     let lot_size = 10u64.pow(8 - 3); // eAPT has 8 decimals, want 1/1000th granularity
@@ -151,6 +163,12 @@ async fn main() -> EconiaResult<()> {
     .unwrap();
 
     econia_client.submit_tx(entry).await?;
+
+    std::thread::sleep(TIMEOUT);
+
+    let result = query!("SELECT COUNT(*) AS count FROM market_registration_events").fetch_one(&db_pool).await?;
+
+    ensure!(result.count == Some(1), "Market not inserted into the database");
 
     Ok(())
 }

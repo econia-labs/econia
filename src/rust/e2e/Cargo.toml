@@ -13,4 +13,5 @@ anyhow = "1"
 clap = { version = "4.3", features = ["derive"] }
 rand = "0.7"
 reqwest = "0.11"
+sqlx = "0.7.1"
 tokio = { workspace = true, features = ["full"] }

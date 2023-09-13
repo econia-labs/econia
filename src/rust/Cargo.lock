@@ -2306,6 +2306,7 @@ dependencies = [
  "econia-sdk",
  "rand 0.7.3",
  "reqwest",
+ "sqlx",
  "tokio",
 ]
 

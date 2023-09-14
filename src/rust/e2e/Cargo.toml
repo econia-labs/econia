@@ -9,9 +9,9 @@ edition = "2021"
 econia-sdk = { path = "../sdk" }
 aptos-sdk = { git = "https://github.com/aptos-labs/aptos-core", branch = "main" }
 
-anyhow = "1"
-clap = { version = "4.3", features = ["derive"] }
+anyhow.workspace = true
+clap.workspace = true
 rand = "0.7"
 reqwest = "0.11"
-sqlx = "0.7.1"
+sqlx = { workspace = true, features = ["postgres"] }
 tokio = { workspace = true, features = ["full"] }

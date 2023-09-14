@@ -13,12 +13,8 @@ use aptos_sdk::{
     },
 };
 use clap::Parser;
-use econia_sdk::{
-    entry::*,
-    errors::EconiaError,
-    EconiaClient, EconiaResult,
-};
-use sqlx::{PgPool, query};
+use econia_sdk::{entry::*, errors::EconiaError, EconiaClient, EconiaResult};
+use sqlx::{query, PgPool};
 
 const TIMEOUT: Duration = Duration::from_secs(1);
 
@@ -47,7 +43,7 @@ pub struct Init {
     faucet_client: FaucetClient,
     econia_address: AccountAddress,
     econia_client: EconiaClient,
-    db_pool: PgPool
+    db_pool: PgPool,
 }
 
 /// Creates the initial variables needed
@@ -73,7 +69,9 @@ async fn init(args: &Args) -> Init {
 
     let (_, econia_client) = account(&faucet_client, &args.node_url, econia_address.clone()).await;
 
-    let db_pool = PgPool::connect(&args.db_url).await.expect("Could not connect to the database.");
+    let db_pool = PgPool::connect(&args.db_url)
+        .await
+        .expect("Could not connect to the database.");
 
     Init {
         e_apt,
@@ -166,9 +164,14 @@ async fn main() -> Result<()> {
 
     std::thread::sleep(TIMEOUT);
 
-    let result = query!("SELECT COUNT(*) AS count FROM market_registration_events").fetch_one(&db_pool).await?;
+    let result = query!("SELECT COUNT(*) AS count FROM market_registration_events")
+        .fetch_one(&db_pool)
+        .await?;
 
-    ensure!(result.count == Some(1), "Market not inserted into the database");
+    ensure!(
+        result.count == Some(1),
+        "Market not inserted into the database"
+    );
 
     Ok(())
 }

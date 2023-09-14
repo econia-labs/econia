@@ -7,12 +7,11 @@ services:
     build:
       context: ../../
       dockerfile: src/docker/tss/Dockerfile
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:18084/readiness"]
-      interval: 10s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+    ports:
+      - "50052:50052"
+      - "50053:50053"
+      - "8084:8084"
+      - "8080:8080"
 
   diesel:
     build:

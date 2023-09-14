@@ -1,4 +1,4 @@
-use std::{sync::Arc, time::Duration, thread::JoinHandle};
+use std::{sync::Arc, time::Duration};
 
 use anyhow::Result;
 use data::{markets::MarketsRegisteredPerDay, Data};
@@ -38,7 +38,7 @@ async fn main() -> Result<()> {
                 tokio::time::sleep(interval).await;
 
                 if data.ready() {
-                    data.process_and_save_historical_data().await?;
+                    data.process_and_save().await?;
                 }
             }
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 while true; do
-    timeout 10 grpcurl -format json -d '{ "starting_version": 0 }' -H x-aptos-data-authorization:dummy_token -plaintext streamer:50052 aptos.indexer.v1.RawData/GetTransactions
+    timeout 10 grpcurl -format json -d '{ "starting_version": 0 }' -H x-aptos-data-authorization:dummy_token -insecure streamer:50053 aptos.indexer.v1.RawData/GetTransactions
 
     if [ $? -eq 124 ]; then
         break

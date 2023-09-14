@@ -1,4 +1,4 @@
--- Add up migration script here
+-- Your SQL goes here
 CREATE SCHEMA aggregator;
 
 CREATE TABLE aggregator.markets_registered_per_day (

@@ -1,0 +1,17 @@
+[package]
+name = "e2e"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+econia-sdk = { path = "../sdk" }
+aptos-sdk = { git = "https://github.com/aptos-labs/aptos-core", branch = "main" }
+
+anyhow.workspace = true
+clap.workspace = true
+rand = "0.7"
+reqwest = "0.11"
+sqlx = { workspace = true, features = ["postgres"] }
+tokio = { workspace = true, features = ["full"] }

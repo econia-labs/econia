@@ -1,8 +1,8 @@
 use anyhow::anyhow;
-use chrono::{DateTime, Utc, Duration};
+use chrono::{DateTime, Duration, Utc};
 use sqlx::PgPool;
 
-use super::{Data, DataAggregationResult, DataAggregationError};
+use super::{Data, DataAggregationError, DataAggregationResult};
 
 pub struct MarketsRegisteredPerDay {
     pool: PgPool,
@@ -21,7 +21,8 @@ impl MarketsRegisteredPerDay {
 #[async_trait::async_trait]
 impl Data for MarketsRegisteredPerDay {
     fn ready(&self) -> bool {
-        self.last_indexed_timestamp.is_none() || self.last_indexed_timestamp.unwrap() + Duration::days(1) < Utc::now()
+        self.last_indexed_timestamp.is_none()
+            || self.last_indexed_timestamp.unwrap() + Duration::days(1) < Utc::now()
     }
 
     async fn process_and_save_historical_data(&mut self) -> DataAggregationResult {
@@ -35,11 +36,10 @@ impl Data for MarketsRegisteredPerDay {
                 )
                 GROUP BY time::date
             "#
-        ).execute(&self.pool)
+        )
+        .execute(&self.pool)
         .await
-        .map_err(|e| {
-            DataAggregationError::ProcessingError(anyhow!(e))
-        })?;
+        .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
         Ok(())
     }
 
@@ -59,11 +59,10 @@ impl Data for MarketsRegisteredPerDay {
                 ))
             "#,
             date
-        ).execute(&self.pool)
+        )
+        .execute(&self.pool)
         .await
-        .map_err(|e| {
-            DataAggregationError::ProcessingError(anyhow!(e))
-        })?;
+        .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
         Ok(())
     }
 }

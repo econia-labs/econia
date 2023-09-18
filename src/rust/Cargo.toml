@@ -7,7 +7,6 @@ members = [
   "types",
   "sdk",
   "sdk/example",
-  "dependencies/aptos-indexer-processors/rust/processor",
 ]
 exclude = ["api", "db", "dependencies"]
 

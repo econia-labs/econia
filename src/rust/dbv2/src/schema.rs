@@ -21,3 +21,27 @@ diesel::table! {
         underwriter_id -> Numeric,
     }
 }
+
+diesel::table! {
+    fill_events (txn_version, event_idx) {
+        txn_version -> Numeric,
+        event_idx -> Numeric,
+        #[max_length = 70]
+        emit_address -> Varchar,
+        time -> Timestamptz,
+        #[max_length = 70]
+        maker_address -> Varchar,
+        maker_custodian_id -> Numeric,
+        maker_order_id -> Numeric,
+        maker_side -> Bool,
+        market_id -> Numeric,
+        price -> Numeric,
+        trade_sequence_number -> Numeric,
+        size -> Numeric,
+        #[max_length = 70]
+        taker_address -> Varchar,
+        taker_custodian_id -> Numeric,
+        taker_order_id -> Numeric,
+        taker_quote_fees_paid -> Numeric,
+    }
+}

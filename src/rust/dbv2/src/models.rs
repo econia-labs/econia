@@ -21,3 +21,24 @@ pub struct MarketRegistrationEvent {
     pub min_size: BigDecimal,
     pub underwriter_id: BigDecimal,
 }
+
+#[derive(Clone, Debug, Queryable, Selectable, Insertable)]
+#[diesel(table_name = crate::schema::fill_events)]
+pub struct FillEvent {
+    pub txn_version: BigDecimal,
+    pub event_idx: BigDecimal,
+    pub emit_address: String,
+    pub time: DateTime<Utc>,
+    pub maker_address: String,
+    pub maker_custodian_id: BigDecimal,
+    pub maker_order_id: BigDecimal,
+    pub maker_side: bool,
+    pub market_id: BigDecimal,
+    pub price: BigDecimal,
+    pub trade_sequence_number: BigDecimal,
+    pub size: BigDecimal,
+    pub taker_address: String,
+    pub taker_custodian_id: BigDecimal,
+    pub taker_order_id: BigDecimal,
+    pub taker_quote_fees_paid: BigDecimal,
+}

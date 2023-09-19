@@ -9,7 +9,7 @@ CREATE TABLE
     time timestamptz NOT NULL,
     maker_address VARCHAR(70) NOT NULL,
     maker_custodian_id NUMERIC(20) NOT NULL,
-    maker_order_id NUMERIC(20) NOT NULL,
+    maker_order_id NUMERIC(40) NOT NULL,
     maker_side BOOLEAN NOT NULL,
     market_id NUMERIC(20) NOT NULL,
     price NUMERIC(20) NOT NULL,
@@ -17,6 +17,6 @@ CREATE TABLE
     size NUMERIC(20) NOT NULL,
     taker_address VARCHAR(70) NOT NULL,
     taker_custodian_id NUMERIC(20) NOT NULL,
-    taker_order_id NUMERIC(20) NOT NULL,
-    taker_quote_fees_paid NUMERIC(20) NOT NULL,
+    taker_order_id NUMERIC(40) NOT NULL,
+    taker_quote_fees_paid NUMERIC(20) NOT NULL
   );

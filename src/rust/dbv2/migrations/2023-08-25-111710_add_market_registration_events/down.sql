@@ -8,6 +8,15 @@ DROP FUNCTION notify_market_registration_event ();
 DROP TABLE market_registration_events;
 
 
+DROP TRIGGER fill_events_trigger ON fill_events;
+
+
+DROP FUNCTION notify_fill_event ();
+
+
+DROP TABLE fill_events;
+
+
 DROP TABLE IF EXISTS processor_status;
 
 

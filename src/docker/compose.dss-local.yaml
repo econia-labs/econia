@@ -34,7 +34,7 @@ services:
       PGRST_DB_SCHEMA: public
     image: postgrest/postgrest
     ports:
-      - "3000:3000"
+      - "3001:3000"
 
   processor:
     build:

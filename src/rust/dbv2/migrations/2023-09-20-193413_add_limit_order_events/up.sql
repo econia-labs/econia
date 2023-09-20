@@ -33,6 +33,8 @@ EXECUTE PROCEDURE notify_fill_event ();
 
 CREATE VIEW api.fill_events AS SELECT * FROM fill_events;
 
+GRANT SELECT ON api.fill_events TO web_anon;
+
 
 CREATE TABLE
   place_limit_order_events (
@@ -66,6 +68,8 @@ EXECUTE PROCEDURE notify_place_limit_order_event ();
 
 CREATE VIEW api.place_limit_order_events AS SELECT * FROM place_limit_order_events;
 
+GRANT SELECT ON api.place_limit_order_events TO web_anon;
+
 
 CREATE TABLE
   cancel_order_events (
@@ -92,3 +96,5 @@ AFTER INSERT ON cancel_order_events FOR EACH ROW
 EXECUTE PROCEDURE notify_cancel_order_event ();
 
 CREATE VIEW api.cancel_order_events AS SELECT * FROM cancel_order_events;
+
+GRANT SELECT ON api.cancel_order_events TO web_anon;

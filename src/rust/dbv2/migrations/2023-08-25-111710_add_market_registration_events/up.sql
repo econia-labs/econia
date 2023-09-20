@@ -132,8 +132,3 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER cancel_order_events_trigger
 AFTER INSERT ON cancel_order_events FOR EACH ROW
 EXECUTE PROCEDURE notify_cancel_order_event ();
-
-
-CREATE ROLE anon;
-GRANT USAGE ON SCHEMA public TO anon;
-GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon;

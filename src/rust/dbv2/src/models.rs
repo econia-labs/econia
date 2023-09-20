@@ -42,3 +42,22 @@ pub struct FillEvent {
     pub taker_order_id: BigDecimal,
     pub taker_quote_fees_paid: BigDecimal,
 }
+
+#[derive(Clone, Debug, Queryable, Selectable, Insertable)]
+#[diesel(table_name = crate::schema::place_limit_order_events)]
+pub struct PlaceLimitOrderEvent {
+    pub txn_version: BigDecimal,
+    pub event_idx: BigDecimal,
+    pub time: DateTime<Utc>,
+    pub market_id: BigDecimal,
+    pub maker_address: String,
+    pub maker_custodian_id: BigDecimal,
+    pub maker_order_id: BigDecimal,
+    pub maker_side: bool,
+    pub integrator_address: String,
+    pub initial_size: BigDecimal,
+    pub price: BigDecimal,
+    pub restriction: BigDecimal,
+    pub self_match_behavior: BigDecimal,
+    pub posted_size: BigDecimal,
+}

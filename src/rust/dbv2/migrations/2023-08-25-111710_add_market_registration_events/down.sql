@@ -17,6 +17,15 @@ DROP FUNCTION notify_fill_event ();
 DROP TABLE fill_events;
 
 
+DROP TRIGGER place_limit_order_events_trigger ON place_limit_order_events;
+
+
+DROP FUNCTION notify_place_limit_order_event ();
+
+
+DROP TABLE place_limit_order_events;
+
+
 DROP TABLE IF EXISTS processor_status;
 
 

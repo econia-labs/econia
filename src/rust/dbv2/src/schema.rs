@@ -45,3 +45,37 @@ diesel::table! {
         taker_quote_fees_paid -> Numeric,
     }
 }
+
+diesel::table! {
+    place_limit_order_events (txn_version, event_idx) {
+        txn_version -> Numeric,
+        event_idx -> Numeric,
+        time -> Timestamptz,
+        market_id -> Numeric,
+        #[max_length = 70]
+        maker_address -> Varchar,
+        maker_custodian_id -> Numeric,
+        maker_order_id -> Numeric,
+        maker_side -> Bool,
+        integrator_address -> Varchar,
+        initial_size -> Numeric,
+        price -> Numeric,
+        restriction -> Numeric,
+        self_match_behavior -> Numeric,
+        posted_size -> Numeric,
+    }
+}
+
+diesel::table! {
+    cancel_order_events (txn_version, event_idx) {
+        txn_version -> Numeric,
+        event_idx -> Numeric,
+        time -> Timestamptz,
+        market_id -> Numeric,
+        #[max_length = 70]
+        maker_address -> Varchar,
+        maker_custodian_id -> Numeric,
+        maker_order_id -> Numeric,
+        reason -> Numeric,
+    }
+}

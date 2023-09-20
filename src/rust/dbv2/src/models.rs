@@ -61,3 +61,16 @@ pub struct PlaceLimitOrderEvent {
     pub self_match_behavior: BigDecimal,
     pub posted_size: BigDecimal,
 }
+
+#[derive(Clone, Debug, Queryable, Selectable, Insertable)]
+#[diesel(table_name = crate::schema::cancel_order_events)]
+pub struct CancelOrderEvent {
+    pub txn_version: BigDecimal,
+    pub event_idx: BigDecimal,
+    pub time: DateTime<Utc>,
+    pub market_id: BigDecimal,
+    pub maker_address: String,
+    pub maker_custodian_id: BigDecimal,
+    pub maker_order_id: BigDecimal,
+    pub reason: BigDecimal,
+}

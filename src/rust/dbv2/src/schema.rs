@@ -65,3 +65,17 @@ diesel::table! {
         posted_size -> Numeric,
     }
 }
+
+diesel::table! {
+    cancel_order_events (txn_version, event_idx) {
+        txn_version -> Numeric,
+        event_idx -> Numeric,
+        time -> Timestamptz,
+        market_id -> Numeric,
+        #[max_length = 70]
+        maker_address -> Varchar,
+        maker_custodian_id -> Numeric,
+        maker_order_id -> Numeric,
+        reason -> Numeric,
+    }
+}

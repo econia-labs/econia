@@ -108,6 +108,32 @@ CREATE TRIGGER place_limit_order_events_trigger
 AFTER INSERT ON place_limit_order_events FOR EACH ROW
 EXECUTE PROCEDURE notify_place_limit_order_event ();
 
+
+CREATE TABLE
+  cancel_order_events (
+    txn_version NUMERIC(20) NOT NULL,
+    event_idx NUMERIC(20) NOT NULL,
+    PRIMARY KEY (txn_version, event_idx),
+    time timestamptz NOT NULL,
+    market_id NUMERIC(20) NOT NULL,
+    maker_address VARCHAR(70) NOT NULL,
+    maker_custodian_id NUMERIC(20) NOT NULL,
+    maker_order_id NUMERIC(40) NOT NULL,
+    reason NUMERIC(20) NOT NULL
+  );
+
+CREATE FUNCTION notify_cancel_order_event () RETURNS TRIGGER AS $$
+BEGIN
+   PERFORM pg_notify('cancel_order_event'::text, row_to_json(NEW)::text);
+   RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER cancel_order_events_trigger
+AFTER INSERT ON cancel_order_events FOR EACH ROW
+EXECUTE PROCEDURE notify_cancel_order_event ();
+
+
 CREATE ROLE anon;
 GRANT USAGE ON SCHEMA public TO anon;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon;

@@ -4,6 +4,8 @@ members = [
   "aggregator",
   "dbv2",
   "e2e",
+  "e2e/e2e-proc-macro",
+  "e2e/metadata",
   "types",
   "sdk",
   "sdk/example",

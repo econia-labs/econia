@@ -1,0 +1,13 @@
+[package]
+name = "e2e-proc-macro"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+quote = "1.0.33"
+syn = "2.0.37"
+
+[lib]
+proc-macro = true

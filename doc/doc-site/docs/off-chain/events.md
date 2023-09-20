@@ -129,7 +129,7 @@ When a [signing user or a custodian][market account] manually cancels an open or
 [`market::get_swapper_event_handle_creation_numbers`]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#function-get_swapper_event_handle_creation_numbers
 [`market::marketeventhandlesformarket`]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#struct-marketeventhandlesformarket
 [`market::marketeventhandles`]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#resource-marketeventhandles
-[`market::placeswaporderevent`]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/user.md#struct-placeswaporderevent
+[`market::placeswaporderevent`]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#struct-placeswaporderevent
 [`market::swappereventhandlesformarket`]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#struct-swappereventhandlesformarket
 [`market::swappereventhandles`]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#resource-swappereventhandles
 [`marketregistrationevent`]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/registry.md#struct-marketregistrationevent

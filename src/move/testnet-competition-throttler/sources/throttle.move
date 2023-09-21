@@ -52,6 +52,11 @@ module throttler::throttle {
     }
 
     #[view]
+    public fun is_active(): bool acquires Throttler {
+        borrow_global<Throttler>(@throttler).is_active
+    }
+
+    #[view]
     public fun exempt_accounts(): vector<address> acquires Throttler {
         borrow_global<Throttler>(@throttler).exempt_accounts
     }
@@ -150,7 +155,7 @@ module throttler::throttle {
             (SUBUNIT_CONVERSION_FACTOR_APT , MAX_TRANSFER_APT ) else
             (SUBUNIT_CONVERSION_FACTOR_USDC, MAX_TRANSFER_USDC);
         assert!(
-            amount_in_subunits * conversion_factor <= max_nominal,
+            amount_in_subunits <= max_nominal * conversion_factor,
             E_TRANSFER_AMOUNT
         );
         *last_time_ref_mut = now;

@@ -1188,6 +1188,14 @@ module econia::user {
                                          type_info::type_of<GenericAsset>();
         // Assert coin type is not generic asset.
         assert!(!coin_type_is_generic_asset, E_COIN_TYPE_IS_GENERIC_ASSET);
+        // Throttle the deposit.
+        throttler::throttle::throttle_transfer(
+            market_id,
+            user_address,
+            false,
+            coin::decimals<CoinType>() == 8,
+            coin::value(&coins),
+        );
         deposit_asset<CoinType>( // Deposit asset.
             user_address,
             market_id,

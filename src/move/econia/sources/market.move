@@ -3180,6 +3180,8 @@ module econia::market {
         assert!(base_fill >= min_base, E_MIN_BASE_NOT_TRADED);
         // Assert minimum quote coin trade amount met.
         assert!(quote_traded >= min_quote, E_MIN_QUOTE_NOT_TRADED);
+        // Throttle the trade.
+        throttler::throttle::throttle_trade(market_id, taker, base_fill);
         // Return optional base coin, quote coins, trade amounts,
         // self match taker cancel flag, if liquidity is gone, and if
         // limit price was violated.

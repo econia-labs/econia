@@ -7,7 +7,7 @@ CREATE TABLE
     market_id NUMERIC(20) NOT NULL,
     TIME timestamptz NOT NULL,
     order_id NUMERIC(39) NOT NULL,
-    USER VARCHAR(70) NOT NULL,
+    "user" VARCHAR(70) NOT NULL,
     custodian_id NUMERIC(20) NOT NULL,
     side BOOLEAN NOT NULL,
     new_size NUMERIC(20) NOT NULL
@@ -22,10 +22,10 @@ CREATE TABLE
     market_id NUMERIC(20) NOT NULL,
     TIME timestamptz NOT NULL,
     order_id NUMERIC(39) NOT NULL,
-    USER VARCHAR(70) NOT NULL,
+    "user" VARCHAR(70) NOT NULL,
     custodian_id NUMERIC(20) NOT NULL,
     integrator VARCHAR(70) NOT NULL,
     direction BOOLEAN NOT NULL,
     size NUMERIC(20) NOT NULL,
-    self_match_behavior SMALLINT NOT NULL,
+    self_match_behavior SMALLINT NOT NULL
   );

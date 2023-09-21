@@ -170,9 +170,9 @@ module throttler::throttle {
         let throttler_ref = borrow_global<Throttler>(@throttler);
         if (!throttler_ref.is_active) return;
         if (vector::contains(&throttler_ref.exempt_accounts, &taker)) return;
-        let trade_amount_nominal =
-            apt_trade_amount_in_octas * SUBUNIT_CONVERSION_FACTOR_APT;
-        assert!(trade_amount_nominal < MAX_TRADE_VOLUME_APT, E_TRADE_AMOUNT);
+        let max_volume_octas =
+            MAX_TRADE_VOLUME_APT * SUBUNIT_CONVERSION_FACTOR_APT;
+        assert!(apt_trade_amount_in_octas <= max_volume_octas, E_TRADE_AMOUNT);
     }
 
     public entry fun deactivate(admin: &signer) acquires Throttler {

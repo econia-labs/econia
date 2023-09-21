@@ -12,10 +12,5 @@ user_0 = "0x2345"
 user_1 = "0x3456"
 integrator = "0x4567"
 
-[dependencies.AptosFramework]
-git = "https://github.com/aptos-labs/aptos-core.git"
-# You may need to change this to `main` to run event unit tests, since
-# event unit tests for this package were added before Aptos' event unit
-# testing framework was incorporated into the `mainnet` branch.
-rev = "mainnet"
-subdir = "aptos-move/framework/aptos-framework"
+[dependencies.EconiaTestnetCompetitionThrottler]
+local = "../testnet-competition-throttler"

@@ -31,10 +31,10 @@ services:
     environment:
       PGRST_DB_URI: "postgres://econia:econia@postgres:5432/econia"
       PGRST_DB_ANON_ROLE: web_anon
-      PGRST_DB_SCHEMA: public
+      PGRST_DB_SCHEMA: api
     image: postgrest/postgrest
     ports:
-      - "3000:3000"
+      - "3001:3000"
 
   processor:
     build:

@@ -1271,7 +1271,7 @@ module econia::registry {
     /// * `test_get_market_info_for_market_account_invalid_base()`
     /// * `test_get_market_info_for_market_account_invalid_market_id()`
     /// * `test_get_market_info_for_market_account_invalid_quote()`
-    public(friend) fun get_market_info_for_market_account(
+    public fun get_market_info_for_market_account(
         market_id: u64,
         base_type: TypeInfo,
         quote_type: TypeInfo

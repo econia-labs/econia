@@ -365,7 +365,33 @@ module econia::user {
         custodian_id: u64,
         /// Reason for the cancel, for example
         /// `CANCEL_REASON_MANUAL_CANCEL`.
-        reason: u8
+        reason: u8,
+        /// Canceled size
+        size: u64,
+        /// Canceled order side
+        side: bool,
+        /// Canceled order price
+        price: u64,
+    }
+
+    public fun cancel_order_event_get_market_id(event: &CancelOrderEvent): u64 {
+        event.market_id
+    }
+
+    public fun cancel_order_event_get_user(event: &CancelOrderEvent): address {
+        event.user
+    }
+
+    public fun cancel_order_event_get_side(event: &CancelOrderEvent): bool {
+        event.side
+    }
+
+    public fun cancel_order_event_get_size(event: &CancelOrderEvent): u64 {
+        event.size
+    }
+
+    public fun cancel_order_event_get_price(event: &CancelOrderEvent): u64 {
+        event.price
     }
 
     /// Emitted when the size of an open order is manually changed.
@@ -423,6 +449,54 @@ module econia::user {
         /// order results in two fills, the first will have sequence
         /// number 0 and the second will have sequence number 1.
         sequence_number_for_trade: u64
+    }
+
+    public fun fill_event_get_market_id(event: &FillEvent): u64 {
+        event.market_id
+    }
+
+    public fun fill_event_get_size(event: &FillEvent): u64 {
+        event.size
+    }
+
+    public fun fill_event_get_price(event: &FillEvent): u64 {
+        event.price
+    }
+
+    public fun fill_event_get_maker_side(event: &FillEvent): bool {
+        event.maker_side
+    }
+
+    public fun fill_event_get_maker(event: &FillEvent): address {
+        event.maker
+    }
+
+    public fun fill_event_get_maker_custodian_id(event: &FillEvent): u64 {
+        event.maker_custodian_id
+    }
+
+    public fun fill_event_get_maker_order_id(event: &FillEvent): u128 {
+        event.maker_order_id
+    }
+
+    public fun fill_event_get_taker(event: &FillEvent): address {
+        event.taker
+    }
+
+    public fun fill_event_get_taker_custodian_id(event: &FillEvent): u64 {
+        event.taker_custodian_id
+    }
+
+    public fun fill_event_get_taker_order_id(event: &FillEvent): u128 {
+        event.taker_order_id
+    }
+
+    public fun fill_event_get_taker_quote_fees_paid(event: &FillEvent): u64 {
+        event.taker_quote_fees_paid
+    }
+
+    public fun fill_event_get_sequence_number_for_trade(event: &FillEvent): u64 {
+        event.sequence_number_for_trade
     }
 
     /// Represents a user's open orders and asset counts for a given
@@ -710,6 +784,38 @@ module econia::user {
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // View functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[view]
+    public fun get_user_market_accounts(
+        user: address,
+        market_ids: vector<u64>,
+        custodian_id: u64
+    ): vector<u64> acquires MarketAccounts {
+        if (!exists<MarketAccounts>(user)) return vector::empty();
+
+        let market_accounts =
+            &borrow_global<MarketAccounts>(user).map;
+
+        let user_market_base_amounts = vector[];
+        let i = 0;
+        let len = vector::length(&market_ids);
+        while (i < len) {
+            let market_id = vector::borrow(&market_ids, i);
+            let market_account_id = get_market_account_id(*market_id, custodian_id);
+            if (!table::contains(market_accounts, market_account_id)) {
+                vector::push_back(&mut user_market_base_amounts, 0);
+                i = i + 1;
+                continue
+            };
+            let market_account = table::borrow(market_accounts, market_account_id);
+
+            vector::push_back(&mut user_market_base_amounts, market_account.base_total);
+
+            i = i + 1;
+        };
+
+        user_market_base_amounts
+    }
 
     #[view]
     /// Public constant getter for `ASK`.
@@ -1705,7 +1811,8 @@ module econia::user {
         price: u64,
         order_access_key: u64,
         market_order_id: u128,
-        reason: u8
+        reason: u8,
+        cancel_order_event_queue_ref_mut: &mut vector<CancelOrderEvent>,
     ): u128
     acquires
         MarketAccounts,
@@ -1775,11 +1882,14 @@ module econia::user {
             if (has_handles_for_market_account) {
                 let handles_ref_mut = table::borrow_mut(
                     market_event_handles_map_ref_mut, market_account_id);
+                let cancel_order_event = CancelOrderEvent {
+                    market_id, order_id: market_order_id,
+                    user: user_address, custodian_id, reason, side, size: start_size, price};
+                vector::push_back(cancel_order_event_queue_ref_mut, cancel_order_event);
                 event::emit_event(
                     &mut handles_ref_mut.cancel_order_events,
-                    CancelOrderEvent{
-                        market_id, order_id: market_order_id,
-                        user: user_address, custodian_id, reason});
+                    cancel_order_event
+                    );
             }
         };
         market_order_id // Return market order ID.
@@ -1832,7 +1942,8 @@ module econia::user {
         new_size: u64,
         price: u64,
         order_access_key: u64,
-        market_order_id: u128
+        market_order_id: u128,
+        cancel_order_event_queue: &mut vector<CancelOrderEvent>
     ) acquires
         MarketAccounts,
         MarketEventHandles
@@ -1854,7 +1965,7 @@ module econia::user {
         cancel_order_internal( // Cancel order with size to be changed.
             user_address, market_id, custodian_id, side, start_size, price,
             order_access_key, market_order_id,
-            CANCEL_REASON_SIZE_CHANGE_INTERNAL);
+            CANCEL_REASON_SIZE_CHANGE_INTERNAL, cancel_order_event_queue);
         place_order_internal( // Place order with new size.
             user_address, market_id, custodian_id, side, new_size, price,
             market_order_id, order_access_key);
@@ -1883,14 +1994,20 @@ module econia::user {
         order_id: u128,
         user: address,
         custodian_id: u64,
-        reason: u8
+        reason: u8,
+        side: bool,
+        size: u64,
+        price: u64,
     ): CancelOrderEvent {
         CancelOrderEvent{
             market_id,
             order_id,
             user,
             custodian_id,
-            reason
+            reason,
+            side,
+            size,
+            price
         }
     }
 
@@ -2048,7 +2165,7 @@ module econia::user {
                 if (option::is_some(cancel_reason_option_ref)) {
                     let event = CancelOrderEvent{
                         market_id, order_id, user, custodian_id,
-                        reason: *option::borrow(cancel_reason_option_ref)};
+                        reason: *option::borrow(cancel_reason_option_ref), side, size, price}; // fixme wrong size
                     event::emit_event(
                         &mut handles_ref_mut.cancel_order_events, event);
                 };
@@ -2129,7 +2246,7 @@ module econia::user {
                 if (option::is_some(cancel_reason_option_ref)) {
                     let event = CancelOrderEvent{
                         market_id, order_id, user, custodian_id,
-                        reason: *option::borrow(cancel_reason_option_ref)};
+                        reason: *option::borrow(cancel_reason_option_ref), side: direction, size, price: 0}; // fixme wrong size price
                     event::emit_event(
                         &mut handles_ref_mut.cancel_order_events, event);
                 };
@@ -2355,7 +2472,7 @@ module econia::user {
     /// * `test_deposits()`
     /// * `test_get_asset_counts_internal_no_account()`
     /// * `test_get_asset_counts_internal_no_accounts()`
-    public(friend) fun get_asset_counts_internal(
+    public fun get_asset_counts_internal(
         user_address: address,
         market_id: u64,
         custodian_id: u64
@@ -3788,10 +3905,11 @@ module econia::user {
         // Place order
         place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
                              size, price, market_order_id, 1);
+        let cancel_order_events = vector[];
         // Attempt invalid cancellation.
         cancel_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
                               size, price, 1, market_order_id + 1,
-                              CANCEL_REASON_MANUAL_CANCEL);
+                              CANCEL_REASON_MANUAL_CANCEL, &mut cancel_order_events);
     }
 
     #[test]
@@ -3817,10 +3935,12 @@ module econia::user {
         // Place order
         place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
                              size, price, market_order_id, 1);
+        let cancel_order_events = vector[];
+
         // Attempt invalid cancellation.
         cancel_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
                               size + 1, price, 1, market_order_id,
-                              CANCEL_REASON_MANUAL_CANCEL);
+                              CANCEL_REASON_MANUAL_CANCEL, &mut cancel_order_events);
     }
 
     #[test]
@@ -3854,9 +3974,11 @@ module econia::user {
         // Remove market event handles.
         remove_market_event_handles_for_market_account_test(
             @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID);
+        let cancel_order_events = vector[];
+
         change_order_size_internal( // Change order size.
             @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, size_old, size,
-            price, order_access_key, market_order_id);
+            price, order_access_key, market_order_id, &mut cancel_order_events);
         // Assert asset counts.
         let (base_total , base_available , base_ceiling,
              quote_total, quote_available, quote_ceiling) =
@@ -3909,9 +4031,11 @@ module econia::user {
         // Place order.
         place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
                              size_old, price, market_order_id, 1);
+        let cancel_order_events = vector[];
+
         change_order_size_internal( // Change order size.
             @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, size_old, size,
-            price, order_access_key, market_order_id);
+            price, order_access_key, market_order_id, &mut cancel_order_events);
         // Assert asset counts.
         let (base_total , base_available , base_ceiling,
              quote_total, quote_available, quote_ceiling) =
@@ -3953,9 +4077,11 @@ module econia::user {
         // Place order
         place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
                              size, price, market_order_id, 1);
+        let cancel_order_events = vector[];
+
         change_order_size_internal( // Attempt invalid order size change.
             @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, size, size, price,
-            1, market_order_id);
+            1, market_order_id, &mut cancel_order_events);
     }
 
     #[test]
@@ -4345,10 +4471,12 @@ module econia::user {
         // Place duplicate order then cancel, so stack is not empty.
         place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
                              size, price, market_order_id, 2);
+        let cancel_order_events = vector[];
+
         cancel_order_internal(
             @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, size, price,
             order_access_key_cancelled, market_order_id,
-            CANCEL_REASON_MANUAL_CANCEL);
+            CANCEL_REASON_MANUAL_CANCEL, &mut cancel_order_events);
         // Initialize external coins passing through matching engine.
         let optional_base_coins = option::some(coin::zero());
         let quote_coins = assets::mint_test(quote_fill);
@@ -4631,9 +4759,11 @@ module econia::user {
                              size, price, market_order_id_2, 2);
         place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, ASK,
                              size, price, market_order_id_3, 3);
+        let cancel_order_events = vector[];
+
         cancel_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, ASK,
                               size, price, 2, market_order_id_2,
-                              CANCEL_REASON_MANUAL_CANCEL);
+                              CANCEL_REASON_MANUAL_CANCEL, &mut cancel_order_events);
         // Get expected market order IDs vector.
         let expected = vector[market_order_id_1, market_order_id_3];
         // Assert expected return.
@@ -4647,10 +4777,12 @@ module econia::user {
         // Assert expected return.
         assert!(get_active_market_order_ids_internal(
             @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, BID) == expected, 0);
+        let cancel_order_events = vector[];
+
         // Cancel order.
         cancel_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, BID,
                               size, price, 1, market_order_id_4,
-                              CANCEL_REASON_MANUAL_CANCEL);
+                              CANCEL_REASON_MANUAL_CANCEL, &mut cancel_order_events);
         // Assert expected return.
         assert!(get_active_market_order_ids_internal(
             @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, BID) == vector[], 0);
@@ -4844,11 +4976,13 @@ module econia::user {
         place_order_internal(
             user, market_id, CUSTODIAN_ID, BID, size, price,
             market_order_id_bid_1, order_access_key_bid_1);
+        let cancel_order_events = vector[];
+
         // Cancel the first placed bid.
         cancel_order_internal(
             user, market_id, CUSTODIAN_ID, BID, size, price,
             order_access_key_bid_0, market_order_id_bid_0,
-            CANCEL_REASON_MANUAL_CANCEL);
+            CANCEL_REASON_MANUAL_CANCEL, &mut cancel_order_events);
         // Get all of user's market account views.
         market_account_views = get_market_accounts(user);
         // Immutably borrow first market account view element.
@@ -5112,10 +5246,12 @@ module econia::user {
         // Remove market event handles.
         remove_market_event_handles_for_market_account_test(
             @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID);
+        let cancel_order_events = vector[];
+
         // Evict order, storing returned market order ID.
         market_order_id_r = cancel_order_internal(
             @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, size, price,
-            order_access_key, (NIL as u128), CANCEL_REASON_MANUAL_CANCEL);
+            order_access_key, (NIL as u128), CANCEL_REASON_MANUAL_CANCEL, &mut cancel_order_events);
         // Assert returned market order ID.
         assert!(market_order_id_r == market_order_id, 0);
         // Assert next order access key.
@@ -5193,10 +5329,12 @@ module econia::user {
             @user, market_account_id, side, order_access_key);
         assert!(market_order_id_r == market_order_id, 0);
         assert!(size_r == size, 0);
+        let cancel_order_events = vector[];
+
         // Cancel order, storing returned market order ID.
         market_order_id_r = cancel_order_internal(
             @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, size, price,
-            order_access_key, market_order_id, CANCEL_REASON_MANUAL_CANCEL);
+            order_access_key, market_order_id, CANCEL_REASON_MANUAL_CANCEL, &mut cancel_order_events);
         // Assert returned market order ID.
         assert!(market_order_id_r == market_order_id, 0);
         // Assert asset counts.
@@ -5262,10 +5400,12 @@ module econia::user {
         // Assert next order access key.
         assert!(get_next_order_access_key_internal(
             @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side) == 3, 0);
+        let cancel_order_events = vector[];
+
         // Cancel first order, storing market order ID.
         let market_order_id = cancel_order_internal(
             @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, size, price, 1,
-            market_order_id_1, CANCEL_REASON_MANUAL_CANCEL);
+            market_order_id_1, CANCEL_REASON_MANUAL_CANCEL, &mut cancel_order_events);
         // Assert returned market order ID.
         assert!(market_order_id == market_order_id_1, 0);
         // Assert inactive stack top on given side.
@@ -5275,9 +5415,11 @@ module econia::user {
         assert!(get_next_order_access_key_internal(
             @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side) == 1, 0);
         // Cancel second order, storting market order ID.
+        let cancel_order_events = vector[];
+
         market_order_id = cancel_order_internal(
             @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, size, price, 2,
-            market_order_id_2, CANCEL_REASON_MANUAL_CANCEL);
+            market_order_id_2, CANCEL_REASON_MANUAL_CANCEL, &mut cancel_order_events);
         // Assert returned market order ID.
         assert!(market_order_id == market_order_id_2, 0);
         // Assert inactive stack top on given side.

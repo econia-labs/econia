@@ -1152,6 +1152,28 @@ module econia::market {
     }
 
     #[view]
+    public fun get_order_size(
+        market_id: u64,
+        side: bool,
+        market_order_id: u128
+    ): Option<u64> acquires OrderBooks {
+        let resource_address = resource_account::get_address();
+        let order_books_map_ref =
+            &borrow_global<OrderBooks>(resource_address).map;
+        let order_book_ref =
+            tablist::borrow(order_books_map_ref, market_id);
+        let orders_ref = if (side == ASK) &order_book_ref.asks else
+            &order_book_ref.bids;
+        let avlq_access_key = ((market_order_id & (HI_64 as u128)) as u64);
+        if (avl_queue::contains_active_list_node_id(orders_ref, avlq_access_key)) {
+            let order_ref = avl_queue::borrow(orders_ref, avlq_access_key);
+            option::some(order_ref.size)
+        } else {
+            option::none()
+        }
+    }
+
+    #[view]
     /// Return order counter encoded in market order ID.
     ///
     /// # Testing
@@ -1484,13 +1506,30 @@ module econia::market {
         side: bool,
         custodian_capability_ref: &CustodianCapability
     ) acquires OrderBooks {
+        let cancel_order_event_queue = vector[];
         cancel_all_orders(
             user_address,
             market_id,
             registry::get_custodian_id(custodian_capability_ref),
-            side);
+            side, &mut cancel_order_event_queue);
     }
 
+    public fun cancel_all_orders_custodian_with_events(
+        user_address: address,
+        market_id: u64,
+        side: bool,
+        custodian_capability_ref: &CustodianCapability
+    ) : vector<CancelOrderEvent> acquires OrderBooks {
+        let cancel_order_event_queue = vector[];
+
+        cancel_all_orders(
+            user_address,
+            market_id,
+            registry::get_custodian_id(custodian_capability_ref),
+            side, &mut cancel_order_event_queue);
+
+        cancel_order_event_queue
+    }
     /// Public function wrapper for `cancel_order()` for cancelling
     /// order under authority of delegated custodian.
     ///
@@ -1504,12 +1543,15 @@ module econia::market {
         market_order_id: u128,
         custodian_capability_ref: &CustodianCapability
     ) acquires OrderBooks {
+        let cancel_order_event_queue = vector[];
         cancel_order(
             user_address,
             market_id,
             registry::get_custodian_id(custodian_capability_ref),
             side,
-            market_order_id);
+            market_order_id,
+            &mut cancel_order_event_queue
+        );
     }
 
     /// Public function wrapper for `change_order_size()` for changing
@@ -1575,6 +1617,47 @@ module econia::market {
             self_match_behavior,
             CRITICAL_HEIGHT)
     }
+
+    /// Public function wrapper for `place_limit_order()` for placing
+    /// order under authority of delegated custodian.
+    /// Return events emitted after placing order
+    public fun place_limit_order_custodian_with_events<
+        BaseType,
+        QuoteType
+    >(
+        user_address: address,
+        market_id: u64,
+        integrator: address,
+        side: bool,
+        size: u64,
+        price: u64,
+        restriction: u8,
+        self_match_behavior: u8,
+        custodian_capability_ref: &CustodianCapability
+    ): (
+        u128,
+        u64,
+        u64,
+        u64,
+        vector<FillEvent>,
+        vector<CancelOrderEvent>
+    ) acquires OrderBooks {
+        place_limit_order_with_events<
+            BaseType,
+            QuoteType
+        >(
+            user_address,
+            market_id,
+            registry::get_custodian_id(custodian_capability_ref),
+            integrator,
+            side,
+            size,
+            price,
+            restriction,
+            self_match_behavior,
+            CRITICAL_HEIGHT)
+    }
+
 
     /// Public function wrapper for
     /// `place_limit_order_passive_advance()` for placing order under
@@ -1732,6 +1815,33 @@ module econia::market {
             self_match_behavior)
     }
 
+    public fun place_market_order_custodian_with_events<
+        BaseType,
+        QuoteType
+    >(
+        user_address: address,
+        market_id: u64,
+        integrator: address,
+        direction: bool,
+        size: u64,
+        self_match_behavior: u8,
+        custodian_capability_ref: &CustodianCapability
+    ): (
+        u64,
+        u64,
+        u64,
+        vector<FillEvent>,
+        vector<CancelOrderEvent>
+    ) acquires OrderBooks {
+        place_market_order_with_events<BaseType, QuoteType>(
+            user_address,
+            market_id,
+            registry::get_custodian_id(custodian_capability_ref),
+            integrator,
+            direction,
+            size,
+            self_match_behavior)
+    }
     /// Public function wrapper for `place_market_order()` for placing
     /// order under authority of signing user.
     ///
@@ -1972,6 +2082,7 @@ module econia::market {
              coin::zero<QuoteType>());
         // Swap against the order book, deferring market events.
         let fill_event_queue = vector[];
+        let cancel_order_event_queue = vector[];
         let (
             optional_base_coins,
             quote_coins,
@@ -1982,6 +2093,7 @@ module econia::market {
             cancel_order_event_option
         ) = swap(
             &mut fill_event_queue,
+            &mut cancel_order_event_queue,
             user_address,
             market_id,
             NO_UNDERWRITER,
@@ -2152,6 +2264,7 @@ module econia::market {
             _
         ) = swap(
             &mut vector[],
+            &mut vector[],
             NO_TAKER_ADDRESS,
             market_id,
             NO_UNDERWRITER,
@@ -2273,6 +2386,7 @@ module econia::market {
             _
         ) = swap(
             &mut vector[],
+            &mut vector[],
             NO_TAKER_ADDRESS,
             market_id,
             underwriter_id,
@@ -2310,11 +2424,12 @@ module econia::market {
         market_id: u64,
         side: bool,
     ) acquires OrderBooks {
+        let cancel_order_event_queue = vector[];
         cancel_all_orders(
             address_of(user),
             market_id,
             NO_CUSTODIAN,
-            side);
+            side, &mut cancel_order_event_queue);
     }
 
     /// Public entry function wrapper for `cancel_order()` for
@@ -2329,12 +2444,15 @@ module econia::market {
         side: bool,
         market_order_id: u128
     ) acquires OrderBooks {
+        let cancel_order_event_queue = vector[];
         cancel_order(
             address_of(user),
             market_id,
             NO_CUSTODIAN,
             side,
-            market_order_id);
+            market_order_id,
+            &mut cancel_order_event_queue
+        );
     }
 
     /// Public entry function wrapper for `change_order_size()` for
@@ -2506,7 +2624,8 @@ module econia::market {
         user: address,
         market_id: u64,
         custodian_id: u64,
-        side: bool
+        side: bool,
+        cancel_order_event_queue: &mut vector<CancelOrderEvent>
     ) acquires OrderBooks {
         // Get user's active market order IDs.
         let market_order_ids = user::get_active_market_order_ids_internal(
@@ -2516,7 +2635,7 @@ module econia::market {
         while (i < n_orders) { // Loop over all active orders.
             // Cancel market order for current iteration.
             cancel_order(user, market_id, custodian_id, side,
-                         *vector::borrow(&market_order_ids, i));
+                         *vector::borrow(&market_order_ids, i), cancel_order_event_queue);
             i = i + 1; // Increment loop counter.
         }
     }
@@ -2565,7 +2684,8 @@ module econia::market {
         market_id: u64,
         custodian_id: u64,
         side: bool,
-        market_order_id: u128
+        market_order_id: u128,
+        cancel_order_event_queue: &mut vector<CancelOrderEvent>
     ) acquires OrderBooks {
         // Get address of resource account where order books are stored.
         let resource_address = resource_account::get_address();
@@ -2597,7 +2717,7 @@ module econia::market {
         // Cancel order user-side, thus verifying market order ID.
         user::cancel_order_internal(
             user, market_id, custodian_id, side, size, price, order_access_key,
-            market_order_id, CANCEL_REASON_MANUAL_CANCEL);
+            market_order_id, CANCEL_REASON_MANUAL_CANCEL, cancel_order_event_queue);
     }
 
     /// Change maker order size on book and in user's market account.
@@ -2682,12 +2802,13 @@ module econia::market {
         // Assert passed custodian ID matches that from order.
         assert!(custodian_id == order_ref_mut.custodian_id,
                 E_INVALID_CUSTODIAN);
+        let cancel_order_event_queue = vector[];
         // Change order size user-side, thus verifying market order ID
         // and new size.
         user::change_order_size_internal(
             user, market_id, custodian_id, side, order_ref_mut.size, new_size,
             order_ref_mut.price, order_ref_mut.order_access_key,
-            market_order_id);
+            market_order_id, &mut cancel_order_event_queue);
         // Get order price.
         let price = avl_queue::get_access_key_insertion_key(avlq_access_key);
         // If size change is for a size decrease or if order is at tail
@@ -2997,6 +3118,7 @@ module econia::market {
     >(
         market_id: u64,
         fill_event_queue_ref_mut: &mut vector<FillEvent>,
+        cancel_order_event_queue_ref_mut: &mut vector<CancelOrderEvent>,
         order_book_ref_mut: &mut OrderBook,
         taker: address,
         custodian_id: u64,
@@ -3109,7 +3231,7 @@ module econia::market {
                         maker, market_id, maker_custodian_id, side,
                         order_ref_mut.size, price,
                         order_ref_mut.order_access_key, (NIL as u128),
-                        CANCEL_REASON_SELF_MATCH_MAKER);
+                        CANCEL_REASON_SELF_MATCH_MAKER, cancel_order_event_queue_ref_mut);
                     // Get AVL queue access key from market order ID.
                     let avlq_access_key =
                         ((market_order_id & (HI_64 as u128)) as u64);
@@ -3320,6 +3442,88 @@ module econia::market {
         u64,
         u64
     ) acquires OrderBooks {
+        let fill_event_queue = vector[];
+        let cancel_order_event_queue = vector[];
+        let (market_order_id, base_traded, quote_traded, fees) = place_limit_order_internal<BaseType, QuoteType>(
+           user_address,
+           market_id,
+           custodian_id,
+           integrator,
+           side,
+           size,
+           price,
+           restriction,
+           self_match_behavior,
+           critical_height,
+           &mut fill_event_queue,
+           &mut cancel_order_event_queue,
+        );
+        (market_order_id, base_traded, quote_traded, fees)
+    }
+
+    fun place_limit_order_with_events<
+        BaseType,
+        QuoteType,
+    >(
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64,
+        integrator: address,
+        side: bool,
+        size: u64,
+        price: u64,
+        restriction: u8,
+        self_match_behavior: u8,
+        critical_height: u8
+    ): (
+        u128,
+        u64,
+        u64,
+        u64,
+        vector<FillEvent>,
+        vector<CancelOrderEvent>
+    ) acquires OrderBooks {
+        let fill_event_queue = vector[];
+        let cancel_order_event_queue = vector[];
+        let (market_order_id, base_traded, quote_traded, fees) = place_limit_order_internal<BaseType, QuoteType>(
+            user_address,
+            market_id,
+            custodian_id,
+            integrator,
+            side,
+            size,
+            price,
+            restriction,
+            self_match_behavior,
+            critical_height,
+            &mut fill_event_queue,
+            &mut cancel_order_event_queue
+        );
+        (market_order_id, base_traded, quote_traded, fees, fill_event_queue, cancel_order_event_queue)
+    }
+
+    fun place_limit_order_internal<
+        BaseType,
+        QuoteType,
+    >(
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64,
+        integrator: address,
+        side: bool,
+        size: u64,
+        price: u64,
+        restriction: u8,
+        self_match_behavior: u8,
+        critical_height: u8,
+        fill_event_queue: &mut vector<FillEvent>,
+        cancel_order_event_queue: &mut vector<CancelOrderEvent>,
+    ): (
+        u128,
+        u64,
+        u64,
+        u64,
+    ) acquires OrderBooks {
         // Assert valid order restriction flag.
         assert!(restriction <= N_RESTRICTIONS, E_INVALID_RESTRICTION);
         assert!(price != 0, E_PRICE_0); // Assert nonzero price.
@@ -3327,8 +3531,8 @@ module econia::market {
         assert!(price <= HI_PRICE, E_PRICE_TOO_HIGH);
         // Get user's available and ceiling asset counts.
         let (_, base_available, base_ceiling, _, quote_available,
-             quote_ceiling) = user::get_asset_counts_internal(
-                user_address, market_id, custodian_id);
+            quote_ceiling) = user::get_asset_counts_internal(
+            user_address, market_id, custodian_id);
         // If asset count check does not abort, then market exists, so
         // get address of resource account for borrowing order book.
         let resource_address = resource_account::get_address();
@@ -3337,9 +3541,9 @@ module econia::market {
         let order_book_ref_mut = // Mutably borrow market order book.
             tablist::borrow_mut(order_books_map_ref_mut, market_id);
         assert!(type_info::type_of<BaseType>() // Assert base type.
-                == order_book_ref_mut.base_type, E_INVALID_BASE);
+            == order_book_ref_mut.base_type, E_INVALID_BASE);
         assert!(type_info::type_of<QuoteType>() // Assert quote type.
-                == order_book_ref_mut.quote_type, E_INVALID_QUOTE);
+            == order_book_ref_mut.quote_type, E_INVALID_QUOTE);
         // Assert order size is at least minimum size for market.
         assert!(size >= order_book_ref_mut.min_size, E_SIZE_TOO_SMALL);
         // Get market underwriter ID.
@@ -3352,10 +3556,10 @@ module econia::market {
             !avl_queue::would_update_head(&order_book_ref_mut.asks, price);
         // Assert order crosses spread if fill-or-abort.
         assert!(!((restriction == FILL_OR_ABORT) && !crosses_spread),
-                E_FILL_OR_ABORT_NOT_CROSS_SPREAD);
+            E_FILL_OR_ABORT_NOT_CROSS_SPREAD);
         // Assert order does not cross spread if post-or-abort.
         assert!(!((restriction == POST_OR_ABORT) && crosses_spread),
-                E_POST_OR_ABORT_CROSSES_SPREAD);
+            E_POST_OR_ABORT_CROSSES_SPREAD);
         // Calculate base asset amount corresponding to size in lots.
         let base = (size as u128) * (order_book_ref_mut.lot_size as u128);
         // Assert corresponding base asset amount fits in a u64.
@@ -3409,7 +3613,6 @@ module econia::market {
         // Assume no assets traded as a taker.
         let (base_traded, quote_traded, fees) = (0, 0, 0);
         let cancel_reason_option = option::none();
-        let fill_event_queue = vector[];
         let remaining_size = size;
         if (crosses_spread) { // If order price crosses spread:
             // Calculate max base and quote to withdraw. If a buy:
@@ -3436,7 +3639,8 @@ module econia::market {
                 _
             ) = match(
                 market_id,
-                &mut fill_event_queue,
+                fill_event_queue,
+                cancel_order_event_queue,
                 order_book_ref_mut,
                 user_address,
                 custodian_id,
@@ -3465,7 +3669,7 @@ module econia::market {
             // and all available quote spent.
             let still_crosses_spread = if (side == ASK)
                 !avl_queue::would_update_head(&order_book_ref_mut.bids, price)
-                else
+            else
                 !avl_queue::would_update_head(&order_book_ref_mut.asks, price);
             // Remaining size is amount not traded during matching.
             remaining_size =
@@ -3473,14 +3677,14 @@ module econia::market {
             // Get optional order cancel reason.
             if (self_match_cancel) {
                 option::fill(&mut cancel_reason_option,
-                             CANCEL_REASON_SELF_MATCH_TAKER);
+                    CANCEL_REASON_SELF_MATCH_TAKER);
             } else if ((remaining_size > 0) &&
-                       (restriction == IMMEDIATE_OR_CANCEL)) {
+                (restriction == IMMEDIATE_OR_CANCEL)) {
                 option::fill(&mut cancel_reason_option,
-                             CANCEL_REASON_IMMEDIATE_OR_CANCEL);
+                    CANCEL_REASON_IMMEDIATE_OR_CANCEL);
             } else if (still_crosses_spread) {
                 option::fill(&mut cancel_reason_option,
-                             CANCEL_REASON_MAX_QUOTE_TRADED);
+                    CANCEL_REASON_MAX_QUOTE_TRADED);
             };
         } else { // If spread not crossed (matching engine not called):
             // Order book counter needs to be updated for new order ID.
@@ -3488,7 +3692,7 @@ module econia::market {
             // IOC order needs to be cancelled if no fills took place.
             if (restriction == IMMEDIATE_OR_CANCEL) {
                 option::fill(&mut cancel_reason_option,
-                             CANCEL_REASON_IMMEDIATE_OR_CANCEL);
+                    CANCEL_REASON_IMMEDIATE_OR_CANCEL);
             };
         };
         // Assume that limit order will not post.
@@ -3504,7 +3708,7 @@ module econia::market {
                 &mut order_book_ref_mut.asks else &mut order_book_ref_mut.bids;
             // Declare order to insert to book.
             let order = Order{size: remaining_size, price, user: user_address,
-                              custodian_id, order_access_key};
+                custodian_id, order_access_key};
             // Get new AVL queue access key, evictee access key, and evictee
             // value by attempting to insert for given critical height.
             let (avlq_access_key, evictee_access_key, evictee_value) =
@@ -3527,15 +3731,15 @@ module econia::market {
                 // Cancel order user-side.
                 user::cancel_order_internal(
                     user, market_id, custodian_id, side, size, price,
-                    order_access_key, (NIL as u128), CANCEL_REASON_EVICTION);
+                    order_access_key, (NIL as u128), CANCEL_REASON_EVICTION, cancel_order_event_queue);
             };
         };
         // Emit relevant events to user event handles.
         user::emit_limit_order_events_internal(
             market_id, user_address, custodian_id, integrator, side, size,
             price, restriction, self_match_behavior, remaining_size,
-            market_order_id, &fill_event_queue, &cancel_reason_option);
-        // Return market order ID and taker trade amounts.
+            market_order_id, fill_event_queue, &cancel_reason_option);
+        // Return market order ID and taker trade amounts and fill events
         return (market_order_id, base_traded, quote_traded, fees)
     }
 
@@ -3637,99 +3841,152 @@ module econia::market {
         target_advance_amount: u64
     ): u128
     acquires OrderBooks {
-        // Get address of resource account where order books are stored.
-        let resource_address = resource_account::get_address();
-        let order_books_map_ref = // Immutably borrow order books map.
-            &borrow_global<OrderBooks>(resource_address).map;
-        // Assert order books map has order book with given market ID.
-        assert!(tablist::contains(order_books_map_ref, market_id),
-                E_INVALID_MARKET_ID);
-        // Immutably borrow market order book.
-        let order_book_ref = tablist::borrow(order_books_map_ref, market_id);
-        assert!(type_info::type_of<BaseType>() // Assert base type.
-                == order_book_ref.base_type, E_INVALID_BASE);
-        assert!(type_info::type_of<QuoteType>() // Assert quote type.
-                == order_book_ref.quote_type, E_INVALID_QUOTE);
-        // Get option-packed maximum bid and minimum ask prices.
-        let (max_bid_price_option, min_ask_price_option) =
-            (avl_queue::get_head_key(&order_book_ref.bids),
-             avl_queue::get_head_key(&order_book_ref.asks));
-        // Get best price on given side, and best price on other side.
-        let (start_price_option, cross_price_option) = if (side == ASK)
-            (min_ask_price_option, max_bid_price_option) else
-            (max_bid_price_option, min_ask_price_option);
-        // Return if there is no price to advance from.
-        if (option::is_none(&start_price_option)) return (NIL as u128);
-        // Get price to start advance from.
-        let start_price = *option::borrow(&start_price_option);
-        // If target advance amount is 0, price is start price. Else:
-        let price = if (target_advance_amount == 0) start_price else {
-            // Return if no cross price.
-            if (option::is_none(&cross_price_option)) return (NIL as u128);
-            // Get cross price.
-            let cross_price = *option::borrow(&cross_price_option);
-            // Calculate full advance price. If an ask:
-            let full_advance_price = if (side == ASK) {
-                // Check price one tick above max bid price.
-                let check_price = cross_price + 1;
-                // If check price is less than start price, full advance
-                // goes to check price. Otherwise do not advance past
-                // start price.
-                if (check_price < start_price) check_price else start_price
-            } else { // If a bid:
-                // Check price one tick below min ask price.
-                let check_price = cross_price - 1;
-                // If check price greater than start price, full advance
-                // goes to check price. Otherwise do not advance past
-                // start price.
-                if (check_price > start_price) check_price else start_price
-            };
-            // Calculate price. If full advance price equals start
-            // price, do not advance past start price. Otherwise:
-            if (full_advance_price == start_price) start_price else {
-                // Calculate full advance in ticks:
-                let full_advance = if (side == ASK)
-                    // If an ask, calculate max decrement.
-                    (start_price - full_advance_price) else
-                    // If a bid, calculate max increment.
-                    (full_advance_price - start_price);
-                // Calculate price. If advance specified as percentage:
-                if (advance_style == PERCENT) {
-                    // Assert target advance amount is a valid percent.
-                    assert!(target_advance_amount <= PERCENT_100,
-                            E_INVALID_PERCENT);
-                    // Calculate price. If target is 100 percent:
-                    if (target_advance_amount == PERCENT_100)
-                            // Price is full advance price.
-                            full_advance_price else { // Otherwise:
-                        let advance = full_advance * target_advance_amount /
-                            PERCENT_100; // Calculate advance in ticks.
-                        // Price is decremented by advance if an ask,
-                        if (side == ASK) start_price - advance else
-                            start_price + advance // Else incremented.
-                    }
-                } else { // Advance specified number of ticks.
-                    // Calculate price. If target advance amount greater
-                    // than or equal to full advance in ticks:
-                    if (target_advance_amount >= full_advance)
-                        // Price is full advance price. Else if an ask:
-                        full_advance_price else if (side == ASK)
-                            // Price is decremented by target advance
-                            // amount.
-                            start_price - target_advance_amount else
-                            // If a bid, price incremented instead.
-                            start_price + target_advance_amount
-                }
-            }
-        }; // Price now computed.
-        // Place post-or-abort limit order that aborts for self match,
-        // storing market order ID.
-        let (market_order_id, _, _, _) =
-            place_limit_order<BaseType, QuoteType>(
-                user_address, market_id, custodian_id, integrator, side, size,
-                price, POST_OR_ABORT, ABORT, CRITICAL_HEIGHT);
-        market_order_id // Return market order ID.
+       let (market_order_id, _) = place_limit_order_passive_advance_internal<BaseType, QuoteType>(
+           user_address,
+           market_id,
+           custodian_id,
+           integrator,
+           side,
+           size,
+           advance_style,
+           target_advance_amount
+       );
+        market_order_id
     }
+
+    public fun place_limit_order_passive_advance_custodian_with_events<
+        BaseType,
+        QuoteType,
+    >(
+        user_address: address,
+        market_id: u64,
+        integrator: address,
+        side: bool,
+        size: u64,
+        advance_style: bool,
+        target_advance_amount: u64,
+        custodian_capability_ref: &CustodianCapability
+    ): (u128, vector<CancelOrderEvent>)
+    acquires OrderBooks {
+        place_limit_order_passive_advance_internal<BaseType, QuoteType>(
+            user_address,
+            market_id,
+            registry::get_custodian_id(custodian_capability_ref),
+            integrator,
+            side,
+            size,
+            advance_style,
+            target_advance_amount
+        )
+    }
+
+     fun place_limit_order_passive_advance_internal<
+            BaseType,
+            QuoteType,
+        >(
+            user_address: address,
+            market_id: u64,
+            custodian_id: u64,
+            integrator: address,
+            side: bool,
+            size: u64,
+            advance_style: bool,
+            target_advance_amount: u64
+        ): (u128, vector<CancelOrderEvent>)
+        acquires OrderBooks {
+         // Get address of resource account where order books are stored.
+         let resource_address = resource_account::get_address();
+         let order_books_map_ref = // Immutably borrow order books map.
+             &borrow_global<OrderBooks>(resource_address).map;
+         // Assert order books map has order book with given market ID.
+         assert!(tablist::contains(order_books_map_ref, market_id),
+             E_INVALID_MARKET_ID);
+         // Immutably borrow market order book.
+         let order_book_ref = tablist::borrow(order_books_map_ref, market_id);
+         assert!(type_info::type_of<BaseType>() // Assert base type.
+             == order_book_ref.base_type, E_INVALID_BASE);
+         assert!(type_info::type_of<QuoteType>() // Assert quote type.
+             == order_book_ref.quote_type, E_INVALID_QUOTE);
+         // Get option-packed maximum bid and minimum ask prices.
+         let (max_bid_price_option, min_ask_price_option) =
+             (avl_queue::get_head_key(&order_book_ref.bids),
+                 avl_queue::get_head_key(&order_book_ref.asks));
+         // Get best price on given side, and best price on other side.
+         let (start_price_option, cross_price_option) = if (side == ASK)
+             (min_ask_price_option, max_bid_price_option) else
+             (max_bid_price_option, min_ask_price_option);
+         // Return if there is no price to advance from.
+         if (option::is_none(&start_price_option)) return ((NIL as u128), vector[]);
+         // Get price to start advance from.
+         let start_price = *option::borrow(&start_price_option);
+         // If target advance amount is 0, price is start price. Else:
+         let price = if (target_advance_amount == 0) start_price else {
+             // Return if no cross price.
+             if (option::is_none(&cross_price_option)) return ((NIL as u128), vector[]);
+             // Get cross price.
+             let cross_price = *option::borrow(&cross_price_option);
+             // Calculate full advance price. If an ask:
+             let full_advance_price = if (side == ASK) {
+                 // Check price one tick above max bid price.
+                 let check_price = cross_price + 1;
+                 // If check price is less than start price, full advance
+                 // goes to check price. Otherwise do not advance past
+                 // start price.
+                 if (check_price < start_price) check_price else start_price
+             } else { // If a bid:
+                 // Check price one tick below min ask price.
+                 let check_price = cross_price - 1;
+                 // If check price greater than start price, full advance
+                 // goes to check price. Otherwise do not advance past
+                 // start price.
+                 if (check_price > start_price) check_price else start_price
+             };
+             // Calculate price. If full advance price equals start
+             // price, do not advance past start price. Otherwise:
+             if (full_advance_price == start_price) start_price else {
+                 // Calculate full advance in ticks:
+                 let full_advance = if (side == ASK)
+                     // If an ask, calculate max decrement.
+                     (start_price - full_advance_price) else
+                 // If a bid, calculate max increment.
+                     (full_advance_price - start_price);
+                 // Calculate price. If advance specified as percentage:
+                 if (advance_style == PERCENT) {
+                     // Assert target advance amount is a valid percent.
+                     assert!(target_advance_amount <= PERCENT_100,
+                         E_INVALID_PERCENT);
+                     // Calculate price. If target is 100 percent:
+                     if (target_advance_amount == PERCENT_100)
+                         // Price is full advance price.
+                         full_advance_price else { // Otherwise:
+                         let advance = full_advance * target_advance_amount /
+                             PERCENT_100; // Calculate advance in ticks.
+                         // Price is decremented by advance if an ask,
+                         if (side == ASK) start_price - advance else
+                             start_price + advance // Else incremented.
+                     }
+                 } else { // Advance specified number of ticks.
+                     // Calculate price. If target advance amount greater
+                     // than or equal to full advance in ticks:
+                     if (target_advance_amount >= full_advance)
+                         // Price is full advance price. Else if an ask:
+                         full_advance_price else if (side == ASK)
+                         // Price is decremented by target advance
+                         // amount.
+                         start_price - target_advance_amount else
+                     // If a bid, price incremented instead.
+                         start_price + target_advance_amount
+                 }
+             }
+         }; // Price now computed.
+         // Place post-or-abort limit order that aborts for self match,
+         // storing market order ID.
+         let (market_order_id, _, _, _,_,cancel_orders_events) =
+             place_limit_order_with_events<BaseType, QuoteType>(
+                 user_address, market_id, custodian_id, integrator, side, size,
+                 price, POST_OR_ABORT, ABORT, CRITICAL_HEIGHT);
+         (market_order_id, cancel_orders_events) // Return market order ID.
+        }
 
     /// Place market order against order book from user market account.
     ///
@@ -3796,10 +4053,77 @@ module econia::market {
         u64,
         u64
     ) acquires OrderBooks {
+        let fill_events = vector[];
+        let cancel_order_events = vector[];
+        place_market_order_internal<BaseType, QuoteType>(
+            user_address,
+            market_id,
+            custodian_id,
+            integrator,
+            direction,
+            size,
+            self_match_behavior,
+            &mut fill_events,
+            &mut cancel_order_events,
+        )
+    }
+
+    fun place_market_order_with_events<
+        BaseType,
+        QuoteType
+    >(
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64,
+        integrator: address,
+        direction: bool,
+        size: u64,
+        self_match_behavior: u8
+    ): (
+        u64,
+        u64,
+        u64,
+        vector<FillEvent>,
+        vector<CancelOrderEvent>,
+    ) acquires OrderBooks {
+        let fill_events = vector[];
+        let cancel_order_events = vector[];
+        let (base_traded, quote_traded, fees) = place_market_order_internal<BaseType, QuoteType>(
+            user_address,
+            market_id,
+            custodian_id,
+            integrator,
+            direction,
+            size,
+            self_match_behavior,
+            &mut fill_events,
+            &mut cancel_order_events,
+        );
+        (base_traded, quote_traded, fees, fill_events, cancel_order_events)
+    }
+
+    fun place_market_order_internal<
+        BaseType,
+        QuoteType
+    >(
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64,
+        integrator: address,
+        direction: bool,
+        size: u64,
+        self_match_behavior: u8,
+        fill_events: &mut vector<FillEvent>,
+        cancel_order_events: &mut vector<CancelOrderEvent>,
+    ): (
+        u64,
+        u64,
+        u64
+    ) acquires OrderBooks {
         // Get user's available and ceiling asset counts.
         let (_, base_available, base_ceiling, _, quote_available,
-             quote_ceiling) = user::get_asset_counts_internal(
-                user_address, market_id, custodian_id);
+            quote_ceiling) = user::get_asset_counts_internal(
+            user_address, market_id, custodian_id);
         // If asset count check does not abort, then market exists, so
         // get address of resource account for borrowing order book.
         let resource_address = resource_account::get_address();
@@ -3808,9 +4132,9 @@ module econia::market {
         let order_book_ref_mut = // Mutably borrow market order book.
             tablist::borrow_mut(order_books_map_ref_mut, market_id);
         assert!(type_info::type_of<BaseType>() // Assert base type.
-                == order_book_ref_mut.base_type, E_INVALID_BASE);
+            == order_book_ref_mut.base_type, E_INVALID_BASE);
         assert!(type_info::type_of<QuoteType>() // Assert quote type.
-                == order_book_ref_mut.quote_type, E_INVALID_QUOTE);
+            == order_book_ref_mut.quote_type, E_INVALID_QUOTE);
         // Assert order size is at least minimum size for market.
         assert!(size >= order_book_ref_mut.min_size, E_SIZE_TOO_SMALL);
         // Calculate base asset amount corresponding to size in lots.
@@ -3845,7 +4169,6 @@ module econia::market {
         // max price possible when buying.
         let limit_price = if (direction == SELL) 0 else HI_PRICE;
         // Match against order book, deferring fill events.
-        let fill_event_queue = vector[];
         let (
             optional_base_coins,
             quote_coins,
@@ -3857,7 +4180,8 @@ module econia::market {
             _
         ) = match(
             market_id,
-            &mut fill_event_queue,
+            fill_events,
+            cancel_order_events,
             order_book_ref_mut,
             user_address,
             custodian_id,
@@ -3890,8 +4214,7 @@ module econia::market {
         // Emit relevant events to user event handles.
         user::emit_market_order_events_internal(
             market_id, user_address, custodian_id, integrator, direction, size,
-            self_match_behavior, market_order_id, &fill_event_queue,
-            &cancel_reason_option);
+            self_match_behavior, market_order_id, fill_events, &cancel_reason_option);
         // Return base and quote traded by user, fees paid.
         (base_traded, quote_traded, fees)
     }
@@ -4135,6 +4458,7 @@ module econia::market {
         QuoteType
     >(
         fill_event_queue_ref_mut: &mut vector<FillEvent>,
+        cancel_order_event_queue_ref_mut: &mut vector<CancelOrderEvent>,
         signer_address: address,
         market_id: u64,
         underwriter_id: u64,
@@ -4189,6 +4513,7 @@ module econia::market {
         ) = match(
             market_id,
             fill_event_queue_ref_mut,
+            cancel_order_event_queue_ref_mut,
             order_book_ref_mut,
             signer_address,
             NO_CUSTODIAN,
@@ -4246,10 +4571,13 @@ module econia::market {
                 liquidity_gone, order_book_ref_mut.lot_size,
                 violated_limit_price);
         let need_to_cancel = option::is_some(&cancel_reason_option);
-        let cancel_order_event_option = if (need_to_cancel)
-            option::some(user::create_cancel_order_event_internal(
+        let cancel_order_event_option = if (need_to_cancel) {
+            let cancel_order_event = user::create_cancel_order_event_internal(
                 market_id, market_order_id, signer_address, NO_CUSTODIAN,
-                option::destroy_some(cancel_reason_option))) else
+                option::destroy_some(cancel_reason_option), direction, 0, 0); //fixme wrong size
+            vector::push_back(cancel_order_event_queue_ref_mut, cancel_order_event);
+            option::some(cancel_order_event)
+        } else
             option::none();
         // Assume do not need to return place swap order event.
         let place_swap_order_event_option = option::none();
@@ -4867,7 +5195,10 @@ module econia::market {
                     market_order_id,
                     maker_address,
                     custodian_id,
-                    CANCEL_REASON_MANUAL_CANCEL
+                    CANCEL_REASON_MANUAL_CANCEL,
+                    side,
+                    size,
+                    0
                 )
             ], 0);
         assert!(user::get_change_order_size_events_test(
@@ -4959,7 +5290,10 @@ module econia::market {
                     market_order_id,
                     maker_address,
                     custodian_id,
-                    CANCEL_REASON_MANUAL_CANCEL
+                    CANCEL_REASON_MANUAL_CANCEL,
+                    side,
+                    size,
+                    0
                 )
             ], 0);
         assert!(user::get_change_order_size_events_test(
@@ -6499,7 +6833,9 @@ module econia::market {
                     taker_order_id,
                     NO_TAKER_ADDRESS,
                     NO_CUSTODIAN,
-                    CANCEL_REASON_NOT_ENOUGH_LIQUIDITY
+                    CANCEL_REASON_NOT_ENOUGH_LIQUIDITY,
+                    !direction_taker,
+                    0, 0 // fixme
                 ),
             ], 0);
         // Assert returns.
@@ -6598,7 +6934,9 @@ module econia::market {
                     taker_order_id,
                     NO_TAKER_ADDRESS,
                     NO_CUSTODIAN,
-                    CANCEL_REASON_NOT_ENOUGH_LIQUIDITY
+                    CANCEL_REASON_NOT_ENOUGH_LIQUIDITY,
+                    direction,
+                    0, 0 // fixme
                 ),
             ], 0);
         // Assert returns.
@@ -6735,7 +7073,9 @@ module econia::market {
                     taker_order_id,
                     NO_TAKER_ADDRESS,
                     NO_CUSTODIAN,
-                    CANCEL_REASON_TOO_SMALL_TO_FILL_LOT
+                    CANCEL_REASON_TOO_SMALL_TO_FILL_LOT,
+                    direction_taker,
+                    0, 0 // fixme
                 ),
             ], 0);
         // Assert returns.
@@ -7443,7 +7783,9 @@ module econia::market {
                     taker_order_id,
                     NO_TAKER_ADDRESS,
                     NO_CUSTODIAN,
-                    CANCEL_REASON_MAX_QUOTE_TRADED
+                    CANCEL_REASON_MAX_QUOTE_TRADED,
+                    direction_taker,
+                    0, 0 // fixme
                 )
         ], 0);
         // Assert returns.
@@ -7610,7 +7952,9 @@ module econia::market {
                     taker_order_id,
                     NO_TAKER_ADDRESS,
                     NO_CUSTODIAN,
-                    CANCEL_REASON_VIOLATED_LIMIT_PRICE
+                    CANCEL_REASON_VIOLATED_LIMIT_PRICE,
+                    direction_taker,
+                    0, 0 // fixme
                 )
         ], 0);
         // Assert returns.
@@ -7771,7 +8115,9 @@ module econia::market {
                     taker_order_id,
                     NO_TAKER_ADDRESS,
                     NO_CUSTODIAN,
-                    CANCEL_REASON_VIOLATED_LIMIT_PRICE
+                    CANCEL_REASON_VIOLATED_LIMIT_PRICE,
+                    direction_taker,
+                    0, 0 // fixme
                 )
         ], 0);
         // Assert returns.
@@ -8111,14 +8457,18 @@ module econia::market {
                     market_order_id_lo,
                     user_address,
                     NO_CUSTODIAN,
-                    CANCEL_REASON_SELF_MATCH_MAKER
+                    CANCEL_REASON_SELF_MATCH_MAKER,
+                    direction_taker,
+                    0, 0 // fixme
                 ),
                 user::create_cancel_order_event_internal(
                     market_id,
                     taker_order_id,
                     user_address,
                     NO_CUSTODIAN,
-                    CANCEL_REASON_SELF_MATCH_TAKER
+                    CANCEL_REASON_SELF_MATCH_TAKER,
+                    direction_taker,
+                    0, 0 // fixme
                 )
             ], 0);
         assert!(user::get_cancel_order_events_test(
@@ -8345,7 +8695,9 @@ module econia::market {
                     market_order_id_lo,
                     user_address,
                     NO_CUSTODIAN,
-                    CANCEL_REASON_SELF_MATCH_MAKER
+                    CANCEL_REASON_SELF_MATCH_MAKER,
+                    direction_taker,
+                    0, 0 // fixme
                 )
             ], 0);
         assert!(user::get_cancel_order_events_test(
@@ -8552,7 +8904,9 @@ module econia::market {
                     taker_order_id,
                     user_address,
                     NO_CUSTODIAN,
-                    CANCEL_REASON_SELF_MATCH_TAKER
+                    CANCEL_REASON_SELF_MATCH_TAKER,
+                    direction_taker,
+                    0, 0 // fixme
                 )
             ], 0);
         assert!(user::get_cancel_order_events_test(
@@ -9128,7 +9482,9 @@ module econia::market {
                     market_order_id_1,
                     @user_1,
                     NO_CUSTODIAN,
-                    CANCEL_REASON_IMMEDIATE_OR_CANCEL
+                    CANCEL_REASON_IMMEDIATE_OR_CANCEL,
+                    side,
+                     size, 0 // fixme
                 )
             ], 0);
         // Assert returns
@@ -9240,14 +9596,18 @@ module econia::market {
                     market_order_id,
                     @user_0,
                     NO_CUSTODIAN,
-                    CANCEL_REASON_SELF_MATCH_MAKER
+                    CANCEL_REASON_SELF_MATCH_MAKER,
+                    side_taker,
+                     size, 0 // fixme
                 ),
                 user::create_cancel_order_event_internal(
                     MARKET_ID_COIN,
                     market_order_id_r,
                     @user_0,
                     NO_CUSTODIAN,
-                    CANCEL_REASON_SELF_MATCH_TAKER
+                    CANCEL_REASON_SELF_MATCH_TAKER,
+                    side_taker,
+                     size, 0 // fixme
                 )
             ], 0);
         // Assert returns
@@ -9950,7 +10310,9 @@ module econia::market {
                     market_order_id_0,
                     @user_0,
                     NO_CUSTODIAN,
-                    CANCEL_REASON_EVICTION
+                    CANCEL_REASON_EVICTION,
+                    side,
+                    size_0, 0 // fixme
                 )
             ], 0);
         assert!(user::get_cancel_order_events_test(
@@ -10375,7 +10737,9 @@ module econia::market {
                     market_order_id_1,
                     @user_0,
                     NO_CUSTODIAN,
-                    CANCEL_REASON_IMMEDIATE_OR_CANCEL
+                    CANCEL_REASON_IMMEDIATE_OR_CANCEL,
+                    side,
+                     size, 0 // fixme
                 )
             ], 0);
     }
@@ -11225,7 +11589,9 @@ module econia::market {
                     market_order_id_1,
                     @user_1,
                     NO_CUSTODIAN,
-                    CANCEL_REASON_MAX_QUOTE_TRADED
+                    CANCEL_REASON_MAX_QUOTE_TRADED,
+                    side_maker,
+                    0, 0 // fixme
                 )
             ], 0);
         // Assert returns
@@ -11420,7 +11786,9 @@ module econia::market {
                     market_order_id_1,
                     @user_1,
                     NO_CUSTODIAN,
-                    CANCEL_REASON_MAX_QUOTE_TRADED
+                    CANCEL_REASON_MAX_QUOTE_TRADED,
+                    side_taker,
+                    size_maker, 0 // fixme
                 )
             ], 0);
         // Assert returns
@@ -12586,7 +12954,9 @@ module econia::market {
                     taker_order_id,
                     @user_1,
                     NO_CUSTODIAN,
-                    CANCEL_REASON_MAX_QUOTE_TRADED
+                    CANCEL_REASON_MAX_QUOTE_TRADED,
+                    side_maker,
+                    size_maker, 0 // fixme
                 )
             ], 0);
         // Assert returns
@@ -12771,7 +13141,9 @@ module econia::market {
                     taker_order_id,
                     @user_1,
                     NO_CUSTODIAN,
-                    CANCEL_REASON_NOT_ENOUGH_LIQUIDITY
+                    CANCEL_REASON_NOT_ENOUGH_LIQUIDITY,
+                    side_maker,
+                     size, 0 // fixme
                 )
             ], 0);
         // Assert returns
@@ -13753,7 +14125,9 @@ module econia::market {
                     taker_order_id,
                     @user_1,
                     NO_CUSTODIAN,
-                    CANCEL_REASON_MAX_QUOTE_TRADED
+                    CANCEL_REASON_MAX_QUOTE_TRADED,
+                    side_maker,
+                    size_maker, 0 // fixme
                 )
             ], 0);
         assert!(get_fill_events_swapper_test(
@@ -13935,7 +14309,9 @@ module econia::market {
                     taker_order_id,
                     @user_1,
                     NO_CUSTODIAN,
-                    CANCEL_REASON_MAX_QUOTE_TRADED
+                    CANCEL_REASON_MAX_QUOTE_TRADED,
+                    side_maker,
+                    size_maker, 0 // fixme
                 )
             ], 0);
         assert!(get_fill_events_swapper_test(
@@ -14128,7 +14504,9 @@ module econia::market {
                     taker_order_id,
                     @user_1,
                     NO_CUSTODIAN,
-                    CANCEL_REASON_MAX_QUOTE_TRADED
+                    CANCEL_REASON_MAX_QUOTE_TRADED,
+                    side_maker,
+                    size_maker, 0 // fixme
                 )
             ], 0);
         assert!(get_fill_events_swapper_test(
@@ -14314,7 +14692,9 @@ module econia::market {
                     taker_order_id,
                     @user_1,
                     NO_CUSTODIAN,
-                    CANCEL_REASON_NOT_ENOUGH_LIQUIDITY
+                    CANCEL_REASON_NOT_ENOUGH_LIQUIDITY,
+                    side_maker,
+                    size_maker, 0 // fixme
                 )
             ], 0);
         assert!(get_fill_events_swapper_test(
@@ -14683,7 +15063,9 @@ module econia::market {
                     taker_order_id,
                     @user_1,
                     NO_CUSTODIAN,
-                    CANCEL_REASON_MAX_QUOTE_TRADED
+                    CANCEL_REASON_MAX_QUOTE_TRADED,
+                    side_maker,
+                    size_maker, 0 // fixme
                 )
             ], 0);
         assert!(get_fill_events_swapper_test(
@@ -14843,7 +15225,9 @@ module econia::market {
                     taker_order_id,
                     @user_0,
                     NO_CUSTODIAN,
-                    CANCEL_REASON_SELF_MATCH_TAKER
+                    CANCEL_REASON_SELF_MATCH_TAKER,
+                    side_maker,
+                    size_maker, 0 // fixme
                 )
             ], 0);
         assert!(get_fill_events_swapper_test(
@@ -15365,7 +15749,9 @@ module econia::market {
                     taker_order_id,
                     NO_TAKER_ADDRESS,
                     NO_CUSTODIAN,
-                    CANCEL_REASON_MAX_QUOTE_TRADED
+                    CANCEL_REASON_MAX_QUOTE_TRADED,
+                    side_maker,
+                    size_maker, 0 // fixme
                 )
             ], 0);
         // Assert returns.
@@ -15544,7 +15930,9 @@ module econia::market {
                     taker_order_id,
                     NO_TAKER_ADDRESS,
                     NO_CUSTODIAN,
-                    CANCEL_REASON_MAX_QUOTE_TRADED
+                    CANCEL_REASON_MAX_QUOTE_TRADED,
+                    side_maker,
+                    size_maker, 0 // fixme
                 )
             ], 0);
         // Assert returns.
@@ -15893,7 +16281,9 @@ module econia::market {
                     taker_order_id,
                     NO_TAKER_ADDRESS,
                     NO_CUSTODIAN,
-                    CANCEL_REASON_MAX_QUOTE_TRADED
+                    CANCEL_REASON_MAX_QUOTE_TRADED,
+                    side_maker,
+                    size_maker, 0 // fixme
                 )
             ], 0);
         // Assert returns.
@@ -16242,7 +16632,9 @@ module econia::market {
                     taker_order_id,
                     NO_TAKER_ADDRESS,
                     NO_CUSTODIAN,
-                    CANCEL_REASON_MAX_QUOTE_TRADED
+                    CANCEL_REASON_MAX_QUOTE_TRADED,
+                    side_maker,
+                    size_maker, 0 // fixme
                 )
             ], 0);
         // Drop underwriter capability.
@@ -16419,7 +16811,9 @@ module econia::market {
                     taker_order_id,
                     NO_TAKER_ADDRESS,
                     NO_CUSTODIAN,
-                    CANCEL_REASON_MAX_QUOTE_TRADED
+                    CANCEL_REASON_MAX_QUOTE_TRADED,
+                    side_maker,
+                    size_maker, 0 // fixme
                 )
             ], 0);
         // Drop underwriter capability.
@@ -16765,7 +17159,9 @@ module econia::market {
                     taker_order_id,
                     NO_TAKER_ADDRESS,
                     NO_CUSTODIAN,
-                    CANCEL_REASON_MAX_QUOTE_TRADED
+                    CANCEL_REASON_MAX_QUOTE_TRADED,
+                    side_maker,
+                    size_maker, 0 // fixme
                 )
             ], 0);
         // Drop underwriter capability.

@@ -3,11 +3,11 @@ module throttler::throttle {
     // Constants for trading competition rules. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Maximum amount of APT that can change hands in a single trade.
-    const MAX_TRADE_VOLUME_APT: u64 =  200;
+    const MAX_TRADE_VOLUME_APT: u64 =  500;
     /// Maximum amount of APT that can be deposited/minted at a time.
-    const MAX_TRANSFER_APT: u64 =  20;
+    const MAX_TRANSFER_APT: u64 =  100;
     /// Maximum amount of USDC that can be deposited/minted at a time.
-    const MAX_TRANSFER_USDC: u64 =  100;
+    const MAX_TRANSFER_USDC: u64 =  600;
     /// The market ID that activity is throttled on.
     const THROTTLED_MARKET_ID: u64 = 3;
     /// How long user must wait between faucet mints or market account

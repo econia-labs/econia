@@ -63,7 +63,7 @@ export const averageOrOtherPriceLevel = (
   return { price: 0, size: 0 };
 };
 
-export function shorten(str: string | undefined, maxLen = 10, separator = "") {
+export function shorten(str: string | undefined, maxLen = 10) {
   if (str == undefined) return "";
   if (str.length <= maxLen) return str;
   return str.substr(0, maxLen) + "..";

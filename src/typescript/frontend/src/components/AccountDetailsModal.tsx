@@ -1,6 +1,6 @@
 import { useWallet } from "@aptos-labs/wallet-adapter-react";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 
 import { Button } from "@/components/Button";
 import { type ApiMarket } from "@/types/api";
@@ -45,7 +45,7 @@ export const AccountDetailsModal: React.FC<{
         return test;
       } catch (e) {
         if (e instanceof Error) {
-          toast.error(e.message);
+          // toast.error(e.message);
           console.log(e.message);
         } else {
           console.error(e);
@@ -55,7 +55,7 @@ export const AccountDetailsModal: React.FC<{
     },
   );
 
-  const copyToClipboard = () => {
+  const copyToClipboard = useCallback(() => {
     setShowCopiedNotif(true);
     // remove notif after 1 second
     setTimeout(() => {
@@ -63,7 +63,7 @@ export const AccountDetailsModal: React.FC<{
     }, 1000);
 
     navigator.clipboard.writeText(account?.address || "");
-  };
+  }, [account?.address]);
 
   const disconnectWallet = () => {
     onClose();

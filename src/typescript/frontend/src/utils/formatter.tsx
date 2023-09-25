@@ -79,3 +79,9 @@ export const averageOrOtherPriceLevel = (
   // no prices (orderbook empty) maybe should get the last sale price then?
   return { price: 0, size: 0 };
 };
+
+export function shorten(str: string | undefined, maxLen = 10) {
+  if (str == undefined) return "";
+  if (str.length <= maxLen) return str;
+  return str.substr(0, maxLen) + "..";
+}

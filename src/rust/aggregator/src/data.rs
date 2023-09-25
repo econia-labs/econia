@@ -2,6 +2,7 @@ use thiserror::Error;
 
 pub mod candlesticks;
 pub mod markets;
+pub mod user_history;
 
 type DataAggregationResult = Result<(), DataAggregationError>;
 

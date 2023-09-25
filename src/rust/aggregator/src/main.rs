@@ -1,7 +1,7 @@
 use std::{sync::Arc, time::Duration};
 
 use anyhow::Result;
-use data::{markets::MarketsRegisteredPerDay, Data};
+use data::{markets::MarketsRegisteredPerDay, Data, user_history::UserHistory};
 use sqlx::PgPool;
 use tokio::sync::Mutex;
 
@@ -23,6 +23,10 @@ async fn main() -> Result<()> {
     let mut data: Vec<Arc<Mutex<dyn Data + Send + Sync>>> = vec![];
 
     data.push(Arc::new(Mutex::new(MarketsRegisteredPerDay::new(
+        pool.clone(),
+    ))));
+
+    data.push(Arc::new(Mutex::new(UserHistory::new(
         pool.clone(),
     ))));
 

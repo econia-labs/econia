@@ -14,6 +14,19 @@ CREATE TABLE
   );
 
 
+CREATE FUNCTION notify_change_order_size_event () RETURNS TRIGGER AS $$
+BEGIN
+   PERFORM pg_notify('change_order_size_event'::text, row_to_json(NEW)::text);
+   RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE TRIGGER change_order_size_events_trigger
+AFTER INSERT ON change_order_size_events FOR EACH ROW
+EXECUTE PROCEDURE notify_change_order_size_event ();
+
+
 CREATE TABLE
   place_market_order_events (
     txn_version NUMERIC(20) NOT NULL,
@@ -29,6 +42,19 @@ CREATE TABLE
     size NUMERIC(20) NOT NULL,
     self_match_behavior SMALLINT NOT NULL
   );
+
+
+CREATE FUNCTION notify_place_market_order_event () RETURNS TRIGGER AS $$
+BEGIN
+   PERFORM pg_notify('place_market_order_event'::text, row_to_json(NEW)::text);
+   RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE TRIGGER place_market_order_events_trigger
+AFTER INSERT ON place_market_order_events FOR EACH ROW
+EXECUTE PROCEDURE notify_place_market_order_event ();
 
 
 CREATE TABLE
@@ -48,3 +74,16 @@ CREATE TABLE
     max_quote NUMERIC(20) NOT NULL,
     limit_price NUMERIC(20) NOT NULL
   );
+
+
+CREATE FUNCTION notify_place_swap_order_event () RETURNS TRIGGER AS $$
+BEGIN
+   PERFORM pg_notify('place_swap_order_event'::text, row_to_json(NEW)::text);
+   RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE TRIGGER place_swap_order_events_trigger
+AFTER INSERT ON place_swap_order_events FOR EACH ROW
+EXECUTE PROCEDURE notify_place_swap_order_event ();

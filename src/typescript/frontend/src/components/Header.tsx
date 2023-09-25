@@ -125,15 +125,6 @@ export function Header({
               <Button
                 variant="primary"
                 onClick={onWalletButtonClick}
-                className="w-[156px] whitespace-nowrap text-[16px]/6"
-              >
-                Deposit / Withdraw
-              </Button>
-              <Button
-                variant="primary"
-                // onClick={() => {
-                //   setIsModalOpen(true);
-                // }}
                 className="whitespace-nowrap font-roboto-mono text-[16px]/6 !font-medium uppercase"
               >
                 {shorten(account?.address)}

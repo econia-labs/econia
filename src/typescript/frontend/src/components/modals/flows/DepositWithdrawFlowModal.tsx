@@ -3,7 +3,7 @@ import { type ApiMarket } from "@/types/api";
 import { BaseModal } from "../BaseModal";
 import { DepositWithdrawContent } from "../content/DepositWithdrawContent";
 import { AccountDetailsContent } from "../content/AccountDetailsContent";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { RegisterAccountContent } from "../content/RegisterAccountContent";
 import { SelectMarketContent } from "@/components/trade/DepositWithdrawModal/SelectMarketContent";
 import { useQuery } from "@tanstack/react-query";
@@ -31,7 +31,6 @@ export const DepositWithdrawFlowModal: React.FC<Props> = ({
   onClose,
   allMarketData,
 }) => {
-  const [isRegistered, setIsRegistered] = useState(false);
   const { account } = useWallet();
 
   // TODO: change this after merge with ECO-319
@@ -43,16 +42,14 @@ export const DepositWithdrawFlowModal: React.FC<Props> = ({
     },
   );
 
-  useEffect(() => {
-    // TODO: refetch registered markets on chain registration OR flow step change
-    if (registeredMarkets) {
-      setIsRegistered(
-        registeredMarkets.some(
-          (market) => market.market_id === selectedMarket.market_id,
-        ),
-      );
-    }
-  }, [registeredMarkets, selectedMarket]);
+  const isRegistered = useMemo(
+    () =>
+      !!registeredMarkets &&
+      registeredMarkets.some(
+        (market) => market.market_id === selectedMarket.market_id,
+      ),
+    [registeredMarkets, selectedMarket],
+  );
 
   return (
     <>

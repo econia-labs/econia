@@ -109,7 +109,7 @@ export function Header({
         <div className="flex flex-1 justify-end">
           <ConnectedButton className="w-[156px] py-1">
             <div className="flex items-center gap-4">
-              {onDepositWithdrawClick != null && (
+              {onDepositWithdrawClick && (
                 <Button
                   variant="secondary"
                   className="whitespace-nowrap text-[16px]/6"

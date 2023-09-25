@@ -166,7 +166,7 @@ const DepositWithdrawForm: React.FC<{
             {mode === "deposit" ? "Deposit" : "Withdraw"}
           </Button>
         ) : (
-          // copied over from RegsiterAccountContext, make this a util function?
+          // TODO: copied over from RegsiterAccountContext, make this a util function?
           <Button
             variant="primary"
             onClick={async () => {
@@ -186,7 +186,7 @@ const DepositWithdrawForm: React.FC<{
               });
               if (res) {
                 // refetch user market accounts
-                queryClient.invalidateQueries({
+                await queryClient.invalidateQueries({
                   queryKey: ["userMarketAccounts"],
                 });
               }

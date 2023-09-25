@@ -82,6 +82,7 @@ export const WalletButtonFlowModal: React.FC<Props> = ({
     );
   };
 
+  // TODO: https://github.com/econia-labs/econia/pull/421#discussion_r1323744522
   useEffect(() => {
     if (isOpen && flowStep === FlowStep.Closed) {
       setFlowStep(FlowStep.AccountDetails);
@@ -151,7 +152,7 @@ export const WalletButtonFlowModal: React.FC<Props> = ({
             // if user hasn't selected one through modal, automatically select the first one that user doesnt have an account for
             selectedMarket={selectedMarketToRegister || filteredMarkets[0]}
             selectMarket={onMarketSelectClick}
-            createAccountCallback={(status: boolean) => {
+            onAccountCreated={(status: boolean) => {
               if (status) {
                 queryClient.invalidateQueries({
                   queryKey: ["userMarketAccounts"],

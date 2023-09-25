@@ -7,17 +7,18 @@ import { useAptos } from "@/contexts/AptosContext";
 import { ECONIA_ADDR } from "@/env";
 import { type ApiMarket } from "@/types/api";
 import { TypeTag } from "@/utils/TypeTag";
+import { toast } from "react-toastify";
 
 type RegisterAccountContentProps = {
   selectedMarket?: ApiMarket;
   selectMarket: () => void;
-  createAccountCallback?: (status: boolean) => void;
+  onAccountCreated?: (status: boolean) => void;
 };
 
 export const RegisterAccountContent: React.FC<RegisterAccountContentProps> = ({
   selectedMarket,
   selectMarket,
-  createAccountCallback,
+  onAccountCreated,
 }) => {
   const { signAndSubmitTransaction } = useAptos();
   return (
@@ -36,7 +37,9 @@ export const RegisterAccountContent: React.FC<RegisterAccountContentProps> = ({
       <Button
         onClick={async () => {
           if (selectedMarket?.base == null) {
-            throw new Error("Generic markets not supported");
+            toast.error("Generic markets not supported");
+            console.log("Generic markets not supported");
+            return;
           }
           const payload = entryFunctions.registerMarketAccount(
             ECONIA_ADDR,
@@ -50,8 +53,8 @@ export const RegisterAccountContent: React.FC<RegisterAccountContentProps> = ({
             type: "entry_function_payload",
           });
 
-          if (createAccountCallback) {
-            createAccountCallback(res);
+          if (onAccountCreated) {
+            onAccountCreated(res);
           }
         }}
         variant="primary"

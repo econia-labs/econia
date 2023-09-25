@@ -124,19 +124,19 @@ pub enum CancelReason {
     ViolatedLimitPrice,
 }
 
-impl From<CancelReason> for types::events::CancelReason {
+impl From<CancelReason> for types::order::CancelReason {
     fn from(value: CancelReason) -> Self {
         match value {
-            CancelReason::SizeChangeInternal => types::events::CancelReason::SizeChangeInternal,
-            CancelReason::Eviction => types::events::CancelReason::Eviction,
-            CancelReason::ImmediateOrCancel => types::events::CancelReason::ImmediateOrCancel,
-            CancelReason::ManualCancel => types::events::CancelReason::ManualCancel,
-            CancelReason::MaxQuoteTraded => types::events::CancelReason::MaxQuoteTraded,
-            CancelReason::NotEnoughLiquidity => types::events::CancelReason::NotEnoughLiquidity,
-            CancelReason::SelfMatchMaker => types::events::CancelReason::SelfMatchMaker,
-            CancelReason::SelfMatchTaker => types::events::CancelReason::SelfMatchTaker,
-            CancelReason::TooSmallToFillLot => types::events::CancelReason::TooSmallToFillLot,
-            CancelReason::ViolatedLimitPrice => types::events::CancelReason::ViolatedLimitPrice,
+            CancelReason::SizeChangeInternal => types::order::CancelReason::SizeChangeInternal,
+            CancelReason::Eviction => types::order::CancelReason::Eviction,
+            CancelReason::ImmediateOrCancel => types::order::CancelReason::ImmediateOrCancel,
+            CancelReason::ManualCancel => types::order::CancelReason::ManualCancel,
+            CancelReason::MaxQuoteTraded => types::order::CancelReason::MaxQuoteTraded,
+            CancelReason::NotEnoughLiquidity => types::order::CancelReason::NotEnoughLiquidity,
+            CancelReason::SelfMatchMaker => types::order::CancelReason::SelfMatchMaker,
+            CancelReason::SelfMatchTaker => types::order::CancelReason::SelfMatchTaker,
+            CancelReason::TooSmallToFillLot => types::order::CancelReason::TooSmallToFillLot,
+            CancelReason::ViolatedLimitPrice => types::order::CancelReason::ViolatedLimitPrice,
         }
     }
 }

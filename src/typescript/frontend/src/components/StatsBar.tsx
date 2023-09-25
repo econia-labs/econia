@@ -18,6 +18,7 @@ import { MediumIcon } from "./icons/MediumIcon";
 import { TwitterIcon } from "./icons/TwitterIcon";
 import { MarketIconPair } from "./MarketIconPair";
 import { SelectMarketContent } from "./trade/DepositWithdrawModal/SelectMarketContent";
+import { toast } from "react-toastify";
 
 const DEFAULT_TOKEN_ICON = "/tokenImages/default.png";
 
@@ -76,6 +77,7 @@ export const StatsBar: React.FC<{
   allMarketData: ApiMarket[];
   selectedMarket: ApiMarket;
 }> = ({ allMarketData, selectedMarket }) => {
+  const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { coinListClient } = useAptos();
 
@@ -141,11 +143,21 @@ export const StatsBar: React.FC<{
         isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
-          false;
         }}
         showCloseButton={false}
       >
-        <SelectMarketContent allMarketData={allMarketData} />
+        <SelectMarketContent
+          allMarketData={allMarketData}
+          onSelectMarket={(id, name) => {
+            setIsModalOpen(false);
+            if (name == undefined) {
+              // selected an undefined market
+              toast.error("Selected market is undefined, please try again.");
+              return;
+            }
+            router.push(`/trade/${name}`);
+          }}
+        />
       </BaseModal>
       <div className="flex justify-between border-b border-neutral-600 px-9 py-3">
         <div className="flex overflow-x-clip whitespace-nowrap">

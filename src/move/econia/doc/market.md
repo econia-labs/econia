@@ -2216,6 +2216,16 @@ Order ID corresponds to an order that did not post.
 
 
 
+<a name="0xc0deb00c_market_E_ORDER_PRICE_MISMATCH"></a>
+
+Order price field does not match AVL queue insertion key price.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_ORDER_PRICE_MISMATCH">E_ORDER_PRICE_MISMATCH</a>: u64 = 32;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_market_E_POST_OR_ABORT_CROSSES_SPREAD"></a>
 
 Post-or-abort limit order price crosses spread.
@@ -3131,26 +3141,30 @@ Mutates state, so kept as a private view function.
     <b>if</b> (!<a href="market.md#0xc0deb00c_market_has_open_order">has_open_order</a>(market_id, order_id)) <b>return</b> <a href="_none">option::none</a>();
     // Get <b>address</b> of resource <a href="">account</a> <b>where</b> order books are stored.
     <b>let</b> resource_address = resource_account::get_address();
-    // Mutably borrow order books map.
-    <b>let</b> order_books_map_ref_mut =
-        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>&gt;(resource_address).map;
-    // Mutably borrow <a href="market.md#0xc0deb00c_market">market</a> order book.
-    <b>let</b> order_book_ref_mut = <a href="tablist.md#0xc0deb00c_tablist_borrow_mut">tablist::borrow_mut</a>(
-        order_books_map_ref_mut, market_id);
+    // Immutably borrow order books map.
+    <b>let</b> order_books_map_ref =
+        &<b>borrow_global</b>&lt;<a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>&gt;(resource_address).map;
+    // Immutably borrow <a href="market.md#0xc0deb00c_market">market</a> order book.
+    <b>let</b> order_book_ref = <a href="tablist.md#0xc0deb00c_tablist_borrow">tablist::borrow</a>(
+        order_books_map_ref, market_id);
     // Get order ID side.
     <b>let</b> side = <a href="market.md#0xc0deb00c_market_get_posted_order_id_side">get_posted_order_id_side</a>(order_id);
     // Get open orders for given side.
-    <b>let</b> orders_ref_mut = <b>if</b> (side == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>) &<b>mut</b> order_book_ref_mut.asks <b>else</b>
-        &<b>mut</b> order_book_ref_mut.bids;
+    <b>let</b> orders_ref = <b>if</b> (side == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>) &order_book_ref.asks <b>else</b>
+        &order_book_ref.bids;
     <b>let</b> avlq_access_key = // Get AVL queue access key.
         <a href="market.md#0xc0deb00c_market_get_order_id_avl_queue_access_key">get_order_id_avl_queue_access_key</a>(order_id);
-    // Remove and unpack order <b>with</b> given access key, discarding
-    // order access key.
-    <b>let</b> <a href="market.md#0xc0deb00c_market_Order">Order</a>{size, price, <a href="user.md#0xc0deb00c_user">user</a>, custodian_id, order_access_key: _} =
-        <a href="avl_queue.md#0xc0deb00c_avl_queue_remove">avl_queue::remove</a>(orders_ref_mut, avlq_access_key);
+    // Immutably borrow order <b>with</b> given access key.
+    <b>let</b> order_ref = <a href="avl_queue.md#0xc0deb00c_avl_queue_borrow">avl_queue::borrow</a>(orders_ref, avlq_access_key);
     // Pack and <b>return</b> an order view in an <a href="">option</a>.
-    <a href="_some">option::some</a>(<a href="market.md#0xc0deb00c_market_OrderView">OrderView</a>{market_id, side, order_id, remaining_size: size,
-                           price, <a href="user.md#0xc0deb00c_user">user</a>, custodian_id})
+    <a href="_some">option::some</a>(<a href="market.md#0xc0deb00c_market_OrderView">OrderView</a>{
+        market_id,
+        side,
+        order_id,
+        remaining_size: order_ref.size,
+        price: order_ref.price,
+        <a href="user.md#0xc0deb00c_user">user</a>: order_ref.<a href="user.md#0xc0deb00c_user">user</a>,
+        custodian_id: order_ref.custodian_id})
 }
 </code></pre>
 
@@ -5579,6 +5593,7 @@ book.
 
 
 * <code>test_get_price_levels()</code>
+* <code>test_get_price_levels_mismatch()</code>
 
 
 <pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_get_price_levels_for_side">get_price_levels_for_side</a>(order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">market::OrderBook</a>, side: bool, n_price_levels_max: u64): <a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_PriceLevel">market::PriceLevel</a>&gt;
@@ -5613,10 +5628,16 @@ book.
                 // If order at head of the queue is in price level:
                 <b>if</b> (<a href="_contains">option::contains</a>(
                         &<a href="avl_queue.md#0xc0deb00c_avl_queue_get_head_key">avl_queue::get_head_key</a>(avlq_ref_mut), &price)) {
-                    // Pop order, storing only its size.
-                    <b>let</b> <a href="market.md#0xc0deb00c_market_Order">Order</a>{size: order_size, price: _, <a href="user.md#0xc0deb00c_user">user</a>: _,
-                              custodian_id: _, order_access_key: _} =
-                        <a href="avl_queue.md#0xc0deb00c_avl_queue_pop_head">avl_queue::pop_head</a>(avlq_ref_mut);
+                    // Pop order, storing only its size and price.
+                    <b>let</b> <a href="market.md#0xc0deb00c_market_Order">Order</a>{
+                        size: order_size,
+                        price: order_price,
+                        <a href="user.md#0xc0deb00c_user">user</a>: _,
+                        custodian_id: _,
+                        order_access_key: _
+                    } = <a href="avl_queue.md#0xc0deb00c_avl_queue_pop_head">avl_queue::pop_head</a>(avlq_ref_mut);
+                    // Verify order price equals insertion key.
+                    <b>assert</b>!(order_price == price, <a href="market.md#0xc0deb00c_market_E_ORDER_PRICE_MISMATCH">E_ORDER_PRICE_MISMATCH</a>);
                     // Increment tracker for price level size. Note
                     // that no overflow is checked because an open
                     // order's size is a u64, and an AVL queue can

@@ -216,7 +216,7 @@ pub fn change_order_size_user(
 /// * `base`: Aptos [`TypeTag`](https://docs.rs/move-core-types/0.0.3/move_core_types/language_storage/enum.TypeTag.html) for base coin.
 /// * `quote`: Aptos [`TypeTag`](https://docs.rs/move-core-types/0.0.3/move_core_types/language_storage/enum.TypeTag.html) for quote coin.
 /// * `market_id`: Market ID for corresponding market.
-/// * `integrator`: Integrator's AccountAddress.
+/// * `integrator`: Integrator's `AccountAddress`.
 /// * `side`: Order [`Side`].
 /// * `size`: Size of the order in lots.
 /// * `advance_style`: The [`AdvanceStyle`] of the order.
@@ -262,8 +262,9 @@ pub fn place_limit_order_passive_advance_user_entry(
 /// * `integrator`: Integrator's [`AccountAddress`].
 /// * `side`: Order [`Side`].
 /// * `size`: Size of the order in lots.
-/// * `advance_style`: The [`AdvanceStyle`] of the order.
-/// * `target_advance_amount`: Target advance amount.
+/// * `price`: Price of the order.
+/// * `restriction`: The [`Restriction`] of the order.
+/// * `self_match_behavior`: The [`SelfMatchBehavior`] of the order.
 #[allow(clippy::too_many_arguments)]
 pub fn place_limit_order_user_entry(
     econia_address: AccountAddress,
@@ -580,5 +581,68 @@ pub fn withdraw_to_coinstore(
         ident_str!("withdraw_to_coinstore").to_owned(),
         vec![coin.clone()],
         vec![bcs::to_bytes(&market_id)?, bcs::to_bytes(&amount)?],
+    ))
+}
+
+/// Create the `EntryFunction` for [init_market_event_handle_if_missing](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/user.md#0xc0deb00c_user_init_market_event_handles_if_missing)
+///
+/// Arguments:
+/// * `econia_address`: Aptos `AccountAddress` of the account that holds the econia modules.
+/// * `market_id`: Market ID for corresponding market.
+/// * `custodian_id`: ID of market custodian.
+pub fn init_market_event_handles_if_missing(
+    econia_address: AccountAddress,
+    market_id: u64,
+    custodian_id: u64,
+) -> EconiaResult<EntryFunction> {
+    let module = ModuleId::from(
+        MoveModuleId::from_str(&format!("{}::user", econia_address))
+            .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
+    );
+    Ok(EntryFunction::new(
+        module,
+        ident_str!("init_market_event_handles_if_missing").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&market_id)?, bcs::to_bytes(&custodian_id)?],
+    ))
+}
+
+/// Create the `EntryFunction` for [place_market_order_user_entry](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/user.md#0xc0deb00c_market_place_market_order_user_entry)
+///
+/// Arguments:
+/// * `econia_address`: Aptos `AccountAddress` of the account that holds the econia modules.
+/// * `base`: Aptos [`TypeTag`](https://docs.rs/move-core-types/0.0.3/move_core_types/language_storage/enum.TypeTag.html) for base coin.
+/// * `quote`: Aptos [`TypeTag`](https://docs.rs/move-core-types/0.0.3/move_core_types/language_storage/enum.TypeTag.html) for quote coin.
+/// * `market_id`: Market ID for corresponding market.
+/// * `integrator`: Integrator's AccountAddress.
+/// * `side`: Order [`Side`].
+/// * `size`: Size of the order in lots.
+/// * `restriction`: The [`Restriction`] of the order.
+/// * `self_match_behavior`: The [`SelfMatchBehavior`] of the order.
+pub fn place_market_order_user_entry(
+    econia_address: AccountAddress,
+    base: &TypeTag,
+    quote: &TypeTag,
+    market_id: u64,
+    integrator: &AccountAddress,
+    side: Side,
+    size: u64,
+    self_match_behavior: SelfMatchBehavior,
+) -> EconiaResult<EntryFunction> {
+    let module = ModuleId::from(
+        MoveModuleId::from_str(&format!("{}::market", econia_address))
+            .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
+    );
+    Ok(EntryFunction::new(
+        module,
+        ident_str!("place_market_order_user_entry").to_owned(),
+        vec![base.clone(), quote.clone()],
+        vec![
+            bcs::to_bytes(&market_id)?,
+            bcs::to_bytes(integrator)?,
+            bcs::to_bytes(&side)?,
+            bcs::to_bytes(&size)?,
+            bcs::to_bytes(&self_match_behavior)?,
+        ],
     ))
 }

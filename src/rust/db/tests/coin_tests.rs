@@ -1,5 +1,6 @@
 use db::{
-    models::coin::{Coin, NewCoin}, establish_connection, create_coin,
+    create_coin, establish_connection,
+    models::coin::{Coin, NewCoin},
 };
 use diesel::prelude::*;
 use helpers::{load_config, reset_tables};

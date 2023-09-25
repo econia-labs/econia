@@ -4,7 +4,7 @@ import type { GetStaticPaths, GetStaticProps } from "next";
 import dynamic from "next/dynamic";
 import Head from "next/head";
 import Script from "next/script";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
 
 import { DepthChart } from "@/components/DepthChart";
@@ -64,7 +64,12 @@ export default function Market({ allMarketData, marketData }: Props) {
   useEffect(() => {
     ws.current = new WebSocket(WS_URL);
     ws.current.onopen = () => {
-      if (marketData?.market_id == null || ws.current == null) {
+      // because useEffects can fire more than once and onopen is an async function, we still want to check readystate when we send a message
+      if (
+        marketData?.market_id == null ||
+        ws.current == null ||
+        ws.current.readyState !== WebSocket.OPEN
+      ) {
         return;
       }
 
@@ -90,19 +95,26 @@ export default function Market({ allMarketData, marketData }: Props) {
 
   // Handle wallet connect and disconnect
   useEffect(() => {
-    if (marketData?.market_id == null || ws.current == null) {
+    if (
+      marketData?.market_id == null ||
+      ws.current == null ||
+      ws.current.readyState !== WebSocket.OPEN
+    ) {
       return;
     }
     if (account?.address != null) {
+      //  commenting this out because it doesn't seem to be doing what it's supposed to
+      //  maybe if we made it synchronous it would work?
+
       // If the WebSocket connection is not ready,
       // wait for the WebSocket connection to be opened.
-      if (ws.current.readyState === WebSocket.CONNECTING) {
-        const interval = setInterval(() => {
-          if (ws.current?.readyState === WebSocket.OPEN) {
-            clearInterval(interval);
-          }
-        }, 500);
-      }
+      // if (ws.current.readyState === WebSocket.CONNECTING) {
+      //   const interval = setInterval(() => {
+      //     if (ws.current?.readyState === WebSocket.OPEN) {
+      //       clearInterval(interval);
+      //     }
+      //   }, 500);
+      // }
 
       // Subscribe to orders by account channel
       ws.current.send(
@@ -209,6 +221,7 @@ export default function Market({ allMarketData, marketData }: Props) {
                         ...prevData.bids.slice(i + 1),
                       ],
                       asks: prevData.asks,
+                      updatedLevel: { ...priceLevel },
                     };
                   } else if (priceLevel.price > lvl.price) {
                     return {
@@ -218,6 +231,7 @@ export default function Market({ allMarketData, marketData }: Props) {
                         ...prevData.bids.slice(i),
                       ],
                       asks: prevData.asks,
+                      updatedLevel: { ...priceLevel },
                     };
                   }
                 }
@@ -227,6 +241,7 @@ export default function Market({ allMarketData, marketData }: Props) {
                     { price: priceLevel.price, size: priceLevel.size },
                   ],
                   asks: prevData.asks,
+                  updatedLevel: { ...priceLevel },
                 };
               } else {
                 for (const [i, lvl] of prevData.asks.entries()) {
@@ -238,6 +253,7 @@ export default function Market({ allMarketData, marketData }: Props) {
                         { price: priceLevel.price, size: priceLevel.size },
                         ...prevData.asks.slice(i + 1),
                       ],
+                      updatedLevel: { ...priceLevel },
                     };
                   } else if (priceLevel.price < lvl.price) {
                     return {
@@ -247,6 +263,7 @@ export default function Market({ allMarketData, marketData }: Props) {
                         { price: priceLevel.price, size: priceLevel.size },
                         ...prevData.asks.slice(i),
                       ],
+                      updatedLevel: { ...priceLevel },
                     };
                   }
                 }
@@ -256,6 +273,7 @@ export default function Market({ allMarketData, marketData }: Props) {
                     ...prevData.asks,
                     { price: priceLevel.price, size: priceLevel.size },
                   ],
+                  updatedLevel: { ...priceLevel },
                 };
               }
             },
@@ -286,6 +304,24 @@ export default function Market({ allMarketData, marketData }: Props) {
     { keepPreviousData: true, refetchOnWindowFocus: false },
   );
 
+  const defaultTVChartProps = useMemo(() => {
+    return {
+      symbol: marketData?.name ?? "",
+      interval: "1" as ResolutionString,
+      datafeedUrl: "https://dev.api.econia.exchange",
+      libraryPath: "/static/charting_library/",
+      clientId: "econia.exchange",
+      userId: "public_user_id",
+      fullscreen: false,
+      autosize: true,
+      studiesOverrides: {},
+      theme: "Dark" as ThemeName,
+      // antipattern if we render market not found? need ! for typescript purposes
+      selectedMarket: marketData!,
+      allMarketData,
+    };
+  }, [marketData, allMarketData]);
+
   if (!marketData)
     return (
       <>
@@ -298,21 +334,6 @@ export default function Market({ allMarketData, marketData }: Props) {
         </div>
       </>
     );
-
-  const defaultTVChartProps = {
-    symbol: marketData.name,
-    interval: "1" as ResolutionString,
-    datafeedUrl: "https://dev.api.econia.exchange",
-    libraryPath: "/static/charting_library/",
-    clientId: "econia.exchange",
-    userId: "public_user_id",
-    fullscreen: false,
-    autosize: true,
-    studiesOverrides: {},
-    theme: "Dark" as ThemeName,
-    selectedMarket: marketData,
-    allMarketData,
-  };
 
   return (
     <OrderEntryContextProvider>
@@ -338,7 +359,7 @@ export default function Market({ allMarketData, marketData }: Props) {
               </div>
             </div>
             <div className="border border-neutral-600">
-              <div className="bg-black py-3 pl-4">
+              <div className="bg-transparent py-3 pl-4">
                 <p className="font-jost font-bold text-white">Orders</p>
               </div>
 

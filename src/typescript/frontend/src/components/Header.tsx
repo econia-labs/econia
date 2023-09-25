@@ -5,8 +5,12 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import React, { type MouseEventHandler, type PropsWithChildren } from "react";
 
+import { AccountDetailsModal } from "./AccountDetailsModal";
+// import { BaseModal } from "./BaseModal";
 import { Button } from "./Button";
 import { ConnectedButton } from "./ConnectedButton";
+// import { DepositWithdrawModal } from "./trade/DepositWithdrawModal";
+import { shorten } from "@/utils/formatter";
 
 const NavItem: React.FC<
   PropsWithChildren<{
@@ -68,7 +72,7 @@ export function Header({
   return (
     <header className="border-b border-neutral-600">
       <nav className="flex items-center justify-between px-8 py-4">
-        <div className="my-auto flex-1 items-center">
+        <div className="my-auto flex flex-1 items-center">
           <Link href={logoHref}>
             <Image
               className=""
@@ -123,7 +127,16 @@ export function Header({
                 onClick={onWalletButtonClick}
                 className="w-[156px] whitespace-nowrap text-[16px]/6"
               >
-                {`${account?.address.slice(0, 10)}...`}
+                Deposit / Withdraw
+              </Button>
+              <Button
+                variant="primary"
+                // onClick={() => {
+                //   setIsModalOpen(true);
+                // }}
+                className="whitespace-nowrap font-roboto-mono text-[16px]/6 !font-medium uppercase"
+              >
+                {shorten(account?.address)}
               </Button>
             </div>
           </ConnectedButton>

@@ -1,10 +1,10 @@
 use chrono::Utc;
 use db::{
-    establish_connection,
+    add_market_registration_event, create_coin, establish_connection,
     models::{
         coin::NewCoin,
         market::{Market, MarketRegistrationEvent, NewMarketRegistrationEvent},
-    }, create_coin, add_market_registration_event,
+    },
 };
 use diesel::prelude::*;
 use helpers::{load_config, reset_tables};

@@ -14,8 +14,8 @@ integrator = "0x4567"
 
 [dependencies.AptosFramework]
 git = "https://github.com/aptos-labs/aptos-core.git"
-# You may need to change this to `main` to run event unit tests, pending
-# https://github.com/aptos-labs/aptos-core/pull/9181 merging from `main`
-# into `mainnet`.
+# You may need to change this to `main` to run event unit tests, since
+# event unit tests for this package were added before Aptos' event unit
+# testing framework was incorporated into the `mainnet` branch.
 rev = "mainnet"
 subdir = "aptos-move/framework/aptos-framework"

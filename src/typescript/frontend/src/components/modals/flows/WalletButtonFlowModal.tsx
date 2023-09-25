@@ -11,6 +11,7 @@ import { useWallet } from "@aptos-labs/wallet-adapter-react";
 import { MOCK_MARKETS } from "@/mockdata/markets";
 import { set } from "react-hook-form";
 import { toast } from "react-toastify";
+import { AccountDetailsModal } from "@/components/AccountDetailsModal";
 
 type Props = {
   selectedMarket: ApiMarket;
@@ -120,8 +121,9 @@ export const WalletButtonFlowModal: React.FC<Props> = ({
           onClose={onClose}
           showCloseButton={true}
           showBackButton={false}
+          className="!w-[500px]"
         >
-          <AccountDetailsContent
+          <AccountDetailsModal
             onClose={onClose}
             onDepositWithdrawClick={onDepositWithdrawClick}
             onRegisterAccountClick={onRegisterAccountClick}

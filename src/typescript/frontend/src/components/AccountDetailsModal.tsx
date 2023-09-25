@@ -25,10 +25,12 @@ import { fromRawCoinAmount } from "@/utils/coin";
 export const AccountDetailsModal: React.FC<{
   selectedMarket?: ApiMarket;
   onClose: () => void;
-  disconnect: () => void;
-}> = ({ onClose, disconnect }) => {
+  onDepositWithdrawClick: (selected: ApiMarket) => void;
+  onRegisterAccountClick: () => void;
+}> = ({ onClose, onDepositWithdrawClick, onRegisterAccountClick }) => {
   const { aptosClient, signAndSubmitTransaction } = useAptos();
-  const { account } = useWallet();
+  const { account, disconnect } = useWallet();
+
   const [showCopiedNotif, setShowCopiedNotif] = useState<boolean>(false);
 
   const { data } = useQuery(
@@ -142,6 +144,7 @@ export const AccountDetailsModal: React.FC<{
             // TODO: when audit comes back update hardcode
             marketID={2}
             key={id.toString() + "deposit card"}
+            onDepositWithdrawClick={onDepositWithdrawClick}
           />
         ))}
       </div>
@@ -153,7 +156,9 @@ export const AccountDetailsModal: React.FC<{
       <div className="absolute bottom-0 left-[50%] mb-[-24px] flex h-[84px] w-full min-w-[500px] translate-x-[-50%] items-center justify-center border-[1px] border-neutral-600 text-center">
         <Button
           variant="secondary"
-          onClick={() => {}}
+          onClick={() => {
+            onRegisterAccountClick();
+          }}
           className={
             "flex h-[35px] w-[144px] items-center justify-center !px-3 !py-1 text-center !text-xs"
           }
@@ -168,7 +173,10 @@ export const AccountDetailsModal: React.FC<{
   );
 };
 
-const DepositWithdrawCard: React.FC<{ marketID: number }> = ({ marketID }) => {
+const DepositWithdrawCard: React.FC<{
+  marketID: number;
+  onDepositWithdrawClick: (selected: ApiMarket) => void;
+}> = ({ marketID, onDepositWithdrawClick }) => {
   const [expanded, setExpanded] = React.useState(false);
   const toggleExpanded = () => setExpanded(!expanded);
   const { account } = useWallet();
@@ -233,11 +241,7 @@ const DepositWithdrawCard: React.FC<{ marketID: number }> = ({ marketID }) => {
       );
 
       const res = await resProm;
-
-      return {
-        base: { symbol: res.base.symbol, decimals: res.base.decimals },
-        quote: { symbol: res.quote.symbol, decimals: res.quote.decimals },
-      };
+      return res as ApiMarket;
     },
     {
       keepPreviousData: true,
@@ -276,7 +280,8 @@ const DepositWithdrawCard: React.FC<{ marketID: number }> = ({ marketID }) => {
                 baseAssetIcon={baseAssetIcon}
                 quoteAssetIcon={quoteAssetIcon}
               />
-              {marketPair?.base.symbol}/{marketPair?.quote.symbol}
+              {!marketPair?.base ? "GENERIC" : marketPair?.base?.symbol}/
+              {marketPair?.quote.symbol}
               <RecognizedIcon className="ml-1 inline-block h-[9px] w-[9px] text-center" />
             </div>
             {/* row2 within row1 */}
@@ -310,7 +315,9 @@ const DepositWithdrawCard: React.FC<{ marketID: number }> = ({ marketID }) => {
         {/* row 2 */}
         <Button
           variant="secondary"
-          onClick={() => {}}
+          onClick={() => {
+            onDepositWithdrawClick(marketPair!);
+          }}
           className={
             "flex items-center !px-3 !py-1 !text-[10px] !leading-[18px]"
           }
@@ -322,13 +329,14 @@ const DepositWithdrawCard: React.FC<{ marketID: number }> = ({ marketID }) => {
       <div className="ml-[39px] flex-1">
         <div className="ml-8 flex flex-col text-left">
           <span className="align-text-top font-roboto-mono text-[10px] font-light text-neutral-500">
-            {marketPair?.base.symbol} BALANCE
+            {!marketPair?.base ? "GENERIC ASSET" : marketPair?.base?.symbol}{" "}
+            BALANCE
           </span>
           <p className="font-roboto-mono text-xs font-light text-white">
             <span className="inline-block align-text-top text-white">
               {fromRawCoinAmount(
                 marketAccount?.base_total || 0,
-                marketPair?.base.decimals,
+                !marketPair?.base ? 0 : marketPair?.base.decimals || 0,
               )}
 
               {/* {marketAccount?.base_total} */}
@@ -343,7 +351,7 @@ const DepositWithdrawCard: React.FC<{ marketID: number }> = ({ marketID }) => {
             <span className="inline-block text-white">
               {fromRawCoinAmount(
                 marketAccount?.quote_total || 0,
-                marketPair?.quote.decimals,
+                marketPair?.quote.decimals || 0,
               )}
             </span>
           </p>

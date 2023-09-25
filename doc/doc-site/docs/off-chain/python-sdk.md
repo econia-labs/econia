@@ -4,14 +4,14 @@ The code for the Python SDK lives in [`/econia/src/python/sdk/econia_sdk`](https
 There are 2 primary packages ([`econia_sdk.entry`](https://github.com/econia-labs/econia/tree/main/src/python/sdk/econia_sdk/entry) and [`econia_sdk.view`](https://github.com/econia-labs/econia/tree/main/src/python/sdk/econia_sdk/view)) complemented by two secondary imports.
 This code provides programmatic access to Econia exchanges, in addition to offering an example of how to put it all together shown later in this document.
 
-# Primary Packages
+# Primary packages
 
 ## `econia_sdk.entry`
 
 This package contains helpers for accessing Econia's `public entry` functions.
 Each method's name corresponds to the name of a public entry function in one of the following Econia Move modules:
 
-| package                       | move                                                                                            | python                                                                                                |
+| Package                       | Move                                                                                            | Python                                                                                                |
 | ----------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
 | `econia_sdk.entry.incentives` | [link](https://github.com/econia-labs/econia/blob/main/src/move/econia/sources/incentives.move) | [link](https://github.com/econia-labs/econia/blob/main/src/python/sdk/econia_sdk/entry/incentives.py) |
 | `econia_sdk.entry.market`     | [link](https://github.com/econia-labs/econia/blob/main/src/move/econia/sources/market.move)     | [link](https://github.com/econia-labs/econia/blob/main/src/python/sdk/econia_sdk/entry/market.py)     |
@@ -27,7 +27,7 @@ See the Python code linked above for examples of how an `EntryFunction` instance
 This package contains helpers for accessing Econia's `#[view]` functions.
 Each method's name corresponds to the name of a view function in one of the following Econia Move modules:
 
-| package                            | move                                                                                                  | python                                                                                                     |
+| Package                            | Move                                                                                                  | Python                                                                                                     |
 | ---------------------------------- | ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | `econia_sdk.view.incentives`       | [link](https://github.com/econia-labs/econia/blob/main/src/move/econia/sources/incentives.move)       | [link](https://github.com/econia-labs/econia/blob/main/src/python/sdk/econia_sdk/view/incentives.py)       |
 | `econia_sdk.view.market`           | [link](https://github.com/econia-labs/econia/blob/main/src/move/econia/sources/market.move)           | [link](https://github.com/econia-labs/econia/blob/main/src/python/sdk/econia_sdk/view/market.py)           |
@@ -40,7 +40,7 @@ If the function you desire happens to not be supported by the Python SDK (or sad
 See the Python code linked above for examples of how an `EconiaViewer` instance is used.
 Note the return value of the `EconiaViewer` functions "[quacks](https://en.wikipedia.org/wiki/Duck_typing) like JSON" but every field-value is stringified.
 
-# Secondary Packages
+# Secondary packages
 
 ## `econia_sdk.lib`
 
@@ -54,12 +54,97 @@ This package contains various enum types useful for parsing and referring to imp
 Note that Move doesn't have enum types so unlike most of the above, these do not map directly to Move.
 However, each value in each enum is associated with a constant that exists in the Move code.
 
-# Other Contents
+# Other contents
+
+## `econia_sdk.utils.decimals`
+
+This package contains a few helpers for calculating market parameters (lot size, tick size, and min size).
+The intent is to allow one to express their desired sizes in decimal notation, and have that converted to integer notation.
+Perfect conversions are not always possible due to potential integer division and truncation, so these helpers functions attempt to check for reasonable inputs.
+Price conversion utilities are left out to avoid introducing truncation effects.
+
+Let's walk through an example of configuring a market using these utilities.
+If you'd like to follow along, install the Econia SDK, run the Python interpreter and import the SDK using...
+
+```bash
+pip3 install econia-sdk
+python3
+>>> from econia_sdk.utils.decimals import *
+```
+
+Market configuration (beyond base type and quote type) consists of 3 integer values: lot size, tick size, and min size.
+
+| Value     | Units                  | Description                |
+| --------- | ---------------------- | -------------------------- |
+| Lot size  | Subunits of base type  | Granularity of base sizes  |
+| Tick size | Subunits of quote type | Granularity of quote sizes |
+| Min size  | Number of lots         | Minimum limit order size   |
+
+In order to proceed, we must decide the granularity of base and quote sizes as well as the minimum limit order size for our market.
+Consider that "price" in the exchange is an integer expressed in terms of "ticks per lot", which means that tick size and lot size affect the prices that can be expressed.
+**That is: price granularity is a function of lot size _and_ tick size.**
+In general the desire is to have one _tick_ be "small" relative to one **_lot_** in terms of value, since the minimum expressible price is 1 tick per lot. The second smallest possible price is 2 ticks per lot, and so on.
+Let's use `eAPT` and `eUSDC` used in the faucet below as example base and quote types, respectively, for a market.
+We know that `eAPT` (the base type) has 8 decimals and `eUSDC` (the quote type) has 6 decimals:
+
+```python
+>>> base_decimals = 8
+>>> quote_decimals = 6
+```
+
+We have a few objectives when it comes to configuring the market:
+
+- Granular order sizes such that traders can express an amount almost exactly.
+- Granular prices such that the value of an asset is roughly continuous.
+- Specific minimum order sizes such that everyone can trade, and attacks are stopped.
+
+Towards those ends, let's use 0.001 `eAPT` for the order size granularity, that is lot size precision.
+Let's also use 0.001 `eUSDC` for the price granularity, equivalent to one-hundredth of a penny.
+Last, we'll use a minimum order size of 0.5 `eAPT` so that small orders are allowed while preventing attacks.
+
+The `get_market_parameters_integer` helper from the SDK will give us the configuration variables needed to achieve these outcomes:
+
+```python
+>>> base_decimals = 8
+>>> quote_decimals = 6
+>>> size_precision_nominal = "0.001"
+>>> price_precision_nominal = "0.001"
+>>> min_size_nominal = "0.5"
+>>> (lot_size, tick_size, min_size) = get_market_parameters_integer(
+... size_precision_nominal,
+... price_precision_nominal,
+... min_size_nominal,
+... base_decimals,
+... quote_decimals
+... )
+>>> (lot_size, tick_size, min_size)
+(100000, 1, 500)
+```
+
+Let's also check the maximum price given our price granularity:
+
+```python
+>>> get_max_price_nominal(price_precision_nominal)
+Decimal('4294967.295')
+```
+
+That's a maximum price of \$4,294,967.295 per `eAPT` which is plenty high.
+So, our market parameters would be:
+
+| Parameter | Value  | Units             |
+| --------- | ------ | ----------------- |
+| Lot size  | 100000 | Subunits of base  |
+| Tick size | 1      | Subunits of quote |
+| Min size  | 500    | Lots of base      |
+
+This gives us a market with a price granularity of 0.1 cent and minimum order size of 0.5 `eAPT`!
+We'd get an error if we tried to use a more granular price, or more granular size without changing price granularity.
+This is because our tick size is 1, which represents the most possible price precision for the given size and the highest possible granularity of the quote asset.
 
 ## `examples.trade`
 
 This is a script that makes use of both view functions and entry functions to perform a few scenarios in the exchange for the user.
-After set-up, it should be automatic (except for hitting enter to proceed the script).
+After setup, it should be automatic (except for hitting enter to proceed the script).
 On display are things like registering a market, creating a market account and funding it, placing limit/market orders under various conditions as well as cancelling them.
 It's useful as a way to gain an understanding of what different fields/parameters mean and in general how to use the Python SDK.
 **Running/reading this example script and understanding what it does is recommended before anyone trades real money with the SDK.**
@@ -89,7 +174,7 @@ It's time to deploy our own Econia Faucet to the local chain:
 git clone https://github.com/econia-labs/econia.git # only if necessary
 cd ./econia/src/move/faucet
 aptos init --profile econia_faucet_deploy # enter "local" for the chain
-export FAUCET_ADDR=<ACCOUNT-FROM-ABOVE>
+export FAUCET_ADDR=<ACCOUNT-FROM-ABOVE> # make sure to put 0x at the start
 # deploy the faucet (all one command)
 aptos move publish \
         --named-addresses econia_faucet=$FAUCET_ADDR \
@@ -102,7 +187,7 @@ You also need to deploy Econia:
 ```bash
 cd ./econia/src/move/econia
 aptos init --profile econia_exchange_deploy # enter "local" for the chain
-export ECONIA_ADDR=<ACCOUNT-FROM-ABOVE>
+export ECONIA_ADDR=<ACCOUNT-FROM-ABOVE> # make sure to put 0x at the start
 # deploy the exchange (all one command)
 aptos move publish \
         --override-size-check \
@@ -122,9 +207,9 @@ cd ./econia/src/python/sdk && poetry install # only if necessary
 poetry run trade # we're off to the races!
 ```
 
-### Understanding the Example Script
+### Understanding the example script
 
-#### Step #1: Set-up the Market
+#### Step #1: Setup the market
 
 ```
 Press enter to initialize (or obtain) the market.
@@ -146,14 +231,14 @@ There don't appear to be any open orders on this brand-new market which makes a 
 The long hex string is a transaction hash, which can be looked up on an explorer if using a public chain such as devnet.
 [Explorers](https://explorer.aptoslabs.com/?network=devnet) can provide more information about a transaction at a glance.
 
-#### Step #2: Set-up the Account "A"
+#### Step #2: Setup the account "A"
 
 ```
-Press enter to set-up an Account A with funds.
+Press enter to setup an Account A with funds.
 New market account after deposit:
   * eAPT: 0 -> 10.0
   * eUSDC: 0 -> 10000.0
-Account A was set-up: 0xfb456eeadbb32a392263e56ff682f080be9cae2a97c7113813e3e6bfaa5b0c6b
+Account A was setup: 0xfb456eeadbb32a392263e56ff682f080be9cae2a97c7113813e3e6bfaa5b0c6b
 TRANSACTIONS EXECUTED (first-to-last):
   * Mint 10.0 eAPT (yet to be deposited): 0x3e2d3431ec77b51a47efc64ea4565ef365e68623d7cf22689bf025eee27e3f67
   * Mint 10000.0 eUSDC (yet to be deposited): 0x6ae9b23119347499f685c768ba73a593f0182157de0daecde54861f700287d37
@@ -172,7 +257,7 @@ In the above, we perform two steps for two coins, in addition to registering a n
 
 This gives us the 5 total transactions we expect and see above. Minting and depositing happens twice while creating a new account happens only once. This will happen again when we create an Account "B" below.
 
-#### Step #3: Place Limit Orders (as Account A)
+#### Step #3: Place limit orders (as account A)
 
 ```
 Press enter to place limit orders with Account A.
@@ -203,14 +288,14 @@ Limit orders make an asset available for purchase at a given price.
 When a market order comes along and pays the price of a limit order, this is called a "fill" event.
 We're about to witness such a fill event in the coming steps.
 
-#### Step #4: Set-up the Account "B"
+#### Step #4: Setup the account "B"
 
 ```
-Press enter to set-up an Account B with funds.
+Press enter to setup an Account B with funds.
 New market account after deposit:
   * eAPT: 0 -> 10.0
   * eUSDC: 0 -> 10000.0
-Account B was set-up: 0xcaebb3c924ff16721bb4df186592e2e1282a64bf468090d2168659aa730a70cb
+Account B was setup: 0xcaebb3c924ff16721bb4df186592e2e1282a64bf468090d2168659aa730a70cb
 TRANSACTIONS EXECUTED (first-to-last):
   * Mint 10.0 eAPT (yet to be deposited): 0x512781d089ab0baedfeb8e6d2ef11058589a5d8912b9c921efcd3ec2dc6d2e91
   * Mint 10000.0 eUSDC (yet to be deposited): 0x731244203e1eb3b76f8834cbd65b8aedc17340e60f6eaaa0186f0a536fdae13b
@@ -221,7 +306,7 @@ TRANSACTIONS EXECUTED (first-to-last):
 
 Same as step #2, but for a new account.
 
-#### Step 5: Place Market Orders (as Account B)
+#### Step 5: Place market orders (as account B)
 
 ```
 Press enter to place market orders (buy and sell) with Account B.
@@ -238,7 +323,7 @@ CURRENT BEST PRICE LEVELS:
 Here after Account B has placed their market orders in both directions, the best price level in both directions has gone down in total size.
 This is expected, because some of the liquidity available has been taken at the agreed-upon prices in both the "buy base asset" (bid) and "sell base asset" (ask) cases.
 
-#### Step 6: Cancel All Limit Orders (as Account A)
+#### Step 6: Cancel all limit orders (as account A)
 
 ```
 Press enter to cancel all of Account A's outstanding orders
@@ -253,7 +338,7 @@ There is no eAPT being bought or sold right now!
 This one is straightforward, but it's worth nothing that there are no longer orders on the book unlike in the step above.
 That's because in this case, all of the liquidity in the order book has been cancelled by our cancelling all of Account A's orders (since Account A's orders were all the orders on the book).
 
-#### Step 7: Place Multiple Competitive Limit Orders (as Account A)
+#### Step 7: Place multiple competitive limit orders (as account A)
 
 ```
 Press enter to place competitive limit orders (top-of-book) with Account A.
@@ -281,7 +366,7 @@ Likewise the lowest price the base asset (tETH) is being sold for right now is 1
 
 We'll see the sequence of these limit orders clearer in the next step, where Account B places spread-crossing limit orders.
 
-#### Step #8: Place Spread-Crossing Limit Orders (as Account B)
+#### Step #8: Place spread-crossing limit orders (as account B)
 
 ```
 Press enter to place spread-crossing limit order with Account B (no remainder).

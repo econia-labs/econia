@@ -15,6 +15,8 @@ use crate::error::TypeError;
     derive(sqlx::Type),
     sqlx(type_name = "side", rename_all = "snake_case")
 )]
+#[cfg_attr(feature = "serde", serde(from = "bool"))]
+#[cfg_attr(feature = "serde", serde(into = "bool"))]
 pub enum Side {
     Bid,
     Ask,
@@ -29,6 +31,15 @@ impl From<bool> for Side {
     }
 }
 
+impl From<Side> for bool {
+    fn from(value: Side) -> Self {
+        match value {
+            Side::Bid => false,
+            Side::Ask => true,
+        }
+    }
+}
+
 impl TryFrom<u8> for Side {
     type Error = TypeError;
 
@@ -39,6 +50,27 @@ impl TryFrom<u8> for Side {
             _ => Err(TypeError::ConversionError {
                 name: "Side".to_string(),
             }),
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[cfg_attr(
+    feature = "serde",
+    derive(Serialize, Deserialize),
+    serde(rename_all = "snake_case")
+)]
+#[cfg_attr(feature = "serde", serde(from = "bool"))]
+pub enum Direction {
+    Buy,
+    Sell,
+}
+
+impl From<bool> for Direction {
+    fn from(value: bool) -> Self {
+        match value {
+            false => Self::Buy,
+            true => Self::Sell,
         }
     }
 }
@@ -85,6 +117,7 @@ impl TryFrom<u8> for AdvanceStyle {
     serde(rename_all = "snake_case")
 )]
 #[repr(u8)]
+#[cfg_attr(feature = "serde", serde(try_from = "u8"))]
 pub enum SelfMatchBehavior {
     Abort,
     CancelBoth,
@@ -114,11 +147,13 @@ impl TryFrom<u8> for SelfMatchBehavior {
     derive(Serialize, Deserialize),
     serde(rename_all = "snake_case")
 )]
+#[cfg_attr(feature = "serde", serde(try_from = "u8"))]
 #[repr(u8)]
 pub enum Restriction {
     NoRestriction,
     FillOrAbort,
     ImmediateOrCancel,
+    PostOrAbort,
 }
 
 impl TryFrom<u8> for Restriction {
@@ -129,6 +164,7 @@ impl TryFrom<u8> for Restriction {
             0 => Ok(Self::NoRestriction),
             1 => Ok(Self::FillOrAbort),
             2 => Ok(Self::ImmediateOrCancel),
+            3 => Ok(Self::PostOrAbort),
             _ => Err(TypeError::ConversionError {
                 name: "Restriction".to_string(),
             }),
@@ -154,13 +190,89 @@ pub enum OrderState {
     Evicted,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[cfg_attr(
+    feature = "serde",
+    derive(Serialize, Deserialize),
+    serde(rename_all = "snake_case")
+)]
+#[repr(u8)]
+pub enum CancelType {
+    Both,
+    Maker,
+    Taker,
+}
+
+impl TryFrom<u8> for CancelType {
+    type Error = TypeError;
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Self::Both),
+            1 => Ok(Self::Maker),
+            2 => Ok(Self::Taker),
+            _ => Err(TypeError::ConversionError {
+                name: "CancelType".to_string(),
+            }),
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(
+    feature = "serde",
+    derive(Serialize, Deserialize),
+    serde(rename_all = "snake_case")
+)]
+#[cfg_attr(
+    feature = "sqlx",
+    derive(sqlx::Type),
+    sqlx(type_name = "cancel_reason", rename_all = "snake_case")
+)]
+#[cfg_attr(feature = "serde", serde(try_from = "u8"))]
+pub enum CancelReason {
+    SizeChangeInternal,
+    Eviction,
+    ImmediateOrCancel,
+    ManualCancel,
+    MaxQuoteTraded,
+    NotEnoughLiquidity,
+    SelfMatchMaker,
+    SelfMatchTaker,
+    TooSmallToFillLot,
+    ViolatedLimitPrice,
+}
+
+impl TryFrom<u8> for CancelReason {
+    type Error = TypeError;
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Self::SizeChangeInternal),
+            1 => Ok(Self::Eviction),
+            2 => Ok(Self::ImmediateOrCancel),
+            3 => Ok(Self::ManualCancel),
+            4 => Ok(Self::MaxQuoteTraded),
+            5 => Ok(Self::NotEnoughLiquidity),
+            6 => Ok(Self::SelfMatchMaker),
+            7 => Ok(Self::SelfMatchTaker),
+            8 => Ok(Self::TooSmallToFillLot),
+            9 => Ok(Self::ViolatedLimitPrice),
+            _ => Err(TypeError::ConversionError {
+                name: "CancelType".to_string(),
+            }),
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Order {
-    pub market_order_id: u128,
+    pub order_id: u128,
     pub market_id: u64,
     pub side: Side,
     pub size: u64,
+    pub remaining_size: u64,
     pub price: u64,
     pub user_address: String,
     pub custodian_id: Option<u64>,
@@ -180,3 +292,12 @@ pub struct Fill {
     pub price: u64,
     pub time: DateTime<Utc>,
 }
+
+pub const HI_PRICE: u64 = 0xffffffff;
+pub const HI_64: u64 = 0xffffffffffffffff;
+pub const MAX_POSSIBLE: u64 = 0xffffffffffffffff;
+pub const SHIFT_COUNTER: u64 = 64;
+pub const SHIFT_MARKET_ID: u64 = 64;
+pub const NO_CUSTODIAN: u64 = 0;
+pub const NO_UNDERWRITER: u64 = 0;
+pub const NIL: u64 = 0;

@@ -73,7 +73,6 @@ module.exports = {
                         'integrators/oracles/pyth',
                     ]
                 },
-                'integrators/audits',
                 'integrators/bridges',
                 'integrators/notifications',
             ]

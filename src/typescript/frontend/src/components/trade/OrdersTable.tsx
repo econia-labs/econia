@@ -11,9 +11,11 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { type ReactNode, useMemo, useState } from "react";
+import Skeleton from "react-loading-skeleton";
 
 import { type ApiMarket, type ApiOrder } from "@/types/api";
 
+import bg from "../../../public/bg.png";
 import { ConnectedButton } from "../ConnectedButton";
 
 type TableOrder = ApiOrder & { total: number };
@@ -155,11 +157,16 @@ export const OrdersTable: React.FC<{
       <table
         className={"w-full table-auto" + (className ? ` ${className}` : "")}
       >
-        <thead className="sticky top-0 h-8 bg-black shadow-[inset_0_-1px_0_theme(colors.neutral.600)]">
+        <thead
+          className="sticky top-0 h-8  bg-[#020202] shadow-[inset_0_-1px_0_theme(colors.neutral.600)]"
+          style={{
+            backgroundImage: `url(${bg.src})`,
+          }}
+        >
           <tr>
             {table.getFlatHeaders().map((header) => (
               <th
-                className="cursor-pointer select-none py-0.5 text-left font-roboto-mono text-sm font-light uppercase text-neutral-500"
+                className="cursor-pointer select-none py-0.5 text-left font-roboto-mono text-sm font-light uppercase text-neutral-500 shadow-[inset_0_-1px_0_theme(colors.neutral.600)]"
                 key={header.id}
                 onClick={header.column.getToggleSortingHandler()}
               >
@@ -174,17 +181,8 @@ export const OrdersTable: React.FC<{
             ))}
           </tr>
         </thead>
-
-        <tbody className="h-[160px] w-full overflow-y-auto">
-          {isLoading || !data ? (
-            <tr>
-              <td colSpan={7}>
-                <div className="flex h-[150px] flex-col items-center justify-center text-sm font-light uppercase text-neutral-500">
-                  Loading...
-                </div>
-              </td>
-            </tr>
-          ) : !connected ? (
+        <tbody>
+          {!connected ? (
             <tr>
               <td colSpan={7}>
                 <div className="flex h-[150px] flex-col items-center justify-center">
@@ -192,6 +190,28 @@ export const OrdersTable: React.FC<{
                 </div>
               </td>
             </tr>
+          ) : isLoading || !data ? (
+            <>
+              {/* temporarily removing skeletong to help UX and reduce glitchyness. see: ECO-230 */}
+              {/* <tr>
+                {table.getAllColumns().map((column, i) => (
+                  <td
+                    className={`${
+                      i === 0
+                        ? "pl-4 text-left text-neutral-500"
+                        : i === 6
+                        ? ""
+                        : ""
+                    }`}
+                    key={column.id}
+                  >
+                    <div className={"pr-3"}>
+                      <Skeleton />
+                    </div>
+                  </td>
+                ))}
+              </tr> */}
+            </>
           ) : data.length === 0 ? (
             <tr>
               <td colSpan={7}>

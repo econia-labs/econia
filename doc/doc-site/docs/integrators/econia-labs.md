@@ -4,10 +4,8 @@ Check out the following resources from Econia Labs:
 
 1. [Teach yourself Move]
 1. [`optivanity`]
-1. [Reference front end implementation] (revamp in progress)
-1. [Convenience wrapper functions] (old implementation)
+1. [Amsterdam 2023 hackathon workshop]
 
-[convenience wrapper functions]: https://github.com/econia-labs/econia-wrappers
-[reference front end implementation]: https://github.com/econia-labs/econia-reference-front-end
+[amsterdam 2023 hackathon workshop]: https://github.com/econia-labs/amsterdam-2023-demo
 [teach yourself move]: https://github.com/econia-labs/teach-yourself-move
 [`optivanity`]: https://github.com/econia-labs/optivanity

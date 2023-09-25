@@ -1,0 +1,68 @@
+version: "3.9"
+
+services:
+
+  diesel:
+    build:
+      args:
+        DATABASE_URL: "postgres://econia:econia@postgres:5432/econia"
+      context: ../../
+      dockerfile: src/docker/database/Dockerfile.diesel
+    depends_on:
+      - postgres
+
+  postgres:
+    environment:
+      POSTGRES_USER: "econia"
+      POSTGRES_PASSWORD: "econia"
+    build:
+      context: ../../
+      dockerfile: src/docker/database/Dockerfile.postgres
+    ports:
+      - "5432:5432"
+    restart: always
+    volumes:
+      - "db:/var/lib/postgresql/data"
+
+  postgrest:
+    depends_on:
+      - diesel
+      - postgres
+    environment:
+      PGRST_DB_URI: "postgres://econia:econia@postgres:5432/econia"
+      PGRST_DB_ANON_ROLE: web_anon
+      PGRST_DB_SCHEMA: api
+    image: postgrest/postgrest
+    ports:
+      - "3001:3000"
+
+  processor:
+    build:
+      context: ../../
+      dockerfile: src/docker/processor/Dockerfile
+    depends_on:
+      - postgres
+    ports:
+      - "8084:8084"
+    volumes:
+      - "./processor/config.yaml:/config.yaml"
+
+  ws:
+    build:
+      context: ../../
+      dockerfile: src/docker/api/Dockerfile.ws
+      args:
+        - POSTGRES_WEBSOCKETS_VERSION=0.11.1.0
+    depends_on:
+      - diesel
+      - postgres
+    environment:
+      - PGWS_DB_URI=postgres://econia:econia@postgres/econia
+      - PGWS_JWT_SECRET=econia_is_dope
+      - PGWS_CHECK_LISTENER_INTERVAL=1000
+    ports:
+      - 3000:8083
+
+volumes:
+  db:
+    driver: local

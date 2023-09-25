@@ -1,10 +1,13 @@
 [tool.poetry]
 name = "econia-sdk"
-version = "1.0.2"
+version = "1.0.5"
 description = ""
 authors = ["Econia Labs <developers@econialabs.com>"]
 readme = "README.md"
 packages = [{ include = "econia_sdk" }]
+
+[tool.isort]
+profile = "black"
 
 [tool.poetry.dependencies]
 aptos-sdk = "^0.6.4"

@@ -1,5 +1,6 @@
 use aptos_api_types::{
-    AptosErrorCode, MoveType, Transaction, TransactionInfo, UserTransactionRequest, U64,
+    AptosErrorCode, MoveType, Transaction, TransactionInfo, UserTransactionRequest, VersionedEvent,
+    U64,
 };
 use aptos_sdk::crypto::ed25519::Ed25519PrivateKey;
 use aptos_sdk::crypto::ValidCryptoMaterialStringExt;
@@ -21,9 +22,13 @@ use std::collections::HashMap;
 use std::default;
 use std::fmt::Debug;
 use std::fs::File;
+use view::EconiaViewClient;
 
 pub mod entry;
 pub mod errors;
+pub mod view;
+
+pub use econia_types as types;
 
 pub const SUBMIT_ATTEMPTS: u8 = 10;
 pub const MAX_GAS_AMOUNT: u64 = 1_000_000;
@@ -214,6 +219,43 @@ impl EconiaClient {
             .map_err(EconiaError::AptosError)
     }
 
+    pub async fn get_events_by_creation_number(
+        &self,
+        creation_number: u64,
+        address: AccountAddress,
+        start: Option<u64>,
+        limit: Option<u16>,
+    ) -> EconiaResult<Vec<VersionedEvent>> {
+        let url = self
+            .aptos_client
+            .build_path(&format!(
+                "accounts/{}/events/{}",
+                address.to_hex_literal(),
+                creation_number,
+            ))
+            .map_err(EconiaError::AptosError)?;
+
+        let client = reqwest::Client::new();
+        let mut request = client.get(url);
+
+        if let Some(start) = start {
+            request = request.query(&[("start", start)])
+        }
+
+        if let Some(limit) = limit {
+            request = request.query(&[("limit", limit)])
+        }
+
+        let response = request
+            .send()
+            .await
+            .map_err(|e| EconiaError::Custom(Box::new(e)))?;
+        Ok(response
+            .json()
+            .await
+            .map_err(|e| EconiaError::Custom(Box::new(e)))?)
+    }
+
     /// Checks if a coin exists on the aptos chain.
     ///
     /// # Arguments:
@@ -222,7 +264,7 @@ impl EconiaClient {
     pub async fn does_coin_exist(&self, coin: &TypeTag) -> EconiaResult<bool> {
         let coin_info = format!("0x1::coin::CoinInfo<{}>", coin);
         let TypeTag::Struct(tag) = coin else {
-            return Err(EconiaError::InvalidTypeTag(coin.clone()))
+            return Err(EconiaError::InvalidTypeTag(coin.clone()));
         };
 
         self.fetch_resource(tag.address, &coin_info)
@@ -294,7 +336,7 @@ impl EconiaClient {
             .into_inner();
 
         let Transaction::UserTransaction(ut) = tx else {
-            return Err(EconiaError::InvalidTransaction)
+            return Err(EconiaError::InvalidTransaction);
         };
 
         let events = ut
@@ -326,6 +368,10 @@ impl EconiaClient {
             }
         }
         Err(EconiaError::FailedSubmittingTransaction)
+    }
+
+    pub fn view_client(&self) -> EconiaViewClient {
+        EconiaViewClient::new(&self.aptos_client, self.econia_address.clone())
     }
 }
 

@@ -71,7 +71,7 @@ export function Header({ allMarketData, logoHref }: HeaderProps) {
   return (
     <header className="border-b border-neutral-600">
       <nav className="flex items-center justify-between px-8 py-4">
-        <div className="my-auto flex-1 items-center">
+        <div className="my-auto flex flex-1 items-center">
           <Link href={logoHref}>
             <Image
               className=""

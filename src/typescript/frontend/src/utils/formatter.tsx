@@ -1,3 +1,6 @@
+import { type ReactElement } from "react";
+import Skeleton from "react-loading-skeleton";
+
 import { type PriceLevel } from "@/types/global";
 
 export const getLang = () => {
@@ -12,12 +15,26 @@ export const plusMinus = (num: number | undefined): string => {
   return num >= 0 ? `+` : ``;
 };
 
+export const priceFormatter = Intl.NumberFormat("en", {
+  notation: "compact",
+  compactDisplay: "short",
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+});
+
+export const volFormatter = Intl.NumberFormat("en", {
+  notation: "compact",
+  compactDisplay: "short",
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+});
+
 export const formatNumber = (
   num: number | undefined,
   digits: number,
   signDisplay: Intl.NumberFormatOptions["signDisplay"] = "never",
-): string => {
-  if (!num) return "-";
+): undefined | string => {
+  if (num == undefined) return undefined;
   const lang =
     typeof window === "undefined"
       ? "en"

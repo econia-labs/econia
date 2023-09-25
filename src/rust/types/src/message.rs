@@ -1,10 +1,7 @@
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    book::PriceLevelWithId,
-    order::{Fill, Order},
-};
+use crate::{book::PriceLevelWithId, events::FillEvent, order::Order};
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 #[cfg_attr(
@@ -50,7 +47,7 @@ pub enum Channel {
 )]
 pub enum Update {
     Orders(Order),
-    Fills(Fill),
+    Fills(FillEvent),
     PriceLevels(PriceLevelWithId), // TODO add more update types
 }
 

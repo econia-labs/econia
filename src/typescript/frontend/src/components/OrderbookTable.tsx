@@ -1,12 +1,12 @@
 import BigNumber from "bignumber.js";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useOrderEntry } from "@/contexts/OrderEntryContext";
 import { type ApiMarket } from "@/types/api";
-// import { type Precision } from "@/types/global";
 import { type Orderbook, type PriceLevel } from "@/types/global";
 import { toDecimalPrice, toDecimalSize } from "@/utils/econia";
 import { averageOrOtherPriceLevel } from "@/utils/formatter";
+import Skeleton from "react-loading-skeleton";
 
 // const precisionOptions: Precision[] = [
 //   "0.01",
@@ -24,8 +24,23 @@ const Row: React.FC<{
   type: "bid" | "ask";
   highestSize: number;
   marketData: ApiMarket;
-}> = ({ level, type, highestSize, marketData }) => {
-  const { setType, setPrice } = useOrderEntry();
+  updatedLevel: PriceLevel | undefined;
+}> = ({ level, type, highestSize, marketData, updatedLevel }) => {
+  const { setPrice } = useOrderEntry();
+  const [flash, setFlash] = useState<"flash-red" | "flash-green" | "">("");
+
+  useEffect(() => {
+    if (updatedLevel == undefined) {
+      return;
+    }
+    if (updatedLevel.price == level.price) {
+      setFlash(type === "ask" ? "flash-red" : "flash-green");
+      setTimeout(() => {
+        setFlash("");
+      }, 100);
+    }
+  }, [type, updatedLevel, level.price]);
+
   const price = toDecimalPrice({
     price: new BigNumber(level.price),
     lotSize: BigNumber(marketData.lot_size),
@@ -46,19 +61,20 @@ const Row: React.FC<{
 
   return (
     <div
-      className="relative flex h-6 cursor-pointer items-center justify-between py-[1px] hover:ring-1 hover:ring-neutral-600"
+      className={`flash-bg-once ${flash} relative flex h-6 cursor-pointer items-center justify-between py-[1px] hover:ring-1 hover:ring-neutral-600`}
       onClick={() => {
-        setType(type === "ask" ? "buy" : "sell");
         setPrice(price.toString());
       }}
-      style={{
-        background: `linear-gradient(
-          to left,
-          ${barColor},
-          ${barColor} ${barPercentage}%,
-          transparent ${barPercentage}%
-        )`,
-      }}
+      // https://github.com/econia-labs/econia/pull/371
+      // commenting out this change because it overrides orderbook flash
+      // style={{
+      //   background: `linear-gradient(
+      //     to left,
+      //     ${barColor},
+      //     ${barColor} ${barPercentage}%,
+      //     transparent ${barPercentage}%
+      //   )`,
+      // }}
     >
       <div
         className={`z-10 ml-4 text-right font-roboto-mono text-xs ${
@@ -70,6 +86,14 @@ const Row: React.FC<{
       <div className="z-10 mr-4 py-0.5 font-roboto-mono text-xs text-white">
         {size.toPrecision(4)}
       </div>
+      <div
+        className={`absolute right-0 z-0 h-full ${
+          type === "ask" ? "bg-red/30" : "bg-green/30"
+        }`}
+        // dynamic taillwind?
+
+        style={{ width: `${(100 * level.size) / highestSize}%` }}
+      ></div>
     </div>
   );
 };
@@ -88,6 +112,7 @@ export function OrderbookTable({
   // const [precision, setPrecision] = useState<Precision>(precisionOptions[0]);
 
   const centerRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     centerRef.current?.scrollIntoView({
       behavior: "smooth",
@@ -114,14 +139,6 @@ export function OrderbookTable({
       ...data.bids.map((order) => order.size),
     );
   }, [data]);
-
-  if (isLoading || data == null) {
-    return (
-      <div className="flex h-full flex-col items-center justify-center text-sm font-light uppercase text-neutral-500">
-        Loading...
-      </div>
-    );
-  }
 
   return (
     <div className="flex grow flex-col">
@@ -165,49 +182,77 @@ export function OrderbookTable({
       </div>
       {/* bids ask spread scrollable container */}
       <div className="scrollbar-none relative grow overflow-y-auto">
-        <div className="absolute w-full">
-          {/* ASK */}
-          {data.asks
-            .slice()
-            .reverse()
-            .map((level) => (
+        {isLoading ? (
+          <div className="absolute w-full">
+            {Array.from({ length: 60 }, (_, i) => (
+              <div
+                className="relative flex h-6 w-full cursor-pointer items-center justify-between py-[1px] hover:ring-1 hover:ring-neutral-600"
+                key={"skeleton-" + i}
+              >
+                <Skeleton
+                  containerClassName={`z-10 ml-2 font-roboto-mono text-xs text-left`}
+                  style={{
+                    width: `${i % 2 == 0 ? 90 : 70}px`,
+                  }}
+                />
+                <Skeleton
+                  containerClassName="z-10 mr-2 py-0.5 font-roboto-mono text-xs text-white text-right"
+                  style={{
+                    width: `${i % 2 == 0 ? 90 : 70}px`,
+                  }}
+                />
+
+                <div className={`absolute right-0 z-0 h-full opacity-30`}></div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="absolute w-full">
+            {/* ASK */}
+            {data?.asks
+              .slice()
+              .reverse()
+              .map((level) => (
+                <Row
+                  level={level}
+                  type={"ask"}
+                  key={`ask-${level.price}-${level.size}`}
+                  highestSize={highestSize}
+                  marketData={marketData}
+                  updatedLevel={data.updatedLevel}
+                />
+              ))}
+            {/* SPREAD */}
+            <div
+              className="flex items-center justify-between border-y border-neutral-600"
+              ref={centerRef}
+            >
+              <div className="z-10 ml-4 text-right font-roboto-mono text-xs text-white">
+                {toDecimalPrice({
+                  price: new BigNumber(midPrice?.price || 0),
+                  lotSize: BigNumber(marketData.lot_size),
+                  tickSize: BigNumber(marketData.tick_size),
+                  baseCoinDecimals: BigNumber(marketData.base?.decimals || 0),
+                  quoteCoinDecimals: BigNumber(marketData.quote?.decimals || 0),
+                }).toNumber()}
+              </div>
+              <div className="mr-4 font-roboto-mono text-white">
+                {midPrice?.size || "-"}
+              </div>
+            </div>
+            {/* BID */}
+            {data?.bids.map((level) => (
               <Row
                 level={level}
-                type={"ask"}
-                key={`ask-${level.price}-${level.size}`}
+                type={"bid"}
+                key={`bid-${level.price}-${level.size}`}
                 highestSize={highestSize}
                 marketData={marketData}
+                updatedLevel={data.updatedLevel}
               />
             ))}
-          {/* SPREAD */}
-          <div
-            className="flex items-center justify-between border-y border-neutral-600"
-            ref={centerRef}
-          >
-            <div className="z-10 ml-4 text-right font-roboto-mono text-xs text-white">
-              {toDecimalPrice({
-                price: new BigNumber(midPrice?.price || 0),
-                lotSize: BigNumber(marketData.lot_size),
-                tickSize: BigNumber(marketData.tick_size),
-                baseCoinDecimals: BigNumber(marketData.base?.decimals || 0),
-                quoteCoinDecimals: BigNumber(marketData.quote?.decimals || 0),
-              }).toNumber()}
-            </div>
-            <div className="mr-4 font-roboto-mono text-white">
-              {midPrice?.size || "-"}
-            </div>
           </div>
-          {/* BID */}
-          {data.bids.map((level) => (
-            <Row
-              level={level}
-              type={"bid"}
-              key={`bid-${level.price}-${level.size}`}
-              highestSize={highestSize}
-              marketData={marketData}
-            />
-          ))}
-        </div>
+        )}
       </div>
     </div>
   );

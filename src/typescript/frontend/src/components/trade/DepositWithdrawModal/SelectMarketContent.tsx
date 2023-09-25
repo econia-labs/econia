@@ -45,6 +45,9 @@ type MarketWithStats = {
 
 const columnHelper = createColumnHelper<MarketWithStats>();
 
+/**
+ * @param onSelectMarket - if provided, will call this function instead of routing to the market page
+ */
 export const SelectMarketContent: React.FC<{
   allMarketData: ApiMarket[];
   onSelectMarket?: (marketId: number, name?: string) => void;
@@ -297,7 +300,6 @@ export const SelectMarketContent: React.FC<{
                     className="h-24 cursor-pointer hover:bg-neutral-700"
                     key={row.id}
                     onClick={() => {
-                      // TODO clean up once ECO-327 is resolved
                       if (onSelectMarket != null) {
                         const marketId = row.original.marketId;
                         onSelectMarket(marketId, row.getValue("name"));

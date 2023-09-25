@@ -12,7 +12,7 @@ import { toDecimalPrice } from "@/utils/econia";
 import { averageOrOther, formatNumber } from "@/utils/formatter";
 import { TypeTag } from "@/utils/TypeTag";
 
-import { BaseModal } from "./BaseModal";
+import { BaseModal } from "./modals/BaseModal";
 import { DiscordIcon } from "./icons/DiscordIcon";
 import { MediumIcon } from "./icons/MediumIcon";
 import { TwitterIcon } from "./icons/TwitterIcon";
@@ -140,7 +140,7 @@ export const StatsBar: React.FC<{
   return (
     <>
       <BaseModal
-        open={isModalOpen}
+        isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
         }}

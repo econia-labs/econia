@@ -9,6 +9,8 @@ import { toast } from "react-toastify";
 
 import { DepthChart } from "@/components/DepthChart";
 import { Header } from "@/components/Header";
+import { DepositWithdrawFlowModal } from "@/components/modals/flows/DepositWithdrawFlowModal";
+import { WalletButtonFlowModal } from "@/components/modals/flows/WalletButtonFlowModal";
 import { OrderbookTable } from "@/components/OrderbookTable";
 import { StatsBar } from "@/components/StatsBar";
 import { OrderEntry } from "@/components/trade/OrderEntry";
@@ -50,6 +52,12 @@ export default function Market({ allMarketData, marketData }: Props) {
   const queryClient = useQueryClient();
   const ws = useRef<WebSocket | undefined>(undefined);
   const prevAddress = useRef<MaybeHexString | undefined>(undefined);
+
+  const [depositWithdrawModalOpen, setDepositWithdrawModalOpen] =
+    useState<boolean>(false);
+  const [walletButtonModalOpen, setWalletButtonModalOpen] =
+    useState<boolean>(false);
+
   const [isScriptReady, setIsScriptReady] = useState(false);
 
   // Set up WebSocket API connection
@@ -321,10 +329,7 @@ export default function Market({ allMarketData, marketData }: Props) {
           <title>Not Found</title>
         </Head>
         <div className="flex min-h-screen flex-col">
-          <Header
-            allMarketData={allMarketData}
-            logoHref={`${allMarketData[0].name}`}
-          />
+          <Header logoHref={`${allMarketData[0].name}`} />
           Market not found.
         </div>
       </>
@@ -337,8 +342,9 @@ export default function Market({ allMarketData, marketData }: Props) {
       </Head>
       <div className="flex min-h-screen flex-col">
         <Header
-          allMarketData={allMarketData}
           logoHref={`${allMarketData[0].name}`}
+          onDepositWithdrawClick={() => setDepositWithdrawModalOpen(true)}
+          onWalletButtonClick={() => setWalletButtonModalOpen(true)}
         />
         <StatsBar allMarketData={allMarketData} selectedMarket={marketData} />
         <main className="flex h-full min-h-[680px] w-full grow">
@@ -383,6 +389,23 @@ export default function Market({ allMarketData, marketData }: Props) {
           </div>
         </main>
       </div>
+      {/* temp */}
+      <DepositWithdrawFlowModal
+        selectedMarket={marketData}
+        isOpen={depositWithdrawModalOpen}
+        onClose={() => {
+          setDepositWithdrawModalOpen(false);
+        }}
+        allMarketData={allMarketData}
+      />
+      <WalletButtonFlowModal
+        selectedMarket={marketData}
+        isOpen={walletButtonModalOpen}
+        onClose={() => {
+          setWalletButtonModalOpen(false);
+        }}
+        allMarketData={allMarketData}
+      />
       <Script
         src="/static/datafeeds/udf/dist/bundle.js"
         strategy="lazyOnload"

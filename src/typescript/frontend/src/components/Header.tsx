@@ -3,15 +3,13 @@ import { ArrowRightIcon } from "@heroicons/react/20/solid";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import React, { type PropsWithChildren, useState } from "react";
-
-import { type ApiMarket } from "@/types/api";
+import React, { type MouseEventHandler, type PropsWithChildren } from "react";
 
 import { AccountDetailsModal } from "./AccountDetailsModal";
-import { BaseModal } from "./BaseModal";
+// import { BaseModal } from "./BaseModal";
 import { Button } from "./Button";
 import { ConnectedButton } from "./ConnectedButton";
-import { DepositWithdrawModal } from "./trade/DepositWithdrawModal";
+// import { DepositWithdrawModal } from "./trade/DepositWithdrawModal";
 import { shorten } from "@/utils/formatter";
 
 const NavItem: React.FC<
@@ -58,15 +56,18 @@ const NavItemDivider: React.FC = () => {
 };
 
 type HeaderProps = {
-  allMarketData: ApiMarket[];
   logoHref: string;
+  onDepositWithdrawClick?: MouseEventHandler<HTMLButtonElement>;
+  onWalletButtonClick?: MouseEventHandler<HTMLButtonElement>;
 };
 
-export function Header({ allMarketData, logoHref }: HeaderProps) {
-  const { disconnect, account } = useWallet();
+export function Header({
+  logoHref,
+  onDepositWithdrawClick,
+  onWalletButtonClick,
+}: HeaderProps) {
+  const { account } = useWallet();
   const router = useRouter();
-  const [depositWithdrawOpen, setDepositWithdrawOpen] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
     <header className="border-b border-neutral-600">
@@ -110,20 +111,29 @@ export function Header({ allMarketData, logoHref }: HeaderProps) {
           </NavItem>
         </div>
         <div className="flex flex-1 justify-end">
-          <ConnectedButton className="py-1">
+          <ConnectedButton className="w-[156px] py-1">
             <div className="flex items-center gap-4">
+              {onDepositWithdrawClick && (
+                <Button
+                  variant="secondary"
+                  className="whitespace-nowrap text-[16px]/6"
+                  onClick={onDepositWithdrawClick}
+                >
+                  Deposit / Withdraw
+                </Button>
+              )}
               <Button
-                variant="secondary"
-                onClick={() => setDepositWithdrawOpen(true)}
-                className="whitespace-nowrap text-[16px]/6"
+                variant="primary"
+                onClick={onWalletButtonClick}
+                className="w-[156px] whitespace-nowrap text-[16px]/6"
               >
                 Deposit / Withdraw
               </Button>
               <Button
                 variant="primary"
-                onClick={() => {
-                  setIsModalOpen(true);
-                }}
+                // onClick={() => {
+                //   setIsModalOpen(true);
+                // }}
                 className="whitespace-nowrap font-roboto-mono text-[16px]/6 !font-medium uppercase"
               >
                 {shorten(account?.address)}
@@ -132,26 +142,6 @@ export function Header({ allMarketData, logoHref }: HeaderProps) {
           </ConnectedButton>
         </div>
       </nav>
-      <DepositWithdrawModal
-        allMarketData={allMarketData}
-        open={depositWithdrawOpen}
-        onClose={() => setDepositWithdrawOpen(false)}
-      />
-      <BaseModal
-        open={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          false;
-        }}
-        showCloseButton={true}
-        className="!w-[500px]"
-      >
-        <AccountDetailsModal
-          // allMarketData={allMarketData}
-          onClose={() => setIsModalOpen(false)}
-          disconnect={disconnect}
-        />
-      </BaseModal>
     </header>
   );
 }

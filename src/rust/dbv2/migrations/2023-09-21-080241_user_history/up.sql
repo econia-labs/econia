@@ -66,3 +66,8 @@ CREATE VIEW api.market_orders AS
 
 CREATE VIEW api.swap_orders AS
     SELECT * FROM aggregator.user_history_swap NATURAL JOIN aggregator.user_history;
+
+GRANT SELECT ON api.orders TO web_anon;
+GRANT SELECT ON api.limit_orders TO web_anon;
+GRANT SELECT ON api.market_orders TO web_anon;
+GRANT SELECT ON api.swap_orders TO web_anon;

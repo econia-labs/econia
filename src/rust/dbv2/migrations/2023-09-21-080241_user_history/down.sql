@@ -9,3 +9,4 @@ DROP TABLE aggregator.user_history_market;
 DROP TABLE aggregator.user_history_swap;
 DROP TABLE aggregator.user_history;
 DROP TYPE order_status;
+DROP TYPE order_type;

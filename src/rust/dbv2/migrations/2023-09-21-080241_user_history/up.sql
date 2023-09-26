@@ -1,5 +1,6 @@
 -- Your SQL goes here
 CREATE TYPE order_status AS ENUM ('open', 'closed', 'cancelled');
+CREATE TYPE order_type AS ENUM ('limit', 'market', 'swap');
 
 CREATE TABLE aggregator.aggregated_events (
     txn_version NUMERIC(20) NOT NULL,
@@ -16,7 +17,8 @@ CREATE TABLE aggregator.user_history (
     integrator TEXT NOT NULL,
     total_filled NUMERIC(20) NOT NULL,
     remaining_size NUMERIC(20) NOT NULL,
-    order_status order_status NOT NULL
+    order_status order_status NOT NULL,
+    order_type order_type NOT NULL
 );
 
 CREATE TABLE aggregator.user_history_limit (

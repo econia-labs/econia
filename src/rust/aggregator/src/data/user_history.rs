@@ -13,6 +13,14 @@ pub enum OrderStatus {
     Cancelled,
 }
 
+#[derive(sqlx::Type, Debug)]
+#[sqlx(type_name = "order_type", rename_all = "lowercase")] // only for PostgreSQL to match a type definition
+pub enum OrderType {
+    Limit,
+    Market,
+    Swap,
+}
+
 pub struct UserHistory {
     pool: PgPool,
     last_indexed_timestamp: Option<DateTime<Utc>>,
@@ -142,7 +150,7 @@ impl Data for UserHistory {
             sqlx::query!(
                 r#"
                     INSERT INTO aggregator.user_history VALUES (
-                        $1, $2, $3, $4, $5, $6, $7, $8
+                        $1, $2, $3, $4, $5, $6, $7, $8, $9
                     );
                 "#,
                 x.market_id,
@@ -153,6 +161,7 @@ impl Data for UserHistory {
                 BigDecimal::zero(),
                 x.initial_size,
                 OrderStatus::Open as OrderStatus,
+                OrderType::Limit as OrderType,
             )
             .execute(&self.pool)
             .await
@@ -194,7 +203,7 @@ impl Data for UserHistory {
             sqlx::query!(
                 r#"
                     INSERT INTO aggregator.user_history VALUES (
-                        $1, $2, $3, $4, $5, $6, $7, $8
+                        $1, $2, $3, $4, $5, $6, $7, $8, $9
                     );
                 "#,
                 x.market_id,
@@ -205,6 +214,7 @@ impl Data for UserHistory {
                 BigDecimal::zero(),
                 x.size,
                 OrderStatus::Open as OrderStatus,
+                OrderType::Market as OrderType,
             )
             .execute(&self.pool)
             .await
@@ -246,10 +256,14 @@ impl Data for UserHistory {
             .execute(&self.pool)
             .await
             .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
+            let market = sqlx::query!("SELECT * FROM market_registration_events WHERE market_id = $1", x.market_id)
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
             sqlx::query!(
                 r#"
                     INSERT INTO aggregator.user_history VALUES (
-                        $1, $2, $3, $4, $5, $6, $7, $8
+                        $1, $2, $3, $4, $5, $6, $7, $8, $9
                     );
                 "#,
                 x.market_id,
@@ -258,8 +272,9 @@ impl Data for UserHistory {
                 None as Option<DateTime<Utc>>,
                 x.integrator,
                 BigDecimal::zero(),
-                x.max_base,
+                x.max_base.clone() / market.lot_size,
                 OrderStatus::Open as OrderStatus,
+                OrderType::Swap as OrderType,
             )
             .execute(&self.pool)
             .await

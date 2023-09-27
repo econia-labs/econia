@@ -2,7 +2,6 @@
 
 # Aptos CLI git metadata.
 ARG GIT_REPO=https://github.com/aptos-labs/aptos-core.git
-ARG GIT_TAG=aptos-cli-v2.0.3
 
 # Relative to Econia repository root.
 ARG MOVE_ROOT=src/move
@@ -16,13 +15,12 @@ ARG NODE_BIN=/aptos-core/target/cli/aptos
 # Get Aptos repo and build dependencies, then compile.
 FROM rust:1-bookworm AS compile-cli
 ARG GIT_REPO
-ARG GIT_TAG
 ARG NODE_BIN
 RUN git clone \
     $GIT_REPO \
-    --branch $GIT_TAG \
     --depth 1
 RUN apt-get update && apt-get install -y \
+    libudev-dev \
     build-essential \
     libclang-dev \
     libpq-dev \
@@ -41,6 +39,7 @@ FROM ubuntu
 ARG NODE_BIN
 COPY --from=compile-cli $NODE_BIN /usr/local/bin
 RUN apt-get update && apt-get install -y \
+    curl \
     libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
@@ -64,12 +63,6 @@ RUN chmod u+x /app/start.sh
 
 RUN /app/install_deps.sh
 
-RUN git clone https://github.com/aptos-labs/aptos-core.git --depth 1
-
 ENV PATH=/root/.local/bin:$PATH
-
-WORKDIR aptos-core/testsuite
-
-RUN poetry install
 
 CMD /app/start.sh

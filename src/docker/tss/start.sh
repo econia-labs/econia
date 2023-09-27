@@ -1,15 +1,9 @@
 #!/bin/bash
 
-dockerd &
-
-sleep 10
-
-export DOCKER_DEFAULT_PLATFORM=linux/amd64
-
-poetry run python indexer_grpc_local.py start
+aptos node run-local-testnet --with-faucet & sleep 60
 
 aptos init \
-  --assume-yes \
+  --assume-no \
   --network local \
   --private-key-file /app/accounts/econia.key \
   --profile econia
@@ -23,7 +17,7 @@ aptos move publish \
   --profile econia
 
 aptos init \
-  --assume-yes \
+  --assume-no \
   --network local \
   --private-key-file /app/accounts/faucet.key \
   --profile faucet

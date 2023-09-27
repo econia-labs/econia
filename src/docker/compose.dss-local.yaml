@@ -8,8 +8,7 @@ services:
       context: ../../
       dockerfile: src/docker/tss/Dockerfile
     ports:
-      - "50052:50052"
-      - "50053:50053"
+      - "50051:50051"
       - "8084:8084"
       - "8080:8080"
 

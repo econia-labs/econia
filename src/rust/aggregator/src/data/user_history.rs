@@ -47,7 +47,7 @@ impl Data for UserHistory {
     }
 
     fn poll_interval(&self) -> Option<std::time::Duration> {
-        Some(std::time::Duration::from_secs(60 * 60))
+        Some(std::time::Duration::from_secs(5))
     }
 
     async fn process_and_save_internal(&mut self) -> DataAggregationResult {

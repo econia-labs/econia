@@ -1,12 +1,12 @@
 use anyhow::anyhow;
 use bigdecimal::{BigDecimal, Zero};
 use chrono::{DateTime, Duration, Utc};
-use sqlx::PgPool;
+use sqlx::{PgPool, PgConnection};
 
 use super::{Data, DataAggregationError, DataAggregationResult};
 
 #[derive(sqlx::Type, Debug)]
-#[sqlx(type_name = "order_status", rename_all = "lowercase")] // only for PostgreSQL to match a type definition
+#[sqlx(type_name = "order_status", rename_all = "lowercase")]
 pub enum OrderStatus {
     Open,
     Closed,
@@ -14,7 +14,7 @@ pub enum OrderStatus {
 }
 
 #[derive(sqlx::Type, Debug)]
-#[sqlx(type_name = "order_type", rename_all = "lowercase")] // only for PostgreSQL to match a type definition
+#[sqlx(type_name = "order_type", rename_all = "lowercase")]
 pub enum OrderType {
     Limit,
     Market,
@@ -51,6 +51,9 @@ impl Data for UserHistory {
     }
 
     async fn process_and_save_internal(&mut self) -> DataAggregationResult {
+        let mut transaction = self.pool.begin()
+            .await
+            .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
         let fill_events = sqlx::query!(
             r#"
                 SELECT * FROM fill_events
@@ -61,7 +64,7 @@ impl Data for UserHistory {
                 )
             "#,
         )
-        .fetch_all(&self.pool)
+        .fetch_all(&mut transaction as &mut PgConnection)
         .await
         .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
         let change_events = sqlx::query!(
@@ -74,7 +77,7 @@ impl Data for UserHistory {
                 )
             "#,
         )
-        .fetch_all(&self.pool)
+        .fetch_all(&mut transaction as &mut PgConnection)
         .await
         .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
         let cancel_events = sqlx::query!(
@@ -87,7 +90,7 @@ impl Data for UserHistory {
                 )
             "#,
         )
-        .fetch_all(&self.pool)
+        .fetch_all(&mut transaction as &mut PgConnection)
         .await
         .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
         let limit_events = sqlx::query!(
@@ -100,7 +103,7 @@ impl Data for UserHistory {
                 )
             "#,
         )
-        .fetch_all(&self.pool)
+        .fetch_all(&mut transaction as &mut PgConnection)
         .await
         .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
         let market_events = sqlx::query!(
@@ -113,7 +116,7 @@ impl Data for UserHistory {
                 )
             "#,
         )
-        .fetch_all(&self.pool)
+        .fetch_all(&mut transaction as &mut PgConnection)
         .await
         .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
         let swap_events = sqlx::query!(
@@ -126,7 +129,7 @@ impl Data for UserHistory {
                 )
             "#,
         )
-        .fetch_all(&self.pool)
+        .fetch_all(&mut transaction as &mut PgConnection)
         .await
         .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
         for x in &limit_events {
@@ -144,7 +147,7 @@ impl Data for UserHistory {
                 x.self_match_behavior,
                 x.restriction,
             )
-            .execute(&self.pool)
+            .execute(&mut transaction as &mut PgConnection)
             .await
             .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
             sqlx::query!(
@@ -163,7 +166,7 @@ impl Data for UserHistory {
                 OrderStatus::Open as OrderStatus,
                 OrderType::Limit as OrderType,
             )
-            .execute(&self.pool)
+            .execute(&mut transaction as &mut PgConnection)
             .await
             .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
         }
@@ -178,7 +181,7 @@ impl Data for UserHistory {
                     x.txn_version,
                     x.event_idx,
                 )
-                .execute(&self.pool)
+                .execute(&mut transaction as &mut PgConnection)
                 .await
                 .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
             }
@@ -197,7 +200,7 @@ impl Data for UserHistory {
                 x.direction,
                 x.self_match_behavior,
             )
-            .execute(&self.pool)
+            .execute(&mut transaction as &mut PgConnection)
             .await
             .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
             sqlx::query!(
@@ -216,7 +219,7 @@ impl Data for UserHistory {
                 OrderStatus::Open as OrderStatus,
                 OrderType::Market as OrderType,
             )
-            .execute(&self.pool)
+            .execute(&mut transaction as &mut PgConnection)
             .await
             .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
         }
@@ -231,7 +234,7 @@ impl Data for UserHistory {
                     x.txn_version,
                     x.event_idx,
                 )
-                .execute(&self.pool)
+                .execute(&mut transaction as &mut PgConnection)
                 .await
                 .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
             }
@@ -253,11 +256,11 @@ impl Data for UserHistory {
                 x.min_quote,
                 x.max_quote,
             )
-            .execute(&self.pool)
+            .execute(&mut transaction as &mut PgConnection)
             .await
             .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
             let market = sqlx::query!("SELECT * FROM market_registration_events WHERE market_id = $1", x.market_id)
-            .fetch_one(&self.pool)
+            .fetch_one(&mut transaction as &mut PgConnection)
             .await
             .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
             sqlx::query!(
@@ -276,7 +279,7 @@ impl Data for UserHistory {
                 OrderStatus::Open as OrderStatus,
                 OrderType::Swap as OrderType,
             )
-            .execute(&self.pool)
+            .execute(&mut transaction as &mut PgConnection)
             .await
             .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
         }
@@ -291,7 +294,7 @@ impl Data for UserHistory {
                     x.txn_version,
                     x.event_idx,
                 )
-                .execute(&self.pool)
+                .execute(&mut transaction as &mut PgConnection)
                 .await
                 .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
             }
@@ -308,7 +311,7 @@ impl Data for UserHistory {
                 x.market_id,
                 x.time,
             )
-            .execute(&self.pool)
+            .execute(&mut transaction as &mut PgConnection)
             .await
             .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
         }
@@ -323,7 +326,7 @@ impl Data for UserHistory {
                     x.txn_version,
                     x.event_idx,
                 )
-                .execute(&self.pool)
+                .execute(&mut transaction as &mut PgConnection)
                 .await
                 .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
             }
@@ -339,7 +342,7 @@ impl Data for UserHistory {
                 x.market_id,
                 x.time,
             )
-            .execute(&self.pool)
+            .execute(&mut transaction as &mut PgConnection)
             .await
             .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
         }
@@ -354,7 +357,7 @@ impl Data for UserHistory {
                     x.txn_version,
                     x.event_idx,
                 )
-                .execute(&self.pool)
+                .execute(&mut transaction as &mut PgConnection)
                 .await
                 .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
             }
@@ -386,7 +389,7 @@ impl Data for UserHistory {
                 x.market_id,
                 x.time,
             )
-            .execute(&self.pool)
+            .execute(&mut transaction as &mut PgConnection)
             .await
             .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
         }
@@ -401,11 +404,14 @@ impl Data for UserHistory {
                     x.txn_version,
                     x.event_idx,
                 )
-                .execute(&self.pool)
+                .execute(&mut transaction as &mut PgConnection)
                 .await
                 .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
             }
         }
+        transaction.commit()
+            .await
+            .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
         Ok(())
     }
 }

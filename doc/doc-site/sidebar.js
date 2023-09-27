@@ -49,7 +49,7 @@ module.exports = {
                 type: 'generated-index'
             },
             items: [
-                'off-chain/apis',
+                'off-chain/data-service-stack',
                 'off-chain/events',
                 'off-chain/python-sdk',
                 'off-chain/rust-sdk'

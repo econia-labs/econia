@@ -2,14 +2,12 @@ import { type ApiMarket } from "@/types/api";
 
 import { BaseModal } from "../BaseModal";
 import { DepositWithdrawContent } from "../content/DepositWithdrawContent";
-import { AccountDetailsContent } from "../content/AccountDetailsContent";
 import { useEffect, useState } from "react";
 import { RegisterAccountContent } from "../content/RegisterAccountContent";
 import { SelectMarketContent } from "@/components/trade/DepositWithdrawModal/SelectMarketContent";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useWallet } from "@aptos-labs/wallet-adapter-react";
 import { MOCK_MARKETS } from "@/mockdata/markets";
-import { set } from "react-hook-form";
 import { toast } from "react-toastify";
 import { AccountDetailsModal } from "@/components/AccountDetailsModal";
 
@@ -166,7 +164,12 @@ export const WalletButtonFlowModal: React.FC<Props> = ({
         </BaseModal>
       )}
       {flowStep === FlowStep.MarketSelect && (
-        <BaseModal isOpen={isOpen} onClose={onClose} showCloseButton={true}>
+        <BaseModal
+          isOpen={isOpen}
+          onClose={onClose}
+          showCloseButton={true}
+          className={"pl-0 pr-0"}
+        >
           <SelectMarketContent
             allMarketData={filteredMarkets}
             onSelectMarket={selectMarketCallback}

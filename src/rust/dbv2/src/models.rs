@@ -63,6 +63,54 @@ pub struct PlaceLimitOrderEvent {
 }
 
 #[derive(Clone, Debug, Queryable, Selectable, Insertable)]
+#[diesel(table_name = crate::schema::place_market_order_events)]
+pub struct PlaceMarketOrderEvent {
+    pub txn_version: BigDecimal,
+    pub event_idx: BigDecimal,
+    pub time: DateTime<Utc>,
+    pub market_id: BigDecimal,
+    pub user: String,
+    pub custodian_id: BigDecimal,
+    pub order_id: BigDecimal,
+    pub direction: bool,
+    pub integrator: String,
+    pub self_match_behavior: i16,
+    pub size: BigDecimal,
+}
+
+#[derive(Clone, Debug, Queryable, Selectable, Insertable)]
+#[diesel(table_name = crate::schema::place_swap_order_events)]
+pub struct PlaceSwapOrderEvent {
+    pub txn_version: BigDecimal,
+    pub event_idx: BigDecimal,
+    pub time: DateTime<Utc>,
+    pub market_id: BigDecimal,
+    pub order_id: BigDecimal,
+    pub direction: bool,
+    pub signing_account: String,
+    pub integrator: String,
+    pub min_base: BigDecimal,
+    pub max_base: BigDecimal,
+    pub min_quote: BigDecimal,
+    pub max_quote: BigDecimal,
+    pub limit_price: BigDecimal,
+}
+
+#[derive(Clone, Debug, Queryable, Selectable, Insertable)]
+#[diesel(table_name = crate::schema::change_order_size_events)]
+pub struct ChangeOrderSizeEvent {
+    pub txn_version: BigDecimal,
+    pub event_idx: BigDecimal,
+    pub time: DateTime<Utc>,
+    pub market_id: BigDecimal,
+    pub user: String,
+    pub custodian_id: BigDecimal,
+    pub order_id: BigDecimal,
+    pub side: bool,
+    pub new_size: BigDecimal,
+}
+
+#[derive(Clone, Debug, Queryable, Selectable, Insertable)]
 #[diesel(table_name = crate::schema::cancel_order_events)]
 pub struct CancelOrderEvent {
     pub txn_version: BigDecimal,

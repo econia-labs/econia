@@ -33,8 +33,6 @@ type MarketStats = {
   pairData: {
     baseAsset: string;
     quoteAsset: string;
-    baseAssetIcon: string;
-    quoteAssetIcon: string;
     baseVolume: number;
     quoteVolume: number;
   };
@@ -81,6 +79,23 @@ export const StatsBar: React.FC<{
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { coinListClient } = useAptos();
 
+  const { data: iconData } = useQuery(
+    ["iconData", selectedMarket],
+    async () => {
+      const baseAssetIcon = selectedMarket.base
+        ? coinListClient.getCoinInfoByFullName(
+            TypeTag.fromApiCoin(selectedMarket.base).toString(),
+          )?.logo_url
+        : DEFAULT_TOKEN_ICON;
+      const quoteAssetIcon =
+        coinListClient.getCoinInfoByFullName(
+          TypeTag.fromApiCoin(selectedMarket.quote).toString(),
+        )?.logo_url ?? DEFAULT_TOKEN_ICON;
+
+      return { baseAssetIcon, quoteAssetIcon };
+    },
+  );
+
   const { data } = useQuery(
     ["marketStats", selectedMarket],
     async () => {
@@ -92,16 +107,6 @@ export const StatsBar: React.FC<{
       ).then((res) => res.json());
       const res = await resProm;
       const priceRes = await priceProm;
-
-      const baseAssetIcon = selectedMarket.base
-        ? coinListClient.getCoinInfoByFullName(
-            TypeTag.fromApiCoin(selectedMarket.base).toString(),
-          )?.logo_url
-        : DEFAULT_TOKEN_ICON;
-      const quoteAssetIcon =
-        coinListClient.getCoinInfoByFullName(
-          TypeTag.fromApiCoin(selectedMarket.quote).toString(),
-        )?.logo_url ?? DEFAULT_TOKEN_ICON;
 
       return {
         lastPrice: toDecimalPrice({
@@ -123,8 +128,6 @@ export const StatsBar: React.FC<{
             ? selectedMarket.base.symbol
             : selectedMarket.name.split("-")[0],
           quoteAsset: selectedMarket.quote.symbol,
-          baseAssetIcon,
-          quoteAssetIcon,
           baseVolume: res.volume,
           quoteVolume: 68026950.84, // TODO: Mock data
         },
@@ -163,8 +166,8 @@ export const StatsBar: React.FC<{
         <div className="flex overflow-x-clip whitespace-nowrap">
           <div className="flex items-center">
             <MarketIconPair
-              baseAssetIcon={data?.pairData.baseAssetIcon}
-              quoteAssetIcon={data?.pairData.quoteAssetIcon}
+              baseAssetIcon={iconData?.baseAssetIcon}
+              quoteAssetIcon={iconData?.quoteAssetIcon}
             />
             <div className="min-w-[160px]">
               <button

@@ -1,5 +1,8 @@
 version: "3.9"
 
+include:
+  - compose.database.yaml
+
 services:
 
   streamer:
@@ -11,29 +14,6 @@ services:
       - "50051:50051"
       - "8084:8084"
       - "8080:8080"
-
-  diesel:
-    build:
-      args:
-        DATABASE_URL: "postgres://econia:econia@postgres:5432/econia"
-      context: ../../
-      dockerfile: src/docker/database/Dockerfile.diesel
-    depends_on:
-      - postgres
-
-  postgres:
-    environment:
-      POSTGRES_DB: "econia"
-      POSTGRES_USER: "econia"
-      POSTGRES_PASSWORD: "econia"
-    build:
-      context: ../../
-      dockerfile: src/docker/database/Dockerfile.postgres
-    ports:
-      - "5432:5432"
-    restart: always
-    volumes:
-      - "db:/var/lib/postgresql/data"
 
   postgrest:
     depends_on:

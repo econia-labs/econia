@@ -13,6 +13,6 @@ env_logger = "0.10.0"
 log = "0.4.20"
 serde.workspace = true
 serde_json.workspace = true
-sqlx = { workspace = true, features = ["postgres", "chrono"] }
+sqlx = { workspace = true, features = ["postgres", "chrono", "bigdecimal"] }
 thiserror.workspace = true
 tokio = { workspace = true, features = ["full"] }

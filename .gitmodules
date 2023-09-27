@@ -1,6 +1,3 @@
-[submodule "src/rust/dependencies/aptos-core"]
-	path = src/rust/dependencies/aptos-core
-	url = https://github.com/econia-labs/aptos-core.git
 [submodule "src/rust/dependencies/aptos-indexer-processors"]
 	path = src/rust/dependencies/aptos-indexer-processors
 	url = https://github.com/econia-labs/aptos-indexer-processors.git

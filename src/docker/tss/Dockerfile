@@ -39,7 +39,6 @@ FROM ubuntu
 ARG NODE_BIN
 COPY --from=compile-cli $NODE_BIN /usr/local/bin
 RUN apt-get update && apt-get install -y \
-    curl \
     libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 

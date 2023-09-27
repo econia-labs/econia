@@ -14,6 +14,7 @@ services:
       - "50051:50051"
       - "8084:8084"
       - "8080:8080"
+      - "8081:8081"
 
   postgrest:
     depends_on:
@@ -54,7 +55,3 @@ services:
       - PGWS_CHECK_LISTENER_INTERVAL=1000
     ports:
       - 3000:8083
-
-volumes:
-  db:
-    driver: local

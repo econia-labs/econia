@@ -2,15 +2,10 @@ import { type ApiMarket } from "@/types/api";
 
 import { BaseModal } from "../BaseModal";
 import { DepositWithdrawContent } from "../content/DepositWithdrawContent";
-import { AccountDetailsContent } from "../content/AccountDetailsContent";
-import { useEffect, useMemo, useState } from "react";
-import { RegisterAccountContent } from "../content/RegisterAccountContent";
-import { SelectMarketContent } from "@/components/trade/DepositWithdrawModal/SelectMarketContent";
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useWallet } from "@aptos-labs/wallet-adapter-react";
 import { MOCK_MARKETS } from "@/mockdata/markets";
-import { set } from "react-hook-form";
-import { toast } from "react-toastify";
 
 type Props = {
   selectedMarket: ApiMarket;

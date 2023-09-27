@@ -113,7 +113,6 @@ export const SelectMarketContent: React.FC<{
         header: () => <div className="pl-8">Name</div>,
         cell: (info) => {
           const { baseAssetIcon, quoteAssetIcon } = info.row.original;
-          console.log("market select icons", baseAssetIcon, quoteAssetIcon);
           return (
             <div className="flex pl-8">
               <MarketIconPair

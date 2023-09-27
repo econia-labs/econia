@@ -231,7 +231,7 @@ export const SelectMarketContent: React.FC<{
             </Tab>
           </Tab.List>
         </div>
-        <Tab.Panels className="w-full">
+        <Tab.Panels className="scrollbar-none w-full overflow-y-scroll">
           <table className="mt-4 w-full table-fixed">
             <thead>
               {table.getHeaderGroups().map((headerGroup) => (

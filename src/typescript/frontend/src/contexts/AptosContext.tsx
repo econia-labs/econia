@@ -37,6 +37,8 @@ export function AptosContextProvider({ children }: PropsWithChildren) {
   const { signAndSubmitTransaction: aptosSignAndSubmitTransaction, account } =
     useWallet();
   const aptosClient = useMemo(() => new AptosClient(RPC_NODE_URL), []);
+
+  // returns true if transaction is confirmed, false if transaction fails
   const signAndSubmitTransaction = useCallback(
     async (
       ...args: Parameters<WalletContextState["signAndSubmitTransaction"]>
@@ -60,9 +62,11 @@ export function AptosContextProvider({ children }: PropsWithChildren) {
       try {
         await aptosClient.waitForTransaction(res?.hash || "");
         toast.success("Transaction confirmed");
+        return true;
       } catch (error) {
         toast.error("Transaction failed");
         console.error(error);
+        return false;
       }
     },
     [aptosSignAndSubmitTransaction, aptosClient],

@@ -13,7 +13,7 @@ import {
 } from "react";
 import { toast } from "react-toastify";
 
-import { BaseModal } from "@/components/BaseModal";
+import { BaseModal } from "@/components/modals/BaseModal";
 import { ArrowIcon } from "@/components/icons/ArrowIcon";
 
 export type ConnectWalletContextState = {
@@ -52,7 +52,7 @@ export function ConnectWalletContextProvider({ children }: PropsWithChildren) {
     <ConnectWalletContext.Provider value={value}>
       {children}
       <BaseModal
-        open={open}
+        isOpen={open}
         onClose={() => setOpen(false)}
         onBack={() => setOpen(false)}
       >

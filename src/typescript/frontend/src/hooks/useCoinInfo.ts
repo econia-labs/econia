@@ -4,7 +4,7 @@ import { useAptos } from "@/contexts/AptosContext";
 import { type TypeTag } from "@/utils/TypeTag";
 
 export type CoinInfo = {
-  decimals: 6;
+  decimals: number;
   name: string;
   symbol: string;
 };

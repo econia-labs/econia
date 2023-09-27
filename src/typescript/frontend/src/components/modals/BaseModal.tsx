@@ -2,21 +2,35 @@ import { Dialog, Transition } from "@headlessui/react";
 import { ChevronLeftIcon } from "@heroicons/react/20/solid";
 import React, { Fragment, type PropsWithChildren } from "react";
 
-import bg from "../../public/bg.png";
-import { XIcon } from "./icons/XIcon";
+import bg from "../../../public/bg.png";
+import { XIcon } from "../icons/XIcon";
 
 export const BaseModal: React.FC<
   PropsWithChildren<{
-    open: boolean;
+    isOpen: boolean;
     onClose: () => void;
     onBack?: () => void;
     showCloseButton?: boolean;
     showBackButton?: boolean;
+    className?: string;
   }>
-> = ({ open, onClose, onBack, showBackButton, showCloseButton, children }) => {
+> = ({
+  isOpen,
+  onClose,
+  onBack,
+  showBackButton,
+  showCloseButton,
+  children,
+  className,
+}) => {
   return (
-    <Transition appear show={open} as={Fragment}>
-      <Dialog as="div" className="relative z-50" open={open} onClose={onClose}>
+    <Transition appear show={isOpen} as={Fragment}>
+      <Dialog
+        as="div"
+        className="relative z-50"
+        open={isOpen}
+        onClose={onClose}
+      >
         <Transition.Child
           as={Fragment}
           enter="ease-out duration-150"
@@ -32,7 +46,8 @@ export const BaseModal: React.FC<
         <div className="fixed inset-0 overflow-y-auto">
           <div className="flex min-h-full items-center justify-center p-4 text-center">
             <Dialog.Panel
-              className="w-full max-w-4xl transform border border-neutral-600 bg-black align-middle shadow-xl transition-all"
+              className={`w-full
+              ${className} max-w-4xl transform border border-neutral-600 bg-black p-6 align-middle shadow-xl transition-all`}
               style={{
                 backgroundImage: `url(${bg.src})`,
               }}
@@ -49,7 +64,7 @@ export const BaseModal: React.FC<
                 )}
                 {showCloseButton && (
                   <div
-                    className="absolute right-0 top-0 flex h-[72px] w-[72px] cursor-pointer items-center justify-center border-b border-l border-b-neutral-600 border-l-neutral-600 transition-all [&>svg>path]:stroke-neutral-500 [&>svg>path]:transition-all [&>svg>path]:hover:stroke-neutral-100"
+                    className="absolute right-0 top-0 z-50 flex h-[50px] w-[50px] cursor-pointer items-center justify-center border-b border-l border-b-neutral-600 border-l-neutral-600 transition-all [&>svg>path]:stroke-neutral-500 [&>svg>path]:transition-all [&>svg>path]:hover:stroke-neutral-100"
                     onClick={onClose}
                   >
                     <XIcon />

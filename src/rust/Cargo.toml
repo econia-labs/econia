@@ -3,10 +3,10 @@ resolver = "2"
 members = [
   "aggregator",
   "dbv2",
+  "e2e",
   "types",
   "sdk",
   "sdk/example",
-  "dependencies/aptos-indexer-processors/rust/processor",
 ]
 exclude = ["api", "db", "dependencies"]
 

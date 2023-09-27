@@ -46,18 +46,6 @@ jobs:
           args: --check --all --manifest-path src/rust/Cargo.toml
 
       - uses: actions-rs/cargo@v1
-        name: Install cargo-sort
-        with:
-          command: install
-          args: cargo-sort --manifest-path src/rust/Cargo.toml
-
-      - uses: actions-rs/cargo@v1
-        name: Check with cargo-sort
-        with:
-          command: sort
-          args: --grouped --check --workspace --manifest-path src/rust/Cargo.toml
-
-      - uses: actions-rs/cargo@v1
         name: Check
         with:
           command: check

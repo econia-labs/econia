@@ -8,15 +8,15 @@ CREATE TABLE
     time timestamptz NOT NULL,
     maker_address VARCHAR(70) NOT NULL,
     maker_custodian_id NUMERIC(20) NOT NULL,
-    maker_order_id NUMERIC(40) NOT NULL,
+    maker_order_id NUMERIC(39) NOT NULL,
     maker_side BOOLEAN NOT NULL,
     market_id NUMERIC(20) NOT NULL,
     price NUMERIC(20) NOT NULL,
-    trade_sequence_number NUMERIC(20) NOT NULL,
+    sequence_number_for_trade NUMERIC(20) NOT NULL,
     size NUMERIC(20) NOT NULL,
     taker_address VARCHAR(70) NOT NULL,
     taker_custodian_id NUMERIC(20) NOT NULL,
-    taker_order_id NUMERIC(40) NOT NULL,
+    taker_order_id NUMERIC(39) NOT NULL,
     taker_quote_fees_paid NUMERIC(20) NOT NULL
   );
 
@@ -43,16 +43,16 @@ CREATE TABLE
     PRIMARY KEY (txn_version, event_idx),
     time timestamptz NOT NULL,
     market_id NUMERIC(20) NOT NULL,
-    maker_address VARCHAR(70) NOT NULL,
-    maker_custodian_id NUMERIC(20) NOT NULL,
-    maker_order_id NUMERIC(40) NOT NULL,
-    maker_side BOOLEAN NOT NULL,
-    integrator_address VARCHAR(70) NOT NULL,
+    "user" VARCHAR(70) NOT NULL,
+    custodian_id NUMERIC(20) NOT NULL,
+    order_id NUMERIC(39) NOT NULL,
+    side BOOLEAN NOT NULL,
+    integrator VARCHAR(70) NOT NULL,
     initial_size NUMERIC(20) NOT NULL,
     price NUMERIC(20) NOT NULL,
-    restriction NUMERIC(20) NOT NULL,
-    self_match_behavior NUMERIC(20) NOT NULL,
-    posted_size NUMERIC(20) NOT NULL
+    restriction SMALLINT NOT NULL,
+    self_match_behavior SMALLINT NOT NULL,
+    size NUMERIC(20) NOT NULL
   );
 
 CREATE FUNCTION notify_place_limit_order_event () RETURNS TRIGGER AS $$
@@ -78,10 +78,10 @@ CREATE TABLE
     PRIMARY KEY (txn_version, event_idx),
     time timestamptz NOT NULL,
     market_id NUMERIC(20) NOT NULL,
-    maker_address VARCHAR(70) NOT NULL,
-    maker_custodian_id NUMERIC(20) NOT NULL,
-    maker_order_id NUMERIC(40) NOT NULL,
-    reason NUMERIC(20) NOT NULL
+    "user" VARCHAR(70) NOT NULL,
+    custodian_id NUMERIC(20) NOT NULL,
+    order_id NUMERIC(39) NOT NULL,
+    reason SMALLINT NOT NULL
   );
 
 CREATE FUNCTION notify_cancel_order_event () RETURNS TRIGGER AS $$

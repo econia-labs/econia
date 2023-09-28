@@ -16,7 +16,7 @@ CREATE TABLE
 
 CREATE FUNCTION notify_change_order_size_event () RETURNS TRIGGER AS $$
 BEGIN
-   PERFORM pg_notify('change_order_size_event'::text, row_to_json(NEW)::text);
+   PERFORM pg_notify('econiaws', json_build_object('channel', 'change_order_size_event', 'payload', NEW)::text);
    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -46,7 +46,7 @@ CREATE TABLE
 
 CREATE FUNCTION notify_place_market_order_event () RETURNS TRIGGER AS $$
 BEGIN
-   PERFORM pg_notify('place_market_order_event'::text, row_to_json(NEW)::text);
+   PERFORM pg_notify('econiaws', json_build_object('channel', 'place_market_order_event', 'payload', NEW)::text);
    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -78,7 +78,7 @@ CREATE TABLE
 
 CREATE FUNCTION notify_place_swap_order_event () RETURNS TRIGGER AS $$
 BEGIN
-   PERFORM pg_notify('place_swap_order_event'::text, row_to_json(NEW)::text);
+   PERFORM pg_notify('econiaws', json_build_object('channel', 'place_swap_order_event', 'payload', NEW)::text);
    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

@@ -22,7 +22,7 @@ CREATE TABLE
 
 CREATE FUNCTION notify_fill_event () RETURNS TRIGGER AS $$
 BEGIN
-   PERFORM pg_notify('fill_event'::text, row_to_json(NEW)::text);
+   PERFORM pg_notify('econiaws', json_build_object('channel', 'fill_event', 'payload', NEW)::text);
    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -57,7 +57,7 @@ CREATE TABLE
 
 CREATE FUNCTION notify_place_limit_order_event () RETURNS TRIGGER AS $$
 BEGIN
-   PERFORM pg_notify('place_limit_order_event'::text, row_to_json(NEW)::text);
+   PERFORM pg_notify('econiaws', json_build_object('channel', 'place_limit_order_event', 'payload', NEW::text));
    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -86,7 +86,7 @@ CREATE TABLE
 
 CREATE FUNCTION notify_cancel_order_event () RETURNS TRIGGER AS $$
 BEGIN
-   PERFORM pg_notify('cancel_order_event'::text, row_to_json(NEW)::text);
+   PERFORM pg_notify('econiaws', json_build_object('channel', 'cancel_order_event', 'payload', NEW::text));
    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

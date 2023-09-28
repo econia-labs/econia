@@ -39,11 +39,8 @@ services:
       - postgres
     environment:
       - PGWS_DB_URI=postgres://econia:econia@postgres/econia
-      - PGWS_JWT_SECRET=econia_is_dope
+      - PGWS_JWT_SECRET=econia_is_dooooooooooooooooooope
       - PGWS_CHECK_LISTENER_INTERVAL=1000
+      - PGWS_LISTEN_CHANNEL=econiaws
     ports:
-      - 3000:8083
-
-volumes:
-  db:
-    driver: local
+      - 3000:3000

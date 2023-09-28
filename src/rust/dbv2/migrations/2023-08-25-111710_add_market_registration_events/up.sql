@@ -32,7 +32,7 @@ CREATE TABLE
 
 CREATE FUNCTION notify_market_registration_event () RETURNS TRIGGER AS $$
 BEGIN
-   PERFORM pg_notify('market_registration_event'::text, row_to_json(NEW)::text);
+   PERFORM pg_notify('econiaws', json_build_object('channel', 'market_registration_event', 'payload', NEW)::text);
    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

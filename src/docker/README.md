@@ -2,6 +2,8 @@
 
 The `compose.dss-local.yaml` Docker compose file specifies the Econia data service stack in its most basic form, which can be run locally.
 
+You can read more about the DSS by taking a look at the [official documentation](https://econia.dev/off-chain/data-service-stack).
+
 ## Configuration
 
 1. Note that before you can use this file you will have to update the indexer submodule:

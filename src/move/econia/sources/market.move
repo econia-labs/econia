@@ -853,6 +853,8 @@ module econia::market {
     const E_ORDER_DID_NOT_POST: u64 = 31;
     /// Order price field does not match AVL queue insertion key price.
     const E_ORDER_PRICE_MISMATCH: u64 = 32;
+    /// New order size is less than the minimum order size for market.
+    const E_SIZE_CHANGE_BELOW_MIN_SIZE: u64 = 33;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -2630,6 +2632,8 @@ module econia::market {
     ///   on book having given market order ID.
     /// * `E_INVALID_CUSTODIAN`: Mismatch between `custodian_id` and
     ///   custodian ID of order on order book having market order ID.
+    /// * `E_SIZE_CHANGE_BELOW_MIN_SIZE`: New order size is less than
+    ///   the minimum order size for market.
     ///
     /// # Expected value testing
     ///
@@ -2639,6 +2643,7 @@ module econia::market {
     ///
     /// # Failure testing
     ///
+    /// * `test_change_order_size_below_min_size()`
     /// * `test_change_order_size_insertion_error()`
     /// * `test_change_order_size_invalid_custodian()`
     /// * `test_change_order_size_invalid_market_id()`
@@ -2662,6 +2667,9 @@ module econia::market {
                 E_INVALID_MARKET_ID);
         let order_book_ref_mut = // Mutably borrow market order book.
             tablist::borrow_mut(order_books_map_ref_mut, market_id);
+        // Assert new size is at least minimum size for market.
+        assert!(new_size >= order_book_ref_mut.min_size,
+                E_SIZE_CHANGE_BELOW_MIN_SIZE);
         // Mutably borrow corresponding orders AVL queue.
         let orders_ref_mut = if (side == ASK) &mut order_book_ref_mut.asks
             else &mut order_book_ref_mut.bids;
@@ -5299,6 +5307,44 @@ module econia::market {
         assert!(price_r            == price, 0);
         assert!(user_r             == maker_address, 0);
         assert!(custodian_id_r     == custodian_id, 0);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = E_SIZE_CHANGE_BELOW_MIN_SIZE)]
+    /// Verify failure for attempting to change size below min size.
+    fun test_change_order_size_below_min_size()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (maker, _) = init_markets_users_integrator_test();
+        // Declare order parameters.
+        let side                = BID;
+        let market_id           = MARKET_ID_COIN;
+        let integrator          = @integrator;
+        let custodian_id        = NO_CUSTODIAN;
+        let maker_address       = address_of(&maker);
+        let restriction         = NO_RESTRICTION;
+        let price               = 10;
+        let size_start          = MIN_SIZE_COIN;
+        let size_end            = MIN_SIZE_COIN - 1;
+        let self_match_behavior = ABORT;
+        // Declare base/quote posted with final order.
+        let base_maker  = size_end * LOT_SIZE_COIN;
+        let quote_maker = size_end * price * TICK_SIZE_COIN;
+        // Declare maker deposit amounts.
+        let deposit_base  = base_maker;
+        let deposit_quote = HI_64 - quote_maker;
+        // Deposit maker coins.
+        user::deposit_coins<BC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(deposit_base));
+        user::deposit_coins<QC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(deposit_quote));
+        // Place maker order, storing market order ID for lookup.
+        let (market_order_id, _, _, _) = place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, side, size_start, price,
+            restriction, self_match_behavior);
+        // Attempt invalid order size change.
+        change_order_size_user(
+            &maker, market_id, side, market_order_id, size_end);
     }
 
     #[test]

@@ -2266,6 +2266,16 @@ Limit order size results in base asset amount overflow.
 
 
 
+<a name="0xc0deb00c_market_E_SIZE_CHANGE_BELOW_MIN_SIZE"></a>
+
+New order size is less than the minimum order size for market.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_SIZE_CHANGE_BELOW_MIN_SIZE">E_SIZE_CHANGE_BELOW_MIN_SIZE</a>: u64 = 33;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_market_E_SIZE_CHANGE_INSERTION_ERROR"></a>
 
 Order size change requiring insertion resulted in an AVL queue
@@ -5310,6 +5320,8 @@ correspond to a valid order.
 on book having given market order ID.
 * <code><a href="market.md#0xc0deb00c_market_E_INVALID_CUSTODIAN">E_INVALID_CUSTODIAN</a></code>: Mismatch between <code>custodian_id</code> and
 custodian ID of order on order book having market order ID.
+* <code><a href="market.md#0xc0deb00c_market_E_SIZE_CHANGE_BELOW_MIN_SIZE">E_SIZE_CHANGE_BELOW_MIN_SIZE</a></code>: New order size is less than
+the minimum order size for market.
 
 
 <a name="@Expected_value_testing_106"></a>
@@ -5327,6 +5339,7 @@ custodian ID of order on order book having market order ID.
 ### Failure testing
 
 
+* <code>test_change_order_size_below_min_size()</code>
 * <code>test_change_order_size_insertion_error()</code>
 * <code>test_change_order_size_invalid_custodian()</code>
 * <code>test_change_order_size_invalid_market_id()</code>
@@ -5360,6 +5373,9 @@ custodian ID of order on order book having market order ID.
             <a href="market.md#0xc0deb00c_market_E_INVALID_MARKET_ID">E_INVALID_MARKET_ID</a>);
     <b>let</b> order_book_ref_mut = // Mutably borrow <a href="market.md#0xc0deb00c_market">market</a> order book.
         <a href="tablist.md#0xc0deb00c_tablist_borrow_mut">tablist::borrow_mut</a>(order_books_map_ref_mut, market_id);
+    // Assert new size is at least minimum size for <a href="market.md#0xc0deb00c_market">market</a>.
+    <b>assert</b>!(new_size &gt;= order_book_ref_mut.min_size,
+            <a href="market.md#0xc0deb00c_market_E_SIZE_CHANGE_BELOW_MIN_SIZE">E_SIZE_CHANGE_BELOW_MIN_SIZE</a>);
     // Mutably borrow corresponding orders AVL queue.
     <b>let</b> orders_ref_mut = <b>if</b> (side == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>) &<b>mut</b> order_book_ref_mut.asks
         <b>else</b> &<b>mut</b> order_book_ref_mut.bids;

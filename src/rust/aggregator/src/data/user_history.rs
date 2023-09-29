@@ -173,11 +173,7 @@ impl Data for UserHistory {
             .execute(&mut transaction as &mut PgConnection)
             .await
             .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
-        }
-        if !limit_events.is_empty() {
-            for x in limit_events {
-                mark_as_aggregated(&mut transaction, &x.txn_version, &x.event_idx).await?;
-            }
+            mark_as_aggregated(&mut transaction, &x.txn_version, &x.event_idx).await?;
         }
         for x in &market_events {
             sqlx::query!(
@@ -215,11 +211,7 @@ impl Data for UserHistory {
             .execute(&mut transaction as &mut PgConnection)
             .await
             .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
-        }
-        if !market_events.is_empty() {
-            for x in market_events {
-                mark_as_aggregated(&mut transaction, &x.txn_version, &x.event_idx).await?;
-            }
+            mark_as_aggregated(&mut transaction, &x.txn_version, &x.event_idx).await?;
         }
         for x in &swap_events {
             sqlx::query!(
@@ -267,11 +259,7 @@ impl Data for UserHistory {
             .execute(&mut transaction as &mut PgConnection)
             .await
             .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
-        }
-        if !swap_events.is_empty() {
-            for x in swap_events {
-                mark_as_aggregated(&mut transaction, &x.txn_version, &x.event_idx).await?;
-            }
+            mark_as_aggregated(&mut transaction, &x.txn_version, &x.event_idx).await?;
         }
         let mut fill_index = 0;
         let mut change_index = 0;
@@ -354,11 +342,7 @@ impl Data for UserHistory {
             .execute(&mut transaction as &mut PgConnection)
             .await
             .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
-        }
-        if !cancel_events.is_empty() {
-            for x in cancel_events {
-                mark_as_aggregated(&mut transaction, &x.txn_version, &x.event_idx).await?;
-            }
+            mark_as_aggregated(&mut transaction, &x.txn_version, &x.event_idx).await?;
         }
         transaction
             .commit()

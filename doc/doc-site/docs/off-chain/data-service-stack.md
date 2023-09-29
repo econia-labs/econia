@@ -74,6 +74,8 @@ docker compose -f src/docker/compose.dss-global.yaml up -d # From inside econia 
 
 This might take a while to start (expect anywhere from a couple minutes, to more, depending on the machine you have).
 
+*WARNING*: when switching chains, dont forget to prune the Docker volume (`docker volume prune -af` to prune all Docker volumes).
+
 ## Result
 
 Great job!

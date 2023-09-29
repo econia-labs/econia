@@ -1,7 +1,7 @@
 use anyhow::anyhow;
 use bigdecimal::{BigDecimal, Zero};
 use chrono::{DateTime, Duration, Utc};
-use sqlx::{PgPool, PgConnection, Transaction, Database, Postgres};
+use sqlx::{Database, PgConnection, PgPool, Postgres, Transaction};
 
 use super::{Data, DataAggregationError, DataAggregationResult};
 
@@ -51,10 +51,12 @@ impl Data for UserHistory {
     }
 
     async fn process_and_save_internal(&mut self) -> DataAggregationResult {
-        let mut transaction = self.pool.begin()
+        let mut transaction = self
+            .pool
+            .begin()
             .await
             .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
-        let fill_events = sqlx::query!(
+        let mut fill_events = sqlx::query!(
             r#"
                 SELECT * FROM fill_events
                 WHERE NOT EXISTS (
@@ -68,7 +70,7 @@ impl Data for UserHistory {
         .fetch_all(&mut transaction as &mut PgConnection)
         .await
         .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
-        let change_events = sqlx::query!(
+        let mut change_events = sqlx::query!(
             r#"
                 SELECT * FROM change_order_size_events
                 WHERE NOT EXISTS (
@@ -239,7 +241,10 @@ impl Data for UserHistory {
             .execute(&mut transaction as &mut PgConnection)
             .await
             .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
-            let market = sqlx::query!("SELECT * FROM market_registration_events WHERE market_id = $1", x.market_id)
+            let market = sqlx::query!(
+                "SELECT * FROM market_registration_events WHERE market_id = $1",
+                x.market_id
+            )
             .fetch_one(&mut transaction as &mut PgConnection)
             .await
             .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
@@ -268,27 +273,70 @@ impl Data for UserHistory {
                 mark_as_aggregated(&mut transaction, &x.txn_version, &x.event_idx).await?;
             }
         }
-        for i in 0..fill_events.len().max(change_events.len()) {
-            match (fill_events.get(i), change_events.get(i)) {
+        let mut fill_index = 0;
+        let mut change_index = 0;
+        for _ in 0..(fill_events.len() + change_events.len()) {
+            match (fill_events.get(fill_index), change_events.get(change_index)) {
                 (Some(fill), Some(change)) => {
-                    if fill.txn_version < change.txn_version || (fill.txn_version == change.txn_version && fill.event_idx < change.event_idx) {
-                        aggregate_fill(&mut transaction, &fill.size, &fill.maker_order_id, &fill.market_id, &fill.time).await?;
-                        aggregate_change(&mut transaction, &change.new_size, &change.order_id, &change.market_id, &change.time).await?;
+                    if fill.txn_version < change.txn_version
+                        || (fill.txn_version == change.txn_version
+                            && fill.event_idx < change.event_idx)
+                    {
+                        aggregate_fill(
+                            &mut transaction,
+                            &fill.size,
+                            &fill.maker_order_id,
+                            &fill.market_id,
+                            &fill.time,
+                        )
+                        .await?;
+                        mark_as_aggregated(&mut transaction, &fill.txn_version, &fill.event_idx)
+                            .await?;
+                        fill_index = fill_index + 1;
                     } else {
-                        aggregate_change(&mut transaction, &change.new_size, &change.order_id, &change.market_id, &change.time).await?;
-                        aggregate_fill(&mut transaction, &fill.size, &fill.maker_order_id, &fill.market_id, &fill.time).await?;
+                        aggregate_change(
+                            &mut transaction,
+                            &change.new_size,
+                            &change.order_id,
+                            &change.market_id,
+                            &change.time,
+                        )
+                        .await?;
+                        mark_as_aggregated(
+                            &mut transaction,
+                            &change.txn_version,
+                            &change.event_idx,
+                        )
+                        .await?;
+                        change_index = change_index + 1;
                     }
-                    mark_as_aggregated(&mut transaction, &fill.txn_version, &fill.event_idx).await?;
-                    mark_as_aggregated(&mut transaction, &change.txn_version, &change.event_idx).await?;
-                },
+                }
                 (Some(fill), None) => {
-                    aggregate_fill(&mut transaction, &fill.size, &fill.maker_order_id, &fill.market_id, &fill.time).await?;
-                    mark_as_aggregated(&mut transaction, &fill.txn_version, &fill.event_idx).await?;
-                },
+                    aggregate_fill(
+                        &mut transaction,
+                        &fill.size,
+                        &fill.maker_order_id,
+                        &fill.market_id,
+                        &fill.time,
+                    )
+                    .await?;
+                    mark_as_aggregated(&mut transaction, &fill.txn_version, &fill.event_idx)
+                        .await?;
+                    fill_index = fill_index + 1;
+                }
                 (None, Some(change)) => {
-                    aggregate_change(&mut transaction, &change.new_size, &change.order_id, &change.market_id, &change.time).await?;
-                    mark_as_aggregated(&mut transaction, &change.txn_version, &change.event_idx).await?;
-                },
+                    aggregate_change(
+                        &mut transaction,
+                        &change.new_size,
+                        &change.order_id,
+                        &change.market_id,
+                        &change.time,
+                    )
+                    .await?;
+                    mark_as_aggregated(&mut transaction, &change.txn_version, &change.event_idx)
+                        .await?;
+                    change_index = change_index + 1;
+                }
                 (None, None) => unreachable!(),
             };
         }
@@ -312,14 +360,21 @@ impl Data for UserHistory {
                 mark_as_aggregated(&mut transaction, &x.txn_version, &x.event_idx).await?;
             }
         }
-        transaction.commit()
+        transaction
+            .commit()
             .await
             .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
         Ok(())
     }
 }
 
-async fn aggregate_fill<'a>(tx: &mut Transaction<'a, Postgres>, size: &BigDecimal, maker_order_id: &BigDecimal, market_id: &BigDecimal, time: &DateTime<Utc>) -> DataAggregationResult {
+async fn aggregate_fill<'a>(
+    tx: &mut Transaction<'a, Postgres>,
+    size: &BigDecimal,
+    maker_order_id: &BigDecimal,
+    market_id: &BigDecimal,
+    time: &DateTime<Utc>,
+) -> DataAggregationResult {
     sqlx::query!(
         r#"
             UPDATE aggregator.user_history
@@ -350,7 +405,13 @@ async fn aggregate_fill<'a>(tx: &mut Transaction<'a, Postgres>, size: &BigDecima
     Ok(())
 }
 
-async fn aggregate_change<'a>(tx: &mut Transaction<'a, Postgres>, new_size: &BigDecimal, order_id: &BigDecimal, market_id: &BigDecimal, time: &DateTime<Utc>) -> DataAggregationResult {
+async fn aggregate_change<'a>(
+    tx: &mut Transaction<'a, Postgres>,
+    new_size: &BigDecimal,
+    order_id: &BigDecimal,
+    market_id: &BigDecimal,
+    time: &DateTime<Utc>,
+) -> DataAggregationResult {
     sqlx::query!(
         r#"
             UPDATE aggregator.user_history
@@ -368,7 +429,11 @@ async fn aggregate_change<'a>(tx: &mut Transaction<'a, Postgres>, new_size: &Big
     Ok(())
 }
 
-async fn mark_as_aggregated<'a>(tx: &mut Transaction<'a, Postgres>, txn_version: &BigDecimal, event_idx: &BigDecimal) -> DataAggregationResult {
+async fn mark_as_aggregated<'a>(
+    tx: &mut Transaction<'a, Postgres>,
+    txn_version: &BigDecimal,
+    event_idx: &BigDecimal,
+) -> DataAggregationResult {
     sqlx::query!(
         r#"
             INSERT INTO aggregator.aggregated_events VALUES (

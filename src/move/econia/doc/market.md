@@ -5821,6 +5821,7 @@ requirement not met.
 * <code>test_match_empty()</code>
 * <code>test_match_fill_size_0()</code>
 * <code>test_match_loop_twice()</code>
+* <code>test_match_order_size_0()</code>
 * <code>test_match_partial_fill_lot_limited_sell()</code>
 * <code>test_match_partial_fill_tick_limited_buy()</code>
 * <code>test_match_price_break_buy()</code>
@@ -5929,6 +5930,31 @@ requirement not met.
         <b>let</b> order_ref_mut = <a href="avl_queue.md#0xc0deb00c_avl_queue_borrow_head_mut">avl_queue::borrow_head_mut</a>(orders_ref_mut);
         // Assert AVL queue head price matches that of order.
         <b>assert</b>!(order_ref_mut.price == price, <a href="market.md#0xc0deb00c_market_E_HEAD_KEY_PRICE_MISMATCH">E_HEAD_KEY_PRICE_MISMATCH</a>);
+        // If order at head of queue <b>has</b> size 0, evict it and
+        // <b>continue</b> <b>to</b> next order. This should never be reached
+        // during production, but is handled here <b>to</b> explicitly
+        // verify the assumption of no empty orders on the book.
+        <b>if</b> (order_ref_mut.size == 0) {
+            <b>let</b> <a href="market.md#0xc0deb00c_market_Order">Order</a>{
+                size: evictee_size,
+                price: evictee_price,
+                <a href="user.md#0xc0deb00c_user">user</a>: evictee_user,
+                custodian_id: evictee_custodian_id,
+                order_access_key: evictee_order_access_key
+            } = <a href="avl_queue.md#0xc0deb00c_avl_queue_pop_head">avl_queue::pop_head</a>(orders_ref_mut);
+            <a href="user.md#0xc0deb00c_user_cancel_order_internal">user::cancel_order_internal</a>(
+                evictee_user,
+                market_id,
+                evictee_custodian_id,
+                side,
+                evictee_size,
+                evictee_price,
+                evictee_order_access_key,
+                (<a href="market.md#0xc0deb00c_market_NIL">NIL</a> <b>as</b> u128),
+                <a href="market.md#0xc0deb00c_market_CANCEL_REASON_EVICTION">CANCEL_REASON_EVICTION</a>,
+            );
+            <b>continue</b>
+        };
         // Get fill size and <b>if</b> a complete fill against book.
         <b>let</b> (fill_size, complete_fill) =
             // If max fill size is less than order size, fill size

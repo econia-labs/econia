@@ -23,7 +23,6 @@ services:
       dockerfile: src/docker/processor/Dockerfile
     depends_on:
       - postgres
-      - streamer
     ports:
       - "8085:8085"
     volumes:

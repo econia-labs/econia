@@ -92,6 +92,7 @@ poetry run trade
 ```
 
 The script will have a few prompts, respond to each of them as follows:
+
 | Prompt         | Value                                                              |
 | -------------- | ------------------------------------------------------------------ |
 | Econia address | 0xeeee0dd966cd4fc739f76006591239b32527edbb7c303c431f8c691bda150b40 |

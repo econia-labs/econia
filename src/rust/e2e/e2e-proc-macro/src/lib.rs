@@ -35,10 +35,7 @@ pub fn e2e_test(attr: TokenStream, item: TokenStream) -> TokenStream {
     };
 
     let ItemFn {
-        vis,
-        sig,
-        block,
-        ..
+        vis, sig, block, ..
     } = input;
     let inputs = sig.inputs.clone();
     let ident = sig.ident.clone();
@@ -56,5 +53,6 @@ pub fn e2e_test(attr: TokenStream, item: TokenStream) -> TokenStream {
             };
             Metadata::new(#attr, stringify!(#ident), result.await)
         }
-    }.into()
+    }
+    .into()
 }

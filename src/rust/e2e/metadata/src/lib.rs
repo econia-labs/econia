@@ -6,7 +6,11 @@ pub struct Metadata<T> {
 
 impl<T> Metadata<T> {
     pub fn new(namespace: impl Into<String>, name: impl Into<String>, result: T) -> Self {
-        Self { namespace: namespace.into(), name: name.into(), result }
+        Self {
+            namespace: namespace.into(),
+            name: name.into(),
+            result,
+        }
     }
 
     pub fn namespace(&self) -> &str {

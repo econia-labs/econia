@@ -59,7 +59,7 @@ async fn run_tests(state: State) -> Result<()> {
         i.finish();
     }
 
-    println!("Sccesses:");
+    println!("Successes:");
     successes.iter().for_each(|(namespace, v)| {
         println!("-> {namespace}");
         v.iter().for_each(|name| println!("  -> {}", name.green()))

@@ -12,7 +12,9 @@ use crate::utils::*;
 pub async fn test_market_registration<'a>(state: &'a State) -> Result<()> {
     let lot_size = 10u64.pow(8 - 3); // eAPT has 8 decimals, want 1/1000th granularity
     let tick_size = 10u64.pow(6 - 3); // eAPT has 6 decimals, want 1/1000th granularity
-    let min_size = 1;
+    let min_size = state
+        .market_size
+        .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
 
     let entry = register_market_base_coin_from_coinstore(
         state.econia_address.clone(),

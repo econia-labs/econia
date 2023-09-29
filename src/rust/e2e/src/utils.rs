@@ -1,4 +1,4 @@
-use std::{time::Duration, str::FromStr};
+use std::{str::FromStr, sync::atomic::AtomicU64, time::Duration};
 
 use anyhow::Result;
 use aptos_sdk::{
@@ -8,9 +8,7 @@ use aptos_sdk::{
         language_storage::{ModuleId, StructTag, TypeTag},
     },
     rest_client::{aptos_api_types::MoveModuleId, FaucetClient},
-    types::{
-        account_address::AccountAddress, transaction::EntryFunction, LocalAccount
-    },
+    types::{account_address::AccountAddress, transaction::EntryFunction, LocalAccount},
 };
 use clap::Parser;
 use econia_sdk::EconiaClient;
@@ -45,12 +43,19 @@ pub struct State {
     pub econia_client: EconiaClient,
     pub db_pool: PgPool,
     pub node_url: String,
+    pub market_size: AtomicU64,
 }
 
 /// Creates the initial variables needed
 pub async fn init(args: &Args) -> State {
     // Create eAPT and eUSDC `TypeTag`s
-    let faucet_address = AccountAddress::from_hex_literal(&args.faucet_address).unwrap();
+    let faucet_address = if args.faucet_address.starts_with("0x") {
+        args.faucet_address.clone()
+    } else {
+        format!("0x{}", args.faucet_address)
+    };
+    let faucet_address =
+        AccountAddress::from_hex_literal(&faucet_address).expect("Could not parse faucet address.");
     let e_apt = TypeTag::Struct(Box::new(
         StructTag::from_str(&format!("0x{faucet_address}::example_apt::ExampleAPT")).unwrap(),
     ));
@@ -65,8 +70,13 @@ pub async fn init(args: &Args) -> State {
     );
 
     // Transform the Econia address from `String` to `AccountAddress`
+    let econia_address = if args.econia_address.starts_with("0x") {
+        args.econia_address.clone()
+    } else {
+        format!("0x{}", args.econia_address)
+    };
     let econia_address =
-        AccountAddress::from_hex_literal(&args.econia_address).expect("Could not parse address.");
+        AccountAddress::from_hex_literal(&econia_address).expect("Could not parse Econia address.");
 
     let (_, econia_client) = account(&faucet_client, &args.node_url, econia_address.clone()).await;
 
@@ -82,7 +92,8 @@ pub async fn init(args: &Args) -> State {
         econia_address,
         econia_client,
         db_pool,
-        node_url: args.node_url.clone()
+        node_url: args.node_url.clone(),
+        market_size: AtomicU64::new(1),
     }
 }
 
@@ -119,9 +130,10 @@ pub async fn fund(
     econia_client: &mut EconiaClient,
     faucet_address: AccountAddress,
 ) -> Result<()> {
-    let module_id = ModuleId::from(
-        MoveModuleId::from_str(&format!("{}::faucet", faucet_address))?
-    );
+    let module_id = ModuleId::from(MoveModuleId::from_str(&format!(
+        "{}::faucet",
+        faucet_address
+    ))?);
     let entry = EntryFunction::new(
         module_id.clone(),
         ident_str!("mint").to_owned(),

@@ -1,5 +1,3 @@
 # REST API
 
-The documentation of the REST API from Econia's DSS.
-
-Comming soon…
+See auto-generated api docs [here](https://econia.dev/api).

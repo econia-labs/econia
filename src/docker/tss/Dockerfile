@@ -2,6 +2,7 @@
 
 # Aptos CLI git metadata.
 ARG GIT_REPO=https://github.com/aptos-labs/aptos-core.git
+ARG GIT_TAG=aptos-cli-v2.1.1
 
 # Relative to Econia repository root.
 ARG MOVE_ROOT=src/move
@@ -15,9 +16,11 @@ ARG NODE_BIN=/aptos-core/target/cli/aptos
 # Get Aptos repo and build dependencies, then compile.
 FROM rust:1-bookworm AS compile-cli
 ARG GIT_REPO
+ARG GIT_TAG
 ARG NODE_BIN
 RUN git clone \
     $GIT_REPO \
+    --branch $GIT_TAG \
     --depth 1
 RUN apt-get update && apt-get install -y \
     libudev-dev \

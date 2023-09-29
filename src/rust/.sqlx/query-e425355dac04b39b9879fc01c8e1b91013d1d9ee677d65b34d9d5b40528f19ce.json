@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO aggregator.aggregated_events VALUES (\n                $1, $2\n            );\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Numeric",
+        "Numeric"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "e425355dac04b39b9879fc01c8e1b91013d1d9ee677d65b34d9d5b40528f19ce"
+}

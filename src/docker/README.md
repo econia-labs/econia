@@ -39,16 +39,18 @@ There are a few steps to start up the local end-to-end testing environment:
 
 **1. Configure the processor.**
 
-See the file `config-template-local.yaml` in `/econia/src/docker/processor` for an example configuration.
+See the file `config-template-local.yaml` in `/src/docker/processor` for an example configuration.
 Copy and rename this file to `config.yaml`, which is ignored by git, so that the docker compose will pick it up.
 The new, copied and renamed file goes into the same folder as the template.
 
 **2. Run the docker compose.**
 
-While inside `/econia/src/docker` run:
+While inside `/src/docker` run:
+
 ```sh
 docker compose -f ./compose.dss-local.yaml up
 ```
+
 Expect this to take a little over 10 minutes (on an M1 OSX machine).
 
 **3. Verify contract deployment** (optional, recommended).
@@ -74,28 +76,28 @@ You'll need to install [Poetry](https://python-poetry.org/docs/):
 
 ```sh
 brew install poetry
-curl -sSL https://install.python-poetry.org | python3 - # alternative
 ```
 
-Next, navigate your terminal to `/econia/src/python/sdk` and run the following:
+Alternatively, if your platform doesn't support `brew`:
+
+```sh
+curl -sSL https://install.python-poetry.org | python3 -
+```
+
+Next, navigate your terminal to `/src/python/sdk` and run the following:
 
 ```sh
 poetry install
 poetry run trade
 ```
 
-The script will have a few prompts; respond as follows:
-
-```
-Please enter the 0x-prefixed address of an Econia deployment (enter nothing to default to devnet OR re-run with ECONIA_ADDR environment variable)
-0xeeee0dd966cd4fc739f76006591239b32527edbb7c303c431f8c691bda150b40
-Please enter the 0x-prefixed address of an Econia faucet (or re-run with FAUCET_ADDR environment variable)
-0xffff094ef8ccfa9137adcb13a2fae2587e83c348b32c63f811cc19fcc9fc5878
-Please enter the URL of an Aptos node (enter nothing to default to devnet OR re-run with APTOS_NODE_URL environment variable)
-http://0.0.0.0:8080/v1
-Please enter the URL of an Aptos faucet (enter nothing to default to devnet OR re-run with APTOS_FAUCET_URL environment variable)
-http://0.0.0.0:8081
-```
+The script will have a few prompts, respond to each of them as follows:
+| Prompt         | Value                                                              |
+| -------------- | ------------------------------------------------------------------ |
+| Econia address | 0xeeee0dd966cd4fc739f76006591239b32527edbb7c303c431f8c691bda150b40 |
+| Faucet address | 0xffff094ef8ccfa9137adcb13a2fae2587e83c348b32c63f811cc19fcc9fc5878 |
+| Node URL       | http://0.0.0.0:8080/v1                                             |
+| Faucet URL     | http://0.0.0.0:8081                                                |
 
 Next, the script will step through various operations such as order creation, cancellation and fulfillment; press `ENTER` to advance each step.
 The script should execute to completion (it says `THE END!`) if everything is working.

@@ -6,13 +6,12 @@ include:
 services:
 
   streamer:
-    privileged: true
     build:
       context: ../../
       dockerfile: src/docker/tss/Dockerfile
     ports:
       - "50051:50051"
-      - "8084:8084"
+      - "8090:8090"
       - "8080:8080"
       - "8081:8081"
 

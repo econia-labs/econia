@@ -1,9 +1,9 @@
 #!/bin/bash
 
 while true; do
-    timeout 10 grpcurl -format json -d '{ "starting_version": 0 }' -H x-aptos-data-authorization:dummy_token -plaintext streamer:50051 aptos.indexer.v1.RawData/GetTransactions
+    curl -f streamer:8090
 
-    if [ $? -eq 124 ]; then
+    if [ $? -eq 0 ]; then
         break
     else
         echo "THE STREAMER IS NOT READY!!!!"

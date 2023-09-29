@@ -5,16 +5,6 @@ include:
 
 services:
 
-  streamer:
-    build:
-      context: ../../
-      dockerfile: src/docker/tss/Dockerfile
-    ports:
-      - "50051:50051"
-      - "8090:8090"
-      - "8080:8080"
-      - "8081:8081"
-
   postgrest:
     depends_on:
       - diesel
@@ -33,7 +23,6 @@ services:
       dockerfile: src/docker/processor/Dockerfile
     depends_on:
       - postgres
-      - streamer
     ports:
       - "8085:8085"
     volumes:
@@ -50,8 +39,7 @@ services:
       - postgres
     environment:
       - PGWS_DB_URI=postgres://econia:econia@postgres/econia
-      - PGWS_JWT_SECRET=econia_is_dooooooooooooooooooope
+      - PGWS_JWT_SECRET=econia_is_dope
       - PGWS_CHECK_LISTENER_INTERVAL=1000
-      - PGWS_LISTEN_CHANNEL=econiaws
     ports:
-      - 3000:3000
+      - 3000:8083

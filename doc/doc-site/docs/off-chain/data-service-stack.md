@@ -37,22 +37,22 @@ Unless you are an infrastructure provider or want to run a fullnode yourself, th
 To connect to this service, you'll need to get an API key [here](https://aptos-api-gateway-prod.firebaseapp.com/).
 
 Once you have the API key, you'll need to create the processor configuration file.
-A template can be found at `src/docker/processor/config-template.yaml`.
+A template can be found at `src/docker/processor/config-template-global.yaml`.
 In the same folder as the template, create a copy of the file named `config.yaml`, then fill it as follows:
 
 - health_check_port: `8085`
 - server_config:
   - processor_config:
-    - type: `econia_processor`.
+    - type: `econia_transaction_processor`.
     - econia_address: the testnet Econia address (`0xc0de11113b427d35ece1d8991865a941c0578b0f349acabbe9753863c24109ff`).
   - postgres_connection_string: `postgres://econia:econia@postgres/econia` if you are using the database which comes with the Docker compose file.
-  - indexer_grpc_data_service_address: `https://grpc.testnet.aptoslabs.com` for testnet.
+  - indexer_grpc_data_service_address: `https://grpc.testnet.aptoslabs.com:443` for testnet.
     See [the Aptos official documentation](https://aptos.dev/indexer/txn-stream/labs-hosted) for other networks.
   - indexer_grpc_http2_ping_interval_in_secs: `60`.
   - indexer_grpc_http2_ping_timeout_in_secs: `10`.
   - auth_token: the key you got earlier.
   - starting_version: where to start indexing.
-    We recommend this to be the transaction Econia was deployed on, so that you don't miss any events which could lead to corrupted data.
+    We recommend this to be the transaction Econia was deployed on, so that you don't miss any events which could lead to corrupted data (`649555969`).
 
 ## Updating the git submodules
 
@@ -69,7 +69,7 @@ Once you're done with the previous step, you can start the DSS.
 In order to do so, you can run the following commands:
 
 ```bash
-docker compose -f src/docker/compose.dss-local.yaml up -d # From inside econia repo root
+docker compose -f src/docker/compose.dss-global.yaml up -d # From inside econia repo root
 ```
 
 This might take a while to start (expect anywhere from a couple minutes, to more, depending on the machine you have).

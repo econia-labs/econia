@@ -35,14 +35,78 @@ docker compose --file src/docker/compose.dss-local.yaml down
 
 This Docker compose is designed to work with an end-to-end testing environment, with Econia and the Econia faucet published under single-signer vanity address accounts generated from plaintext (compromised) private keys.
 
-While the local testnet is running, you can look up on-chain Move resources using the published node REST API port (note that the Aptos faucet API may take longer to start up than the node REST API):
+There are a few steps to start up the local end-to-end testing environment:
+
+**1. Configure the processor.**
+
+See the file `config-template-local.yaml` in `/econia/src/docker/processor` for an example configuration.
+Copy and rename this file to `config.yaml`, which is ignored by git, so that the docker compose will pick it up.
+The new, copied and renamed file goes into the same folder as the template.
+
+**2. Run the docker compose.**
+
+While inside `/econia/src/docker` run:
+```sh
+docker compose -f ./compose.dss-local.yaml up
+```
+Expect this to take a little over 10 minutes (on an M1 OSX machine).
+
+**3. Verify contract deployment** (optional, recommended).
+
+While the local testnet is running, you can look up on-chain Move resources using the published node REST API port.
+Note that the Aptos faucet API may take longer to start up than the node REST API:
 
 ```sh
 # From Econia repo root
-ECONIA_ADDRESS=$(cat src/docker/chain/accounts/econia.address)
-FAUCET_ADDRESS=$(cat src/docker/chain/accounts/faucet.address)
-aptos account list --account $FAUCET_ADDRESS --url http://localhost:8080
+ECONIA_ADDRESS=0xeeee0dd966cd4fc739f76006591239b32527edbb7c303c431f8c691bda150b40
+FAUCET_ADDRESS=0xffff094ef8ccfa9137adcb13a2fae2587e83c348b32c63f811cc19fcc9fc5878
+aptos account list --account $FAUCET_ADDRESS --url http://0.0.0.0:8080
+aptos account list --account $ECONIA_ADDRESS --url http://0.0.0.0:8080
 ```
+
+Both of the last two commands should spit out a bunch of resources deployed to the expected addresses.
+
+**4. Verify working connectivity** (optional, recommended).
+
+There is a script available that performs most (but not all) of the eventful and/or interesting operations on the exchange.
+By running it against the local end-to-end deployment, it's possible to verify things like processor operation, database connectivity and data accessibility.
+You'll need to install [Poetry](https://python-poetry.org/docs/):
+
+```sh
+brew install poetry
+curl -sSL https://install.python-poetry.org | python3 - # alternative
+```
+
+Next, navigate your terminal to `/econia/src/python/sdk` and run the following:
+
+```sh
+poetry install
+poetry run trade
+```
+
+The script will have a few prompts; respond as follows:
+
+```
+Please enter the 0x-prefixed address of an Econia deployment (enter nothing to default to devnet OR re-run with ECONIA_ADDR environment variable)
+0xeeee0dd966cd4fc739f76006591239b32527edbb7c303c431f8c691bda150b40
+Please enter the 0x-prefixed address of an Econia faucet (or re-run with FAUCET_ADDR environment variable)
+0xffff094ef8ccfa9137adcb13a2fae2587e83c348b32c63f811cc19fcc9fc5878
+Please enter the URL of an Aptos node (enter nothing to default to devnet OR re-run with APTOS_NODE_URL environment variable)
+http://0.0.0.0:8080/v1
+Please enter the URL of an Aptos faucet (enter nothing to default to devnet OR re-run with APTOS_FAUCET_URL environment variable)
+http://0.0.0.0:8081
+```
+
+Next, the script will step through various operations such as order creation, cancellation and fulfillment; press `ENTER` to advance each step.
+The script should execute to completion (it says `THE END!`) if everything is working.
+Verify that the database is accessible by navigating to `http://0.0.0.0:3001`, and that necessary tables are visible/contain data by navigating to:
+
+- `http://0.0.0.0:3001/market_registration_events`
+- `http://0.0.0.0:3001/cancel_order_events`
+- `http://0.0.0.0:3001/fill_events`
+- `http://0.0.0.0:3001/place_limit_order_events`
+
+If each of these tables is visible and containing data then that means the processor, database and PostgREST are all working together!
 
 # Helpful Docker commands
 

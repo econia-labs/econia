@@ -110,7 +110,9 @@ When switching chains, don't forget to prune the Docker database volume (`docker
 
 ### Verifying the DSS
 
-Verify that the database is accessible by navigating your browser to `http://0.0.0.0:3001`, and check that individual tables are visible/contain data by navigating to:
+Verify that the database is accessible by navigating your browser to `http://0.0.0.0:3001`.
+
+Once the processor has parsed all transactions up until the chain tip, then check that individual tables are visible/contain data by navigating to:
 
 - `http://0.0.0.0:3001/market_registration_events`
 - `http://0.0.0.0:3001/cancel_order_events`

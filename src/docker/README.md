@@ -95,6 +95,13 @@ Verify that the database is accessible by navigating to `http://0.0.0.0:3001`, a
 
 If each of these tables is visible and containing data then that means the processor, database and PostgREST are all working together!
 
+**5. Shut down the local DSS**
+
+```sh
+# From Econia repo root
+docker compose --file src/docker/compose.dss-local.yaml down
+```
+
 # Helpful Docker commands
 
 The [Docker docs](https://docs.docker.com/) offer an extensive collection of helpful tutorials, examples, and references.

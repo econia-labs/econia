@@ -27,6 +27,8 @@ services:
       - "8085:8085"
     volumes:
       - "./processor/config.yaml:/config.yaml"
+    environment:
+      - HEALTHCHECK_BEFORE_START=false
 
   ws:
     build:

@@ -50,6 +50,8 @@ module.exports = {
             },
             items: [
                 'off-chain/data-service-stack',
+                'off-chain/rest-api',
+                'off-chain/websocket',
                 'off-chain/events',
                 'off-chain/python-sdk',
                 'off-chain/rust-sdk'

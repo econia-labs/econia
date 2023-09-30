@@ -20,6 +20,20 @@ module.exports = {
 
   presets: [
     [
+      'redocusaurus',
+      {
+        specs: [
+          {
+            spec: './openapi.json',
+            route: '/api/',
+          },
+        ],
+        theme: {
+          primaryColor: '#1890ff',
+        },
+      },
+    ],
+    [
       "classic",
       ({
         docs: {

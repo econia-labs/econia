@@ -21,7 +21,7 @@ Alternatively, you can generate the JWT by yourself (you can find the secret in 
 To get a list of the different channels, please see the [WebSocket server documentation](./websocket.md).
 
 The REST API is actually a PostgREST instance.
-You can find the REST API documentation [here](econia.dev/rest-api.md).
+You can find the REST API documentation [here](./rest-api.md).
 You can learn more about how to query a PostgREST instance on their [official documentation](https://postgrest.org/en/stable/).
 
 ## Testnet walkthrough

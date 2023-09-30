@@ -1,6 +1,6 @@
-# WebSocket
+# WebSockets
 
-Econia's DSS provides a WebSocket server for real-time notifications.
+Econia's [DSS](./index.md) provides a WebSocket server for real-time notifications.
 
 ## Format
 
@@ -35,7 +35,7 @@ Channels include:
 For each channel, the payload format is identical to the corresponding event format returned by the [DSS REST API](./rest-api.md).
 For example, the payload of an event from the `fill_event` channel is identical to the event format returned by a REST API query for `localhost:3001/fill_events` (note that channel names have no `s` at the end but REST API endpoints do), except that WebSocket events are received one by one instead of in an array.
 
-Hence, a return from the `fill_event` channel is of format:
+Hence the format of an event payload from the `fill_event` channel:
 
 ```json
 {
@@ -58,7 +58,7 @@ Hence, a return from the `fill_event` channel is of format:
 }
 ```
 
-In contrast, the format of a REST API query return for the `/fill_events` endpoint (if there was only one fill event in the database):
+In contrast, the response of a REST API query for the `/fill_events` endpoint (assuming only one fill event in the database):
 
 ```json
 [{

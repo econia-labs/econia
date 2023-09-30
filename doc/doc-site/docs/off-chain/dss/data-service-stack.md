@@ -70,7 +70,7 @@ A `starting_version` that is too late will lead to missed events and corrupted d
 Before starting the DSS, make sure to have the git submodules cloned.
 If not, run the following command:
 
-```sh
+```bash
 # From Econia repo root
 git submodule init
 git submodule update src/rust/dependencies/aptos-indexer-processors
@@ -97,9 +97,9 @@ docker compose --file src/docker/compose.dss-global.yaml up --detach
 
 Then, to shut it down:
 
-```sh
+```bash
 # From Econia repo root
-docker compose --file src/docker/compose.dss-local.yaml down
+docker compose --file src/docker/compose.dss-global.yaml down
 ```
 
 This might take a while to start (expect anywhere from a couple minutes, to more, depending on the machine you have).
@@ -107,6 +107,15 @@ This might take a while to start (expect anywhere from a couple minutes, to more
 :::tip
 When switching chains, don't forget to prune the Docker database volume (`docker volume prune -af` to prune all Docker volumes).
 :::
+
+### Verifying the DSS
+
+Verify that the database is accessible by navigating your browser to `http://0.0.0.0:3001`, and check that individual tables are visible/contain data by navigating to:
+
+- `http://0.0.0.0:3001/market_registration_events`
+- `http://0.0.0.0:3001/cancel_order_events`
+- `http://0.0.0.0:3001/fill_events`
+- `http://0.0.0.0:3001/place_limit_order_events`
 
 ### Result
 

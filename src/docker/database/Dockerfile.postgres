@@ -15,3 +15,6 @@ RUN apt autoremove -y git make
 WORKDIR ..
 
 RUN rm -rf ./pgjwt
+
+HEALTHCHECK --interval=5s --timeout=3s \
+    CMD pg_isready -h localhost -p 5432 -U econia || exit 1

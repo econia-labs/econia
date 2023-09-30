@@ -7,7 +7,7 @@ Econia Move source code adheres to [Semantic Versioning] and [Keep a Changelog] 
 ### Added
 
 - Abort for order size change below min size ([#500]).
-- Add check to evict empty orders during matching ([#504]).
+- Check for empty orders during matching ([#504]).
 
 ## [v4.1.0]
 

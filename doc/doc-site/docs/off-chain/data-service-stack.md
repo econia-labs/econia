@@ -1,7 +1,7 @@
 # Data service stack
 
 The Econia data service stack (DSS) is a collection of services that provide assorted data endpoints for integration purposes.
-It exposes a REST API and a WebSocket server, which are powered internally by an aggregator, database, and indexer.
+It exposes a REST API and a WebSocket server, which are powered internally by an aggregator, a database, and an indexer.
 To ensure composability, portability, and ease of use, each component is represented as a Docker service inside of a Docker compose environment.
 For more on Docker, see [the official docs](https://docs.docker.com/).
 

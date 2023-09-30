@@ -77,12 +77,12 @@ poetry run trade
 
 The script will have a few prompts, respond to each of them as follows:
 
-| Prompt         | Value                                                              |
-| -------------- | ------------------------------------------------------------------ |
-| Econia address | 0xeeee0dd966cd4fc739f76006591239b32527edbb7c303c431f8c691bda150b40 |
-| Faucet address | 0xffff094ef8ccfa9137adcb13a2fae2587e83c348b32c63f811cc19fcc9fc5878 |
-| Node URL       | http://0.0.0.0:8080/v1                                             |
-| Faucet URL     | http://0.0.0.0:8081                                                |
+| Prompt         | Value                                                                |
+| -------------- | -------------------------------------------------------------------- |
+| Econia address | `0xeeee0dd966cd4fc739f76006591239b32527edbb7c303c431f8c691bda150b40` |
+| Faucet address | `0xffff094ef8ccfa9137adcb13a2fae2587e83c348b32c63f811cc19fcc9fc5878` |
+| Node URL       | http://0.0.0.0:8080/v1                                               |
+| Faucet URL     | http://0.0.0.0:8081                                                  |
 
 Next, the script will step through various operations such as order creation, cancellation and fulfillment; press `ENTER` to advance each step.
 The script should execute to completion (it says `THE END!`) if everything is working.

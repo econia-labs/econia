@@ -14,26 +14,9 @@ You can read more about the DSS by taking a look at the [official documentation]
    git submodule update src/rust/dependencies/aptos-indexer-processors
    ```
 
-1. You'll also need to provide a `processor/config.yaml` based on `processor/config-template.yaml`.
+1. You'll also need to provide a `processor/config.yaml` based on `processor/config-template-local.yaml`.
 
-## Start up
-
-> This command may take a while the first time you run it, since it will have to compile several binaries.
-> Subsequent calls should be much faster, however, due to Docker's caching mechanism.
-
-```sh
-# From Econia repo root
-docker compose --file src/docker/compose.dss-local.yaml up --detach
-```
-
-## Shut down
-
-```sh
-# From Econia repo root
-docker compose --file src/docker/compose.dss-local.yaml down
-```
-
-# End-to-end docker compose
+## End-to-end docker compose
 
 This Docker compose is designed to work with an end-to-end testing environment, with Econia and the Econia faucet published under single-signer vanity address accounts generated from plaintext (compromised) private keys.
 
@@ -41,19 +24,18 @@ There are a few steps to start up the local end-to-end testing environment:
 
 **1. Configure the processor.**
 
-See the file `config-template-local.yaml` in `/src/docker/processor` for an example configuration.
+See the file `config-template-local.yaml` in `src/docker/processor` for an example configuration.
 Copy and rename this file to `config.yaml`, which is ignored by git, so that the docker compose will pick it up.
 The new, copied and renamed file goes into the same folder as the template.
 
 **2. Run the docker compose.**
 
-While inside `/src/docker` run:
-
 ```sh
-docker compose -f ./compose.dss-local.yaml up
+# From Econia repo root
+docker compose --file src/docker/compose.dss-local.yaml up
 ```
 
-Expect this to take a little over 10 minutes (on an M1 OSX machine).
+Expect this to take a little over 10 minutes to compile (on an M1 OSX machine).
 
 **3. Verify contract deployment** (optional, recommended).
 
@@ -86,7 +68,7 @@ Alternatively, if your platform doesn't support `brew`:
 curl -sSL https://install.python-poetry.org | python3 -
 ```
 
-Next, navigate your terminal to `/src/python/sdk` and run the following:
+Next, navigate your terminal to `src/python/sdk` and run the following:
 
 ```sh
 poetry install

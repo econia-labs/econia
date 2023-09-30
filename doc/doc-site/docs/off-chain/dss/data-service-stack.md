@@ -29,7 +29,7 @@ You can learn more about how to query a PostgREST instance on their [official do
 There are two ways of running the DSS:
 
 1. Against a local chain.
-2. Against a public chain like Aptos devnet, testnet, or mainnet.
+1. Against a public chain like Aptos devnet, testnet, or mainnet.
 
 For continuous integration (CI) or development, running the DSS against a local chain is recommended.
 

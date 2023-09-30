@@ -78,13 +78,14 @@ git submodule update src/rust/dependencies/aptos-indexer-processors
 
 ### Starting the DSS
 
-Once you're done with the previous step, you can start the DSS.
-In order to do so, you can run the following commands:
+Once you're done with the previous step, you can start the DSS:
 
 ```bash
 # From Econia repo root
 docker compose --file src/docker/compose.dss-global.yaml up
 ```
+
+This might take a while to start (expect anywhere from a couple minutes, to more, depending on the machine you have).
 
 Then, to shut it down simply press `Ctrl+C`.
 
@@ -102,8 +103,6 @@ Then, to shut it down:
 docker compose --file src/docker/compose.dss-global.yaml down
 ```
 
-This might take a while to start (expect anywhere from a couple minutes, to more, depending on the machine you have).
-
 :::tip
 When switching chains, don't forget to prune the Docker database volume (`docker volume prune -af` to prune all Docker volumes).
 :::
@@ -118,6 +117,14 @@ Once the processor has parsed all transactions up until the chain tip, then chec
 - `http://0.0.0.0:3001/cancel_order_events`
 - `http://0.0.0.0:3001/fill_events`
 - `http://0.0.0.0:3001/place_limit_order_events`
+
+:::tip
+
+It may take up to ten minutes before the `market_registration_events_table` has data in it.
+
+To see what transaction the DSS processor has synced through, do not run in detached mode.
+
+:::
 
 ### Result
 

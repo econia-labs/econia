@@ -57,7 +57,7 @@ module.exports = {
                     label: 'Data service stack',
                     link: {
                         type: 'doc',
-                        id: 'off-chain/dss/index'
+                        id: 'off-chain/dss/data-service-stack'
                     },
                     items: [
                         'off-chain/dss/rest-api',

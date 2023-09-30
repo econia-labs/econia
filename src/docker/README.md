@@ -14,8 +14,6 @@ You can read more about the DSS by taking a look at the [official documentation]
    git submodule update src/rust/dependencies/aptos-indexer-processors
    ```
 
-1. You'll also need to provide a `processor/config.yaml` based on `processor/config-template-local.yaml`.
-
 ## End-to-end docker compose
 
 This Docker compose is designed to work with an end-to-end testing environment, with Econia and the Econia faucet published under single-signer vanity address accounts generated from plaintext (compromised) private keys.
@@ -24,7 +22,7 @@ There are a few steps to start up the local end-to-end testing environment:
 
 **1. Configure the processor.**
 
-See the file `config-template-local.yaml` in `src/docker/processor` for an example configuration.
+See the file `processor/config-template-local.yaml` for an example configuration.
 Copy and rename this file to `config.yaml`, which is ignored by git, so that the docker compose will pick it up.
 The new, copied and renamed file goes into the same folder as the template.
 
@@ -68,9 +66,11 @@ Alternatively, if your platform doesn't support `brew`:
 curl -sSL https://install.python-poetry.org | python3 -
 ```
 
-Next, navigate your terminal to `src/python/sdk` and run the following:
+Next run the following:
 
 ```sh
+# From Econia repo root
+cd src/python/sdk
 poetry install
 poetry run trade
 ```

@@ -1,6 +1,6 @@
 # WebSockets
 
-Econia's [DSS](./index.md) provides a WebSocket server for real-time notifications.
+Econia's [DSS](./data-service-stack.md) provides a WebSocket server for real-time notifications.
 
 ## Format
 

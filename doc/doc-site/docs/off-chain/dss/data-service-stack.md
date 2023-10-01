@@ -57,7 +57,7 @@ In the same folder as the template, create a copy of the file named `config.yaml
   - indexer_grpc_http2_ping_timeout_in_secs: `10`.
   - auth_token: the key you got earlier.
   - starting_version: where to start indexing.
-    For this walkthrough, use the first transaction of the [Econia testnet account](../welcome.md#account-addresses) (`649555969`), which is a prudent starting point that slightly precedes the publication of the Econia Move package on testnet.
+    For this walkthrough, use the first transaction of the [Econia testnet account](../../welcome.md#account-addresses) (`649555969`), which is a prudent starting point that slightly precedes the publication of the Econia Move package on testnet.
 
 :::warning
 

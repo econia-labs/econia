@@ -24,13 +24,11 @@ module.exports = {
       {
         specs: [
           {
+            id: 'dss-rest-api',
             spec: './openapi.json',
             route: '/api/',
           },
         ],
-        theme: {
-          primaryColor: '#1890ff',
-        },
       },
     ],
     [

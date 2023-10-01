@@ -1,10 +1,10 @@
-# WebSocket
+# WebSockets
 
-The documentation of the WebSocket server from Econia's DSS.
+Econia's [DSS](./index.md) provides a WebSocket server for real-time notifications.
 
 ## Format
 
-There is a general format for all WebSocket messages which is the following:
+The WebSocket server uses a general format for all WebSocket messages:
 
 ```json
 {
@@ -15,13 +15,14 @@ There is a general format for all WebSocket messages which is the following:
 }
 ```
 
-`channel` indicates from which channel the message comes, and `payload` contains the message's data.
+- `channel` indicates which channel the message comes from.
+- `payload` contains the message's data.
 
 ## Channels
 
-There is a channel per event type.
+Each event type has a its own channel.
 
-Here is the list of all channels:
+Channels include:
 
 - `market_registration_event`
 - `place_limit_order_event`
@@ -31,10 +32,10 @@ Here is the list of all channels:
 - `change_order_size_event`
 - `cancel_order_event`
 
-For each channel, the payload will be the same as you would get by querying this event from the REST API.
-For example, the payload of an event coming from the `fill_event` channel will be the exact same as the data you get by querying `localhost:3001/fill_events` (note that channel names have no `s` at the end where as REST API endpoints do), except that you get them one by one (not in an array).
+For each channel, the payload format is identical to the corresponding event format returned by the [DSS REST API](./rest-api.md).
+For example, the payload of an event from the `fill_event` channel is identical to the event format returned by a REST API query for `localhost:3001/fill_events` (note that channel names have no `s` at the end but REST API endpoints do), except that WebSocket events are received one by one instead of in an array.
 
-Just to illustrate what has been said above, here is what you would get from the `fill_event` channel:
+Hence the format of an event payload from the `fill_event` channel:
 
 ```json
 {
@@ -57,7 +58,7 @@ Just to illustrate what has been said above, here is what you would get from the
 }
 ```
 
-And here is what you would get from the `/fill_events` endpoint (if there was only this fill event in the database):
+In contrast, the response of a REST API query for the `/fill_events` endpoint (assuming only one fill event in the database):
 
 ```json
 [{
@@ -80,4 +81,4 @@ And here is what you would get from the `/fill_events` endpoint (if there was on
 }]
 ```
 
-Note the `[` and the `]`.
+Note the `[` and the `]`, constituting an array.

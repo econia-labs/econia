@@ -2209,6 +2209,8 @@ dependencies = [
  "metadata",
  "rand 0.7.3",
  "reqwest",
+ "serde 1.0.175",
+ "serde_json",
  "sqlx",
  "tokio",
 ]

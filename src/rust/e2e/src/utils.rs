@@ -12,6 +12,8 @@ use aptos_sdk::{
 };
 use clap::Parser;
 use econia_sdk::EconiaClient;
+use reqwest::Url;
+use serde::Deserialize;
 use sqlx::PgPool;
 
 pub const TIMEOUT: Duration = Duration::from_secs(1);
@@ -32,6 +34,9 @@ pub struct Args {
 
     /// The database URL
     pub db_url: String,
+
+    /// The Econia REST API URL
+    pub api_url: String,
 }
 
 pub struct State {
@@ -43,7 +48,13 @@ pub struct State {
     pub econia_client: EconiaClient,
     pub db_pool: PgPool,
     pub node_url: String,
+    pub api_url: String,
     pub market_size: AtomicU64,
+}
+
+#[derive(Deserialize, Clone)]
+struct MinSize {
+    min_size: u64,
 }
 
 /// Creates the initial variables needed
@@ -84,6 +95,35 @@ pub async fn init(args: &Args) -> State {
         .await
         .expect("Could not connect to the database.");
 
+    let api_url = if args.api_url.ends_with("/") {
+        let mut api_url = args.api_url.clone();
+        api_url.pop();
+        api_url
+    } else {
+        args.api_url.clone()
+    };
+
+    let api_res = reqwest::get(Url::parse_with_params(&format!("{api_url}/market_registration_events"), &[
+        ("order", "min_size.desc"),
+        ("limit", "1"),
+        ("base_account_address", &format!("{faucet_address:#}")),
+        ("base_module_name", "eq.example_usdc"),
+        ("base_struct_name", "eq.ExampleUSDC"),
+        ("quote_account_address", &format!("{faucet_address:#}")),
+        ("quote_module_name", "eq.example_apt"),
+        ("quote_struct_name", "eq.ExampleAPT"),
+        ("select", "min_size"),
+    ])
+        .expect("Could not parse URL."))
+        .await
+        .expect("Could not reach API.");
+
+    let MinSize { min_size } = if let Some(min_size) = api_res.json::<Vec<MinSize>>().await.expect("Could not parse API response.").get(0) {
+        min_size.clone()
+    } else {
+        MinSize { min_size: 0 }
+    };
+
     State {
         e_apt,
         e_usdc,
@@ -93,7 +133,8 @@ pub async fn init(args: &Args) -> State {
         econia_client,
         db_pool,
         node_url: args.node_url.clone(),
-        market_size: AtomicU64::new(1),
+        api_url: args.api_url.clone(),
+        market_size: AtomicU64::new(min_size.clone()),
     }
 }
 

@@ -42,6 +42,7 @@ services:
       - HEALTHCHECK_BEFORE_START=true
 
   ws:
+    platform: linux/x86_64
     build:
       context: ../../
       dockerfile: src/docker/api/Dockerfile.ws

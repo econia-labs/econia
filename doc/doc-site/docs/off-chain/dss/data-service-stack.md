@@ -12,8 +12,10 @@ This page will show you how to run the DSS locally.
 The DSS exposes a REST API and a WebSocket server.
 
 The WebSocket server mainly provides notifications of any events emitted by the Econia Move package.
+It can be addressed at `ws://0.0.0.0:3001` in the default local configuration of docker compose.
 
 The REST API also provides all the events emitted by the Econia Move package., as well as aggregated data like order history and order book state.
+It can be addressed at `http://0.0.0.0:3000` in the default local configuration of docker compose.
 
 In order to access the WebSocket server, connect to the following URL: `ws://your-host/[JWT]` where `[JWT]` is a JSON Web Token (JWT).
 To get a JWT, query the REST API at `http://your-host/rpc/jwt` with the HTTP method `POST` and `{"channels": […]}` as a payload, where `[…]` is a list of the names of the channels you want to receive notifications for.
@@ -109,14 +111,14 @@ When switching chains, don't forget to prune the Docker database volume (`docker
 
 ### Verifying the DSS
 
-Verify that the database is accessible by navigating your browser to `http://0.0.0.0:3001`.
+Verify that the database is accessible by navigating your browser to `http://0.0.0.0:3000`.
 
 Once the processor has parsed all transactions up until the chain tip, then check that individual tables are visible/contain data by navigating to:
 
-- `http://0.0.0.0:3001/market_registration_events`
-- `http://0.0.0.0:3001/cancel_order_events`
-- `http://0.0.0.0:3001/fill_events`
-- `http://0.0.0.0:3001/place_limit_order_events`
+- `http://0.0.0.0:3000/market_registration_events`
+- `http://0.0.0.0:3000/cancel_order_events`
+- `http://0.0.0.0:3000/fill_events`
+- `http://0.0.0.0:3000/place_limit_order_events`
 
 :::tip
 

@@ -5,8 +5,8 @@ import websocket
 import rel
 
 
-REST_URL_LOCAL_DEFAULT = "http://0.0.0.0:3001"
-WS_URL_LOCAL_DEFAULT = "ws://0.0.0.0:3000"
+REST_URL_LOCAL_DEFAULT = "http://0.0.0.0:3000"
+WS_URL_LOCAL_DEFAULT = "ws://0.0.0.0:3001"
 WS_CHANNEL_DEFAULT = "fill_event"
 
 def on_message(ws, message):

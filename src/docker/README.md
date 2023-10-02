@@ -86,12 +86,12 @@ The script will have a few prompts, respond to each of them as follows:
 
 Next, the script will step through various operations such as order creation, cancellation and fulfillment; press `ENTER` to advance each step.
 The script should execute to completion (it says `THE END!`) if everything is working.
-Verify that the database is accessible by navigating to `http://0.0.0.0:3001`, and that necessary tables are visible/contain data by navigating to:
+Verify that the database is accessible by navigating to `http://0.0.0.0:3000`, and that necessary tables are visible/contain data by navigating to:
 
-- `http://0.0.0.0:3001/market_registration_events`
-- `http://0.0.0.0:3001/cancel_order_events`
-- `http://0.0.0.0:3001/fill_events`
-- `http://0.0.0.0:3001/place_limit_order_events`
+- `http://0.0.0.0:3000/market_registration_events`
+- `http://0.0.0.0:3000/cancel_order_events`
+- `http://0.0.0.0:3000/fill_events`
+- `http://0.0.0.0:3000/place_limit_order_events`
 
 If each of these tables is visible and containing data then that means the processor, database and PostgREST are all working together!
 

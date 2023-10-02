@@ -33,7 +33,7 @@ Channels include:
 - `cancel_order_event`
 
 For each channel, the payload format is identical to the corresponding event format returned by the [DSS REST API](./rest-api.md).
-For example, the payload of an event from the `fill_event` channel is identical to the event format returned by a REST API query for `localhost:3001/fill_events` (note that channel names have no `s` at the end but REST API endpoints do), except that WebSocket events are received one by one instead of in an array.
+For example, the payload of an event from the `fill_event` channel is identical to the event format returned by a REST API query for `localhost:3000/fill_events` (note that channel names have no `s` at the end but REST API endpoints do), except that WebSocket events are received one by one instead of in an array.
 
 Hence the format of an event payload from the `fill_event` channel:
 

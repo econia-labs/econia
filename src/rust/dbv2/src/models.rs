@@ -128,6 +128,7 @@ pub struct CancelOrderEvent {
 pub struct MarketAccountHandle {
     pub user: String,
     pub handle: String,
+    pub creation_time: DateTime<Utc>,
 }
 
 #[derive(Clone, Debug, Queryable, Selectable, Insertable)]

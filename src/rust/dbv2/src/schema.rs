@@ -153,6 +153,7 @@ diesel::table! {
         user -> Varchar,
         #[max_length = 70]
         handle -> Varchar,
+        creation_time -> Timestamptz,
     }
 }
 

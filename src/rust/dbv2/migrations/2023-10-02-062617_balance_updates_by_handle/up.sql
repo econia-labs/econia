@@ -1,5 +1,5 @@
--- Table generated via diesel migration generate --diff-schema
--- View generated manually
+-- Table generated via diesel migration generate --diff-schema.
+-- Views generated manually.
 CREATE TABLE "balance_updates_by_handle"(
 	"txn_version" NUMERIC NOT NULL,
 	"handle" VARCHAR(70) NOT NULL,

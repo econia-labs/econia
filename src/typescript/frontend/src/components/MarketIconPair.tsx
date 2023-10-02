@@ -22,11 +22,13 @@ type MarketIconPairProps = {
   baseAssetIcon?: string;
   quoteAssetIcon?: string;
   size?: number;
+  zIndex?: number;
 };
 export const MarketIconPair = ({
   baseAssetIcon = DEFAULT_TOKEN_ICON,
   quoteAssetIcon = DEFAULT_TOKEN_ICON,
   size = 28,
+  zIndex = 20,
 }: MarketIconPairProps) => {
   return (
     <div className="md:w-15 relative flex" style={{ width: (size * 12) / 7 }}>
@@ -36,14 +38,16 @@ export const MarketIconPair = ({
         alt="market-icon-pair"
         width={size}
         height={size}
-        className="z-20 aspect-square"
+        style={{ zIndex }}
+        className="aspect-square"
       ></ImageWithFallback>
       <ImageWithFallback
         src={quoteAssetIcon}
         alt="market-icon-pair"
         width={size}
         height={size}
-        className="absolute z-10 aspect-square translate-x-1/2"
+        style={{ zIndex: zIndex - 1 }}
+        className="absolute aspect-square translate-x-1/2"
       ></ImageWithFallback>
     </div>
   );

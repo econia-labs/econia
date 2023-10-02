@@ -60,8 +60,8 @@ pbjson = "0.5.1"
 prometheus = { version = "0.13.0", default-features = false }
 prost = "0.11.9"
 prost-types = "0.11.9"
-serde = { version = "1.0.137", features = ["derive", "rc"] }
-serde_json = { version = "1.0.81", features = ["preserve_order"] }
+serde = { version = "1.0.149", features = ["derive", "rc"] }
+serde_json = { version = "1.0.99", features = ["preserve_order"] }
 serde_yaml = "0.8.24"
 sha2 = "0.9.3"
 sha3 = "0.9.1"

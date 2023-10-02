@@ -6,4 +6,4 @@ CREATE TABLE "market_account_handles"(
 );
 
 CREATE VIEW api.market_account_handles AS SELECT * FROM market_account_handles;
-GRANT SELECT ON api.place_limit_order_events TO web_anon;
+GRANT SELECT ON api.market_account_handles TO web_anon;

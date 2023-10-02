@@ -1,6 +1,9 @@
+//use aptos_sdk::types::account_address::AccountAddress;
 use bigdecimal::BigDecimal;
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
+use serde::Deserialize;
+use serde_json;
 
 #[derive(Clone, Debug, Queryable, Selectable, Insertable)]
 #[diesel(table_name = crate::schema::market_registration_events)]
@@ -121,4 +124,49 @@ pub struct CancelOrderEvent {
     pub custodian_id: BigDecimal,
     pub order_id: BigDecimal,
     pub reason: i16,
+}
+
+#[derive(Clone, Debug, Queryable, Selectable, Insertable)]
+#[diesel(table_name = crate::schema::market_account_handles)]
+pub struct MarketAccountHandle {
+    pub user: String,
+    pub handle: String,
+}
+
+// Write set types.
+
+#[derive(Deserialize)]
+pub struct MarketAccounts {
+    pub map: Table,
+    pub custodians: Tablist,
+}
+
+#[derive(Deserialize)]
+pub struct StructOption {
+    pub vec: Vec<serde_json::Value>,
+}
+
+#[derive(Deserialize)]
+pub struct Table {
+    pub handle: String,
+}
+
+#[derive(Deserialize)]
+pub struct TableWithLength {
+    pub inner: Table,
+    pub length: u64,
+}
+
+#[derive(Deserialize)]
+pub struct Tablist {
+    pub table: Table,
+    pub head: StructOption,
+    pub tail: StructOption,
+}
+
+#[derive(Deserialize)]
+pub struct TypeInfo {
+    pub account_address: String,
+    pub module_name: String,
+    pub struct_name: String,
 }

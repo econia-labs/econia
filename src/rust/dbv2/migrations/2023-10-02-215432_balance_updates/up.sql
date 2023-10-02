@@ -28,17 +28,17 @@ CREATE VIEW api.balance_updates_by_handle AS SELECT * FROM balance_updates_by_ha
 GRANT SELECT ON api.balance_updates_by_handle TO web_anon;
 
 CREATE VIEW api.balance_updates AS SELECT
-    time,
-    txn_version,
-    user,
-    market_id,
-    custodian_id,
-    base_total,
-    base_available,
-    base_ceiling,
-    quote_total,
-    quote_available,
-    quote_ceiling
+    "time",
+    "txn_version",
+    "user",
+    "market_id",
+    "custodian_id",
+    "base_total",
+    "base_available",
+    "base_ceiling",
+    "quote_total",
+    "quote_available",
+    "quote_ceiling"
 FROM api.balance_updates_by_handle NATURAL JOIN api.market_account_handles;
 GRANT SELECT ON api.balance_updates TO web_anon;
 

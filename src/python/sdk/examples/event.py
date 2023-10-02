@@ -1,25 +1,29 @@
 from os import environ
 
 import httpx
-import websocket
 import rel
-
+import websocket
 
 REST_URL_LOCAL_DEFAULT = "http://0.0.0.0:3000"
 WS_URL_LOCAL_DEFAULT = "ws://0.0.0.0:3001"
 WS_CHANNEL_DEFAULT = "fill_event"
 
+
 def on_message(ws, message):
     print(message)
+
 
 def on_error(ws, error):
     print(error)
 
+
 def on_close(ws, close_status_code, close_msg):
     print("### closed ###")
 
+
 def on_open(ws):
     print("Opened connection")
+
 
 def get_rest_host() -> str:
     url = environ.get("REST_URL")
@@ -34,6 +38,7 @@ def get_rest_host() -> str:
     else:
         return url
 
+
 def get_ws_host() -> str:
     url = environ.get("WS_URL")
     if url == None:
@@ -46,6 +51,7 @@ def get_ws_host() -> str:
             return url_in
     else:
         return url
+
 
 def get_channel() -> str:
     url = environ.get("WS_CHANNEL")
@@ -60,6 +66,7 @@ def get_channel() -> str:
     else:
         return url
 
+
 def start():
     host_rest = get_rest_host()
     channel = get_channel()
@@ -71,8 +78,10 @@ def start():
         on_open=on_open,
         on_message=on_message,
         on_error=on_error,
-        on_close=on_close
+        on_close=on_close,
     )
-    ws.run_forever(dispatcher=rel)  # Set dispatcher to automatic reconnection, 5 second reconnect delay if connection closed unexpectedly
+    ws.run_forever(
+        dispatcher=rel
+    )  # Set dispatcher to automatic reconnection, 5 second reconnect delay if connection closed unexpectedly
     rel.signal(2, rel.abort)  # Keyboard Interrupt
     rel.dispatch()

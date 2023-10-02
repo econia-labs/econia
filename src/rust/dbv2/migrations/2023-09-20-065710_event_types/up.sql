@@ -26,6 +26,8 @@ CREATE TRIGGER change_order_size_events_trigger
 AFTER INSERT ON change_order_size_events FOR EACH ROW
 EXECUTE PROCEDURE notify_change_order_size_event ();
 
+CREATE VIEW api.change_order_size_events AS SELECT * FROM change_order_size_events;
+GRANT SELECT ON api.change_order_size_events TO web_anon;
 
 CREATE TABLE
   place_market_order_events (
@@ -55,6 +57,9 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER place_market_order_events_trigger
 AFTER INSERT ON place_market_order_events FOR EACH ROW
 EXECUTE PROCEDURE notify_place_market_order_event ();
+
+CREATE VIEW api.place_market_order_event AS SELECT * FROM place_market_order_event;
+GRANT SELECT ON api.place_market_order_event TO web_anon;
 
 
 CREATE TABLE
@@ -87,3 +92,6 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER place_swap_order_events_trigger
 AFTER INSERT ON place_swap_order_events FOR EACH ROW
 EXECUTE PROCEDURE notify_place_swap_order_event ();
+
+CREATE VIEW api.place_swap_order_event AS SELECT * FROM place_swap_order_event;
+GRANT SELECT ON api.place_swap_order_event TO web_anon;

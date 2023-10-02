@@ -3,7 +3,6 @@ use bigdecimal::BigDecimal;
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 use serde::Deserialize;
-use serde_json;
 
 #[derive(Clone, Debug, Queryable, Selectable, Insertable)]
 #[diesel(table_name = crate::schema::market_registration_events)]
@@ -136,6 +135,26 @@ pub struct MarketAccountHandle {
 // Write set types.
 
 #[derive(Deserialize)]
+pub struct AccountAddress([u8; AccountAddress::LENGTH]);
+
+impl AccountAddress {
+    pub const LENGTH: usize = 32;
+
+    pub fn short_str_lossless(&self) -> String {
+        let hex_str = hex::encode(self.0).trim_start_matches('0').to_string();
+        if hex_str.is_empty() {
+            "0".to_string()
+        } else {
+            hex_str
+        }
+    }
+
+    pub fn to_hex_literal(&self) -> String {
+        format!("0x{}", self.short_str_lossless())
+    }
+}
+
+#[derive(Deserialize)]
 pub struct MarketAccounts {
     pub map: Table,
     pub custodians: Tablist,
@@ -148,7 +167,7 @@ pub struct StructOption {
 
 #[derive(Deserialize)]
 pub struct Table {
-    pub handle: String,
+    pub handle: AccountAddress,
 }
 
 #[derive(Deserialize)]
@@ -166,7 +185,7 @@ pub struct Tablist {
 
 #[derive(Deserialize)]
 pub struct TypeInfo {
-    pub account_address: String,
+    pub account_address: AccountAddress,
     pub module_name: String,
     pub struct_name: String,
 }

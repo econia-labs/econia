@@ -9,6 +9,7 @@ edition = "2021"
 bigdecimal = { workspace = true }
 chrono = { workspace = true }
 diesel = { workspace = true, features = ["chrono", "numeric", "postgres"] }
+hex = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 sqlx = { workspace = true, optional = true }

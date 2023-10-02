@@ -1,8 +1,6 @@
-//use aptos_sdk::types::account_address::AccountAddress;
 use bigdecimal::BigDecimal;
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
-use serde::Deserialize;
 
 #[derive(Clone, Debug, Queryable, Selectable, Insertable)]
 #[diesel(table_name = crate::schema::market_registration_events)]

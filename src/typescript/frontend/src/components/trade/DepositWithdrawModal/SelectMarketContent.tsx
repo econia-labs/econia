@@ -119,6 +119,7 @@ export const SelectMarketContent: React.FC<{
           return (
             <div className="flex pl-8">
               <MarketIconPair
+                zIndex={1}
                 quoteAssetIcon={quoteAssetIcon}
                 baseAssetIcon={baseAssetIcon}
               />
@@ -231,11 +232,11 @@ export const SelectMarketContent: React.FC<{
             </Tab>
           </Tab.List>
         </div>
-        <Tab.Panels className="w-full">
-          <table className="mt-4 w-full table-fixed">
-            <thead>
+        <Tab.Panels className="w-full overflow-y-scroll">
+          <table className=" w-full  table-fixed">
+            <thead className="sticky top-0 z-10 h-12 bg-[#020202] pt-4">
               {table.getHeaderGroups().map((headerGroup) => (
-                <tr className="h-8" key={headerGroup.id}>
+                <tr className="h-8 pt-4" key={headerGroup.id}>
                   {headerGroup.headers.map((header, i) => {
                     if (header.id === "name") {
                       if (
@@ -269,7 +270,7 @@ export const SelectMarketContent: React.FC<{
                     }
                     return (
                       <th
-                        className={`text-left font-roboto-mono text-sm font-light uppercase text-neutral-500`}
+                        className={`pt-4 text-left font-roboto-mono text-sm font-light uppercase text-neutral-500`}
                         key={header.id}
                         style={{ width: colWidths[i] }}
                       >

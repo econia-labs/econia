@@ -58,8 +58,8 @@ CREATE TRIGGER place_market_order_events_trigger
 AFTER INSERT ON place_market_order_events FOR EACH ROW
 EXECUTE PROCEDURE notify_place_market_order_event ();
 
-CREATE VIEW api.place_market_order_event AS SELECT * FROM place_market_order_events;
-GRANT SELECT ON api.place_market_order_event TO web_anon;
+CREATE VIEW api.place_market_order_events AS SELECT * FROM place_market_order_events;
+GRANT SELECT ON api.place_market_order_events TO web_anon;
 
 
 CREATE TABLE
@@ -93,5 +93,5 @@ CREATE TRIGGER place_swap_order_events_trigger
 AFTER INSERT ON place_swap_order_events FOR EACH ROW
 EXECUTE PROCEDURE notify_place_swap_order_event ();
 
-CREATE VIEW api.place_swap_order_event AS SELECT * FROM place_swap_order_events;
-GRANT SELECT ON api.place_swap_order_event TO web_anon;
+CREATE VIEW api.place_swap_order_events AS SELECT * FROM place_swap_order_events;
+GRANT SELECT ON api.place_swap_order_events TO web_anon;

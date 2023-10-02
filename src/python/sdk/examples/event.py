@@ -21,12 +21,6 @@ def on_close(ws, close_status_code, close_msg):
 def on_open(ws):
     print("Opened connection")
 
-def get_jwt(host: str, channel: str) -> str:
-    return "aaaaaaaa"
-
-def connect(host_ws: str, jwt: str):
-    pass
-
 def get_rest_host() -> str:
     url = environ.get("REST_URL")
     if url == None:

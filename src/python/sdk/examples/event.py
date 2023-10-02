@@ -81,7 +81,7 @@ def start():
         on_close=on_close,
     )
     ws.run_forever(
-        dispatcher=rel
+        dispatcher=rel # type: ignore
     )  # Set dispatcher to automatic reconnection, 5 second reconnect delay if connection closed unexpectedly
     rel.signal(2, rel.abort)  # Keyboard Interrupt
     rel.dispatch()

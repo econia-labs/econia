@@ -20,3 +20,4 @@ GRANT SELECT ON api.balance_updates_by_handle TO web_anon;
 
 CREATE VIEW api.balance_updates AS
     SELECT * FROM api.balance_updates_by_handle NATURAL JOIN api.market_account_handles;
+GRANT SELECT ON api.balance_updates TO web_anon;

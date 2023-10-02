@@ -2,6 +2,32 @@
 
 Econia's [DSS](./data-service-stack.md) provides a WebSocket server for real-time notifications.
 
+## Example
+
+See `/src/python/sdk/examples/event.py` for an example of how to connect to the WebSocket server and listen to a channel for events.
+In order to run the example script, you'll need to install [Poetry](https://python-poetry.org/docs/):
+
+```sh
+brew install poetry
+```
+
+Alternatively, if your platform doesn't support `brew`:
+
+```sh
+curl -sSL https://install.python-poetry.org | python3 -
+```
+
+Next run the following:
+
+```sh
+# From Econia repo root
+cd src/python/sdk
+poetry install
+poetry run event
+```
+
+Enter nothing for all of the prompts to use the default local configuration.
+
 ## Format
 
 The WebSocket server uses a general format for all WebSocket messages:

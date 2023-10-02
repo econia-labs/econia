@@ -117,7 +117,7 @@ Once the processor has parsed all transactions up until the chain tip, then chec
 - `http://0.0.0.0:3001/cancel_order_events`
 - `http://0.0.0.0:3001/fill_events`
 - `http://0.0.0.0:3001/place_limit_order_events`
-- `http://0.0.0.0:3001/market_account_handles`
+- `http://0.0.0.0:3001/balance_updates`
 
 :::tip
 

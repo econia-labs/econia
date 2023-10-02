@@ -156,7 +156,25 @@ diesel::table! {
     }
 }
 
+diesel::table! {
+    balance_updates_by_handle (txn_version, handle, market_id, custodian_id) {
+        txn_version -> Numeric,
+        #[max_length = 70]
+        handle -> Varchar,
+        market_id -> Numeric,
+        custodian_id -> Numeric,
+        time -> Timestamptz,
+        base_total -> Numeric,
+        base_available -> Numeric,
+        base_ceiling -> Numeric,
+        quote_total -> Numeric,
+        quote_available -> Numeric,
+        quote_ceiling -> Numeric,
+    }
+}
+
 diesel::allow_tables_to_appear_in_same_query!(
+    balance_updates_by_handle,
     cancel_order_events,
     change_order_size_events,
     fill_events,

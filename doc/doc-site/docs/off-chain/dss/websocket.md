@@ -27,6 +27,22 @@ poetry run event
 ```
 
 Enter nothing for all of the prompts to use the default local configuration.
+Now you can perform actions on the deployed exchange to trigger events, or run the `trade.py` script:
+
+```
+poetry run trade
+```
+
+The script will have a few prompts, respond to each of them as follows:
+
+| Prompt         | Value                                                                |
+| -------------- | -------------------------------------------------------------------- |
+| Econia address | `0xeeee0dd966cd4fc739f76006591239b32527edbb7c303c431f8c691bda150b40` |
+| Faucet address | `0xffff094ef8ccfa9137adcb13a2fae2587e83c348b32c63f811cc19fcc9fc5878` |
+| Node URL       | http://0.0.0.0:8080/v1                                               |
+| Faucet URL     | http://0.0.0.0:8081                                                  |
+
+This script will trigger most (but not all) available events when run to completion.
 
 ## Format
 

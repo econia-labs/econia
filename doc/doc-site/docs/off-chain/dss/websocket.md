@@ -2,48 +2,6 @@
 
 Econia's [DSS](./data-service-stack.md) provides a WebSocket server for real-time notifications.
 
-## Example
-
-See `/src/python/sdk/examples/event.py` for an example of how to connect to the WebSocket server and listen to a channel for events.
-In order to run the example script, you'll need to install [Poetry](https://python-poetry.org/docs/):
-
-```sh
-brew install poetry
-```
-
-Alternatively, if your platform doesn't support `brew`:
-
-```sh
-curl -sSL https://install.python-poetry.org | python3 -
-```
-
-Next run the following:
-
-```sh
-# From Econia repo root
-cd src/python/sdk
-poetry install
-poetry run event
-```
-
-Enter nothing for all of the prompts to use the default local configuration.
-Now you can perform actions on the deployed exchange to trigger events, or run the `trade.py` script:
-
-```
-poetry run trade
-```
-
-The script will have a few prompts, respond to each of them as follows:
-
-| Prompt         | Value                                                                |
-| -------------- | -------------------------------------------------------------------- |
-| Econia address | `0xeeee0dd966cd4fc739f76006591239b32527edbb7c303c431f8c691bda150b40` |
-| Faucet address | `0xffff094ef8ccfa9137adcb13a2fae2587e83c348b32c63f811cc19fcc9fc5878` |
-| Node URL       | http://0.0.0.0:8080/v1                                               |
-| Faucet URL     | http://0.0.0.0:8081                                                  |
-
-This script will trigger most (but not all) available events when run to completion.
-
 ## Format
 
 The WebSocket server uses a general format for all WebSocket messages:
@@ -124,3 +82,40 @@ In contrast, the response of a REST API query for the `/fill_events` endpoint (a
 ```
 
 Note the `[` and the `]`, constituting an array.
+
+## Example
+
+The Econia repository contains a Docker compose environment for running a DSS against a local testnet.
+This compose environment is designed for end-to-end testing, and can be used for monitoring WebSockets notifications via the [`event.py`](https://github.com/econia-labs/econia/blob/main/src/python/sdk/examples/event.py) example script.
+In order to run the example script, you'll need to install [Poetry](https://python-poetry.org/docs/).
+
+If you'd like to run the example script against the end-to-end Docker compose environment, first initialize the environment according to the steps [here](https://github.com/econia-labs/econia/blob/main/src/docker/README.md).
+Then once the compose environment is running, open up a new terminal and run the following:
+
+```sh
+# From Econia repo root
+cd src/python/sdk
+poetry install
+poetry run event
+```
+
+Enter nothing for all of the prompts to use the default local configuration.
+
+Now you can perform actions on the locally-deployed exchange to trigger events, or run the `trade.py` script:
+
+```sh
+# From Econia repo root, new terminal
+cd src/python/sdk
+poetry run trade
+```
+
+The script will have a few prompts, respond to each of them as follows:
+
+| Prompt         | Value                                                                |
+| -------------- | -------------------------------------------------------------------- |
+| Econia address | `0xeeee0dd966cd4fc739f76006591239b32527edbb7c303c431f8c691bda150b40` |
+| Faucet address | `0xffff094ef8ccfa9137adcb13a2fae2587e83c348b32c63f811cc19fcc9fc5878` |
+| Node URL       | http://0.0.0.0:8080/v1                                               |
+| Faucet URL     | http://0.0.0.0:8081                                                  |
+
+As you run through the assorted sections in the trading script, you should see fill events coming in over the WebSockets channel.

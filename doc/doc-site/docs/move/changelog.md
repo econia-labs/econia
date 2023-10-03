@@ -2,6 +2,13 @@
 
 Econia Move source code adheres to [Semantic Versioning] and [Keep a Changelog] standards.
 
+## [v4.1.1]
+
+### Added
+
+- Abort for order size change below min size ([#500]).
+- Check for empty orders during matching ([#504]).
+
 ## [v4.1.0]
 
 ### Added
@@ -44,6 +51,9 @@ Econia Move source code adheres to [Semantic Versioning] and [Keep a Changelog] 
 [#380]: https://github.com/econia-labs/econia/pull/380
 [#428]: https://github.com/econia-labs/econia/pull/428
 [#429]: https://github.com/econia-labs/econia/pull/429
+[#500]: https://github.com/econia-labs/econia/pull/500
+[#504]: https://github.com/econia-labs/econia/pull/504
 [keep a changelog]: https://keepachangelog.com/en/1.0.0/
 [semantic versioning]: https://semver.org/spec/v2.0.0.html
 [v4.1.0]: https://github.com/econia-labs/econia/releases/tag/v4.1.0-audited
+[v4.1.1]: https://github.com/econia-labs/econia/releases/tag/v4.1.1-audited

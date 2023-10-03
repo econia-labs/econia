@@ -42,11 +42,21 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=builder $BIN_PATH /usr/local/bin
 
+RUN curl -L -o g.tar.gz https://github.com/fullstorydev/grpcurl/releases/download/v1.8.7/grpcurl_1.8.7_linux_x86_64.tar.gz
+RUN tar xf g.tar.gz
+RUN mv grpcurl /usr/local/bin
+RUN rm g.tar.gz
+
+WORKDIR /app
+COPY /src/docker/processor/start.sh .
+RUN chmod u+x /app/start.sh
+WORKDIR $PROCESSOR_DIR
+
 # Use JSON Rust logging.
 ENV RUST_LOG_FORMAT=json
 
 # Health check port.
 EXPOSE 8084
 
-# Run processor with config file.
-ENTRYPOINT ["/usr/local/bin/processor", "-c", "/config.yaml"]
+# Do the streamer ready-check and start
+CMD /app/start.sh

@@ -1,5 +1,3 @@
-// @generated automatically by Diesel CLI.
-
 diesel::table! {
     cancel_order_events (txn_version, event_idx) {
         txn_version -> Numeric,
@@ -149,11 +147,40 @@ diesel::table! {
     }
 }
 
+diesel::table! {
+    market_account_handles (user) {
+        #[max_length = 70]
+        user -> Varchar,
+        #[max_length = 70]
+        handle -> Varchar,
+        creation_time -> Timestamptz,
+    }
+}
+
+diesel::table! {
+    balance_updates_by_handle (txn_version, handle, market_id, custodian_id) {
+        txn_version -> Numeric,
+        #[max_length = 70]
+        handle -> Varchar,
+        market_id -> Numeric,
+        custodian_id -> Numeric,
+        time -> Timestamptz,
+        base_total -> Numeric,
+        base_available -> Numeric,
+        base_ceiling -> Numeric,
+        quote_total -> Numeric,
+        quote_available -> Numeric,
+        quote_ceiling -> Numeric,
+    }
+}
+
 diesel::allow_tables_to_appear_in_same_query!(
+    balance_updates_by_handle,
     cancel_order_events,
     change_order_size_events,
     fill_events,
     ledger_infos,
+    market_account_handles,
     market_registration_events,
     place_limit_order_events,
     place_market_order_events,

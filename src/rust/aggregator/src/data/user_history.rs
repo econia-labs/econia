@@ -140,7 +140,7 @@ impl Data for UserHistory {
             sqlx::query!(
                 r#"
                     INSERT INTO aggregator.user_history_limit VALUES (
-                        $1, $2, $3, $4, $5, $6, $7
+                        $1, $2, $3, $4, $5, $6, $7, $8
                     );
                 "#,
                 x.market_id,
@@ -150,6 +150,7 @@ impl Data for UserHistory {
                 x.side,
                 x.self_match_behavior,
                 x.restriction,
+                x.price,
             )
             .execute(&mut transaction as &mut PgConnection)
             .await

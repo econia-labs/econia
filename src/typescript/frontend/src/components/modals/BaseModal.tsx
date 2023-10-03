@@ -23,6 +23,8 @@ export const BaseModal: React.FC<
   children,
   className,
 }) => {
+  const [hoveringOnCloseButton, setHoveringOnCloseButton] =
+    React.useState(false);
   return (
     <Transition appear show={isOpen} as={Fragment}>
       <Dialog
@@ -47,7 +49,9 @@ export const BaseModal: React.FC<
           <div className="flex min-h-full items-center justify-center p-4 text-center">
             <Dialog.Panel
               className={`w-full
-              ${className} max-w-4xl transform border border-neutral-600 bg-black p-6 align-middle shadow-xl transition-all`}
+              ${className} ${
+                hoveringOnCloseButton ? "border-blue" : "border-neutral-600 "
+              } max-w-4xl transform border bg-black p-6 align-middle shadow-xl transition-all`}
               style={{
                 backgroundImage: `url(${bg.src})`,
               }}
@@ -64,8 +68,14 @@ export const BaseModal: React.FC<
                 )}
                 {showCloseButton && (
                   <div
-                    className="absolute right-0 top-0 z-50 flex h-[50px] w-[50px] cursor-pointer items-center justify-center border-b border-l border-b-neutral-600 border-l-neutral-600 transition-all [&>svg>path]:stroke-neutral-500 [&>svg>path]:transition-all [&>svg>path]:hover:stroke-neutral-100"
+                    className={`hover:bg-blue-100 absolute right-0 top-0 z-50 flex h-[50px] w-[50px] cursor-pointer items-center justify-center border-b border-l transition-all [&>svg>path]:stroke-neutral-500 [&>svg>path]:transition-all [&>svg>path]:hover:stroke-neutral-100 ${
+                      hoveringOnCloseButton
+                        ? "border-b-blue border-l-blue bg-blue"
+                        : "border-b-neutral-600 border-l-neutral-600"
+                    }`}
                     onClick={onClose}
+                    onMouseEnter={() => setHoveringOnCloseButton(true)}
+                    onMouseLeave={() => setHoveringOnCloseButton(false)}
                   >
                     <XIcon />
                   </div>

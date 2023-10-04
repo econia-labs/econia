@@ -35,7 +35,9 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
 1. Create a new [project](https://cloud.google.com/storage/docs/projects) with the name `econia-dss`:
 
     ```sh
-    gcloud projects create $PROJ_ID --name=econia-dss --organization=$ORG_ID
+    gcloud projects create $PROJ_ID \
+        --name=econia-dss \
+        --organization=$ORG_ID
     ```
 
 1. Check your projects to verify that the project is listed:
@@ -70,7 +72,8 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
 1. Verify that the project is linked:
 
     ```
-    gcloud billing projects list --billing-account=$BILLING_ACCOUNT_ID
+    gcloud billing projects list \
+        --billing-account=$BILLING_ACCOUNT_ID
     ```
 
 ## Build Docker images
@@ -87,10 +90,10 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
     BUILD_REGION=<NEARBY_REGION>
     ```
 
-1. Create a [GCP Artifact Registry](https://cloud.google.com/artifact-registry/docs/overview) Docker repository named `econia-dss`:
+1. Create a [GCP Artifact Registry](https://cloud.google.com/artifact-registry/docs/overview) Docker repository named `images`:
 
     ```
-    gcloud artifacts repositories create econia-dss \
+    gcloud artifacts repositories create images \
         --location=$BUILD_REGION \
         --project=$PROJ_ID \
         --repository-format=docker
@@ -122,6 +125,18 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
         --config econia/src/docker/gcp-tutorial-config.yaml \
         --project=$PROJ_ID \
         --region=$BUILD_REGION \
-        --substitutions \
-            _REGION=$BUILD_REGION,_ADMIN_NAME=$ADMIN_NAME,_ADMIN_PW=$ADMIN_PW
+        --substitutions "$(printf '%s' \
+            _ADMIN_NAME=$ADMIN_NAME,\
+            _ADMIN_PW=$ADMIN_PW,\
+            _REGION=$BUILD_REGION\
+        )"
     ```
+
+1. Verify the Docker artifacts:
+
+    ```
+    gcloud artifacts docker images list \
+        $BUILD_REGION-docker.pkg.dev/$PROJ_ID/images
+    ```
+
+## Deploy database

@@ -1,19 +1,27 @@
 # GCP cloud builder config for DSS tutorial on docs site.
 
+images:
+  - '${_REPO}/postgres'
+
+options:
+  dynamicSubstitutions: true
+
 steps:
 
-  # Build postgres image.
-  - name: 'gcr.io/cloud-builders/docker'
+  - id: build-postgres
     args:
       - 'build'
       - '--file'
-      - 'src/docker/database/Dockerfile.postgres'
+      - '${_DOCKER_DIR}/database/Dockerfile.postgres'
       - '--tag'
-      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/econia-dss/postgres'
+      - '${_REPO}/postgres'
       - '.'
     env:
       - 'POSTGRES_USER=${_ADMIN_NAME}'
       - 'POSTGRES_PASSWORD=${_ADMIN_PW}'
+    name: '${_BUILDER}'
 
-images:
-  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/econia-dss/postgres'
+substitutions:
+  _BUILDER: 'gcr.io/cloud-builders/docker'
+  _DOCKER_DIR: 'src/docker'
+  _REPO: '${_REGION}-docker.pkg.dev/${PROJECT_ID}/images'

@@ -1,0 +1,44 @@
+version: "3.9"
+
+include:
+  - compose.database.yaml
+
+services:
+  aggregator:
+    build:
+      context: ../../
+      dockerfile: src/docker/aggregator/Dockerfile
+    depends_on:
+      - diesel
+      - postgres
+    environment:
+      DATABASE_URL: "postgres://econia:econia@postgres:5432/econia"
+
+  postgrest:
+    depends_on:
+      - diesel
+      - postgres
+    environment:
+      PGRST_DB_URI: "postgres://econia:econia@postgres:5432/econia"
+      PGRST_DB_ANON_ROLE: web_anon
+      PGRST_DB_SCHEMA: api
+    image: postgrest/postgrest
+    ports:
+      - "3001:3000"
+
+  ws:
+    build:
+      context: ../../
+      dockerfile: src/docker/api/Dockerfile.ws
+      args:
+        - POSTGRES_WEBSOCKETS_VERSION=0.11.1.0
+    depends_on:
+      - diesel
+      - postgres
+    environment:
+      - PGWS_DB_URI=postgres://econia:econia@postgres/econia
+      - PGWS_JWT_SECRET=econia_is_dooooooooooooooooooope
+      - PGWS_CHECK_LISTENER_INTERVAL=1000
+      - PGWS_LISTEN_CHANNEL=econiaws
+    ports:
+      - 3000:3000

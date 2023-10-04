@@ -14,6 +14,7 @@ from econia_sdk.entry.market import (
     place_market_order_user_entry,
     register_market_base_coin_from_coinstore,
     change_order_size_user,
+    swap_between_coinstores_entry
 )
 from econia_sdk.entry.user import (
     deposit_from_coinstore,
@@ -47,6 +48,7 @@ There are several prompts; entering nothing for all of them will default to runn
 against a local deployment without performing a market recognization.
 """
 
+U64_MAX = (2**64)-1
 NODE_URL_LOCAL = "http://0.0.0.0:8080/v1"
 FAUCET_URL_LOCAL = "http://0.0.0.0:8081"
 ECONIA_ADDR_LOCAL = (
@@ -216,7 +218,10 @@ def start():
 
     input("\n\nPress enter to change Account A's order sizes.")
     (bids, asks) = get_order_ids(account_A.account_address, market_id)
+    bid_size = 0
     for (i, bid) in enumerate(bids):
+        bid_size_new = (bid["size"] // (i + 2))
+        bid_size = bid_size + bid_size_new,
         exec_txn(
             EconiaClient(NODE_URL, ECONIA_ADDR, account_A),
             change_order_size_user(
@@ -224,23 +229,65 @@ def start():
                 market_id,
                 Side.BID,
                 bid["market_order_id"],
-                bid["size"] * (i + 2),
+                bid_size_new,
             ),
-            f"Chance bid size (#{i + 1})"
+            f"Change bid size (#{i + 1})"
         )
+    ask_size = 0
     for (i, ask) in enumerate(asks):
+        ask_size_new = (ask["size"] // (i + 2))
+        ask_size = ask_size + ask_size_new,
         exec_txn(
             EconiaClient(NODE_URL, ECONIA_ADDR, account_A),
             change_order_size_user(
                 ECONIA_ADDR,
                 market_id,
-                Side.BID,
+                Side.ASK,
                 ask["market_order_id"],
-                ask["size"] // (i + 2),
+                ask_size_new,
             ),
-            f"Chance bid size (#{i + 1})"
+            f"Change ask size (#{i + 1})"
         )
     dump_txns()
+
+    input("\n\nPress enter to swap with Account A.")
+    calldata = swap_between_coinstores_entry(
+        account_A.account_address,
+        TypeTag(StructTag.from_str(COIN_TYPE_EAPT)),
+        TypeTag(StructTag.from_str(COIN_TYPE_EUSDC)),
+        market_id,
+        ECONIA_ADDR,
+        Side.BID,
+        0,
+        U64_MAX,
+        0,
+        U64_MAX,
+        U64_MAX
+    )
+    exec_txn(
+        EconiaClient(NODE_URL, ECONIA_ADDR, account_A),
+        calldata,
+        "Execute BID swap order for Account A"
+    )
+
+    calldata = swap_between_coinstores_entry(
+        account_A.account_address,
+        TypeTag(StructTag.from_str(COIN_TYPE_EAPT)),
+        TypeTag(StructTag.from_str(COIN_TYPE_EUSDC)),
+        market_id,
+        ECONIA_ADDR,
+        Side.ASK,
+        0,
+        U64_MAX,
+        0,
+        U64_MAX,
+        0
+    )
+    exec_txn(
+        EconiaClient(NODE_URL, ECONIA_ADDR, account_A),
+        calldata,
+        "Execute ASK swap order for Account A"
+    )
 
     input("\n\nPress enter to setup an Account B with funds.")
     account_B = setup_new_account(viewer, faucet_client, market_id)
@@ -440,8 +487,8 @@ def setup_new_account(
 
     # Fund with APT, "eAPT" and "eUSDC"
     faucet.fund_account(account.address().hex(), 1 * (10**8))
-    fund_APT(account, base_wholes)
-    fund_USDC(account, quote_wholes)
+    fund_APT(account, base_wholes * 2)
+    fund_USDC(account, quote_wholes * 2)
 
     # Register market account
     calldata = register_market_account(
@@ -503,7 +550,7 @@ def fund_APT(account: Account, wholes: int):
         ModuleId.from_str(f"{FAUCET_ADDR}::faucet"),  # module
         "mint",  # funcname
         [TypeTag(StructTag.from_str(COIN_TYPE_EAPT))],  # generics
-        [encoder(wholes * (10**18), Serializer.u64)],  # arguments
+        [encoder(wholes * (10**8), Serializer.u64)],  # arguments
     )
 
     return exec_txn(

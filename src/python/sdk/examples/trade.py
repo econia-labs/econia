@@ -18,6 +18,9 @@ from econia_sdk.entry.user import (
     deposit_from_coinstore,
     register_market_account,
 )
+from econia_sdk.entry.registry import (
+    set_recognized_market
+)
 from econia_sdk.lib import EconiaClient, EconiaViewer
 from econia_sdk.types import Restriction, SelfMatchBehavior, Side
 from econia_sdk.view.market import get_open_orders_all, get_price_levels
@@ -35,62 +38,72 @@ from econia_sdk.view.user import (
 """
 HOW TO RUN THIS SCRIPT: `poetry install && poetry run trade` in .../econia/src/python/sdk
 
-RECOMMENDED: Use a local development chain (else you might hit rate-limiting issues)
-1. Run: aptos node run-local-testnet --with-faucet
-2. Do: "Deploy an Econia Faucet" (above, enter "local" for the `aptos init` chain)
-3. Do: "Deploy an Econia Exchange"
-2. Enter: http://0.0.0.0:8080/v1 when prompted node URL
-3. Enter: http://0.0.0.0:8081 when prompted for a faucet URL
+See instructions in /src/docker/README.md to see how to run this script against a local
+deployment of Econia (including the backend service stack).
 
-REQUIRED: Deploy an Econia Faucet.
-1. Run: cd .../econia/src/move/faucet # (whatever its full path is)
-2. Run: aptos init --profile econia_faucet_deploy
-3. Run: export FAUCET_ADDR=<ACCOUNT-FROM-ABOVE> # make sure to put 0x at the start
-4. Run: aptos move publish \
-        --named-addresses econia_faucet=$FAUCET_ADDR \
-        --profile econia_faucet_deploy \
-        --assume-yes
-
-OPTIONAL: Deploy an Econia Exchange.
-1. Run: cd /econia/src/move/econia # (or whatever its full path is)
-2. Run: aptos init --profile econia_exchange_deploy
-3. Run: export ECONIA_ADDR=<ACCOUNT-FROM-ABOVE> # make sure to put 0x at the start
-4. Run: aptos move publish \
-        --override-size-check \
-        --included-artifacts none \
-        --named-addresses econia=$ECONIA_ADDR \
-        --profile econia_exchange_deploy \
-        --assume-yes
+There are several prompts; entering nothing for all of them will default to running
+against a local deployment without performing a market recognization.
 """
 
-NODE_URL_DEVNET = "https://fullnode.devnet.aptoslabs.com/v1"
-FAUCET_URL_DEVNET = "https://faucet.devnet.aptoslabs.com"
-ECONIA_ADDR_DEVNET = (
-    "0xc0de0000fe693e08f668613c502360dc48508197401d2ac1ae79571498cd8b74"
+NODE_URL_LOCAL = "http://0.0.0.0:8080/v1"
+FAUCET_URL_LOCAL = "http://0.0.0.0:8081"
+ECONIA_ADDR_LOCAL = (
+    "0xeeee0dd966cd4fc739f76006591239b32527edbb7c303c431f8c691bda150b40"
+)
+ECONIA_KEY_LOCAL = (
+    "0x8eeb9bd1808d99ef54758060f5067b5707be379058cfd83cd983fe7e47063a09"
+)
+FAUCET_ADDR_LOCAL = (
+    "0xffff094ef8ccfa9137adcb13a2fae2587e83c348b32c63f811cc19fcc9fc5878"
 )
 COIN_TYPE_APT = "0x1::aptos_coin::AptosCoin"
 
+def get_minimum_size() -> int:
+    min_size_s = input(
+        "Enter the minimum order size to (re-)use for the market (enter nothing to default to 500==0.5 APT)\n"
+    ).strip()
+    if min_size_s == "":
+        return 500
+    min_size = int(min_size_s)
+    if (min_size <= 0):
+        raise ValueError("Minimum size must be at least 1 lot")
+    else:
+        return min_size
 
 def get_econia_address() -> AccountAddress:
     addr = environ.get("ECONIA_ADDR")
     if addr == None:
         addr_in = input(
-            "Please enter the 0x-prefixed address of an Econia deployment (enter nothing to default to devnet OR re-run with ECONIA_ADDR environment variable)\n"
+            "Enter the 0x-prefixed address of an Econia deployment (enter nothing to default to local OR re-run with ECONIA_ADDR environment variable)\n"
         ).strip()
         if addr_in == "":
-            return AccountAddress.from_hex(ECONIA_ADDR_DEVNET)
+            return AccountAddress.from_hex(ECONIA_ADDR_LOCAL)
         else:
             return AccountAddress.from_hex(addr_in)
     else:
         return AccountAddress.from_hex(addr)
 
+def get_econia_account() -> Optional[Account]:
+    private_key = input(
+        "Enter the 0x-prefixed private key of the Econia deployment (enter \".\" to use local OR enter nothing to skip recognizing the market)\n"
+    ).strip()
+    if private_key == "":
+        return None
+    elif private_key == ".":
+        return Account.load_key(ECONIA_KEY_LOCAL)
+    else:
+        return Account.load_key(private_key)
 
 def get_faucet_address() -> AccountAddress:
     addr = environ.get("FAUCET_ADDR")
     if addr == None:
-        return input(
-            "Please enter the 0x-prefixed address of an Econia faucet (or re-run with FAUCET_ADDR environment variable)\n"
+        addr_in = input(
+            "Enter the 0x-prefixed address of an Econia faucet deployment (enter nothing to default to local OR re-run with FAUCET_ADDR environment variable)\n"
         ).strip()
+        if addr_in == "":
+            return AccountAddress.from_hex(FAUCET_ADDR_LOCAL)
+        else:
+            return AccountAddress.from_hex(addr_in)
     else:
         return AccountAddress.from_hex(addr)
 
@@ -99,10 +112,10 @@ def get_aptos_node_url() -> str:
     url = environ.get("APTOS_NODE_URL")
     if url == None:
         url_in = input(
-            "Please enter the URL of an Aptos node (enter nothing to default to devnet OR re-run with APTOS_NODE_URL environment variable)\n"
+            "Enter the URL of an Aptos node (enter nothing to default to local OR re-run with APTOS_NODE_URL environment variable)\n"
         ).strip()
         if url_in == "":
-            return NODE_URL_DEVNET  # devnet default
+            return NODE_URL_LOCAL  # devnet default
         else:
             return url_in
     else:
@@ -113,19 +126,20 @@ def get_aptos_faucet_url() -> str:
     url = environ.get("APTOS_FAUCET_URL")
     if url == None:
         url_in = input(
-            "Please enter the URL of an Aptos faucet (enter nothing to default to devnet OR re-run with APTOS_FAUCET_URL environment variable)\n"
+            "Please enter the URL of an Aptos faucet (enter nothing to default to local OR re-run with APTOS_FAUCET_URL environment variable)\n"
         ).strip()
         if url_in == "":
-            return FAUCET_URL_DEVNET  # devnet default
+            return FAUCET_URL_LOCAL  # devnet default
         else:
             return url_in
     else:
         return url
 
-
+MIN_SIZE = get_minimum_size()
 ECONIA_ADDR = (
     get_econia_address()
 )  # See https://econia.dev/ for up-to-date per-chain addresses
+ECONIA_ACCT = get_econia_account()
 FAUCET_ADDR = get_faucet_address()  # See (and deploy): /econia/src/move/faucet
 COIN_TYPE_EAPT = f"{FAUCET_ADDR}::example_apt::ExampleAPT"
 COIN_TYPE_EUSDC = f"{FAUCET_ADDR}::example_usdc::ExampleUSDC"
@@ -486,7 +500,7 @@ def setup_market(faucet_client: FaucetClient, viewer: EconiaViewer) -> int:
     # 0.5 eAPT.
     lot_size = 100000
     tick_size = 1
-    min_size = 500
+    min_size = MIN_SIZE
     market_id = get_market_id_base_coin(
         viewer, COIN_TYPE_EAPT, COIN_TYPE_EUSDC, lot_size, tick_size, min_size
     )
@@ -523,7 +537,18 @@ def setup_market(faucet_client: FaucetClient, viewer: EconiaViewer) -> int:
     if market_id == None:
         exit()
     print(f"Market ID: {market_id}")
+
+    if ECONIA_ACCT is None:
+        return market_id
+    
+    fund_APT(ECONIA_ACCT, 1)
+    exec_txn(
+        EconiaClient(NODE_URL, ECONIA_ADDR, ECONIA_ACCT),
+        set_recognized_market(ECONIA_ADDR, market_id),
+        f"Recognize the market (id {market_id}, min size {MIN_SIZE})"
+    )
     return market_id
+    
 
 
 def get_best_prices(

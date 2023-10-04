@@ -13,6 +13,7 @@ from econia_sdk.entry.market import (
     place_limit_order_user_entry,
     place_market_order_user_entry,
     register_market_base_coin_from_coinstore,
+    change_order_size_user,
 )
 from econia_sdk.entry.user import (
     deposit_from_coinstore,
@@ -33,6 +34,7 @@ from econia_sdk.view.user import (
     get_fill_events,
     get_market_account,
     get_place_limit_order_events,
+    get_market_account,
 )
 
 """
@@ -212,6 +214,34 @@ def start():
     dump_txns()
     report_best_price_levels(viewer, market_id)
 
+    input("\n\nPress enter to change Account A's order sizes.")
+    (bids, asks) = get_order_ids(account_A.account_address, market_id)
+    for (i, bid) in enumerate(bids):
+        exec_txn(
+            EconiaClient(NODE_URL, ECONIA_ADDR, account_A),
+            change_order_size_user(
+                ECONIA_ADDR,
+                market_id,
+                Side.BID,
+                bid["market_order_id"],
+                bid["size"] * (i + 2),
+            ),
+            f"Chance bid size (#{i + 1})"
+        )
+    for (i, ask) in enumerate(asks):
+        exec_txn(
+            EconiaClient(NODE_URL, ECONIA_ADDR, account_A),
+            change_order_size_user(
+                ECONIA_ADDR,
+                market_id,
+                Side.BID,
+                ask["market_order_id"],
+                ask["size"] // (i + 2),
+            ),
+            f"Chance bid size (#{i + 1})"
+        )
+    dump_txns()
+
     input("\n\nPress enter to setup an Account B with funds.")
     account_B = setup_new_account(viewer, faucet_client, market_id)
     print(f"Account B was setup: {account_B.account_address}")
@@ -294,6 +324,10 @@ def start():
 
     print("\n\nTHE END!")
 
+def get_order_ids(account_address: AccountAddress, market_id: int) -> Tuple[set, set]:
+    viewer = EconiaViewer(NODE_URL, ECONIA_ADDR)
+    market_account = get_market_account(viewer, account_address, market_id, 0)
+    return (market_account["bids"], market_account["asks"])
 
 def place_market_order(
     direction: Side,

@@ -103,22 +103,32 @@ pub async fn init(args: &Args) -> State {
         args.api_url.clone()
     };
 
-    let api_res = reqwest::get(Url::parse_with_params(&format!("{api_url}/market_registration_events"), &[
-        ("order", "min_size.desc"),
-        ("limit", "1"),
-        ("base_account_address", &format!("{faucet_address:#}")),
-        ("base_module_name", "eq.example_usdc"),
-        ("base_struct_name", "eq.ExampleUSDC"),
-        ("quote_account_address", &format!("{faucet_address:#}")),
-        ("quote_module_name", "eq.example_apt"),
-        ("quote_struct_name", "eq.ExampleAPT"),
-        ("select", "min_size"),
-    ])
-        .expect("Could not parse URL."))
-        .await
-        .expect("Could not reach API.");
+    let api_res = reqwest::get(
+        Url::parse_with_params(
+            &format!("{api_url}/market_registration_events"),
+            &[
+                ("order", "min_size.desc"),
+                ("limit", "1"),
+                ("base_account_address", &format!("{faucet_address:#}")),
+                ("base_module_name", "eq.example_usdc"),
+                ("base_struct_name", "eq.ExampleUSDC"),
+                ("quote_account_address", &format!("{faucet_address:#}")),
+                ("quote_module_name", "eq.example_apt"),
+                ("quote_struct_name", "eq.ExampleAPT"),
+                ("select", "min_size"),
+            ],
+        )
+        .expect("Could not parse URL."),
+    )
+    .await
+    .expect("Could not reach API.");
 
-    let MinSize { min_size } = if let Some(min_size) = api_res.json::<Vec<MinSize>>().await.expect("Could not parse API response.").get(0) {
+    let MinSize { min_size } = if let Some(min_size) = api_res
+        .json::<Vec<MinSize>>()
+        .await
+        .expect("Could not parse API response.")
+        .get(0)
+    {
         min_size.clone()
     } else {
         MinSize { min_size: 0 }

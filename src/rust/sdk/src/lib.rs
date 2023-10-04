@@ -319,7 +319,8 @@ impl EconiaClient {
                     | AptosErrorCode::VmError => {
                         let seq_num = self.get_sequence_number().await?;
                         let acc_seq_num = self.user_account.sequence_number();
-                        self.user_account.set_sequence_number(max(seq_num, acc_seq_num + 1));
+                        self.user_account
+                            .set_sequence_number(max(seq_num, acc_seq_num + 1));
                         Err(EconiaError::AptosError(RestError::Api(a)))
                     }
                     _ => Err(EconiaError::AptosError(RestError::Api(a))),

@@ -7,11 +7,19 @@ edition = "2021"
 
 [dependencies]
 econia-sdk = { path = "../sdk" }
+e2e-proc-macro = { path = "./e2e-proc-macro" }
+metadata = { path = "./metadata" }
 aptos-sdk = { git = "https://github.com/aptos-labs/aptos-core", branch = "main" }
 
 anyhow.workspace = true
 clap.workspace = true
-rand = "0.7"
 reqwest = "0.11"
 sqlx = { workspace = true, features = ["postgres"] }
 tokio = { workspace = true, features = ["full"] }
+colored = "2.0.4"
+indicatif = "0.17.6"
+futures.workspace = true
+rand = "0.7"
+serde.workspace = true
+serde_json.workspace = true
+

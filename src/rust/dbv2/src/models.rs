@@ -122,3 +122,27 @@ pub struct CancelOrderEvent {
     pub order_id: BigDecimal,
     pub reason: i16,
 }
+
+#[derive(Clone, Debug, Queryable, Selectable, Insertable)]
+#[diesel(table_name = crate::schema::market_account_handles)]
+pub struct MarketAccountHandle {
+    pub user: String,
+    pub handle: String,
+    pub creation_time: DateTime<Utc>,
+}
+
+#[derive(Clone, Debug, Queryable, Selectable, Insertable)]
+#[diesel(table_name = crate::schema::balance_updates_by_handle)]
+pub struct BalanceUpdate {
+    pub txn_version: BigDecimal,
+    pub handle: String,
+    pub market_id: BigDecimal,
+    pub custodian_id: BigDecimal,
+    pub time: DateTime<Utc>,
+    pub base_total: BigDecimal,
+    pub base_available: BigDecimal,
+    pub base_ceiling: BigDecimal,
+    pub quote_total: BigDecimal,
+    pub quote_available: BigDecimal,
+    pub quote_ceiling: BigDecimal,
+}

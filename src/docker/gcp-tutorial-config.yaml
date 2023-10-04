@@ -1,0 +1,19 @@
+# GCP cloud builder config for DSS tutorial on docs site.
+
+steps:
+
+  # Build postgres image.
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '--file'
+      - 'src/docker/database/Dockerfile.postgres'
+      - '--tag'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/econia-dss/postgres'
+      - '.'
+    env:
+      - 'POSTGRES_USER=${_ADMIN_NAME}'
+      - 'POSTGRES_PASSWORD=${_ADMIN_PW}'
+
+images:
+  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/econia-dss/postgres'

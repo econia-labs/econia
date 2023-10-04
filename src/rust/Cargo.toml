@@ -25,6 +25,7 @@ rust-version = "1.70"
 aptos-indexer-protos = { path = "dependencies/aptos-indexer-processors/rust/aptos-indexer-protos" }
 server-framework = { path = "dependencies/aptos-indexer-processors/rust/server-framework" }
 aptos-moving-average = { path = "dependencies/aptos-indexer-processors/rust/moving-average" }
+aptos-sdk = { git = "https://github.com/aptos-labs/aptos-core", tag = "aptos-node-v1.7.2" }
 
 anyhow = "1.0.62"
 async-trait = "0.1.53"
@@ -32,7 +33,7 @@ axum = "0.6.19"
 backtrace = "0.3.58"
 base64 = "0.13.0"
 bcs = { git = "https://github.com/aptos-labs/bcs.git", rev = "d31fab9d81748e2594be5cd5cdf845786a30562d" }
-bigdecimal = { version = "0.3.1", features = ["serde"] }
+bigdecimal = { version = "=0.3.1", features = ["serde"] }
 chrono = { version = "0.4.26", features = ["clock", "serde"] }
 clap = { version = "4.3.5", features = ["derive", "unstable-styles"] }
 diesel = { version = "2.1.0", features = [
@@ -62,8 +63,8 @@ pbjson = "0.5.1"
 prometheus = { version = "0.13.0", default-features = false }
 prost = "0.11.9"
 prost-types = "0.11.9"
-serde = { version = "1.0.175", features = ["derive", "rc"] }
-serde_json = { version = "1.0.103", features = ["preserve_order"] }
+serde = { version = "1.0", features = ["derive", "rc"] }
+serde_json = { version = "1.0", features = ["preserve_order"] }
 serde_yaml = "0.8.24"
 sha2 = "0.9.3"
 sha3 = "0.9.1"

@@ -174,7 +174,7 @@ def start():
         viewer, account_A.account_address, market_id, 0
     )
     report_place_limit_order_event(
-        list(filter(lambda ev: ev["data"]["side"] == Side.BID, events))[0]
+        next(filter(lambda ev: ev["data"]["side"] == Side.BID, events))
     )
     # Ask to sell 1 whole eAPT
     sell_base_lots = 1 * (10**3)
@@ -186,7 +186,7 @@ def start():
         viewer, account_A.account_address, market_id, 0
     )
     report_place_limit_order_event(
-        list(filter(lambda ev: ev["data"]["side"] == Side.ASK, events))[0]
+        next(filter(lambda ev: ev["data"]["side"] == Side.ASK, events))
     )
     print(f"Account A has finished placing limit orders.")
     fills = get_fill_events(viewer, account_A.account_address, market_id, 0)
@@ -391,7 +391,7 @@ def setup_new_account(
     client = EconiaClient(NODE_URL, ECONIA_ADDR, account)
 
     # Fund with APT, "eAPT" and "eUSDC"
-    faucet.fund_account(account.address(), 1 * (10**8))
+    faucet.fund_account(account.address().hex(), 1 * (10**8))
     fund_APT(account, base_wholes)
     fund_USDC(account, quote_wholes)
 
@@ -493,11 +493,11 @@ def setup_market(faucet_client: FaucetClient, viewer: EconiaViewer) -> int:
     if market_id == None:
         account_XCH = Account.generate()
         # The faucet only gives out 1 APT at a time, have to go multiple times
-        faucet_client.fund_account(account_XCH.address(), 1 * (10**8))
-        faucet_client.fund_account(account_XCH.address(), 1 * (10**8))
-        faucet_client.fund_account(account_XCH.address(), 1 * (10**8))
-        faucet_client.fund_account(account_XCH.address(), 1 * (10**8))
-        faucet_client.fund_account(account_XCH.address(), 1 * (10**8))
+        faucet_client.fund_account(account_XCH.address().hex(), 1 * (10**8))
+        faucet_client.fund_account(account_XCH.address().hex(), 1 * (10**8))
+        faucet_client.fund_account(account_XCH.address().hex(), 1 * (10**8))
+        faucet_client.fund_account(account_XCH.address().hex(), 1 * (10**8))
+        faucet_client.fund_account(account_XCH.address().hex(), 1 * (10**8))
         print("Market does not exist yet, creating one...")
         calldata = register_market_base_coin_from_coinstore(
             ECONIA_ADDR,
@@ -518,7 +518,7 @@ def setup_market(faucet_client: FaucetClient, viewer: EconiaViewer) -> int:
         )
         events = get_market_registration_events(viewer)
         report_market_creation_event(
-            list(filter(lambda e: e["data"]["market_id"] == market_id, events))[0]
+            next(filter(lambda e: e["data"]["market_id"] == market_id, events))
         )
     if market_id == None:
         exit()
@@ -601,7 +601,7 @@ def report_fill_events(fill_events: list[dict]):
     print("LAST ORDER EXECUTION BREAKDOWN: FillEvent(s)")
     if len(fill_events) != 0:
         last_events = find_all_fill_events_with_last_taker_order_id(fill_events)
-        last_events_maker_side = last_events[0]["data"]["maker_side"]
+        last_events_maker_side = last_events[0]["data"]["maker_side"] # type: ignore
         n_last_events = len(last_events)
         if last_events_maker_side == Side.ASK:
             print(
@@ -630,7 +630,7 @@ def report_fill_events(fill_events: list[dict]):
 
 
 def report_order_for_last_fill(fill_events: list[dict], open_orders: list[dict]):
-    order_id = fill_events[-1]["data"]["taker_order_id"]
+    order_id = fill_events[-1]["data"]["taker_order_id"] # type: ignore
     open_order = list(filter(lambda ev: ev["order_id"] == order_id, open_orders))
     if len(open_order) == 1:
         print("  * The order WAS NOT fully satisfied by initial execution")
@@ -646,8 +646,8 @@ def find_all_fill_events_with_last_taker_order_id(
     index = len(events) - 1
     returns = []
     while index > 0:
-        last_fill_order_id = events[-1]["data"]["taker_order_id"]
-        ev = events[index]
+        last_fill_order_id = events[-1]["data"]["taker_order_id"] # type: ignore
+        ev = events[index] # type: ignore
         if ev["data"]["taker_order_id"] == last_fill_order_id:
             returns.append(ev)
         index = index - 1

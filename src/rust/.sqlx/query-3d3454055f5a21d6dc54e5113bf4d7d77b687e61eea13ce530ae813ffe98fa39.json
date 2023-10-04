@@ -1,0 +1,34 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                    SELECT order_type as \"order_type: OrderType\"\n                    FROM aggregator.user_history\n                    WHERE market_id = $1\n                    AND order_id = $2\n                ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "order_type: OrderType",
+        "type_info": {
+          "Custom": {
+            "name": "order_type",
+            "kind": {
+              "Enum": [
+                "limit",
+                "market",
+                "swap"
+              ]
+            }
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Numeric",
+        "Numeric"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "3d3454055f5a21d6dc54e5113bf4d7d77b687e61eea13ce530ae813ffe98fa39"
+}

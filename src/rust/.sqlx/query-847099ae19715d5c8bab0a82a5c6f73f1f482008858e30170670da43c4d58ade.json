@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                UPDATE aggregator.user_history_limit\n                SET prev = (\n                    SELECT prev\n                    FROM aggregator.user_history_limit\n                    WHERE market_id = $1\n                    AND order_id = $2\n                )\n                WHERE market_id = $1\n                AND price = (\n                    SELECT price\n                    FROM aggregator.user_history_limit\n                    WHERE market_id = $1\n                    AND order_id = $2\n                )\n                AND prev = $2;\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Numeric",
+        "Numeric"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "847099ae19715d5c8bab0a82a5c6f73f1f482008858e30170670da43c4d58ade"
+}

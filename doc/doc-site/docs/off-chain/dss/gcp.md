@@ -20,30 +20,36 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
    gcloud organizations list
    ```
 
-1. Store your organization ID in a shell variable:
+1. Store your preferred organization ID in a shell variable:
 
    ```sh
-   ORG_ID=<YOUR_ORG_ID>
+   ORGANIZATION_ID=<YOUR_ORGANIZATION_ID>
    ```
 
-1. Choose a project ID that complies with the [GCP project ID rules](https://cloud.google.com/sdk/gcloud/reference/projects/create) and store it in a shell variable:
+1. Choose a project ID (like `fast-25`)that complies with the [GCP project ID rules](https://cloud.google.com/sdk/gcloud/reference/projects/create) and store it in a shell variable:
 
    ```sh
-   PROJ_ID=<PREFERRED_PROJECT_ID>
+   PROJECT_ID=<YOUR_PROJECT_ID>
    ```
 
 1. Create a new [project](https://cloud.google.com/storage/docs/projects) with the name `econia-dss`:
 
    ```sh
-   gcloud projects create $PROJ_ID \
+   gcloud projects create $PROJECT_ID \
        --name econia-dss \
-       --organization $ORG_ID
+       --organization $ORGANIZATION_ID
    ```
 
-1. Check your projects to verify that the project is listed:
+1. Verify that your project was created:
 
    ```sh
    gcloud projects list
+   ```
+
+1. Set the project ID as default:
+
+   ```sh
+   gcloud config set project $PROJECT_ID
    ```
 
 1. List your billing account ID:
@@ -65,7 +71,7 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
 1. Link the billing account to the project:
 
    ```sh
-   gcloud billing projects link $PROJ_ID \
+   gcloud billing projects link $PROJECT_ID \
        --billing-account $BILLING_ACCOUNT_ID
    ```
 
@@ -90,26 +96,29 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
    BUILD_REGION=<NEARBY_REGION>
    ```
 
+1. Set the region as default:
+
+   ```sh
+   gcloud config set artifacts/location $BUILD_REGION
+   ```
+
 1. Create a [GCP Artifact Registry](https://cloud.google.com/artifact-registry/docs/overview) Docker repository named `images`:
 
    ```sh
    gcloud artifacts repositories create images \
-       --location $BUILD_REGION \
-       --project $PROJ_ID \
        --repository-format docker
    ```
 
 1. Verify that your repository was created:
 
    ```sh
-   gcloud artifacts repositories list --project $PROJ_ID
+   gcloud artifacts repositories list
    ```
 
-1. Create an administrator username and password and store them in shell variables:
+1. Set the repository as default:
 
    ```sh
-   ADMIN_NAME=<YOUR_ADMIN_NAME>
-   ADMIN_PW=<YOUR_ADMIN_PW>
+   gcloud config set artifacts/repository images
    ```
 
 1. Clone the Econia repository:
@@ -123,20 +132,13 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
    ```sh
    gcloud builds submit econia \
        --config econia/src/docker/gcp-tutorial-config.yaml \
-       --project $PROJ_ID \
-       --region $BUILD_REGION \
-       --substitutions "$(printf '%s' \
-           _ADMIN_NAME=$ADMIN_NAME,\
-           _ADMIN_PW=$ADMIN_PW,\
-           _REGION=$BUILD_REGION\
-       )"
+       --substitutions _REGION=$BUILD_REGION
    ```
 
 1. Verify the Docker artifacts:
 
    ```sh
-   gcloud artifacts docker images list \
-       $BUILD_REGION-docker.pkg.dev/$PROJ_ID/images
+   gcloud artifacts docker images list
    ```
 
 ## Deploy database
@@ -144,7 +146,7 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
 1. List available deployment zones:
 
    ```sh
-   gcloud compute zones list --project $PROJ_ID
+   gcloud compute zones list
    ```
 
 1. Pick a zone that is [close to you](https://cloud.google.com/compute/docs/regions-zones) and store it in a shell variable:
@@ -153,20 +155,35 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
    DEPLOY_ZONE=<NEARBY_ZONE>
    ```
 
+1. Set the zone as default:
+
+   ```sh
+   gcloud config set compute/zone $DEPLOY_ZONE
+   ```
+
+1. Create an administrator username and password and store them in shell variables:
+
+   ```sh
+   ADMIN_NAME=<YOUR_ADMIN_NAME>
+   ADMIN_PASSWORD=<YOUR_ADMIN_PW>
+   ```
+
 1. Deploy the `postgres` image as a [GCP Compute Engine instance](https://cloud.google.com/compute/docs/containers):
 
    ```sh
    gcloud compute instances create-with-container postgres \
+       --container-env "$(printf '%s' \
+           POSTGRES_USER=$ADMIN_NAME,\
+           POSTGRES_PASSWORD=$ADMIN_PASSWORD\
+       )" \
        --container-image \
-           $BUILD_REGION-docker.pkg.dev/$PROJ_ID/images/postgres \
-       --project $PROJ_ID \
-       --zone $DEPLOY_ZONE
+           $BUILD_REGION-docker.pkg.dev/$PROJECT_ID/images/postgres
    ```
 
-1. Verify your instance is listed as running:
+1. Verify that your instance is listed as running:
 
    ```sh
-   gcloud compute instances list --project $PROJ_ID
+   gcloud compute instances list
    ```
 
 1. Store the external IP address in a shell variable:
@@ -175,23 +192,54 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
    POSTGRES_IP=<POSTGRES_EXTERNAL_IP>
    ```
 
-1. Allow incoming traffic on port 5432:
+1. Store [your IP address](https://ip4.me/) in a shell variable:
+
+   ```sh
+   MY_IP=<YOUR_IP_ADDRESS>
+   ```
+
+1. Allow incoming traffic on port 5432 from your IP address:
 
    ```sh
    gcloud compute firewall-rules create pg-admin \
        --allow tcp:5432 \
-       --direction INGRESS \
-       --project $PROJ_ID
+       --direction ingress \
+       --source-ranges $MY_IP
    ```
 
-1. Verify the firewall rule is listed:
+1. Verify that the firewall rule is listed:
 
    ```sh
-   gcloud compute firewall-rules list --project $PROJ_ID
+   gcloud compute firewall-rules list
+   ```
+
+1. Note the full description of the firewall rule:
+
+   ```sh
+   gcloud compute firewall-rules describe pg-admin
    ```
 
 1. Store the PostgreSQL connection string as an environment variable:
 
    ```sh
-   export DATABASE_URL=postgres://$ADMIN_NAME:$ADMIN_PW@$POSTGRES_IP:5432/econia
+   export DATABASE_URL="$(printf '%s' postgres://\
+       $ADMIN_NAME:\
+       $ADMIN_PASSWORD@\
+       $POSTGRES_IP:5432/econia
+   )"
+   ```
+
+1. Install [`diesel`](https://diesel.rs/guides/getting-started) if you don't already have it, then check that the database has an empty schema:
+
+   ```sh
+   diesel print-schema
+   ```
+
+1. Run the database migrations then check the schema again:
+
+   ```sh
+   cd econia/src/rust/dbv2
+   diesel migration run
+   diesel print-schema
+   cd ../../../..
    ```

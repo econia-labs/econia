@@ -16,9 +16,6 @@ steps:
       - '--tag'
       - '${_REPO}/postgres'
       - '.'
-    env:
-      - 'POSTGRES_USER=${_ADMIN_NAME}'
-      - 'POSTGRES_PASSWORD=${_ADMIN_PW}'
     name: '${_BUILDER}'
 
 substitutions:

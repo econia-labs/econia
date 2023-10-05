@@ -165,11 +165,11 @@ def start():
     bids_price, asks_price = get_best_prices(viewer, market_id)
     if bids_price is not None or asks_price is not None:
         input("\n\nPress enter to clean-up open orders on the market.")
-        account_ = setup_new_account(viewer, faucet_client, market_id, 9, 10_000 * 100)
+        account_ = setup_new_account(viewer, faucet_client, market_id, 1000000, 1000000)
         if bids_price is not None:
-            place_market_order(Side.ASK, account_, market_id, 9000)
+            place_market_order(Side.ASK, account_, market_id, 1000000)
         if asks_price is not None:
-            place_market_order(Side.BID, account_, market_id, 9000)
+            place_market_order(Side.BID, account_, market_id, 1000000)
 
         dump_txns()
         n_clears = len(get_fill_events(viewer, account_.account_address, market_id, 0))
@@ -252,7 +252,7 @@ def start():
 
     input("\n\nPress enter to swap with Account A.")
     calldata = swap_between_coinstores_entry(
-        account_A.account_address,
+        ECONIA_ADDR,
         TypeTag(StructTag.from_str(COIN_TYPE_EAPT)),
         TypeTag(StructTag.from_str(COIN_TYPE_EUSDC)),
         market_id,
@@ -262,16 +262,15 @@ def start():
         U64_MAX,
         0,
         U64_MAX,
-        U64_MAX
+        U64_MAX >> 32
     )
     exec_txn(
         EconiaClient(NODE_URL, ECONIA_ADDR, account_A),
         calldata,
         "Execute BID swap order for Account A"
     )
-
     calldata = swap_between_coinstores_entry(
-        account_A.account_address,
+        ECONIA_ADDR,
         TypeTag(StructTag.from_str(COIN_TYPE_EAPT)),
         TypeTag(StructTag.from_str(COIN_TYPE_EUSDC)),
         market_id,
@@ -288,6 +287,7 @@ def start():
         calldata,
         "Execute ASK swap order for Account A"
     )
+    dump_txns()
 
     input("\n\nPress enter to setup an Account B with funds.")
     account_B = setup_new_account(viewer, faucet_client, market_id)

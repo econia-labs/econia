@@ -1,4 +1,4 @@
-# This docker file is used to run the database migrations
+# This docker file is used to run the aggregator
 FROM rust:slim-bookworm
 
 ARG RUST_ROOT=src/rust
@@ -17,4 +17,6 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-ENTRYPOINT ["cargo", "run", "-p", "aggregator"]
+RUN cargo build --release -p aggregator
+
+ENTRYPOINT ["cargo", "run", "--release", "-p", "aggregator"]

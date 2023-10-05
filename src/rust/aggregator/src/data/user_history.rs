@@ -140,7 +140,7 @@ impl Data for UserHistory {
             sqlx::query!(
                 r#"
                     INSERT INTO aggregator.user_history_limit VALUES (
-                        $1, $2, $3, $4, $5, $6, $7, linked_list_last($1, $8), $8
+                        $1, $2, $3, $4, $5, $6, $7, $8, $9
                     );
                 "#,
                 x.market_id,
@@ -151,6 +151,7 @@ impl Data for UserHistory {
                 x.self_match_behavior,
                 x.restriction,
                 x.price,
+                x.time,
             )
             .execute(&mut transaction as &mut PgConnection)
             .await
@@ -330,49 +331,6 @@ impl Data for UserHistory {
             };
         }
         for x in &cancel_events {
-            let order_type = sqlx::query!(
-                r#"
-                    SELECT order_type as "order_type: OrderType"
-                    FROM aggregator.user_history
-                    WHERE market_id = $1
-                    AND order_id = $2
-                "#,
-                x.market_id,
-                x.order_id
-            )
-            .fetch_one(&mut transaction as &mut PgConnection)
-            .await
-            .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
-
-            if matches!(order_type.order_type, OrderType::Limit) {
-                // Let's say we have A <- B <- C where B is the current order
-
-                // We update C to point to A
-                sqlx::query!(
-                    r#"
-                        UPDATE aggregator.user_history_limit
-                        SET prev = (
-                            SELECT prev
-                            FROM aggregator.user_history_limit
-                            WHERE market_id = $1
-                            AND order_id = $2
-                        )
-                        WHERE market_id = $1
-                        AND price = (
-                            SELECT price
-                            FROM aggregator.user_history_limit
-                            WHERE market_id = $1
-                            AND order_id = $2
-                        )
-                        AND prev = $2;
-                    "#,
-                    x.market_id,
-                    x.order_id,
-                )
-                .execute(&mut transaction as &mut PgConnection)
-                .await
-                .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
-            }
             sqlx::query!(
                 r#"
                     UPDATE aggregator.user_history
@@ -403,7 +361,7 @@ async fn aggregate_fill<'a>(
     market_id: &BigDecimal,
     time: &DateTime<Utc>,
 ) -> DataAggregationResult {
-    let record = sqlx::query!(
+    sqlx::query!(
         r#"
             UPDATE aggregator.user_history
             SET
@@ -421,7 +379,6 @@ async fn aggregate_fill<'a>(
                 END,
                 last_updated_at = $4
             WHERE order_id = $2 AND market_id = $3
-            RETURNING order_status as "order_status: OrderStatus"
         "#,
         size,
         maker_order_id,
@@ -431,49 +388,6 @@ async fn aggregate_fill<'a>(
     .fetch_one(tx as &mut PgConnection)
     .await
     .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
-    if matches!(record.order_status, OrderStatus::Closed) {
-        // Let's say we have A <- B <- C where B is the current order
-
-        // We update C to point to A
-        sqlx::query!(
-            r#"
-                UPDATE aggregator.user_history_limit
-                SET prev = (
-                    SELECT prev
-                    FROM aggregator.user_history_limit
-                    WHERE market_id = $1
-                    AND order_id = $2
-                )
-                WHERE market_id = $1
-                AND price = (
-                    SELECT price
-                    FROM aggregator.user_history_limit
-                    WHERE market_id = $1
-                    AND order_id = $2
-                )
-                AND prev = $2;
-            "#,
-            market_id,
-            maker_order_id,
-        )
-        .execute(tx as &mut PgConnection)
-        .await
-        .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
-
-        // We update B to point to null
-        sqlx::query!(
-            r#"
-                UPDATE aggregator.user_history_limit
-                SET prev = NULL
-                WHERE market_id = $1 AND order_id = $2;
-            "#,
-            market_id,
-            maker_order_id,
-        )
-        .execute(tx as &mut PgConnection)
-        .await
-        .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
-    }
     Ok(())
 }
 
@@ -502,49 +416,16 @@ async fn aggregate_change<'a>(
         (record.order_type, record.remaining_size);
     // If its a limit order and needs reordering
     if matches!(order_type, OrderType::Limit) && &original_size < new_size {
-        // Let's say we have A <- B <- C where B is the current order
-
-        // We update C to point to A
         sqlx::query!(
             r#"
                 UPDATE aggregator.user_history_limit
-                SET prev = (
-                    SELECT prev
-                    FROM aggregator.user_history_limit
-                    WHERE market_id = $1
-                    AND order_id = $2
-                )
+                SET last_increase_time = $3
                 WHERE market_id = $1
-                AND price = (
-                    SELECT price
-                    FROM aggregator.user_history_limit
-                    WHERE market_id = $1
-                    AND order_id = $2
-                )
-                AND prev = $2;
+                AND order_id = $2
             "#,
             market_id,
             order_id,
-        )
-        .execute(tx as &mut PgConnection)
-        .await
-        .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
-
-        // We update B to point to last
-        sqlx::query!(
-            r#"
-                UPDATE aggregator.user_history_limit
-                SET prev = linked_list_last($1, (
-                    SELECT price
-                    FROM aggregator.user_history_limit
-                    WHERE market_id = $1
-                    AND order_id = $2)
-                )
-                WHERE market_id = $1
-                AND order_id = $2;
-            "#,
-            market_id,
-            order_id,
+            time
         )
         .execute(tx as &mut PgConnection)
         .await

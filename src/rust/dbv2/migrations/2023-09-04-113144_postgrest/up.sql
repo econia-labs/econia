@@ -25,5 +25,5 @@ CREATE EXTENSION pgjwt CASCADE;
 
 
 CREATE FUNCTION api.jwt (json) RETURNS TEXT AS $$
-  SELECT sign((CONCAT(CONCAT('{"mode": "r","channels": ', $1->>'channels'::text),'}'))::json, 'econia_is_dooooooooooooooooooope')
+  SELECT sign((CONCAT(CONCAT('{"mode": "r","channels": ', $1->>'channels'::text),'}'))::json, 'conjunctivodacryocystorhinostomy')
 $$ LANGUAGE SQL;

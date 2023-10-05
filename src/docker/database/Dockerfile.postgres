@@ -16,5 +16,16 @@ WORKDIR ..
 
 RUN rm -rf ./pgjwt
 
+# Enable remote IP connections.
+# https://stackoverflow.com/questions/24504680
+WORKDIR $PGDATA
+RUN echo "listen_addresses = '*'" > postgresql.conf
+RUN echo "$(printf '%s' \
+        "host all all 0.0.0.0/0 trust\n"\
+        "host all all ::/0 trust"\
+    )" > pg_hba.conf
+
+WORKDIR /
+
 HEALTHCHECK --interval=5s --timeout=3s \
     CMD pg_isready -h localhost -p 5432 -U econia || exit 1

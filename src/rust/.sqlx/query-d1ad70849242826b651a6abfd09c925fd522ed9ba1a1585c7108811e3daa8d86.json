@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                UPDATE aggregator.user_history_limit\n                SET last_increase_stamp = $3\n                WHERE market_id = $1\n                AND order_id = $2\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Numeric",
+        "Numeric",
+        "Numeric"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d1ad70849242826b651a6abfd09c925fd522ed9ba1a1585c7108811e3daa8d86"
+}

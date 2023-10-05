@@ -1,5 +1,5 @@
 use anyhow::anyhow;
-use bigdecimal::{BigDecimal, Zero};
+use bigdecimal::{BigDecimal, Zero, num_bigint::ToBigInt};
 use chrono::{DateTime, Duration, Utc};
 use sqlx::{PgConnection, PgPool, Postgres, Transaction};
 
@@ -137,6 +137,9 @@ impl Data for UserHistory {
         .await
         .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
         for x in &limit_events {
+            let txn = x.txn_version.to_bigint().ok_or(DataAggregationError::ProcessingError(anyhow!("txn_version not integer")))? << 64;
+            let event = x.event_idx.to_bigint().ok_or(DataAggregationError::ProcessingError(anyhow!("event_idx not integer")))?;
+            let txn_event: BigDecimal = BigDecimal::from(txn & event);
             sqlx::query!(
                 r#"
                     INSERT INTO aggregator.user_history_limit VALUES (
@@ -151,7 +154,7 @@ impl Data for UserHistory {
                 x.self_match_behavior,
                 x.restriction,
                 x.price,
-                x.time,
+                txn_event,
             )
             .execute(&mut transaction as &mut PgConnection)
             .await
@@ -290,6 +293,8 @@ impl Data for UserHistory {
                             &change.order_id,
                             &change.market_id,
                             &change.time,
+                            &fill.txn_version,
+                            &fill.event_idx,
                         )
                         .await?;
                         mark_as_aggregated(
@@ -321,6 +326,8 @@ impl Data for UserHistory {
                         &change.order_id,
                         &change.market_id,
                         &change.time,
+                        &change.txn_version,
+                        &change.event_idx,
                     )
                     .await?;
                     mark_as_aggregated(&mut transaction, &change.txn_version, &change.event_idx)
@@ -397,6 +404,8 @@ async fn aggregate_change<'a>(
     order_id: &BigDecimal,
     market_id: &BigDecimal,
     time: &DateTime<Utc>,
+    txn_version: &BigDecimal,
+    event_idx: &BigDecimal,
 ) -> DataAggregationResult {
     // Get some info
     let record = sqlx::query!(
@@ -416,16 +425,19 @@ async fn aggregate_change<'a>(
         (record.order_type, record.remaining_size);
     // If its a limit order and needs reordering
     if matches!(order_type, OrderType::Limit) && &original_size < new_size {
+        let txn = txn_version.to_bigint().ok_or(DataAggregationError::ProcessingError(anyhow!("txn_version not integer")))? << 64;
+        let event = event_idx.to_bigint().ok_or(DataAggregationError::ProcessingError(anyhow!("event_idx not integer")))?;
+        let txn_event: BigDecimal = BigDecimal::from(txn & event);
         sqlx::query!(
             r#"
                 UPDATE aggregator.user_history_limit
-                SET last_increase_time = $3
+                SET last_increase_stamp = $3
                 WHERE market_id = $1
                 AND order_id = $2
             "#,
             market_id,
             order_id,
-            time
+            txn_event,
         )
         .execute(tx as &mut PgConnection)
         .await

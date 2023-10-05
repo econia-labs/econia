@@ -16,7 +16,7 @@ DROP FUNCTION notify_updated_order;
 
 DROP VIEW api.limit_orders;
 
-ALTER TABLE aggregator.user_history_limit DROP COLUMN last_increase_time;
+ALTER TABLE aggregator.user_history_limit DROP COLUMN last_increase_stamp;
 
 ALTER TABLE aggregator.user_history_limit DROP COLUMN price;
 

@@ -13,7 +13,7 @@
         "Int2",
         "Int2",
         "Numeric",
-        "Timestamptz"
+        "Numeric"
       ]
     },
     "nullable": []

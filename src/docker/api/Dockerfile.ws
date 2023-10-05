@@ -1,13 +1,24 @@
 FROM debian:stable-slim
 
-ARG POSTGRES_WEBSOCKETS_VERSION
-
 RUN apt-get update \
-    && apt-get install -y libpq-dev wget \
+    && apt-get install -y \
+        libpq-dev \
+        wget \
+        git \
+        build-essential \
+        libffi-dev \
+        libgmp-dev \
+        zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
-RUN wget https://github.com/diogob/postgres-websockets/releases/download/$POSTGRES_WEBSOCKETS_VERSION/postgres-websockets
-
-RUN chmod u+x ./postgres-websockets
-
-ENTRYPOINT ["./postgres-websockets"]
+WORKDIR /root/.local/bin
+ENV PATH="/root/.local/bin:$PATH"
+WORKDIR /app
+RUN wget -qO- https://get.haskellstack.org/ | sh
+RUN git clone https://github.com/diogob/postgres-websockets.git
+WORKDIR /app/postgres-websockets
+RUN echo $HOME
+RUN stack setup
+RUN stack build
+RUN cd .stack-work/install/*/*/*/bin && mv * /root/.local/bin
+ENTRYPOINT ["postgres-websockets"]

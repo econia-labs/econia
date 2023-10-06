@@ -136,74 +136,37 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
 
 ## Create shared storage
 
-1. Create a [persistent disk](https://cloud.google.com/compute/docs/disks):
+1. Create a [GCP Compute Engine instance](https://cloud.google.com/compute/docs/instances) for bootstrapping config files, with a [persistent disk](https://cloud.google.com/compute/docs/disks):
 
    ```sh
-   gcloud compute disks create data
+   gcloud compute instances create bootstrapper \
+       --create-disk name=data
    ```
 
-1. Create a [GCP Compute Engine instance](https://cloud.google.com/compute/docs/instances) for bootstrapping config files:
-
-   ```sh
-   gcloud compute instances create bootstrapper --disk name=data
-   ```
-
-1. [Create an SSH key pair](https://cloud.google.com/compute/docs/connect/create-ssh-keys), then output the public key to your shell for later:
+1. [Create an SSH key pair](https://cloud.google.com/compute/docs/connect/create-ssh-keys) to connect to the bootstrapper:
 
    ```sh
    mkdir ssh
-   ssh-keygen -t rsa -f ssh/gcp -C root -b 2048
-   echo "\n\n\nPublic key:\n\n\n"
-   < ssh/gcp.pub
-   echo "\n\n\n"
+   ssh-keygen -t rsa -f ssh/gcp -C bootstrapper -b 2048
    ```
 
-1. [Connect to](https://cloud.google.com/compute/docs/connect/standard-ssh) the bootstrapper:
+1. Upload configuration files to bootstrapper:
+
+   ```sh
+   gcloud compute scp \
+       econia/src/docker/database/configs/pg_hba.conf \
+       bootstrapper:~ \
+       --ssh-key-file ssh/gcp
+   gcloud compute scp \
+       econia/src/docker/database/configs/postgresql.conf \
+       bootstrapper:~ \
+       --ssh-key-file ssh/gcp
+   ```
+
+1. [Connect to](https://cloud.google.com/compute/docs/connect/standard-ssh) the bootstrapper instance:
 
    ```sh
    gcloud compute ssh bootstrapper --ssh-key-file ssh/gcp
-   ```
-
-1. [Enable root SSH login](https://cloud.google.com/compute/docs/connect/root-ssh#enable_root_login) on the bootstrapper:
-
-   ```sh
-   sudo sed -i \
-       's/PermitRootLogin no/PermitRootLogin prohibit-password/g' \
-       /etc/ssh/sshd_config
-   ```
-
-   ```sh
-   sudo mkdir /root/.ssh
-   ```
-
-   ```sh
-   sudo chmod 700 /root/.ssh
-   ```
-
-   ```sh
-   sudo touch /root/.ssh/authorized_keys
-   ```
-
-   ```sh
-   sudo chmod 600 /root/.ssh/authorized_keys
-   ```
-
-1. Start root user mode:
-
-   ```sh
-   sudo su
-   ```
-
-1. Type `echo "`, copy-paste your public key from the shell, then type `" >> /root/.ssh/authorized_keys` and press enter:
-
-   ```sh
-   echo "<PASTE_FROM_CLIPBOARD>" >> /root/.ssh/authorized_keys
-   ```
-
-1. End root user mode:
-
-   ```
-   <Ctrl+D>
    ```
 
 1. [Check connected disks](https://cloud.google.com/compute/docs/disks/format-mount-disk-linux#format_linux):
@@ -246,32 +209,22 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
    sudo chmod a+w /mnt/disks/data
    ```
 
-1. Create a PostgreSQL data directory:
+1. Create a PostgreSQL data directory and move the config files into it:
 
    ```sh
+   mkdir /mnt/disks/data/postgresql
    mkdir /mnt/disks/data/postgresql/data
+   mv pg_hba.conf /mnt/disks/data/postgresql/data/pg_hba.conf
+   mv postgresql.conf /mnt/disks/data/postgresql/data/postgresql.conf
    ```
 
-1. Restart the bootstrapper, ending the connection with the VM:
+1. End the connection with the bootstrapper:
 
    ```
-   sudo reboot
+   exit
    ```
 
-1. Upload configuration files to the shared disk through the bootstrapper:
-
-   ```sh
-   gcloud compute scp \
-       econia/src/docker/database/configs/pg_hba.conf \
-       root@bootstrapper:/mnt/disks/data/postgresql/data\
-       --ssh-key-file ssh/gcp
-   gcloud compute scp \
-       econia/src/docker/database/configs/postgresql.conf \
-       root@bootstrapper:/mnt/disks/data/postgresql/data\
-       --ssh-key-file ssh/gcp
-   ```
-
-1. Detach the shared data disk from the bootstrapper:
+1. Detach the shared data disk from the bootstrapper instance:
 
    ```sh
    gcloud compute instances detach-disk bootstrapper --disk data

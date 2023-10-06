@@ -26,7 +26,7 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
    ORGANIZATION_ID=<YOUR_ORGANIZATION_ID>
    ```
 
-1. Choose a project ID (like `fast-25`)that complies with the [GCP project ID rules](https://cloud.google.com/sdk/gcloud/reference/projects/create) and store it in a shell variable:
+1. Choose a project ID (like `fast-15`) that complies with the [GCP project ID rules](https://cloud.google.com/sdk/gcloud/reference/projects/create) and store it in a shell variable:
 
    ```sh
    PROJECT_ID=<YOUR_PROJECT_ID>
@@ -38,12 +38,6 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
    gcloud projects create $PROJECT_ID \
        --name econia-dss \
        --organization $ORGANIZATION_ID
-   ```
-
-1. Verify that your project was created:
-
-   ```sh
-   gcloud projects list
    ```
 
 1. Set the project ID as default:
@@ -75,19 +69,12 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
        --billing-account $BILLING_ACCOUNT_ID
    ```
 
-1. Verify that the project is linked:
-
-   ```sh
-   gcloud billing projects list \
-       --billing-account $BILLING_ACCOUNT_ID
-   ```
-
 ## Build Docker images
 
 1. List available build regions:
 
    ```sh
-   gcloud artifacts locations list --project $PROJ_ID
+   gcloud artifacts locations list
    ```
 
 1. Pick a region that is [close to you](https://cloud.google.com/artifact-registry/docs/repositories/repo-locations) and store it in a shell variable:
@@ -107,12 +94,6 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
    ```sh
    gcloud artifacts repositories create images \
        --repository-format docker
-   ```
-
-1. Verify that your repository was created:
-
-   ```sh
-   gcloud artifacts repositories list
    ```
 
 1. Set the repository as default:
@@ -135,21 +116,13 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
        --substitutions _REGION=$BUILD_REGION
    ```
 
-1. Verify the Docker artifacts:
-
-   ```sh
-   gcloud artifacts docker images list
-   ```
-
-## Deploy database
-
 1. List available deployment zones:
 
    ```sh
    gcloud compute zones list
    ```
 
-1. Pick a zone that is [close to you](https://cloud.google.com/compute/docs/regions-zones) and store it in a shell variable:
+1. Pick a zone that is [close to you](https://cloud.google.com/compute/docs/regions-zones#available) and store it in a shell variable:
 
    ```sh
    DEPLOY_ZONE=<NEARBY_ZONE>
@@ -161,6 +134,151 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
    gcloud config set compute/zone $DEPLOY_ZONE
    ```
 
+## Create shared storage
+
+1. Create a [persistent disk](https://cloud.google.com/compute/docs/disks):
+
+   ```sh
+   gcloud compute disks create data
+   ```
+
+1. Create a [GCP Compute Engine instance](https://cloud.google.com/compute/docs/instances) for bootstrapping config files:
+
+   ```sh
+   gcloud compute instances create bootstrapper --disk name=data
+   ```
+
+1. [Create an SSH key pair](https://cloud.google.com/compute/docs/connect/create-ssh-keys), then output the public key to your shell for later:
+
+   ```sh
+   mkdir ssh
+   ssh-keygen -t rsa -f ssh/gcp -C root -b 2048
+   echo "\n\n\nPublic key:\n\n\n"
+   < ssh/gcp.pub
+   echo "\n\n\n"
+   ```
+
+1. [Connect to](https://cloud.google.com/compute/docs/connect/standard-ssh) the bootstrapper:
+
+   ```sh
+   gcloud compute ssh bootstrapper --ssh-key-file ssh/gcp
+   ```
+
+1. [Enable root SSH login](https://cloud.google.com/compute/docs/connect/root-ssh#enable_root_login) on the bootstrapper:
+
+   ```sh
+   sudo sed -i \
+       's/PermitRootLogin no/PermitRootLogin prohibit-password/g' \
+       /etc/ssh/sshd_config
+   ```
+
+   ```sh
+   sudo mkdir /root/.ssh
+   ```
+
+   ```sh
+   sudo chmod 700 /root/.ssh
+   ```
+
+   ```sh
+   sudo touch /root/.ssh/authorized_keys
+   ```
+
+   ```sh
+   sudo chmod 600 /root/.ssh/authorized_keys
+   ```
+
+1. Start root user mode:
+
+   ```sh
+   sudo su
+   ```
+
+1. Type `echo "`, copy-paste your public key from the shell, then type `" >> /root/.ssh/authorized_keys` and press enter:
+
+   ```sh
+   echo "<PASTE_FROM_CLIPBOARD>" >> /root/.ssh/authorized_keys
+   ```
+
+1. End root user mode:
+
+   ```
+   <Ctrl+D>
+   ```
+
+1. [Check connected disks](https://cloud.google.com/compute/docs/disks/format-mount-disk-linux#format_linux):
+
+   ```sh
+   sudo lsblk
+   ```
+
+   :::tip
+   The device name for the new blank persistent disk will probably be `sbd`.
+   :::
+
+1. Store the device name in a shell variable:
+
+   ```sh
+   DEVICE_NAME=<PROBABLY_sdb>
+   ```
+
+1. [Format and mount the disk with read/write permissions](https://cloud.google.com/compute/docs/disks/format-mount-disk-linux#format_linux):
+
+   ```sh
+   sudo mkfs.ext4 \
+       -m 0 \
+       -E lazy_itable_init=0,lazy_journal_init=0,discard \
+       /dev/$DEVICE_NAME
+   ```
+
+   ```sh
+   sudo mkdir -p /mnt/disks/data
+   ```
+
+   ```sh
+   sudo mount -o \
+       discard,defaults \
+       /dev/$DEVICE_NAME \
+       /mnt/disks/data
+   ```
+
+   ```sh
+   sudo chmod a+w /mnt/disks/data
+   ```
+
+1. Create a PostgreSQL data directory:
+
+   ```sh
+   mkdir /mnt/disks/data/postgresql/data
+   ```
+
+1. Restart the bootstrapper, ending the connection with the VM:
+
+   ```
+   sudo reboot
+   ```
+
+1. Upload configuration files to the shared disk through the bootstrapper:
+
+   ```sh
+   gcloud compute scp \
+       econia/src/docker/database/configs/pg_hba.conf \
+       root@bootstrapper:/mnt/disks/data/postgresql/data\
+       --ssh-key-file ssh/gcp
+   gcloud compute scp \
+       econia/src/docker/database/configs/postgresql.conf \
+       root@bootstrapper:/mnt/disks/data/postgresql/data\
+       --ssh-key-file ssh/gcp
+   ```
+
+1. Detach the shared data disk from the bootstrapper:
+
+   ```sh
+   gcloud compute instances detach-disk bootstrapper --disk data
+   ```
+
+## Deploy database
+
 1. Create an administrator username and password and store them in shell variables:
 
    ```sh
@@ -168,7 +286,7 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
    ADMIN_PASSWORD=<YOUR_ADMIN_PW>
    ```
 
-1. Deploy the `postgres` image as a [GCP Compute Engine instance](https://cloud.google.com/compute/docs/containers):
+1. Deploy the `postgres` image as a [Compute Engine Container](https://cloud.google.com/compute/docs/containers/deploying-containers) with the shared disk as a [data volume](https://cloud.google.com/compute/docs/containers/configuring-options-to-run-containers#mounting_a_persistent_disk_as_a_data_volume):
 
    ```sh
    gcloud compute instances create-with-container postgres \
@@ -177,13 +295,15 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
            POSTGRES_PASSWORD=$ADMIN_PASSWORD\
        )" \
        --container-image \
-           $BUILD_REGION-docker.pkg.dev/$PROJECT_ID/images/postgres
-   ```
-
-1. Verify that your instance is listed as running:
-
-   ```sh
-   gcloud compute instances list
+           $BUILD_REGION-docker.pkg.dev/$PROJECT_ID/images/postgres \
+       --container-mount-disk "$(printf '%s' \
+           mount-path=/var/lib,\
+           name=data\
+       )" \
+       --disk "$(printf '%s' \
+           name=data,\
+           device-name=data\
+       )"
    ```
 
 1. Store the external IP address in a shell variable:
@@ -203,14 +323,8 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
    ```sh
    gcloud compute firewall-rules create pg-admin \
        --allow tcp:5432 \
-       --direction ingress \
+       --direction INGRESS \
        --source-ranges $MY_IP
-   ```
-
-1. Verify that the firewall rule is listed:
-
-   ```sh
-   gcloud compute firewall-rules list
    ```
 
 1. Note the full description of the firewall rule:

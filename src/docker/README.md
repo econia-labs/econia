@@ -75,14 +75,7 @@ poetry install
 poetry run trade
 ```
 
-The script will have a few prompts, respond to each of them as follows:
-
-| Prompt         | Value                                                                |
-| -------------- | -------------------------------------------------------------------- |
-| Econia address | `0xeeee0dd966cd4fc739f76006591239b32527edbb7c303c431f8c691bda150b40` |
-| Faucet address | `0xffff094ef8ccfa9137adcb13a2fae2587e83c348b32c63f811cc19fcc9fc5878` |
-| Node URL       | http://0.0.0.0:8080/v1                                               |
-| Faucet URL     | http://0.0.0.0:8081                                                  |
+The script will have a few prompts, respond to each of them with nothing for all of them.
 
 Next, the script will step through various operations such as order creation, cancellation and fulfillment; press `ENTER` to advance each step.
 The script should execute to completion (it says `THE END!`) if everything is working.
@@ -92,6 +85,9 @@ Verify that the database is accessible by navigating to `http://0.0.0.0:3001`, a
 - `http://0.0.0.0:3001/cancel_order_events`
 - `http://0.0.0.0:3001/fill_events`
 - `http://0.0.0.0:3001/place_limit_order_events`
+- `http://0.0.0.0:3001/change_order_size_events`
+- `http://0.0.0.0:3001/place_market_order_events`
+- `http://0.0.0.0:3001/place_swap_order_events`
 
 If each of these tables is visible and containing data then that means the processor, database and PostgREST are all working together!
 

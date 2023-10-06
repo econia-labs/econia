@@ -33,13 +33,14 @@ from econia_sdk.view.user import (
 )
 
 """
-HOW TO RUN THIS SCRIPT: `poetry install && poetry run trade` in .../econia/src/python/sdk
+HOW TO RUN THIS SCRIPT: `poetry install && poetry run trade` in /econia/src/python/sdk
 
-See instructions in /src/docker/README.md to see how to run this script against a local
-deployment of Econia (including the backend service stack).
+See instructions in /econia/src/docker/README.md to see how to run this script against
+a local deployment of Econia, including the data service stack.
 
-There are several prompts; entering nothing for all of them will default to running
-against a local deployment without performing a market recognization.
+There are several prompts; entering nothing for all of them will result in:
+- Running against a local deployment of the data service stack.
+- No market will be listed as recognized.
 """
 
 U64_MAX = (2**64) - 1
@@ -111,7 +112,7 @@ def get_aptos_node_url() -> str:
             "Enter the URL of an Aptos node (enter nothing to default to local OR re-run with APTOS_NODE_URL environment variable)\n"
         ).strip()
         if url_in == "":
-            return NODE_URL_LOCAL  # devnet default
+            return NODE_URL_LOCAL
         else:
             return url_in
     else:
@@ -125,7 +126,7 @@ def get_aptos_faucet_url() -> str:
             "Please enter the URL of an Aptos faucet (enter nothing to default to local OR re-run with APTOS_FAUCET_URL environment variable)\n"
         ).strip()
         if url_in == "":
-            return FAUCET_URL_LOCAL  # devnet default
+            return FAUCET_URL_LOCAL
         else:
             return url_in
     else:
@@ -213,7 +214,7 @@ def start():
     (bids, asks) = get_order_ids(account_A.account_address, market_id)
     bid_size = 0
     for (i, bid) in enumerate(bids):
-        bid_size_new = bid["size"] // (i + 2)
+        bid_size_new = bid["size"] * (i + 2)
         bid_size = (bid_size + bid_size_new,)
         exec_txn(
             EconiaClient(NODE_URL, ECONIA_ADDR, account_A),
@@ -224,7 +225,7 @@ def start():
                 bid["market_order_id"],
                 bid_size_new,
             ),
-            f"Change bid size (#{i + 1})",
+            f"Increase bid order size (#{i + 1})",
         )
     ask_size = 0
     for (i, ask) in enumerate(asks):
@@ -239,7 +240,7 @@ def start():
                 ask["market_order_id"],
                 ask_size_new,
             ),
-            f"Change ask size (#{i + 1})",
+            f"Decrease ask order size (#{i + 1})",
         )
     dump_txns()
 

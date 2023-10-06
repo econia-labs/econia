@@ -41,7 +41,6 @@ While the local testnet is running, you can look up on-chain Move resources usin
 Note that the Aptos faucet API may take longer to start up than the node REST API:
 
 ```sh
-# From Econia repo root
 ECONIA_ADDRESS=0xeeee0dd966cd4fc739f76006591239b32527edbb7c303c431f8c691bda150b40
 FAUCET_ADDRESS=0xffff094ef8ccfa9137adcb13a2fae2587e83c348b32c63f811cc19fcc9fc5878
 aptos account list --account $FAUCET_ADDRESS --url http://0.0.0.0:8080
@@ -54,17 +53,7 @@ Both of the last two commands should spit out a bunch of resources deployed to t
 
 There is a script available that performs most (but not all) of the eventful and/or interesting operations on the exchange.
 By running it against the local end-to-end deployment, it's possible to verify things like processor operation, database connectivity and data accessibility.
-You'll need to install [Poetry](https://python-poetry.org/docs/):
-
-```sh
-brew install poetry
-```
-
-Alternatively, if your platform doesn't support `brew`:
-
-```sh
-curl -sSL https://install.python-poetry.org | python3 -
-```
+To run the script you'll need to install [Poetry](https://python-poetry.org/docs/).
 
 Next run the following:
 
@@ -79,15 +68,15 @@ The script will have a few prompts, respond to each of them with nothing for all
 
 Next, the script will step through various operations such as order creation, cancellation and fulfillment; press `ENTER` to advance each step.
 The script should execute to completion (it says `THE END!`) if everything is working.
-Verify that the database is accessible by navigating to `http://0.0.0.0:3001`, and that necessary tables are visible/contain data by navigating to:
+Verify that the database is accessible by navigating to `http://0.0.0.0:3000`, and that necessary tables are visible/contain data by navigating to:
 
-- `http://0.0.0.0:3001/market_registration_events`
-- `http://0.0.0.0:3001/cancel_order_events`
-- `http://0.0.0.0:3001/fill_events`
-- `http://0.0.0.0:3001/place_limit_order_events`
-- `http://0.0.0.0:3001/change_order_size_events`
-- `http://0.0.0.0:3001/place_market_order_events`
-- `http://0.0.0.0:3001/place_swap_order_events`
+- `http://0.0.0.0:3000/market_registration_events`
+- `http://0.0.0.0:3000/cancel_order_events`
+- `http://0.0.0.0:3000/fill_events`
+- `http://0.0.0.0:3000/place_limit_order_events`
+- `http://0.0.0.0:3000/change_order_size_events`
+- `http://0.0.0.0:3000/place_market_order_events`
+- `http://0.0.0.0:3000/place_swap_order_events`
 
 If each of these tables is visible and containing data then that means the processor, database and PostgREST are all working together!
 

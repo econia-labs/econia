@@ -25,7 +25,7 @@ services:
       PGRST_DB_SCHEMA: api
     image: postgrest/postgrest
     ports:
-      - "3001:3000"
+      - "3000:3000"
 
   processor:
     build:
@@ -56,4 +56,4 @@ services:
       - PGWS_CHECK_LISTENER_INTERVAL=1000
       - PGWS_LISTEN_CHANNEL=econiaws
     ports:
-      - 3000:3000
+      - 3001:3000

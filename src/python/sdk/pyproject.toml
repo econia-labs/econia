@@ -12,6 +12,9 @@ profile = "black"
 [tool.poetry.dependencies]
 aptos-sdk = "^0.6.4"
 python = "^3.8"
+websocket-client = "^1.6.3"
+httpx = "0.23.0"
+rel = "^0.4.9"
 
 [tool.poetry.group.dev.dependencies]
 autoflake = "^2.2.0"
@@ -24,6 +27,7 @@ pdoc = "^14.0.0"
 
 [tool.poetry.scripts]
 trade = "examples.trade:start"
+event = "examples.event:start"
 
 [build-system]
 requires = ["poetry-core"]

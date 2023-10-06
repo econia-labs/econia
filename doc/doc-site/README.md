@@ -34,6 +34,6 @@ Econia's docs are built using [Docusaurus].
 
 1. Make your changes to the database migrations.
 2. Run the local end-to-end docker compose according to instructions in `/src/docker/README.md`
-3. Visit `localhost:3001` and copy the JSON it returns.
+3. Visit `localhost:3000` and copy the JSON it returns.
 4. Paste the JSON into `/doc/doc-site/openapi.json`
 5. Done!

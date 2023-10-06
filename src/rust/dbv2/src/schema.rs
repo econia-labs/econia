@@ -1,3 +1,5 @@
+
+
 diesel::table! {
     cancel_order_events (txn_version, event_idx) {
         txn_version -> Numeric,
@@ -54,6 +56,28 @@ diesel::table! {
 diesel::table! {
     ledger_infos (chain_id) {
         chain_id -> Int8,
+    }
+}
+
+diesel::table! {
+    recognized_market_events (txn_version, event_idx) {
+        txn_version -> Numeric,
+        event_idx -> Numeric,
+        time -> Timestamptz,
+        #[max_length = 70]
+        base_account_address -> Nullable<Varchar>,
+        base_module_name -> Nullable<Text>,
+        base_struct_name -> Nullable<Text>,
+        base_name_generic -> Nullable<Text>,
+        #[max_length = 70]
+        quote_account_address -> Varchar,
+        quote_module_name -> Text,
+        quote_struct_name -> Text,
+        market_id -> Nullable<Numeric>,
+        lot_size -> Nullable<Numeric>,
+        tick_size -> Nullable<Numeric>,
+        min_size -> Nullable<Numeric>,
+        underwriter_id -> Nullable<Numeric>,
     }
 }
 

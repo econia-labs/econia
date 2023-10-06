@@ -3,7 +3,6 @@ FROM rust:slim-bookworm
 
 ARG RUST_ROOT=src/rust
 ARG DATABASE_URL
-ENV DATABASE_URL=$DATABASE_URL
 COPY $RUST_ROOT /app
 
 RUN apt-get update && apt-get install -y \
@@ -18,5 +17,7 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 RUN cargo build --release -p aggregator
+
+ENV DATABASE_URL=$DATABASE_URL
 
 ENTRYPOINT ["cargo", "run", "--release", "-p", "aggregator"]

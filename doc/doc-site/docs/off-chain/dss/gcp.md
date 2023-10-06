@@ -8,7 +8,7 @@ This guide will show you how to run the DSS on [Google Gloud Platform (GCP)](htt
 See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/) for more information on the commands used in this walkthrough.
 :::
 
-## Configure a billable project
+## Configure project
 
 1. [Create a GCP organization](https://cloud.google.com/resource-manager/docs/creating-managing-organization), [try GCP for free](https://cloud.google.com/free), or otherwise get access to GCP.
 
@@ -40,20 +40,16 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
        --organization $ORGANIZATION_ID
    ```
 
-1. Set the project ID as default:
-
-   ```sh
-   gcloud config set project $PROJECT_ID
-   ```
-
 1. List your billing account ID:
 
    ```sh
-   gcloud billing accounts list
+   gcloud alpha billing accounts list
    ```
 
    :::tip
-   Some of the billing commands are still in alpha release, and the CLI may recommend you substitute `gcloud alpha billing`.
+   As of the time of this writing, some billing commands were still in alpha release.
+
+   If you prefer a stable command release, you might not need to use the `alpha` keyword.
    :::
 
 1. Store the billing account ID in a shell variable:
@@ -65,11 +61,17 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
 1. Link the billing account to the project:
 
    ```sh
-   gcloud billing projects link $PROJECT_ID \
+   gcloud alpha billing projects link $PROJECT_ID \
        --billing-account $BILLING_ACCOUNT_ID
    ```
 
-## Build Docker images
+1. Set the project as default:
+
+    ```sh
+    gcloud config set project $PROJECT_ID
+    ```
+
+## Configure locations
 
 1. List available build regions:
 
@@ -83,11 +85,27 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
    BUILD_REGION=<NEARBY_REGION>
    ```
 
-1. Set the region as default:
+1. List available deployment zones:
+
+   ```sh
+   gcloud compute zones list
+   ```
+
+1. Pick a zone that is [close to you](https://cloud.google.com/compute/docs/regions-zones#available) and store it in a shell variable:
+
+   ```sh
+   DEPLOY_ZONE=<NEARBY_ZONE>
+   ```
+
+1. Store values as defaults:
 
    ```sh
    gcloud config set artifacts/location $BUILD_REGION
+   gcloud config set compute/zone $DEPLOY_ZONE
+   gcloud config set run/region $BUILD_REGION
    ```
+
+## Build Docker images
 
 1. Create a [GCP Artifact Registry](https://cloud.google.com/artifact-registry/docs/overview) Docker repository named `images`:
 
@@ -114,24 +132,6 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
    gcloud builds submit econia \
        --config econia/src/docker/gcp-tutorial-config.yaml \
        --substitutions _REGION=$BUILD_REGION
-   ```
-
-1. List available deployment zones:
-
-   ```sh
-   gcloud compute zones list
-   ```
-
-1. Pick a zone that is [close to you](https://cloud.google.com/compute/docs/regions-zones#available) and store it in a shell variable:
-
-   ```sh
-   DEPLOY_ZONE=<NEARBY_ZONE>
-   ```
-
-1. Set the zone as default:
-
-   ```sh
-   gcloud config set compute/zone $DEPLOY_ZONE
    ```
 
 ## Create shared storage
@@ -259,17 +259,20 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
        )"
    ```
 
-1. Store the external IP address in a shell variable:
+1. Store the instance's [internal and external IP addresses](https://cloud.google.com/compute/docs/reference/rest/v1/instances) as well [your public IP address](https://stackoverflow.com/a/56068456) in shell variables:
 
-   ```sh
-   POSTGRES_IP=<POSTGRES_EXTERNAL_IP>
-   ```
-
-1. Store [your IP address](https://ip4.me/) in a shell variable:
-
-   ```sh
-   MY_IP=<YOUR_IP_ADDRESS>
-   ```
+    ```sh
+    POSTGRES_EXTERNAL_IP=$(gcloud compute instances list \
+        --filter="name=postgres" \
+        --format="value(networkInterfaces[0].accessConfigs[0].natIP)")
+    POSTGRES_INTERNAL_IP=$(gcloud compute instances list \
+        --filter="name=postgres" \
+        --format="value(networkInterfaces[0].networkIP)")
+    MY_IP=$(curl --silent http://checkip.amazonaws.com)
+    echo "\n\nPostgreSQL internal IP: $POSTGRES_INTERNAL_IP"
+    echo "PostgreSQL external IP: $POSTGRES_EXTERNAL_IP"
+    echo "Your IP: $MY_IP"
+    ```
 
 1. Allow incoming traffic on port 5432 from your IP address:
 
@@ -292,8 +295,9 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
    export DATABASE_URL="$(printf '%s' postgres://\
        $ADMIN_NAME:\
        $ADMIN_PASSWORD@\
-       $POSTGRES_IP:5432/econia
+       $POSTGRES_EXTERNAL_IP:5432/econia
    )"
+   echo $DATABASE_URL
    ```
 
 1. Install [`diesel`](https://diesel.rs/guides/getting-started) if you don't already have it, then check that the database has an empty schema:
@@ -310,3 +314,23 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
    diesel print-schema
    cd ../../../..
    ```
+
+## Deploy REST API
+
+1. Deploy [PostgREST](https://postgrest.org/en/stable/) on [GCP Cloud Run](https://cloud.google.com/run/docs/overview/what-is-cloud-run) with [public access](https://cloud.google.com/run/docs/authenticating/public):
+
+    ```sh
+    POSTGREST_URL="$(printf '%s' postgres://\
+        $ADMIN_NAME:\
+        $ADMIN_PASSWORD@\
+        $POSTGRES_INTERNAL_IP:5432/econia
+    )"
+    gcloud run deploy postgrest \
+        --allow-unauthenticated \
+        --image=us-docker.pkg.dev/postgrest/postgrest \
+        --set-env-vars "$(printf '%s' \
+            PGRST_DB_ANON_ROLE=web_anon,\
+            PGRST_DB_SCHEMA=api,\
+            PGRST_DB_URI=$POSTGREST_URL\
+        )"
+    ```

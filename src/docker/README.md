@@ -77,6 +77,7 @@ Verify that the database is accessible by navigating to `http://0.0.0.0:3000`, a
 - `http://0.0.0.0:3000/change_order_size_events`
 - `http://0.0.0.0:3000/place_market_order_events`
 - `http://0.0.0.0:3000/place_swap_order_events`
+- `http://0.0.0.0:3000/registered_market_evnets`
 
 If each of these tables is visible and containing data then that means the processor, database and PostgREST are all working together!
 

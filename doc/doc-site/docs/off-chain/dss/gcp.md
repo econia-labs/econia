@@ -67,9 +67,9 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
 
 1. Set the project as default:
 
-    ```sh
-    gcloud config set project $PROJECT_ID
-    ```
+   ```sh
+   gcloud config set project $PROJECT_ID
+   ```
 
 ## Configure locations
 
@@ -261,18 +261,20 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
 
 1. Store the instance's [internal and external IP addresses](https://cloud.google.com/compute/docs/reference/rest/v1/instances) as well [your public IP address](https://stackoverflow.com/a/56068456) in shell variables:
 
-    ```sh
-    POSTGRES_EXTERNAL_IP=$(gcloud compute instances list \
-        --filter="name=postgres" \
-        --format="value(networkInterfaces[0].accessConfigs[0].natIP)")
-    POSTGRES_INTERNAL_IP=$(gcloud compute instances list \
-        --filter="name=postgres" \
-        --format="value(networkInterfaces[0].networkIP)")
-    MY_IP=$(curl --silent http://checkip.amazonaws.com)
-    echo "\n\nPostgreSQL internal IP: $POSTGRES_INTERNAL_IP"
-    echo "PostgreSQL external IP: $POSTGRES_EXTERNAL_IP"
-    echo "Your IP: $MY_IP"
-    ```
+   ```sh
+   POSTGRES_EXTERNAL_IP=$(gcloud compute instances list \
+       --filter name=postgres \
+       --format "value(networkInterfaces[0].accessConfigs[0].natIP)" \
+   )
+   POSTGRES_INTERNAL_IP=$(gcloud compute instances list \
+       --filter name=postgres \
+       --format "value(networkInterfaces[0].networkIP)" \
+   )
+   MY_IP=$(curl --silent http://checkip.amazonaws.com)
+   echo "\n\nPostgreSQL external IP: $POSTGRES_EXTERNAL_IP"
+   echo "PostgreSQL internal IP: $POSTGRES_INTERNAL_IP"
+   echo "Your IP: $MY_IP"
+   ```
 
 1. Allow incoming traffic on port 5432 from your IP address:
 
@@ -317,20 +319,65 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
 
 ## Deploy REST API
 
+1. [Create a connector](https://cloud.google.com/vpc/docs/configure-serverless-vpc-access#create-connector) for your project's `default` [Virtual Private Cloud (VPC)](https://cloud.google.com/vpc/docs/overview) network:
+
+   ```sh
+   gcloud compute networks vpc-access connectors create \
+       postgrest \
+       --range 10.8.0.0/28 \
+       --region $BUILD_REGION
+   ```
+
+1. Verify that the connector is ready:
+
+   ```sh
+   STATE=$(gcloud compute networks vpc-access connectors describe \
+       postgrest \
+       --region $BUILD_REGION \
+       --format "value(state)"
+   )
+   echo "Connector state is: $STATE"
+   ```
+
+1. Construct the PosgREST connection URL to connect to the `postgres` instance:
+
+   ```sh
+   POSTGREST_URL="$(printf '%s' postgres://\
+       $ADMIN_NAME:\
+       $ADMIN_PASSWORD@\
+       $POSTGRES_INTERNAL_IP:5432/econia
+   )"
+   echo $POSTGREST_URL
+   ```
+
 1. Deploy [PostgREST](https://postgrest.org/en/stable/) on [GCP Cloud Run](https://cloud.google.com/run/docs/overview/what-is-cloud-run) with [public access](https://cloud.google.com/run/docs/authenticating/public):
 
-    ```sh
-    POSTGREST_URL="$(printf '%s' postgres://\
-        $ADMIN_NAME:\
-        $ADMIN_PASSWORD@\
-        $POSTGRES_INTERNAL_IP:5432/econia
-    )"
-    gcloud run deploy postgrest \
-        --allow-unauthenticated \
-        --image=us-docker.pkg.dev/postgrest/postgrest \
-        --set-env-vars "$(printf '%s' \
-            PGRST_DB_ANON_ROLE=web_anon,\
-            PGRST_DB_SCHEMA=api,\
-            PGRST_DB_URI=$POSTGREST_URL\
-        )"
-    ```
+   ```sh
+   gcloud run deploy postgrest \
+       --allow-unauthenticated \
+       --image \
+          $BUILD_REGION-docker.pkg.dev/$PROJECT_ID/images/postgrest \
+       --port 3000 \
+       --set-env-vars "$(printf '%s' \
+           PGRST_DB_ANON_ROLE=web_anon,\
+           PGRST_DB_SCHEMA=api,\
+           PGRST_DB_URI=$POSTGREST_URL\
+       )" \
+       --vpc-connector postgrest
+   ```
+
+1. Store the [service URL](https://cloud.google.com/run/docs/reference/rest/v1/namespaces.services#ServiceStatus) in a shell variable:
+
+   ```sh
+   REST_API=$(
+       gcloud run services describe postgrest \
+           --format "value(status.url)"
+   )
+   echo $REST_API
+   ```
+
+1. Verify that you can query the PostgREST API from the public URL:
+
+   ```sh
+   curl $REST_API
+   ```

@@ -64,7 +64,7 @@ poetry install
 poetry run trade
 ```
 
-The script will have a few prompts, respond to each of them with nothing for all of them.
+Enter nothing for all of the prompts to use the default local configuration.
 
 Next, the script will step through various operations such as order creation, cancellation and fulfillment; press `ENTER` to advance each step.
 The script should execute to completion (it says `THE END!`) if everything is working.
@@ -77,7 +77,7 @@ Verify that the database is accessible by navigating to `http://0.0.0.0:3000`, a
 - `http://0.0.0.0:3000/change_order_size_events`
 - `http://0.0.0.0:3000/place_market_order_events`
 - `http://0.0.0.0:3000/place_swap_order_events`
-- `http://0.0.0.0:3000/registered_market_evnets`
+- `http://0.0.0.0:3000/recognized_market_events`
 
 If each of these tables is visible and containing data then that means the processor, database and PostgREST are all working together!
 

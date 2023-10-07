@@ -157,7 +157,7 @@ Install the Aptos CLI & run your local node/faucet:
 ```bash
 brew install aptos # only if necessary
 mkdir aptos && cd aptos
-aptos node run-local-testnet --with-faucet
+aptos node run-local-testnet --with-faucet --test-dir data
 ```
 
 In another terminal, run the following:
@@ -173,8 +173,16 @@ It's time to deploy our own Econia Faucet to the local chain:
 ```bash
 git clone https://github.com/econia-labs/econia.git # only if necessary
 cd ./econia/src/move/faucet
-aptos init --profile econia_faucet_deploy # enter "local" for the chain
-export FAUCET_ADDR=<ACCOUNT-FROM-ABOVE> # make sure to put 0x at the start
+# enter "local" for the chain
+aptos init --profile econia_faucet_deploy
+```
+
+```sh
+# make sure to put 0x at the start
+export FAUCET_ADDR=<ACCOUNT-FROM-ABOVE>
+```
+
+```sh
 # deploy the faucet (all one command)
 aptos move publish \
         --named-addresses econia_faucet=$FAUCET_ADDR \
@@ -185,9 +193,17 @@ aptos move publish \
 You also need to deploy Econia:
 
 ```bash
-cd ./econia/src/move/econia
-aptos init --profile econia_exchange_deploy # enter "local" for the chain
-export ECONIA_ADDR=<ACCOUNT-FROM-ABOVE> # make sure to put 0x at the start
+cd ../econia/
+# enter "local" for the chain
+aptos init --profile econia_exchange_deploy
+```
+
+```sh
+# make sure to put 0x at the start
+export ECONIA_ADDR=<ACCOUNT-FROM-ABOVE>
+```
+
+```sh
 # deploy the exchange (all one command)
 aptos move publish \
         --override-size-check \
@@ -203,11 +219,13 @@ In order to run, install Poetry then install dependencies and run the script:
 
 ```bash
 brew install poetry # only if necessary
-cd ./econia/src/python/sdk && poetry install # only if necessary
+cd ../../python/sdk/
+poetry install # only if necessary
 poetry run trade # we're off to the races!
 ```
 
 There will be a few more prompts; enter nothing for them until you reach this printout:
+
 ```
 Press enter to initialize (or obtain) the market.
 ```
@@ -294,6 +312,7 @@ When a market order comes along and pays the price of a limit order, this is cal
 We're about to witness such a fill event in the coming steps.
 
 #### Step #4: Change order sizes (as Account A)
+
 ```
 Press enter to change Account A's order sizes.
 TRANSACTIONS EXECUTED (first-to-last):
@@ -304,11 +323,12 @@ TRANSACTIONS EXECUTED (first-to-last):
 Limit orders can be size-changed by their owner, including size increases.
 **If the size increases, the order is sent to the back of the time priority queue at its price!**
 This ensures price-time priority is preserved within the exchange.
-Here, the script has increase the size of the one bid order created above.
+Here, the script has increased the size of the one bid order created above.
 It's also decreased the size of the one ask order created above.
-Both of these transactions emit `ChangeOrderSizeEvent`.
+Both of these transactions emit a `ChangeOrderSizeEvent`.
 
 #### Step #5: Self-trade with swap orders (as Account A)
+
 ```
 Press enter to swap with Account A.
 TRANSACTIONS EXECUTED (first-to-last):
@@ -316,7 +336,7 @@ TRANSACTIONS EXECUTED (first-to-last):
   * Execute ASK swap order for Account A: 0x3ae0c79f9dca26552d42b700b4de319d0dda65f12acc8d2328d0c9f057792c4e
 ```
 
-It's possible for an account to trade against itself, such as with the swap orders above.
+It's possible for an account to match (but not fill) against itself, such as with the swap orders above.
 Swaps are trades performed without a market account involved.
 Since the limit orders have the `CancelMaker` self-match behavior, the above swaps do not emit fill events.
 However, the swaps do result in `PlaceSwapOrderEvent` emissions even though the trade doesn't fill anything.

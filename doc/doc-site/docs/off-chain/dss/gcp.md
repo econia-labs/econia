@@ -26,10 +26,18 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
    ORGANIZATION_ID=<YOUR_ORGANIZATION_ID>
    ```
 
+   ```sh
+   echo $ORGANIZATION_ID
+   ```
+
 1. Choose a project ID (like `fast-15`) that complies with the [GCP project ID rules](https://cloud.google.com/sdk/gcloud/reference/projects/create) and store it in a shell variable:
 
    ```sh
    PROJECT_ID=<YOUR_PROJECT_ID>
+   ```
+
+   ```sh
+   echo $PROJECT_ID
    ```
 
 1. Create a new [project](https://cloud.google.com/storage/docs/projects) with the name `econia-dss`:
@@ -58,6 +66,10 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
    BILLING_ACCOUNT_ID=<YOUR_BILLING_ACCOUNT_ID>
    ```
 
+   ```sh
+   echo $BILLING_ACCOUNT_ID
+   ```
+
 1. Link the billing account to the project:
 
    ```sh
@@ -82,7 +94,11 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
 1. Pick a region that is [close to you](https://cloud.google.com/artifact-registry/docs/repositories/repo-locations) and store it in a shell variable:
 
    ```sh
-   BUILD_REGION=<NEARBY_REGION>
+   REGION=<NEARBY_REGION>
+   ```
+
+   ```
+   echo $REGION
    ```
 
 1. List available deployment zones:
@@ -94,15 +110,19 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
 1. Pick a zone that is [close to you](https://cloud.google.com/compute/docs/regions-zones#available) and store it in a shell variable:
 
    ```sh
-   DEPLOY_ZONE=<NEARBY_ZONE>
+   ZONE=<NEARBY_ZONE>
+   ```
+
+   ```
+   echo $ZONE
    ```
 
 1. Store values as defaults:
 
    ```sh
-   gcloud config set artifacts/location $BUILD_REGION
-   gcloud config set compute/zone $DEPLOY_ZONE
-   gcloud config set run/region $BUILD_REGION
+   gcloud config set artifacts/location $REGION
+   gcloud config set compute/zone $ZONE
+   gcloud config set run/region $REGION
    ```
 
 ## Build Docker images
@@ -131,33 +151,32 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
    ```sh
    gcloud builds submit econia \
        --config econia/src/docker/gcp-tutorial-config.yaml \
-       --substitutions _REGION=$BUILD_REGION
+       --substitutions _REGION=$REGION
    ```
 
-## Create shared storage
+## Create config bootstrapper
 
-1. Create a [GCP Compute Engine instance](https://cloud.google.com/compute/docs/instances) for bootstrapping config files, with a [persistent disk](https://cloud.google.com/compute/docs/disks):
+1. Create a [GCP Compute Engine instance](https://cloud.google.com/compute/docs/instances) for bootstrapping config files, with two attached [persistent disks](https://cloud.google.com/compute/docs/disks):
 
    ```sh
    gcloud compute instances create bootstrapper \
-       --create-disk name=data
+       --create-disk "$(printf '%s' \
+               name=postgres-disk,\
+               size=100GB\
+       )" \
+       --create-disk "$(printf '%s' \
+               name=processor-disk,\
+               size=1GB\
+       )"
    ```
 
-1. [Create an SSH key pair](https://cloud.google.com/compute/docs/connect/create-ssh-keys) to connect to the bootstrapper:
+1. [Create an SSH key pair](https://cloud.google.com/compute/docs/connect/create-ssh-keys) and use it to upload PostgreSQL configuration files to the bootstrapper:
 
    ```sh
    mkdir ssh
-   ssh-keygen -t rsa -f ssh/gcp -C bootstrapper -b 2048
-   ```
-
-1. Upload configuration files to bootstrapper:
-
-   ```sh
+   ssh-keygen -t rsa -f ssh/gcp -C bootstrapper -b 2048 -q -N ""
    gcloud compute scp \
        econia/src/docker/database/configs/pg_hba.conf \
-       bootstrapper:~ \
-       --ssh-key-file ssh/gcp
-   gcloud compute scp \
        econia/src/docker/database/configs/postgresql.conf \
        bootstrapper:~ \
        --ssh-key-file ssh/gcp
@@ -176,46 +195,52 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
    ```
 
    :::tip
-   The device name for the new blank persistent disk will probably be `sbd`.
+   The device name for the `postgres` disk will probably be `sbd`, and the device name for the `processor` will probably be `sdc` (check the disk sizes if you are unsure).
    :::
 
-1. Store the device name in a shell variable:
+1. Store the device names in shell variables:
 
    ```sh
-   DEVICE_NAME=<PROBABLY_sdb>
+   POSTGRES_DISK_DEVICE_NAME=<PROBABLY_sdb>
+   PROCESSOR_DISK_DEVICE_NAME=<PROBABLY_sdc>
    ```
 
-1. [Format and mount the disk with read/write permissions](https://cloud.google.com/compute/docs/disks/format-mount-disk-linux#format_linux):
+   ```sh
+   echo "PostgreSQL disk device name: $POSTGRES_DISK_DEVICE_NAME"
+   echo "Processor disk device name: $PROCESSOR_DISK_DEVICE_NAME"
+   ```
+
+1. [Format and mount the disks with read/write permissions](https://cloud.google.com/compute/docs/disks/format-mount-disk-linux#format_linux):
 
    ```sh
    sudo mkfs.ext4 \
        -m 0 \
        -E lazy_itable_init=0,lazy_journal_init=0,discard \
-       /dev/$DEVICE_NAME
-   ```
-
-   ```sh
-   sudo mkdir -p /mnt/disks/data
-   ```
-
-   ```sh
+       /dev/$POSTGRES_DISK_DEVICE_NAME
+   sudo mkfs.ext4 \
+       -m 0 \
+       -E lazy_itable_init=0,lazy_journal_init=0,discard \
+       /dev/$PROCESSOR_DISK_DEVICE_NAME
+   sudo mkdir -p /mnt/disks/postgres
+   sudo mkdir -p /mnt/disks/processor
    sudo mount -o \
        discard,defaults \
-       /dev/$DEVICE_NAME \
-       /mnt/disks/data
-   ```
-
-   ```sh
-   sudo chmod a+w /mnt/disks/data
+       /dev/$POSTGRES_DISK_DEVICE_NAME \
+       /mnt/disks/postgres
+   sudo mount -o \
+       discard,defaults \
+       /dev/$PROCESSOR_DISK_DEVICE_NAME \
+       /mnt/disks/processor
+   sudo chmod a+w /mnt/disks/postgres
+   sudo chmod a+w /mnt/disks/processor
    ```
 
 1. Create a PostgreSQL data directory and move the config files into it:
 
    ```sh
-   mkdir /mnt/disks/data/postgresql
-   mkdir /mnt/disks/data/postgresql/data
-   mv pg_hba.conf /mnt/disks/data/postgresql/data/pg_hba.conf
-   mv postgresql.conf /mnt/disks/data/postgresql/data/postgresql.conf
+   mkdir /mnt/disks/postgres/data
+   mv pg_hba.conf /mnt/disks/postgres/data/pg_hba.conf
+   mv postgresql.conf /mnt/disks/postgres/data/postgresql.conf
    ```
 
 1. End the connection with the bootstrapper:
@@ -224,10 +249,10 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
    exit
    ```
 
-1. Detach the shared data disk from the bootstrapper instance:
+1. Detach the `postgres` disk from the bootstrapper instance:
 
    ```sh
-   gcloud compute instances detach-disk bootstrapper --disk data
+   gcloud compute instances detach-disk bootstrapper --disk postgres-disk
    ```
 
 ## Deploy database
@@ -239,7 +264,12 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
    ADMIN_PASSWORD=<YOUR_ADMIN_PW>
    ```
 
-1. Deploy the `postgres` image as a [Compute Engine Container](https://cloud.google.com/compute/docs/containers/deploying-containers) with the shared disk as a [data volume](https://cloud.google.com/compute/docs/containers/configuring-options-to-run-containers#mounting_a_persistent_disk_as_a_data_volume):
+   ```sh
+   echo "Admin name: $ADMIN_NAME"
+   echo "Admin password: $ADMIN_PASSWORD"
+   ```
+
+1. Deploy the `postgres` image as a [Compute Engine Container](https://cloud.google.com/compute/docs/containers/deploying-containers) with the `postgres` disk as a [data volume](https://cloud.google.com/compute/docs/containers/configuring-options-to-run-containers#mounting_a_persistent_disk_as_a_data_volume):
 
    ```sh
    gcloud compute instances create-with-container postgres \
@@ -248,14 +278,15 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
            POSTGRES_PASSWORD=$ADMIN_PASSWORD\
        )" \
        --container-image \
-           $BUILD_REGION-docker.pkg.dev/$PROJECT_ID/images/postgres \
+           $REGION-docker.pkg.dev/$PROJECT_ID/images/postgres \
        --container-mount-disk "$(printf '%s' \
-           mount-path=/var/lib,\
-           name=data\
+           mount-path=/var/lib/postgresql,\
+           name=postgres-disk\
        )" \
        --disk "$(printf '%s' \
-           name=data,\
-           device-name=data\
+           auto-delete=no,\
+           device-name=postgres-disk,\
+           name=postgres-disk\
        )"
    ```
 
@@ -285,12 +316,6 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
        --source-ranges $MY_IP
    ```
 
-1. Note the full description of the firewall rule:
-
-   ```sh
-   gcloud compute firewall-rules describe pg-admin
-   ```
-
 1. Store the PostgreSQL connection string as an environment variable:
 
    ```sh
@@ -307,6 +332,10 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
    ```sh
    diesel print-schema
    ```
+
+   :::tip
+   You might not be able to connect to the database until a minute or so after you've first created the instance.
+   :::
 
 1. Run the database migrations then check the schema again:
 
@@ -325,7 +354,7 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
    gcloud compute networks vpc-access connectors create \
        postgrest \
        --range 10.8.0.0/28 \
-       --region $BUILD_REGION
+       --region $REGION
    ```
 
 1. Verify that the connector is ready:
@@ -333,7 +362,7 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
    ```sh
    STATE=$(gcloud compute networks vpc-access connectors describe \
        postgrest \
-       --region $BUILD_REGION \
+       --region $REGION \
        --format "value(state)"
    )
    echo "Connector state is: $STATE"
@@ -356,7 +385,7 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
    gcloud run deploy postgrest \
        --allow-unauthenticated \
        --image \
-          $BUILD_REGION-docker.pkg.dev/$PROJECT_ID/images/postgrest \
+          $REGION-docker.pkg.dev/$PROJECT_ID/images/postgrest \
        --port 3000 \
        --set-env-vars "$(printf '%s' \
            PGRST_DB_ANON_ROLE=web_anon,\

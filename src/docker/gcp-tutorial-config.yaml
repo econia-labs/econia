@@ -3,6 +3,7 @@
 images:
   - '${_REPO}/postgres'
   - '${_REPO}/postgrest'
+  - '${_REPO}/processor'
 
 options:
   dynamicSubstitutions: true
@@ -26,6 +27,16 @@ steps:
       - '${_DOCKER_DIR}/database/Dockerfile.postgrest'
       - '--tag'
       - '${_REPO}/postgrest'
+      - '.'
+    name: '${_BUILDER}'
+
+  - id: build-processor
+    args:
+      - 'build'
+      - '--file'
+      - '${_DOCKER_DIR}/processor/Dockerfile'
+      - '--tag'
+      - '${_REPO}/processor'
       - '.'
     name: '${_BUILDER}'
 

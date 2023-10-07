@@ -1,3 +1,22 @@
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
+    balance_updates_by_handle (txn_version, handle, market_id, custodian_id) {
+        txn_version -> Numeric,
+        #[max_length = 70]
+        handle -> Varchar,
+        market_id -> Numeric,
+        custodian_id -> Numeric,
+        time -> Timestamptz,
+        base_total -> Numeric,
+        base_available -> Numeric,
+        base_ceiling -> Numeric,
+        quote_total -> Numeric,
+        quote_available -> Numeric,
+        quote_ceiling -> Numeric,
+    }
+}
+
 diesel::table! {
     cancel_order_events (txn_version, event_idx) {
         txn_version -> Numeric,
@@ -54,6 +73,16 @@ diesel::table! {
 diesel::table! {
     ledger_infos (chain_id) {
         chain_id -> Int8,
+    }
+}
+
+diesel::table! {
+    market_account_handles (user) {
+        #[max_length = 70]
+        user -> Varchar,
+        #[max_length = 70]
+        handle -> Varchar,
+        creation_time -> Timestamptz,
     }
 }
 
@@ -144,33 +173,6 @@ diesel::table! {
         processor -> Varchar,
         last_success_version -> Int8,
         last_updated -> Timestamp,
-    }
-}
-
-diesel::table! {
-    market_account_handles (user) {
-        #[max_length = 70]
-        user -> Varchar,
-        #[max_length = 70]
-        handle -> Varchar,
-        creation_time -> Timestamptz,
-    }
-}
-
-diesel::table! {
-    balance_updates_by_handle (txn_version, handle, market_id, custodian_id) {
-        txn_version -> Numeric,
-        #[max_length = 70]
-        handle -> Varchar,
-        market_id -> Numeric,
-        custodian_id -> Numeric,
-        time -> Timestamptz,
-        base_total -> Numeric,
-        base_available -> Numeric,
-        base_ceiling -> Numeric,
-        quote_total -> Numeric,
-        quote_available -> Numeric,
-        quote_ceiling -> Numeric,
     }
 }
 

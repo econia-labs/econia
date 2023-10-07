@@ -161,12 +161,14 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
    ```sh
    gcloud compute instances create bootstrapper \
        --create-disk "$(printf '%s' \
-               name=postgres-disk,\
-               size=100GB\
+            auto-delete=no,\
+            name=postgres-disk,\
+            size=100GB\
        )" \
        --create-disk "$(printf '%s' \
-               name=processor-disk,\
-               size=1GB\
+            auto-delete=no,\
+            name=processor-disk,\
+            size=1GB\
        )"
    ```
 
@@ -503,3 +505,79 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
 
    Then try `curl $REST_API/balance_updates`, since this starting version immediately precedes a series of balance update operations on tesnet.
    :::
+
+## Restart with a new processor config
+
+1. Delete the processor:
+
+   ```sh
+   gcloud compute instances delete processor
+   ```
+
+1. Reset the database:
+
+   ```sh
+   echo $DATABASE_URL
+   ```
+
+   ```sh
+   cd econia/src/rust/dbv2
+   diesel database reset
+   cd ../../../..
+   diesel print-schema
+   ```
+
+1. Update your processor config at `econia/src/docker/processor/config.yaml`.
+
+1. Re-attach `processor-disk` to the bootstrapper:
+
+   ```sh
+   gcloud compute instances attach-disk bootstrapper --disk processor-disk
+   ```
+
+1. Upload the config, connect to the bootstrapper, re-mount the disk, replace the old config, and detach the disk:
+
+   ```sh
+   gcloud compute scp \
+       econia/src/docker/processor/config.yaml \
+       bootstrapper:~ \
+       --ssh-key-file ssh/gcp
+   ```
+
+   ```sh
+   gcloud compute ssh bootstrapper --ssh-key-file ssh/gcp
+   ```
+
+   ```sh
+   sudo lsblk
+   ```
+
+   ```sh
+   PROCESSOR_DISK_DEVICE_NAME=<NEW_NAME>
+   ```
+
+   ```sh
+   echo $PROCESSOR_DISK_DEVICE_NAME
+   ```
+
+   ```sh
+   sudo mount -o \
+       discard,defaults \
+       /dev/$PROCESSOR_DISK_DEVICE_NAME \
+       /mnt/disks/processor
+   sudo chmod a+w /mnt/disks/processor
+   mv config.yaml /mnt/disks/processor/data/config.yaml
+   echo "\n\nNew config:\n"
+   cat /mnt/disks/processor/data/config.yaml
+   echo
+   ```
+
+   ```sh
+   exit
+   ```
+
+   ```sh
+   gcloud compute instances detach-disk bootstrapper --disk processor-disk
+   ```
+
+1. Re-deploy the processor.

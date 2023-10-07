@@ -12,3 +12,6 @@ DROP ROLE web_anon;
 
 
 DROP EXTENSION pgjwt;
+
+
+DROP ROLE IF EXISTS web_anon;

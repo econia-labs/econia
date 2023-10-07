@@ -1,4 +1,8 @@
-FROM haskell:9.2.6-slim as builder
+FROM haskell:9.4.7-slim as builder
+
+# Postgres-websockets repo metadata
+ARG GIT_REPO=https://github.com/diogob/postgres-websockets.git
+ARG GIT_TAG=0.11.2.1
 
 # Install System Dependencies
 RUN apt-get update \
@@ -14,14 +18,17 @@ RUN apt-get update \
 
 # Clone the Repository
 WORKDIR /app
-RUN git clone https://github.com/diogob/postgres-websockets.git
+RUN git clone \
+    $GIT_REPO \
+    --branch $GIT_TAG \
+    --depth 1
 
 # Build the Project from source using the resolver it specifies
 # https://github.com/diogob/postgres-websockets/tree/master#building-from-source
 # https://github.com/diogob/postgres-websockets/blob/master/stack.yaml
 WORKDIR /app/postgres-websockets
 RUN stack setup
-RUN stack install --resolver lts-20.12
+RUN stack install --resolver lts-21.14
 
 # Lightweight Final Image
 FROM debian:bullseye-slim

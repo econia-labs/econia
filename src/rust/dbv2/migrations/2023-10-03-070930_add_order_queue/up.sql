@@ -9,7 +9,7 @@ CREATE VIEW api.limit_orders AS
     SELECT
         market_id,
         order_id,
-        user,
+        "user",
         custodian_id,
         self_matching_behavior,
         restriction,
@@ -20,6 +20,8 @@ CREATE VIEW api.limit_orders AS
         remaining_size,
         order_status,
         order_type,
+        price,
+        last_increase_stamp,
         CASE
             WHEN side = true THEN 'ask'
             ELSE 'bid'

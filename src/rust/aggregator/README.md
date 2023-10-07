@@ -49,4 +49,5 @@ For example, a 1-minute candle stick data flow would follow the following princi
 
 # SQLX
 
-The aggregator uses SQLX. In order for the requests to be checked and the crate to be compiled when the database is offline, you have to run `cargo sqlx prepare --workspace` from the Rust root (`src/rust`) when updating or creating a request.
+The aggregator uses [SQLx](https://github.com/launchbadge/sqlx/blob/main/README.md).
+In order for the requests to be checked and the crate to be compiled when the database is offline, you have to run `cargo sqlx prepare --workspace` from the Rust root (`src/rust`) when updating or creating a request.

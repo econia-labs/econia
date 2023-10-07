@@ -1,9 +1,12 @@
 use anyhow::anyhow;
-use bigdecimal::{BigDecimal, Zero, num_bigint::ToBigInt};
+use bigdecimal::{num_bigint::ToBigInt, BigDecimal, Zero};
 use chrono::{DateTime, Duration, Utc};
 use sqlx::{PgConnection, PgPool, Postgres, Transaction};
 
 use super::{Data, DataAggregationError, DataAggregationResult};
+
+/// Number of bits to shift when encoding transaction version.
+const SHIFT_TXN_VERSION: u8 = 64;
 
 #[derive(sqlx::Type, Debug)]
 #[sqlx(type_name = "order_status", rename_all = "lowercase")]
@@ -137,8 +140,19 @@ impl Data for UserHistory {
         .await
         .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
         for x in &limit_events {
-            let txn = x.txn_version.to_bigint().ok_or(DataAggregationError::ProcessingError(anyhow!("txn_version not integer")))? << 64;
-            let event = x.event_idx.to_bigint().ok_or(DataAggregationError::ProcessingError(anyhow!("event_idx not integer")))?;
+            let txn = x
+                .txn_version
+                .to_bigint()
+                .ok_or(DataAggregationError::ProcessingError(anyhow!(
+                    "txn_version not integer"
+                )))?
+                << SHIFT_TXN_VERSION;
+            let event = x
+                .event_idx
+                .to_bigint()
+                .ok_or(DataAggregationError::ProcessingError(anyhow!(
+                    "event_idx not integer"
+                )))?;
             let txn_event: BigDecimal = BigDecimal::from(txn | event);
             sqlx::query!(
                 r#"
@@ -429,8 +443,17 @@ async fn aggregate_change<'a>(
         (record.order_type, record.remaining_size);
     // If its a limit order and needs reordering
     if matches!(order_type, OrderType::Limit) && &original_size < new_size {
-        let txn = txn_version.to_bigint().ok_or(DataAggregationError::ProcessingError(anyhow!("txn_version not integer")))? << 64;
-        let event = event_idx.to_bigint().ok_or(DataAggregationError::ProcessingError(anyhow!("event_idx not integer")))?;
+        let txn = txn_version
+            .to_bigint()
+            .ok_or(DataAggregationError::ProcessingError(anyhow!(
+                "txn_version not integer"
+            )))?
+            << SHIFT_TXN_VERSION;
+        let event = event_idx
+            .to_bigint()
+            .ok_or(DataAggregationError::ProcessingError(anyhow!(
+                "event_idx not integer"
+            )))?;
         let txn_event: BigDecimal = BigDecimal::from(txn & event);
         sqlx::query!(
             r#"

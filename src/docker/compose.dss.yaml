@@ -37,7 +37,8 @@ services:
       - postgres
     environment:
       - PGWS_DB_URI=postgres://econia:econia@postgres/econia
-      - PGWS_JWT_SECRET=conjunctivodacryocystorhinostomy
+      # This has to be at least 32 characters long.
+      - PGWS_JWT_SECRET=econia_0000000000000000000000000
       - PGWS_CHECK_LISTENER_INTERVAL=1000
       - PGWS_LISTEN_CHANNEL=econiaws
     ports:

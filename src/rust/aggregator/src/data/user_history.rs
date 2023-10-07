@@ -275,14 +275,16 @@ impl Data for UserHistory {
                         || (fill.txn_version == change.txn_version
                             && fill.event_idx < change.event_idx)
                     {
-                        aggregate_fill(
-                            &mut transaction,
-                            &fill.size,
-                            &fill.maker_order_id,
-                            &fill.market_id,
-                            &fill.time,
-                        )
-                        .await?;
+                        if fill.maker_address == fill.emit_address {
+                            aggregate_fill(
+                                &mut transaction,
+                                &fill.size,
+                                &fill.maker_order_id,
+                                &fill.market_id,
+                                &fill.time,
+                            )
+                            .await?;
+                        }
                         mark_as_aggregated(&mut transaction, &fill.txn_version, &fill.event_idx)
                             .await?;
                         fill_index = fill_index + 1;
@@ -307,14 +309,16 @@ impl Data for UserHistory {
                     }
                 }
                 (Some(fill), None) => {
-                    aggregate_fill(
-                        &mut transaction,
-                        &fill.size,
-                        &fill.maker_order_id,
-                        &fill.market_id,
-                        &fill.time,
-                    )
-                    .await?;
+                    if fill.maker_address == fill.emit_address {
+                        aggregate_fill(
+                            &mut transaction,
+                            &fill.size,
+                            &fill.maker_order_id,
+                            &fill.market_id,
+                            &fill.time,
+                        )
+                        .await?;
+                    }
                     mark_as_aggregated(&mut transaction, &fill.txn_version, &fill.event_idx)
                         .await?;
                     fill_index = fill_index + 1;

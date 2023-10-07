@@ -21,7 +21,7 @@ CREATE TABLE
 
 CREATE FUNCTION notify_recognized_market_event () RETURNS TRIGGER AS $$
 BEGIN
-   PERFORM pg_notify('econiaws', json_build_object('channel', 'fill_event', 'payload', NEW)::text);
+   PERFORM pg_notify('econiaws', json_build_object('channel', 'recognized_market_event', 'payload', NEW)::text);
    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

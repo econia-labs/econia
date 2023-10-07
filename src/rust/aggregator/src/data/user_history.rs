@@ -139,7 +139,7 @@ impl Data for UserHistory {
         for x in &limit_events {
             let txn = x.txn_version.to_bigint().ok_or(DataAggregationError::ProcessingError(anyhow!("txn_version not integer")))? << 64;
             let event = x.event_idx.to_bigint().ok_or(DataAggregationError::ProcessingError(anyhow!("event_idx not integer")))?;
-            let txn_event: BigDecimal = BigDecimal::from(txn & event);
+            let txn_event: BigDecimal = BigDecimal::from(txn | event);
             sqlx::query!(
                 r#"
                     INSERT INTO aggregator.user_history_limit VALUES (
@@ -392,7 +392,7 @@ async fn aggregate_fill<'a>(
         market_id,
         time,
     )
-    .fetch_one(tx as &mut PgConnection)
+    .execute(tx as &mut PgConnection)
     .await
     .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
     Ok(())

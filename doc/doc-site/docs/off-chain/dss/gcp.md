@@ -125,7 +125,7 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
    gcloud config set run/region $REGION
    ```
 
-## Build Docker images
+## Build images
 
 1. Create a [GCP Artifact Registry](https://cloud.google.com/artifact-registry/docs/overview) Docker repository named `images`:
 
@@ -154,7 +154,7 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
        --substitutions _REGION=$REGION
    ```
 
-## Create config bootstrapper
+## Create bootstrapper
 
 1. Create a [GCP Compute Engine instance](https://cloud.google.com/compute/docs/instances) for bootstrapping config files, with two attached [persistent disks](https://cloud.google.com/compute/docs/disks):
 
@@ -249,7 +249,7 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
    exit
    ```
 
-1. Detach the `postgres` disk from the bootstrapper instance:
+1. Detach `postgres-disk` from the bootstrapper:
 
    ```sh
    gcloud compute instances detach-disk bootstrapper --disk postgres-disk
@@ -410,3 +410,96 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
    ```sh
    curl $REST_API
    ```
+
+## Deploy processor
+
+1. Create a config at `econia/src/docker/processor/config.yaml` per the [general DSS guidelies](./data-service-stack.md):
+
+   :::tip
+   For `postgres_connection_string` use the same one that the `postgrest` service uses:
+
+   ```sh
+   echo $POSTGREST_URL
+   ```
+
+   :::
+
+1. Upload the processor config to the bootstrapper:
+
+   ```sh
+   gcloud compute scp \
+       econia/src/docker/processor/config.yaml \
+       bootstrapper:~ \
+       --ssh-key-file ssh/gcp
+   ```
+
+1. Connect to the bootstrapper:
+
+   ```sh
+   gcloud compute ssh bootstrapper --ssh-key-file ssh/gcp
+   ```
+
+1. Create a processor data directory and move the config file into it:
+
+   ```sh
+   mkdir /mnt/disks/processor/data
+   mv config.yaml /mnt/disks/processor/data/config.yaml
+   ```
+
+1. End the connection with the bootstrapper:
+
+   ```
+   exit
+   ```
+
+1. Detach `processor-disk` from the bootstrapper:
+
+   ```sh
+   gcloud compute instances detach-disk bootstrapper --disk processor-disk
+   ```
+
+1. Deploy the `processor` image:
+
+   ```sh
+   gcloud compute instances create-with-container processor \
+       --container-env HEALTHCHECK_BEFORE_START=false \
+       --container-image \
+           $REGION-docker.pkg.dev/$PROJECT_ID/images/processor \
+       --container-mount-disk "$(printf '%s' \
+           mount-path=/config,\
+           name=processor-disk\
+       )" \
+       --disk "$(printf '%s' \
+           auto-delete=no,\
+           device-name=processor-disk,\
+           name=processor-disk\
+       )"
+   ```
+
+1. Give the processor a minute or so to start up, then [view the container logs](https://cloud.google.com/compute/docs/containers/deploying-containers#viewing_container_logs):
+
+   ```sh
+   PROCESSOR_ID=$(gcloud compute instances describe processor \
+   --zone $ZONE \
+   --format="value(id)"
+   )
+   gcloud logging read "resource.type=gce_instance AND \
+       logName=projects/$PROJECT_ID/logs/cos_containers AND \
+       resource.labels.instance_id=$PROCESSOR_ID" \
+       --limit 3
+   ```
+
+1. Once the processor has had enough time to sync, check some of the events:
+
+   ```sh
+   curl $REST_API/<AN_ENDPOINT>
+   ```
+
+   :::tip
+   For immediate results (but with missed events), use a testnet config with the following:
+
+   - `econia_address: 0xc0de11113b427d35ece1d8991865a941c0578b0f349acabbe9753863c24109ff`
+   - `starting_version: 683453241`
+
+   Then try `curl $REST_API/balance_updates`, since this starting version immediately precedes a series of balance update operations on tesnet.
+   :::

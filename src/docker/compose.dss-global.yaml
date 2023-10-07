@@ -26,7 +26,8 @@ services:
     ports:
       - "8085:8085"
     volumes:
-      - "./processor/config.yaml:/config.yaml"
+      # Two down from root for GCP disk mounting.
+      - "./processor/config.yaml:/config/data/config.yaml"
     environment:
       - HEALTHCHECK_BEFORE_START=false
 

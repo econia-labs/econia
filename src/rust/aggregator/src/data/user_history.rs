@@ -454,7 +454,7 @@ async fn aggregate_change<'a>(
             .ok_or(DataAggregationError::ProcessingError(anyhow!(
                 "event_idx not integer"
             )))?;
-        let txn_event: BigDecimal = BigDecimal::from(txn & event);
+        let txn_event: BigDecimal = BigDecimal::from(txn | event);
         sqlx::query!(
             r#"
                 UPDATE aggregator.user_history_limit

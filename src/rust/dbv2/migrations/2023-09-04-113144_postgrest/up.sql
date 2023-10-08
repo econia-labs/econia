@@ -1,4 +1,5 @@
 -- Your SQL goes here
+DROP ROLE IF EXISTS web_anon;
 CREATE ROLE web_anon nologin;
 
 

@@ -42,4 +42,4 @@ services:
       - PGWS_CHECK_LISTENER_INTERVAL=1000
       - PGWS_LISTEN_CHANNEL=econiaws
     ports:
-      - 3001:3000
+      - "3001:3000"

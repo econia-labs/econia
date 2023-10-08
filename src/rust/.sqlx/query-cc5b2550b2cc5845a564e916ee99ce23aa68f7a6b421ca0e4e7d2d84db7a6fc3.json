@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE aggregator.user_history\n            SET\n                last_updated_at = $4,\n                remaining_size = $1\n            WHERE order_id = $2 AND market_id = $3;\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Numeric",
+        "Numeric",
+        "Numeric",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "cc5b2550b2cc5845a564e916ee99ce23aa68f7a6b421ca0e4e7d2d84db7a6fc3"
+}

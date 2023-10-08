@@ -1,7 +1,7 @@
 use anyhow::anyhow;
 use bigdecimal::{num_bigint::ToBigInt, BigDecimal, Zero};
 use chrono::{DateTime, Duration, Utc};
-use sqlx::{PgConnection, PgPool, Postgres, Transaction};
+use sqlx::{PgConnection, PgPool, Postgres, Transaction, Executor};
 
 use super::{Data, DataAggregationError, DataAggregationResult};
 
@@ -53,10 +53,16 @@ impl Data for UserHistory {
         Some(std::time::Duration::from_secs(5))
     }
 
+    /// All database interactions are handled in a single atomic transaction. Processor insertions
+    /// are also handled in a single atomic transaction for each batch of transactions, such that
+    /// user history aggregation logic is effectively serialized across historical chain state.
     async fn process_and_save_internal(&mut self) -> DataAggregationResult {
         let mut transaction = self
             .pool
             .begin()
+            .await
+            .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
+        transaction.execute("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;")
             .await
             .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
         let fill_events = sqlx::query!(
@@ -380,24 +386,22 @@ async fn aggregate_fill<'a>(
     market_id: &BigDecimal,
     time: &DateTime<Utc>,
 ) -> DataAggregationResult {
-    // To protect against unexpected asynchronous behavior, only update order status to closed upon
-    // remaining size hitting 0 if the order is not marked cancelled. Note that the cancel event and
-    // change event aggregators should enforce that orders are respectively marked cancelled and
-    // open whenever they are called, such that events can be aggregated out of order. This logic
-    // applies for limit orders that post only, take only, and take then post, as well as market
-    // orders and swaps.
+    // Only limit orders can remain open after a transaction during which they are filled against,
+    // so flag market orders and swaps as closed by default: if they end up being cancelled instead
+    // of closed, the cancel event emitted during the same transaction (aggregated after fills) will
+    // clean up the order status to cancelled.
     sqlx::query!(
         r#"
         UPDATE aggregator.user_history
         SET
             remaining_size = remaining_size - $1,
             total_filled = total_filled + $1,
-            order_status = CASE order_status
-                WHEN 'cancelled' THEN order_status
-                ELSE CASE remaining_size - $1
+            order_status = CASE order_type
+                WHEN 'limit' THEN CASE remaining_size - $1
                     WHEN 0 THEN 'closed'
                     ELSE order_status
                 END
+                ELSE 'closed'
             END,
             last_updated_at = $4
         WHERE order_id = $2 AND market_id = $3
@@ -451,7 +455,7 @@ async fn aggregate_change<'a>(
             .ok_or(DataAggregationError::ProcessingError(anyhow!(
                 "event_idx not integer"
             )))?;
-        let txn_event: BigDecimal = BigDecimal::from(txn & event);
+        let txn_event: BigDecimal = BigDecimal::from(txn | event);
         sqlx::query!(
             r#"
                 UPDATE aggregator.user_history_limit
@@ -467,13 +471,11 @@ async fn aggregate_change<'a>(
         .await
         .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
     }
-    // Enforce that order status is set to open after a size change to guard against async issues
     sqlx::query!(
         r#"
             UPDATE aggregator.user_history
             SET
                 last_updated_at = $4,
-                order_status = 'open',
                 remaining_size = $1
             WHERE order_id = $2 AND market_id = $3;
         "#,

@@ -1,7 +1,7 @@
 version: "3.9"
 
 include:
-  - compose.dss.yaml
+  - compose.dss-core.yaml
 
 services:
   streamer:
@@ -15,15 +15,8 @@ services:
       - "8081:8081"
 
   processor:
-    build:
-      context: ../../
-      dockerfile: src/docker/processor/Dockerfile
-    depends_on:
-      - postgres
-    ports:
-      - "8085:8085"
-    volumes:
-      # Two down from root for GCP disk mounting.
-      - "./processor/config.yaml:/config/data/config.yaml"
     environment:
       - HEALTHCHECK_BEFORE_START=true
+    extends:
+      file: compose.processor-template.yaml
+      service: processor-template

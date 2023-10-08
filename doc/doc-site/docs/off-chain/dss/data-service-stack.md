@@ -133,4 +133,4 @@ To see what transaction the DSS processor has synced through, do not run in deta
 
 Great job!
 You have successfully deployed Econia's DSS.
-You can now query port 3001 to access the REST API and port 3000 to access the WebSocket server.
+You can now query port 3000 to access the REST API and port 3001 to access the WebSocket server.

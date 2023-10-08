@@ -20,16 +20,6 @@ steps:
       - '.'
     name: '${_BUILDER}'
 
-  - id: pull-postgrest
-    args:
-      - 'build'
-      - '--file'
-      - '${_DOCKER_DIR}/database/Dockerfile.postgrest'
-      - '--tag'
-      - '${_REPO}/postgrest'
-      - '.'
-    name: '${_BUILDER}'
-
   - id: build-processor
     args:
       - 'build'
@@ -37,6 +27,16 @@ steps:
       - '${_DOCKER_DIR}/processor/Dockerfile'
       - '--tag'
       - '${_REPO}/processor'
+      - '.'
+    name: '${_BUILDER}'
+
+  - id: pull-postgrest
+    args:
+      - 'build'
+      - '--file'
+      - '${_DOCKER_DIR}/database/Dockerfile.postgrest'
+      - '--tag'
+      - '${_REPO}/postgrest'
       - '.'
     name: '${_BUILDER}'
 

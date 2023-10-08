@@ -7,6 +7,10 @@ DROP TRIGGER new_swap_order_trigger ON aggregator.user_history_swap;
 DROP FUNCTION notify_new_swap_order;
 DROP TRIGGER updated_limit_order_trigger ON aggregator.user_history_limit;
 DROP FUNCTION notify_updated_limit_order;
+DROP TRIGGER updated_market_order_trigger ON aggregator.user_history_market;
+DROP FUNCTION notify_updated_market_order;
+DROP TRIGGER updated_swap_order_trigger ON aggregator.user_history_swap;
+DROP FUNCTION notify_updated_swap_order;
 DROP TRIGGER updated_order_trigger ON aggregator.user_history;
 DROP FUNCTION notify_updated_order;
 

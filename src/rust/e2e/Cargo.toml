@@ -9,7 +9,7 @@ edition = "2021"
 econia-sdk = { path = "../sdk" }
 e2e-proc-macro = { path = "./e2e-proc-macro" }
 metadata = { path = "./metadata" }
-aptos-sdk = { git = "https://github.com/aptos-labs/aptos-core", branch = "main" }
+aptos-sdk.workspace = true
 
 anyhow.workspace = true
 clap.workspace = true

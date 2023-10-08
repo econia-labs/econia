@@ -1,9 +1,12 @@
 use anyhow::anyhow;
-use bigdecimal::{BigDecimal, Zero};
+use bigdecimal::{num_bigint::ToBigInt, BigDecimal, Zero};
 use chrono::{DateTime, Duration, Utc};
-use sqlx::{Database, PgConnection, PgPool, Postgres, Transaction};
+use sqlx::{PgConnection, PgPool, Postgres, Transaction};
 
 use super::{Data, DataAggregationError, DataAggregationResult};
+
+/// Number of bits to shift when encoding transaction version.
+const SHIFT_TXN_VERSION: u8 = 64;
 
 #[derive(sqlx::Type, Debug)]
 #[sqlx(type_name = "order_status", rename_all = "lowercase")]
@@ -56,7 +59,7 @@ impl Data for UserHistory {
             .begin()
             .await
             .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
-        let mut fill_events = sqlx::query!(
+        let fill_events = sqlx::query!(
             r#"
                 SELECT * FROM fill_events
                 WHERE NOT EXISTS (
@@ -70,7 +73,7 @@ impl Data for UserHistory {
         .fetch_all(&mut transaction as &mut PgConnection)
         .await
         .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
-        let mut change_events = sqlx::query!(
+        let change_events = sqlx::query!(
             r#"
                 SELECT * FROM change_order_size_events
                 WHERE NOT EXISTS (
@@ -137,10 +140,24 @@ impl Data for UserHistory {
         .await
         .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
         for x in &limit_events {
+            let txn = x
+                .txn_version
+                .to_bigint()
+                .ok_or(DataAggregationError::ProcessingError(anyhow!(
+                    "txn_version not integer"
+                )))?
+                << SHIFT_TXN_VERSION;
+            let event = x
+                .event_idx
+                .to_bigint()
+                .ok_or(DataAggregationError::ProcessingError(anyhow!(
+                    "event_idx not integer"
+                )))?;
+            let txn_event: BigDecimal = BigDecimal::from(txn | event);
             sqlx::query!(
                 r#"
                     INSERT INTO aggregator.user_history_limit VALUES (
-                        $1, $2, $3, $4, $5, $6, $7
+                        $1, $2, $3, $4, $5, $6, $7, $8, $9
                     );
                 "#,
                 x.market_id,
@@ -150,6 +167,8 @@ impl Data for UserHistory {
                 x.side,
                 x.self_match_behavior,
                 x.restriction,
+                x.price,
+                txn_event,
             )
             .execute(&mut transaction as &mut PgConnection)
             .await
@@ -261,56 +280,43 @@ impl Data for UserHistory {
             .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
             mark_as_aggregated(&mut transaction, &x.txn_version, &x.event_idx).await?;
         }
+        // Step through fill and change events in total order.
         let mut fill_index = 0;
         let mut change_index = 0;
         for _ in 0..(fill_events.len() + change_events.len()) {
-            match (fill_events.get(fill_index), change_events.get(change_index)) {
-                (Some(fill), Some(change)) => {
-                    if fill.txn_version < change.txn_version
-                        || (fill.txn_version == change.txn_version
-                            && fill.event_idx < change.event_idx)
-                    {
-                        aggregate_fill(
+            let (fill_event_to_aggregate, change_event_to_aggregate) =
+                match (fill_events.get(fill_index), change_events.get(change_index)) {
+                    (Some(fill), Some(change)) => {
+                        if fill.txn_version < change.txn_version
+                            || (fill.txn_version == change.txn_version
+                                && fill.event_idx < change.event_idx)
+                        {
+                            (Some(fill), None)
+                        } else {
+                            (None, Some(change))
+                        }
+                    }
+                    (Some(fill), None) => (Some(fill), None),
+                    (None, Some(change)) => (None, Some(change)),
+                    (None, None) => unreachable!(),
+                };
+            match (fill_event_to_aggregate, change_event_to_aggregate) {
+                (Some(fill), None) => {
+                    // Dedupe if needed by only aggregating events emitted to maker handle.
+                    if fill.maker_address == fill.emit_address {
+                        aggregate_fill_for_maker_and_taker(
                             &mut transaction,
                             &fill.size,
                             &fill.maker_order_id,
+                            &fill.taker_order_id,
                             &fill.market_id,
                             &fill.time,
                         )
                         .await?;
-                        mark_as_aggregated(&mut transaction, &fill.txn_version, &fill.event_idx)
-                            .await?;
-                        fill_index = fill_index + 1;
-                    } else {
-                        aggregate_change(
-                            &mut transaction,
-                            &change.new_size,
-                            &change.order_id,
-                            &change.market_id,
-                            &change.time,
-                        )
-                        .await?;
-                        mark_as_aggregated(
-                            &mut transaction,
-                            &change.txn_version,
-                            &change.event_idx,
-                        )
-                        .await?;
-                        change_index = change_index + 1;
                     }
-                }
-                (Some(fill), None) => {
-                    aggregate_fill(
-                        &mut transaction,
-                        &fill.size,
-                        &fill.maker_order_id,
-                        &fill.market_id,
-                        &fill.time,
-                    )
-                    .await?;
                     mark_as_aggregated(&mut transaction, &fill.txn_version, &fill.event_idx)
                         .await?;
-                    fill_index = fill_index + 1;
+                    fill_index += 1;
                 }
                 (None, Some(change)) => {
                     aggregate_change(
@@ -319,13 +325,15 @@ impl Data for UserHistory {
                         &change.order_id,
                         &change.market_id,
                         &change.time,
+                        &change.txn_version,
+                        &change.event_idx,
                     )
                     .await?;
                     mark_as_aggregated(&mut transaction, &change.txn_version, &change.event_idx)
                         .await?;
-                    change_index = change_index + 1;
+                    change_index += 1;
                 }
-                (None, None) => unreachable!(),
+                _ => unreachable!(),
             };
         }
         for x in &cancel_events {
@@ -352,36 +360,52 @@ impl Data for UserHistory {
     }
 }
 
-async fn aggregate_fill<'a>(
+async fn aggregate_fill_for_maker_and_taker<'a>(
     tx: &mut Transaction<'a, Postgres>,
     size: &BigDecimal,
     maker_order_id: &BigDecimal,
+    taker_order_id: &BigDecimal,
     market_id: &BigDecimal,
     time: &DateTime<Utc>,
 ) -> DataAggregationResult {
+    aggregate_fill(tx, size, maker_order_id, market_id, time).await?;
+    aggregate_fill(tx, size, taker_order_id, market_id, time).await?;
+    Ok(())
+}
+
+async fn aggregate_fill<'a>(
+    tx: &mut Transaction<'a, Postgres>,
+    size: &BigDecimal,
+    order_id: &BigDecimal,
+    market_id: &BigDecimal,
+    time: &DateTime<Utc>,
+) -> DataAggregationResult {
+    // To protect against unexpected asynchronous behavior, only update order status to closed upon
+    // remaining size hitting 0 if the order is not marked cancelled. Note that the cancel event and
+    // change event aggregators should enforce that orders are respectively marked cancelled and
+    // open whenever they are called, such that events can be aggregated out of order. This logic
+    // applies for limit orders that post only, take only, and take then post, as well as market
+    // orders and swaps.
     sqlx::query!(
         r#"
-            UPDATE aggregator.user_history
-            SET
-                remaining_size = remaining_size - $1,
-                total_filled = total_filled + $1,
-                order_status = CASE remaining_size
-                    WHEN 0 THEN CASE order_status
-                        WHEN 'cancelled' THEN order_status
-                        ELSE 'closed'
-                    END
-                    ELSE CASE order_type
-                        WHEN 'swap' THEN 'closed'
-                        ELSE order_status
-                    END
-                END,
-                last_updated_at = $4
-            WHERE order_id = $2 AND market_id = $3;
+        UPDATE aggregator.user_history
+        SET
+            remaining_size = remaining_size - $1,
+            total_filled = total_filled + $1,
+            order_status = CASE order_status
+                WHEN 'cancelled' THEN order_status
+                ELSE CASE remaining_size - $1
+                    WHEN 0 THEN 'closed'
+                    ELSE order_status
+                END
+            END,
+            last_updated_at = $4
+        WHERE order_id = $2 AND market_id = $3
         "#,
         size,
-        maker_order_id,
+        order_id,
         market_id,
-        time,
+        time
     )
     .execute(tx as &mut PgConnection)
     .await
@@ -395,11 +419,62 @@ async fn aggregate_change<'a>(
     order_id: &BigDecimal,
     market_id: &BigDecimal,
     time: &DateTime<Utc>,
+    txn_version: &BigDecimal,
+    event_idx: &BigDecimal,
 ) -> DataAggregationResult {
+    // Get some info
+    let record = sqlx::query!(
+        r#"
+            SELECT order_type as "order_type: OrderType", remaining_size
+            FROM aggregator.user_history
+            WHERE market_id = $1
+            AND order_id = $2
+        "#,
+        market_id,
+        order_id,
+    )
+    .fetch_one(tx as &mut PgConnection)
+    .await
+    .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
+    let (order_type, original_size): (OrderType, BigDecimal) =
+        (record.order_type, record.remaining_size);
+    // If it's a limit order and needs reordering
+    if matches!(order_type, OrderType::Limit) && &original_size < new_size {
+        let txn = txn_version
+            .to_bigint()
+            .ok_or(DataAggregationError::ProcessingError(anyhow!(
+                "txn_version not integer"
+            )))?
+            << SHIFT_TXN_VERSION;
+        let event = event_idx
+            .to_bigint()
+            .ok_or(DataAggregationError::ProcessingError(anyhow!(
+                "event_idx not integer"
+            )))?;
+        let txn_event: BigDecimal = BigDecimal::from(txn & event);
+        sqlx::query!(
+            r#"
+                UPDATE aggregator.user_history_limit
+                SET last_increase_stamp = $3
+                WHERE market_id = $1
+                AND order_id = $2
+            "#,
+            market_id,
+            order_id,
+            txn_event,
+        )
+        .execute(tx as &mut PgConnection)
+        .await
+        .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
+    }
+    // Enforce that order status is set to open after a size change to guard against async issues
     sqlx::query!(
         r#"
             UPDATE aggregator.user_history
-            SET remaining_size = $1, last_updated_at = $4
+            SET
+                last_updated_at = $4,
+                order_status = 'open',
+                remaining_size = $1
             WHERE order_id = $2 AND market_id = $3;
         "#,
         new_size,

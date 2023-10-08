@@ -1,7 +1,7 @@
 use anyhow::anyhow;
 use bigdecimal::{num_bigint::ToBigInt, BigDecimal, Zero};
 use chrono::{DateTime, Duration, Utc};
-use sqlx::{PgConnection, PgPool, Postgres, Transaction};
+use sqlx::{PgConnection, PgPool, Postgres, Transaction, Executor};
 
 use super::{Data, DataAggregationError, DataAggregationResult};
 
@@ -57,6 +57,9 @@ impl Data for UserHistory {
         let mut transaction = self
             .pool
             .begin()
+            .await
+            .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
+        transaction.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;")
             .await
             .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
         let fill_events = sqlx::query!(

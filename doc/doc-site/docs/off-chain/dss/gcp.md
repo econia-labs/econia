@@ -8,7 +8,23 @@ This guide will show you how to run the DSS on [Google Gloud Platform (GCP)](htt
 See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/) for more information on the commands used in this walkthrough.
 :::
 
-## Configure project
+## Initial setup
+
+Follow the steps in this section in order, making sure to keep the relevant shell variables stored in your active shell session.
+
+:::tip
+Use a scratchpad text file to store shell variable assignment statements that you can copy-paste into your shell:
+
+```sh
+ORGANIZATION_ID=123456789012
+BILLING_ACCOUNT_ID=ABCDEF-GHIJKL-MNOPQR
+REGION=a-region
+ZONE=a-zone
+```
+
+:::
+
+### Configure project
 
 1. [Create a GCP organization](https://cloud.google.com/resource-manager/docs/creating-managing-organization), [try GCP for free](https://cloud.google.com/free), or otherwise get access to GCP.
 
@@ -83,7 +99,7 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
    gcloud config set project $PROJECT_ID
    ```
 
-## Configure locations
+### Configure locations
 
 1. List available build regions:
 
@@ -125,7 +141,7 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
    gcloud config set run/region $REGION
    ```
 
-## Build images
+### Build images
 
 1. Create a [GCP Artifact Registry](https://cloud.google.com/artifact-registry/docs/overview) Docker repository named `images`:
 
@@ -154,7 +170,11 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
        --substitutions _REGION=$REGION
    ```
 
-## Create bootstrapper
+   :::tip
+   This could take up to 20 minutes.
+   :::
+
+### Create bootstrapper
 
 1. Create a [GCP Compute Engine instance](https://cloud.google.com/compute/docs/instances) for bootstrapping config files, with two attached [persistent disks](https://cloud.google.com/compute/docs/disks):
 
@@ -257,7 +277,7 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
    gcloud compute instances detach-disk bootstrapper --disk postgres-disk
    ```
 
-## Deploy database
+### Deploy database
 
 1. Create an administrator username and password and store them in shell variables:
 
@@ -348,7 +368,7 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
    cd ../../../..
    ```
 
-## Deploy REST API
+### Deploy REST API
 
 1. [Create a connector](https://cloud.google.com/vpc/docs/configure-serverless-vpc-access#create-connector) for your project's `default` [Virtual Private Cloud (VPC)](https://cloud.google.com/vpc/docs/overview) network:
 
@@ -400,20 +420,20 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
 1. Store the [service URL](https://cloud.google.com/run/docs/reference/rest/v1/namespaces.services#ServiceStatus) in a shell variable:
 
    ```sh
-   REST_API=$(
+   export REST_URL=$(
        gcloud run services describe postgrest \
            --format "value(status.url)"
    )
-   echo $REST_API
+   echo $REST_URL
    ```
 
 1. Verify that you can query the PostgREST API from the public URL:
 
    ```sh
-   curl $REST_API
+   curl $REST_URL
    ```
 
-## Deploy processor
+### Deploy processor
 
 1. Create a config at `econia/src/docker/processor/config.yaml` per the [general DSS guidelies](./data-service-stack.md):
 
@@ -494,7 +514,7 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
 1. Once the processor has had enough time to sync, check some of the events:
 
    ```sh
-   curl $REST_API/<AN_ENDPOINT>
+   curl $REST_URL/<AN_ENDPOINT>
    ```
 
    :::tip
@@ -503,8 +523,149 @@ See the [`gcloud` CLI reference](https://cloud.google.com/sdk/gcloud/reference/)
    - `econia_address: 0xc0de11113b427d35ece1d8991865a941c0578b0f349acabbe9753863c24109ff`
    - `starting_version: 683453241`
 
-   Then try `curl $REST_API/balance_updates`, since this starting version immediately precedes a series of balance update operations on tesnet.
+   Then try `curl $REST_URL/balance_updates`, since this starting version immediately precedes a series of balance update operations on tesnet.
    :::
+
+### Deploy aggregator
+
+1. Deploy an `aggregator` instance using the same connection string as the `postgrest` service:
+
+   ```sh
+   echo $POSTGREST_URL
+   ```
+
+   ```sh
+   gcloud compute instances create-with-container aggregator \
+       --container-env DATABASE_URL=$POSTGREST_URL \
+       --container-image \
+           $REGION-docker.pkg.dev/$PROJECT_ID/images/aggregator
+   ```
+
+1. Wait a minute or two then check logs:
+
+   ```sh
+   AGGREGATOR_ID=$(gcloud compute instances describe aggregator \
+       --zone $ZONE \
+       --format="value(id)"
+   )
+   gcloud logging read "resource.type=gce_instance AND \
+       logName=projects/$PROJECT_ID/logs/cos_containers AND \
+       resource.labels.instance_id=$AGGREGATOR_ID" \
+       --limit 5
+   ```
+
+1. Once the aggregator has had enough time to aggregate events, check some aggregated data.
+   For example on testnet:
+
+   ```sh
+   echo $REST_URL
+   ```
+
+   ```sh
+   curl "$(printf '%s' \
+       "$REST_URL/"\
+       "limit_orders?"\
+       "order=price.desc,"\
+       "last_increase_stamp.asc&"\
+       "market_id=eq.3&"\
+       "side=eq.ask&"\
+       "order_status=eq.closed&"\
+       "limit=3"\
+   )"
+   ```
+
+### Deploy WebSockets API
+
+1. Create a connector:
+
+   ```sh
+   gcloud compute networks vpc-access connectors create \
+       websockets \
+       --range 10.64.0.0/28 \
+       --region $REGION
+   ```
+
+1. Verify connector readiness:
+
+   ```sh
+   STATE=$(gcloud compute networks vpc-access connectors describe \
+       websockets \
+       --region $REGION \
+       --format "value(state)"
+   )
+   echo "Connector state is: $STATE"
+   ```
+
+1. Construct WebSockets connection string:
+
+   ```sh
+   PGWS_DB_URI="$(printf '%s' postgres://\
+       $ADMIN_NAME:\
+       $ADMIN_PASSWORD@\
+       $POSTGRES_INTERNAL_IP/econia
+   )"
+   echo $PGWS_DB_URI
+   ```
+
+1. Deploy the `websockets` service:
+
+   ```sh
+   gcloud run deploy websockets \
+       --allow-unauthenticated \
+       --image \
+           $REGION-docker.pkg.dev/$PROJECT_ID/images/websockets \
+       --port 3000 \
+       --set-env-vars "$(printf '%s' \
+           PGWS_DB_URI=$PGWS_DB_URI,\
+           PGWS_JWT_SECRET=econia_is_dooooooooooooooooooope,\
+           PGWS_CHECK_LISTENER_INTERVAL=1000,\
+           PGWS_LISTEN_CHANNEL=econiaws\
+       )" \
+       --vpc-connector websockets
+   ```
+
+   should switch to `wss`
+
+1. Store service URL:
+
+   ```sh
+   WS_HTTPS_URL=$(
+       gcloud run services describe websockets \
+           --format "value(status.url)"
+   )
+   export WS_URL=$(echo $WS_HTTPS_URL | sed 's/https/wss/')
+   echo $WS_URL
+   ```
+
+1. Monitor events using the [WebSockets listening script](./websocket.md):
+
+   ```sh
+   cd econia/src/python/sdk
+   poetry install
+   poetry run event
+   ```
+
+   ```sh
+   echo $WS_URL
+   echo $REST_URL
+   echo $WS_CHANNEL
+   poetry run event
+   ```
+
+   ```sh
+   # To quit
+   <Ctrl+C>
+   ```
+
+   ```
+   cd ../../../..
+   ```
+
+## Redeployment
+
+Once you have the DSS running you might want to redeploy within the same GCP project, for example using a different chain or with new images.
+
+Whenever you redeploy, wipe the database and restart all the other instances and services as follows so that you do not break startup dependencies or miss any data.
 
 ## Restart with a new processor config
 

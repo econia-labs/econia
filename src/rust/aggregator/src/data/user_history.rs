@@ -383,15 +383,22 @@ async fn aggregate_fill<'a>(
     market_id: &BigDecimal,
     time: &DateTime<Utc>,
 ) -> DataAggregationResult {
+    // Only limit orders can remain open after a transaction during which they are filled against,
+    // so flag market orders and swaps as closed by default: if they end up being cancelled instead
+    // of closed, the cancel event emitted during the same transaction (aggregated after fills) will
+    // clean up the order status to cancelled.
     sqlx::query!(
         r#"
         UPDATE aggregator.user_history
         SET
             remaining_size = remaining_size - $1,
             total_filled = total_filled + $1,
-            order_status = CASE remaining_size - $1
-                WHEN 0 THEN 'closed'
-                ELSE order_status
+            order_status = CASE order_type
+                WHEN 'limit' THEN CASE remaining_size - $1
+                    WHEN 0 THEN 'closed'
+                    ELSE order_status
+                END
+                ELSE 'closed'
             END,
             last_updated_at = $4
         WHERE order_id = $2 AND market_id = $3

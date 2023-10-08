@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE aggregator.user_history\n        SET\n            remaining_size = remaining_size - $1,\n            total_filled = total_filled + $1,\n            order_status = CASE order_type\n                WHEN 'limit' THEN CASE remaining_size - $1\n                    WHEN 0 THEN 'closed'\n                    ELSE order_status\n                END\n                ELSE 'closed'\n            END,\n            last_updated_at = $4\n        WHERE order_id = $2 AND market_id = $3\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Numeric",
+        "Numeric",
+        "Numeric",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b17a5be1a3797d2bc5bfedb9c508e039285194b97b6d96e961dd7edc2557fbd2"
+}

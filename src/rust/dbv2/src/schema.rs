@@ -1,4 +1,21 @@
+// @generated automatically by Diesel CLI.
 
+diesel::table! {
+    balance_updates_by_handle (txn_version, handle, market_id, custodian_id) {
+        txn_version -> Numeric,
+        #[max_length = 70]
+        handle -> Varchar,
+        market_id -> Numeric,
+        custodian_id -> Numeric,
+        time -> Timestamptz,
+        base_total -> Numeric,
+        base_available -> Numeric,
+        base_ceiling -> Numeric,
+        quote_total -> Numeric,
+        quote_available -> Numeric,
+        quote_ceiling -> Numeric,
+    }
+}
 
 diesel::table! {
     cancel_order_events (txn_version, event_idx) {
@@ -60,24 +77,12 @@ diesel::table! {
 }
 
 diesel::table! {
-    recognized_market_events (txn_version, event_idx) {
-        txn_version -> Numeric,
-        event_idx -> Numeric,
-        time -> Timestamptz,
+    market_account_handles (user) {
         #[max_length = 70]
-        base_account_address -> Nullable<Varchar>,
-        base_module_name -> Nullable<Text>,
-        base_struct_name -> Nullable<Text>,
-        base_name_generic -> Nullable<Text>,
+        user -> Varchar,
         #[max_length = 70]
-        quote_account_address -> Varchar,
-        quote_module_name -> Text,
-        quote_struct_name -> Text,
-        market_id -> Nullable<Numeric>,
-        lot_size -> Nullable<Numeric>,
-        tick_size -> Nullable<Numeric>,
-        min_size -> Nullable<Numeric>,
-        underwriter_id -> Nullable<Numeric>,
+        handle -> Varchar,
+        creation_time -> Timestamptz,
     }
 }
 
@@ -172,29 +177,24 @@ diesel::table! {
 }
 
 diesel::table! {
-    market_account_handles (user) {
-        #[max_length = 70]
-        user -> Varchar,
-        #[max_length = 70]
-        handle -> Varchar,
-        creation_time -> Timestamptz,
-    }
-}
-
-diesel::table! {
-    balance_updates_by_handle (txn_version, handle, market_id, custodian_id) {
+    recognized_market_events (txn_version, event_idx) {
         txn_version -> Numeric,
-        #[max_length = 70]
-        handle -> Varchar,
-        market_id -> Numeric,
-        custodian_id -> Numeric,
+        event_idx -> Numeric,
         time -> Timestamptz,
-        base_total -> Numeric,
-        base_available -> Numeric,
-        base_ceiling -> Numeric,
-        quote_total -> Numeric,
-        quote_available -> Numeric,
-        quote_ceiling -> Numeric,
+        #[max_length = 70]
+        base_account_address -> Nullable<Varchar>,
+        base_module_name -> Nullable<Text>,
+        base_struct_name -> Nullable<Text>,
+        base_name_generic -> Nullable<Text>,
+        #[max_length = 70]
+        quote_account_address -> Varchar,
+        quote_module_name -> Text,
+        quote_struct_name -> Text,
+        market_id -> Nullable<Numeric>,
+        lot_size -> Nullable<Numeric>,
+        tick_size -> Nullable<Numeric>,
+        min_size -> Nullable<Numeric>,
+        underwriter_id -> Nullable<Numeric>,
     }
 }
 
@@ -210,4 +210,5 @@ diesel::allow_tables_to_appear_in_same_query!(
     place_market_order_events,
     place_swap_order_events,
     processor_status,
+    recognized_market_events,
 );

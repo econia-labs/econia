@@ -62,7 +62,7 @@ impl Data for UserHistory {
             .begin()
             .await
             .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
-        transaction.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;")
+        transaction.execute("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;")
             .await
             .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
         let fill_events = sqlx::query!(

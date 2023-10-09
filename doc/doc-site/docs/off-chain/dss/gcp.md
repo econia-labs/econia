@@ -713,6 +713,8 @@ Whenever you redeploy, restart all instances and services, and reset the databas
    gcloud compute instances stop postgres --quiet
    ```
 
+1. Optionally [change the processor config](#change-processor-config).
+
 1. Update `postgres` container and restart:
 
    ```sh
@@ -902,6 +904,12 @@ Whenever you redeploy, restart all instances and services, and reset the databas
    exit
    ```
 
+1. Stop the bootstrapper:
+
+   ```sh
+   gcloud compute instances stop bootstrapper
+   ```
+
 1. Detach the `processor-disk` from the bootstrapper, and reattach to the processor:
 
    ```sh
@@ -909,10 +917,4 @@ Whenever you redeploy, restart all instances and services, and reset the databas
    gcloud compute instances attach-disk processor \
        --device-name processor-disk \
        --disk processor-disk
-   ```
-
-1. Stop the bootstrapper:
-
-   ```sh
-   gcloud compute instances stop bootstrapper
    ```

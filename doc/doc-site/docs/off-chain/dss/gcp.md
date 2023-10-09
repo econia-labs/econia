@@ -99,6 +99,36 @@ ZONE=a-zone
    gcloud config set project $PROJECT_ID
    ```
 
+### Grant project permissions
+
+1. Download the project [IAM](https://cloud.google.com/iam/docs/overview) policy:
+
+   ```sh
+   gcloud projects get-iam-policy $PROJECT_ID > policy.yaml
+   ```
+
+1. In `policy.yaml` add the email address of a user in your [Google Workspace](https://cloud.google.com/iam/docs/overview#g-suite-domain) under the `member` binding with `roles/owner`.
+
+1. Set the IAM policy:
+
+   ```sh
+   gcloud projects set-iam-policy $PROJECT_ID policy.yaml
+   ```
+
+1. Instruct the user to [Install the Google Cloud CLI](https://cloud.google.com/sdk/docs/install-sdk) and set the project ID as default before continuing:
+
+   ```sh
+   PROJECT_ID=<PROJECT_ID>
+   ```
+
+   ```sh
+   echo $PROJECT_ID
+   ```
+
+   ```sh
+   gcloud config set project $PROJECT_ID
+   ```
+
 ### Configure locations
 
 1. List available build regions:
@@ -928,4 +958,64 @@ Whenever you redeploy, restart all instances and services, and reset the databas
    gcloud compute instances attach-disk processor \
        --device-name processor-disk \
        --disk processor-disk
+   ```
+
+## Diagnostics
+
+### Check instance container status
+
+1. Connect to an instance:
+
+   ```sh
+   gcloud compute ssh <INSTANCE_NAME> --ssh-key-file <SSH_KEY_FILE>
+   ```
+
+1. Check Docker status:
+
+   ```sh
+   docker ps
+   ```
+
+   :::tip
+   If your container restarts every minute or so, you've got a problem.
+   :::
+
+1. Exit instance connection:
+
+   ```sh
+   exit
+   ```
+
+### Check instance container logs
+
+1. Set instance name and number of logs to pull:
+
+   ```sh
+   INSTANCE_NAME=<INSTANCE_NAME>
+   N_LOGS=<HOW_MANY_LOGS>
+   ```
+
+   ```sh
+   echo $PROJECT_ID
+   echo $INSTANCE_NAME
+   echo $N_LOGS
+   ```
+
+1. Get instance ID:
+
+   ```sh
+   INSTANCE_ID=$(gcloud compute instances describe $INSTANCE_NAME \
+       --zone $ZONE \
+       --format="value(id)"
+   )
+   echo $INSTANCE_ID
+   ```
+
+1. Pull the logs:
+
+   ```sh
+   gcloud logging read "resource.type=gce_instance AND \
+       logName=projects/$PROJECT_ID/logs/cos_containers AND \
+       resource.labels.instance_id=$INSTANCE_ID" \
+       --limit $N_LOGS
    ```

@@ -113,10 +113,6 @@ ZONE=a-zone
    REGION=<NEARBY_REGION>
    ```
 
-   ```
-   echo $REGION
-   ```
-
 1. List available deployment zones:
 
    ```sh
@@ -129,11 +125,12 @@ ZONE=a-zone
    ZONE=<NEARBY_ZONE>
    ```
 
+1. Store values as defaults:
+
    ```
+   echo $REGION
    echo $ZONE
    ```
-
-1. Store values as defaults:
 
    ```sh
    gcloud config set artifacts/location $REGION
@@ -171,7 +168,7 @@ ZONE=a-zone
    ```
 
    :::tip
-   This could take up to 20 minutes.
+   This will take a while, since it involves the compilation of several binaries from source.
    :::
 
 ### Create bootstrapper
@@ -489,16 +486,16 @@ ZONE=a-zone
    exit
    ```
 
-1. Detach `processor-disk` from the bootstrapper:
-
-   ```sh
-   gcloud compute instances detach-disk bootstrapper --disk processor-disk
-   ```
-
 1. Stop the bootstrapper:
 
    ```sh
    gcloud compute instances stop bootstrapper
+   ```
+
+1. Detach `processor-disk` from the bootstrapper:
+
+   ```sh
+   gcloud compute instances detach-disk bootstrapper --disk processor-disk
    ```
 
 1. Deploy the `processor` image:
@@ -523,13 +520,13 @@ ZONE=a-zone
 
    ```sh
    PROCESSOR_ID=$(gcloud compute instances describe processor \
-   --zone $ZONE \
-   --format="value(id)"
+       --zone $ZONE \
+       --format="value(id)"
    )
    gcloud logging read "resource.type=gce_instance AND \
        logName=projects/$PROJECT_ID/logs/cos_containers AND \
        resource.labels.instance_id=$PROCESSOR_ID" \
-       --limit 3
+       --limit 5
    ```
 
 1. Once the processor has had enough time to sync, check some of the events:
@@ -539,7 +536,7 @@ ZONE=a-zone
    ```
 
    :::tip
-   For immediate results (but with missed events), use a testnet config with the following:
+   For immediate results (but with missed events and a corrupted database) during testing, use a testnet config with the following:
 
    - `econia_address: 0xc0de11113b427d35ece1d8991865a941c0578b0f349acabbe9753863c24109ff`
    - `starting_version: 683453241`
@@ -659,15 +656,14 @@ ZONE=a-zone
 1. Monitor events using the [WebSockets listening script](./websocket.md):
 
    ```sh
-   cd econia/src/python/sdk
-   poetry install
-   poetry run event
-   ```
-
-   ```sh
    echo $WS_URL
    echo $REST_URL
    echo $WS_CHANNEL
+   ```
+
+   ```sh
+   cd econia/src/python/sdk
+   poetry install
    poetry run event
    ```
 

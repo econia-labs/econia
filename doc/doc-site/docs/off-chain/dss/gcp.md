@@ -107,10 +107,10 @@ ZONE=a-zone
    gcloud artifacts locations list
    ```
 
-1. Pick a region that is [close to you](https://cloud.google.com/artifact-registry/docs/repositories/repo-locations) and store it in a shell variable:
+1. Pick a [preferred region](https://cloud.google.com/artifact-registry/docs/repositories/repo-locations) and store it in a shell variable:
 
    ```sh
-   REGION=<NEARBY_REGION>
+   REGION=<PREFERRED_REGION>
    ```
 
 1. List available deployment zones:
@@ -119,10 +119,10 @@ ZONE=a-zone
    gcloud compute zones list
    ```
 
-1. Pick a zone that is [close to you](https://cloud.google.com/compute/docs/regions-zones#available) and store it in a shell variable:
+1. Pick a [preferred zone](https://cloud.google.com/compute/docs/regions-zones#available) and store it in a shell variable:
 
    ```sh
-   ZONE=<NEARBY_ZONE>
+   ZONE=<PREFERRED_ZONE>
    ```
 
 1. Store values as defaults:
@@ -236,20 +236,35 @@ ZONE=a-zone
        -m 0 \
        -E lazy_itable_init=0,lazy_journal_init=0,discard \
        /dev/$POSTGRES_DISK_DEVICE_NAME
+   ```
+
+   ```sh
    sudo mkfs.ext4 \
        -m 0 \
        -E lazy_itable_init=0,lazy_journal_init=0,discard \
        /dev/$PROCESSOR_DISK_DEVICE_NAME
+   ```
+
+   ```sh
    sudo mkdir -p /mnt/disks/postgres
    sudo mkdir -p /mnt/disks/processor
+   ```
+
+   ```sh
    sudo mount -o \
        discard,defaults \
        /dev/$POSTGRES_DISK_DEVICE_NAME \
        /mnt/disks/postgres
+   ```
+
+   ```sh
    sudo mount -o \
        discard,defaults \
        /dev/$PROCESSOR_DISK_DEVICE_NAME \
        /mnt/disks/processor
+   ```
+
+   ```sh
    sudo chmod a+w /mnt/disks/postgres
    sudo chmod a+w /mnt/disks/processor
    ```
@@ -529,7 +544,7 @@ ZONE=a-zone
        --limit 5
    ```
 
-1. Once the processor has had enough time to sync, check some of the events:
+1. Once the processor has had enough time to sync, check some of the events from one of the [REST endpoints](./rest-api.md):
 
    ```sh
    curl $REST_URL/<AN_ENDPOINT>

@@ -62,6 +62,7 @@ module.exports = {
                     items: [
                         'off-chain/dss/rest-api',
                         'off-chain/dss/websocket',
+                        'off-chain/dss/gcp'
                     ]
                 },
             ]

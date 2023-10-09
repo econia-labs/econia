@@ -1,18 +1,12 @@
 version: "3.9"
 
 include:
-  - compose.dss.yaml
+  - compose.dss-core.yaml
 
 services:
-  processor:
-    build:
-      context: ../../
-      dockerfile: src/docker/processor/Dockerfile
-    depends_on:
-      - postgres
-    ports:
-      - "8085:8085"
-    volumes:
-      - "./processor/config.yaml:/config.yaml"
-    environment:
-      - HEALTHCHECK_BEFORE_START=false
+    processsor:
+      environment:
+        - HEALTHCHECK_BEFORE_START=false
+      extends:
+        file: compose.processor-template.yaml
+        service: processor-template

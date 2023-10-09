@@ -3,6 +3,8 @@ version: "3.9"
 include:
   - compose.database.yaml
 
+# The processor is kept in its own template file since it needs to be
+# configured differently when running against a local vs public chain.
 services:
   aggregator:
     build:

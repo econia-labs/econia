@@ -115,7 +115,7 @@ ZONE=a-zone
    gcloud projects set-iam-policy $PROJECT_ID policy.yaml
    ```
 
-1. Instruct the user to [Install the Google Cloud CLI](https://cloud.google.com/sdk/docs/install-sdk) and set the project ID as default before continuing:
+1. Instruct the user to [install the Google Cloud CLI](https://cloud.google.com/sdk/docs/install-sdk) and set the project ID as default before continuing:
 
    ```sh
    PROJECT_ID=<PROJECT_ID>

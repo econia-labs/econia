@@ -47,6 +47,44 @@ diesel::table! {
 }
 
 diesel::table! {
+    competition_indexed_events (txn_version, event_idx, competition_id) {
+        txn_version -> Numeric,
+        event_idx -> Numeric,
+        competition_id -> Int4,
+    }
+}
+
+diesel::table! {
+    competition_leaderboard_users (user) {
+        user -> Text,
+        volume -> Numeric,
+        frontends_used -> Array<Nullable<Text>>,
+        trades -> Int4,
+        points -> Numeric,
+        competition_id -> Int4,
+    }
+}
+
+diesel::table! {
+    competition_metadata (id) {
+        id -> Int4,
+        start -> Timestamptz,
+        end -> Timestamptz,
+        prize -> Int4,
+        market_id -> Numeric,
+        frontends_required -> Array<Nullable<Text>>,
+    }
+}
+
+diesel::table! {
+    exclusion_list (user) {
+        user -> Text,
+        reason -> Nullable<Text>,
+        competition_id -> Int4,
+    }
+}
+
+diesel::table! {
     fill_events (txn_version, event_idx) {
         txn_version -> Numeric,
         event_idx -> Numeric,
@@ -198,10 +236,18 @@ diesel::table! {
     }
 }
 
+diesel::joinable!(competition_indexed_events -> competition_metadata (competition_id));
+diesel::joinable!(competition_leaderboard_users -> competition_metadata (competition_id));
+diesel::joinable!(exclusion_list -> competition_metadata (competition_id));
+
 diesel::allow_tables_to_appear_in_same_query!(
     balance_updates_by_handle,
     cancel_order_events,
     change_order_size_events,
+    competition_indexed_events,
+    competition_leaderboard_users,
+    competition_metadata,
+    exclusion_list,
     fill_events,
     ledger_infos,
     market_account_handles,

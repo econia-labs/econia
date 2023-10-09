@@ -1,6 +1,7 @@
 use thiserror::Error;
 
 pub mod candlesticks;
+pub mod leaderboards;
 pub mod markets;
 pub mod user_history;
 

@@ -127,7 +127,7 @@ ZONE=a-zone
 
 1. Store values as defaults:
 
-   ```
+   ```sh
    echo $REGION
    echo $ZONE
    ```
@@ -264,7 +264,7 @@ ZONE=a-zone
 
 1. End the connection with the bootstrapper:
 
-   ```
+   ```sh
    exit
    ```
 
@@ -482,7 +482,7 @@ ZONE=a-zone
 
 1. End the connection with the bootstrapper:
 
-   ```
+   ```sh
    exit
    ```
 
@@ -672,7 +672,7 @@ ZONE=a-zone
    <Ctrl+C>
    ```
 
-   ```
+   ```sh
    cd ../../../..
    ```
 

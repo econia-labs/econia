@@ -11,8 +11,8 @@ repository = "https://github.com/econia-labs/rust_sdk"
 keywords = ["aptos", "econia", "dex", "clob", "sdk", "blockchain"]
 
 [dependencies]
-aptos-api-types = { git = "https://github.com/aptos-labs/aptos-core", branch = "main" }
-aptos-sdk = { git = "https://github.com/aptos-labs/aptos-core", branch = "main" }
+aptos-api-types = { git = "https://github.com/aptos-labs/aptos-core", tag = "aptos-node-v1.7.2" }
+aptos-sdk.workspace = true
 econia-types = { package = "types", path = "../types", features = ["serde"] }
 futures = "0.3.24"
 hex = { version = "0.4.3" }

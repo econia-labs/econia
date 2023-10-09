@@ -3,7 +3,7 @@ use std::{sync::Arc, time::Duration};
 use anyhow::Result;
 use data::{markets::MarketsRegisteredPerDay, user_history::UserHistory, Data};
 use sqlx::PgPool;
-use tokio::sync::Mutex;
+use tokio::{sync::Mutex, task::JoinSet};
 
 mod data;
 
@@ -28,10 +28,10 @@ async fn main() -> Result<()> {
 
     data.push(Arc::new(Mutex::new(UserHistory::new(pool.clone()))));
 
-    let mut handles = vec![];
+    let mut handles = JoinSet::new();
 
     for data in data {
-        handles.push(tokio::spawn(async move {
+        handles.spawn(async move {
             let mut data = data.lock().await;
 
             data.process_and_save_historical_data().await?;
@@ -48,11 +48,11 @@ async fn main() -> Result<()> {
 
             #[allow(unreachable_code)]
             Ok::<(), anyhow::Error>(())
-        }));
+        });
     }
 
-    for handle in handles {
-        handle.await??;
+    while let Some(res) = handles.join_next().await {
+        res??;
     }
 
     Ok(())

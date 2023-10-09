@@ -46,3 +46,8 @@ For example, a 1-minute candle stick data flow would follow the following princi
 - `process` would get all events between `truncate(now, 'minutes')` and `truncate(now - 1 minute, 'minutes')` and generate the candle sticks from this data.
   It would also update a field with the last time the function was executed.
 - `save` would take the output of `process` and save it in a database.
+
+# SQLX
+
+The aggregator uses [SQLx](https://github.com/launchbadge/sqlx/blob/main/README.md).
+In order for the requests to be checked and the crate to be compiled when the database is offline, you have to run `cargo sqlx prepare --workspace` from the Rust root (`src/rust`) when updating or creating a request.

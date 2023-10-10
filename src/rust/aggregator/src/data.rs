@@ -23,9 +23,9 @@ pub trait Data {
     /// [`DataProcessingError::NotReady`] is returned.
     async fn process_and_save(&mut self) -> DataAggregationResult {
         if self.ready() {
-            tracing::info!("[Aggregator] Starting processing & saving ({})", self.model_name());
+            tracing::info!("[Aggregator] Starting process & saving ({})", self.model_name());
             let res = self.process_and_save_internal().await;
-            tracing::info!("[Aggregator] Finished processing & saving ({})", self.model_name());
+            tracing::info!("[Aggregator] Finished process & saving ({})", self.model_name());
             res
         } else {
             Err(DataAggregationError::NotReady)

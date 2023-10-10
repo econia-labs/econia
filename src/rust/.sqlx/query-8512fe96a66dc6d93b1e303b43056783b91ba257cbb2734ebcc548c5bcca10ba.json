@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO competition_indexed_events\n            SELECT txn_version, event_idx, $1 FROM place_swap_order_events\n            WHERE NOT EXISTS (\n                SELECT * FROM competition_indexed_events\n                WHERE place_swap_order_events.txn_version = competition_indexed_events.txn_version\n                AND place_swap_order_events.event_idx = competition_indexed_events.event_idx\n                AND competition_indexed_events.competition_id = $1\n            )\n            AND place_swap_order_events.time > $2 AND place_swap_order_events.time < $3\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "8512fe96a66dc6d93b1e303b43056783b91ba257cbb2734ebcc548c5bcca10ba"
+}

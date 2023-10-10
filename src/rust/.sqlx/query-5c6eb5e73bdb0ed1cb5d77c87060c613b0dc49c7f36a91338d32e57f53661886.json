@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO competition_indexed_events\n            SELECT txn_version, event_idx, $1 FROM fill_events -- Get all fill events\n            WHERE NOT EXISTS ( -- that do not appear in \"competition_indexed_events\"\n                SELECT * FROM competition_indexed_events\n                WHERE fill_events.txn_version = competition_indexed_events.txn_version\n                AND fill_events.event_idx = competition_indexed_events.event_idx\n                AND competition_indexed_events.competition_id = $1\n            )\n            AND fill_events.time > $2 AND fill_events.time < $3 -- and that match the competition timeline\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "5c6eb5e73bdb0ed1cb5d77c87060c613b0dc49c7f36a91338d32e57f53661886"
+}

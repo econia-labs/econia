@@ -1,0 +1,50 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                SELECT * FROM competition_metadata\n                WHERE start < CURRENT_TIMESTAMP AND CURRENT_TIMESTAMP < \"end\"\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "start",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 2,
+        "name": "end",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 3,
+        "name": "prize",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "market_id",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 5,
+        "name": "integrators_required",
+        "type_info": "TextArray"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "2fee5bc2b524e3fc3d4b7a43dcf8822f6f38717aea6a00f8857f97ab48fdeb22"
+}

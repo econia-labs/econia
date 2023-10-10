@@ -1,7 +1,7 @@
 use std::{sync::Arc, time::Duration};
 
 use anyhow::Result;
-use data::{markets::MarketsRegisteredPerDay, user_history::UserHistory, Data};
+use data::{markets::MarketsRegisteredPerDay, user_history::UserHistory, Data, leaderboards::Leaderboards};
 use sqlx::PgPool;
 use tokio::{sync::Mutex, task::JoinSet};
 
@@ -27,6 +27,8 @@ async fn main() -> Result<()> {
     ))));
 
     data.push(Arc::new(Mutex::new(UserHistory::new(pool.clone()))));
+
+    data.push(Arc::new(Mutex::new(Leaderboards::new(pool.clone()))));
 
     let mut handles = JoinSet::new();
 

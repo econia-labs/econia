@@ -47,7 +47,7 @@ diesel::table! {
 }
 
 diesel::table! {
-    competition_exclusion_list (user) {
+    competition_exclusion_list (user, competition_id) {
         user -> Text,
         reason -> Nullable<Text>,
         competition_id -> Int4,
@@ -63,7 +63,7 @@ diesel::table! {
 }
 
 diesel::table! {
-    competition_leaderboard_users (user) {
+    competition_leaderboard_users (user, competition_id) {
         user -> Text,
         volume -> Numeric,
         integrators_used -> Array<Nullable<Text>>,
@@ -111,6 +111,13 @@ diesel::table! {
 diesel::table! {
     ledger_infos (chain_id) {
         chain_id -> Int8,
+    }
+}
+
+diesel::table! {
+    lol (id) {
+        id -> Int4,
+        volume -> Numeric,
     }
 }
 
@@ -250,6 +257,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     competition_metadata,
     fill_events,
     ledger_infos,
+    lol,
     market_account_handles,
     market_registration_events,
     place_limit_order_events,

@@ -38,9 +38,22 @@ module throttler::throttle {
 
     /// You do not have permission to modify the throttler.
     const E_NOT_ADMIN: u64 = 3;
+    /// This function is deprecated. Use `get_config_parameters()`.
+    const E_DEPRECATED_CONFIG_PARAMETERS: u64 = 4;
+
+    public fun config_parameters(): ConfigView {
+        assert!(false, E_DEPRECATED_CONFIG_PARAMETERS);
+        ConfigView {
+            max_trade_volume_apt: 0,
+            max_transfer_apt: 0,
+            max_transfer_usdc: 0,
+            throttled_market_id: 0,
+            wait_time_in_minutes: 0,
+        }
+    }
 
     #[view]
-    public fun config_parameters(): ConfigViewV2 {
+    public fun get_config_parameters(): ConfigViewV2 {
         ConfigViewV2 {
             max_trade_volume_apt: MAX_TRADE_VOLUME_APT,
             max_transfer_apt: MAX_TRANSFER_APT,

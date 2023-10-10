@@ -1,5 +1,6 @@
 use std::{sync::Arc, time::Duration};
 
+use tracing_subscriber;
 use anyhow::Result;
 use data::{markets::MarketsRegisteredPerDay, user_history::UserHistory, Data};
 use sqlx::PgPool;
@@ -9,14 +10,20 @@ mod data;
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::INFO)
+        .init();
+    tracing::info!("[Aggregator] Starting up.");
     dotenvy::dotenv().ok();
 
+    tracing::info!("[Aggregator] Connecting to DB.");
     let pool = PgPool::connect(
         std::env::var("DATABASE_URL")
             .expect("DATABASE_URL should be set")
             .as_str(),
     )
     .await?;
+    tracing::info!("[Aggregator] Connected to DB.");
 
     let default_interval = Duration::from_secs(5);
 
@@ -34,7 +41,9 @@ async fn main() -> Result<()> {
         handles.spawn(async move {
             let mut data = data.lock().await;
 
+            tracing::info!("[Aggregator] Starting process & save (historical).");
             data.process_and_save_historical_data().await?;
+            tracing::info!("[Aggregator] Finished process & save (historical).");
 
             loop {
                 let interval = data.poll_interval().unwrap_or(default_interval);
@@ -42,7 +51,11 @@ async fn main() -> Result<()> {
                 tokio::time::sleep(interval).await;
 
                 if data.ready() {
+                    tracing::info!("[Aggregator] Starting process & save.");
                     data.process_and_save().await?;
+                    tracing::info!("[Aggregator] Finished process & save.");
+                } else {
+                    tracing::info!("[Aggregator] Data is not ready.");
                 }
             }
 

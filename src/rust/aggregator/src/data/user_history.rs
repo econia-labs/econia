@@ -46,7 +46,10 @@ impl Data for UserHistory {
     }
 
     async fn process_and_save_historical_data(&mut self) -> DataAggregationResult {
-        self.process_and_save_internal().await
+        tracing::info!("[Aggregator] Start processing UserHistory.");
+        let res = self.process_and_save_internal().await;
+        tracing::info!("[Aggregator] Finish processing UserHistory.");
+        return res;
     }
 
     fn poll_interval(&self) -> Option<std::time::Duration> {
@@ -65,6 +68,7 @@ impl Data for UserHistory {
         transaction.execute("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;")
             .await
             .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
+        tracing::info!("[Aggregator] Get fill events (UserHistory).");
         let fill_events = sqlx::query!(
             r#"
                 SELECT * FROM fill_events
@@ -79,6 +83,8 @@ impl Data for UserHistory {
         .fetch_all(&mut transaction as &mut PgConnection)
         .await
         .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
+
+        tracing::info!("[Aggregator] Get change size events (UserHistory).");
         let change_events = sqlx::query!(
             r#"
                 SELECT * FROM change_order_size_events
@@ -93,6 +99,8 @@ impl Data for UserHistory {
         .fetch_all(&mut transaction as &mut PgConnection)
         .await
         .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
+
+        tracing::info!("[Aggregator] Get cancel events (UserHistory).");
         let cancel_events = sqlx::query!(
             r#"
                 SELECT * FROM cancel_order_events
@@ -106,6 +114,8 @@ impl Data for UserHistory {
         .fetch_all(&mut transaction as &mut PgConnection)
         .await
         .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
+
+        tracing::info!("[Aggregator] Get limit order events (UserHistory).");
         let limit_events = sqlx::query!(
             r#"
                 SELECT * FROM place_limit_order_events
@@ -119,6 +129,8 @@ impl Data for UserHistory {
         .fetch_all(&mut transaction as &mut PgConnection)
         .await
         .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
+
+        tracing::info!("[Aggregator] Get market order events (UserHistory).");
         let market_events = sqlx::query!(
             r#"
                 SELECT * FROM place_market_order_events
@@ -132,6 +144,8 @@ impl Data for UserHistory {
         .fetch_all(&mut transaction as &mut PgConnection)
         .await
         .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
+
+        tracing::info!("[Aggregator] Get swap order events (UserHistory).");
         let swap_events = sqlx::query!(
             r#"
                 SELECT * FROM place_swap_order_events
@@ -145,6 +159,8 @@ impl Data for UserHistory {
         .fetch_all(&mut transaction as &mut PgConnection)
         .await
         .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
+
+        tracing::info!("[Aggregator] Process limit order events (UserHistory).");
         for x in &limit_events {
             let txn = x
                 .txn_version
@@ -200,6 +216,8 @@ impl Data for UserHistory {
             .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
             mark_as_aggregated(&mut transaction, &x.txn_version, &x.event_idx).await?;
         }
+
+        tracing::info!("[Aggregator] Process market order events (UserHistory).");
         for x in &market_events {
             sqlx::query!(
                 r#"
@@ -238,6 +256,8 @@ impl Data for UserHistory {
             .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
             mark_as_aggregated(&mut transaction, &x.txn_version, &x.event_idx).await?;
         }
+
+        tracing::info!("[Aggregator] Process swap order events (UserHistory).");
         for x in &swap_events {
             sqlx::query!(
                 r#"
@@ -286,6 +306,8 @@ impl Data for UserHistory {
             .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
             mark_as_aggregated(&mut transaction, &x.txn_version, &x.event_idx).await?;
         }
+
+        tracing::info!("[Aggregator] Process fill & change size events (UserHistory).");
         // Step through fill and change events in total order.
         let mut fill_index = 0;
         let mut change_index = 0;
@@ -342,6 +364,8 @@ impl Data for UserHistory {
                 _ => unreachable!(),
             };
         }
+
+        tracing::info!("[Aggregator] Process cancel order events (UserHistory).");
         for x in &cancel_events {
             sqlx::query!(
                 r#"
@@ -358,10 +382,14 @@ impl Data for UserHistory {
             .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
             mark_as_aggregated(&mut transaction, &x.txn_version, &x.event_idx).await?;
         }
+
+        tracing::info!("[Aggregator] Commit processed transaction (UserHistory).");
         transaction
             .commit()
             .await
             .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
+
+        tracing::info!("[Aggregator] Processed & saved (UserHistory).");
         Ok(())
     }
 }

@@ -9,9 +9,13 @@ type DataAggregationResult = Result<(), DataAggregationError>;
 /// This trait represents a data output.
 #[async_trait::async_trait]
 pub trait Data {
+
     /// Returns `true` if the data is ready to be processed (if the process function should be
     /// called now).
     fn ready(&self) -> bool;
+
+    // Used for visibility/logging, returns a static string e.g. "ModelName"
+    fn model_name(&self) -> &'static str;
 
     /// Processes the data and saves the result.
     ///
@@ -19,7 +23,10 @@ pub trait Data {
     /// [`DataProcessingError::NotReady`] is returned.
     async fn process_and_save(&mut self) -> DataAggregationResult {
         if self.ready() {
-            self.process_and_save_internal().await
+            tracing::info!("[Aggregator] Start processing & saving ({})", self.model_name());
+            let res = self.process_and_save_internal().await;
+            tracing::info!("[Aggregator] Finish processing & saving ({})", self.model_name());
+            res
         } else {
             Err(DataAggregationError::NotReady)
         }

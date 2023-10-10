@@ -13,10 +13,9 @@ async fn main() -> Result<()> {
     tracing_subscriber::fmt()
         .with_max_level(tracing::Level::INFO)
         .init();
-    tracing::info!("[Aggregator] Starting up.");
+    tracing::info!("[Aggregator] Started up.");
     dotenvy::dotenv().ok();
 
-    tracing::info!("[Aggregator] Connecting to DB.");
     let pool = PgPool::connect(
         std::env::var("DATABASE_URL")
             .expect("DATABASE_URL should be set")
@@ -51,9 +50,7 @@ async fn main() -> Result<()> {
                 tokio::time::sleep(interval).await;
 
                 if data.ready() {
-                    tracing::info!("[Aggregator] Starting process & save.");
                     data.process_and_save().await?;
-                    tracing::info!("[Aggregator] Finished process & save.");
                 } else {
                     tracing::info!("[Aggregator] Data is not ready.");
                 }

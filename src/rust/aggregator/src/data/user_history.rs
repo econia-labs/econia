@@ -60,6 +60,7 @@ impl Data for UserHistory {
     /// are also handled in a single atomic transaction for each batch of transactions, such that
     /// user history aggregation logic is effectively serialized across historical chain state.
     async fn process_and_save_internal(&mut self) -> DataAggregationResult {
+        tracing::info!("[Aggregator] Starting process & save (UserHistory).");
         let mut transaction = self
             .pool
             .begin()
@@ -68,7 +69,7 @@ impl Data for UserHistory {
         transaction.execute("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;")
             .await
             .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
-        tracing::info!("[Aggregator] Get fill events (UserHistory).");
+
         let fill_events = sqlx::query!(
             r#"
                 SELECT * FROM fill_events
@@ -84,7 +85,6 @@ impl Data for UserHistory {
         .await
         .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
 
-        tracing::info!("[Aggregator] Get change size events (UserHistory).");
         let change_events = sqlx::query!(
             r#"
                 SELECT * FROM change_order_size_events
@@ -100,7 +100,6 @@ impl Data for UserHistory {
         .await
         .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
 
-        tracing::info!("[Aggregator] Get cancel events (UserHistory).");
         let cancel_events = sqlx::query!(
             r#"
                 SELECT * FROM cancel_order_events
@@ -115,7 +114,6 @@ impl Data for UserHistory {
         .await
         .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
 
-        tracing::info!("[Aggregator] Get limit order events (UserHistory).");
         let limit_events = sqlx::query!(
             r#"
                 SELECT * FROM place_limit_order_events
@@ -130,7 +128,6 @@ impl Data for UserHistory {
         .await
         .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
 
-        tracing::info!("[Aggregator] Get market order events (UserHistory).");
         let market_events = sqlx::query!(
             r#"
                 SELECT * FROM place_market_order_events
@@ -145,7 +142,6 @@ impl Data for UserHistory {
         .await
         .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
 
-        tracing::info!("[Aggregator] Get swap order events (UserHistory).");
         let swap_events = sqlx::query!(
             r#"
                 SELECT * FROM place_swap_order_events
@@ -160,7 +156,6 @@ impl Data for UserHistory {
         .await
         .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
 
-        tracing::info!("[Aggregator] Process limit order events (UserHistory).");
         for x in &limit_events {
             let txn = x
                 .txn_version
@@ -217,7 +212,6 @@ impl Data for UserHistory {
             mark_as_aggregated(&mut transaction, &x.txn_version, &x.event_idx).await?;
         }
 
-        tracing::info!("[Aggregator] Process market order events (UserHistory).");
         for x in &market_events {
             sqlx::query!(
                 r#"
@@ -257,7 +251,6 @@ impl Data for UserHistory {
             mark_as_aggregated(&mut transaction, &x.txn_version, &x.event_idx).await?;
         }
 
-        tracing::info!("[Aggregator] Process swap order events (UserHistory).");
         for x in &swap_events {
             sqlx::query!(
                 r#"
@@ -307,7 +300,6 @@ impl Data for UserHistory {
             mark_as_aggregated(&mut transaction, &x.txn_version, &x.event_idx).await?;
         }
 
-        tracing::info!("[Aggregator] Process fill & change size events (UserHistory).");
         // Step through fill and change events in total order.
         let mut fill_index = 0;
         let mut change_index = 0;
@@ -365,7 +357,6 @@ impl Data for UserHistory {
             };
         }
 
-        tracing::info!("[Aggregator] Process cancel order events (UserHistory).");
         for x in &cancel_events {
             sqlx::query!(
                 r#"
@@ -383,7 +374,7 @@ impl Data for UserHistory {
             mark_as_aggregated(&mut transaction, &x.txn_version, &x.event_idx).await?;
         }
 
-        tracing::info!("[Aggregator] Commit processed transaction (UserHistory).");
+        tracing::info!("[Aggregator] Committing processed transaction (UserHistory).");
         transaction
             .commit()
             .await

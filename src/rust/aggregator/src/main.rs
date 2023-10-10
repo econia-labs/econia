@@ -40,9 +40,9 @@ async fn main() -> Result<()> {
         handles.spawn(async move {
             let mut data = data.lock().await;
 
-            tracing::info!("[Aggregator] Starting process & save (historical).");
+            tracing::info!("[Aggregator] Starting process & save (historical, {}).", data.model_name());
             data.process_and_save_historical_data().await?;
-            tracing::info!("[Aggregator] Finished process & save (historical).");
+            tracing::info!("[Aggregator] Finished process & save (historical, {}).", data.model_name());
 
             loop {
                 let interval = data.poll_interval().unwrap_or(default_interval);

@@ -68,7 +68,7 @@ diesel::table! {
         volume -> Numeric,
         integrators_used -> Array<Nullable<Text>>,
         n_trades -> Int4,
-        points -> Numeric,
+        points -> Nullable<Numeric>,
         competition_id -> Int4,
     }
 }
@@ -78,7 +78,7 @@ diesel::table! {
         id -> Int4,
         start -> Timestamptz,
         end -> Timestamptz,
-        prize -> Numeric,
+        prize -> Int4,
         market_id -> Numeric,
         integrators_required -> Array<Nullable<Text>>,
     }
@@ -111,13 +111,6 @@ diesel::table! {
 diesel::table! {
     ledger_infos (chain_id) {
         chain_id -> Int8,
-    }
-}
-
-diesel::table! {
-    lol (id) {
-        id -> Int4,
-        volume -> Numeric,
     }
 }
 
@@ -257,7 +250,6 @@ diesel::allow_tables_to_appear_in_same_query!(
     competition_metadata,
     fill_events,
     ledger_infos,
-    lol,
     market_account_handles,
     market_registration_events,
     place_limit_order_events,

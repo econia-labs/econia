@@ -49,7 +49,12 @@ CREATE TABLE aggregator.competition_indexed_events (
 
 CREATE FUNCTION api.volume(api.competition_metadata)
 RETURNS int AS $$
-  SELECT COALESCE(SUM(volume), 0) FROM api.competition_leaderboard_users WHERE competition_id = $1.id;
+  SELECT COALESCE(SUM(volume), 0) FROM api.competition_leaderboard_users WHERE competition_id = $1.id AND NOT EXISTS(
+    SELECT *
+    FROM api.competition_exclusion_list
+    WHERE api.competition_exclusion_list.competition_id = api.competition_leaderboard_users.competition_id
+    AND api.competition_exclusion_list."user" = api.competition_leaderboard_users."user"
+  );
 $$ LANGUAGE SQL;
 
 CREATE FUNCTION api.is_eligible(api.competition_leaderboard_users)

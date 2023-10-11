@@ -30,7 +30,7 @@ fn main() {
     } else if args.len() == 3 {
         let first_s = args.get(1).unwrap();
         let first_i = first_s.parse::<i32>();
-        let second_s = args.get(1).unwrap();
+        let second_s = args.get(2).unwrap();
         let second_i = first_s.parse::<i32>();
         let i;
         let s;

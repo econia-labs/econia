@@ -31,8 +31,7 @@ CREATE TABLE aggregator.competition_exclusion_list (
     "user" TEXT NOT NULL,
     "reason" TEXT,
     "competition_id" INT NOT NULL REFERENCES aggregator.competition_metadata("id"),
-    PRIMARY KEY ("user", "competition_id"),
-    FOREIGN KEY ("user", "competition_id") REFERENCES aggregator.competition_leaderboard_users("user", "competition_id")
+    PRIMARY KEY ("user", "competition_id")
 );
 
 CREATE VIEW api.competition_exclusion_list AS SELECT * FROM aggregator.competition_exclusion_list;

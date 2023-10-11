@@ -15,6 +15,7 @@ struct NewCompetitionMetadata {
     market_id: BigDecimal,
     integrators_required: Vec<String>,
 }
+
 fn main() {
     let metadata_json = fs::read_to_string("./competition-metadata.json").expect("No config");
     let metadata: NewCompetitionMetadata =

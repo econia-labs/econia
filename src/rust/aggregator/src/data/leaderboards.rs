@@ -38,7 +38,8 @@ impl Data for Leaderboards {
 
     fn ready(&self) -> bool {
         self.last_indexed_timestamp.is_none()
-            || self.last_indexed_timestamp.unwrap() + Duration::from_std(TIMEOUT).unwrap() < Utc::now()
+            || self.last_indexed_timestamp.unwrap() + Duration::from_std(TIMEOUT).unwrap()
+                < Utc::now()
     }
 
     async fn process_and_save_historical_data(&mut self) -> DataAggregationResult {
@@ -58,7 +59,7 @@ impl Data for Leaderboards {
         let competitions = sqlx::query_as!(
             Competition,
             r#"
-                SELECT * FROM aggregator.competition_metadata
+                SELECT * FROM competition_metadata
                 WHERE start < CURRENT_TIMESTAMP AND CURRENT_TIMESTAMP < "end"
             "#,
         )
@@ -139,8 +140,8 @@ async fn aggregate_data_for_competition<'a>(
                     -- Only keep aggregators that are in the "integrators_required" list
                     WHERE integrator IN (
                         SELECT unnest(integrators_required)
-                        FROM aggregator.competition_metadata
-                        WHERE aggregator.competition_metadata.id = $1
+                        FROM competition_metadata
+                        WHERE competition_metadata.id = $1
                     )
                     -- Do not keep integrators that are already in the array (no duplicates)
                     AND integrator NOT IN (

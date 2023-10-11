@@ -1,6 +1,6 @@
 -- Your SQL goes here
 CREATE TABLE
-  aggregator.competition_metadata (
+  competition_metadata (
     "id" SERIAL NOT NULL PRIMARY KEY,
     "start" TIMESTAMPTZ NOT NULL,
     "end" TIMESTAMPTZ NOT NULL,
@@ -15,7 +15,7 @@ CREATE VIEW
 SELECT
   *
 FROM
-  aggregator.competition_metadata;
+  competition_metadata;
 
 
 GRANT
@@ -32,7 +32,7 @@ CREATE TABLE
     "points" NUMERIC GENERATED ALWAYS AS (
       volume * COALESCE(ARRAY_LENGTH(integrators_used, 1), 0)
     ) STORED,
-    "competition_id" INT NOT NULL REFERENCES aggregator.competition_metadata ("id"),
+    "competition_id" INT NOT NULL REFERENCES competition_metadata ("id"),
     PRIMARY KEY ("user", "competition_id")
   );
 
@@ -51,10 +51,10 @@ SELECT
 
 
 CREATE TABLE
-  aggregator.competition_exclusion_list (
+  competition_exclusion_list (
     "user" TEXT NOT NULL,
     "reason" TEXT,
-    "competition_id" INT NOT NULL REFERENCES aggregator.competition_metadata ("id"),
+    "competition_id" INT NOT NULL REFERENCES competition_metadata ("id"),
     PRIMARY KEY ("user", "competition_id")
   );
 
@@ -64,7 +64,7 @@ CREATE VIEW
 SELECT
   *
 FROM
-  aggregator.competition_exclusion_list;
+  competition_exclusion_list;
 
 
 GRANT
@@ -76,7 +76,7 @@ CREATE TABLE
   aggregator.competition_indexed_events (
     "txn_version" NUMERIC NOT NULL,
     "event_idx" NUMERIC NOT NULL,
-    "competition_id" INT NOT NULL REFERENCES aggregator.competition_metadata ("id"),
+    "competition_id" INT NOT NULL REFERENCES competition_metadata ("id"),
     PRIMARY KEY ("txn_version", "event_idx", "competition_id")
   );
 

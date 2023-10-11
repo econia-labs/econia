@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n                SELECT * FROM aggregator.competition_metadata\n                WHERE start < CURRENT_TIMESTAMP AND CURRENT_TIMESTAMP < \"end\"\n            ",
+  "query": "\n                SELECT * FROM competition_metadata\n                WHERE start < CURRENT_TIMESTAMP AND CURRENT_TIMESTAMP < \"end\"\n            ",
   "describe": {
     "columns": [
       {
@@ -46,5 +46,5 @@
       false
     ]
   },
-  "hash": "ce8934add726d616fd259cfbea7d39f3b99f00d293e3bcf9d87791b77ec9c595"
+  "hash": "2fee5bc2b524e3fc3d4b7a43dcf8822f6f38717aea6a00f8857f97ab48fdeb22"
 }

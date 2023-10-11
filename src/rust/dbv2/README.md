@@ -64,3 +64,160 @@ CREATE VIEW api.example AS SELECT * FROM example;
    ```sh
    cargo run --bin get-competitions
    ```
+
+## Binaries
+
+### Trading competition management
+
+#### Create a competition
+
+Compile the `init-competition` binary:
+
+```sh
+cargo build --release --bin init-competition
+```
+
+It requires a file in the `/src/rust/dbv2` directory called `competition-metadata.json`.
+There is a template file in that location by the name `competition-metadata-template.json`.
+Rename the template file to `competition-metadata.json` and update its contents accordingly.
+After that, run the `init-competition` binary from `/src/rust/dbv2`:
+
+```sh
+./../target/release/add-inclusions
+```
+
+If successful, it will print out the added competition like so:
+
+```
+New competition: CompetitionMetadata {
+    id: 1,
+    start: 2023-10-01T11:00:00Z,
+    end: 2023-10-16T19:00:00Z,
+    prize: 123456789,
+    market_id: BigDecimal("3"),
+    integrators_required: [
+        Some(
+            "0xace",
+        ),
+    ],
+}
+```
+
+#### View all competitions
+
+Compile and run the `get-competitions` binary from the `/src/rust/dbv2` directory:
+
+```sh
+cargo build --release --bin get-competitions
+./../target/release/get-competitions
+```
+
+If successful it will print out all competitions, for example:
+
+```
+Existing competitions:
+CompetitionMetadata {
+    id: 1,
+    start: 2023-10-01T11:00:00Z,
+    end: 2023-10-16T19:00:00Z,
+    prize: 123456789,
+    market_id: BigDecimal("3"),
+    integrators_required: [
+        Some(
+            "0xace",
+        ),
+    ],
+}
+```
+
+#### Add/remove/view competition exclusions
+
+Users can be excluded from a competition's leaderboards by their address.
+Compile all of the utilities like so:
+
+```sh
+cargo build --release --bin get-exclusions
+cargo build --release --bin add-exclusions
+cargo build --release --bin add-inclusions
+```
+
+**Get exclusions**
+
+This binary accepts 0 to 2 arguments: up to one competition id and up to one user address, in any order.
+Run it from the `/src/rust/dbv2` directory like so:
+
+```sh
+./../target/release/get-exclusions # Optionally pass a competition id, user address
+```
+
+If there are exclusions matching those parameters, they will be printed like so:
+
+```
+EXCLUSIONS:
+(1) 0xeeee0dd966cd4fc739f76006591239b32527edbb7c303c431f8c691bda150b40: "Eats too many cookies"
+(1) 0xffff094ef8ccfa9137adcb13a2fae2587e83c348b32c63f811cc19fcc9fc5878: "Hates Advil too much"
+```
+
+If none match, the following will be printed instead:
+
+```
+No exclusions match those parameters.
+```
+
+Passing no arguments will print the whole exclusion table (or its lack of contents).
+
+**Add exclusions**
+
+This binary requires a file in `/src/rust/dbv2` named `competition-additional-exclusions.json` for which there is a template in the same location.
+Run the binary from the `/src/rust/dbv2` directory like so:
+
+```sh
+./../target/release/add-exclusions
+```
+
+If successful, it will print out the exclusions added like so:
+
+```
+New exclusions: [
+    CompetitionExclusion {
+        user: "0xeeee0dd966cd4fc739f76006591239b32527edbb7c303c431f8c691bda150b40",
+        reason: Some(
+            "Eats too many cookies",
+        ),
+        competition_id: 1,
+    },
+    CompetitionExclusion {
+        user: "0xffff094ef8ccfa9137adcb13a2fae2587e83c348b32c63f811cc19fcc9fc5878",
+        reason: Some(
+            "Hates Advil too much",
+        ),
+        competition_id: 1,
+    },
+]
+```
+
+It will throw an exception if you try to insert a user to a competition they're already excluded from.
+To remove someone from exclusion, use inverse of this binary (`add-inclusions`) described below.
+
+**Add inclusions**
+
+This binary requires a file in `/src/rust/dbv2` named `competition-additional-inclusions.json` for which there is a template in the same location.
+Run the binary from the `/src/rust/dbv2` directory like so:
+
+```sh
+./../target/release/add-inclusions
+```
+
+If successful, it will print out the exclusions added like so:
+
+```
+Now included: 0xeeee0dd966cd4fc739f76006591239b32527edbb7c303c431f8c691bda150b40
+Now included: 0xffff094ef8ccfa9137adcb13a2fae2587e83c348b32c63f811cc19fcc9fc5878
+```
+
+If the user(s) are already included for the given competition id(s) then such will be printed like so:
+
+```
+Already included: 0xeeee0dd966cd4fc739f76006591239b32527edbb7c303c431f8c691bda150b40
+Already included: 0xffff094ef8ccfa9137adcb13a2fae2587e83c348b32c63f811cc19fcc9fc5878
+```

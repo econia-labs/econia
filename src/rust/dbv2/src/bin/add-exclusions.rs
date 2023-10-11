@@ -4,7 +4,8 @@ use std::env;
 use std::fs;
 
 fn main() {
-    let exclusion_json = fs::read_to_string("./competition-additional-exclusions.json").expect("No config");
+    let exclusion_json =
+        fs::read_to_string("./competition-additional-exclusions.json").expect("No config");
     let exclusions: Vec<CompetitionExclusion> =
         serde_json::from_str(&exclusion_json).expect("Unable to parse");
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");

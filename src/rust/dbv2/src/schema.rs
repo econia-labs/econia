@@ -78,7 +78,7 @@ diesel::table! {
         id -> Int4,
         start -> Timestamptz,
         end -> Timestamptz,
-        prize -> Int4,
+        prize -> Numeric,
         market_id -> Numeric,
         integrators_required -> Array<Nullable<Text>>,
     }

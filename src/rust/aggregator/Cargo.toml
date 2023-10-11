@@ -18,3 +18,4 @@ thiserror.workspace = true
 tokio = { workspace = true, features = ["full"] }
 tracing.workspace = true
 tracing-subscriber.workspace = true
+dbv2 = { path = "../dbv2" }

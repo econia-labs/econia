@@ -66,6 +66,7 @@ dependencies = [
  "async-trait",
  "bigdecimal",
  "chrono",
+ "dbv2",
  "dotenvy",
  "env_logger",
  "log",
@@ -74,6 +75,8 @@ dependencies = [
  "sqlx",
  "thiserror",
  "tokio",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]

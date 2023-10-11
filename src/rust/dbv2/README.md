@@ -42,3 +42,25 @@ CREATE TABLE example (…);
 -- Expose the table in the api schema
 CREATE VIEW api.example AS SELECT * FROM example;
 ```
+
+## Managing testnet trading competitions
+
+1. Store `DATABASE_URL` environment variable:
+
+   ```sh
+   export DATABASE_URL=postgres://econia:econia@localhost:5432/econia
+   ```
+
+1. Create `competition-metadata.json` based on `competition-metadata-template.json`.
+
+1. Create a new competition:
+
+   ```sh
+   cargo run --bin init-competition
+   ```
+
+1. View all competitions:
+
+   ```sh
+   cargo run --bin get-competitions
+   ```

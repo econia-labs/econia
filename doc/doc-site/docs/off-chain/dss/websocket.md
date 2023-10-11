@@ -34,17 +34,14 @@ Channels include:
 - `new_limit_order`
 - `updated_limit_order`
 - `new_market_order`
-- `updated_market_order`
 - `new_swap_order`
-- `updated_swap_order`
-- `updated_order`
 
 For each channel, the payload format is identical to the corresponding event format returned by the [DSS REST API](./rest-api.md).
 For example, the payload of an event from the `fill_event` channel is identical to the event format returned by a REST API query for `localhost:3000/fill_events` (note that channel names have no `s` at the end but REST API endpoints do), except that WebSocket events are received one by one instead of in an array.
 
-Note that `new_{limit,market,swap}_order` and `updated_{limit,market,swap}_order` correspond to `{limit,market,swap}_orders`.
+Note that `new_{limit,market,swap}_order` and `updated_limit_order` correspond to `{limit,market,swap}_orders`.
 `new_*` channels will send a message each time an order is placed.
-`updated_*` channels will send a message each time an order is updated (size changed, filled, etc).
+The `updated_limit_order` channel will send a message each time an order is updated (size changed, filled, etc).
 
 Hence the format of an event payload from the `fill_event` channel:
 

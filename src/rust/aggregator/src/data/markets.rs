@@ -20,6 +20,11 @@ impl MarketsRegisteredPerDay {
 
 #[async_trait::async_trait]
 impl Data for MarketsRegisteredPerDay {
+
+    fn model_name(&self) -> &'static str {
+        "MarketsRegisteredPerDay"
+    }
+
     fn ready(&self) -> bool {
         self.last_indexed_timestamp.is_none()
             || self.last_indexed_timestamp.unwrap() + Duration::days(1) < Utc::now()

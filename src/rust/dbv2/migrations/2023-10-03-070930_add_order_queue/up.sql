@@ -90,7 +90,7 @@ CREATE TRIGGER updated_limit_order_trigger
 AFTER UPDATE ON aggregator.user_history_limit FOR EACH ROW
 EXECUTE PROCEDURE notify_updated_limit_order ();
 
-
+/* Dropped in a later migration */
 CREATE FUNCTION notify_updated_market_order () RETURNS TRIGGER AS $$
    DECLARE x api.market_orders%ROWTYPE;
 BEGIN
@@ -100,12 +100,12 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-
+/* Dropped in a later migration */
 CREATE TRIGGER updated_market_order_trigger
 AFTER UPDATE ON aggregator.user_history_market FOR EACH ROW
 EXECUTE PROCEDURE notify_updated_market_order ();
 
-
+/* Dropped in a later migration */
 CREATE FUNCTION notify_updated_swap_order () RETURNS TRIGGER AS $$
    DECLARE x api.swap_orders%ROWTYPE;
 BEGIN
@@ -115,12 +115,12 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-
+/* Dropped in a later migration */
 CREATE TRIGGER updated_swap_order_trigger
 AFTER UPDATE ON aggregator.user_history_swap FOR EACH ROW
 EXECUTE PROCEDURE notify_updated_swap_order ();
 
-
+/* This was created improperly and is dropped/updated in a later migration */
 CREATE FUNCTION notify_updated_order () RETURNS TRIGGER AS $$
    DECLARE
       x api.limit_orders%ROWTYPE;

@@ -1,0 +1,2 @@
+ALTER TABLE competition_exclusion_list
+DROP CONSTRAINT competition_exclusion_list_user_competition_id_fkey;

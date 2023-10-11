@@ -1,6 +1,7 @@
 use bigdecimal::BigDecimal;
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
+use serde::{Serialize, Deserialize};
 
 #[derive(Clone, Debug, Queryable, Selectable, Insertable)]
 #[diesel(table_name = crate::schema::recognized_market_events)]
@@ -176,4 +177,12 @@ pub struct CompetitionMetadata {
     pub prize: i32,
     pub market_id: BigDecimal,
     pub integrators_required: Vec<Option<String>>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Queryable, Selectable, Insertable)]
+#[diesel(table_name = crate::schema::competition_exclusion_list)]
+pub struct CompetitionExclusion {
+    pub user: String,
+    pub reason: Option<String>,
+    pub competition_id: i32,
 }

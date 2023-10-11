@@ -198,17 +198,6 @@ diesel::table! {
     }
 }
 
-diesel::table! {
-    aggregator.competition_metadata (id) {
-        id -> Integer,
-        start -> Timestamptz,
-        end -> Timestamptz,
-        prize -> Integer,
-        market_id -> Numeric,
-        integrators_required -> Array<Text>
-    }
-}
-
 diesel::allow_tables_to_appear_in_same_query!(
     balance_updates_by_handle,
     cancel_order_events,

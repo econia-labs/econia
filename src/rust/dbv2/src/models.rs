@@ -169,11 +169,11 @@ pub struct BalanceUpdate {
 
 #[derive(Clone, Debug, Queryable, Selectable, Insertable)]
 #[diesel(table_name = crate::schema::competition_metadata)]
-pub struct Competition {
+pub struct CompetitionMetadata {
     pub id: i32,
     pub start: DateTime<Utc>,
     pub end: DateTime<Utc>,
-    pub prize: BigDecimal,
+    pub prize: i32,
     pub market_id: BigDecimal,
-    pub integrators_required: Vec<String>,
+    pub integrators_required: Vec<Option<String>>,
 }

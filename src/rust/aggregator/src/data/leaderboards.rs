@@ -1,7 +1,6 @@
 use anyhow::anyhow;
 use bigdecimal::BigDecimal;
 use chrono::{DateTime, Duration, Utc};
-use dbv2::models::Competition;
 use sqlx::{PgConnection, PgPool, Postgres, Transaction};
 
 use super::{Data, DataAggregationError, DataAggregationResult};
@@ -18,6 +17,15 @@ impl Leaderboards {
             last_indexed_timestamp: None,
         }
     }
+}
+
+struct Competition {
+    id: i32,
+    start: DateTime<Utc>,
+    end: DateTime<Utc>,
+    prize: i64,
+    market_id: BigDecimal,
+    integrators_required: Vec<String>,
 }
 
 #[async_trait::async_trait]

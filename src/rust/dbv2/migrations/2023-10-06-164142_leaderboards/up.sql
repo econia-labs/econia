@@ -4,7 +4,7 @@ CREATE TABLE competition_metadata (
     "start" TIMESTAMPTZ NOT NULL,
     "end" TIMESTAMPTZ NOT NULL,
     "prize" INT NOT NULL,
-    "market_id" NUMERIC(20) NOT NULL,
+    "market_id" NUMERIC NOT NULL,
     "integrators_required" TEXT[] NOT NULL
 );
 

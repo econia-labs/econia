@@ -175,5 +175,5 @@ pub struct CompetitionMetadata {
     pub end: DateTime<Utc>,
     pub prize: i32,
     pub market_id: BigDecimal,
-    pub integrators_required: Vec<Option<String>>,
+    pub integrators_required: Vec<String>,
 }

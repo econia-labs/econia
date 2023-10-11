@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO aggregator.competition_leaderboard_users (\"user\", volume, integrators_used, n_trades, competition_id)\n            SELECT DISTINCT \"user\", 0, '{}'::text[], 0, $1 FROM aggregator.current_fills($1,$2,$3)\n            WHERE NOT EXISTS (\n                SELECT *\n                FROM aggregator.competition_leaderboard_users\n                WHERE competition_id = $1\n                AND current_fills.\"user\" = aggregator.competition_leaderboard_users.\"user\"\n            )\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "aa7675c3543d3ecc1110e309406e53f466893080de5409e961b7bdccaecd327a"
+}

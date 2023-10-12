@@ -59,8 +59,12 @@ impl Data for Leaderboards {
         let competitions = sqlx::query_as!(
             Competition,
             r#"
-                SELECT * FROM aggregator.competition_metadata
+                SELECT * FROM aggregator.competition_metadata AS cm
                 WHERE start < CURRENT_TIMESTAMP AND CURRENT_TIMESTAMP < "end"
+                AND EXISTS (
+                    SELECT * FROM market_registration_events AS mre
+                    WHERE mre.market_id = cm.market_id
+                )
             "#,
         )
         .fetch_all(&mut transaction as &mut PgConnection)

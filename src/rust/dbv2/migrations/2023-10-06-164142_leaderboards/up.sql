@@ -43,7 +43,11 @@ SELECT
   *,
   rank() OVER (ORDER BY points DESC, volume DESC, n_trades DESC) AS rank
 FROM
-  aggregator.competition_leaderboard_users
+  aggregator.competition_leaderboard_users AS users
+WHERE NOT EXISTS (
+  SELECT * FROM aggregator.competition_exclusion_metadata AS ex
+  WHERE users."user" = ex."user" AND users.competition_id = ex.competition_id
+)
 ORDER BY points DESC, volume DESC, n_trades DESC;
 
 
@@ -62,7 +66,7 @@ CREATE TABLE
 
 
 CREATE VIEW
-  api.competition_exclusion_list AS
+  api.competition_exclusion_metadata AS
 SELECT
   *
 FROM
@@ -71,7 +75,7 @@ FROM
 
 GRANT
 SELECT
-  ON api.competition_exclusion_list TO web_anon;
+  ON api.competition_exclusion_metadata TO web_anon;
 
 
 CREATE TABLE
@@ -87,9 +91,9 @@ CREATE TABLE
 CREATE FUNCTION api.volume (api.competition_metadata) RETURNS NUMERIC AS $$
   SELECT COALESCE(SUM(volume), 0) FROM api.competition_leaderboard_users WHERE competition_id = $1.id AND NOT EXISTS(
     SELECT *
-    FROM api.competition_exclusion_list
-    WHERE api.competition_exclusion_list.competition_id = api.competition_leaderboard_users.competition_id
-    AND api.competition_exclusion_list."user" = api.competition_leaderboard_users."user"
+    FROM api.competition_exclusion_metadata
+    WHERE api.competition_exclusion_metadata.competition_id = api.competition_leaderboard_users.competition_id
+    AND api.competition_exclusion_metadata."user" = api.competition_leaderboard_users."user"
   );
 $$ LANGUAGE SQL;
 
@@ -98,9 +102,9 @@ CREATE FUNCTION api.is_eligible (api.competition_leaderboard_users) RETURNS BOOL
 BEGIN
     RETURN NOT EXISTS(
         SELECT *
-        FROM api.competition_exclusion_list
-        WHERE api.competition_exclusion_list.competition_id = $1.competition_id
-        AND api.competition_exclusion_list."user" = $1."user"
+        FROM api.competition_exclusion_metadata
+        WHERE api.competition_exclusion_metadata.competition_id = $1.competition_id
+        AND api.competition_exclusion_metadata."user" = $1."user"
     );
 END;
 $$ LANGUAGE plpgsql;

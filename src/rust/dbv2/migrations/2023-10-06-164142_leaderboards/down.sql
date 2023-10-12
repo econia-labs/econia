@@ -20,7 +20,7 @@ DROP VIEW aggregator.homogenous_fills;
 DROP VIEW api.competition_exclusion_list;
 
 
-DROP TABLE aggregator.competition_exclusion_list;
+DROP TABLE aggregator.competition_exclusion_metadata;
 
 
 DROP VIEW api.competition_leaderboard_users;

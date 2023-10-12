@@ -13,7 +13,7 @@ struct NewCompetitionMetadata {
     end: DateTime<Utc>,
     prize: i32,
     market_id: BigDecimal,
-    integrators_required: Vec<String>,
+    integrators_required: Vec<Option<String>>,
 }
 
 fn main() {

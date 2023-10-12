@@ -53,7 +53,7 @@ SELECT
 
 
 CREATE TABLE
-  aggregator.competition_exclusion_list (
+  aggregator.competition_exclusion_metadata (
     "user" TEXT NOT NULL,
     "reason" TEXT,
     "competition_id" INT NOT NULL REFERENCES aggregator.competition_metadata ("id"),
@@ -66,7 +66,7 @@ CREATE VIEW
 SELECT
   *
 FROM
-  aggregator.competition_exclusion_list;
+  aggregator.competition_exclusion_metadata;
 
 
 GRANT

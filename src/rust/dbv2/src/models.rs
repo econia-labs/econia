@@ -1,9 +1,10 @@
 use bigdecimal::BigDecimal;
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Queryable, Selectable, Insertable)]
-#[diesel(table_name = crate::schema::recognized_market_events)]
+#[diesel(table_name = crate::schema::public::recognized_market_events)]
 pub struct RecognizedMarketEvent {
     pub txn_version: BigDecimal,
     pub event_idx: BigDecimal,
@@ -23,7 +24,7 @@ pub struct RecognizedMarketEvent {
 }
 
 #[derive(Clone, Debug, Queryable, Selectable, Insertable)]
-#[diesel(table_name = crate::schema::market_registration_events)]
+#[diesel(table_name = crate::schema::public::market_registration_events)]
 pub struct MarketRegistrationEvent {
     pub txn_version: BigDecimal,
     pub event_idx: BigDecimal,
@@ -43,7 +44,7 @@ pub struct MarketRegistrationEvent {
 }
 
 #[derive(Clone, Debug, Queryable, Selectable, Insertable)]
-#[diesel(table_name = crate::schema::fill_events)]
+#[diesel(table_name = crate::schema::public::fill_events)]
 pub struct FillEvent {
     pub txn_version: BigDecimal,
     pub event_idx: BigDecimal,
@@ -64,7 +65,7 @@ pub struct FillEvent {
 }
 
 #[derive(Clone, Debug, Queryable, Selectable, Insertable)]
-#[diesel(table_name = crate::schema::place_limit_order_events)]
+#[diesel(table_name = crate::schema::public::place_limit_order_events)]
 pub struct PlaceLimitOrderEvent {
     pub txn_version: BigDecimal,
     pub event_idx: BigDecimal,
@@ -83,7 +84,7 @@ pub struct PlaceLimitOrderEvent {
 }
 
 #[derive(Clone, Debug, Queryable, Selectable, Insertable)]
-#[diesel(table_name = crate::schema::place_market_order_events)]
+#[diesel(table_name = crate::schema::public::place_market_order_events)]
 pub struct PlaceMarketOrderEvent {
     pub txn_version: BigDecimal,
     pub event_idx: BigDecimal,
@@ -99,7 +100,7 @@ pub struct PlaceMarketOrderEvent {
 }
 
 #[derive(Clone, Debug, Queryable, Selectable, Insertable)]
-#[diesel(table_name = crate::schema::place_swap_order_events)]
+#[diesel(table_name = crate::schema::public::place_swap_order_events)]
 pub struct PlaceSwapOrderEvent {
     pub txn_version: BigDecimal,
     pub event_idx: BigDecimal,
@@ -117,7 +118,7 @@ pub struct PlaceSwapOrderEvent {
 }
 
 #[derive(Clone, Debug, Queryable, Selectable, Insertable)]
-#[diesel(table_name = crate::schema::change_order_size_events)]
+#[diesel(table_name = crate::schema::public::change_order_size_events)]
 pub struct ChangeOrderSizeEvent {
     pub txn_version: BigDecimal,
     pub event_idx: BigDecimal,
@@ -131,7 +132,7 @@ pub struct ChangeOrderSizeEvent {
 }
 
 #[derive(Clone, Debug, Queryable, Selectable, Insertable)]
-#[diesel(table_name = crate::schema::cancel_order_events)]
+#[diesel(table_name = crate::schema::public::cancel_order_events)]
 pub struct CancelOrderEvent {
     pub txn_version: BigDecimal,
     pub event_idx: BigDecimal,
@@ -144,7 +145,7 @@ pub struct CancelOrderEvent {
 }
 
 #[derive(Clone, Debug, Queryable, Selectable, Insertable)]
-#[diesel(table_name = crate::schema::market_account_handles)]
+#[diesel(table_name = crate::schema::public::market_account_handles)]
 pub struct MarketAccountHandle {
     pub user: String,
     pub handle: String,
@@ -152,7 +153,7 @@ pub struct MarketAccountHandle {
 }
 
 #[derive(Clone, Debug, Queryable, Selectable, Insertable)]
-#[diesel(table_name = crate::schema::balance_updates_by_handle)]
+#[diesel(table_name = crate::schema::public::balance_updates_by_handle)]
 pub struct BalanceUpdate {
     pub txn_version: BigDecimal,
     pub handle: String,
@@ -168,12 +169,20 @@ pub struct BalanceUpdate {
 }
 
 #[derive(Clone, Debug, Queryable, Selectable, Insertable)]
-#[diesel(table_name = crate::schema::competition_metadata)]
+#[diesel(table_name = crate::schema::aggregator::competition_metadata)]
 pub struct CompetitionMetadata {
     pub id: i32,
     pub start: DateTime<Utc>,
     pub end: DateTime<Utc>,
     pub prize: i32,
     pub market_id: BigDecimal,
-    pub integrators_required: Vec<String>,
+    pub integrators_required: Vec<Option<String>>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Queryable, Selectable, Insertable)]
+#[diesel(table_name = crate::schema::aggregator::competition_exclusion_list)]
+pub struct CompetitionExclusion {
+    pub user: String,
+    pub reason: Option<String>,
+    pub competition_id: i32,
 }

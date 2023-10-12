@@ -83,7 +83,7 @@ Rename the template file to `competition-metadata.json` and update its contents 
 After that, run the `init-competition` binary from `/src/rust/dbv2`:
 
 ```sh
-./../target/release/add-inclusions
+./../target/release/init-competition
 ```
 
 If successful, it will print out the added competition like so:
@@ -141,30 +141,7 @@ cargo build --release --bin add-exclusions
 cargo build --release --bin add-inclusions
 ```
 
-**Get exclusions**
-
-This binary accepts 0 to 2 arguments: up to one competition id and up to one user address, in any order.
-Run it from the `/src/rust/dbv2` directory like so:
-
-```sh
-./../target/release/get-exclusions # Optionally pass a competition id, user address
-```
-
-If there are exclusions matching those parameters, they will be printed like so:
-
-```
-EXCLUSIONS:
-(1) 0xeeee0dd966cd4fc739f76006591239b32527edbb7c303c431f8c691bda150b40: "Eats too many cookies"
-(1) 0xffff094ef8ccfa9137adcb13a2fae2587e83c348b32c63f811cc19fcc9fc5878: "Hates Advil too much"
-```
-
-If none match, the following will be printed instead:
-
-```
-No exclusions match those parameters.
-```
-
-Passing no arguments will print the whole exclusion table (or its lack of contents).
+Any of these operations will fail if they reference a competition ID that does not yet exist.
 
 **Add exclusions**
 
@@ -182,14 +159,14 @@ New exclusions: [
     CompetitionExclusion {
         user: "0xeeee0dd966cd4fc739f76006591239b32527edbb7c303c431f8c691bda150b40",
         reason: Some(
-            "Eats too many cookies",
+            "Internal testing",
         ),
         competition_id: 1,
     },
     CompetitionExclusion {
         user: "0xffff094ef8ccfa9137adcb13a2fae2587e83c348b32c63f811cc19fcc9fc5878",
         reason: Some(
-            "Hates Advil too much",
+            "Integrating partner",
         ),
         competition_id: 1,
     },
@@ -198,6 +175,39 @@ New exclusions: [
 
 It will throw an exception if you try to insert a user to a competition they're already excluded from.
 To remove someone from exclusion, use inverse of this binary (`add-inclusions`) described below.
+
+**Get exclusions**
+
+This binary accepts 0 to 2 arguments: up to one competition id and up to one user address, in any order.
+Run it from the `/src/rust/dbv2` directory like so:
+
+```sh
+./../target/release/get-exclusions # Optionally pass a competition id, user address
+```
+
+If there are exclusions matching those parameters, they will be printed like so:
+
+```
+EXCLUSIONS:
+(COMPETITION_ID) ADDRESS: "REASON"
+```
+
+```
+EXCLUSIONS:
+(1) 0xeeee0dd966cd4fc739f76006591239b32527edbb7c303c431f8c691bda150b40: "Internal testing"
+(1) 0xffff094ef8ccfa9137adcb13a2fae2587e83c348b32c63f811cc19fcc9fc5878: "Integrating partner"
+```
+
+If none match, the following will be printed instead:
+
+```
+No exclusions match those parameters.
+```
+
+Passing no arguments will print the whole exclusion table (or its lack of contents).
+
+It will throw an exception if you try to insert a user to a competition they're already excluded from.
+To remove someone from exclusion, use inverse of this binary, (`add-inclusions`), described below.
 
 **Add inclusions**
 
@@ -215,7 +225,7 @@ Now included: 0xeeee0dd966cd4fc739f76006591239b32527edbb7c303c431f8c691bda150b40
 Now included: 0xffff094ef8ccfa9137adcb13a2fae2587e83c348b32c63f811cc19fcc9fc5878
 ```
 
-If the user(s) are already included for the given competition id(s) then such will be printed like so:
+If the user(s) are already included for the given competition id(s) then the output will look like:
 
 ```
 Already included: 0xeeee0dd966cd4fc739f76006591239b32527edbb7c303c431f8c691bda150b40

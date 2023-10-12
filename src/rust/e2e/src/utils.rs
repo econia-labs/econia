@@ -173,24 +173,3 @@ pub async fn account(
 
     (account_address, econia_client)
 }
-
-/// Funds an amount with the coin specified
-pub async fn fund(
-    coin: &TypeTag,
-    amount: u64,
-    econia_client: &mut EconiaClient,
-    faucet_address: AccountAddress,
-) -> Result<()> {
-    let module_id = ModuleId::from(MoveModuleId::from_str(&format!(
-        "{}::faucet",
-        faucet_address
-    ))?);
-    let entry = EntryFunction::new(
-        module_id.clone(),
-        ident_str!("mint").to_owned(),
-        vec![coin.clone().into()],
-        vec![bcs::to_bytes(&amount)?],
-    );
-    econia_client.submit_tx(entry).await?;
-    Ok(())
-}

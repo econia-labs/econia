@@ -10,7 +10,7 @@ use metadata::Metadata;
 use utils::{init, Args, State};
 
 mod market_registration;
-mod utils;
+pub mod utils;
 
 fn message(success: bool, name: &str) -> String {
     let status = if success { "OK".green() } else { "FAIL".red() };

@@ -428,6 +428,16 @@ ZONE=a-zone
    echo $DB_URL_PRIVATE
    ```
 
+1. Determine a [max number of rows](https://postgrest.org/en/stable/references/configuration.html#db-max-rows) per PostgREST query:
+
+   ```sh
+   PGRST_DB_MAX_ROWS=<MAX_ROWS_FOR_FETCH>
+   ```
+
+   ```
+   echo $PGRST_DB_MAX_ROWS
+   ```
+
 1. Deploy [PostgREST](https://postgrest.org/en/stable/) on [GCP Cloud Run](https://cloud.google.com/run/docs/overview/what-is-cloud-run) with [public access](https://cloud.google.com/run/docs/authenticating/public):
 
    ```sh
@@ -439,7 +449,8 @@ ZONE=a-zone
        --set-env-vars "$(printf '%s' \
            PGRST_DB_ANON_ROLE=web_anon,\
            PGRST_DB_SCHEMA=api,\
-           PGRST_DB_URI=$DB_URL_PRIVATE\
+           PGRST_DB_URI=$DB_URL_PRIVATE,\
+           PGRST_DB_MAX_ROWS=$PGRST_DB_MAX_ROWS\
        )" \
        --vpc-connector postgrest
    ```
@@ -821,7 +832,15 @@ Whenever you redeploy, restart all instances and services, and reset the databas
    gcloud compute instances start aggregator
    ```
 
-1. Redeploy `postgrest` using the `gcloud run deploy` command [from initial deployment](#deploy-rest-api).
+1. Redeploy `postgrest` using the `gcloud run deploy` command [from initial deployment](#deploy-rest-api), after setting a max number of rows:
+
+   ```sh
+   PGRST_DB_MAX_ROWS=<MAX_ROWS_FOR_FETCH>
+   ```
+
+   ```
+   echo $PGRST_DB_MAX_ROWS
+   ```
 
 1. Redeploy `websockets` using the `gcloud run deploy` command [from initial deployment](#deploy-websockets-api), after reconstructing the WebSockets connection string:
 

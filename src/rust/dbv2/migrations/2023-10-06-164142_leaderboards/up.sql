@@ -40,9 +40,11 @@ CREATE TABLE
 CREATE VIEW
   api.competition_leaderboard_users AS
 SELECT
-  *
+  *,
+  rank() OVER (ORDER BY points DESC, volume DESC, n_trades DESC) AS rank
 FROM
-  aggregator.competition_leaderboard_users;
+  aggregator.competition_leaderboard_users
+ORDER BY points DESC, volume DESC, n_trades DESC;
 
 
 GRANT
@@ -82,7 +84,7 @@ CREATE TABLE
 
 
 -- Generated columns. This can be included when querying the tables.
-CREATE FUNCTION api.volume (api.competition_metadata) RETURNS INT AS $$
+CREATE FUNCTION api.volume (api.competition_metadata) RETURNS NUMERIC AS $$
   SELECT COALESCE(SUM(volume), 0) FROM api.competition_leaderboard_users WHERE competition_id = $1.id AND NOT EXISTS(
     SELECT *
     FROM api.competition_exclusion_list
@@ -202,3 +204,7 @@ BEGIN
     AND homogenous_places.time > $2 AND homogenous_places.time < $3;
 END;
 $$ LANGUAGE plpgsql;
+
+
+-- Create index to speed up user ranking
+CREATE INDEX idx_ranking ON aggregator.competition_leaderboard_users (points DESC, volume DESC, n_trades DESC);

@@ -11,9 +11,18 @@ use aptos_sdk::{
     move_types::language_storage::{StructTag, TypeTag},
     types::APTOS_COIN_TYPE,
 };
+use bigdecimal::BigDecimal;
+use chrono::{DateTime, Utc};
+use dbv2::{models::CompetitionExclusion, schema::competition_exclusion_list};
+use dbv2::{models::CompetitionMetadata, schema::competition_metadata};
+use diesel::{self, pg::PgConnection, prelude::*};
 use econia_sdk::entry::{self, deposit_from_coinstore, register_market_base_coin_from_coinstore};
 use econia_sdk::errors::EconiaError;
 use econia_sdk::{EconiaClient, EconiaResult};
+use futures::stream::iter;
+use futures::StreamExt;
+use serde::Deserialize;
+use std::fs;
 use std::thread;
 use std::time::Duration;
 use std::{
@@ -21,6 +30,8 @@ use std::{
     io::{self, BufRead},
     str::FromStr,
 };
+use tokio::stream;
+use futures::future::join_all;
 
 #[tokio::main]
 async fn main() -> EconiaResult<()> {
@@ -111,9 +122,9 @@ async fn main() -> EconiaResult<()> {
     let account_taker = LocalAccount::generate(&mut rand::thread_rng());
 
     let faucet_client = FaucetClient::new(
-      reqwest::Url::parse(&faucet_url).unwrap(),
-      reqwest::Url::parse(&node_url).unwrap(),
-  );
+        reqwest::Url::parse(&faucet_url).unwrap(),
+        reqwest::Url::parse(&node_url).unwrap(),
+    );
 
     println!("Connected to faucet...");
 
@@ -155,8 +166,6 @@ async fn main() -> EconiaResult<()> {
     .unwrap();
 
     println!("Connected to node...");
-
-    
 
     let e_apt = TypeTag::Struct(Box::new(
         StructTag::from_str(&format!("{faucet_addr}::example_apt::ExampleAPT")).unwrap(),
@@ -204,49 +213,47 @@ async fn main() -> EconiaResult<()> {
     }
     let market_id = market_id_opt.unwrap();
 
-    fund(&e_apt, std::u64::MAX, &mut client_maker, faucet_address)
-        .await
-        .expect("Failed to fund maker with eAPT");
-    fund(&e_usdc, std::u64::MAX, &mut client_taker, faucet_address)
-        .await
-        .expect("Failed to fund taker with eUSDC");
-    println!("Funded maker & taker with sufficient funds...");
+    let competition = start_competition(market_id);
+    let competition_id = competition.id;
+    let integrators: Vec<AccountAddress> = competition
+        .integrators_required
+        .iter()
+        .map(|s| {
+            AccountAddress::from_str(s.as_deref().unwrap())
+                .expect("Invalid integrator address provided")
+        })
+        .collect();
 
-    tokio::spawn(async move {
-        // Infinite loop
-        loop {
-            let entry_deposit_maker =
-                deposit_from_coinstore(econia_address, &e_apt, market_id, 0, 100 * 10_u64.pow(8))
-                    .expect("Failed to create deposit transaction payload (maker)");
-            let res = client_maker.submit_tx(entry_deposit_maker).await;
-            match res {
-                Ok(_) => println!("Deposited to the maker's account."),
-                Err(_) => {
-                    println!("Failed to deposit to the maker's account (trying again later).")
-                }
-            }
-            thread::sleep(Duration::from_secs(11));
-        }
-    });
+    // Create a stream from an iterator of futures
+    let futures: Vec<_> = (0..5)
+        .map(|_| async {
+            println!("Creating wallet.");
+            let account = LocalAccount::generate(&mut rand::thread_rng());
+            faucet_client
+                .fund(account.address(), 100_000_000_000)
+                .await
+                .unwrap();
+            let mut client = EconiaClient::connect(
+                reqwest::Url::parse(&node_url).unwrap(),
+                econia_address.clone(),
+                account,
+                None,
+            )
+            .await
+            .unwrap();
+            fund(&e_apt, std::u64::MAX, &mut client, faucet_address)
+                .await
+                .expect("Failed to fund maker with eAPT");
+            fund(&e_usdc, std::u64::MAX, &mut client, faucet_address)
+                .await
+                .expect("Failed to fund taker with eUSDC");
+            println!("Success funding!");
+            client
+        })
+        .collect();
+    let clients: Vec<EconiaClient> = join_all(futures).await;
 
-    tokio::spawn(async move {
-        // Infinite loop
-        loop {
-            let entry_deposit_taker =
-                deposit_from_coinstore(econia_address, &e_usdc, market_id, 0, 600 * 10_u64.pow(6))
-                    .expect("Failed to create deposit transaction payload (taker)");
-            let res = client_taker.submit_tx(entry_deposit_taker).await;
-            match res {
-                Ok(_) => println!("Deposited to the taker's account."),
-                Err(_) => {
-                    println!("Failed to deposit to the taker's account (trying again later).")
-                }
-            }
-            thread::sleep(Duration::from_secs(11));
-        }
-    });
-
-    println!("Set up the auto-deposit loops...");
+    println!("Funded makers & takers with sufficient funds...");
     Ok(())
 }
 
@@ -273,21 +280,70 @@ async fn prompt_for_input(
 
 /// Funds an amount with the coin specified
 pub async fn fund(
-  coin: &TypeTag,
-  amount: u64,
-  econia_client: &mut EconiaClient,
-  faucet_address: AccountAddress,
+    coin: &TypeTag,
+    amount: u64,
+    econia_client: &mut EconiaClient,
+    faucet_address: AccountAddress,
 ) -> EconiaResult<()> {
-  let module_id = ModuleId::from(
-      MoveModuleId::from_str(&format!("{}::faucet", faucet_address))
-          .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
-  );
-  let entry = EntryFunction::new(
-      module_id.clone(),
-      ident_str!("mint").to_owned(),
-      vec![coin.clone().into()],
-      vec![bcs::to_bytes(&amount)?],
-  );
-  econia_client.submit_tx(entry).await?;
-  Ok(())
+    let module_id = ModuleId::from(
+        MoveModuleId::from_str(&format!("{}::faucet", faucet_address))
+            .map_err(|a| EconiaError::InvalidModuleId(a.to_string()))?,
+    );
+    let entry = EntryFunction::new(
+        module_id.clone(),
+        ident_str!("mint").to_owned(),
+        vec![coin.clone().into()],
+        vec![bcs::to_bytes(&amount)?],
+    );
+    econia_client.submit_tx(entry).await?;
+    Ok(())
+}
+
+#[derive(Deserialize, Insertable)]
+#[diesel(table_name = competition_metadata)]
+struct NewCompetitionMetadata {
+    start: DateTime<Utc>,
+    end: DateTime<Utc>,
+    prize: i32,
+    market_id: BigDecimal,
+    integrators_required: Vec<String>,
+}
+
+fn start_competition(market_id: u64) -> CompetitionMetadata /* integrators */ {
+    let metadata_json = fs::read_to_string("./competition-metadata.json").expect("No config");
+    let mut metadata: NewCompetitionMetadata =
+        serde_json::from_str(&metadata_json).expect("Unable to parse");
+    metadata.market_id = BigDecimal::from(market_id);
+    let database_url =
+        env::var("DATABASE_URL").expect("Environment variable DATABASE_URL must be set");
+    let connection = &mut PgConnection::establish(&database_url)
+        .unwrap_or_else(|_| panic!("Error connecting to {}", database_url));
+    let inserted_metadata = diesel::insert_into(competition_metadata::table)
+        .values(&metadata)
+        .returning(CompetitionMetadata::as_returning())
+        .get_result(connection)
+        .expect("Error creating new config");
+    println!("New competition: {:#?}", inserted_metadata);
+    inserted_metadata
+}
+
+fn add_exclusions(competition_id: i32, makers: &Vec<&AccountAddress>) {
+    let mut exclusions = vec![];
+    for (idx, maker) in makers.iter().enumerate() {
+        exclusions.push(CompetitionExclusion {
+            user: maker.to_standard_string(),
+            reason: Some(idx.to_string()),
+            competition_id,
+        })
+    }
+    let database_url =
+        env::var("DATABASE_URL").expect("Environment variable DATABASE_URL must be set");
+    let connection = &mut PgConnection::establish(&database_url)
+        .unwrap_or_else(|_| panic!("Error connecting to {}", database_url));
+    let inserted_exclusions = diesel::insert_into(competition_exclusion_list::table)
+        .values(&exclusions)
+        .returning(CompetitionExclusion::as_returning())
+        .get_results(connection)
+        .expect("Error creating new exclusions");
+    println!("New exclusions: {:#?}", inserted_exclusions);
 }

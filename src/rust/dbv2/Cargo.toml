@@ -6,12 +6,21 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+anyhow.workspace = true
+aptos-api-types = { git = "https://github.com/aptos-labs/aptos-core", tag = "aptos-node-v1.7.2" }
+aptos-sdk.workspace = true
+econia-types = { package = "types", path = "../types", features = ["serde"] }
+econia-sdk = { package = "econia-sdk", path = "../sdk" }
 bigdecimal = { workspace = true }
 chrono = { workspace = true }
 diesel = { workspace = true, features = ["chrono", "numeric", "postgres"] }
+futures = "0.3"
+reqwest.workspace = true
 serde = { workspace = true }
 serde_json = { workspace = true }
 sqlx = { workspace = true, optional = true }
+tokio = { version = "1.21.0", features = ["full"] }
+rand = "0.7"
 
 [features]
 sqlx = ["dep:sqlx"]

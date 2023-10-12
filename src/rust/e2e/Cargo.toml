@@ -12,7 +12,10 @@ metadata = { path = "./metadata" }
 aptos-sdk.workspace = true
 
 anyhow.workspace = true
+bigdecimal.workspace = true
+chrono.workspace = true
 clap.workspace = true
+diesel.workspace = true
 reqwest = "0.11"
 sqlx = { workspace = true, features = ["postgres"] }
 tokio = { workspace = true, features = ["full"] }

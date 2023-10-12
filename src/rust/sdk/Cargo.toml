@@ -16,7 +16,7 @@ aptos-sdk.workspace = true
 econia-types = { package = "types", path = "../types", features = ["serde"] }
 futures = "0.3.24"
 hex = { version = "0.4.3" }
-reqwest = { version = "0.11.11" }
+reqwest.workspace = true
 serde = { version = "1.0.145", features = ["derive"] }
 serde_json = { version = "1.0.85" }
 serde_yaml = { version = "0.9.10" }

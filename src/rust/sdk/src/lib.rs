@@ -311,22 +311,36 @@ impl EconiaClient {
 
         let signed_tx = self.user_account.sign_transaction(tx);
         let pending = match self.aptos_client.submit(&signed_tx).await {
-            Ok(res) => res.into_inner(),
+            Ok(res) => {
+                let seq_num = self.get_sequence_number().await?;
+                let acc_seq_num = self.user_account.sequence_number();
+                self.user_account
+                    .set_sequence_number(max(seq_num + 1, acc_seq_num + 1));
+                res.into_inner()
+            }
             Err(RestError::Api(a)) => {
+                let seq_num = self.get_sequence_number().await?;
+                let acc_seq_num = self.user_account.sequence_number();
+                self.user_account
+                    .set_sequence_number(max(seq_num + 1, acc_seq_num + 1));
                 return match a.error.error_code {
                     AptosErrorCode::InvalidTransactionUpdate
                     | AptosErrorCode::SequenceNumberTooOld
                     | AptosErrorCode::VmError => {
-                        let seq_num = self.get_sequence_number().await?;
-                        let acc_seq_num = self.user_account.sequence_number();
-                        self.user_account
-                            .set_sequence_number(max(seq_num, acc_seq_num + 1));
                         Err(EconiaError::AptosError(RestError::Api(a)))
                     }
-                    _ => Err(EconiaError::AptosError(RestError::Api(a))),
+                    _ => {
+                        Err(EconiaError::AptosError(RestError::Api(a)))
+                    },
                 }
             }
-            Err(e) => return Err(EconiaError::AptosError(e)),
+            Err(e) => {
+                let seq_num = self.get_sequence_number().await?;
+                let acc_seq_num = self.user_account.sequence_number();
+                self.user_account
+                    .set_sequence_number(max(seq_num + 1, acc_seq_num + 1));
+                return Err(EconiaError::AptosError(e))
+            },
         };
 
         let tx = self

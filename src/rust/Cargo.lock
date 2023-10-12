@@ -2037,12 +2037,21 @@ dependencies = [
 name = "dbv2"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
+ "aptos-api-types",
+ "aptos-sdk",
  "bigdecimal",
  "chrono",
  "diesel",
+ "econia-sdk",
+ "futures",
+ "rand 0.7.3",
+ "reqwest",
  "serde 1.0.188",
  "serde_json",
  "sqlx",
+ "tokio",
+ "types",
 ]
 
 [[package]]
@@ -2236,8 +2245,11 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "aptos-sdk",
+ "bigdecimal",
+ "chrono",
  "clap 4.4.6",
  "colored",
+ "diesel",
  "e2e-proc-macro",
  "econia-sdk",
  "futures",

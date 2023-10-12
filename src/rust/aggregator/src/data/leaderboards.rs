@@ -59,7 +59,7 @@ impl Data for Leaderboards {
         let competitions = sqlx::query_as!(
             Competition,
             r#"
-                SELECT * FROM competition_metadata
+                SELECT * FROM aggregator.competition_metadata
                 WHERE start < CURRENT_TIMESTAMP AND CURRENT_TIMESTAMP < "end"
             "#,
         )
@@ -140,7 +140,7 @@ async fn aggregate_data_for_competition<'a>(
                     -- Only keep aggregators that are in the "integrators_required" list
                     WHERE integrator IN (
                         SELECT unnest(integrators_required)
-                        FROM competition_metadata
+                        FROM aggregator.competition_metadata
                         WHERE competition_metadata.id = $1
                     )
                     -- Do not keep integrators that are already in the array (no duplicates)

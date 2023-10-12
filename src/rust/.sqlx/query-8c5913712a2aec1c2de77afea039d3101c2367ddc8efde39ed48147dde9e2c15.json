@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE aggregator.competition_leaderboard_users AS a\n            SET\n\n                -- Update volume\n                volume = volume + COALESCE((\n                    SELECT SUM(size*price)\n                    FROM aggregator.current_fills($1,$2,$3)\n                    WHERE current_fills.\"user\" = a.\"user\"\n                ), 0) * (SELECT tick_size FROM market_registration_events WHERE market_id = $4),\n\n                -- Update number of trades\n                n_trades = (\n                    SELECT COUNT(DISTINCT order_id) AS orders\n                    FROM aggregator.homogenous_fills\n                    WHERE homogenous_fills.\"user\" = a.\"user\"\n                ),\n\n                -- Update integrators used\n                integrators_used =  integrators_used || (\n                    -- Get a list of aggregators from all place events\n                    SELECT array_agg(integrator) FROM (\n                        -- Get user and integrator\n                        SELECT DISTINCT \"user\", integrator\n                        FROM aggregator.current_places($1,$2,$3)\n                    ) AS b\n                    -- Only keep aggregators that are in the \"integrators_required\" list\n                    WHERE integrator IN (\n                        SELECT unnest(integrators_required)\n                        FROM aggregator.competition_metadata\n                        WHERE competition_metadata.id = $1\n                    )\n                    -- Do not keep integrators that are already in the array (no duplicates)\n                    AND integrator NOT IN (\n                        SELECT unnest(integrators_used)\n                        FROM aggregator.competition_leaderboard_users AS c\n                        WHERE c.competition_id = $1\n                        AND a.\"user\" = c.\"user\"\n                    )\n                    AND a.\"user\" = b.\"user\"\n                )\n\n            -- Only for the users that have an update\n            WHERE a.\"user\" IN (SELECT b.\"user\" FROM aggregator.current_fills($1,$2,$3) AS b)\n            OR a.\"user\" IN (SELECT b.\"user\" FROM aggregator.current_places($1,$2,$3) AS b);\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Timestamptz",
+        "Timestamptz",
+        "Numeric"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "8c5913712a2aec1c2de77afea039d3101c2367ddc8efde39ed48147dde9e2c15"
+}

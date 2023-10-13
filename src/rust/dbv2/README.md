@@ -19,6 +19,13 @@ This crates provides the models for every table in the database.
 
 We also use `diesel` to run migrations. In our docker compose configuration, we have a dedicated docker container that runs `diesel migration run`.
 
+To generate schemas:
+
+```sh
+diesel database reset
+diesel print-schema -s aggregator > src/schema/aggregator.rs
+```
+
 ## Notifications
 
 We use [Postgres notifications](https://www.postgresql.org/docs/14/sql-notify.html) to create a real time notification feed for Econia's events.

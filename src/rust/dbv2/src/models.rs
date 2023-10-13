@@ -169,7 +169,7 @@ pub struct BalanceUpdate {
 }
 
 #[derive(Clone, Debug, Queryable, Selectable, Insertable)]
-#[diesel(table_name = crate::schema::aggregator::competition_metadata)]
+#[diesel(table_name = crate::schema::aggregator::aggregator::competition_metadata)]
 pub struct CompetitionMetadata {
     pub id: i32,
     pub start: DateTime<Utc>,
@@ -180,7 +180,7 @@ pub struct CompetitionMetadata {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Queryable, Selectable, Insertable)]
-#[diesel(table_name = crate::schema::aggregator::competition_exclusion_list)]
+#[diesel(table_name = crate::schema::aggregator::aggregator::competition_exclusion_list)]
 pub struct CompetitionExclusion {
     pub user: String,
     pub reason: Option<String>,

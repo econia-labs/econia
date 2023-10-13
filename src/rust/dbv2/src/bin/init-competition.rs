@@ -1,6 +1,6 @@
 use bigdecimal::BigDecimal;
 use chrono::{DateTime, Utc};
-use dbv2::{models::CompetitionMetadata, schema::competition_metadata};
+use dbv2::{models::CompetitionMetadata, schema::aggregator::aggregator::competition_metadata};
 use diesel::{self, pg::PgConnection, prelude::*};
 use serde::Deserialize;
 use std::env;

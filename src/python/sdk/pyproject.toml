@@ -28,6 +28,7 @@ pdoc = "^14.0.0"
 [tool.poetry.scripts]
 trade = "examples.trade:start"
 event = "examples.event:start"
+games = "examples.games:start"
 
 [build-system]
 requires = ["poetry-core"]

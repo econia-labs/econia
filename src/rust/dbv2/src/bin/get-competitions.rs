@@ -1,4 +1,6 @@
-use dbv2::{models::CompetitionMetadata, schema::competition_metadata::dsl::*};
+use dbv2::{
+    models::CompetitionMetadata, schema::aggregator::aggregator::competition_metadata::dsl::*,
+};
 use diesel::{self, pg::PgConnection, prelude::*};
 use std::env;
 

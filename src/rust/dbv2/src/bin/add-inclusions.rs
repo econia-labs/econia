@@ -1,4 +1,4 @@
-use dbv2::schema::competition_exclusion_list;
+use dbv2::schema::aggregator::aggregator::competition_exclusion_list;
 use diesel::{self, pg::PgConnection, prelude::*};
 use serde::Deserialize;
 use std::env;

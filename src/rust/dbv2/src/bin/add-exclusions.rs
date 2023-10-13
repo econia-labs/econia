@@ -1,4 +1,6 @@
-use dbv2::{models::CompetitionExclusion, schema::competition_exclusion_list};
+use dbv2::{
+    models::CompetitionExclusion, schema::aggregator::aggregator::competition_exclusion_list,
+};
 use diesel::{self, pg::PgConnection, prelude::*};
 use std::env;
 use std::fs;

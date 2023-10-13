@@ -56,6 +56,7 @@ impl Data for Leaderboards {
             .begin()
             .await
             .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
+        // Get all competitions having created markets
         let competitions = sqlx::query_as!(
             Competition,
             r#"
@@ -88,8 +89,12 @@ async fn aggregate_data_for_competition<'a>(
     // Insert new users
     sqlx::query!(
         r#"
+            -- Insert into the users table
             INSERT INTO aggregator.competition_leaderboard_users ("user", volume, integrators_used, n_trades, competition_id)
+
+            -- Every address with default values from new fill events
             SELECT DISTINCT "user", 0, '{}'::text[], 0, $1 FROM aggregator.current_fills($1,$2,$3)
+            -- That doesn't already exist
             WHERE NOT EXISTS (
                 SELECT *
                 FROM aggregator.competition_leaderboard_users
@@ -97,7 +102,9 @@ async fn aggregate_data_for_competition<'a>(
                 AND current_fills."user" = aggregator.competition_leaderboard_users."user"
             )
             UNION
+            -- Every address with default values from new place events
             SELECT DISTINCT "user", 0, '{}'::text[], 0, $1 FROM aggregator.current_places($1,$2,$3)
+            -- That doesn't already exist
             WHERE NOT EXISTS (
                 SELECT *
                 FROM aggregator.competition_leaderboard_users

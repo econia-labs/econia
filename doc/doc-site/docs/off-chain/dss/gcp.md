@@ -973,7 +973,7 @@ Whenever you redeploy, follow the below steps in order so that you do not break 
    gcloud compute instances detach-disk bootstrapper --disk processor-disk
    ```
 
-1. Run the `gcloud compute instances create-with-container` command [from initial deployment](#deploy-processor).
+1. Redeploy `processor` using the `gcloud compute instances create-with-container` command [from initial deployment](#deploy-processor).
 
 1. [Redeploy the aggregator](#deploy-aggregator).
 

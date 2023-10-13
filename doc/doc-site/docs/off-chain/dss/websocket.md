@@ -31,6 +31,7 @@ Channels include:
 - `fill_event`
 - `change_order_size_event`
 - `cancel_order_event`
+- `recognized_market_event`
 - `new_limit_order`
 - `updated_limit_order`
 - `new_market_order`

@@ -3,16 +3,16 @@ module throttler::throttle {
     // Constants for trading competition rules. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Maximum amount of APT that can change hands in a single trade.
-    const MAX_TRADE_VOLUME_APT: u64 =  200;
+    const MAX_TRADE_VOLUME_APT: u64 =  500;
     /// Maximum amount of APT that can be deposited/minted at a time.
-    const MAX_TRANSFER_APT: u64 =  20;
+    const MAX_TRANSFER_APT: u64 =  100;
     /// Maximum amount of USDC that can be deposited/minted at a time.
-    const MAX_TRANSFER_USDC: u64 =  100;
+    const MAX_TRANSFER_USDC: u64 =  600;
     /// The market ID that activity is throttled on.
     const THROTTLED_MARKET_ID: u64 = 3;
     /// How long user must wait between faucet mints or market account
     /// deposits for a given asset.
-    const WAIT_TIME_IN_MINUTES: u64 = 5;
+    const WAIT_TIME_IN_SECONDS: u64 = 10;
 
     // Constants for trading competition rules. <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -33,21 +33,33 @@ module throttler::throttle {
     use std::signer;
     use std::vector;
 
-    const SECONDS_PER_MINUTE: u64 = 60;
     const SUBUNIT_CONVERSION_FACTOR_APT: u64 = 100000000;
     const SUBUNIT_CONVERSION_FACTOR_USDC: u64 = 1000000;
 
     /// You do not have permission to modify the throttler.
     const E_NOT_ADMIN: u64 = 3;
+    /// This function is deprecated. Use `get_config_parameters()`.
+    const E_DEPRECATED_CONFIG_PARAMETERS: u64 = 4;
+
+    public fun config_parameters(): ConfigView {
+        assert!(false, E_DEPRECATED_CONFIG_PARAMETERS);
+        ConfigView {
+            max_trade_volume_apt: 0,
+            max_transfer_apt: 0,
+            max_transfer_usdc: 0,
+            throttled_market_id: 0,
+            wait_time_in_minutes: 0,
+        }
+    }
 
     #[view]
-    public fun config_parameters(): ConfigView {
-        ConfigView {
+    public fun get_config_parameters(): ConfigViewV2 {
+        ConfigViewV2 {
             max_trade_volume_apt: MAX_TRADE_VOLUME_APT,
             max_transfer_apt: MAX_TRANSFER_APT,
             max_transfer_usdc: MAX_TRANSFER_USDC,
             throttled_market_id: THROTTLED_MARKET_ID,
-            wait_time_in_minutes: WAIT_TIME_IN_MINUTES,
+            wait_time_in_seconds: WAIT_TIME_IN_SECONDS,
         }
     }
 
@@ -84,6 +96,14 @@ module throttler::throttle {
         max_transfer_usdc: u64,
         throttled_market_id: u64,
         wait_time_in_minutes: u64,
+    }
+
+    struct ConfigViewV2 has copy, drop, store {
+        max_trade_volume_apt: u64,
+        max_transfer_apt: u64,
+        max_transfer_usdc: u64,
+        throttled_market_id: u64,
+        wait_time_in_seconds: u64,
     }
 
     struct Throttler has key {
@@ -148,8 +168,7 @@ module throttler::throttle {
             &mut account_ref_mut.last_deposit_time_usdc
         };
         let now = timestamp::now_seconds();
-        let eligible = (now - *last_time_ref_mut) >
-            (WAIT_TIME_IN_MINUTES * SECONDS_PER_MINUTE);
+        let eligible = (now - *last_time_ref_mut) > (WAIT_TIME_IN_SECONDS);
         assert!(eligible, E_WAIT_TIME);
         let (conversion_factor, max_nominal) = if (is_apt)
             (SUBUNIT_CONVERSION_FACTOR_APT , MAX_TRANSFER_APT ) else

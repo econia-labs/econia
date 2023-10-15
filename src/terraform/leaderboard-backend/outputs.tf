@@ -1,3 +1,3 @@
-output "ip" {
-  value = google_compute_instance.vm_instance.network_interface.0.network_ip
+output "postgres_public_ip" {
+  value = google_sql_database_instance.postgres.public_ip_address
 }

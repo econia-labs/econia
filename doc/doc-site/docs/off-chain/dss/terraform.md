@@ -32,12 +32,6 @@ This guide is for a specific use case, the Econia testnet trading competition le
    echo "project = \"$PROJECT_ID\"" > terraform.tfvars
    ```
 
-1. Enable relevant services:
-
-   ```sh
-   gcloud services enable compute.googleapis.com
-   ```
-
 1. Generate keys for a [service account](https://cloud.google.com/iam/docs/service-account-overview) with project editor privileges:
 
    ```sh
@@ -59,6 +53,41 @@ This guide is for a specific use case, the Econia testnet trading competition le
    ```sh
    gcloud iam service-accounts keys create gcp-key.json \
        --iam-account $SERVICE_ACCOUNT_NAME
+   ```
+
+1. Enable relevant GCP services:
+
+   ```sh
+   gcloud services enable compute.googleapis.com
+   gcloud services enable sqladmin.googleapis.com
+   ```
+
+1. Pick a database root password:
+
+   ```sh
+   DB_ROOT_PASSWORD=<DB_ROOT_PASSWORD>
+   ```
+
+   ```sh
+   echo $DB_ROOT_PASSWORD
+   ```
+
+   ```sh
+   echo "db_root_password = \"$DB_ROOT_PASSWORD\"" >> terraform.tfvars
+   ```
+
+1. Store [your public IP address](https://stackoverflow.com/a/56068456):
+
+   ```sh
+   MY_IP=$(curl --silent http://checkip.amazonaws.com)
+   echo $MY_IP
+   echo "db_admin_public_ip = \"$MY_IP\"" >> terraform.tfvars
+   ```
+
+1. Format:
+
+   ```sh
+   terraform fmt
    ```
 
 1. Initialize the directory:

@@ -14,24 +14,29 @@ provider "google" {
   zone        = var.zone
 }
 
-resource "google_compute_network" "vpc_network" {
-  name = "terraform-network"
-}
-
-resource "google_compute_instance" "vm_instance" {
-  name         = "terraform-instance"
-  machine_type = "f1-micro"
-  tags         = ["web", "dev"]
-
-  boot_disk {
-    initialize_params {
-      image = "cos-cloud/cos-stable"
+resource "google_sql_database_instance" "postgres" {
+  database_version    = "POSTGRES_14"
+  deletion_protection = false
+  root_password       = var.db_root_password
+  settings {
+    tier = "db-f1-micro"
+    ip_configuration {
+      ipv4_enabled = true
     }
   }
+}
 
-  network_interface {
-    network = google_compute_network.vpc_network.name
-    access_config {
-    }
+resource "google_sql_database" "database" {
+  name     = "econia"
+  instance = google_sql_database_instance.postgres.name
+}
+
+resource "google_compute_firewall" "pg-admin" {
+  name          = "pg-admin"
+  network       = "default"
+  source_ranges = [var.db_admin_public_ip]
+  allow {
+    protocol = "tcp"
+    ports    = ["5432"]
   }
 }

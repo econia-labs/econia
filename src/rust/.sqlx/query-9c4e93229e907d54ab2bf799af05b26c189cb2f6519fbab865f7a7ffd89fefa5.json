@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            WITH official_integrators AS (\n                SELECT UNNEST(integrators_required) FROM aggregator.competition_metadata WHERE id = $1\n            )\n            UPDATE aggregator.competition_leaderboard_users AS a\n            SET\n                integrators_used = COALESCE((\n                    SELECT ARRAY_AGG(DISTINCT x)\n                    FROM UNNEST(a.integrators_used || user_integrators.integrators) AS t(x)\n                    WHERE x IN (SELECT * FROM official_integrators)\n                ),'{}'::TEXT[])\n            FROM aggregator.user_integrators($1,$2,$3) WHERE a.\"user\" = user_integrators.\"user\"\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "9c4e93229e907d54ab2bf799af05b26c189cb2f6519fbab865f7a7ffd89fefa5"
+}

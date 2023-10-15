@@ -1,20 +1,32 @@
 -- This file should undo anything in `up.sql`
+DROP INDEX aggregator.ranking_idx;
+
+
+DROP INDEX aggregator.competition_indexed_events_comp_id;
+
+
+DROP INDEX aggregator.competition_indexed_events_tx_ev;
+
+
 DROP FUNCTION api.volume;
 
 
 DROP FUNCTION api.is_eligible;
 
 
-DROP FUNCTION aggregator.current_places;
+DROP FUNCTION aggregator.user_volume;
 
 
-DROP FUNCTION aggregator.current_fills;
+DROP FUNCTION aggregator.user_trades;
 
 
-DROP VIEW aggregator.homogenous_places;
+DROP FUNCTION aggregator.user_integrators;
 
 
-DROP VIEW aggregator.homogenous_fills;
+DROP FUNCTION aggregator.places;
+
+
+DROP FUNCTION aggregator.fills;
 
 
 DROP VIEW api.competition_leaderboard_users;

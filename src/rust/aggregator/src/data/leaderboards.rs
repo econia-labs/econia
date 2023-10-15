@@ -93,23 +93,32 @@ async fn aggregate_data_for_competition<'a>(
             INSERT INTO aggregator.competition_leaderboard_users ("user", volume, integrators_used, n_trades, competition_id)
 
             -- Every address with default values from new fill events
-            SELECT DISTINCT "user", 0, '{}'::text[], 0, $1 FROM aggregator.current_fills($1,$2,$3)
+            SELECT DISTINCT taker_address as "user", 0, '{}'::text[], 0, $1 FROM aggregator.fills($1,$2,$3)
             -- That doesn't already exist
             WHERE NOT EXISTS (
                 SELECT *
                 FROM aggregator.competition_leaderboard_users
                 WHERE competition_id = $1
-                AND current_fills."user" = aggregator.competition_leaderboard_users."user"
+                AND fills.taker_address = aggregator.competition_leaderboard_users."user"
+            )
+            UNION
+            SELECT DISTINCT maker_address as "user", 0, '{}'::text[], 0, $1 FROM aggregator.fills($1,$2,$3)
+            -- That doesn't already exist
+            WHERE NOT EXISTS (
+                SELECT *
+                FROM aggregator.competition_leaderboard_users
+                WHERE competition_id = $1
+                AND fills.maker_address = aggregator.competition_leaderboard_users."user"
             )
             UNION
             -- Every address with default values from new place events
-            SELECT DISTINCT "user", 0, '{}'::text[], 0, $1 FROM aggregator.current_places($1,$2,$3)
+            SELECT DISTINCT "user", 0, '{}'::text[], 0, $1 FROM aggregator.places($1,$2,$3)
             -- That doesn't already exist
             WHERE NOT EXISTS (
                 SELECT *
                 FROM aggregator.competition_leaderboard_users
                 WHERE competition_id = $1
-                AND current_places."user" = aggregator.competition_leaderboard_users."user"
+                AND places."user" = aggregator.competition_leaderboard_users."user"
             )
         "#,
         comp.id,
@@ -120,53 +129,14 @@ async fn aggregate_data_for_competition<'a>(
     .await
     .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
 
-    // Update the data for all users
     sqlx::query!(
         r#"
             UPDATE aggregator.competition_leaderboard_users AS a
             SET
-
-                -- Update volume
-                volume = volume + COALESCE((
-                    SELECT SUM(size*price)
-                    FROM aggregator.current_fills($1,$2,$3)
-                    WHERE current_fills."user" = a."user"
-                ), 0) * (SELECT tick_size FROM market_registration_events WHERE market_id = $4),
-
-                -- Update number of trades
-                n_trades = (
-                    SELECT COUNT(DISTINCT order_id) AS orders
-                    FROM aggregator.homogenous_fills
-                    WHERE homogenous_fills."user" = a."user"
-                ),
-
-                -- Update integrators used
-                integrators_used =  integrators_used || (
-                    -- Get a list of aggregators from all place events
-                    SELECT array_agg(integrator) FROM (
-                        -- Get user and integrator
-                        SELECT DISTINCT "user", integrator
-                        FROM aggregator.current_places($1,$2,$3)
-                    ) AS b
-                    -- Only keep aggregators that are in the "integrators_required" list
-                    WHERE integrator IN (
-                        SELECT unnest(integrators_required)
-                        FROM aggregator.competition_metadata
-                        WHERE competition_metadata.id = $1
-                    )
-                    -- Do not keep integrators that are already in the array (no duplicates)
-                    AND integrator NOT IN (
-                        SELECT unnest(integrators_used)
-                        FROM aggregator.competition_leaderboard_users AS c
-                        WHERE c.competition_id = $1
-                        AND a."user" = c."user"
-                    )
-                    AND a."user" = b."user"
-                )
-
-            -- Only for the users that have an update
-            WHERE a."user" IN (SELECT b."user" FROM aggregator.current_fills($1,$2,$3) AS b)
-            OR a."user" IN (SELECT b."user" FROM aggregator.current_places($1,$2,$3) AS b);
+                volume = a.volume + COALESCE((
+                    user_volume.volume
+                ), 0) * (SELECT tick_size FROM market_registration_events WHERE market_id = $4)
+            FROM aggregator.user_volume($1,$2,$3) where a."user" = user_volume."user"
         "#,
         comp.id,
         comp.start,
@@ -177,11 +147,50 @@ async fn aggregate_data_for_competition<'a>(
     .await
     .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
 
+    sqlx::query!(
+        r#"
+            UPDATE aggregator.competition_leaderboard_users AS a
+            SET
+                n_trades = a.n_trades + COALESCE((
+                    user_trades.trades
+                ), 0)
+            FROM aggregator.user_trades($1,$2,$3) WHERE a."user" = user_trades."user"
+        "#,
+        comp.id,
+        comp.start,
+        comp.end,
+    )
+    .execute(transaction as &mut PgConnection)
+    .await
+    .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
+
+    sqlx::query!(
+        r#"
+            WITH official_integrators AS (
+                SELECT UNNEST(integrators_required) FROM aggregator.competition_metadata WHERE id = $1
+            )
+            UPDATE aggregator.competition_leaderboard_users AS a
+            SET
+                integrators_used = COALESCE((
+                    SELECT ARRAY_AGG(DISTINCT x)
+                    FROM UNNEST(a.integrators_used || user_integrators.integrators) AS t(x)
+                    WHERE x IN (SELECT * FROM official_integrators)
+                ),'{}'::TEXT[])
+            FROM aggregator.user_integrators($1,$2,$3) WHERE a."user" = user_integrators."user"
+        "#,
+        comp.id,
+        comp.start,
+        comp.end,
+    )
+    .execute(transaction as &mut PgConnection)
+    .await
+    .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
+
     // Marking events as aggregated
     sqlx::query!(
         r#"
             INSERT INTO aggregator.competition_indexed_events
-            SELECT DISTINCT txn_version, event_idx, $1 FROM aggregator.current_fills($1,$2,$3)
+            SELECT DISTINCT txn_version, event_idx, $1 FROM aggregator.fills($1,$2,$3)
         "#,
         comp.id,
         comp.start,
@@ -193,7 +202,7 @@ async fn aggregate_data_for_competition<'a>(
     sqlx::query!(
         r#"
             INSERT INTO aggregator.competition_indexed_events
-            SELECT DISTINCT txn_version, event_idx, $1 FROM aggregator.current_places($1,$2,$3)
+            SELECT DISTINCT txn_version, event_idx, $1 FROM aggregator.places($1,$2,$3)
         "#,
         comp.id,
         comp.start,

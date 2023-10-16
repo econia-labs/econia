@@ -22,6 +22,9 @@ resource "google_sql_database_instance" "postgres" {
     tier = "db-f1-micro"
     ip_configuration {
       ipv4_enabled = true
+      authorized_networks {
+        value = var.db_admin_public_ip
+      }
     }
   }
 }
@@ -29,14 +32,4 @@ resource "google_sql_database_instance" "postgres" {
 resource "google_sql_database" "database" {
   name     = "econia"
   instance = google_sql_database_instance.postgres.name
-}
-
-resource "google_compute_firewall" "pg-admin" {
-  name          = "pg-admin"
-  network       = "default"
-  source_ranges = [var.db_admin_public_ip]
-  allow {
-    protocol = "tcp"
-    ports    = ["5432"]
-  }
 }

@@ -123,3 +123,18 @@ This guide is for a specific use case, the Econia testnet trading competition le
    ```sh
    gcloud projects delete $PROJECT_ID
    ```
+
+## Diagnostics
+
+### Connect to PostgreSQL
+
+1. Get [`psql`](https://www.postgresql.org/download/).
+
+1. Connect:
+
+   ```sh
+   psql \
+       --dbname econia \
+       --host $(terraform output -raw postgres_public_ip) \
+       --username postgres
+   ```

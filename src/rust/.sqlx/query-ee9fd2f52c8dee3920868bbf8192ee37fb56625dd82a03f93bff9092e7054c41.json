@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE aggregator.competition_leaderboard_users AS a\n            SET\n                n_trades = a.n_trades + COALESCE((\n                    user_trades.trades\n                ), 0)\n            FROM aggregator.user_trades($1,$2,$3) WHERE a.\"user\" = user_trades.\"user\"\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ee9fd2f52c8dee3920868bbf8192ee37fb56625dd82a03f93bff9092e7054c41"
+}

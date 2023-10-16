@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO aggregator.competition_indexed_events\n            SELECT DISTINCT txn_version, event_idx, $1 FROM aggregator.fills($1,$2,$3)\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "8b80547fd8818a75247d69dc6b37aae48d6ed249ed1581b9accc7f3ac1411549"
+}

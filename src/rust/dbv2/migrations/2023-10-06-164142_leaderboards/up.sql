@@ -50,14 +50,28 @@ CREATE VIEW
   api.competition_leaderboard_users AS
 SELECT
   *,
-  rank() OVER (ORDER BY points DESC, volume DESC, n_trades DESC) AS rank
+  RANK() OVER (
+    ORDER BY
+      points DESC,
+      volume DESC,
+      n_trades DESC
+  ) AS RANK
 FROM
   aggregator.competition_leaderboard_users AS users
-WHERE NOT EXISTS (
-  SELECT * FROM aggregator.competition_exclusion_list AS ex
-  WHERE users."user" = ex."user" AND users.competition_id = ex.competition_id
-)
-ORDER BY points DESC, volume DESC, n_trades DESC;
+WHERE
+  NOT EXISTS (
+    SELECT
+      *
+    FROM
+      aggregator.competition_exclusion_list AS ex
+    WHERE
+      users."user" = ex."user"
+      AND users.competition_id = ex.competition_id
+  )
+ORDER BY
+  points DESC,
+  volume DESC,
+  n_trades DESC;
 
 
 GRANT
@@ -111,104 +125,135 @@ $$ LANGUAGE plpgsql;
 
 
 -- Helper views and functions for the aggregator
-CREATE VIEW
-  aggregator.homogenous_fills AS
-SELECT DISTINCT
-  txn_version,
-  event_idx,
-  taker_address AS "user",
-  size,
-  price,
-  TIME,
-  taker_order_id AS "order_id"
-FROM
-  fill_events
-UNION
-SELECT DISTINCT
-  txn_version,
-  event_idx,
-  maker_address AS "user",
-  size,
-  price,
-  TIME,
-  maker_order_id AS "order_id"
-FROM
-  fill_events;
-
-
-CREATE VIEW
-  aggregator.homogenous_places AS
-SELECT DISTINCT
-  txn_version,
-  event_idx,
-  "user",
-  integrator,
-  TIME
-FROM
-  place_limit_order_events
-UNION
-SELECT DISTINCT
-  txn_version,
-  event_idx,
-  "user",
-  integrator,
-  TIME
-FROM
-  place_market_order_events
-UNION
-SELECT DISTINCT
-  txn_version,
-  event_idx,
-  signing_account AS "user",
-  integrator,
-  TIME
-FROM
-  place_swap_order_events;
-
-
-CREATE FUNCTION aggregator.current_fills (INT, timestamptz, timestamptz) RETURNS TABLE (
-  txn_version NUMERIC,
-  event_idx NUMERIC,
-  "user" VARCHAR(70),
-  size NUMERIC,
-  price NUMERIC,
-  "time" timestamptz,
-  order_id NUMERIC
-) AS $$
+CREATE FUNCTION aggregator.fills (INT, timestamptz, timestamptz) RETURNS SETOF fill_events AS $$
 BEGIN
     RETURN QUERY
-    SELECT * FROM aggregator.homogenous_fills
-    WHERE NOT EXISTS(
-        SELECT * FROM aggregator.competition_indexed_events
-        WHERE homogenous_fills.txn_version = competition_indexed_events.txn_version
-        AND homogenous_fills.event_idx = competition_indexed_events.event_idx
-        AND competition_indexed_events.competition_id = $1
-    )
-    AND homogenous_fills.time > $2 AND homogenous_fills.time < $3;
+      select *
+      from fill_events
+      where maker_address = emit_address
+      and not exists (
+        select *
+        from aggregator.competition_indexed_events
+        where fill_events.txn_version = competition_indexed_events.txn_version
+        and fill_events.event_idx = competition_indexed_events.event_idx
+        and competition_indexed_events.competition_id = $1
+      )
+      and time > $2
+      and time < $3;
 END;
 $$ LANGUAGE plpgsql;
 
 
-CREATE FUNCTION aggregator.current_places (INT, timestamptz, timestamptz) RETURNS TABLE (
+CREATE FUNCTION aggregator.places (INT, timestamptz, timestamptz) RETURNS TABLE (
+  "user" CHARACTER VARYING(70),
+  integrator CHARACTER VARYING(70),
+  "time" timestamptz,
   txn_version NUMERIC,
-  event_idx NUMERIC,
-  "user" VARCHAR(70),
-  integrator VARCHAR(70),
-  "time" timestamptz
+  event_idx NUMERIC
 ) AS $$
 BEGIN
     RETURN QUERY
-    SELECT * FROM aggregator.homogenous_places
-    WHERE NOT EXISTS(
-        SELECT * FROM aggregator.competition_indexed_events
-        WHERE homogenous_places.txn_version = competition_indexed_events.txn_version
-        AND homogenous_places.event_idx = competition_indexed_events.event_idx
-        AND competition_indexed_events.competition_id = $1
-    )
-    AND homogenous_places.time > $2 AND homogenous_places.time < $3;
+      select ploe."user", ploe."integrator", ploe.time, ploe.txn_version, ploe.event_idx
+      from place_limit_order_events as ploe
+      where not exists (
+        select *
+        from aggregator.competition_indexed_events
+        where ploe.txn_version = competition_indexed_events.txn_version
+        and ploe.event_idx = competition_indexed_events.event_idx
+        and competition_indexed_events.competition_id = $1
+      )
+      and ploe.time > $2
+      and ploe.time < $3
+      union all
+      select pmoe."user", pmoe."integrator", pmoe.time, pmoe.txn_version, pmoe.event_idx
+      from place_market_order_events as pmoe
+      where not exists (
+        select *
+        from aggregator.competition_indexed_events
+        where pmoe.txn_version = competition_indexed_events.txn_version
+        and pmoe.event_idx = competition_indexed_events.event_idx
+        and competition_indexed_events.competition_id = $1
+      )
+      and pmoe.time > $2
+      and pmoe.time < $3
+      union all
+      select psoe."signing_account", psoe."integrator", psoe.time, psoe.txn_version, psoe.event_idx
+      from place_swap_order_events as psoe
+      where not exists (
+        select *
+        from aggregator.competition_indexed_events
+        where psoe.txn_version = competition_indexed_events.txn_version
+        and psoe.event_idx = competition_indexed_events.event_idx
+        and competition_indexed_events.competition_id = $1
+      )
+      and psoe.time > $2
+      and psoe.time < $3;
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE FUNCTION aggregator.user_volume (INT, timestamptz, timestamptz) RETURNS TABLE (volume NUMERIC, "user" TEXT) AS $$
+BEGIN
+    RETURN QUERY
+        select
+          sum (price*size) as volume,
+          competition_leaderboard_users."user"
+        from aggregator.competition_leaderboard_users, aggregator.fills($1,$2,$3)
+        where
+          fills.taker_address = competition_leaderboard_users."user"
+        or
+          fills.maker_address = competition_leaderboard_users."user"
+        group by competition_leaderboard_users."user";
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE FUNCTION aggregator.user_trades (INT, timestamptz, timestamptz) RETURNS TABLE (trades BIGINT, "user" TEXT) AS $$
+BEGIN
+    RETURN QUERY
+        with fe as (
+          select *
+          from fill_events
+          where maker_address = emit_address
+          and not exists (
+            select *
+            from aggregator.competition_indexed_events
+            where fill_events.txn_version = competition_indexed_events.txn_version
+            and fill_events.event_idx = competition_indexed_events.event_idx
+            and competition_indexed_events.competition_id = $1
+          )
+        )
+        select
+          count(txn_version) as trades,
+          competition_leaderboard_users."user"
+        from aggregator.competition_leaderboard_users, fe
+        where
+            (fe.taker_address = competition_leaderboard_users."user" or maker_address = competition_leaderboard_users."user")
+            and fe.time > $2
+            and fe.time < $3
+        group by competition_leaderboard_users."user";
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE FUNCTION aggregator.user_integrators (INT, timestamptz, timestamptz) RETURNS TABLE (integrators CHARACTER VARYING[], "user" TEXT) AS $$
+BEGIN
+    RETURN QUERY
+        select
+          array_agg(distinct integrator) as integrators,
+          competition_leaderboard_users."user"
+        from aggregator.competition_leaderboard_users, aggregator.places($1,$2,$3)
+        where places."user" = competition_leaderboard_users."user"
+        group by competition_leaderboard_users."user";
 END;
 $$ LANGUAGE plpgsql;
 
 
 -- Create index to speed up user ranking
-CREATE INDEX idx_ranking ON aggregator.competition_leaderboard_users (points DESC, volume DESC, n_trades DESC);
+CREATE INDEX ranking_idx ON aggregator.competition_leaderboard_users (points DESC, volume DESC, n_trades DESC);
+
+
+CREATE INDEX competition_indexed_events_comp_id ON aggregator.competition_indexed_events (competition_id);
+
+
+CREATE INDEX competition_indexed_events_tx_ev ON aggregator.competition_indexed_events (txn_version, event_idx);

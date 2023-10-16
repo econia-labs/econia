@@ -6,7 +6,7 @@ from aptos_sdk.async_client import FaucetClient, RestClient
 from econia_sdk.lib import EconiaClient, EconiaViewer
 import sys
 from os import environ
-from typing import Optional, Tuple
+from typing import Any, Optional, Tuple
 import random
 import json
 
@@ -36,6 +36,7 @@ from econia_sdk.view.user import (
     get_market_account,
     get_place_limit_order_events,
 )
+import httpx
 
 U64_MAX = (2**64) - 1
 NODE_URL_LOCAL = "http://0.0.0.0:8080/v1"
@@ -192,7 +193,8 @@ async def gen_start():
                 exit()
         print(f"Finished round #{i}")
 
-    write_dict_to_file(volume_buffer, "./output.json")
+    write_dict_to_file(volume_buffer, "./output_expect.json")
+    write_dict_to_file(get_fills(market_id), "./output_events.json")
     print("THE END!")
 
 
@@ -376,7 +378,7 @@ volume_buffer = dict()
 def add_volume(econia_client: EconiaClient, volume: int):
     global volume_buffer
     user_address = econia_client.user_account.address().hex()
-    if user_address in volume_buffer_integ:
+    if user_address in volume_buffer:
         volume_buffer[user_address] += volume
     else:
         volume_buffer[user_address] = volume
@@ -389,3 +391,16 @@ def write_dict_to_file(data_dict, filepath):
         print(f"Data written to {filepath}")
     except Exception as e:
         print(f"An error occurred: {str(e)}")
+
+
+def get_fills(market_id: int) -> Any:
+    fills = httpx.get(f"http://localhost:3000/fill_events?market_id=eq.{market_id}").json()
+    volume = {}
+    for fill in fills:
+        address = fill["emit_address"]
+        if address in volume:
+            volume[address] += fill["size"] * fill["price"] * TICK_SIZE
+        else:
+            volume[address] = fill["size"] * fill["price"] * TICK_SIZE
+    return volume
+

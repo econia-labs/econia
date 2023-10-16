@@ -99,6 +99,36 @@ ZONE=a-zone
    gcloud config set project $PROJECT_ID
    ```
 
+### Grant project permissions
+
+1. Download the project [IAM](https://cloud.google.com/iam/docs/overview) policy:
+
+   ```sh
+   gcloud projects get-iam-policy $PROJECT_ID > policy.yaml
+   ```
+
+1. In `policy.yaml` add the email address of a user in your [Google Workspace](https://cloud.google.com/iam/docs/overview#g-suite-domain) under the `member` binding with `roles/owner`.
+
+1. Set the IAM policy:
+
+   ```sh
+   gcloud projects set-iam-policy $PROJECT_ID policy.yaml
+   ```
+
+1. Instruct the user to [install the Google Cloud CLI](https://cloud.google.com/sdk/docs/install-sdk) and set the project ID as default before continuing:
+
+   ```sh
+   PROJECT_ID=<PROJECT_ID>
+   ```
+
+   ```sh
+   echo $PROJECT_ID
+   ```
+
+   ```sh
+   gcloud config set project $PROJECT_ID
+   ```
+
 ### Configure locations
 
 1. List available build regions:
@@ -312,7 +342,7 @@ ZONE=a-zone
            POSTGRES_PASSWORD=$ADMIN_PASSWORD\
        )" \
        --container-image \
-           $REGION-docker.pkg.dev/$PROJECT_ID/images/postgres:latest \
+           $REGION-docker.pkg.dev/$PROJECT_ID/images/postgres \
        --container-mount-disk "$(printf '%s' \
            mount-path=/var/lib/postgresql,\
            name=postgres-disk\
@@ -428,18 +458,29 @@ ZONE=a-zone
    echo $DB_URL_PRIVATE
    ```
 
+1. Determine a [max number of rows](https://postgrest.org/en/stable/references/configuration.html#db-max-rows) per PostgREST query:
+
+   ```sh
+   PGRST_DB_MAX_ROWS=<MAX_ROWS_FOR_FETCH>
+   ```
+
+   ```
+   echo $PGRST_DB_MAX_ROWS
+   ```
+
 1. Deploy [PostgREST](https://postgrest.org/en/stable/) on [GCP Cloud Run](https://cloud.google.com/run/docs/overview/what-is-cloud-run) with [public access](https://cloud.google.com/run/docs/authenticating/public):
 
    ```sh
    gcloud run deploy postgrest \
        --allow-unauthenticated \
        --image \
-           $REGION-docker.pkg.dev/$PROJECT_ID/images/postgrest:latest \
+           $REGION-docker.pkg.dev/$PROJECT_ID/images/postgrest \
        --port 3000 \
        --set-env-vars "$(printf '%s' \
            PGRST_DB_ANON_ROLE=web_anon,\
            PGRST_DB_SCHEMA=api,\
-           PGRST_DB_URI=$DB_URL_PRIVATE\
+           PGRST_DB_URI=$DB_URL_PRIVATE,\
+           PGRST_DB_MAX_ROWS=$PGRST_DB_MAX_ROWS\
        )" \
        --vpc-connector postgrest
    ```
@@ -519,7 +560,7 @@ ZONE=a-zone
    gcloud compute instances create-with-container processor \
        --container-env HEALTHCHECK_BEFORE_START=false \
        --container-image \
-           $REGION-docker.pkg.dev/$PROJECT_ID/images/processor:latest \
+           $REGION-docker.pkg.dev/$PROJECT_ID/images/processor \
        --container-mount-disk "$(printf '%s' \
            mount-path=/config,\
            name=processor-disk\
@@ -571,7 +612,7 @@ ZONE=a-zone
    gcloud compute instances create-with-container aggregator \
        --container-env DATABASE_URL=$DB_URL_PRIVATE \
        --container-image \
-           $REGION-docker.pkg.dev/$PROJECT_ID/images/aggregator:latest
+           $REGION-docker.pkg.dev/$PROJECT_ID/images/aggregator
    ```
 
 1. Wait a minute or two then check logs:
@@ -646,7 +687,7 @@ ZONE=a-zone
    gcloud run deploy websockets \
        --allow-unauthenticated \
        --image \
-           $REGION-docker.pkg.dev/$PROJECT_ID/images/websockets:latest \
+           $REGION-docker.pkg.dev/$PROJECT_ID/images/websockets \
        --port 3000 \
        --set-env-vars "$(printf '%s' \
            PGWS_DB_URI=$PGWS_DB_URI,\
@@ -695,15 +736,49 @@ ZONE=a-zone
 
 Once you have the DSS running you might want to redeploy within the same GCP project, for example using a different chain or with new image binaries.
 
-Whenever you redeploy, restart all instances and services, and reset the database as follows so that you do not break startup dependencies or generate any corrupted data.
+Whenever you redeploy, follow the below steps in order so that you do not break startup dependencies or generate any corrupted data:
 
-### Basic
+1. Delete images in the existing `images` registry:
 
-1. [Rebuild images](#build-images) in the existing `images` registry.
+   ```sh
+   echo $REGION
+   echo $PROJECT_ID
+   ```
+
+   ```sh
+   gcloud artifacts docker images delete \
+       $REGION-docker.pkg.dev/$PROJECT_ID/images/aggregator
+   ```
+
+   ```sh
+   gcloud artifacts docker images delete \
+       $REGION-docker.pkg.dev/$PROJECT_ID/images/postgres
+   ```
+
+   ```sh
+   gcloud artifacts docker images delete \
+       $REGION-docker.pkg.dev/$PROJECT_ID/images/postgrest
+   ```
+
+   ```sh
+   gcloud artifacts docker images delete \
+       $REGION-docker.pkg.dev/$PROJECT_ID/images/processor
+   ```
+
+   ```sh
+   gcloud artifacts docker images delete \
+       $REGION-docker.pkg.dev/$PROJECT_ID/images/websockets
+   ```
+
+   ```sh
+   gcloud artifacts docker images list
+   ```
 
    :::tip
-   All deploy commands use the `latest` image.
+   You only need to delete images that you wish to redeploy newer versions of. For images that you are sure haven't changed, you can comment them out of the build file in the next step.
    :::
+
+1. [Rebuild images](#build-images) in the existing `images` registry.
 
 1. Delete `postgrest` and `websockets` services:
 
@@ -716,23 +791,40 @@ Whenever you redeploy, restart all instances and services, and reset the databas
    When these are redeployed, they will [have the same endpoint URL as before](https://cloud.google.com/run/docs/managing/services#delete).
    :::
 
-1. Stop `aggregator` and `processor` instances, then `postgres` instance:
+1. Delete `aggregator` and `processor` instances:
 
    ```sh
-   gcloud compute instances stop aggregator --quiet
-   gcloud compute instances stop processor --quiet
-   gcloud compute instances stop postgres --quiet
+   gcloud compute instances delete aggregator --quiet
+   gcloud compute instances delete processor --quiet
    ```
 
-1. Optionally [change the processor config](#change-processor-config).
+1. [Clear all container images](https://stackoverflow.com/questions/61912659) from `postgres`:
+
+   ```sh
+   gcloud compute ssh postgres \
+       --command "$(printf '%s' \
+           "docker ps -aq | xargs docker stop | xargs docker rm && "\
+           "docker image prune -af"\
+       )" \
+       --ssh-key-file ssh/gcp \
+       --verbosity=debug
+   ```
+
+   :::tip
+
+   You'll need to [create more SSH keys](#create-bootstrapper) if you deleted the ones you were previously using.
+
+   :::
+
+   :::note
+   Unlike the `aggregator` and `processor` instances, `postgres` has static IP addresses, so it is updated with a new container, unlike the other instances which are deleted then recreated.
+   :::
 
 1. Update `postgres` container and restart:
 
    ```sh
    echo $ADMIN_NAME
    echo $ADMIN_PASSWORD
-   echo $REGION
-   echo $PROJECT_ID
    ```
 
    ```sh
@@ -742,18 +834,14 @@ Whenever you redeploy, restart all instances and services, and reset the databas
            POSTGRES_PASSWORD=$ADMIN_PASSWORD\
        )" \
        --container-image \
-           $REGION-docker.pkg.dev/$PROJECT_ID/images/postgres:latest \
+           $REGION-docker.pkg.dev/$PROJECT_ID/images/postgres \
        --container-mount-disk "$(printf '%s' \
            mount-path=/var/lib/postgresql,\
            name=postgres-disk\
        )"
    ```
 
-   ```sh
-   gcloud compute instances start postgres
-   ```
-
-1. Reset the database:
+1. Reset database:
 
    ```sh
    POSTGRES_EXTERNAL_IP=$(gcloud compute instances list \
@@ -770,32 +858,21 @@ Whenever you redeploy, restart all instances and services, and reset the databas
 
    ```sh
    cd econia/src/rust/dbv2
-   diesel database reset
-   cd ../../../..
    ```
 
    :::tip
-   Give the instance a minute or so to start up before resetting the database.
+   Give the instance a minute or so to start up before trying to connect.
    :::
 
-1. Update `processor` container and restart:
-
    ```sh
-   gcloud compute instances update-container processor \
-       --container-env HEALTHCHECK_BEFORE_START=false \
-       --container-image \
-           $REGION-docker.pkg.dev/$PROJECT_ID/images/processor:latest \
-       --container-mount-disk "$(printf '%s' \
-           mount-path=/config,\
-           name=processor-disk\
-       )"
+   diesel database reset
    ```
 
    ```sh
-   gcloud compute instances start processor
+   cd ../../../..
    ```
 
-1. Update `aggregator` container and restart:
+1. Get the private connection string:
 
    ```sh
    POSTGRES_INTERNAL_IP=$(gcloud compute instances list \
@@ -810,42 +887,7 @@ Whenever you redeploy, restart all instances and services, and reset the databas
    echo $DB_URL_PRIVATE
    ```
 
-   ```sh
-   gcloud compute instances update-container aggregator \
-       --container-env DATABASE_URL=$DB_URL_PRIVATE \
-       --container-image \
-           $REGION-docker.pkg.dev/$PROJECT_ID/images/aggregator:latest
-   ```
-
-   ```sh
-   gcloud compute instances start aggregator
-   ```
-
-1. Redeploy `postgrest` using the `gcloud run deploy` command [from initial deployment](#deploy-rest-api).
-
-1. Redeploy `websockets` using the `gcloud run deploy` command [from initial deployment](#deploy-websockets-api), after reconstructing the WebSockets connection string:
-
-   ```sh
-   PGWS_DB_URI="$(printf '%s' postgres://\
-       $ADMIN_NAME:\
-       $ADMIN_PASSWORD@\
-       $POSTGRES_INTERNAL_IP/econia
-   )"
-   echo $PGWS_DB_URI
-   ```
-
-### Change processor config
-
-1. Start the [basic redeployment](#basic) checklist, but after you shut down `processor` complete the rest of this checklist before continuing.
-
-1. Update your local processor config at `econia/src/docker/processor/config.yaml`.
-
-1. Detach `processor-disk` from the processor and attach to the bootsrapper:
-
-   ```sh
-   gcloud compute instances detach-disk processor --disk processor-disk
-   gcloud compute instances attach-disk bootstrapper --disk processor-disk
-   ```
+1. Update your local processor config at `econia/src/docker/processor/config.yaml` with `DB_URL_PRIVATE` for `postgres_connection_string`.
 
 1. Start the bootstrapper:
 
@@ -863,10 +905,14 @@ Whenever you redeploy, restart all instances and services, and reset the databas
    ```
 
    :::tip
-
-   You'll need to [create more SSH keys](#create-bootstrapper) if you deleted the ones you were previously using.
-
+   It may take a bit for the bootstrapper to start up.
    :::
+
+1. Attach the config disk to the bootstrapper:
+
+   ```sh
+   gcloud compute instances attach-disk bootstrapper --disk processor-disk
+   ```
 
 1. Connect to the bootstrapper:
 
@@ -897,7 +943,7 @@ Whenever you redeploy, restart all instances and services, and reset the databas
    ```
 
    :::tip
-   See the [bootstrapper creation](#create-bootstrapper) process for a recapitulation of this process
+   See the [bootstrapper creation](#create-bootstrapper) process for a recapitulation of this process.
    :::
 
 1. Replace the old config:
@@ -921,11 +967,93 @@ Whenever you redeploy, restart all instances and services, and reset the databas
    gcloud compute instances stop bootstrapper
    ```
 
-1. Detach the `processor-disk` from the bootstrapper, and reattach to the processor:
+1. Detach the `processor-disk` from the bootstrapper:
 
    ```sh
    gcloud compute instances detach-disk bootstrapper --disk processor-disk
-   gcloud compute instances attach-disk processor \
-       --device-name processor-disk \
-       --disk processor-disk
+   ```
+
+1. Redeploy `processor` using the `gcloud compute instances create-with-container` command [from initial deployment](#deploy-processor).
+
+1. [Redeploy the aggregator](#deploy-aggregator).
+
+1. Redeploy `postgrest` using the `gcloud run deploy` command [from initial deployment](#deploy-rest-api), after setting a max number of rows:
+
+   ```sh
+   PGRST_DB_MAX_ROWS=<MAX_ROWS_FOR_FETCH>
+   ```
+
+   ```
+   echo $PGRST_DB_MAX_ROWS
+   ```
+
+1. Redeploy `websockets` using the `gcloud run deploy` command [from initial deployment](#deploy-websockets-api), after reconstructing the WebSockets connection string:
+
+   ```sh
+   PGWS_DB_URI="$(printf '%s' postgres://\
+       $ADMIN_NAME:\
+       $ADMIN_PASSWORD@\
+       $POSTGRES_INTERNAL_IP/econia
+   )"
+   echo $PGWS_DB_URI
+   ```
+
+## Diagnostics
+
+### Check instance container status
+
+1. Connect to an instance:
+
+   ```sh
+   gcloud compute ssh <INSTANCE_NAME> --ssh-key-file <SSH_KEY_FILE>
+   ```
+
+1. Check Docker status:
+
+   ```sh
+   docker ps
+   ```
+
+   :::tip
+   If your container restarts every minute or so, you've got a problem.
+   :::
+
+1. Exit instance connection:
+
+   ```sh
+   exit
+   ```
+
+### Check instance container logs
+
+1. Set instance name and number of logs to pull:
+
+   ```sh
+   INSTANCE_NAME=<INSTANCE_NAME>
+   N_LOGS=<HOW_MANY_LOGS>
+   ```
+
+   ```sh
+   echo $PROJECT_ID
+   echo $INSTANCE_NAME
+   echo $N_LOGS
+   ```
+
+1. Get instance ID:
+
+   ```sh
+   INSTANCE_ID=$(gcloud compute instances describe $INSTANCE_NAME \
+       --zone $ZONE \
+       --format="value(id)"
+   )
+   echo $INSTANCE_ID
+   ```
+
+1. Pull the logs:
+
+   ```sh
+   gcloud logging read "resource.type=gce_instance AND \
+       logName=projects/$PROJECT_ID/logs/cos_containers AND \
+       resource.labels.instance_id=$INSTANCE_ID" \
+       --limit $N_LOGS
    ```

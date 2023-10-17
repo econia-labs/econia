@@ -29,7 +29,7 @@ This guide is for a specific use case, the Econia testnet trading competition le
    echo "project = \"$PROJECT_ID\"" > terraform.tfvars
    ```
 
-1. Generate keys for a [service account](https://cloud.google.com/iam/docs/service-account-overview) with project editor privileges:
+1. Generate keys for a [service account](https://cloud.google.com/iam/docs/service-account-overview) with project editor privileges, [servicenetworking.serviceAgent](https://stackoverflow.com/a/54351644) privileges, and [compute.networkAdmin](https://serverfault.com/questions/942115) privileges (these are required to [enable private IP](https://stackoverflow.com/questions/54278828) for PostgreSQL).
 
    ```sh
    gcloud iam service-accounts create terraform \
@@ -41,10 +41,22 @@ This guide is for a specific use case, the Econia testnet trading competition le
    echo $SERVICE_ACCOUNT_NAME
    ```
 
-   ```
+   ```sh
    gcloud projects add-iam-policy-binding $PROJECT_ID \
        --member "serviceAccount:$SERVICE_ACCOUNT_NAME" \
        --role "roles/editor"
+   ```
+
+   ```sh
+   gcloud projects add-iam-policy-binding $PROJECT_ID \
+       --member "serviceAccount:$SERVICE_ACCOUNT_NAME" \
+       --role "roles/servicenetworking.serviceAgent"
+   ```
+
+   ```sh
+   gcloud projects add-iam-policy-binding $PROJECT_ID \
+       --member "serviceAccount:$SERVICE_ACCOUNT_NAME" \
+       --role "roles/compute.networkAdmin"
    ```
 
    ```sh
@@ -65,6 +77,10 @@ This guide is for a specific use case, the Econia testnet trading competition le
    ```sh
    echo "db_root_password = \"$DB_ROOT_PASSWORD\"" >> terraform.tfvars
    ```
+
+   :::tip
+   Avoid using the special characters `@`, `/`, `.`, or `:`, which are used in connection strings.
+   :::
 
 1. Store [your public IP address](https://stackoverflow.com/a/56068456):
 

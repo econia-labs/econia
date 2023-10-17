@@ -14,10 +14,16 @@ provider "google" {
   zone        = var.zone
 }
 
+provider "google-beta" {
+  credentials = file(var.credentials_file)
+  project     = var.project
+  region      = var.region
+}
+
 locals {
   db_conn_str_admin = replace(
     local.db_conn_str_base,
-    "ip_address",
+    "IP_ADDRESS",
     "${local.postgres_public_ip}"
   )
   db_conn_str_base = join("", [
@@ -30,7 +36,7 @@ locals {
     "${local.postgres_private_ip}"
   )
   econia_repo_root            = "../../.."
-  migrations_dir              = "/srd/rust/dbv2"
+  migrations_dir              = "src/rust/dbv2"
   postgres_private_ip         = google_sql_database_instance.postgres.private_ip_address
   postgres_public_ip          = google_sql_database_instance.postgres.public_ip_address
   processor_config_path_src   = "src/docker/processor/config.yaml"
@@ -63,18 +69,43 @@ resource "google_sql_database" "database" {
 resource "google_sql_database_instance" "postgres" {
   database_version    = "POSTGRES_14"
   deletion_protection = false
-  depends_on          = [terraform_data.config_environment]
-  root_password       = var.db_root_password
+  depends_on = [
+    google_service_networking_connection.sql_network_connection,
+    terraform_data.config_environment,
+  ]
+  provider      = google-beta
+  root_password = var.db_root_password
   settings {
     ip_configuration {
       authorized_networks {
         value = var.db_admin_public_ip
       }
       ipv4_enabled    = true
-      private_network = "default"
+      private_network = google_compute_network.sql_network.id
     }
     tier = "db-f1-micro"
   }
+}
+
+resource "google_service_networking_connection" "sql_network_connection" {
+  network                 = google_compute_network.sql_network.id
+  provider                = google-beta
+  reserved_peering_ranges = [google_compute_global_address.private_ip_address.name]
+  service                 = "servicenetworking.googleapis.com"
+}
+
+resource "google_compute_global_address" "private_ip_address" {
+  address_type  = "INTERNAL"
+  name          = "private-ip-address"
+  network       = google_compute_network.sql_network.id
+  provider      = google-beta
+  prefix_length = 16
+  purpose       = "VPC_PEERING"
+}
+
+resource "google_compute_network" "sql_network" {
+  name     = "sql-network"
+  provider = google-beta
 }
 
 resource "terraform_data" "build_processor" {
@@ -121,7 +152,9 @@ resource "terraform_data" "config_environment" {
       "gcloud config set project ${var.project}",
       "gcloud services enable artifactregistry.googleapis.com",
       "gcloud services enable cloudbuild.googleapis.com",
+      "gcloud services enable cloudresourcemanager.googleapis.com",
       "gcloud services enable compute.googleapis.com",
+      "gcloud services enable servicenetworking.googleapis.com",
       "gcloud services enable sqladmin.googleapis.com",
       "rm -rf ssh",
       "mkdir ssh",

@@ -1,15 +1,14 @@
 import asyncio
-from os import environ
-from aptos_sdk.account import Account
-from aptos_sdk.account_address import AccountAddress
-from aptos_sdk.async_client import FaucetClient, RestClient
-from econia_sdk.lib import EconiaClient, EconiaViewer
+import json
+import random
 import sys
 from os import environ
 from typing import Any, Optional, Tuple
-import random
-import json
 
+import httpx
+from aptos_sdk.account import Account
+from aptos_sdk.account_address import AccountAddress
+from aptos_sdk.async_client import FaucetClient, RestClient
 from aptos_sdk.bcs import Serializer, encoder
 from aptos_sdk.transactions import EntryFunction, ModuleId
 from aptos_sdk.type_tag import StructTag, TypeTag
@@ -24,6 +23,7 @@ from econia_sdk.entry.market import (
 )
 from econia_sdk.entry.registry import set_recognized_market
 from econia_sdk.entry.user import deposit_from_coinstore, register_market_account
+from econia_sdk.lib import EconiaClient, EconiaViewer
 from econia_sdk.types import Restriction, SelfMatchBehavior, Side
 from econia_sdk.view.market import get_open_orders_all, get_price_levels
 from econia_sdk.view.registry import (
@@ -36,7 +36,6 @@ from econia_sdk.view.user import (
     get_market_account,
     get_place_limit_order_events,
 )
-import httpx
 
 U64_MAX = (2**64) - 1
 NODE_URL_LOCAL = "http://0.0.0.0:8080/v1"
@@ -118,6 +117,13 @@ MIN_SIZE = 500 if int(sys.argv[3]) == 0 else int(sys.argv[3])  # type: ignore
 
 MAKER_APT_PER_ROUND = 100
 
+INTEGRATORS = [
+    AccountAddress.from_hex("0x2e51979739db25dc987bd24e1a968e45cca0e0daea7cae9121f68af93e8884c9"),
+    AccountAddress.from_hex("0xd718181a753f5b759518d9b896018dd7eb3d77d80bf90ba77fffaf678f781929"),
+    AccountAddress.from_hex("0x69f76d32b0e6b08af826f5f75a7c58e6581d1c6c4ed1a935b121970f65d7436e"),
+]
+integrator_idx = 0
+
 
 def start():
     asyncio.run(gen_start())
@@ -127,7 +133,6 @@ async def gen_start():
     rest_client = RestClient(NODE_URL)
     faucet_client = FaucetClient(FAUCET_URL, rest_client)
     viewer = EconiaViewer(NODE_URL, ECONIA_ADDR)
-    econia_client = await setup_client(faucet_client, rest_client)
     market_id = get_market_id_base_coin(
         viewer,
         str(COIN_TYPE_EAPT),
@@ -137,6 +142,13 @@ async def gen_start():
         MIN_SIZE,
     )
     if market_id is None:
+        econia_client = await setup_client(faucet_client, rest_client, False)
+        await faucet_client.fund_account(
+            econia_client.user_account.account_address.hex(), 1 * (10**8)
+        )
+        await faucet_client.fund_account(
+            econia_client.user_account.account_address.hex(), 1 * (10**8)
+        )
         calldata = register_market_base_coin_from_coinstore(
             ECONIA_ADDR,
             COIN_TYPE_EAPT,
@@ -164,16 +176,33 @@ async def gen_start():
     if market_id is None:
         print("Failed to discover or create market")
         exit()
-    n = 50
-    tasks = [setup_client(faucet_client, rest_client) for _ in range(n)]  # type: ignore
-    clients = await asyncio.gather(*tasks)
-    clients_pairs = list(zip(clients[: n // 2], clients[n // 2 :]))
-    initialized = False
 
-    for i in range(10): # type: ignore
+    n = 2
+
+    private_keys = read_list_from_file("./private_keys.json")
+    clients = []
+    if private_keys is None:
+        tasks = [setup_client(faucet_client, rest_client, True) for _ in range(n)]  # type: ignore
+        clients = await asyncio.gather(*tasks)
+        write_dict_to_file(accounts, "./private_keys.json")
+    else:
+        for private_key in private_keys:
+            clients.append(
+                EconiaClient(
+                    NODE_URL,
+                    ECONIA_ADDR,
+                    Account.load_key(private_key),
+                    None,
+                    rest_client,
+                )
+            )
+    clients_pairs = list(zip(clients[: n // 2], clients[n // 2 :]))
+    initialized = private_keys is not None
+    global integrator_idx
+    for i in range(10):  # type: ignore
         tasks = []
         ticks_per_lot = random.randint(1 * 10**3, (6 * 10**3) - 1)
-        for (a, b) in clients_pairs:
+        for a, b in clients_pairs:
             task = asyncio.create_task(
                 setup_pair(
                     a,
@@ -192,6 +221,8 @@ async def gen_start():
                 print(f"ERROR: {result}")
                 exit()
         print(f"Finished round #{i}")
+        integrator_idx += 1
+        print(get_integrator())
 
     write_dict_to_file(volume_buffer, "./output_expect.json")
     write_dict_to_file(get_fills(market_id), "./output_events.json")
@@ -238,23 +269,44 @@ async def setup_pair(
         flip = coin_flip()
         from_type = COIN_TYPE_EAPT if flip else COIN_TYPE_EUSDC
         to_type = COIN_TYPE_EUSDC if flip else COIN_TYPE_EAPT
+
         base_lots_remaining = base_lots
-        await client_a.gen_submit_tx_wait(
-            deposit_from_coinstore(ECONIA_ADDR, COIN_TYPE_EAPT, market_id, 0, 100 * 10**8)
-        )
-        await client_a.gen_submit_tx_wait(
-            deposit_from_coinstore(
-                ECONIA_ADDR, COIN_TYPE_EUSDC, market_id, 0, 600 * 10**6
+        if from_type == COIN_TYPE_EAPT:
+            await fund(
+                client_maker, client_maker.user_account, 100 * 10**8, COIN_TYPE_EAPT
             )
-        )
-        await client_b.gen_submit_tx_wait(
-            deposit_from_coinstore(ECONIA_ADDR, COIN_TYPE_EAPT, market_id, 0, 100 * 10**8)
-        )
-        await client_b.gen_submit_tx_wait(
-            deposit_from_coinstore(
-                ECONIA_ADDR, COIN_TYPE_EUSDC, market_id, 0, 600 * 10**6
+            await fund(
+                client_taker, client_taker.user_account, 600 * 10**6, COIN_TYPE_EUSDC
             )
-        )
+
+            await client_maker.gen_submit_tx_wait(
+                deposit_from_coinstore(
+                    ECONIA_ADDR, COIN_TYPE_EAPT, market_id, 0, 100 * 10**8
+                )
+            )
+            await client_taker.gen_submit_tx_wait(
+                deposit_from_coinstore(
+                    ECONIA_ADDR, COIN_TYPE_EUSDC, market_id, 0, 600 * 10**6
+                )
+            )
+        else:
+            await fund(
+                client_maker, client_maker.user_account, 600 * 10**6, COIN_TYPE_EUSDC
+            )
+            await fund(
+                client_taker, client_taker.user_account, 100 * 10**8, COIN_TYPE_EAPT
+            )
+
+            await client_maker.gen_submit_tx_wait(
+                deposit_from_coinstore(
+                    ECONIA_ADDR, COIN_TYPE_EUSDC, market_id, 0, 600 * 10**6
+                )
+            )
+            await client_taker.gen_submit_tx_wait(
+                deposit_from_coinstore(
+                    ECONIA_ADDR, COIN_TYPE_EAPT, market_id, 0, 100 * 10**8
+                )
+            )
 
         orders = 0
         while base_lots_remaining > MIN_SIZE:
@@ -263,8 +315,6 @@ async def setup_pair(
                 ticks_per_lot if from_type == COIN_TYPE_EUSDC else ticks_per_lot + 1
             )
             volume = base_lots_size * match_price * TICK_SIZE
-            fee = volume // 2000
-            volume = volume - fee
             await execute_limit_order(
                 client_maker, market_id, from_type, base_lots_size, match_price
             )
@@ -277,26 +327,20 @@ async def setup_pair(
         print(f"Created the paired orders: {orders}")
 
     await run()
-    # await asyncio.sleep(interval)
+    await asyncio.sleep(11)
 
 
-async def setup_client(faucet: FaucetClient, rest: RestClient) -> EconiaClient:
+accounts = []
+
+async def setup_client(
+    faucet: FaucetClient, rest: RestClient, add: bool
+) -> EconiaClient:
     account = Account.generate()
     client = EconiaClient(NODE_URL, ECONIA_ADDR, account, None, rest)
-    await faucet.fund_account(account.address().hex(), 10 * (10**8))
-    await fund(client, client.user_account, U64_MAX, COIN_TYPE_EAPT)
-    await fund(client, client.user_account, U64_MAX, COIN_TYPE_EUSDC)
+    await faucet.fund_account(account.address().hex(), 1 * (10**8))
+    if add:
+        accounts.append(account.private_key.hex())
     return client
-
-
-async def setup_taker(
-    client: EconiaClient,
-    market_id: int,
-    from_type: TypeTag,
-    subunits: int,
-    interval: int,
-):
-    pass
 
 
 async def fund(client: EconiaClient, account: Account, subunits: int, type: TypeTag):
@@ -320,7 +364,7 @@ async def execute_market_order(
         COIN_TYPE_EAPT,
         COIN_TYPE_EUSDC,
         market_id,
-        integrator,
+        get_integrator(),
         direction,
         base_lots,
         SelfMatchBehavior.CancelMaker,
@@ -342,7 +386,7 @@ async def execute_limit_order(
         COIN_TYPE_EAPT,
         COIN_TYPE_EUSDC,
         market_id,
-        integrator,
+        get_integrator(),
         direction,
         base_lots,
         ticks_per_lot,
@@ -351,9 +395,12 @@ async def execute_limit_order(
     )
     await client.gen_submit_tx_wait(calldata)
 
+def get_integrator() -> AccountAddress:
+    global integrator_idx
+    global INTEGRATORS
+    return INTEGRATORS[integrator_idx % len(INTEGRATORS)] # type: ignore
 
 volume_buffer_integ = dict()
-
 
 def add_volume_with_integrator(
     econia_client: EconiaClient, integrator_address: AccountAddress, base_lots: int
@@ -393,8 +440,20 @@ def write_dict_to_file(data_dict, filepath):
         print(f"An error occurred: {str(e)}")
 
 
+def read_list_from_file(filepath):
+    try:
+        with open(filepath, "r", encoding="utf-8") as file:
+            data_list = json.load(file)
+        return data_list
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
+        return None
+
+
 def get_fills(market_id: int) -> Any:
-    fills = httpx.get(f"http://localhost:3000/fill_events?market_id=eq.{market_id}").json()
+    fills = httpx.get(
+        f"http://localhost:3000/fill_events?market_id=eq.{market_id}"
+    ).json()
     volume = {}
     for fill in fills:
         address = fill["emit_address"]
@@ -403,4 +462,3 @@ def get_fills(market_id: int) -> Any:
         else:
             volume[address] = fill["size"] * fill["price"] * TICK_SIZE
     return volume
-

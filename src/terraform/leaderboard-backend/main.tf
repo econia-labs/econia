@@ -205,7 +205,7 @@ resource "google_compute_instance" "config_bootstrapper" {
     source      = "${local.econia_repo_root}/${local.processor_config_path_src}"
     destination = "/home/${local.ssh_username}/config.yaml"
   }
-  # Format and mount disk, copy config into it.
+  # Format and mount disk, copy config into it, update private connection string.
   # https://cloud.google.com/compute/docs/disks/format-mount-disk-linux#format_linux
   # https://medium.com/@DazWilkin/compute-engine-identifying-your-devices-aeae6c01a4d7
   provisioner "remote-exec" {

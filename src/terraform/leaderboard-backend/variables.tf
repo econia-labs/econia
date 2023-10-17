@@ -4,6 +4,18 @@ variable "db_root_password" {}
 
 variable "db_admin_public_ip" {}
 
+variable "migrations_dir" {
+  default = "/src/rust/dbv2"
+}
+
+variable "econia_repo_root" {
+  default = "../../../"
+}
+
+variable "terraform_dir" {
+  default = "src/terraform/leaderboard-backend"
+}
+
 variable "credentials_file" {
   default = "gcp-key.json"
 }

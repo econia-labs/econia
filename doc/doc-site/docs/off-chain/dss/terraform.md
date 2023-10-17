@@ -8,16 +8,13 @@ This guide is for a specific use case, the Econia testnet trading competition le
 
 1. [Install Terraform](https://developer.hashicorp.com/terraform/tutorials/gcp-get-started/install-cli).
 
-1. Clone the Econia repository:
+1. Clone the Econia repository and navigate to the `leaderboard-backend` project directory:
 
    ```sh
    git clone https://github.com/econia-labs/econia.git
-   ```
-
-1. Navigate to the `leaderboard-backend` project directory:
-
-   ```sh
-   cd econia/src/terraform/leaderboard-backend
+   cd econia
+   git submodule update --init --recursive
+   cd src/terraform/leaderboard-backend
    ```
 
 1. [Configure a billable GCP project](gcp#configure-project).
@@ -55,13 +52,6 @@ This guide is for a specific use case, the Econia testnet trading competition le
        --iam-account $SERVICE_ACCOUNT_NAME
    ```
 
-1. Enable relevant GCP services:
-
-   ```sh
-   gcloud services enable compute.googleapis.com
-   gcloud services enable sqladmin.googleapis.com
-   ```
-
 1. Pick a database root password:
 
    ```sh
@@ -84,19 +74,33 @@ This guide is for a specific use case, the Econia testnet trading competition le
    echo "db_admin_public_ip = \"$MY_IP\"" >> terraform.tfvars
    ```
 
-1. Format:
+1. Get [Diesel for postgres](https://diesel.rs/guides/getting-started).
+
+1. Make sure you have `ssh-keygen` on your machine:
+
+    ```sh
+    which ssh-keygen
+    ```
+
+2. Format:
 
    ```sh
    terraform fmt
    ```
 
-1. Initialize the directory:
+3. Initialize the directory:
 
    ```sh
    terraform init
    ```
 
 ## Build infrastructure
+
+1. Update `/src/docker/processor/config.yaml`.
+
+    :::tip
+    Don't worry about `postgres_connection_string`, this will be automatically handled later.
+    :::
 
 1. Apply the configuration:
 

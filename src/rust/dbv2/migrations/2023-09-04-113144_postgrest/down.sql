@@ -10,5 +10,3 @@ DROP SCHEMA api;
 
 DROP ROLE web_anon;
 
-
-DROP EXTENSION pgjwt;

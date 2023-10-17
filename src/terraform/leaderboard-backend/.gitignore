@@ -1,4 +1,5 @@
 gcp-key.json
+ssh*
 
 terraform.tfvars
 .terraform*

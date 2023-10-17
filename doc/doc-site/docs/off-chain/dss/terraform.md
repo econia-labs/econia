@@ -78,17 +78,17 @@ This guide is for a specific use case, the Econia testnet trading competition le
 
 1. Make sure you have `ssh-keygen` on your machine:
 
-    ```sh
-    which ssh-keygen
-    ```
+   ```sh
+   which ssh-keygen
+   ```
 
-2. Format:
+1. Format:
 
    ```sh
    terraform fmt
    ```
 
-3. Initialize the directory:
+1. Initialize the directory:
 
    ```sh
    terraform init
@@ -98,9 +98,9 @@ This guide is for a specific use case, the Econia testnet trading competition le
 
 1. Update `/src/docker/processor/config.yaml`.
 
-    :::tip
-    Don't worry about `postgres_connection_string`, this will be automatically handled later.
-    :::
+   :::tip
+   Don't worry about `postgres_connection_string`, this will be automatically handled later.
+   :::
 
 1. Apply the configuration:
 
@@ -138,7 +138,20 @@ This guide is for a specific use case, the Econia testnet trading competition le
 
    ```sh
    psql \
-       --dbname econia \
        --host $(terraform output -raw postgres_public_ip) \
        --username postgres
+   ```
+
+### Target a specific resource
+
+1. Apply:
+
+   ```sh
+   terraform apply -target <RESOURCE_NAME>
+   ```
+
+1. Destroy:
+
+   ```sh
+   terraform destroy -target <RESOURCE_NAME>
    ```

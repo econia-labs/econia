@@ -15,96 +15,107 @@ provider "google" {
 }
 
 locals {
-  db_admin_conn_str = join("", [
+  db_conn_str_admin = replace(
+    local.db_conn_str_base,
+    "ip_address",
+    "${local.postgres_public_ip}"
+  )
+  db_conn_str_base = join("", [
     "postgres://postgres:${var.db_root_password}@",
-    "${local.postgres_public_ip}:5432/econia"
+    "IP_ADDRESS:5432/econia"
   ])
-  db_private_conn_str = join("", [
-    "postgres://postgres:${var.db_root_password}@",
-    "${local.postgres_private_ip}:5432/econia"
-  ])
-  # https://medium.com/@DazWilkin/compute-engine-identifying-your-devices-aeae6c01a4d7
-  processor_disk_device_path = "/dev/disk/by-id/google-${local.processor_disk_name}"
-  processor_disk_name        = "processor-disk"
-  ssh_username               = "bootstrapper"
-  postgres_private_ip        = google_sql_database_instance.postgres.private_ip_address
-  postgres_public_ip         = google_sql_database_instance.postgres.public_ip_address
-  processor_config_path      = "src/docker/processor/config.yaml"
-  ssh_secret                 = "ssh/gcp"
-  ssh_pubkey                 = "ssh/gcp.pub"
+  db_conn_str_private = replace(
+    local.db_conn_str_base,
+    "IP_ADDRESS",
+    "${local.postgres_private_ip}"
+  )
+  econia_repo_root            = "../../.."
+  migrations_dir              = "/srd/rust/dbv2"
+  postgres_private_ip         = google_sql_database_instance.postgres.private_ip_address
+  postgres_public_ip          = google_sql_database_instance.postgres.public_ip_address
+  processor_config_path_src   = "src/docker/processor/config.yaml"
+  processor_config_path_mount = "/mnt/disks/processor/data/config.yaml"
+  processor_disk_device_path  = "/dev/disk/by-id/google-${local.processor_disk_name}"
+  processor_disk_name         = "processor-disk"
+  ssh_pubkey                  = "ssh/gcp.pub"
+  ssh_secret                  = "ssh/gcp"
+  ssh_username                = "bootstrapper"
+  terraform_dir               = "src/terraform/leaderboard-backend"
 }
 
-resource "null_resource" "run_migrations" {
+resource "terraform_data" "run_migrations" {
   depends_on = [google_sql_database.database]
   provisioner "local-exec" {
     environment = {
-      DATABASE_URL = local.db_admin_conn_str
+      DATABASE_URL = local.db_conn_str_admin
     }
-    working_dir = "${var.econia_repo_root}/${var.migrations_dir}"
+    working_dir = "${local.econia_repo_root}/${local.migrations_dir}"
     command     = "diesel database reset"
   }
 }
 
 resource "google_sql_database" "database" {
-  name     = "econia"
-  instance = google_sql_database_instance.postgres.name
+  deletion_policy = "ABANDON"
+  instance        = google_sql_database_instance.postgres.name
+  name            = "econia"
 }
 
 resource "google_sql_database_instance" "postgres" {
   database_version    = "POSTGRES_14"
   deletion_protection = false
-  depends_on          = [null_resource.config_environment]
+  depends_on          = [terraform_data.config_environment]
   root_password       = var.db_root_password
   settings {
     ip_configuration {
-      ipv4_enabled = true
       authorized_networks {
         value = var.db_admin_public_ip
       }
+      ipv4_enabled    = true
+      private_network = "default"
     }
     tier = "db-f1-micro"
   }
 }
 
-resource "null_resource" "build_processor" {
+resource "terraform_data" "build_processor" {
   depends_on = [google_artifact_registry_repository.images]
   provisioner "local-exec" {
     command = join(" ", [
       "gcloud builds submit .",
-      "--config ${var.terraform_dir}/cloudbuild.processor.yaml",
+      "--config ${local.terraform_dir}/cloudbuild.processor.yaml",
       "--substitutions _REGION=${var.region}"
     ])
     environment = {
       PROJECT_ID = var.project
     }
-    working_dir = var.econia_repo_root
+    working_dir = local.econia_repo_root
   }
 }
 
-resource "null_resource" "build_aggregator" {
+resource "terraform_data" "build_aggregator" {
   depends_on = [google_artifact_registry_repository.images]
   provisioner "local-exec" {
     command = join(" ", [
       "gcloud builds submit .",
-      "--config ${var.terraform_dir}/cloudbuild.aggregator.yaml",
+      "--config ${local.terraform_dir}/cloudbuild.aggregator.yaml",
       "--substitutions _REGION=${var.region}"
     ])
     environment = {
       PROJECT_ID = var.project
     }
-    working_dir = var.econia_repo_root
+    working_dir = local.econia_repo_root
   }
 }
 
 resource "google_artifact_registry_repository" "images" {
-  depends_on    = [null_resource.config_environment]
+  depends_on    = [terraform_data.config_environment]
   location      = var.region
   repository_id = "images"
   format        = "DOCKER"
 }
 
-resource "null_resource" "config_environment" {
-  depends_on = [null_resource.config_environment]
+resource "terraform_data" "config_environment" {
+  depends_on = [terraform_data.config_environment]
   provisioner "local-exec" {
     command = join(" && ", [
       "gcloud config set project ${var.project}",
@@ -144,8 +155,9 @@ resource "google_compute_instance" "config_bootstrapper" {
     user        = local.ssh_username
   }
   depends_on = [
+    google_compute_disk.processor_disk,
     google_compute_firewall.bootstrapper_ssh,
-    null_resource.config_environment,
+    terraform_data.config_environment,
   ]
   metadata = {
     ssh-keys = "${local.ssh_username}:${file(local.ssh_pubkey)}"
@@ -157,12 +169,14 @@ resource "google_compute_instance" "config_bootstrapper" {
     access_config {}
   }
   provisioner "file" {
-    source      = "${var.econia_repo_root}/${local.processor_config_path}"
+    source      = "${local.econia_repo_root}/${local.processor_config_path_src}"
     destination = "/home/${local.ssh_username}/config.yaml"
   }
+  # Format and mount disk, copy config into it.
+  # https://cloud.google.com/compute/docs/disks/format-mount-disk-linux#format_linux
+  # https://medium.com/@DazWilkin/compute-engine-identifying-your-devices-aeae6c01a4d7
   provisioner "remote-exec" {
     inline = [
-      # Format the disk.
       join(" ", [
         "sudo mkfs.ext4",
         "-m 0",
@@ -170,7 +184,6 @@ resource "google_compute_instance" "config_bootstrapper" {
         "${local.processor_disk_device_path}"
       ]),
       "sudo mkdir -p /mnt/disks/processor",
-      # Mount it.
       join(" ", [
         "sudo mount -o",
         "discard,defaults",
@@ -179,23 +192,22 @@ resource "google_compute_instance" "config_bootstrapper" {
       ]),
       "sudo chmod a+w /mnt/disks/processor",
       "mkdir /mnt/disks/processor/data",
-      # Edit the processor config connection string.
+      # Substitute private connection string into config.
       join(" ", [
         "sed -E",
         join("", [
-            "'s/(postgres_connection_string: )(.+)/\\1",
-            # Escape forward slashes in private connection string.
-            join("", [
-                "postgres:\\/\\/postgres:${var.db_root_password}@",
-                "${local.postgres_private_ip}:5432\\/econia"
-            ]),
-            "/g'",
+          "'s/(postgres_connection_string: )(.+)/\\1",
+          # Escape forward slashes in private connection string.
+          replace(local.db_conn_str_private, "/", "\\/"),
+          "/g'",
         ]),
         "/home/${local.ssh_username}/config.yaml >",
-        "/mnt/disks/processor/data/config.yaml"
+        "${local.processor_config_path_mount}"
       ]),
       "echo Processor config:",
-      "while read line; do echo \"$line\"; done</mnt/disks/processor/data/config.yaml"
+      "while read line; do ",
+      "echo \"$line\"",
+      "done<${local.processor_config_path_mount}"
     ]
   }
 }

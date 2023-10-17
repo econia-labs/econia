@@ -29,7 +29,7 @@ This guide is for a specific use case, the Econia testnet trading competition le
    echo "project = \"$PROJECT_ID\"" > terraform.tfvars
    ```
 
-1. Generate keys for a [service account](https://cloud.google.com/iam/docs/service-account-overview) with project editor privileges, [servicenetworking.serviceAgent](https://stackoverflow.com/a/54351644) privileges, and [compute.networkAdmin](https://serverfault.com/questions/942115) privileges (these are required to [enable private IP](https://stackoverflow.com/questions/54278828) for PostgreSQL).
+1. Generate keys for a [service account](https://cloud.google.com/iam/docs/service-account-overview) with project editor privileges, [servicenetworking.serviceAgent](https://stackoverflow.com/a/54351644) privileges, and [compute.networkAdmin](https://serverfault.com/questions/942115) privileges (these are required to [enable private IP](https://stackoverflow.com/questions/54278828) for PostgreSQL), as well as [run.services.setIamPolicy](https://stackoverflow.com/a/61250654) permissions for making public endpoint:
 
    ```sh
    gcloud iam service-accounts create terraform \
@@ -57,6 +57,12 @@ This guide is for a specific use case, the Econia testnet trading competition le
    gcloud projects add-iam-policy-binding $PROJECT_ID \
        --member "serviceAccount:$SERVICE_ACCOUNT_NAME" \
        --role "roles/compute.networkAdmin"
+   ```
+
+   ```sh
+   gcloud projects add-iam-policy-binding $PROJECT_ID \
+       --member "serviceAccount:$SERVICE_ACCOUNT_NAME" \
+       --role "roles/run.admin"
    ```
 
    ```sh
@@ -121,7 +127,7 @@ This guide is for a specific use case, the Econia testnet trading competition le
 1. Apply the configuration:
 
    ```sh
-   terraform apply
+   terraform apply --parallelism 20
    ```
 
 1. View outputs:
@@ -154,6 +160,7 @@ This guide is for a specific use case, the Econia testnet trading competition le
 
    ```sh
    psql \
+       --dbname econia \
        --host $(terraform output -raw postgres_public_ip) \
        --username postgres
    ```
@@ -171,3 +178,37 @@ This guide is for a specific use case, the Econia testnet trading competition le
    ```sh
    terraform destroy -target <RESOURCE_NAME>
    ```
+
+### Generate a dependency graph
+
+1. Check that you have `dot`:
+
+    ```sh
+    which dot
+    ```
+2. [Generate graph](https://developer.hashicorp.com/terraform/cli/commands/graph#generating-images):
+
+    ```sh
+    terraform graph | dot -Tsvg > graph.svg
+    ```
+
+### Check resource metadata
+
+1. [Show state](https://developer.hashicorp.com/terraform/cli/commands/show):
+
+    ```sh
+    terraform show
+    ```
+
+1. [List state](https://developer.hashicorp.com/terraform/cli/commands/state/list):
+
+    ```sh
+    terraform state list
+    ```
+
+1. [Show state for a resource](https://developer.hashicorp.com/terraform/cli/commands/state/show)
+
+
+    ```sh
+    terraform state show <RESOURCE_TYPE.RESOURCE_NAME>
+    ```

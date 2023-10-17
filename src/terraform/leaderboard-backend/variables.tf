@@ -9,7 +9,7 @@ variable "migrations_dir" {
 }
 
 variable "econia_repo_root" {
-  default = "../../../"
+  default = "../../.."
 }
 
 variable "terraform_dir" {

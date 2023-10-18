@@ -23,10 +23,7 @@ export default function Trade({ allMarketData }: Props) {
         <title>Trade | Econia</title>
       </Head>
       <div className="flex min-h-screen flex-col">
-        <Header
-          allMarketData={allMarketData}
-          logoHref={`${allMarketData[0].name}`}
-        />
+        <Header logoHref={`${allMarketData[0].name}`} />
         Market not found.
       </div>
     </>

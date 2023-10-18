@@ -1,5 +1,5 @@
 # Econia faucet
 
-This package allows anyone to permissionless mint test coins.
+This package provides a permissionless faucet for `eAPT` (example `APT`) and `eUSDC` (example `USDC`).
 
 The source code is unaudited and intended only for testing purposes.

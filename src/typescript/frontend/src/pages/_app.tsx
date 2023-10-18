@@ -21,13 +21,13 @@ import { type AppProps } from "next/app";
 import { Jost, Roboto_Mono } from "next/font/google";
 import { PetraWallet } from "petra-plugin-wallet-adapter";
 import { useMemo } from "react";
+import { SkeletonTheme } from "react-loading-skeleton";
 import { ToastContainer } from "react-toastify";
 
 import { AptosContextProvider } from "@/contexts/AptosContext";
 import { ConnectWalletContextProvider } from "@/contexts/ConnectWalletContext";
 
 import bg from "../../public/bg.png";
-import { SkeletonTheme } from "react-loading-skeleton";
 
 Chart.register(
   CategoryScale,

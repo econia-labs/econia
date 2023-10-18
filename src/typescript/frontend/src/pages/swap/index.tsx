@@ -23,7 +23,7 @@ export default function Swap({ allMarketData }: Props) {
         <title>Swap | Econia</title>
       </Head>
       <div className="flex h-screen w-full flex-col font-roboto-mono">
-        <Header allMarketData={allMarketData} logoHref="/" />
+        <Header logoHref={`/trade/${allMarketData[0].name}`} />
         <div className="flex flex-col items-center">
           <div className="mt-8 w-1/4">
             <div className="border p-3 text-center font-roboto-mono text-xs text-gray-300">

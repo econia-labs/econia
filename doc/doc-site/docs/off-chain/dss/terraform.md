@@ -25,6 +25,10 @@ This guide is for a specific use case, the Econia testnet trading competition le
    echo $PROJECT_ID
    ```
 
+   ```sh
+   gcloud config set project $PROJECT_ID
+   ```
+
 1. Pick a database root password:
 
    ```sh
@@ -80,6 +84,11 @@ This guide is for a specific use case, the Econia testnet trading competition le
 
    ```sh
    terraform fmt
+   ```
+
+   ```sh
+   echo "\n\nContents of terraform.tfvars:\n\n"
+   cat terraform.tfvars
    ```
 
    ```sh

@@ -49,10 +49,8 @@ locals {
 }
 
 resource "terraform_data" "config_environment" {
-  depends_on = [terraform_data.config_environment]
   provisioner "local-exec" {
     command = join(" && ", [
-      "gcloud config set project ${var.project}",
       # Allow service account to edit project.
       join(" ", [
         "gcloud projects add-iam-policy-binding ${var.project}",
@@ -80,11 +78,6 @@ resource "terraform_data" "config_environment" {
         "--member \"serviceAccount:${local.service_account_name}\"",
         "--role \"roles/run.admin\""
       ]),
-      # Create key for service account.
-      join(" ", [
-        "gcloud iam service-accounts keys create ${var.credentials_file}",
-        "--iam-account ${local.service_account_name}",
-      ]),
       # Enable service APIs.
       "gcloud services enable artifactregistry.googleapis.com",
       "gcloud services enable cloudbuild.googleapis.com",
@@ -94,7 +87,7 @@ resource "terraform_data" "config_environment" {
       "gcloud services enable servicenetworking.googleapis.com",
       "gcloud services enable sqladmin.googleapis.com",
       "gcloud services enable vpcaccess.googleapis.com",
-
+      # Set config defaults.
       "gcloud config set artifacts/location ${var.region}",
       "gcloud config set compute/zone ${var.zone}",
       "gcloud config set run/region ${var.zone}",
@@ -114,12 +107,6 @@ resource "terraform_data" "run_migrations" {
       "psql ${local.db_conn_str_admin} -c 'GRANT web_anon to postgres'"
     ])
   }
-}
-
-resource "google_sql_database" "database" {
-  deletion_policy = "ABANDON"
-  instance        = google_sql_database_instance.postgres.name
-  name            = "econia"
 }
 
 resource "google_sql_database_instance" "postgres" {
@@ -143,6 +130,12 @@ resource "google_sql_database_instance" "postgres" {
   }
 }
 
+resource "google_sql_database" "database" {
+  deletion_policy = "ABANDON"
+  instance        = google_sql_database_instance.postgres.name
+  name            = "econia"
+}
+
 resource "google_service_networking_connection" "sql_network_connection" {
   network                 = google_compute_network.sql_network.id
   provider                = google-beta
@@ -152,6 +145,7 @@ resource "google_service_networking_connection" "sql_network_connection" {
 
 resource "google_compute_global_address" "private_ip_address" {
   address_type  = "INTERNAL"
+  depends_on    = [google_sql_database.database]
   name          = "private-ip-address"
   network       = google_compute_network.sql_network.id
   provider      = google-beta
@@ -160,8 +154,16 @@ resource "google_compute_global_address" "private_ip_address" {
 }
 
 resource "google_compute_network" "sql_network" {
-  name     = "sql-network"
-  provider = google-beta
+  name       = "sql-network"
+  depends_on = [google_sql_database.database]
+  provider   = google-beta
+}
+
+resource "google_artifact_registry_repository" "images" {
+  depends_on    = [terraform_data.config_environment]
+  location      = var.region
+  repository_id = "images"
+  format        = "DOCKER"
 }
 
 resource "terraform_data" "build_processor" {
@@ -194,16 +196,21 @@ resource "terraform_data" "build_aggregator" {
   }
 }
 
-resource "google_artifact_registry_repository" "images" {
-  depends_on    = [terraform_data.config_environment]
-  location      = var.region
-  repository_id = "images"
-  format        = "DOCKER"
+resource "google_compute_disk" "processor_disk" {
+  depends_on = [terraform_data.config_environment]
+  name       = "processor-disk"
+  size       = 1
 }
 
-resource "google_compute_disk" "processor_disk" {
-  name = "processor-disk"
-  size = 1
+resource "google_compute_firewall" "bootstrapper_ssh" {
+  depends_on = [terraform_data.config_environment]
+  name       = "bootstrapper-ssh"
+  network    = "default"
+  allow {
+    protocol = "tcp"
+    ports    = ["22"]
+  }
+  source_ranges = [var.db_admin_public_ip]
 }
 
 resource "google_compute_instance" "bootstrapper" {
@@ -225,7 +232,6 @@ resource "google_compute_instance" "bootstrapper" {
   depends_on = [
     google_compute_disk.processor_disk,
     google_compute_firewall.bootstrapper_ssh,
-    terraform_data.config_environment,
   ]
   metadata = {
     ssh-keys = "${local.ssh_username}:${file(local.ssh_pubkey)}"
@@ -282,17 +288,8 @@ resource "google_compute_instance" "bootstrapper" {
   }
 }
 
-resource "google_compute_firewall" "bootstrapper_ssh" {
-  name    = "bootstrapper-ssh"
-  network = "default"
-  allow {
-    protocol = "tcp"
-    ports    = ["22"]
-  }
-  source_ranges = [var.db_admin_public_ip]
-}
-
 # No declarative resource for VM with container.
+# Running with container for auto-restart.
 # https://github.com/hashicorp/terraform-provider-google/issues/5832
 resource "terraform_data" "deploy_processor" {
   depends_on = [
@@ -338,6 +335,7 @@ resource "terraform_data" "deploy_processor" {
 }
 
 # No declarative resource for VM with container.
+# Running with container for auto-restart.
 # https://github.com/hashicorp/terraform-provider-google/issues/5832
 resource "terraform_data" "deploy_aggregator" {
   depends_on = [

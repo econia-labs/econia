@@ -12,12 +12,13 @@ import { toDecimalPrice } from "@/utils/econia";
 import { averageOrOther, formatNumber } from "@/utils/formatter";
 import { TypeTag } from "@/utils/TypeTag";
 
-import { BaseModal } from "./BaseModal";
+import { BaseModal } from "./modals/BaseModal";
 import { DiscordIcon } from "./icons/DiscordIcon";
 import { MediumIcon } from "./icons/MediumIcon";
 import { TwitterIcon } from "./icons/TwitterIcon";
 import { MarketIconPair } from "./MarketIconPair";
 import { SelectMarketContent } from "./trade/DepositWithdrawModal/SelectMarketContent";
+import { toast } from "react-toastify";
 
 const DEFAULT_TOKEN_ICON = "/tokenImages/default.png";
 
@@ -32,8 +33,6 @@ type MarketStats = {
   pairData: {
     baseAsset: string;
     quoteAsset: string;
-    baseAssetIcon: string;
-    quoteAssetIcon: string;
     baseVolume: number;
     quoteVolume: number;
   };
@@ -76,8 +75,26 @@ export const StatsBar: React.FC<{
   allMarketData: ApiMarket[];
   selectedMarket: ApiMarket;
 }> = ({ allMarketData, selectedMarket }) => {
+  const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { coinListClient } = useAptos();
+
+  const { data: iconData } = useQuery(
+    ["iconData", selectedMarket],
+    async () => {
+      const baseAssetIcon = selectedMarket.base
+        ? coinListClient.getCoinInfoByFullName(
+            TypeTag.fromApiCoin(selectedMarket.base).toString(),
+          )?.logo_url
+        : DEFAULT_TOKEN_ICON;
+      const quoteAssetIcon =
+        coinListClient.getCoinInfoByFullName(
+          TypeTag.fromApiCoin(selectedMarket.quote).toString(),
+        )?.logo_url ?? DEFAULT_TOKEN_ICON;
+
+      return { baseAssetIcon, quoteAssetIcon };
+    },
+  );
 
   const { data } = useQuery(
     ["marketStats", selectedMarket],
@@ -90,16 +107,6 @@ export const StatsBar: React.FC<{
       ).then((res) => res.json());
       const res = await resProm;
       const priceRes = await priceProm;
-
-      const baseAssetIcon = selectedMarket.base
-        ? coinListClient.getCoinInfoByFullName(
-            TypeTag.fromApiCoin(selectedMarket.base).toString(),
-          )?.logo_url
-        : DEFAULT_TOKEN_ICON;
-      const quoteAssetIcon =
-        coinListClient.getCoinInfoByFullName(
-          TypeTag.fromApiCoin(selectedMarket.quote).toString(),
-        )?.logo_url ?? DEFAULT_TOKEN_ICON;
 
       return {
         lastPrice: toDecimalPrice({
@@ -121,8 +128,6 @@ export const StatsBar: React.FC<{
             ? selectedMarket.base.symbol
             : selectedMarket.name.split("-")[0],
           quoteAsset: selectedMarket.quote.symbol,
-          baseAssetIcon,
-          quoteAssetIcon,
           baseVolume: res.volume,
           quoteVolume: 68026950.84, // TODO: Mock data
         },
@@ -138,21 +143,31 @@ export const StatsBar: React.FC<{
   return (
     <>
       <BaseModal
-        open={isModalOpen}
+        isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
-          false;
         }}
         showCloseButton={false}
       >
-        <SelectMarketContent allMarketData={allMarketData} />
+        <SelectMarketContent
+          allMarketData={allMarketData}
+          onSelectMarket={(id, name) => {
+            setIsModalOpen(false);
+            if (name == undefined) {
+              // selected an undefined market
+              toast.error("Selected market is undefined, please try again.");
+              return;
+            }
+            router.push(`/trade/${name}`);
+          }}
+        />
       </BaseModal>
       <div className="flex justify-between border-b border-neutral-600 px-9 py-3">
         <div className="flex overflow-x-clip whitespace-nowrap">
           <div className="flex items-center">
             <MarketIconPair
-              baseAssetIcon={data?.pairData.baseAssetIcon}
-              quoteAssetIcon={data?.pairData.quoteAssetIcon}
+              baseAssetIcon={iconData?.baseAssetIcon}
+              quoteAssetIcon={iconData?.quoteAssetIcon}
             />
             <div className="min-w-[160px]">
               <button

@@ -1,5 +1,5 @@
 import BigNumber from "bignumber.js";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useOrderEntry } from "@/contexts/OrderEntryContext";
 import { type ApiMarket } from "@/types/api";
@@ -24,8 +24,23 @@ const Row: React.FC<{
   type: "bid" | "ask";
   highestSize: number;
   marketData: ApiMarket;
-}> = ({ level, type, highestSize, marketData }) => {
+  updatedLevel: PriceLevel | undefined;
+}> = ({ level, type, highestSize, marketData, updatedLevel }) => {
   const { setPrice } = useOrderEntry();
+  const [flash, setFlash] = useState<"flash-red" | "flash-green" | "">("");
+
+  useEffect(() => {
+    if (updatedLevel == undefined) {
+      return;
+    }
+    if (updatedLevel.price == level.price) {
+      setFlash(type === "ask" ? "flash-red" : "flash-green");
+      setTimeout(() => {
+        setFlash("");
+      }, 100);
+    }
+  }, [type, updatedLevel, level.price]);
+
   const price = toDecimalPrice({
     price: new BigNumber(level.price),
     lotSize: BigNumber(marketData.lot_size),
@@ -46,18 +61,20 @@ const Row: React.FC<{
 
   return (
     <div
-      className="relative flex h-6 cursor-pointer items-center justify-between py-[1px] hover:ring-1 hover:ring-neutral-600"
+      className={`flash-bg-once ${flash} relative flex h-6 cursor-pointer items-center justify-between py-[1px] hover:ring-1 hover:ring-neutral-600`}
       onClick={() => {
         setPrice(price.toString());
       }}
-      style={{
-        background: `linear-gradient(
-          to left,
-          ${barColor},
-          ${barColor} ${barPercentage}%,
-          transparent ${barPercentage}%
-        )`,
-      }}
+      // https://github.com/econia-labs/econia/pull/371
+      // commenting out this change because it overrides orderbook flash
+      // style={{
+      //   background: `linear-gradient(
+      //     to left,
+      //     ${barColor},
+      //     ${barColor} ${barPercentage}%,
+      //     transparent ${barPercentage}%
+      //   )`,
+      // }}
     >
       <div
         className={`z-10 ml-4 text-right font-roboto-mono text-xs ${
@@ -69,6 +86,14 @@ const Row: React.FC<{
       <div className="z-10 mr-4 py-0.5 font-roboto-mono text-xs text-white">
         {size.toPrecision(4)}
       </div>
+      <div
+        className={`absolute right-0 z-0 h-full ${
+          type === "ask" ? "bg-red/30" : "bg-green/30"
+        }`}
+        // dynamic taillwind?
+
+        style={{ width: `${(100 * level.size) / highestSize}%` }}
+      ></div>
     </div>
   );
 };
@@ -194,6 +219,7 @@ export function OrderbookTable({
                   key={`ask-${level.price}-${level.size}`}
                   highestSize={highestSize}
                   marketData={marketData}
+                  updatedLevel={data.updatedLevel}
                 />
               ))}
             {/* SPREAD */}
@@ -222,6 +248,7 @@ export function OrderbookTable({
                 key={`bid-${level.price}-${level.size}`}
                 highestSize={highestSize}
                 marketData={marketData}
+                updatedLevel={data.updatedLevel}
               />
             ))}
           </div>

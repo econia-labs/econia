@@ -1,0 +1,44 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                    INSERT INTO aggregator.user_history VALUES (\n                        $1, $2, $3, $4, $5, $6, $7, $8, $9\n                    );\n                ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Numeric",
+        "Numeric",
+        "Timestamptz",
+        "Timestamptz",
+        "Text",
+        "Numeric",
+        "Numeric",
+        {
+          "Custom": {
+            "name": "order_status",
+            "kind": {
+              "Enum": [
+                "open",
+                "closed",
+                "cancelled"
+              ]
+            }
+          }
+        },
+        {
+          "Custom": {
+            "name": "order_type",
+            "kind": {
+              "Enum": [
+                "limit",
+                "market",
+                "swap"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "7d4e91268bff4ad22c2eb8ef4f85dc052540474fced6623390a87a468573a928"
+}

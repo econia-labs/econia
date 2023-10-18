@@ -16,8 +16,6 @@ Hence they can be easily queried via the Aptos node [events by event handle API]
 
 ### Schemas
 
-Market events were recently incorporated per [#321] and will soon be deployed under a mainnet contract upgrade, pending an audit.
-
 Econia emits the following market events:
 
 - [`user::CancelOrderEvent`]
@@ -109,7 +107,6 @@ When a [signing user or a custodian][market account] manually changes the size o
 
 When a [signing user or a custodian][market account] manually cancels an open order, a [`user::CancelOrderEvent`] is emitted to the associated [`user::MarketEventHandlesForMarketAccount`] with [`CANCEL_REASON_MANUAL_CANCEL`].
 
-[#321]: https://github.com/econia-labs/econia/pull/321
 [events by creation number api]: https://fullnode.mainnet.aptoslabs.com/v1/spec#/operations/get_events_by_creation_number
 [events by event handle api]: https://fullnode.mainnet.aptoslabs.com/v1/spec#/operations/get_events_by_event_handle
 [limit orders]: ../overview/matching.md#limit-orders
@@ -132,7 +129,7 @@ When a [signing user or a custodian][market account] manually cancels an open or
 [`market::get_swapper_event_handle_creation_numbers`]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#function-get_swapper_event_handle_creation_numbers
 [`market::marketeventhandlesformarket`]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#struct-marketeventhandlesformarket
 [`market::marketeventhandles`]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#resource-marketeventhandles
-[`market::placeswaporderevent`]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/user.md#struct-placeswaporderevent
+[`market::placeswaporderevent`]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#struct-placeswaporderevent
 [`market::swappereventhandlesformarket`]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#struct-swappereventhandlesformarket
 [`market::swappereventhandles`]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#resource-swappereventhandles
 [`marketregistrationevent`]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/registry.md#struct-marketregistrationevent

@@ -100,10 +100,7 @@ export default function Faucet({
         <title>Faucet | Econia</title>
       </Head>
       <div className="flex h-screen flex-col">
-        <Header
-          allMarketData={allMarketData}
-          logoHref={`/trade/${allMarketData[0].name}`}
-        />
+        <Header logoHref={`/trade/${allMarketData[0].name}`} />
         <main className="flex h-full w-full">
           <div className="m-auto flex flex-wrap justify-center gap-8">
             {TYPE_TAGS.map((typeTag, i) => (

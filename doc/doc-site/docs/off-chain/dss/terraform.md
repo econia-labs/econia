@@ -142,6 +142,24 @@ This guide is for a specific use case, the Econia testnet trading competition le
    gcloud projects delete $PROJECT_ID
    ```
 
+## Deploy second parallel project
+
+1. Clear cache:
+
+   ```sh
+   rm *tfstate*
+   rm -rf .terraform
+   rm .terraform*
+   ```
+
+1. After creating a new project, use a different credentials filename and add your `credentials_file` to `terraform.tfvars` (for example `credentials_file = gcp-key-2.json`).
+
+   :::tip
+   `.gitignore` ignores any files of pattern `gcp-key-*.json`.
+   :::
+
+1. Use the same SSH keys as the main deployment (no need to recreate).
+
 ## Diagnostics
 
 ### Connect to PostgreSQL

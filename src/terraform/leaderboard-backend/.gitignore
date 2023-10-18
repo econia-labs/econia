@@ -1,6 +1,6 @@
 .terraform*
 *.tfstate*
-gcp-key.json
+gcp-key*.json
 graph.svg
 ssh*
 terraform.tfvars

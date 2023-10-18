@@ -141,6 +141,19 @@ async def gen_start():
         TICK_SIZE,
         MIN_SIZE,
     )
+    private_keys = read_list_from_file("./private_keys.json")
+    clients = []
+    if private_keys is not None:
+        for private_key in private_keys:
+            clients.append(
+                EconiaClient(
+                    NODE_URL,
+                    ECONIA_ADDR,
+                    Account.load_key(private_key),
+                    None,
+                    rest_client,
+                )
+            )
     if market_id is None:
         econia_client = await setup_client(faucet_client, rest_client, False)
         await faucet_client.fund_account(
@@ -149,6 +162,7 @@ async def gen_start():
         await faucet_client.fund_account(
             econia_client.user_account.account_address.hex(), 1 * (10**8)
         )
+
         calldata = register_market_base_coin_from_coinstore(
             ECONIA_ADDR,
             COIN_TYPE_EAPT,
@@ -178,24 +192,20 @@ async def gen_start():
         exit()
 
     n = 2
-
-    private_keys = read_list_from_file("./private_keys.json")
-    clients = []
     if private_keys is None:
-        tasks = [setup_client(faucet_client, rest_client, True) for _ in range(n)]  # type: ignore
-        clients = await asyncio.gather(*tasks)
-        write_dict_to_file(accounts, "./private_keys.json")
-    else:
-        for private_key in private_keys:
-            clients.append(
-                EconiaClient(
-                    NODE_URL,
-                    ECONIA_ADDR,
-                    Account.load_key(private_key),
-                    None,
+        econia_client = await setup_client(faucet_client, rest_client, False)
+        for i in range(n): # type: ignore
+            task = await setup_client(
+                    faucet_client,
                     rest_client,
-                )
-            )
+                    True,
+                    econia_client,
+                ) 
+            clients.append(task)
+            print(f"Client #{i} done!")
+        write_dict_to_file(accounts, "./private_keys.json")
+    
+    print(len(clients))
     clients_pairs = list(zip(clients[: n // 2], clients[n // 2 :]))
     initialized = private_keys is not None
     global integrator_idx
@@ -222,7 +232,6 @@ async def gen_start():
                 exit()
         print(f"Finished round #{i}")
         integrator_idx += 1
-        print(get_integrator())
 
     write_dict_to_file(volume_buffer, "./output_expect.json")
     write_dict_to_file(get_fills(market_id), "./output_events.json")
@@ -333,11 +342,20 @@ async def setup_pair(
 accounts = []
 
 async def setup_client(
-    faucet: FaucetClient, rest: RestClient, add: bool
+    faucet: FaucetClient, rest: RestClient, add: bool, econia: Optional[EconiaClient] = None
 ) -> EconiaClient:
     account = Account.generate()
     client = EconiaClient(NODE_URL, ECONIA_ADDR, account, None, rest)
-    await faucet.fund_account(account.address().hex(), 1 * (10**8))
+    if econia is None:
+        await faucet.fund_account(account.address().hex(), 1 * (10**8))
+    else:
+        bal = await econia.aptos_client_async.account_balance(econia.user_account.account_address)
+        txn = await econia.aptos_client_async.transfer(
+            econia.user_account,
+            account.account_address,
+            min(bal, (1 * 10**8) // 3)
+        )
+        await econia.aptos_client_async.wait_for_transaction(txn)
     if add:
         accounts.append(account.private_key.hex())
     return client

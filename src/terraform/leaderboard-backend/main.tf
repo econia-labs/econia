@@ -96,20 +96,6 @@ resource "terraform_data" "config_environment" {
   }
 }
 
-resource "terraform_data" "run_migrations" {
-  depends_on = [google_sql_database.database]
-  provisioner "local-exec" {
-    environment = {
-      DATABASE_URL = local.db_conn_str_admin
-    }
-    command = join(" && ", [
-      "diesel database reset",
-      "psql ${local.db_conn_str_admin} -c 'GRANT web_anon to postgres'"
-    ])
-    working_dir = "${local.econia_repo_root}/${local.migrations_dir}"
-  }
-}
-
 resource "google_sql_database_instance" "postgres" {
   database_version    = "POSTGRES_14"
   deletion_protection = false
@@ -137,11 +123,24 @@ resource "google_sql_database" "database" {
   name            = "econia"
 }
 
-resource "google_service_networking_connection" "sql_network_connection" {
-  network                 = google_compute_network.sql_network.id
-  provider                = google-beta
-  reserved_peering_ranges = [google_compute_global_address.private_ip_address.name]
-  service                 = "servicenetworking.googleapis.com"
+resource "terraform_data" "run_migrations" {
+  depends_on = [google_sql_database.database]
+  provisioner "local-exec" {
+    environment = {
+      DATABASE_URL = local.db_conn_str_admin
+    }
+    command = join(" && ", [
+      "diesel database reset",
+      "psql ${local.db_conn_str_admin} -c 'GRANT web_anon to postgres'"
+    ])
+    working_dir = "${local.econia_repo_root}/${local.migrations_dir}"
+  }
+}
+
+resource "google_compute_network" "sql_network" {
+  name       = "sql-network"
+  depends_on = [terraform_data.config_environment]
+  provider   = google-beta
 }
 
 resource "google_compute_global_address" "private_ip_address" {
@@ -154,10 +153,11 @@ resource "google_compute_global_address" "private_ip_address" {
   purpose       = "VPC_PEERING"
 }
 
-resource "google_compute_network" "sql_network" {
-  name       = "sql-network"
-  depends_on = [terraform_data.config_environment]
-  provider   = google-beta
+resource "google_service_networking_connection" "sql_network_connection" {
+  network                 = google_compute_network.sql_network.id
+  provider                = google-beta
+  reserved_peering_ranges = [google_compute_global_address.private_ip_address.name]
+  service                 = "servicenetworking.googleapis.com"
 }
 
 resource "google_artifact_registry_repository" "images" {
@@ -361,19 +361,19 @@ resource "terraform_data" "deploy_aggregator" {
   }
 }
 
+resource "google_compute_subnetwork" "connector_subnetwork" {
+  name          = "connector-subnetwork"
+  ip_cidr_range = "10.8.0.0/28"
+  region        = var.region
+  network       = google_compute_network.sql_network.id
+}
+
 resource "google_vpc_access_connector" "vpc_connector" {
   depends_on = [terraform_data.run_migrations]
   name       = "vpc-connector"
   subnet {
     name = google_compute_subnetwork.connector_subnetwork.name
   }
-}
-
-resource "google_compute_subnetwork" "connector_subnetwork" {
-  name          = "connector-subnetwork"
-  ip_cidr_range = "10.8.0.0/28"
-  region        = var.region
-  network       = google_compute_network.sql_network.id
 }
 
 resource "google_cloud_run_v2_service" "postgrest" {

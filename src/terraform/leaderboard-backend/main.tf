@@ -215,10 +215,6 @@ resource "google_compute_firewall" "bootstrapper_ssh" {
 }
 
 resource "google_compute_instance" "bootstrapper" {
-  attached_disk {
-    source      = "processor-disk"
-    device_name = "processor-disk"
-  }
   boot_disk {
     initialize_params {
       image = "debian-cloud/debian-11"
@@ -246,6 +242,15 @@ resource "google_compute_instance" "bootstrapper" {
   provisioner "file" {
     source      = "${local.econia_repo_root}/${local.processor_config_path}"
     destination = "/home/${local.ssh_username}/config.yaml"
+  }
+  # Attach disk here rather than in declaractive config, then detach soon after.
+  # This is so that upon state refreshes the instance doesn't appear misconfigured.
+  provisioner "local-exec" {
+    command = join(" ", [
+      "gcloud compute instances attach-disk bootstrapper",
+      "--disk processor-disk",
+      "--device-name processor-disk"
+    ])
   }
   # Format and mount disk, copy config into it, update private connection string.
   # https://cloud.google.com/compute/docs/disks/format-mount-disk-linux#format_linux
@@ -287,6 +292,13 @@ resource "google_compute_instance" "bootstrapper" {
       "done<$PROCESSOR_CONFIG_MOUNT_PATH"
     ]
   }
+  # Detach disk, stop bootstrapper after preparing the processor config file.
+  provisioner "local-exec" {
+    command = join(" && ", [
+      "gcloud compute instances stop bootstrapper",
+      "gcloud compute instances detach-disk bootstrapper --disk processor-disk",
+    ])
+  }
 }
 
 # No declarative resource for VM with container.
@@ -300,8 +312,6 @@ resource "terraform_data" "deploy_processor" {
   ]
   provisioner "local-exec" {
     command = join(" && ", [
-      "gcloud compute instances stop bootstrapper",
-      "gcloud compute instances detach-disk bootstrapper --disk processor-disk",
       join(" ", [
         "gcloud compute instances create-with-container processor",
         "--container-image",
@@ -325,12 +335,6 @@ resource "terraform_data" "deploy_processor" {
     when = destroy
     command = join(" && ", [
       "gcloud compute instances delete processor --quiet",
-      join(" ", [
-        "gcloud compute instances attach-disk bootstrapper",
-        "--disk processor-disk",
-        "--device-name processor-disk"
-      ]),
-      "gcloud compute instances start bootstrapper"
     ])
   }
 }

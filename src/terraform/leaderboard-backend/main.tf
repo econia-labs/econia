@@ -41,6 +41,7 @@ locals {
   postgres_private_ip   = google_sql_database_instance.postgres.private_ip_address
   postgres_public_ip    = google_sql_database_instance.postgres.public_ip_address
   processor_config_path = "src/docker/processor/config.yaml"
+  service_account_name  = "terraform@${var.project}.iam.gserviceaccount.com"
   ssh_pubkey            = "ssh/gcp.pub"
   ssh_secret            = "ssh/gcp"
   ssh_username          = "bootstrapper"
@@ -52,6 +53,39 @@ resource "terraform_data" "config_environment" {
   provisioner "local-exec" {
     command = join(" && ", [
       "gcloud config set project ${var.project}",
+      # Allow service account to edit project.
+      join(" ", [
+        "gcloud projects add-iam-policy-binding ${var.project}",
+        "--member \"serviceAccount:${local.service_account_name}\"",
+        "--role \"roles/editor\""
+      ]),
+      # Next two are to enable private IP for PostgreSQL.
+      # https://stackoverflow.com/a/54351644
+      # https://stackoverflow.com/questions/54278828
+      # https://serverfault.com/questions/942115
+      join(" ", [
+        "gcloud projects add-iam-policy-binding ${var.project}",
+        "--member \"serviceAccount:${local.service_account_name}\"",
+        "--role \"roles/servicenetworking.serviceAgent\""
+      ]),
+      join(" ", [
+        "gcloud projects add-iam-policy-binding ${var.project}",
+        "--member \"serviceAccount:${local.service_account_name}\"",
+        "--role \"roles/compute.networkAdmin\""
+      ]),
+      # Enable public endpoint for Cloud Run URL.
+      # https://stackoverflow.com/a/61250654
+      join(" ", [
+        "gcloud projects add-iam-policy-binding ${var.project}",
+        "--member \"serviceAccount:${local.service_account_name}\"",
+        "--role \"roles/run.admin\""
+      ]),
+      # Create key for service account.
+      join(" ", [
+        "gcloud iam service-accounts keys create ${var.credentials_file}",
+        "--iam-account ${local.service_account_name}",
+      ]),
+      # Enable service APIs.
       "gcloud services enable artifactregistry.googleapis.com",
       "gcloud services enable cloudbuild.googleapis.com",
       "gcloud services enable cloudresourcemanager.googleapis.com",
@@ -60,9 +94,7 @@ resource "terraform_data" "config_environment" {
       "gcloud services enable servicenetworking.googleapis.com",
       "gcloud services enable sqladmin.googleapis.com",
       "gcloud services enable vpcaccess.googleapis.com",
-      "rm -rf ssh",
-      "mkdir ssh",
-      "ssh-keygen -t rsa -f ${local.ssh_secret} -C ${local.ssh_username} -b 2048 -q -N \"\"",
+
       "gcloud config set artifacts/location ${var.region}",
       "gcloud config set compute/zone ${var.zone}",
       "gcloud config set run/region ${var.zone}",

@@ -10,12 +10,6 @@ This guide is for a specific use case, the Econia testnet trading competition le
 
 1. Get [Diesel for postgres](https://diesel.rs/guides/getting-started).
 
-1. Verify that you have `ssh-keygen`:
-
-   ```sh
-   which ssh-keygen
-   ```
-
 1. Clone the Econia repository and navigate to the `leaderboard-backend` project directory:
 
    ```sh
@@ -52,6 +46,30 @@ This guide is for a specific use case, the Econia testnet trading competition le
    echo $MY_IP
    ```
 
+1. Generate keys for a [service account](https://cloud.google.com/iam/docs/service-account-overview):
+
+   ```sh
+   gcloud iam service-accounts create terraform
+   ```
+
+   ```sh
+   SERVICE_ACCOUNT_NAME=terraform@$PROJECT_ID.iam.gserviceaccount.com
+   echo $SERVICE_ACCOUNT_NAME
+   ```
+
+   ```sh
+   gcloud iam service-accounts keys create gcp-key.json \
+       --iam-account $SERVICE_ACCOUNT_NAME
+   ```
+
+1. Generate SSH keys:
+
+   ```sh
+   rm -rf ssh
+   mkdir ssh
+   ssh-keygen -t rsa -f ssh/gcp -C bootstrapper -b 2048 -q -N ""
+   ```
+
 1. Store variables in a [Terraform variable file](https://developer.hashicorp.com/terraform/tutorials/configuration-language/variables), then format and initialize the directory:
 
    ```sh
@@ -66,47 +84,6 @@ This guide is for a specific use case, the Econia testnet trading competition le
 
    ```sh
    terraform init
-   ```
-
-1. Generate keys for a [service account](https://cloud.google.com/iam/docs/service-account-overview) with project editor privileges, [servicenetworking.serviceAgent](https://stackoverflow.com/a/54351644) privileges, and [compute.networkAdmin](https://serverfault.com/questions/942115) privileges (these are required to [enable private IP](https://stackoverflow.com/questions/54278828) for PostgreSQL), as well as [run.services.setIamPolicy](https://stackoverflow.com/a/61250654) permissions for making a public endpoint:
-
-   ```sh
-   gcloud iam service-accounts create terraform \
-       --display-name "Terraform"
-   ```
-
-   ```sh
-   SERVICE_ACCOUNT_NAME=terraform@$PROJECT_ID.iam.gserviceaccount.com
-   echo $SERVICE_ACCOUNT_NAME
-   ```
-
-   ```sh
-   gcloud projects add-iam-policy-binding $PROJECT_ID \
-       --member "serviceAccount:$SERVICE_ACCOUNT_NAME" \
-       --role "roles/editor"
-   ```
-
-   ```sh
-   gcloud projects add-iam-policy-binding $PROJECT_ID \
-       --member "serviceAccount:$SERVICE_ACCOUNT_NAME" \
-       --role "roles/servicenetworking.serviceAgent"
-   ```
-
-   ```sh
-   gcloud projects add-iam-policy-binding $PROJECT_ID \
-       --member "serviceAccount:$SERVICE_ACCOUNT_NAME" \
-       --role "roles/compute.networkAdmin"
-   ```
-
-   ```sh
-   gcloud projects add-iam-policy-binding $PROJECT_ID \
-       --member "serviceAccount:$SERVICE_ACCOUNT_NAME" \
-       --role "roles/run.admin"
-   ```
-
-   ```sh
-   gcloud iam service-accounts keys create gcp-key.json \
-       --iam-account $SERVICE_ACCOUNT_NAME
    ```
 
 ## Build infrastructure

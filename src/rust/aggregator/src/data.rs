@@ -5,12 +5,12 @@ pub mod leaderboards;
 pub mod markets;
 pub mod user_history;
 
-type DataAggregationResult = Result<(), DataAggregationError>;
+type ProcessorAggregationResult = Result<(), ProcessorError>;
 
-/// This trait represents a data output.
+/// This trait represents a data processor.
 #[async_trait::async_trait]
-pub trait Data {
-    /// Returns `true` if the data is ready to be processed (if the process function should be
+pub trait Processor {
+    /// Returns `true` if the processor is ready to be executed (if the process function should be
     /// called now).
     fn ready(&self) -> bool;
 
@@ -19,21 +19,21 @@ pub trait Data {
 
     /// Processes the data and saves the result.
     ///
-    /// Before any real work is done, [`Data::ready`] is called. If it returns `false`,
-    /// [`DataProcessingError::NotReady`] is returned.
-    async fn process_and_save(&mut self) -> DataAggregationResult {
+    /// Before any real work is done, [`Processor::ready`] is called. If it returns `false`,
+    /// [`ProcessorError::NotReady`] is returned.
+    async fn process_and_save(&mut self) -> ProcessorAggregationResult {
         if self.ready() {
             self.process_and_save_internal().await
         } else {
-            Err(DataAggregationError::NotReady)
+            Err(ProcessorError::NotReady)
         }
     }
 
     /// Processes the data and saves the result.
     ///
     /// This is an internal function. It should never be called, except in
-    /// [`Data::process_and_save`].
-    async fn process_and_save_internal(&mut self) -> DataAggregationResult;
+    /// [`Processor::process_and_save`].
+    async fn process_and_save_internal(&mut self) -> ProcessorAggregationResult;
 
     /// Process and save historical data that is missing in the database.
     ///
@@ -42,9 +42,9 @@ pub trait Data {
     ///
     /// It is recommended that this fuction is run once, before the program starts, to make
     /// sure that the data is up to date.
-    async fn process_and_save_historical_data(&mut self) -> DataAggregationResult;
+    async fn process_and_save_historical_data(&mut self) -> ProcessorAggregationResult;
 
-    /// The interval at which the [`Data::ready`] function should be polled.
+    /// The interval at which the [`Processor::ready`] function should be polled.
     ///
     /// If `None` is returned, it is up to the caller to decide when to poll.
     fn poll_interval(&self) -> Option<std::time::Duration>;
@@ -52,11 +52,11 @@ pub trait Data {
 
 /// Error while trying to process data.
 #[derive(Debug, Error)]
-pub enum DataAggregationError {
+pub enum ProcessorError {
     /// The data is not ready to be processed.
     ///
-    /// If this error arises, it means that [`Data::ready`] returns `false`.
-    /// Wait for [`Data::ready`] to return `true` before calling [`Data::process`] again.
+    /// If this error arises, it means that [`Processor::ready`] returns `false`.
+    /// Wait for [`Processor::ready`] to return `true` before calling [`Processor::process_and_save`] again.
     #[error("Data is not ready to be processed")]
     NotReady,
 
@@ -64,7 +64,7 @@ pub enum DataAggregationError {
     ///
     /// An error occured in the processing process.
     /// There are two possible causes to this:
-    /// - [`Data::process_internal`] has a bug.
+    /// - [`Processor::process_internal`] has a bug.
     /// - an external data source is not responding as it should.
     ///
     /// This error should be returned when an error occured, and some action must be taken to fix

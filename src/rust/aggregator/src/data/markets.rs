@@ -2,7 +2,7 @@ use anyhow::anyhow;
 use chrono::{DateTime, Duration, Utc};
 use sqlx::PgPool;
 
-use super::{Data, DataAggregationError, DataAggregationResult};
+use super::{Processor, ProcessorAggregationResult, ProcessorError};
 
 pub struct MarketsRegisteredPerDay {
     pool: PgPool,
@@ -19,7 +19,7 @@ impl MarketsRegisteredPerDay {
 }
 
 #[async_trait::async_trait]
-impl Data for MarketsRegisteredPerDay {
+impl Processor for MarketsRegisteredPerDay {
     fn model_name(&self) -> &'static str {
         "MarketsRegisteredPerDay"
     }
@@ -29,7 +29,7 @@ impl Data for MarketsRegisteredPerDay {
             || self.last_indexed_timestamp.unwrap() + Duration::days(1) < Utc::now()
     }
 
-    async fn process_and_save_historical_data(&mut self) -> DataAggregationResult {
+    async fn process_and_save_historical_data(&mut self) -> ProcessorAggregationResult {
         sqlx::query!(
             r#"
                 INSERT INTO aggregator.markets_registered_per_day (markets, date)
@@ -43,7 +43,7 @@ impl Data for MarketsRegisteredPerDay {
         )
         .execute(&self.pool)
         .await
-        .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
+        .map_err(|e| ProcessorError::ProcessingError(anyhow!(e)))?;
         Ok(())
     }
 
@@ -51,7 +51,7 @@ impl Data for MarketsRegisteredPerDay {
         Some(std::time::Duration::from_secs(60 * 60))
     }
 
-    async fn process_and_save_internal(&mut self) -> DataAggregationResult {
+    async fn process_and_save_internal(&mut self) -> ProcessorAggregationResult {
         let date = Utc::now().date_naive() - Duration::days(1);
         sqlx::query!(
             r#"
@@ -66,7 +66,7 @@ impl Data for MarketsRegisteredPerDay {
         )
         .execute(&self.pool)
         .await
-        .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
+        .map_err(|e| ProcessorError::ProcessingError(anyhow!(e)))?;
         Ok(())
     }
 }

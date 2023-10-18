@@ -6,9 +6,13 @@ This guide is for a specific use case, the Econia testnet trading competition le
 
 ## Configure project
 
-1. [Install Terraform](https://developer.hashicorp.com/terraform/tutorials/gcp-get-started/install-cli).
+1. Install (if you don't already have):
 
-1. Get [Diesel for postgres](https://diesel.rs/guides/getting-started).
+   1. [Terraform](https://developer.hashicorp.com/terraform/tutorials/gcp-get-started/install-cli).
+
+   1. [Diesel for postgres](https://diesel.rs/guides/getting-started).
+
+   1. [`psql`](https://www.postgresql.org/download/).
 
 1. Clone the Econia repository and navigate to the `leaderboard-backend` project directory:
 
@@ -141,8 +145,6 @@ This guide is for a specific use case, the Econia testnet trading competition le
 ## Diagnostics
 
 ### Connect to PostgreSQL
-
-1. Get [`psql`](https://www.postgresql.org/download/).
 
 1. Connect:
 

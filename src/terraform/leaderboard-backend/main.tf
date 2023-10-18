@@ -2,7 +2,7 @@ terraform {
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = "4.51.0"
+      version = "5.2.0"
     }
   }
 }
@@ -77,7 +77,10 @@ resource "terraform_data" "run_migrations" {
       DATABASE_URL = local.db_conn_str_admin
     }
     working_dir = "${local.econia_repo_root}/${local.migrations_dir}"
-    command     = "diesel database reset"
+    command = join(" && ", [
+      "diesel database reset",
+      "psql ${local.db_conn_str_admin} -c 'GRANT web_anon to postgres'"
+    ])
   }
 }
 
@@ -327,8 +330,8 @@ resource "terraform_data" "deploy_aggregator" {
 }
 
 resource "google_vpc_access_connector" "vpc_connector" {
-  depends_on    = [terraform_data.run_migrations]
-  name          = "vpc-connector"
+  depends_on = [terraform_data.run_migrations]
+  name       = "vpc-connector"
   subnet {
     name = google_compute_subnetwork.connector_subnetwork.name
   }
@@ -343,7 +346,7 @@ resource "google_compute_subnetwork" "connector_subnetwork" {
 
 resource "google_cloud_run_v2_service" "postgrest" {
   location = var.region
-  name = "postgrest"
+  name     = "postgrest"
   template {
     containers {
       image = "postgrest/postgrest:v11.2.1"

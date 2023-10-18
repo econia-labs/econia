@@ -30,8 +30,8 @@ CREATE TABLE
     "integrators_used" TEXT[] NOT NULL,
     "n_trades" INT NOT NULL,
     "points" NUMERIC GENERATED ALWAYS AS (
-      volume * COALESCE(ARRAY_LENGTH(integrators_used, 1), 0)
-    ) STORED,
+      POWER(2,LOG10(volume)) * COALESCE(ARRAY_LENGTH(integrators_used, 1), 0)
+    ) STORED, -- Having 10 times the volume gives you 2 times the points
     "competition_id" INT NOT NULL REFERENCES aggregator.competition_metadata ("id"),
     PRIMARY KEY ("user", "competition_id")
   );

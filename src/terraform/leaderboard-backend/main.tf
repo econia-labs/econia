@@ -339,8 +339,9 @@ resource "terraform_data" "deploy_processor" {
 # https://github.com/hashicorp/terraform-provider-google/issues/5832
 resource "terraform_data" "deploy_aggregator" {
   depends_on = [
-    terraform_data.run_migrations,
     terraform_data.build_aggregator,
+    terraform_data.deploy_processor,
+    terraform_data.run_migrations,
   ]
   provisioner "local-exec" {
     command = join(" && ", [

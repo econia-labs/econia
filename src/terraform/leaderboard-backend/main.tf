@@ -21,6 +21,7 @@ provider "google-beta" {
 }
 
 locals {
+  competition_metadata_dir = "src/rust/dbv2"
   db_conn_str_admin = replace(
     local.db_conn_str_base,
     "IP_ADDRESS",
@@ -101,11 +102,11 @@ resource "terraform_data" "run_migrations" {
     environment = {
       DATABASE_URL = local.db_conn_str_admin
     }
-    working_dir = "${local.econia_repo_root}/${local.migrations_dir}"
     command = join(" && ", [
       "diesel database reset",
       "psql ${local.db_conn_str_admin} -c 'GRANT web_anon to postgres'"
     ])
+    working_dir = "${local.econia_repo_root}/${local.migrations_dir}"
   }
 }
 
@@ -422,4 +423,21 @@ resource "google_cloud_run_service_iam_policy" "no_auth" {
   project     = google_cloud_run_v2_service.postgrest.project
   service     = google_cloud_run_v2_service.postgrest.name
   policy_data = data.google_iam_policy.no_auth.policy_data
+}
+
+resource "terraform_data" "seed_competition_data" {
+  depends_on = [
+    terraform_data.deploy_aggregator,
+    terraform_data.deploy_processor,
+  ]
+  provisioner "local-exec" {
+    command = join(" && ", [
+      "cargo build --release --bin init-competition",
+      "cargo build --release --bin add-exclusions",
+      "export DATABASE_URL=${local.db_conn_str_admin}",
+      "./../target/release/init-competition",
+      "./../target/release/add-exclusions"
+    ])
+    working_dir = "${local.econia_repo_root}/${local.competition_metadata_dir}"
+  }
 }

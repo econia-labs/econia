@@ -93,7 +93,7 @@ async fn aggregate_data_for_competition<'a>(
             INSERT INTO aggregator.competition_leaderboard_users ("user", volume, integrators_used, n_trades, competition_id)
 
             -- Every address with default values from new fill events
-            SELECT DISTINCT taker_address as "user", 0, '{}'::text[], 0, $1 FROM aggregator.fills($1,$2,$3)
+            SELECT DISTINCT taker_address as "user", 0, '{}'::text[], 0, $1 FROM aggregator.fills($1)
             -- That doesn't already exist
             WHERE NOT EXISTS (
                 SELECT *
@@ -102,7 +102,7 @@ async fn aggregate_data_for_competition<'a>(
                 AND fills.taker_address = aggregator.competition_leaderboard_users."user"
             )
             UNION
-            SELECT DISTINCT maker_address as "user", 0, '{}'::text[], 0, $1 FROM aggregator.fills($1,$2,$3)
+            SELECT DISTINCT maker_address as "user", 0, '{}'::text[], 0, $1 FROM aggregator.fills($1)
             -- That doesn't already exist
             WHERE NOT EXISTS (
                 SELECT *
@@ -112,7 +112,7 @@ async fn aggregate_data_for_competition<'a>(
             )
             UNION
             -- Every address with default values from new place events
-            SELECT DISTINCT "user", 0, '{}'::text[], 0, $1 FROM aggregator.places($1,$2,$3)
+            SELECT DISTINCT "user", 0, '{}'::text[], 0, $1 FROM aggregator.places($1)
             -- That doesn't already exist
             WHERE NOT EXISTS (
                 SELECT *
@@ -122,8 +122,6 @@ async fn aggregate_data_for_competition<'a>(
             )
         "#,
         comp.id,
-        comp.start,
-        comp.end,
     )
     .execute(transaction as &mut PgConnection)
     .await
@@ -135,12 +133,10 @@ async fn aggregate_data_for_competition<'a>(
             SET
                 volume = a.volume + COALESCE((
                     user_volume.volume
-                ), 0) * (SELECT tick_size FROM market_registration_events WHERE market_id = $4)
-            FROM aggregator.user_volume($1,$2,$3) where a."user" = user_volume."user"
+                ), 0) * (SELECT tick_size FROM market_registration_events WHERE market_id = $2)
+            FROM aggregator.user_volume($1) where a."user" = user_volume."user" AND a.competition_id = $1
         "#,
         comp.id,
-        comp.start,
-        comp.end,
         comp.market_id,
     )
     .execute(transaction as &mut PgConnection)
@@ -154,11 +150,9 @@ async fn aggregate_data_for_competition<'a>(
                 n_trades = a.n_trades + COALESCE((
                     user_trades.trades
                 ), 0)
-            FROM aggregator.user_trades($1,$2,$3) WHERE a."user" = user_trades."user"
+            FROM aggregator.user_trades($1) WHERE a."user" = user_trades."user" AND a.competition_id = $1
         "#,
         comp.id,
-        comp.start,
-        comp.end,
     )
     .execute(transaction as &mut PgConnection)
     .await
@@ -176,11 +170,9 @@ async fn aggregate_data_for_competition<'a>(
                     FROM UNNEST(a.integrators_used || user_integrators.integrators) AS t(x)
                     WHERE x IN (SELECT * FROM official_integrators)
                 ),'{}'::TEXT[])
-            FROM aggregator.user_integrators($1,$2,$3) WHERE a."user" = user_integrators."user"
+            FROM aggregator.user_integrators($1) WHERE a."user" = user_integrators."user" AND a.competition_id = $1
         "#,
         comp.id,
-        comp.start,
-        comp.end,
     )
     .execute(transaction as &mut PgConnection)
     .await
@@ -190,11 +182,9 @@ async fn aggregate_data_for_competition<'a>(
     sqlx::query!(
         r#"
             INSERT INTO aggregator.competition_indexed_events
-            SELECT DISTINCT txn_version, event_idx, $1 FROM aggregator.fills($1,$2,$3)
+            SELECT DISTINCT txn_version, event_idx, $1 FROM aggregator.fills($1)
         "#,
         comp.id,
-        comp.start,
-        comp.end,
     )
     .execute(transaction as &mut PgConnection)
     .await
@@ -202,11 +192,9 @@ async fn aggregate_data_for_competition<'a>(
     sqlx::query!(
         r#"
             INSERT INTO aggregator.competition_indexed_events
-            SELECT DISTINCT txn_version, event_idx, $1 FROM aggregator.places($1,$2,$3)
+            SELECT DISTINCT txn_version, event_idx, $1 FROM aggregator.places($1)
         "#,
         comp.id,
-        comp.start,
-        comp.end,
     )
     .execute(transaction as &mut PgConnection)
     .await

@@ -8,6 +8,9 @@ DROP INDEX aggregator.competition_indexed_events_comp_id;
 DROP INDEX aggregator.competition_indexed_events_tx_ev;
 
 
+DROP INDEX fills_market_id;
+
+
 DROP FUNCTION api.volume;
 
 

@@ -145,7 +145,7 @@ resource "google_service_networking_connection" "sql_network_connection" {
 
 resource "google_compute_global_address" "private_ip_address" {
   address_type  = "INTERNAL"
-  depends_on    = [google_sql_database.database]
+  depends_on    = [terraform_data.config_environment]
   name          = "private-ip-address"
   network       = google_compute_network.sql_network.id
   provider      = google-beta
@@ -155,7 +155,7 @@ resource "google_compute_global_address" "private_ip_address" {
 
 resource "google_compute_network" "sql_network" {
   name       = "sql-network"
-  depends_on = [google_sql_database.database]
+  depends_on = [terraform_data.config_environment]
   provider   = google-beta
 }
 

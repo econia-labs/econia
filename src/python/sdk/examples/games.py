@@ -118,13 +118,28 @@ MIN_SIZE = 500 if int(sys.argv[3]) == 0 else int(sys.argv[3])  # type: ignore
 MAKER_APT_PER_ROUND = 100
 
 INTEGRATORS = [
-    AccountAddress.from_hex("0x2e51979739db25dc987bd24e1a968e45cca0e0daea7cae9121f68af93e8884c9"),
-    AccountAddress.from_hex("0xd718181a753f5b759518d9b896018dd7eb3d77d80bf90ba77fffaf678f781929"),
-    AccountAddress.from_hex("0x69f76d32b0e6b08af826f5f75a7c58e6581d1c6c4ed1a935b121970f65d7436e"),
+    AccountAddress.from_hex(
+        "0x2e51979739db25dc987bd24e1a968e45cca0e0daea7cae9121f68af93e8884c9"
+    ),
+    AccountAddress.from_hex(
+        "0xd718181a753f5b759518d9b896018dd7eb3d77d80bf90ba77fffaf678f781929"
+    ),
+    AccountAddress.from_hex(
+        "0x69f76d32b0e6b08af826f5f75a7c58e6581d1c6c4ed1a935b121970f65d7436e"
+    ),
 ]
 integrator_idx = 0
 
+"""
+HOW TO RUN THIS SCRIPT: `poetry install && poetry run games 0 0 0` in `/src/python/sdk`
+Enter nothing for all prompts to default to local deployments.
+Using 0 0 0 for the lot size, tick size and min size results in defaults being used.
+You can provide 0 for some or all of the arguments; changing min size is common.
+Only trades with 2 wallets because that's the most rate limits would allow on testnet.
 
+Spits out a `private_keys.json` file in the directory that it was run in so as to cache
+them for later re-use. Otherwise the user would get rate-limited while funding wallets.
+"""
 def start():
     asyncio.run(gen_start())
 
@@ -194,20 +209,19 @@ async def gen_start():
     n = 2
     if private_keys is None:
         econia_client = await setup_client(faucet_client, rest_client, False)
-        for i in range(n): # type: ignore
+        for i in range(n):  # type: ignore
             task = await setup_client(
-                    faucet_client,
-                    rest_client,
-                    True,
-                    econia_client,
-                ) 
+                faucet_client,
+                rest_client,
+                True,
+                econia_client,
+            )
             clients.append(task)
             print(f"Client #{i} done!")
         write_dict_to_file(accounts, "./private_keys.json")
-    
+
     print(len(clients))
     clients_pairs = list(zip(clients[: n // 2], clients[n // 2 :]))
-    initialized = private_keys is not None
     global integrator_idx
     for i in range(10):  # type: ignore
         tasks = []
@@ -220,12 +234,10 @@ async def gen_start():
                     market_id,
                     (100 * 10**8) // LOT_SIZE,
                     ticks_per_lot,
-                    initialized,
                 )
             )
             tasks.append(task)
         res = await asyncio.gather(*tasks, return_exceptions=True)
-        initialized = True
         for result in res:
             if isinstance(result, Exception):
                 print(f"ERROR: {result}")
@@ -248,9 +260,8 @@ async def setup_pair(
     market_id: int,
     base_lots: int,
     ticks_per_lot: int,
-    initialized: bool,
 ):
-    if not initialized:
+    try:
         await client_a.gen_submit_tx_wait(
             register_market_account(
                 ECONIA_ADDR,
@@ -260,6 +271,10 @@ async def setup_pair(
                 0,
             )
         )
+    except:
+        print("Account may already exist...")
+
+    try:
         await client_b.gen_submit_tx_wait(
             register_market_account(
                 ECONIA_ADDR,
@@ -270,6 +285,8 @@ async def setup_pair(
             )
         )
         print("Initialized account pair...")
+    except:
+        print("Account may already exist...")
 
     async def run():
         flip = coin_flip()
@@ -341,19 +358,23 @@ async def setup_pair(
 
 accounts = []
 
+
 async def setup_client(
-    faucet: FaucetClient, rest: RestClient, add: bool, econia: Optional[EconiaClient] = None
+    faucet: FaucetClient,
+    rest: RestClient,
+    add: bool,
+    econia: Optional[EconiaClient] = None,
 ) -> EconiaClient:
     account = Account.generate()
     client = EconiaClient(NODE_URL, ECONIA_ADDR, account, None, rest)
     if econia is None:
         await faucet.fund_account(account.address().hex(), 1 * (10**8))
     else:
-        bal = await econia.aptos_client_async.account_balance(econia.user_account.account_address)
+        bal = await econia.aptos_client_async.account_balance(
+            econia.user_account.account_address
+        )
         txn = await econia.aptos_client_async.transfer(
-            econia.user_account,
-            account.account_address,
-            min(bal, (1 * 10**8) // 3)
+            econia.user_account, account.account_address, min(bal, (1 * 10**8) // 3)
         )
         await econia.aptos_client_async.wait_for_transaction(txn)
     if add:
@@ -376,7 +397,6 @@ async def execute_market_order(
     client: EconiaClient, market_id: int, from_type: TypeTag, base_lots: int
 ):
     direction = Side.BID if from_type == COIN_TYPE_EUSDC else Side.ASK
-    integrator = ECONIA_ADDR
     calldata = place_market_order_user_entry(
         ECONIA_ADDR,
         COIN_TYPE_EAPT,
@@ -398,7 +418,6 @@ async def execute_limit_order(
     ticks_per_lot: int,
 ):
     direction = Side.BID if from_type == COIN_TYPE_EUSDC else Side.ASK
-    integrator = ECONIA_ADDR
     calldata = place_limit_order_user_entry(
         ECONIA_ADDR,
         COIN_TYPE_EAPT,
@@ -413,12 +432,15 @@ async def execute_limit_order(
     )
     await client.gen_submit_tx_wait(calldata)
 
+
 def get_integrator() -> AccountAddress:
     global integrator_idx
     global INTEGRATORS
-    return INTEGRATORS[integrator_idx % len(INTEGRATORS)] # type: ignore
+    return INTEGRATORS[integrator_idx % len(INTEGRATORS)]  # type: ignore
+
 
 volume_buffer_integ = dict()
+
 
 def add_volume_with_integrator(
     econia_client: EconiaClient, integrator_address: AccountAddress, base_lots: int

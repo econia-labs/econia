@@ -138,7 +138,7 @@ You can provide 0 for some or all of the arguments; changing min size is common.
 Only trades with 2 wallets because that's the most rate limits would allow on testnet.
 
 Spits out a `private_keys.json` file in the directory that it was run in so as to cache
-them for later re-use. Otherwise the user would get rate-limited while funding wallets.
+them for later re-use. Otherwise the user would get rate-limited trying to fund
 """
 def start():
     asyncio.run(gen_start())
@@ -245,8 +245,6 @@ async def gen_start():
         print(f"Finished round #{i}")
         integrator_idx += 1
 
-    write_dict_to_file(volume_buffer, "./output_expect.json")
-    write_dict_to_file(get_fills(market_id), "./output_events.json")
     print("THE END!")
 
 
@@ -344,9 +342,7 @@ async def setup_pair(
             await execute_limit_order(
                 client_maker, market_id, from_type, base_lots_size, match_price
             )
-            add_volume(client_maker, volume)
             await execute_market_order(client_taker, market_id, to_type, base_lots_size)
-            add_volume(client_taker, volume)
             orders += 1
             base_lots_remaining -= base_lots_size
 
@@ -439,38 +435,6 @@ def get_integrator() -> AccountAddress:
     return INTEGRATORS[integrator_idx % len(INTEGRATORS)]  # type: ignore
 
 
-volume_buffer_integ = dict()
-
-
-def add_volume_with_integrator(
-    econia_client: EconiaClient, integrator_address: AccountAddress, base_lots: int
-):
-    global volume_buffer
-    user_address = econia_client.user_account.address().hex()
-    integ_address = integrator_address.hex()
-    if (
-        user_address in volume_buffer_integ
-        and integ_address in volume_buffer_integ[user_address]
-    ):
-        volume_buffer_integ[user_address][integ_address] += base_lots
-    elif user_address in volume_buffer_integ and integ_address:
-        volume_buffer_integ[user_address][integ_address] = base_lots
-    else:
-        volume_buffer_integ[user_address] = {integ_address: base_lots}
-
-
-volume_buffer = dict()
-
-
-def add_volume(econia_client: EconiaClient, volume: int):
-    global volume_buffer
-    user_address = econia_client.user_account.address().hex()
-    if user_address in volume_buffer:
-        volume_buffer[user_address] += volume
-    else:
-        volume_buffer[user_address] = volume
-
-
 def write_dict_to_file(data_dict, filepath):
     try:
         with open(filepath, "w", encoding="utf-8") as file:
@@ -489,16 +453,3 @@ def read_list_from_file(filepath):
         print(f"An error occurred: {str(e)}")
         return None
 
-
-def get_fills(market_id: int) -> Any:
-    fills = httpx.get(
-        f"http://localhost:3000/fill_events?market_id=eq.{market_id}"
-    ).json()
-    volume = {}
-    for fill in fills:
-        address = fill["emit_address"]
-        if address in volume:
-            volume[address] += fill["size"] * fill["price"] * TICK_SIZE
-        else:
-            volume[address] = fill["size"] * fill["price"] * TICK_SIZE
-    return volume

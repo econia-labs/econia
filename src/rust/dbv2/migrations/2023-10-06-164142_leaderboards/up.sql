@@ -30,7 +30,10 @@ CREATE TABLE
     "integrators_used" TEXT[] NOT NULL,
     "n_trades" INT NOT NULL,
     "points" NUMERIC GENERATED ALWAYS AS (
-      POWER(2,LOG10(volume)) * COALESCE(ARRAY_LENGTH(integrators_used, 1), 0)
+      CASE volume
+        WHEN 0 THEN 0
+        ELSE POWER(2,LOG10(volume)) * COALESCE(ARRAY_LENGTH(integrators_used, 1), 0)
+      END
     ) STORED, -- Having 10 times the volume gives you 2 times the points
     "competition_id" INT NOT NULL REFERENCES aggregator.competition_metadata ("id"),
     PRIMARY KEY ("user", "competition_id")
@@ -51,6 +54,7 @@ CREATE VIEW
 SELECT
   *,
   RANK() OVER (
+    PARTITION BY competition_id
     ORDER BY
       points DESC,
       volume DESC,
@@ -125,8 +129,11 @@ $$ LANGUAGE plpgsql;
 
 
 -- Helper views and functions for the aggregator
-CREATE FUNCTION aggregator.fills (INT, timestamptz, timestamptz) RETURNS SETOF fill_events AS $$
+CREATE FUNCTION aggregator.fills (INT) RETURNS SETOF fill_events AS $$
+DECLARE
+    comp aggregator.competition_metadata%ROWTYPE;
 BEGIN
+    SELECT * INTO comp FROM aggregator.competition_metadata WHERE id = $1;
     RETURN QUERY
       select *
       from fill_events
@@ -136,22 +143,26 @@ BEGIN
         from aggregator.competition_indexed_events
         where fill_events.txn_version = competition_indexed_events.txn_version
         and fill_events.event_idx = competition_indexed_events.event_idx
-        and competition_indexed_events.competition_id = $1
+        and competition_indexed_events.competition_id = comp.id
       )
-      and time > $2
-      and time < $3;
+      and market_id = comp.market_id
+      and time > comp.start
+      and time < comp."end";
 END;
 $$ LANGUAGE plpgsql;
 
 
-CREATE FUNCTION aggregator.places (INT, timestamptz, timestamptz) RETURNS TABLE (
+CREATE FUNCTION aggregator.places (INT) RETURNS TABLE (
   "user" CHARACTER VARYING(70),
   integrator CHARACTER VARYING(70),
   "time" timestamptz,
   txn_version NUMERIC,
   event_idx NUMERIC
 ) AS $$
+DECLARE
+    comp aggregator.competition_metadata%ROWTYPE;
 BEGIN
+    SELECT * INTO comp FROM aggregator.competition_metadata WHERE id = $1;
     RETURN QUERY
       select ploe."user", ploe."integrator", ploe.time, ploe.txn_version, ploe.event_idx
       from place_limit_order_events as ploe
@@ -160,10 +171,11 @@ BEGIN
         from aggregator.competition_indexed_events
         where ploe.txn_version = competition_indexed_events.txn_version
         and ploe.event_idx = competition_indexed_events.event_idx
-        and competition_indexed_events.competition_id = $1
+        and competition_indexed_events.competition_id = comp.id
       )
-      and ploe.time > $2
-      and ploe.time < $3
+      and ploe.market_id = comp.market_id
+      and ploe.time > comp.start
+      and ploe.time < comp."end"
       union all
       select pmoe."user", pmoe."integrator", pmoe.time, pmoe.txn_version, pmoe.event_idx
       from place_market_order_events as pmoe
@@ -172,10 +184,11 @@ BEGIN
         from aggregator.competition_indexed_events
         where pmoe.txn_version = competition_indexed_events.txn_version
         and pmoe.event_idx = competition_indexed_events.event_idx
-        and competition_indexed_events.competition_id = $1
+        and competition_indexed_events.competition_id = comp.id
       )
-      and pmoe.time > $2
-      and pmoe.time < $3
+      and pmoe.market_id = comp.market_id
+      and pmoe.time > comp.start
+      and pmoe.time < comp."end"
       union all
       select psoe."signing_account", psoe."integrator", psoe.time, psoe.txn_version, psoe.event_idx
       from place_swap_order_events as psoe
@@ -184,65 +197,58 @@ BEGIN
         from aggregator.competition_indexed_events
         where psoe.txn_version = competition_indexed_events.txn_version
         and psoe.event_idx = competition_indexed_events.event_idx
-        and competition_indexed_events.competition_id = $1
+        and competition_indexed_events.competition_id = comp.id
       )
-      and psoe.time > $2
-      and psoe.time < $3;
+      and psoe.market_id = comp.market_id
+      and psoe.time > comp.start
+      and psoe.time < comp."end";
 END;
 $$ LANGUAGE plpgsql;
 
 
-CREATE FUNCTION aggregator.user_volume (INT, timestamptz, timestamptz) RETURNS TABLE (volume NUMERIC, "user" TEXT) AS $$
+CREATE FUNCTION aggregator.user_volume (INT) RETURNS TABLE (volume NUMERIC, "user" TEXT) AS $$
 BEGIN
     RETURN QUERY
         select
           sum (price*size) as volume,
           competition_leaderboard_users."user"
-        from aggregator.competition_leaderboard_users, aggregator.fills($1,$2,$3)
-        where
-          fills.taker_address = competition_leaderboard_users."user"
-        or
-          fills.maker_address = competition_leaderboard_users."user"
+        from aggregator.competition_leaderboard_users, aggregator.fills($1)
+        where (
+            fills.taker_address = competition_leaderboard_users."user"
+          or
+            fills.maker_address = competition_leaderboard_users."user"
+        )
+        and competition_leaderboard_users.competition_id = $1
         group by competition_leaderboard_users."user";
 END;
 $$ LANGUAGE plpgsql;
 
 
-CREATE FUNCTION aggregator.user_trades (INT, timestamptz, timestamptz) RETURNS TABLE (trades BIGINT, "user" TEXT) AS $$
+CREATE FUNCTION aggregator.user_trades (INT) RETURNS TABLE (trades BIGINT, "user" TEXT) AS $$
 BEGIN
     RETURN QUERY
-        with fe as (
-          select *
-          from fill_events
-          where maker_address = emit_address
-          and not exists (
-            select *
-            from aggregator.competition_indexed_events
-            where fill_events.txn_version = competition_indexed_events.txn_version
-            and fill_events.event_idx = competition_indexed_events.event_idx
-            and competition_indexed_events.competition_id = $1
-          )
-        )
         select
           count(txn_version) as trades,
           competition_leaderboard_users."user"
-        from aggregator.competition_leaderboard_users, fe
-        where
-            (fe.taker_address = competition_leaderboard_users."user" or maker_address = competition_leaderboard_users."user")
-            and fe.time > $2
-            and fe.time < $3
+        from aggregator.competition_leaderboard_users, aggregator.fills($1)
+        where (
+            fills.taker_address = competition_leaderboard_users."user"
+          or
+            fills.maker_address = competition_leaderboard_users."user"
+        )
+        and competition_leaderboard_users.competition_id = $1
         group by competition_leaderboard_users."user";
 END;
 $$ LANGUAGE plpgsql;
 
 
-CREATE FUNCTION aggregator.user_integrators (INT, timestamptz, timestamptz) RETURNS TABLE (integrators CHARACTER VARYING[], "user" TEXT) AS $$
+CREATE FUNCTION aggregator.user_integrators (INT) RETURNS TABLE (integrators CHARACTER VARYING[], "user" TEXT) AS $$
 BEGIN
     RETURN QUERY
         select
           array_agg(distinct integrator) as integrators,
           competition_leaderboard_users."user"
-        from aggregator.competition_leaderboard_users, aggregator.places($1,$2,$3)
+        from aggregator.competition_leaderboard_users, aggregator.places($1)
         where places."user" = competition_leaderboard_users."user"
         group by competition_leaderboard_users."user";
 END;
@@ -257,3 +263,6 @@ CREATE INDEX competition_indexed_events_comp_id ON aggregator.competition_indexe
 
 
 CREATE INDEX competition_indexed_events_tx_ev ON aggregator.competition_indexed_events (txn_version, event_idx);
+
+
+CREATE INDEX fills_market_id ON fill_events (market_id);

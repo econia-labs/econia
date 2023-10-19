@@ -40,6 +40,11 @@ impl UserHistory {
 
 #[async_trait::async_trait]
 impl Data for UserHistory {
+
+    fn model_name(&self) -> &'static str {
+        "UserHistory"
+    }
+
     fn ready(&self) -> bool {
         self.last_indexed_timestamp.is_none()
             || self.last_indexed_timestamp.unwrap() + Duration::seconds(5) < Utc::now()

@@ -23,13 +23,20 @@ This guide is for a specific use case, the Econia testnet trading competition le
    cd src/terraform/leaderboard-backend
    ```
 
-1. [Configure a billable GCP project](gcp#configure-project) and store the project ID:
+1. [Configure a billable GCP project](gcp#configure-project):
 
    ```sh
    echo $PROJECT_ID
+   echo $ORGANIZATION_ID
+   echo $BILLING_ACCOUNT_ID
    ```
 
    ```sh
+   gcloud projects create $PROJECT_ID \
+       --name leaderboard-backend \
+       --organization $ORGANIZATION_ID
+   gcloud alpha billing projects link $PROJECT_ID \
+       --billing-account $BILLING_ACCOUNT_ID
    gcloud config set project $PROJECT_ID
    ```
 

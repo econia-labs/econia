@@ -154,6 +154,8 @@ class rest-service yellow;
    Don't worry about `postgres_connection_string`, this will be automatically handled later.
    :::
 
+1. Create `competition.metadata.json` and `competition-additional-exclusions.json` in `/src/rust/dbv2` per [the README](https://github.com/econia-labs/econia/tree/main/src/rust/dbv2/README.md).
+
 1. Apply the configuration:
 
    ```sh

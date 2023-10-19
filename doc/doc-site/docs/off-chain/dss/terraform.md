@@ -159,6 +159,12 @@ This guide is for a specific use case, the Econia testnet trading competition le
    rm .terraform*
    ```
 
+   :::tip
+   If you delete `*tfstate*` files, then you will [lose configuration state](https://tryingthings.wordpress.com/2021/03/31/lessons-learned-after-losing-the-terraform-state-file/) and will only be able to modify the primary project via `gcloud commands`.
+
+   If you want to be able to do more than just delete the primary project once you've started a parallel one, keep backups of your `*tfstate*` files.
+   :::
+
 1. After creating a new project, use a different credentials filename and add your `credentials_file` to `terraform.tfvars` (for example `credentials_file = gcp-key-2.json`).
 
    :::tip

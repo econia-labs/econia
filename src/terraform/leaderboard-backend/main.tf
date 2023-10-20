@@ -91,7 +91,7 @@ resource "terraform_data" "config_environment" {
       # Set config defaults.
       "gcloud config set artifacts/location ${var.region}",
       "gcloud config set compute/zone ${var.zone}",
-      "gcloud config set run/region ${var.zone}",
+      "gcloud config set run/region ${var.region}",
     ])
   }
 }
@@ -381,6 +381,7 @@ resource "google_vpc_access_connector" "vpc_connector" {
 }
 
 resource "google_cloud_run_v2_service" "postgrest" {
+  ingress  = "INGRESS_TRAFFIC_INTERNAL_ONLY"
   location = var.region
   name     = "postgrest"
   template {
@@ -413,6 +414,8 @@ resource "google_cloud_run_v2_service" "postgrest" {
   }
 }
 
+# Included in case user wants public URL without load balancing.
+# Overriden by manual load balancer step from walkthrough.
 data "google_iam_policy" "no_auth" {
   binding {
     role = "roles/run.invoker"
@@ -421,7 +424,8 @@ data "google_iam_policy" "no_auth" {
     ]
   }
 }
-
+# Included in case user wants public URL without load balancing.
+# Overriden by manual load balancer step from walkthrough.
 resource "google_cloud_run_service_iam_policy" "no_auth" {
   location    = google_cloud_run_v2_service.postgrest.location
   project     = google_cloud_run_v2_service.postgrest.project

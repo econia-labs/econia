@@ -7,7 +7,7 @@ This guide is for a specific use case, the Econia testnet trading competition le
 ```mermaid
 flowchart TB
 
-subgraph gcp[Google Cloud Platform via Terraform]
+subgraph gcp[Google Cloud Platform]
     subgraph rest-service[REST API Cloud Run Service]
         subgraph r-instance-1[PostgREST Instance]
             ri1c[Container]
@@ -18,8 +18,8 @@ subgraph gcp[Google Cloud Platform via Terraform]
     end
     rest-service --> rest-connector
     subgraph vpc[PostgreSQL VPC]
-        aggregator-container-->|Private IP|cloud_pg
-        processor-container-->|Private IP|cloud_pg
+        aggregator-container-->|Private IP|cloud-pg
+        processor-container-->|Private IP|cloud-pg
         subgraph processor-image[Processor VM]
             processor-container[Container]
         end
@@ -27,13 +27,14 @@ subgraph gcp[Google Cloud Platform via Terraform]
             aggregator-container[Container]
         end
         processor-container-->processor_disk[Config disk]
-        cloud_pg[(PostgreSQL via Cloud SQL)]
-        rest-connector(REST VPC connector)--->cloud_pg
+        cloud-pg[(PostgreSQL via Cloud SQL)]
+        rest-connector(REST VPC connector)--->cloud-pg
     end
+    load-balancer[Global Load Balancer]-->rest-service
 end
 processor-container-->grpc[Aptos Labs gRPC]
-pg_admin[PostgreSQL Admin]-->|Public IP|cloud_pg
-leaderboard[Vercel Leaderboard]-->rest-service
+pg_admin[PostgreSQL Admin]-->|Public IP|cloud-pg
+leaderboard[Vercel Leaderboard]-->load-balancer
 
 classDef gcp fill:#134d52
 classDef vpc fill:#13521d
@@ -167,6 +168,37 @@ class rest-service yellow;
    ```sh
    terraform output
    ```
+
+1. [Set up load balancing with a custom domain](https://cloud.google.com/run/docs/integrate/custom-domain-load-balancer), then update your DNS records for the custom domain.
+
+   ```sh
+   CUSTOM_DOMAIN=<MY_CUSTOM_DOMAIN>
+   ```
+
+   ```sh
+   echo $CUSTOM_DOMAIN
+   ```
+
+   ```sh
+   gcloud beta run integrations create \
+       --parameters set-mapping=$CUSTOM_DOMAIN:postgrest \
+       --type custom-domains
+   ```
+
+   ```sh
+   gcloud beta run integrations describe custom-domains
+   ```
+
+   :::tip
+   Compared with the more complex [generic load balancing setup process](https://cloud.google.com/load-balancing/docs/https/setup-global-ext-https-serverless), this streamlined process is a GCP Cloud Run beta feature that is not yet supported by Terraform.
+
+   If you want to instead use the generic public `run.app` URL, then before you run `terraform apply` remove the following line from the `postgrest` service in `main.tf` and skip this step:
+
+   ```
+   ingress = "INGRESS_TRAFFIC_INTERNAL_ONLY"
+   ```
+
+   :::
 
 ## Take down infrastructure
 

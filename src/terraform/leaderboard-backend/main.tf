@@ -113,7 +113,7 @@ resource "google_sql_database_instance" "postgres" {
       ipv4_enabled    = true
       private_network = google_compute_network.sql_network.id
     }
-    tier = "db-f1-micro"
+    tier = "db-custom-8-32768"
   }
 }
 

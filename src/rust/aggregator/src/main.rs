@@ -1,9 +1,10 @@
-use std::{sync::Arc, time::Duration};
+use std::{
+    sync::Arc,
+    time::{Duration, SystemTime},
+};
 
 use anyhow::Result;
-use data::{
-    leaderboards::Leaderboards, user_history::UserHistory, Data,
-};
+use data::{leaderboards::Leaderboards, user_history::UserHistory, Data};
 use sqlx::PgPool;
 use tokio::{sync::Mutex, task::JoinSet};
 use tracing_subscriber;
@@ -15,7 +16,7 @@ async fn main() -> Result<()> {
     tracing_subscriber::fmt()
         .with_max_level(tracing::Level::INFO)
         .init();
-    tracing::info!("[Aggregator] Started up.");
+    tracing::info!("Started up.");
     dotenvy::dotenv().ok();
 
     let pool = PgPool::connect(
@@ -24,7 +25,7 @@ async fn main() -> Result<()> {
             .as_str(),
     )
     .await?;
-    tracing::info!("[Aggregator] Connected to DB.");
+    tracing::info!("Connected to DB.");
 
     let default_interval = Duration::from_secs(5);
 
@@ -41,12 +42,12 @@ async fn main() -> Result<()> {
             let mut data = data.lock().await;
 
             tracing::info!(
-                "[Aggregator] Starting process & save (historical, {}).",
+                "[{}] Starting process & save (historical).",
                 data.model_name()
             );
             data.process_and_save_historical_data().await?;
             tracing::info!(
-                "[Aggregator] Finished process & save (historical, {}).",
+                "[{}] Finished process & save (historical).",
                 data.model_name()
             );
 
@@ -56,9 +57,20 @@ async fn main() -> Result<()> {
                 tokio::time::sleep(interval).await;
 
                 if data.ready() {
+                    tracing::info!("[{}] Starting process & saving.", data.model_name());
+                    let start = SystemTime::now();
                     data.process_and_save().await?;
+                    let time = start
+                        .elapsed()
+                        .unwrap_or(Duration::from_secs(0))
+                        .as_millis();
+                    tracing::info!(
+                        "[{}] Finished process & saving in {}ms.",
+                        data.model_name(),
+                        time
+                    );
                 } else {
-                    tracing::info!("[Aggregator] Data is not ready.");
+                    tracing::info!("[{}] Data is not ready.", data.model_name());
                 }
             }
 

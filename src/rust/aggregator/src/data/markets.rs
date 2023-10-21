@@ -20,7 +20,6 @@ impl MarketsRegisteredPerDay {
 
 #[async_trait::async_trait]
 impl Data for MarketsRegisteredPerDay {
-
     fn model_name(&self) -> &'static str {
         "MarketsRegisteredPerDay"
     }

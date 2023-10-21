@@ -1,5 +1,5 @@
 use anyhow::anyhow;
-use bigdecimal::BigDecimal;
+use bigdecimal::{BigDecimal, Zero};
 use chrono::{DateTime, Duration, Utc};
 use sqlx::{PgConnection, PgPool, Postgres, Transaction};
 
@@ -178,26 +178,47 @@ async fn aggregate_data_for_competition<'a>(
     .await
     .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
 
-    // Marking events as aggregated
-    sqlx::query!(
+    // Set last aggregated transaction version
+    let max_txnv_fills = sqlx::query!(
         r#"
-            INSERT INTO aggregator.competition_indexed_events
-            SELECT DISTINCT txn_version, event_idx, $1 FROM aggregator.fills($1)
+            SELECT MAX(txn_version) AS max FROM aggregator.fills($1)
         "#,
         comp.id,
     )
-    .execute(transaction as &mut PgConnection)
+    .fetch_one(transaction as &mut PgConnection)
     .await
-    .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
-    sqlx::query!(
+    .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?
+    .max;
+
+    let max_txnv_places = sqlx::query!(
         r#"
-            INSERT INTO aggregator.competition_indexed_events
-            SELECT DISTINCT txn_version, event_idx, $1 FROM aggregator.places($1)
+            SELECT MAX(txn_version) AS max FROM aggregator.places($1)
         "#,
         comp.id,
     )
-    .execute(transaction as &mut PgConnection)
+    .fetch_one(transaction as &mut PgConnection)
     .await
-    .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
+    .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?
+    .max;
+
+    let max = BigDecimal::max(
+        max_txnv_places.unwrap_or(BigDecimal::zero()),
+        max_txnv_fills.unwrap_or(BigDecimal::zero()),
+    );
+
+    if !max.is_zero() {
+        sqlx::query!(
+            r#"
+                INSERT INTO aggregator.competition_indexed_events (txn_version, competition_id)
+                VALUES ($1, $2)
+                ON CONFLICT (competition_id) DO UPDATE SET txn_version = $1
+            "#,
+            max,
+            comp.id,
+        )
+        .execute(transaction as &mut PgConnection)
+        .await
+        .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
+    }
     Ok(())
 }

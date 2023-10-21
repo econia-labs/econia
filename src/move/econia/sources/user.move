@@ -1188,13 +1188,6 @@ module econia::user {
                                          type_info::type_of<GenericAsset>();
         // Assert coin type is not generic asset.
         assert!(!coin_type_is_generic_asset, E_COIN_TYPE_IS_GENERIC_ASSET);
-        // Throttle the deposit.
-        throttler::throttle::throttle_transfer(
-            market_id,
-            user_address,
-            false,
-            coin::decimals<CoinType>() == 8,
-            coin::value(&coins));
         deposit_asset<CoinType>( // Deposit asset.
             user_address,
             market_id,
@@ -1973,13 +1966,8 @@ module econia::user {
         deposit_asset<BaseType>( // Deposit base asset.
             user_address, market_id, custodian_id, base_amount,
             optional_base_coins, underwriter_id);
-        deposit_asset<QuoteType>( // Deposit quote coins.
-            user_address,
-            market_id,
-            custodian_id,
-            coin::value(&quote_coins),
-            option::some(quote_coins),
-            NO_UNDERWRITER);
+        deposit_coins<QuoteType>( // Deposit quote coins.
+            user_address, market_id, custodian_id, quote_coins);
     }
 
     /// Emit limit order events to a user's market event handles.
@@ -4016,7 +4004,6 @@ module econia::user {
         Collateral,
         MarketAccounts
     {
-        econia::assets::init_coin_types_test();
         // Attempt invalid invocation.
         deposit_coins<BC>(@user, 0, 0, coin::zero());
     }

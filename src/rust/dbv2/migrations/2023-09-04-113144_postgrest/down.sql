@@ -2,9 +2,6 @@
 DROP VIEW api.market_registration_events;
 
 
-DROP FUNCTION api.jwt;
-
-
 DROP SCHEMA api;
 
 

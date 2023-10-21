@@ -192,7 +192,7 @@ class rest-service yellow;
    :::tip
    Compared with the more complex [generic load balancing setup process](https://cloud.google.com/load-balancing/docs/https/setup-global-ext-https-serverless), this streamlined process is a GCP Cloud Run beta feature that is not yet supported by Terraform.
 
-   If you want to instead use the generic public `run.app` URL, then before you run `terraform apply` remove the following line from the `postgrest` service in `main.tf` and skip this step:
+   If you want to instead use the generic public `run.app` URL, then before you run `terraform apply` remove the following line from the `postgrest` service in `main.tf`, then skip this and all remaining steps:
 
    ```
    ingress = "INGRESS_TRAFFIC_INTERNAL_ONLY"
@@ -208,6 +208,16 @@ class rest-service yellow;
 
    ```sh
    BACKEND_SERVICE=<custom-domains-x-y-postgrest-z-be>
+   ```
+
+   ```sh
+   echo $BACKEND_SERVICE
+   ```
+
+   ```sh
+   gcloud compute backend-services update $BACKEND_SERVICE \
+       --global \
+       --security-policy public-traffic
    ```
 
 ## Take down infrastructure

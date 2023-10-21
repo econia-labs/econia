@@ -467,7 +467,7 @@ resource "google_compute_security_policy" "public_traffic" {
       }
       versioned_expr = "SRC_IPS_V1"
     }
-    priority = "1000"
+    priority = "1"
     rate_limit_options {
       ban_duration_sec = 3600
       conform_action   = "allow"
@@ -493,7 +493,7 @@ resource "google_compute_security_policy" "public_traffic" {
       }
       versioned_expr = "SRC_IPS_V1"
     }
-    priority = "1001"
+    priority = "2"
     rate_limit_options {
       conform_action = "allow"
       enforce_on_key = ""

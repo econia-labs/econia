@@ -449,3 +449,48 @@ resource "terraform_data" "seed_competition_data" {
     working_dir = "${local.econia_repo_root}/${local.competition_metadata_dir}"
   }
 }
+
+resource "google_compute_security_policy" "public_traffic" {
+  adaptive_protection_config {
+    layer_7_ddos_defense_config {
+      enable = true
+    }
+  }
+  name = "public-traffic"
+  rule {
+    action = "rate_based_ban"
+    match {
+      config {
+        src_ip_ranges = ["*"]
+      }
+      versioned_expr = "SRC_IPS_V1"
+    }
+    priority = "2147483646"
+    rate_limit_options {
+      conform_action = "allow"
+      exceed_action  = "deny(429)"
+      rate_limit_threshold {
+        count        = 20
+        interval_sec = 10
+      }
+    }
+  }
+  rule {
+    action = "throttle"
+    match {
+      config {
+        src_ip_ranges = ["*"]
+      }
+      versioned_expr = "SRC_IPS_V1"
+    }
+    priority = "2147483647"
+    rate_limit_options {
+      conform_action = "allow"
+      exceed_action  = "deny(429)"
+      rate_limit_threshold {
+        count        = 10
+        interval_sec = 10
+      }
+    }
+  }
+}

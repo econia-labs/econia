@@ -200,6 +200,16 @@ class rest-service yellow;
 
    :::
 
+1. Create a [security policy](https://cloud.google.com/armor/docs/configure-security-policies#https-load-balancer) for the load balancer:
+
+   ```sh
+   gcloud compute backend-services list
+   ```
+
+   ```sh
+   BACKEND_SERVICE=<custom-domains-x-y-postgrest-z-be>
+   ```
+
 ## Take down infrastructure
 
 1. Destroy project resources:

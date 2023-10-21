@@ -424,6 +424,7 @@ data "google_iam_policy" "no_auth" {
     ]
   }
 }
+
 # Included in case user wants public URL without load balancing.
 # Overriden by manual load balancer step from walkthrough.
 resource "google_cloud_run_service_iam_policy" "no_auth" {
@@ -456,7 +457,8 @@ resource "google_compute_security_policy" "public_traffic" {
       enable = true
     }
   }
-  name = "public-traffic"
+  name     = "public-traffic"
+  provider = google-beta
   rule {
     action = "rate_based_ban"
     match {
@@ -465,10 +467,18 @@ resource "google_compute_security_policy" "public_traffic" {
       }
       versioned_expr = "SRC_IPS_V1"
     }
-    priority = "2147483646"
+    priority = "1000"
     rate_limit_options {
-      conform_action = "allow"
-      exceed_action  = "deny(429)"
+      ban_duration_sec = 3600
+      conform_action   = "allow"
+      enforce_on_key   = ""
+      enforce_on_key_configs {
+        enforce_on_key_type = "IP"
+      }
+      enforce_on_key_configs {
+        enforce_on_key_type = "XFF_IP"
+      }
+      exceed_action = "deny(429)"
       rate_limit_threshold {
         count        = 20
         interval_sec = 10
@@ -483,14 +493,33 @@ resource "google_compute_security_policy" "public_traffic" {
       }
       versioned_expr = "SRC_IPS_V1"
     }
-    priority = "2147483647"
+    priority = "1001"
     rate_limit_options {
       conform_action = "allow"
-      exceed_action  = "deny(429)"
+      enforce_on_key = ""
+      enforce_on_key_configs {
+        enforce_on_key_type = "IP"
+      }
+      enforce_on_key_configs {
+        enforce_on_key_type = "XFF_IP"
+      }
+      exceed_action = "deny(429)"
       rate_limit_threshold {
         count        = 10
         interval_sec = 10
       }
     }
   }
+  rule {
+    action      = "allow"
+    description = "default rule"
+    match {
+      config {
+        src_ip_ranges = ["*"]
+      }
+      versioned_expr = "SRC_IPS_V1"
+    }
+    priority = "2147483647"
+  }
+  type = "CLOUD_ARMOR"
 }

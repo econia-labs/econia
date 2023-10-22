@@ -408,6 +408,15 @@ resource "google_cloud_run_v2_service" "postgrest" {
         container_port = 3000
       }
     }
+    # Set concurrency and max instance count based on Cloud SQL
+    # memory, with buffer for VM instances and margin of safety.
+    # https://cloud.google.com/run/docs/about-concurrency
+    # https://cloud.google.com/sql/docs/postgres/flags#postgres-m
+    max_instance_request_concurrency = 20
+    scaling {
+        min_instance_count = 1
+        max_instance_count = 25
+    }
     vpc_access {
       connector = google_vpc_access_connector.vpc_connector.id
       egress    = "ALL_TRAFFIC"

@@ -1,7 +1,7 @@
 use anyhow::anyhow;
 use bigdecimal::{num_bigint::ToBigInt, BigDecimal, Zero};
 use chrono::{DateTime, Duration, Utc};
-use sqlx::{PgConnection, PgPool, Postgres, Transaction, Executor};
+use sqlx::{Executor, PgConnection, PgPool, Postgres, Transaction};
 
 use super::{Data, DataAggregationError, DataAggregationResult};
 
@@ -40,7 +40,6 @@ impl UserHistory {
 
 #[async_trait::async_trait]
 impl Data for UserHistory {
-
     fn model_name(&self) -> &'static str {
         "UserHistory"
     }
@@ -67,7 +66,8 @@ impl Data for UserHistory {
             .begin()
             .await
             .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
-        transaction.execute("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;")
+        transaction
+            .execute("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;")
             .await
             .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
         let fill_events = sqlx::query!(

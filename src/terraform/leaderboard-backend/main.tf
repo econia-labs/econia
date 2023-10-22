@@ -85,6 +85,7 @@ resource "terraform_data" "config_environment" {
       "gcloud services enable cloudresourcemanager.googleapis.com",
       "gcloud services enable compute.googleapis.com",
       "gcloud services enable run.googleapis.com",
+      "gcloud services enable runapps.googleapis.com",
       "gcloud services enable servicenetworking.googleapis.com",
       "gcloud services enable sqladmin.googleapis.com",
       "gcloud services enable vpcaccess.googleapis.com",

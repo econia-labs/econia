@@ -414,8 +414,8 @@ resource "google_cloud_run_v2_service" "postgrest" {
     # https://cloud.google.com/sql/docs/postgres/flags#postgres-m
     max_instance_request_concurrency = 20
     scaling {
-        min_instance_count = 1
-        max_instance_count = 25
+      min_instance_count = 1
+      max_instance_count = 25
     }
     vpc_access {
       connector = google_vpc_access_connector.vpc_connector.id

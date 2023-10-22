@@ -458,6 +458,31 @@ resource "google_compute_security_policy" "public_traffic" {
       enable = true
     }
   }
+  rule {
+    action = "throttle"
+    match {
+      config {
+        src_ip_ranges = ["*"]
+      }
+      versioned_expr = "SRC_IPS_V1"
+    }
+    priority = "1"
+    rate_limit_options {
+      conform_action = "allow"
+      enforce_on_key = ""
+      enforce_on_key_configs {
+        enforce_on_key_type = "IP"
+      }
+      enforce_on_key_configs {
+        enforce_on_key_type = "XFF_IP"
+      }
+      exceed_action = "deny(429)"
+      rate_limit_threshold {
+        count        = 10
+        interval_sec = 10
+      }
+    }
+  }
   name     = "public-traffic"
   provider = google-beta
   rule {
@@ -468,7 +493,7 @@ resource "google_compute_security_policy" "public_traffic" {
       }
       versioned_expr = "SRC_IPS_V1"
     }
-    priority = "1"
+    priority = "2"
     rate_limit_options {
       ban_duration_sec = 3600
       conform_action   = "allow"
@@ -482,31 +507,6 @@ resource "google_compute_security_policy" "public_traffic" {
       exceed_action = "deny(429)"
       rate_limit_threshold {
         count        = 20
-        interval_sec = 10
-      }
-    }
-  }
-  rule {
-    action = "throttle"
-    match {
-      config {
-        src_ip_ranges = ["*"]
-      }
-      versioned_expr = "SRC_IPS_V1"
-    }
-    priority = "2"
-    rate_limit_options {
-      conform_action = "allow"
-      enforce_on_key = ""
-      enforce_on_key_configs {
-        enforce_on_key_type = "IP"
-      }
-      enforce_on_key_configs {
-        enforce_on_key_type = "XFF_IP"
-      }
-      exceed_action = "deny(429)"
-      rate_limit_threshold {
-        count        = 10
         interval_sec = 10
       }
     }

@@ -8,6 +8,14 @@ This guide is for a specific use case, the Econia testnet trading competition le
 flowchart TB
 
 subgraph gcp[Google Cloud Platform]
+    subgraph load-balancer[Global Load Balancer]
+        subgraph armor[GCP Cloud Armor]
+        direction LR
+            rate-limiting[IP Rate Limiting]
+            ddos[Layer 7 DDoS Protection]
+        end
+    end
+    load-balancer-->rest-service
     subgraph rest-service[REST API Cloud Run Service]
         subgraph r-instance-1[PostgREST Instance]
             ri1c[Container]
@@ -30,17 +38,18 @@ subgraph gcp[Google Cloud Platform]
         cloud-pg[(PostgreSQL via Cloud SQL)]
         rest-connector(REST VPC connector)--->cloud-pg
     end
-    load-balancer[Global Load Balancer]-->rest-service
 end
 processor-container-->grpc[Aptos Labs gRPC]
 pg_admin[PostgreSQL Admin]-->|Public IP|cloud-pg
 leaderboard[Vercel Leaderboard]-->load-balancer
 
-classDef gcp fill:#134d52
-classDef vpc fill:#13521d
+classDef blue fill:#134d52
+classDef green fill:#13521d
 classDef yellow fill:#979e37
-class gcp gcp;
-class vpc vpc;
+classDef purple fill:#800080
+class load-balancer purple;
+class gcp blue;
+class vpc green;
 class ws-service yellow;
 class rest-service yellow;
 ```

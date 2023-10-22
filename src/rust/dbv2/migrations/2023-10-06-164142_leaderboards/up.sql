@@ -136,7 +136,7 @@ BEGIN
     RETURN QUERY
       select *
       from fill_events
-      where txn_version > (select cie.txn_version from aggregator.competition_indexed_events as cie where cie.competition_id = $1)
+      where txn_version > coalesce((select cie.txn_version from aggregator.competition_indexed_events as cie where cie.competition_id = $1), 0)
       and maker_address = emit_address
       and market_id = comp.market_id
       and time > comp.start
@@ -159,21 +159,21 @@ BEGIN
     RETURN QUERY
       select ploe."user", ploe."integrator", ploe.time, ploe.txn_version, ploe.event_idx
       from place_limit_order_events as ploe
-      where ploe.txn_version > (select cie.txn_version from aggregator.competition_indexed_events as cie where cie.competition_id = $1)
+      where ploe.txn_version > coalesce((select cie.txn_version from aggregator.competition_indexed_events as cie where cie.competition_id = $1), 0)
       and ploe.market_id = comp.market_id
       and ploe.time > comp.start
       and ploe.time < comp."end"
       union all
       select pmoe."user", pmoe."integrator", pmoe.time, pmoe.txn_version, pmoe.event_idx
       from place_market_order_events as pmoe
-      where pmoe.txn_version > (select cie.txn_version from aggregator.competition_indexed_events as cie where cie.competition_id = $1)
+      where pmoe.txn_version > coalesce((select cie.txn_version from aggregator.competition_indexed_events as cie where cie.competition_id = $1), 0)
       and pmoe.market_id = comp.market_id
       and pmoe.time > comp.start
       and pmoe.time < comp."end"
       union all
       select psoe."signing_account", psoe."integrator", psoe.time, psoe.txn_version, psoe.event_idx
       from place_swap_order_events as psoe
-      where psoe.txn_version > (select cie.txn_version from aggregator.competition_indexed_events as cie where cie.competition_id = $1)
+      where psoe.txn_version > coalesce((select cie.txn_version from aggregator.competition_indexed_events as cie where cie.competition_id = $1), 0)
       and psoe.market_id = comp.market_id
       and psoe.time > comp.start
       and psoe.time < comp."end";

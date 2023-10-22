@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n                SELECT * FROM fill_events\n                WHERE NOT EXISTS (\n                    SELECT * FROM aggregator.aggregated_events\n                    WHERE fill_events.txn_version = aggregated_events.txn_version\n                    AND fill_events.event_idx = aggregated_events.event_idx\n                )\n                ORDER BY txn_version, event_idx\n            ",
+  "query": "\n                SELECT * FROM fill_events\n                WHERE txn_version > $1\n                ORDER BY txn_version, event_idx\n            ",
   "describe": {
     "columns": [
       {
@@ -85,7 +85,9 @@
       }
     ],
     "parameters": {
-      "Left": []
+      "Left": [
+        "Numeric"
+      ]
     },
     "nullable": [
       false,
@@ -106,5 +108,5 @@
       false
     ]
   },
-  "hash": "3eb91041ba672ee4dd8f310983a8aaba64a8c4bb8cb921b7d3b177e1d91a3525"
+  "hash": "6b092fa0efbdb121b2e88ca45f29db260aae56df4ef961fb26f8e05f5d9bd7d7"
 }

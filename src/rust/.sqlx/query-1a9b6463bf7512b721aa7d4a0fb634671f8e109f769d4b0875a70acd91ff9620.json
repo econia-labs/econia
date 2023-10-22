@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n                SELECT * FROM place_market_order_events\n                WHERE NOT EXISTS (\n                    SELECT * FROM aggregator.aggregated_events\n                    WHERE place_market_order_events.txn_version = aggregated_events.txn_version\n                    AND place_market_order_events.event_idx = aggregated_events.event_idx\n                )\n            ",
+  "query": "\n                SELECT * FROM change_order_size_events\n                WHERE txn_version > $1\n                ORDER BY txn_version, event_idx\n            ",
   "describe": {
     "columns": [
       {
@@ -40,31 +40,21 @@
       },
       {
         "ordinal": 7,
-        "name": "integrator",
-        "type_info": "Varchar"
-      },
-      {
-        "ordinal": 8,
-        "name": "direction",
+        "name": "side",
         "type_info": "Bool"
       },
       {
-        "ordinal": 9,
-        "name": "size",
+        "ordinal": 8,
+        "name": "new_size",
         "type_info": "Numeric"
-      },
-      {
-        "ordinal": 10,
-        "name": "self_match_behavior",
-        "type_info": "Int2"
       }
     ],
     "parameters": {
-      "Left": []
+      "Left": [
+        "Numeric"
+      ]
     },
     "nullable": [
-      false,
-      false,
       false,
       false,
       false,
@@ -76,5 +66,5 @@
       false
     ]
   },
-  "hash": "6307f307695a8b426f0607b9ccd60e02ecb042f8d6a22bfb3d723486e3068fd4"
+  "hash": "1a9b6463bf7512b721aa7d4a0fb634671f8e109f769d4b0875a70acd91ff9620"
 }

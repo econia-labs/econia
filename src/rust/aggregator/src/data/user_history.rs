@@ -70,16 +70,27 @@ impl Data for UserHistory {
             .execute("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;")
             .await
             .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
+        struct TxnVersion {
+            txn_version: BigDecimal,
+        }
+        let max_txn_version = sqlx::query_as!(
+            TxnVersion,
+            "SELECT txn_version FROM aggregator.user_history_last_indexed_txn",
+        )
+        .fetch_optional(&mut transaction as &mut PgConnection)
+        .await
+        .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
+        let txnv_exists = max_txn_version.is_some();
+        let max_txn_version = max_txn_version
+            .unwrap_or(TxnVersion { txn_version: BigDecimal::zero() })
+            .txn_version;
         let fill_events = sqlx::query!(
             r#"
                 SELECT * FROM fill_events
-                WHERE NOT EXISTS (
-                    SELECT * FROM aggregator.aggregated_events
-                    WHERE fill_events.txn_version = aggregated_events.txn_version
-                    AND fill_events.event_idx = aggregated_events.event_idx
-                )
+                WHERE txn_version > $1
                 ORDER BY txn_version, event_idx
             "#,
+            max_txn_version
         )
         .fetch_all(&mut transaction as &mut PgConnection)
         .await
@@ -87,13 +98,10 @@ impl Data for UserHistory {
         let change_events = sqlx::query!(
             r#"
                 SELECT * FROM change_order_size_events
-                WHERE NOT EXISTS (
-                    SELECT * FROM aggregator.aggregated_events
-                    WHERE change_order_size_events.txn_version = aggregated_events.txn_version
-                    AND change_order_size_events.event_idx = aggregated_events.event_idx
-                )
+                WHERE txn_version > $1
                 ORDER BY txn_version, event_idx
             "#,
+            max_txn_version
         )
         .fetch_all(&mut transaction as &mut PgConnection)
         .await
@@ -101,12 +109,9 @@ impl Data for UserHistory {
         let cancel_events = sqlx::query!(
             r#"
                 SELECT * FROM cancel_order_events
-                WHERE NOT EXISTS (
-                    SELECT * FROM aggregator.aggregated_events
-                    WHERE cancel_order_events.txn_version = aggregated_events.txn_version
-                    AND cancel_order_events.event_idx = aggregated_events.event_idx
-                )
+                WHERE txn_version > $1
             "#,
+            max_txn_version
         )
         .fetch_all(&mut transaction as &mut PgConnection)
         .await
@@ -114,12 +119,9 @@ impl Data for UserHistory {
         let limit_events = sqlx::query!(
             r#"
                 SELECT * FROM place_limit_order_events
-                WHERE NOT EXISTS (
-                    SELECT * FROM aggregator.aggregated_events
-                    WHERE place_limit_order_events.txn_version = aggregated_events.txn_version
-                    AND place_limit_order_events.event_idx = aggregated_events.event_idx
-                )
+                WHERE txn_version > $1
             "#,
+            max_txn_version
         )
         .fetch_all(&mut transaction as &mut PgConnection)
         .await
@@ -127,12 +129,9 @@ impl Data for UserHistory {
         let market_events = sqlx::query!(
             r#"
                 SELECT * FROM place_market_order_events
-                WHERE NOT EXISTS (
-                    SELECT * FROM aggregator.aggregated_events
-                    WHERE place_market_order_events.txn_version = aggregated_events.txn_version
-                    AND place_market_order_events.event_idx = aggregated_events.event_idx
-                )
+                WHERE txn_version > $1
             "#,
+            max_txn_version
         )
         .fetch_all(&mut transaction as &mut PgConnection)
         .await
@@ -140,12 +139,9 @@ impl Data for UserHistory {
         let swap_events = sqlx::query!(
             r#"
                 SELECT * FROM place_swap_order_events
-                WHERE NOT EXISTS (
-                    SELECT * FROM aggregator.aggregated_events
-                    WHERE place_swap_order_events.txn_version = aggregated_events.txn_version
-                    AND place_swap_order_events.event_idx = aggregated_events.event_idx
-                )
+                WHERE txn_version > $1
             "#,
+            max_txn_version
         )
         .fetch_all(&mut transaction as &mut PgConnection)
         .await
@@ -203,7 +199,6 @@ impl Data for UserHistory {
             .execute(&mut transaction as &mut PgConnection)
             .await
             .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
-            mark_as_aggregated(&mut transaction, &x.txn_version, &x.event_idx).await?;
         }
         for x in &market_events {
             sqlx::query!(
@@ -241,7 +236,6 @@ impl Data for UserHistory {
             .execute(&mut transaction as &mut PgConnection)
             .await
             .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
-            mark_as_aggregated(&mut transaction, &x.txn_version, &x.event_idx).await?;
         }
         for x in &swap_events {
             sqlx::query!(
@@ -289,7 +283,6 @@ impl Data for UserHistory {
             .execute(&mut transaction as &mut PgConnection)
             .await
             .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
-            mark_as_aggregated(&mut transaction, &x.txn_version, &x.event_idx).await?;
         }
         // Step through fill and change events in total order.
         let mut fill_index = 0;
@@ -325,8 +318,6 @@ impl Data for UserHistory {
                         )
                         .await?;
                     }
-                    mark_as_aggregated(&mut transaction, &fill.txn_version, &fill.event_idx)
-                        .await?;
                     fill_index += 1;
                 }
                 (None, Some(change)) => {
@@ -340,8 +331,6 @@ impl Data for UserHistory {
                         &change.event_idx,
                     )
                     .await?;
-                    mark_as_aggregated(&mut transaction, &change.txn_version, &change.event_idx)
-                        .await?;
                     change_index += 1;
                 }
                 _ => unreachable!(),
@@ -361,8 +350,8 @@ impl Data for UserHistory {
             .execute(&mut transaction as &mut PgConnection)
             .await
             .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
-            mark_as_aggregated(&mut transaction, &x.txn_version, &x.event_idx).await?;
         }
+        update_max_txn_version(&mut transaction, txnv_exists).await?;
         transaction
             .commit()
             .await
@@ -495,22 +484,49 @@ async fn aggregate_change<'a>(
     Ok(())
 }
 
-async fn mark_as_aggregated<'a>(
+async fn update_max_txn_version<'a>(
     tx: &mut Transaction<'a, Postgres>,
-    txn_version: &BigDecimal,
-    event_idx: &BigDecimal,
+    already_exists: bool,
 ) -> DataAggregationResult {
-    sqlx::query!(
+    let new_max_txn_version = sqlx::query!(
         r#"
-            INSERT INTO aggregator.aggregated_events VALUES (
-                $1, $2
-            );
+            WITH max_per_table AS (
+                SELECT MAX(txn_version) AS max FROM fill_events
+                UNION ALL
+                SELECT MAX(txn_version) AS max FROM place_limit_order_events
+                UNION ALL
+                SELECT MAX(txn_version) AS max FROM place_market_order_events
+                UNION ALL
+                SELECT MAX(txn_version) AS max FROM place_swap_order_events
+            )
+            SELECT MAX(max) AS max FROM max_per_table
         "#,
-        txn_version,
-        event_idx,
     )
-    .execute(tx as &mut PgConnection)
+    .fetch_one(tx as &mut PgConnection)
     .await
-    .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
+    .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?
+    .max.unwrap_or(BigDecimal::zero());
+    if already_exists {
+        sqlx::query!(
+            r#"
+                UPDATE aggregator.user_history_last_indexed_txn
+                SET txn_version = $1
+            "#,
+            new_max_txn_version,
+        )
+        .execute(tx as &mut PgConnection)
+        .await
+        .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
+    } else {
+        sqlx::query!(
+            r#"
+                INSERT INTO aggregator.user_history_last_indexed_txn VALUES ($1)
+            "#,
+            new_max_txn_version,
+        )
+        .execute(tx as &mut PgConnection)
+        .await
+        .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
+    }
     Ok(())
 }

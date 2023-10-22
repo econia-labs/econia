@@ -1,0 +1,20 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            WITH max_per_table AS (\n                SELECT MAX(txn_version) AS max FROM fill_events\n                UNION ALL\n                SELECT MAX(txn_version) AS max FROM place_limit_order_events\n                UNION ALL\n                SELECT MAX(txn_version) AS max FROM place_market_order_events\n                UNION ALL\n                SELECT MAX(txn_version) AS max FROM place_swap_order_events\n            )\n            SELECT MAX(max) AS max FROM max_per_table\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "max",
+        "type_info": "Numeric"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "cf4c0bc0f2b7bd465135f027746ac096a57fa0903b4b26e33523a7620c7dee9f"
+}

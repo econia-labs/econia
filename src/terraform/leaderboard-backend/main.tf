@@ -467,6 +467,7 @@ resource "google_compute_security_policy" "public_traffic" {
       enable = true
     }
   }
+  depends_on = [terraform_data.config_environment]
   rule {
     action = "throttle"
     match {

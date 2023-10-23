@@ -3,9 +3,8 @@ import json
 import random
 import sys
 from os import environ
-from typing import Any, Optional, Tuple
+from typing import Optional
 
-import httpx
 from aptos_sdk.account import Account
 from aptos_sdk.account_address import AccountAddress
 from aptos_sdk.async_client import FaucetClient, RestClient
@@ -14,29 +13,25 @@ from aptos_sdk.transactions import EntryFunction, ModuleId
 from aptos_sdk.type_tag import StructTag, TypeTag
 
 from econia_sdk.entry.market import (
-    cancel_all_orders_user,
-    change_order_size_user,
     place_limit_order_user_entry,
     place_market_order_user_entry,
     register_market_base_coin_from_coinstore,
-    swap_between_coinstores_entry,
 )
-from econia_sdk.entry.registry import set_recognized_market
 from econia_sdk.entry.user import deposit_from_coinstore, register_market_account
 from econia_sdk.lib import EconiaClient, EconiaViewer
 from econia_sdk.types import Restriction, SelfMatchBehavior, Side
-from econia_sdk.view.market import get_open_orders_all, get_price_levels
-from econia_sdk.view.registry import (
-    get_market_id_base_coin,
-    get_market_registration_events,
-)
-from econia_sdk.view.user import (
-    get_cancel_order_events,
-    get_fill_events,
-    get_market_account,
-    get_place_limit_order_events,
-)
+from econia_sdk.view.registry import get_market_id_base_coin
 
+"""
+HOW TO RUN THIS SCRIPT: `poetry install && poetry run games 0 0 0` in `/src/python/sdk`
+Enter nothing for all prompts to default to local deployments.
+Using 0 0 0 for the lot size, tick size and min size results in defaults being used.
+You can provide 0 for some or all of the arguments; changing min size is common.
+Only trades with 2 wallets because that's the most rate limits would allow on testnet.
+
+Spits out a `private_keys.json` file in the directory that it was run in so as to cache
+them for later re-use. Otherwise the user would get rate-limited trying to fund
+"""
 U64_MAX = (2**64) - 1
 NODE_URL_LOCAL = "http://0.0.0.0:8080/v1"
 FAUCET_URL_LOCAL = "http://0.0.0.0:8081"
@@ -130,16 +125,7 @@ INTEGRATORS = [
 ]
 integrator_idx = 0
 
-"""
-HOW TO RUN THIS SCRIPT: `poetry install && poetry run games 0 0 0` in `/src/python/sdk`
-Enter nothing for all prompts to default to local deployments.
-Using 0 0 0 for the lot size, tick size and min size results in defaults being used.
-You can provide 0 for some or all of the arguments; changing min size is common.
-Only trades with 2 wallets because that's the most rate limits would allow on testnet.
 
-Spits out a `private_keys.json` file in the directory that it was run in so as to cache
-them for later re-use. Otherwise the user would get rate-limited trying to fund
-"""
 def start():
     asyncio.run(gen_start())
 
@@ -452,4 +438,3 @@ def read_list_from_file(filepath):
     except Exception as e:
         print(f"An error occurred: {str(e)}")
         return None
-

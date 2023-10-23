@@ -8,6 +8,7 @@ export type PriceLevel = {
 export type Orderbook = {
   bids: PriceLevel[];
   asks: PriceLevel[];
+  updatedLevel?: PriceLevel;
 };
 export type Precision =
   | "0.01"

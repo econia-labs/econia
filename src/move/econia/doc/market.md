@@ -2266,6 +2266,16 @@ Limit order size results in base asset amount overflow.
 
 
 
+<a name="0xc0deb00c_market_E_SIZE_CHANGE_BELOW_MIN_SIZE"></a>
+
+New order size is less than the minimum order size for market.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_SIZE_CHANGE_BELOW_MIN_SIZE">E_SIZE_CHANGE_BELOW_MIN_SIZE</a>: u64 = 33;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_market_E_SIZE_CHANGE_INSERTION_ERROR"></a>
 
 Order size change requiring insertion resulted in an AVL queue
@@ -5310,6 +5320,8 @@ correspond to a valid order.
 on book having given market order ID.
 * <code><a href="market.md#0xc0deb00c_market_E_INVALID_CUSTODIAN">E_INVALID_CUSTODIAN</a></code>: Mismatch between <code>custodian_id</code> and
 custodian ID of order on order book having market order ID.
+* <code><a href="market.md#0xc0deb00c_market_E_SIZE_CHANGE_BELOW_MIN_SIZE">E_SIZE_CHANGE_BELOW_MIN_SIZE</a></code>: New order size is less than
+the minimum order size for market.
 
 
 <a name="@Expected_value_testing_106"></a>
@@ -5327,6 +5339,7 @@ custodian ID of order on order book having market order ID.
 ### Failure testing
 
 
+* <code>test_change_order_size_below_min_size()</code>
 * <code>test_change_order_size_insertion_error()</code>
 * <code>test_change_order_size_invalid_custodian()</code>
 * <code>test_change_order_size_invalid_market_id()</code>
@@ -5360,6 +5373,9 @@ custodian ID of order on order book having market order ID.
             <a href="market.md#0xc0deb00c_market_E_INVALID_MARKET_ID">E_INVALID_MARKET_ID</a>);
     <b>let</b> order_book_ref_mut = // Mutably borrow <a href="market.md#0xc0deb00c_market">market</a> order book.
         <a href="tablist.md#0xc0deb00c_tablist_borrow_mut">tablist::borrow_mut</a>(order_books_map_ref_mut, market_id);
+    // Assert new size is at least minimum size for <a href="market.md#0xc0deb00c_market">market</a>.
+    <b>assert</b>!(new_size &gt;= order_book_ref_mut.min_size,
+            <a href="market.md#0xc0deb00c_market_E_SIZE_CHANGE_BELOW_MIN_SIZE">E_SIZE_CHANGE_BELOW_MIN_SIZE</a>);
     // Mutably borrow corresponding orders AVL queue.
     <b>let</b> orders_ref_mut = <b>if</b> (side == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>) &<b>mut</b> order_book_ref_mut.asks
         <b>else</b> &<b>mut</b> order_book_ref_mut.bids;
@@ -5805,6 +5821,7 @@ requirement not met.
 * <code>test_match_empty()</code>
 * <code>test_match_fill_size_0()</code>
 * <code>test_match_loop_twice()</code>
+* <code>test_match_order_size_0()</code>
 * <code>test_match_partial_fill_lot_limited_sell()</code>
 * <code>test_match_partial_fill_tick_limited_buy()</code>
 * <code>test_match_price_break_buy()</code>
@@ -5913,6 +5930,31 @@ requirement not met.
         <b>let</b> order_ref_mut = <a href="avl_queue.md#0xc0deb00c_avl_queue_borrow_head_mut">avl_queue::borrow_head_mut</a>(orders_ref_mut);
         // Assert AVL queue head price matches that of order.
         <b>assert</b>!(order_ref_mut.price == price, <a href="market.md#0xc0deb00c_market_E_HEAD_KEY_PRICE_MISMATCH">E_HEAD_KEY_PRICE_MISMATCH</a>);
+        // If order at head of queue <b>has</b> size 0, evict it and
+        // <b>continue</b> <b>to</b> next order. This should never be reached
+        // during production, but is handled here <b>to</b> explicitly
+        // verify the assumption of no empty orders on the book.
+        <b>if</b> (order_ref_mut.size == 0) {
+            <b>let</b> <a href="market.md#0xc0deb00c_market_Order">Order</a>{
+                size: evictee_size,
+                price: evictee_price,
+                <a href="user.md#0xc0deb00c_user">user</a>: evictee_user,
+                custodian_id: evictee_custodian_id,
+                order_access_key: evictee_order_access_key
+            } = <a href="avl_queue.md#0xc0deb00c_avl_queue_pop_head">avl_queue::pop_head</a>(orders_ref_mut);
+            <a href="user.md#0xc0deb00c_user_cancel_order_internal">user::cancel_order_internal</a>(
+                evictee_user,
+                market_id,
+                evictee_custodian_id,
+                side,
+                evictee_size,
+                evictee_price,
+                evictee_order_access_key,
+                (<a href="market.md#0xc0deb00c_market_NIL">NIL</a> <b>as</b> u128),
+                <a href="market.md#0xc0deb00c_market_CANCEL_REASON_EVICTION">CANCEL_REASON_EVICTION</a>,
+            );
+            <b>continue</b>
+        };
         // Get fill size and <b>if</b> a complete fill against book.
         <b>let</b> (fill_size, complete_fill) =
             // If max fill size is less than order size, fill size

@@ -18,3 +18,6 @@ export const RPC_NODE_URL = process.env.NEXT_PUBLIC_RPC_NODE_URL;
 export const ECONIA_ADDR = process.env.NEXT_PUBLIC_ECONIA_ADDR;
 export const FAUCET_ADDR = process.env.NEXT_PUBLIC_FAUCET_ADDR;
 export const NETWORK_NAME = process.env.NEXT_PUBLIC_NETWORK_NAME;
+
+// todo: remove this when audit comes back
+export const AUDIT_ADDR = process.env.NEXT_PUBLIC_AUDIT_ONLY_ADDR;

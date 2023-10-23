@@ -1,0 +1,14 @@
+[package]
+name = "EconiaTestnetCompetitionThrottler"
+version = "0.1.0"
+upgrade_policy = "compatible"
+authors = ["Econia Labs (developers@econialabs.com)"]
+
+[addresses]
+throttler = "_"
+admin = "_"
+
+[dependencies.AptosFramework]
+git = "https://github.com/aptos-labs/aptos-core.git"
+rev = "testnet"
+subdir = "aptos-move/framework/aptos-framework"

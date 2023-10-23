@@ -262,8 +262,9 @@ pub fn place_limit_order_passive_advance_user_entry(
 /// * `integrator`: Integrator's [`AccountAddress`].
 /// * `side`: Order [`Side`].
 /// * `size`: Size of the order in lots.
-/// * `advance_style`: The [`AdvanceStyle`] of the order.
-/// * `target_advance_amount`: Target advance amount.
+/// * `price`: Price of the order.
+/// * `restriction`: The [`Restriction`] of the order.
+/// * `self_match_behavior`: The [`SelfMatchBehavior`] of the order.
 #[allow(clippy::too_many_arguments)]
 pub fn place_limit_order_user_entry(
     econia_address: AccountAddress,
@@ -616,8 +617,8 @@ pub fn init_market_event_handles_if_missing(
 /// * `integrator`: Integrator's AccountAddress.
 /// * `side`: Order [`Side`].
 /// * `size`: Size of the order in lots.
-/// * `restriction`: the [`Restriction`] of the order.
-/// * `self_match_behavior`: the [`SelfMatchBehavior`] of the order.
+/// * `restriction`: The [`Restriction`] of the order.
+/// * `self_match_behavior`: The [`SelfMatchBehavior`] of the order.
 pub fn place_market_order_user_entry(
     econia_address: AccountAddress,
     base: &TypeTag,

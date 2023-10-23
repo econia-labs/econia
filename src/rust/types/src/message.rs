@@ -1,11 +1,7 @@
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    book::PriceLevelWithId,
-    order::Order,
-    events::FillEvent,
-};
+use crate::{book::PriceLevelWithId, events::FillEvent, order::Order};
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 #[cfg_attr(

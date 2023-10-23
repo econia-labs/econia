@@ -1,0 +1,16 @@
+[package]
+name = "dbv2"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bigdecimal = { workspace = true }
+chrono = { workspace = true }
+diesel = { workspace = true, features = ["chrono", "numeric", "postgres"] }
+serde = { workspace = true, optional = true }
+sqlx = { workspace = true, optional = true }
+
+[features]
+sqlx = ["dep:sqlx"]

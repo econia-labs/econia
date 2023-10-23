@@ -3,6 +3,7 @@ from os import environ
 import httpx
 import rel
 import websocket
+import jwt
 
 REST_URL_LOCAL_DEFAULT = "http://0.0.0.0:3000"
 WS_URL_LOCAL_DEFAULT = "ws://0.0.0.0:3001"
@@ -68,13 +69,14 @@ def get_channel() -> str:
 
 
 def start():
-    host_rest = get_rest_host()
-    channel = get_channel()
-    response = httpx.post(f"{host_rest}/rpc/jwt", json={"channels": [channel]})
-
+    token = jwt.encode(
+        {'mode': 'r', 'channels': [get_channel()]},
+        'econia_0000000000000000000000000',
+        algorithm='HS256'
+    ).decode('utf-8')
     host_ws = get_ws_host()
     ws = websocket.WebSocketApp(
-        f"{host_ws}/{response.text[1:-1]}",
+        f"{host_ws}/{token}",
         on_open=on_open,
         on_message=on_message,
         on_error=on_error,

@@ -18,8 +18,7 @@ The REST API also provides all the events emitted by the Econia Move package., a
 It can be addressed at `http://0.0.0.0:3000` in the default local configuration of docker compose.
 
 In order to access the WebSocket server, connect to the following URL: `ws://your-host/[JWT]` where `[JWT]` is a JSON Web Token (JWT).
-You must generate the JWT yourself, see `/src/python/sdk/examples/event.py` for an example of how to do so.
-Remember to change the secret to something only you and your team know (global search and replace for it).
+You must generate the JWT yourself, see `src/python/sdk/examples/event.py` for an example of how to do so.
 To get a list of the different channels, please see the [WebSocket server documentation](./websocket.md).
 
 The REST API is actually a PostgREST instance.

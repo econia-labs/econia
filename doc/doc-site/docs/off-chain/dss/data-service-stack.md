@@ -18,20 +18,8 @@ The REST API also provides all the events emitted by the Econia Move package., a
 It can be addressed at `http://0.0.0.0:3000` in the default local configuration of docker compose.
 
 In order to access the WebSocket server, connect to the following URL: `ws://your-host/[JWT]` where `[JWT]` is a JSON Web Token (JWT).
-To get a JWT, query the REST API at `http://your-host/rpc/jwt` with the HTTP method `POST` and `{"channels": […]}` as a payload, where `[…]` is a list of the names of the channels you want to receive notifications for.
-Alternatively, you can generate the JWT by yourself (you can find the secret in the Docker compose file under `src/docker`).
+You must generate the JWT yourself, see `src/python/sdk/examples/event.py` for an example of how to do so.
 To get a list of the different channels, please see the [WebSocket server documentation](./websocket.md).
-
-:::note
-In preparation for the testnet trading competition during 2023-10-25T00:00/2023-11-01T00:00Z, JWT support has been removed from the REST API because the required extension is unavailable on Google Cloud Platform, such that database migrations had to be refactored in a way that prevented JWT generation through the `PostgREST` service.
-You can still manually generate a JWT yourself, though, noting the following plaintext environment variable for the `postgrest-websockets` service:
-
-```yaml
-- PGWS_JWT_SECRET=econia_0000000000000000000000000
-```
-
-Stand by for a resolution, including explicit instructions on JWT generation.
-:::
 
 The REST API is actually a PostgREST instance.
 You can find the REST API documentation [here](./rest-api.md).

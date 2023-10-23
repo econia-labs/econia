@@ -54,6 +54,12 @@ module.exports = {
     ],
   ],
 
+  markdown: {
+    mermaid: true,
+  },
+
+  plugins: ["@docusaurus/theme-mermaid"],
+
   themes: [
     [
       require.resolve("@easyops-cn/docusaurus-search-local"),

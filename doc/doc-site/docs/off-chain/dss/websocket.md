@@ -109,6 +109,8 @@ poetry run event
 ```
 
 Enter nothing for all of the prompts to use the default local configuration.
+The JWT will be generated for you using the compromised `PGWS_JWT_SECRET` environment variable included as an example in the DSS configuration.
+See the `event.py` code for an example of how to generate the JWT yourself.
 
 Now you can perform actions on the locally-deployed exchange to trigger events, or run the `trade.py` script:
 

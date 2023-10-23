@@ -3,8 +3,9 @@ from os import environ
 import httpx
 import rel
 import websocket
+import jwt
 
-REST_URL_LOCAL_DEFAULT = "http://0.0.0.0:3000"
+JWT_SECRET_DEFAULT = "econia_0000000000000000000000000"
 WS_URL_LOCAL_DEFAULT = "ws://0.0.0.0:3001"
 WS_CHANNEL_DEFAULT = "fill_event"
 
@@ -23,20 +24,6 @@ def on_close(ws, close_status_code, close_msg):
 
 def on_open(ws):
     print("Opened connection")
-
-
-def get_rest_host() -> str:
-    url = environ.get("REST_URL")
-    if url == None:
-        url_in = input(
-            "Enter the URL of the REST host (enter nothing to default to local OR re-run with REST_URL environment variable)\n"
-        ).strip()
-        if url_in == "":
-            return REST_URL_LOCAL_DEFAULT
-        else:
-            return url_in
-    else:
-        return url
 
 
 def get_ws_host() -> str:
@@ -65,16 +52,30 @@ def get_channel() -> str:
             return url_in
     else:
         return url
+    
+def get_jwt_secret() -> str:
+    jwt_sec = environ.get("JWT_SECRET")
+    if jwt_sec == None:
+        jwt_sec = input(
+            "Enter the JWT secret (enter nothing to used default compromised key OR re-run with JWT_SECRET environment variable)\n"
+        ).strip()
+        if jwt_sec == "":
+            return JWT_SECRET_DEFAULT
+        else:
+            return jwt_sec
+    else:
+        return jwt_sec
 
 
 def start():
-    host_rest = get_rest_host()
-    channel = get_channel()
-    response = httpx.post(f"{host_rest}/rpc/jwt", json={"channels": [channel]})
-
+    token = jwt.encode(
+        {'mode': 'r', 'channels': [get_channel()]},
+        get_jwt_secret(),
+        algorithm='HS256'
+    ).decode('utf-8')
     host_ws = get_ws_host()
     ws = websocket.WebSocketApp(
-        f"{host_ws}/{response.text[1:-1]}",
+        f"{host_ws}/{token}",
         on_open=on_open,
         on_message=on_message,
         on_error=on_error,

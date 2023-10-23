@@ -1,0 +1,17 @@
+FROM postgres:14-bookworm
+
+RUN apt-get update -y \
+    && apt-get install -y git make \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN git clone https://github.com/michelp/pgjwt
+
+WORKDIR ./pgjwt
+
+RUN make install
+
+RUN apt autoremove -y git make
+
+WORKDIR ..
+
+RUN rm -rf ./pgjwt

@@ -34,21 +34,26 @@ If you haven't already, consider checking out Econia Labs' [Teach yourself Move 
 ## What is Econia?
 
 Econia is a protocol that lets anyone in the world trade a digital asset with anyone else in the world, at whatever price they want.
-More specifically, Econia is an order book, a fundamental financial tool utilized by financial institutions like stock markets, except unlike the New York Stock Exchange or the NASDAQ, Econia is decentralized, open-source, and permissionless.
+More specifically, Econia is an order book, a fundamental financial tool utilized by financial institutions like stock markets, except unlike the New York Stock Exchange or the NASDAQ, Econia is open-source, permissionless, and fully on-chain.
 
 ## Econia v4 is audited
 
-Econia has completed [three independent audits].
+Econia has completed multiple [independent audits].
 
 ## Account addresses
 
-The [Econia repo] uses branches to track the Move package source code published across Aptos Mainnet, Testnet, and Devnet:
+The Econia Move package is persisted indefinitely on both Aptos mainnet and testnet at the following multisig addresses:
 
-| Chain     | Account address                                                      | Multisig? |
-| --------- | -------------------------------------------------------------------- | --------- |
-| [mainnet] | [0xc0deb00c405f84c85dc13442e305df75d1288100cdd82675695f6148c7ece51c] | Yes       |
-| [testnet] | [0x40b119411c6a975fca28f1ba5800a8a418bba1e16a3f13b1de92f731e023d135] | No        |
-| [devnet]  | [0xc0de0000fe693e08f668613c502360dc48508197401d2ac1ae79571498cd8b74] | Yes       |
+| Chain     | Account address                                                      |
+| --------- | -------------------------------------------------------------------- |
+| [mainnet] | [0xc0deb00c405f84c85dc13442e305df75d1288100cdd82675695f6148c7ece51c] |
+| [testnet] | [0xc0de11113b427d35ece1d8991865a941c0578b0f349acabbe9753863c24109ff] |
+
+:::tip
+
+The testnet account also contains a [permissionless faucet] for example assets `eAPT` and `eUSDC`.
+
+:::
 
 If you would like to use Econia as a dependency in your Move package, use the corresponding branch name in your package's `Move.toml`:
 
@@ -59,14 +64,6 @@ subdir = "src/move/econia"
 rev = "mainnet"
 ```
 
-:::caution
-The Econia Testnet account will soon be migrated from a single-signer account to a multisig (with a different address), to ensure similar conditions to mainnet.
-:::
-
-:::tip
-Aptos Devnet resets about once weekly, and there may be a slight delay between a weekly reset and the re-publication of Econia.
-:::
-
 ## External resources
 
 - [Discord]
@@ -74,17 +71,17 @@ Aptos Devnet resets about once weekly, and there may be a slight delay between a
 - [Medium]
 - [Twitter]
 
-[0x40b119411c6a975fca28f1ba5800a8a418bba1e16a3f13b1de92f731e023d135]: https://explorer.aptoslabs.com/account/0x40b119411c6a975fca28f1ba5800a8a418bba1e16a3f13b1de92f731e023d135?network=testnet
-[0xc0de0000fe693e08f668613c502360dc48508197401d2ac1ae79571498cd8b74]: https://explorer.aptoslabs.com/account/0xc0de0000fe693e08f668613c502360dc48508197401d2ac1ae79571498cd8b74?network=devnet
-[0xc0deb00c405f84c85dc13442e305df75d1288100cdd82675695f6148c7ece51c]: https://aptos-explorer.netlify.app/account/0xc0deb00c405f84c85dc13442e305df75d1288100cdd82675695f6148c7ece51c/transactions?network=mainnet
+[0xc0de11113b427d35ece1d8991865a941c0578b0f349acabbe9753863c24109ff]: https://explorer.aptoslabs.com/account/0xc0de11113b427d35ece1d8991865a941c0578b0f349acabbe9753863c24109ff?network=testnet
+[0xc0deb00c405f84c85dc13442e305df75d1288100cdd82675695f6148c7ece51c]: https://explorer.aptoslabs.com/account/0xc0deb00c405f84c85dc13442e305df75d1288100cdd82675695f6148c7ece51c?network=mainnet
 [aptos]: https://aptos.dev
 [devnet]: https://github.com/econia-labs/econia/tree/devnet
 [discord]: https://discord.gg/econia
 [econia repo]: https://github.com/econia-labs/econia
 [github]: https://github.com/econia-labs/econia
+[independent audits]: security
 [mainnet]: https://github.com/econia-labs/econia/tree/mainnet
 [medium]: https://medium.com/econialabs
+[permissionless faucet]: https://github.com/econia-labs/econia/tree/v4.1.0-audited/src/move/faucet/sources
 [teach yourself move on aptos]: https://github.com/econia-labs/teach-yourself-move
 [testnet]: https://github.com/econia-labs/econia/tree/testnet
-[three independent audits]: security
 [twitter]: https://twitter.com/econialabs

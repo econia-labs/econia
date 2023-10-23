@@ -21,27 +21,29 @@ const DEFAULT_TOKEN_ICON = "/tokenImages/default.png";
 type MarketIconPairProps = {
   baseAssetIcon?: string;
   quoteAssetIcon?: string;
+  size?: number;
 };
 export const MarketIconPair = ({
   baseAssetIcon = DEFAULT_TOKEN_ICON,
   quoteAssetIcon = DEFAULT_TOKEN_ICON,
+  size = 28,
 }: MarketIconPairProps) => {
   return (
-    <div className="md:w-15 relative flex w-12">
+    <div className="md:w-15 relative flex" style={{ width: (size * 12) / 7 }}>
       {/* height width props required */}
       <ImageWithFallback
         src={baseAssetIcon}
         alt="market-icon-pair"
-        width={28}
-        height={28}
-        className="z-20 aspect-square w-7"
+        width={size}
+        height={size}
+        className="z-20 aspect-square"
       ></ImageWithFallback>
       <ImageWithFallback
         src={quoteAssetIcon}
         alt="market-icon-pair"
-        width={28}
-        height={28}
-        className="absolute z-10 aspect-square w-7 translate-x-1/2"
+        width={size}
+        height={size}
+        className="absolute z-10 aspect-square translate-x-1/2"
       ></ImageWithFallback>
     </div>
   );

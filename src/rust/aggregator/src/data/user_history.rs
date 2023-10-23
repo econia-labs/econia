@@ -106,184 +106,130 @@ impl Data for UserHistory {
         .fetch_all(&mut transaction as &mut PgConnection)
         .await
         .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
-        let cancel_events = sqlx::query!(
+        sqlx::query!(
             r#"
-                SELECT * FROM cancel_order_events
+                INSERT INTO aggregator.user_history_limit
+                SELECT
+                    market_id,
+                    order_id,
+                    user,
+                    custodian_id,
+                    side,
+                    self_match_behavior,
+                    restriction,
+                    price,
+                    (txn_version * POWER(2,64::numeric) + event_idx)
+                FROM place_limit_order_events
                 WHERE txn_version > $1
             "#,
-            max_txn_version
+            max_txn_version,
         )
-        .fetch_all(&mut transaction as &mut PgConnection)
+        .execute(&mut transaction as &mut PgConnection)
         .await
         .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
-        let limit_events = sqlx::query!(
+        sqlx::query!(
             r#"
-                SELECT * FROM place_limit_order_events
+                INSERT INTO aggregator.user_history
+                SELECT
+                    market_id,
+                    order_id,
+                    time,
+                    NULL,
+                    integrator,
+                    0,
+                    initial_size,
+                    'open',
+                    'limit'
+                FROM place_limit_order_events
                 WHERE txn_version > $1
             "#,
-            max_txn_version
+            max_txn_version,
         )
-        .fetch_all(&mut transaction as &mut PgConnection)
+        .execute(&mut transaction as &mut PgConnection)
         .await
         .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
-        let market_events = sqlx::query!(
+        sqlx::query!(
             r#"
-                SELECT * FROM place_market_order_events
+                INSERT INTO aggregator.user_history_market
+                SELECT
+                    market_id,
+                    order_id,
+                    "user",
+                    custodian_id,
+                    direction,
+                    self_match_behavior
+                FROM place_market_order_events
                 WHERE txn_version > $1
             "#,
-            max_txn_version
+            max_txn_version,
         )
-        .fetch_all(&mut transaction as &mut PgConnection)
+        .execute(&mut transaction as &mut PgConnection)
         .await
         .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
-        let swap_events = sqlx::query!(
+        sqlx::query!(
             r#"
-                SELECT * FROM place_swap_order_events
+                INSERT INTO aggregator.user_history
+                SELECT
+                    market_id,
+                    order_id,
+                    time,
+                    NULL,
+                    integrator,
+                    0,
+                    size,
+                    'open',
+                    'market'
+                FROM place_market_order_events
                 WHERE txn_version > $1
             "#,
-            max_txn_version
+            max_txn_version,
         )
-        .fetch_all(&mut transaction as &mut PgConnection)
+        .execute(&mut transaction as &mut PgConnection)
         .await
         .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
-        for x in &limit_events {
-            let txn = x
-                .txn_version
-                .to_bigint()
-                .ok_or(DataAggregationError::ProcessingError(anyhow!(
-                    "txn_version not integer"
-                )))?
-                << SHIFT_TXN_VERSION;
-            let event = x
-                .event_idx
-                .to_bigint()
-                .ok_or(DataAggregationError::ProcessingError(anyhow!(
-                    "event_idx not integer"
-                )))?;
-            let txn_event: BigDecimal = BigDecimal::from(txn | event);
-            sqlx::query!(
-                r#"
-                    INSERT INTO aggregator.user_history_limit VALUES (
-                        $1, $2, $3, $4, $5, $6, $7, $8, $9
-                    );
-                "#,
-                x.market_id,
-                x.order_id,
-                x.user,
-                x.custodian_id,
-                x.side,
-                x.self_match_behavior,
-                x.restriction,
-                x.price,
-                txn_event,
-            )
-            .execute(&mut transaction as &mut PgConnection)
-            .await
-            .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
-            sqlx::query!(
-                r#"
-                    INSERT INTO aggregator.user_history VALUES (
-                        $1, $2, $3, $4, $5, $6, $7, $8, $9
-                    );
-                "#,
-                x.market_id,
-                x.order_id,
-                x.time,
-                None as Option<DateTime<Utc>>,
-                x.integrator,
-                BigDecimal::zero(),
-                x.initial_size,
-                OrderStatus::Open as OrderStatus,
-                OrderType::Limit as OrderType,
-            )
-            .execute(&mut transaction as &mut PgConnection)
-            .await
-            .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
-        }
-        for x in &market_events {
-            sqlx::query!(
-                r#"
-                    INSERT INTO aggregator.user_history_market VALUES (
-                        $1, $2, $3, $4, $5, $6
-                    );
-                "#,
-                x.market_id,
-                x.order_id,
-                x.user,
-                x.custodian_id,
-                x.direction,
-                x.self_match_behavior,
-            )
-            .execute(&mut transaction as &mut PgConnection)
-            .await
-            .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
-            sqlx::query!(
-                r#"
-                    INSERT INTO aggregator.user_history VALUES (
-                        $1, $2, $3, $4, $5, $6, $7, $8, $9
-                    );
-                "#,
-                x.market_id,
-                x.order_id,
-                x.time,
-                None as Option<DateTime<Utc>>,
-                x.integrator,
-                BigDecimal::zero(),
-                x.size,
-                OrderStatus::Open as OrderStatus,
-                OrderType::Market as OrderType,
-            )
-            .execute(&mut transaction as &mut PgConnection)
-            .await
-            .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
-        }
-        for x in &swap_events {
-            sqlx::query!(
-                r#"
-                    INSERT INTO aggregator.user_history_swap VALUES (
-                        $1, $2, $3, $4, $5, $6, $7, $8, $9
-                    );
-                "#,
-                x.market_id,
-                x.order_id,
-                x.direction,
-                x.limit_price,
-                x.signing_account,
-                x.min_base,
-                x.max_base,
-                x.min_quote,
-                x.max_quote,
-            )
-            .execute(&mut transaction as &mut PgConnection)
-            .await
-            .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
-            let market = sqlx::query!(
-                "SELECT * FROM market_registration_events WHERE market_id = $1",
-                x.market_id
-            )
-            .fetch_one(&mut transaction as &mut PgConnection)
-            .await
-            .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
-            sqlx::query!(
-                r#"
-                    INSERT INTO aggregator.user_history VALUES (
-                        $1, $2, $3, $4, $5, $6, $7, $8, $9
-                    );
-                "#,
-                x.market_id,
-                x.order_id,
-                x.time,
-                None as Option<DateTime<Utc>>,
-                x.integrator,
-                BigDecimal::zero(),
-                x.max_base.clone() / market.lot_size,
-                OrderStatus::Open as OrderStatus,
-                OrderType::Swap as OrderType,
-            )
-            .execute(&mut transaction as &mut PgConnection)
-            .await
-            .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
-        }
+        sqlx::query!(
+            r#"
+                INSERT INTO aggregator.user_history_swap
+                SELECT
+                    market_id,
+                    order_id,
+                    direction,
+                    limit_price,
+                    signing_account,
+                    min_base,
+                    max_base,
+                    min_quote,
+                    max_quote
+                FROM place_swap_order_events
+                WHERE txn_version > $1
+            "#,
+            max_txn_version,
+        )
+        .execute(&mut transaction as &mut PgConnection)
+        .await
+        .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
+        sqlx::query!(
+            r#"
+                INSERT INTO aggregator.user_history
+                SELECT
+                    psoe.market_id,
+                    psoe.order_id,
+                    psoe."time",
+                    NULL,
+                    psoe.integrator,
+                    0,
+                    psoe.max_base * mre.lot_size,
+                    'open',
+                    'swap'
+                FROM place_swap_order_events AS psoe
+                INNER JOIN market_registration_events AS mre ON mre.market_id = psoe.market_id
+                WHERE psoe.txn_version > $1
+            "#,
+            max_txn_version,
+        )
+        .execute(&mut transaction as &mut PgConnection)
+        .await
+        .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
         // Step through fill and change events in total order.
         let mut fill_index = 0;
         let mut change_index = 0;
@@ -336,21 +282,19 @@ impl Data for UserHistory {
                 _ => unreachable!(),
             };
         }
-        for x in &cancel_events {
-            sqlx::query!(
-                r#"
-                    UPDATE aggregator.user_history
-                    SET order_status = 'cancelled', last_updated_at = $3
-                    WHERE order_id = $1 AND market_id = $2;
-                "#,
-                x.order_id,
-                x.market_id,
-                x.time,
-            )
-            .execute(&mut transaction as &mut PgConnection)
-            .await
-            .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
-        }
+        sqlx::query!(
+            r#"
+                UPDATE aggregator.user_history AS uh
+                SET order_status = 'cancelled', last_updated_at = coe."time"
+                FROM cancel_order_events AS coe
+                WHERE coe.txn_version > $1
+                AND uh.order_id = coe.order_id AND uh.market_id = coe.market_id;
+            "#,
+            max_txn_version,
+        )
+        .execute(&mut transaction as &mut PgConnection)
+        .await
+        .map_err(|e| DataAggregationError::ProcessingError(anyhow!(e)))?;
         update_max_txn_version(&mut transaction, txnv_exists).await?;
         transaction
             .commit()

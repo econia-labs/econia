@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                INSERT INTO aggregator.user_history_swap\n                SELECT\n                    market_id,\n                    order_id,\n                    direction,\n                    limit_price,\n                    signing_account,\n                    min_base,\n                    max_base,\n                    min_quote,\n                    max_quote\n                FROM place_swap_order_events\n                WHERE txn_version > $1\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Numeric"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ea3eeb85cfd81bfbb1fd018277b9fca2aaed7a19843a96117897af002e3f380f"
+}

@@ -108,18 +108,9 @@ poetry install
 poetry run event
 ```
 
-:::note
-In preparation for the testnet trading competition during 2023-10-25T00:00/2023-11-01T00:00Z, JWT support has been removed from the REST API because the required extension is unavailable on Google Cloud Platform, such that database migrations had to be refactored in a way that prevented JWT generation through the `PostgREST` service.
-You can still manually generate a JWT yourself, though, noting the following plaintext environment variable for the `postgrest-websockets` service:
-
-```yaml
-- PGWS_JWT_SECRET=econia_0000000000000000000000000
-```
-
-Stand by for a resolution, including explicit instructions on JWT generation.
-:::
-
 Enter nothing for all of the prompts to use the default local configuration.
+The JWT will be generated for you using Econia's compromised secret.
+See the `event.py` code for an example of how to generate the JWT yourself.
 
 Now you can perform actions on the locally-deployed exchange to trigger events, or run the `trade.py` script:
 

@@ -1,0 +1,20 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT\n    txn_version\nFROM\n    aggregator.user_history_last_indexed_txn\n",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "txn_version",
+        "type_info": "Numeric"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "716888feef3c55e539a7a30c9e0b6d7238972e1180f000a20760fe270a212c55"
+}

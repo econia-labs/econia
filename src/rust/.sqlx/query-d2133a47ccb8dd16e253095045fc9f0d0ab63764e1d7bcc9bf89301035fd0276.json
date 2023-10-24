@@ -1,85 +1,90 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n                SELECT * FROM fill_events\n                WHERE txn_version > $1\n                ORDER BY txn_version, event_idx\n            ",
+  "query": "WITH parameters AS (\n    SELECT\n        $1::numeric AS max_txn_version\n)\nSELECT\n    *\nFROM\n    parameters,\n    fill_events\nWHERE\n    txn_version > max_txn_version\nORDER BY\n    txn_version,\n    event_idx\n",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "txn_version",
+        "name": "max_txn_version",
         "type_info": "Numeric"
       },
       {
         "ordinal": 1,
-        "name": "event_idx",
+        "name": "txn_version",
         "type_info": "Numeric"
       },
       {
         "ordinal": 2,
+        "name": "event_idx",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 3,
         "name": "emit_address",
         "type_info": "Varchar"
       },
       {
-        "ordinal": 3,
+        "ordinal": 4,
         "name": "time",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 4,
+        "ordinal": 5,
         "name": "maker_address",
         "type_info": "Varchar"
       },
       {
-        "ordinal": 5,
+        "ordinal": 6,
         "name": "maker_custodian_id",
         "type_info": "Numeric"
       },
       {
-        "ordinal": 6,
+        "ordinal": 7,
         "name": "maker_order_id",
         "type_info": "Numeric"
       },
       {
-        "ordinal": 7,
+        "ordinal": 8,
         "name": "maker_side",
         "type_info": "Bool"
       },
       {
-        "ordinal": 8,
+        "ordinal": 9,
         "name": "market_id",
         "type_info": "Numeric"
       },
       {
-        "ordinal": 9,
+        "ordinal": 10,
         "name": "price",
         "type_info": "Numeric"
       },
       {
-        "ordinal": 10,
+        "ordinal": 11,
         "name": "sequence_number_for_trade",
         "type_info": "Numeric"
       },
       {
-        "ordinal": 11,
+        "ordinal": 12,
         "name": "size",
         "type_info": "Numeric"
       },
       {
-        "ordinal": 12,
+        "ordinal": 13,
         "name": "taker_address",
         "type_info": "Varchar"
       },
       {
-        "ordinal": 13,
+        "ordinal": 14,
         "name": "taker_custodian_id",
         "type_info": "Numeric"
       },
       {
-        "ordinal": 14,
+        "ordinal": 15,
         "name": "taker_order_id",
         "type_info": "Numeric"
       },
       {
-        "ordinal": 15,
+        "ordinal": 16,
         "name": "taker_quote_fees_paid",
         "type_info": "Numeric"
       }
@@ -90,6 +95,7 @@
       ]
     },
     "nullable": [
+      null,
       false,
       false,
       false,
@@ -108,5 +114,5 @@
       false
     ]
   },
-  "hash": "6b092fa0efbdb121b2e88ca45f29db260aae56df4ef961fb26f8e05f5d9bd7d7"
+  "hash": "d2133a47ccb8dd16e253095045fc9f0d0ab63764e1d7bcc9bf89301035fd0276"
 }

@@ -1,58 +1,66 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n                SELECT * FROM change_order_size_events\n                WHERE NOT EXISTS (\n                    SELECT * FROM aggregator.aggregated_events\n                    WHERE change_order_size_events.txn_version = aggregated_events.txn_version\n                    AND change_order_size_events.event_idx = aggregated_events.event_idx\n                )\n                ORDER BY txn_version, event_idx\n            ",
+  "query": "WITH parameters AS (\n    SELECT\n        $1::numeric AS max_txn_version\n)\nSELECT\n    *\nFROM\n    parameters,\n    change_order_size_events\nWHERE\n    txn_version > max_txn_version\nORDER BY\n    txn_version,\n    event_idx\n",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "txn_version",
+        "name": "max_txn_version",
         "type_info": "Numeric"
       },
       {
         "ordinal": 1,
-        "name": "event_idx",
+        "name": "txn_version",
         "type_info": "Numeric"
       },
       {
         "ordinal": 2,
-        "name": "market_id",
+        "name": "event_idx",
         "type_info": "Numeric"
       },
       {
         "ordinal": 3,
+        "name": "market_id",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 4,
         "name": "time",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 4,
+        "ordinal": 5,
         "name": "order_id",
         "type_info": "Numeric"
       },
       {
-        "ordinal": 5,
+        "ordinal": 6,
         "name": "user",
         "type_info": "Varchar"
       },
       {
-        "ordinal": 6,
+        "ordinal": 7,
         "name": "custodian_id",
         "type_info": "Numeric"
       },
       {
-        "ordinal": 7,
+        "ordinal": 8,
         "name": "side",
         "type_info": "Bool"
       },
       {
-        "ordinal": 8,
+        "ordinal": 9,
         "name": "new_size",
         "type_info": "Numeric"
       }
     ],
     "parameters": {
-      "Left": []
+      "Left": [
+        "Numeric"
+      ]
     },
     "nullable": [
+      null,
       false,
       false,
       false,
@@ -64,5 +72,5 @@
       false
     ]
   },
-  "hash": "ad97234347c313537d342c48f4c66d5a41a6b76cb374e4d5438363d05cd017ec"
+  "hash": "ea1189ce11e27e6195a0d70398b5e30b78e513b2c122c21c8a1bf0c592248eac"
 }

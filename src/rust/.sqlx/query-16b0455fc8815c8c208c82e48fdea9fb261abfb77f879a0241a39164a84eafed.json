@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT order_type as \"order_type: OrderType\", remaining_size\n            FROM aggregator.user_history\n            WHERE market_id = $1\n            AND order_id = $2\n        ",
+  "query": "WITH parameters AS (\n    SELECT\n        $1::numeric change_market_id,\n        $2::numeric change_order_id\n)\nSELECT\n    order_type AS \"order_type: OrderType\",\n    remaining_size\nFROM\n    parameters,\n    aggregator.user_history\nWHERE\n    market_id = change_market_id\n    AND order_id = change_order_id\n",
   "describe": {
     "columns": [
       {
@@ -36,5 +36,5 @@
       false
     ]
   },
-  "hash": "e6739f7eb63a4c472c776854d150dc20c4059e0f47d4652d7cda82f0d4271987"
+  "hash": "16b0455fc8815c8c208c82e48fdea9fb261abfb77f879a0241a39164a84eafed"
 }

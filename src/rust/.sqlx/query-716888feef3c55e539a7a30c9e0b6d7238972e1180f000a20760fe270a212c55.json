@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT txn_version FROM aggregator.user_history_last_indexed_txn",
+  "query": "SELECT\n    txn_version\nFROM\n    aggregator.user_history_last_indexed_txn\n",
   "describe": {
     "columns": [
       {
@@ -16,5 +16,5 @@
       false
     ]
   },
-  "hash": "f57e4a096be5f2773843c19076706eee55ecfb2ff6d11a28d90299256630a7f8"
+  "hash": "716888feef3c55e539a7a30c9e0b6d7238972e1180f000a20760fe270a212c55"
 }

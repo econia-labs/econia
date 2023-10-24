@@ -482,7 +482,7 @@ resource "google_compute_security_policy" "public_traffic" {
     rate_limit_options {
       ban_duration_sec = 60
       ban_threshold {
-        count        = 30
+        count        = 200
         interval_sec = 60
       }
       conform_action = "allow"
@@ -495,7 +495,7 @@ resource "google_compute_security_policy" "public_traffic" {
       }
       exceed_action = "deny(429)"
       rate_limit_threshold {
-        count        = 10
+        count        = 30
         interval_sec = 10
       }
     }

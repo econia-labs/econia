@@ -2,13 +2,14 @@ use anyhow::anyhow;
 use chrono::{DateTime, Duration, Utc};
 use sqlx::PgPool;
 
-use super::{Pipeline, PipelineAggregationResult, PipelineError};
+use aggregator::{Pipeline, PipelineAggregationResult, PipelineError};
 
 pub struct MarketsRegisteredPerDay {
     pool: PgPool,
     last_indexed_timestamp: Option<DateTime<Utc>>,
 }
 
+#[allow(dead_code)]
 impl MarketsRegisteredPerDay {
     pub fn new(pool: PgPool) -> Self {
         Self {

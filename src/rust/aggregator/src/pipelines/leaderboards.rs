@@ -3,7 +3,7 @@ use bigdecimal::{BigDecimal, Zero};
 use chrono::{DateTime, Duration, Utc};
 use sqlx::{PgConnection, PgPool, Postgres, Transaction};
 
-use super::{Pipeline, PipelineAggregationResult, PipelineError};
+use aggregator::{Pipeline, PipelineAggregationResult, PipelineError};
 
 pub const TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
 
@@ -23,11 +23,7 @@ impl Leaderboards {
 
 struct Competition {
     id: i32,
-    start: DateTime<Utc>,
-    end: DateTime<Utc>,
-    prize: i64,
     market_id: BigDecimal,
-    integrators_required: Vec<String>,
 }
 
 #[async_trait::async_trait]
@@ -60,7 +56,7 @@ impl Pipeline for Leaderboards {
         let competitions = sqlx::query_as!(
             Competition,
             r#"
-                SELECT * FROM aggregator.competition_metadata AS cm
+                SELECT id, market_id FROM aggregator.competition_metadata AS cm
                 WHERE start < CURRENT_TIMESTAMP AND CURRENT_TIMESTAMP < "end"
                 AND EXISTS (
                     SELECT * FROM market_registration_events AS mre

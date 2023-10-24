@@ -3,7 +3,7 @@ use bigdecimal::{num_bigint::ToBigInt, BigDecimal, Zero};
 use chrono::{DateTime, Duration, Utc};
 use sqlx::{Executor, PgConnection, PgPool, Postgres, Transaction};
 
-use super::{Pipeline, PipelineAggregationResult, PipelineError};
+use aggregator::{Pipeline, PipelineAggregationResult, PipelineError};
 
 /// Number of bits to shift when encoding transaction version.
 const SHIFT_TXN_VERSION: u8 = 64;

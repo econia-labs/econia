@@ -20,18 +20,6 @@ module.exports = {
 
   presets: [
     [
-      'redocusaurus',
-      {
-        specs: [
-          {
-            id: 'dss-rest-api',
-            spec: './openapi.json',
-            route: '/api/',
-          },
-        ],
-      },
-    ],
-    [
       "classic",
       ({
         docs: {

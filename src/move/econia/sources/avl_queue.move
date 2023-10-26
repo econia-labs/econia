@@ -858,6 +858,11 @@ module econia::avl_queue {
     /// $2^{14} - 1$, the maximum number of nodes that can be allocated
     /// for either node type.
     const N_NODES_MAX: u64 = 16383;
+    /// The maximum number of allocated list nodes before eviction. This
+    /// is a constraint imposed by the Aptos view function paradigm,
+    /// namely that attempting to query all open orders leads to a view
+    /// function execution error.
+    const N_NODES_MAX_EVICT: u64 = 500;
     /// Flag for inorder predecessor traversal.
     const PREDECESSOR: bool = true;
     /// Flag for right direction.
@@ -1386,7 +1391,7 @@ module econia::avl_queue {
         // Get number of allocated list nodes.
         let n_list_nodes = table_with_length::length(&avlq_ref_mut.list_nodes);
         let max_list_nodes_active = // Check if max list nodes active.
-            (n_list_nodes == N_NODES_MAX) && (list_top == (NIL as u64));
+            (n_list_nodes == N_NODES_MAX_EVICT) && (list_top == (NIL as u64));
         // Declare tail access key and insertion value.
         let (tail_access_key, tail_value);
         // If above critical height or max list nodes active:

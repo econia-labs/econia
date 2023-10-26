@@ -1801,6 +1801,56 @@ module econia::avl_queue {
         value // Return insertion value.
     }
 
+    /// `access_key` should have an active list node ID encoded in it.
+    public fun traverse_total_order_unchecked<V>(
+        avlq_ref: &AVLqueue<V>,
+        access_key: u64,
+        target: bool // `PREDECESSOR` or `SUCCESSOR`.
+    ): (
+        // List node ID of target list node encoded in otherwise blank
+        // access key, else `NIL`.
+        u64
+    ) {
+        let list_node_id = // Extract list node ID from access key.
+            (access_key >> SHIFT_ACCESS_LIST_NODE_ID) & HI_NODE_ID;
+        // Immutably borrow list node.
+        let list_node_ref = table_with_length::borrow(
+            &avlq_ref.list_nodes, list_node_id);
+        // Get target list node ID. If looking for predecessor:
+        let target_list_node_id = if (target == PREDECESSOR) {
+            // Get virtual last field from node.
+            let last = ((list_node_ref.last_msbs as u64) << BITS_PER_BYTE) |
+                       (list_node_ref.last_lsbs as u64);
+            // Determine if last node is flagged as tree node.
+            let last_is_tree = ((last >> SHIFT_NODE_TYPE) &
+                (BIT_FLAG_TREE_NODE as u64)) == (BIT_FLAG_TREE_NODE as u64);
+            let last_node_id = last & HI_NODE_ID; // Get last node ID.
+            if (last_is_tree) {
+                let (_, _, tree_node_predecessor_list_tail) =
+                    traverse(avlq_ref, last_node_id, target);
+                tree_node_predecessor_list_tail
+            } else {
+                last_node_id
+            }
+        } else { // If looking for successor:
+            // Get virtual next field from node.
+            let next = ((list_node_ref.next_msbs as u64) << BITS_PER_BYTE) |
+                       (list_node_ref.next_lsbs as u64);
+            // Determine if next node is flagged as tree node.
+            let next_is_tree = ((next >> SHIFT_NODE_TYPE) &
+                (BIT_FLAG_TREE_NODE as u64)) == (BIT_FLAG_TREE_NODE as u64);
+            let next_node_id = next & HI_NODE_ID; // Get next node ID.
+            if (next_is_tree) {
+                let (_, tree_node_successor_list_head, _) =
+                    traverse(avlq_ref, next_node_id, target);
+                tree_node_successor_list_head
+            } else {
+                next_node_id
+            }
+        };
+        (target_list_node_id << SHIFT_ACCESS_LIST_NODE_ID)
+    }
+
     /// Return `true` if inserting `key` would update AVL queue head.
     ///
     /// # Aborts

@@ -945,6 +945,11 @@ module econia::market {
     /// Flag for passive order specified by advance in ticks.
     const TICKS: bool = false;
 
+    /// Flag for inorder predecessor traversal.
+    const PREDECESSOR: bool = true;
+    /// Flag for inorder successor traversal.
+    const SUCCESSOR: bool = false;
+
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // View functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -2876,6 +2881,84 @@ module econia::market {
             }
         };
         price_levels // Return vector of price levels.
+    }
+
+    fun get_price_levels_for_side_paginated(
+        order_book_ref: &OrderBook,
+        market_id: u64,
+        side: bool,
+        n_orders_to_index_max: u64,
+        starting_order_id: u128 // If `NIL`, start from best bid/ask.
+    ): (
+        vector<PriceLevel>,
+        u128, // Order ID for start of next page, `NIL` if done.
+    ) acquires OrderBooks {
+        // Get immutable reference to orders AVL queue for given side.
+        let avlq_ref = if (side == ASK) &order_book_ref.asks else
+            &order_book_ref.bids;
+        // Initialize empty price levels vector.
+        let price_levels = vector[];
+        // Return early if no orders to index.
+        if (avl_queue::is_empty(avlq_ref) || n_orders_to_index_max == 0)
+            return (price_levels, (NIL as u128));
+        // Get order ID to index. If starting from best bid/ask:
+        let order_id = if (starting_order_id == (NIL as u128)) {
+            // Lookup order ID from user memory and reassign.
+            let order_ref = avl_queue::borrow_head(avlq_ref);
+            let optional_order_id = user::get_open_order_id_internal(
+                order_ref.user, market_id, order_ref.custodian_id, side,
+                order_ref.order_access_key);
+            option::destroy_some(optional_order_id)
+        // If starting from prior page operation, check order ID and
+        // start from there.
+        } else {
+            assert!(has_open_order(market_id, starting_order_id),
+                    E_INVALID_MARKET_ORDER_ID);
+            starting_order_id
+        };
+        // Get AVL queue access key from order ID.
+        let avlq_access_key = get_order_id_avl_queue_access_key(order_id);
+        // Get price for starting price level.
+        let price = avl_queue::borrow(avlq_ref, avlq_access_key).price;
+        // Initialize size for price level to 0.
+        let size = 0;
+        // Get traversal direction.
+        let target = if (side == ASK) SUCCESSOR else PREDECESSOR;
+        let n_indexed_orders = 0;
+        let next_avlq_access_key = NIL;
+        while (n_indexed_orders < n_orders_to_index_max) {
+            // Borrow next order to index in AVL queue.
+            let order_ref = avl_queue::borrow(avlq_ref, avlq_access_key);
+            // If in same price level, increment size:
+            if (order_ref.price == price) {
+                size = size + (order_ref.size as u128);
+            // If in new level, push back prior one and start anew.
+            } else {
+                vector::push_back(&mut price_levels, PriceLevel{price, size});
+                price = order_ref.price;
+                size = (order_ref.size as u128);
+            };
+            // Get access key for next order in AVL queue.
+            next_avlq_access_key =
+                avl_queue::traverse_total_order_unchecked(
+                    avlq_ref, avlq_access_key, target);
+            // Stop indexing if no traversals left.
+            if (next_avlq_access_key == NIL) break;
+            n_indexed_orders = n_indexed_orders + 1;
+        };
+        // Push back final price level.
+        vector::push_back(&mut price_levels, PriceLevel{price, size});
+        let next_page_start = if (next_avlq_access_key == NIL) {
+            (NIL as u128)
+        } else {
+            // Borrow order for next page start.
+            let order_ref = avl_queue::borrow(avlq_ref, next_avlq_access_key);
+            let optional_order_id = user::get_open_order_id_internal(
+                order_ref.user, market_id, order_ref.custodian_id, side,
+                order_ref.order_access_key);
+            option::destroy_some(optional_order_id)
+        };
+        (price_levels, next_page_start)
     }
 
     /// Initialize the order books map upon module publication.

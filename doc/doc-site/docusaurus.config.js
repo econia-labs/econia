@@ -20,6 +20,25 @@ module.exports = {
 
   presets: [
     [
+      'redocusaurus',
+      {
+        // Plugin Options for loading OpenAPI files
+        specs: [
+          {
+            id: "dss-rest-api",
+            spec: 'openapi.json',
+            route: '/api/',
+          },
+        ],
+        debugger: true,
+        // Theme Options for modifying how redoc renders them
+        theme: {
+          // Change with your site colors
+          primaryColor: '#1890ff',
+        },
+      },
+    ],
+    [
       "classic",
       ({
         docs: {

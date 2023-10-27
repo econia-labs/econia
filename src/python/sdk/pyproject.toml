@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "econia-sdk"
-version = "1.0.5"
+version = "1.0.6"
 description = ""
 authors = ["Econia Labs <developers@econialabs.com>"]
 readme = "README.md"
@@ -29,6 +29,7 @@ pdoc = "^14.0.0"
 [tool.poetry.scripts]
 trade = "examples.trade:start"
 event = "examples.event:start"
+games = "examples.games:start"
 
 [build-system]
 requires = ["poetry-core"]

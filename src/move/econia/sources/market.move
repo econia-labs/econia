@@ -2756,6 +2756,9 @@ module econia::market {
         // Assert new size is at least minimum size for market.
         assert!(new_size >= order_book_ref_mut.min_size,
                 E_SIZE_CHANGE_BELOW_MIN_SIZE);
+        // Throttle trade.
+        throttler::throttle::throttle_trade(
+            market_id, user, new_size * order_book_ref_mut.lot_size);
         // Mutably borrow corresponding orders AVL queue.
         let orders_ref_mut = if (side == ASK) &mut order_book_ref_mut.asks
             else &mut order_book_ref_mut.bids;

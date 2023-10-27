@@ -30,13 +30,12 @@ You can provide 0 for some or all of the arguments; changing min size is common.
 Only trades with 2 wallets because that's the most rate limits would allow on testnet.
 
 Spits out a `private_keys.json` file in the directory that it was run in so as to cache
-them for later re-use. Otherwise the user would get rate-limited trying to fund
+them for later re-use. Otherwise the user would get rate-limited when trying to fund.
 """
 U64_MAX = (2**64) - 1
 NODE_URL_LOCAL = "http://0.0.0.0:8080/v1"
 FAUCET_URL_LOCAL = "http://0.0.0.0:8081"
 ECONIA_ADDR_LOCAL = "0xeeee0dd966cd4fc739f76006591239b32527edbb7c303c431f8c691bda150b40"
-ECONIA_KEY_LOCAL = "0x8eeb9bd1808d99ef54758060f5067b5707be379058cfd83cd983fe7e47063a09"
 FAUCET_ADDR_LOCAL = "0xffff094ef8ccfa9137adcb13a2fae2587e83c348b32c63f811cc19fcc9fc5878"
 COIN_TYPE_APT = "0x1::aptos_coin::AptosCoin"
 
@@ -324,7 +323,6 @@ async def setup_pair(
             match_price = (
                 ticks_per_lot if from_type == COIN_TYPE_EUSDC else ticks_per_lot + 1
             )
-            volume = base_lots_size * match_price * TICK_SIZE
             await execute_limit_order(
                 client_maker, market_id, from_type, base_lots_size, match_price
             )

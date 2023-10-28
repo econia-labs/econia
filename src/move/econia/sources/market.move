@@ -1282,6 +1282,20 @@ module econia::market {
     }
 
     #[view]
+    /// Wrapped call to `get_open_orders()` for getting all open orders
+    /// on both sides.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_open_orders()`
+    fun get_open_orders_all(
+        market_id: u64
+    ): OrdersView
+    acquires OrderBooks {
+        get_open_orders(market_id, HI_64, HI_64)
+    }
+
+    #[view]
     fun get_open_orders_paginated(
         market_id: u64,
         n_asks_to_index_max: u64,
@@ -1318,20 +1332,6 @@ module econia::market {
             order_book_ref, market_id, BID, n_bids_to_index_max,
             starting_bid_order_id);
         (OrdersView{asks, bids}, ask_next, bid_next)
-    }
-
-    #[view]
-    /// Wrapped call to `get_open_orders()` for getting all open orders
-    /// on both sides.
-    ///
-    /// # Testing
-    ///
-    /// * `test_get_open_orders()`
-    fun get_open_orders_all(
-        market_id: u64
-    ): OrdersView
-    acquires OrderBooks {
-        get_open_orders(market_id, HI_64, HI_64)
     }
 
     #[view]
@@ -1406,6 +1406,20 @@ module econia::market {
     }
 
     #[view]
+    /// Wrapped call to `get_price_levels()` for getting all price
+    /// levels on both sides.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_price_levels()`
+    fun get_price_levels_all(
+        market_id: u64
+    ): PriceLevels
+    acquires OrderBooks {
+        get_price_levels(market_id, HI_64, HI_64)
+    }
+
+    #[view]
     fun get_price_levels_paginated(
         market_id: u64,
         n_asks_to_index_max: u64,
@@ -1450,20 +1464,6 @@ module econia::market {
             ask_next,
             bid_next
         )
-    }
-
-    #[view]
-    /// Wrapped call to `get_price_levels()` for getting all price
-    /// levels on both sides.
-    ///
-    /// # Testing
-    ///
-    /// * `test_get_price_levels()`
-    fun get_price_levels_all(
-        market_id: u64
-    ): PriceLevels
-    acquires OrderBooks {
-        get_price_levels(market_id, HI_64, HI_64)
     }
 
     #[view]

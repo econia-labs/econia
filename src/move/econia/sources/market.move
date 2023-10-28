@@ -303,10 +303,11 @@
 ///
 /// flowchart LR
 ///
-/// get_open_orders_paginated --> get_open_orders_for_side_paginated
-/// get_price_levels_paginated --> get_price_levels_for_side_paginated
+/// get_open_orders --> get_open_orders_for_side
+/// get_open_orders_all --> get_open_orders
 /// get_price_levels --> get_open_orders
 /// get_price_levels --> get_price_levels_for_side
+/// get_market_order_id_price --> did_order_post
 /// get_price_levels_all --> get_price_levels
 /// get_open_order --> has_open_order
 /// get_open_order --> get_posted_order_id_side
@@ -315,9 +316,14 @@
 /// get_posted_order_id_side --> get_order_id_avl_queue_access_key
 /// has_open_order --> get_posted_order_id_side
 /// has_open_order --> get_order_id_avl_queue_access_key
-/// get_open_orders --> get_open_orders_for_side
-/// get_open_orders_all --> get_open_orders
-/// get_market_order_id_price --> did_order_post
+/// get_open_orders_paginated --> get_open_orders_for_side_paginated
+/// get_open_orders_paginated --> has_open_order
+/// get_open_orders_for_side_paginated -->
+///     get_order_id_avl_queue_access_key
+/// get_price_levels_paginated --> get_price_levels_for_side_paginated
+/// get_price_levels_paginated --> has_open_order
+/// get_price_levels_for_side_paginated -->
+///     get_order_id_avl_queue_access_key
 ///
 /// ```
 ///
@@ -404,6 +410,10 @@
 /// get_market_event_handle_creation_info -->
 ///     resource_account::get_address
 ///
+/// get_open_orders_paginated --> resource_account::get_address
+///
+/// get_price_levels_paginated --> resource_account::get_address
+///
 /// ```
 ///
 /// `user`:
@@ -440,6 +450,12 @@
 ///
 /// swap --> user::create_cancel_order_event_internal
 /// swap --> user::emit_swap_maker_fill_events_internal
+///
+/// get_open_orders_for_side_paginated -->
+///     user::get_open_order_id_internal
+///
+/// get_price_levels_for_side_paginated -->
+///     user::get_open_order_id_internal
 ///
 /// ```
 ///

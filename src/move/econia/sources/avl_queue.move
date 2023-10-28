@@ -568,6 +568,7 @@
 /// * `is_empty()`
 /// * `is_local_tail()`
 /// * `new()`
+/// * `next_list_node_id_in_access_key()`
 /// * `pop_head()`
 /// * `pop_tail()`
 /// * `remove()`
@@ -653,6 +654,8 @@
 ///
 /// insert_check_eviction --> remove
 /// insert_check_eviction --> insert
+///
+/// next_list_node_id_in_access_key --> traverse
 ///
 /// has_key --> search
 ///
@@ -1642,13 +1645,32 @@ module econia::avl_queue {
         avlq // Return AVL queue.
     }
 
-    /// `access_key` should have an active list node ID encoded in it.
+    /// Get list node ID of the next list node in AVL queue, encoded in
+    /// an otherwise blank access key.
+    ///
+    /// This function is optimized for performance and leaves access key
+    /// validity checking to calling functions. See tests.
+    ///
+    /// # Parameters
+    ///
+    /// * `avlq_ref`: Immutable reference to AVL queue.
+    /// * `access_key`: Access key containing list node ID of an active
+    ///   list node, relative to which the next list node ID should be
+    ///   returned.
+    ///
+    /// # Returns
+    ///
+    /// * `u64`: The list node ID of the next active list node in the
+    ///   AVL queue if there is one, otherwise `NIL`.
+    ///
+    /// # Testing
+    ///
+    /// * `market::test_get_open_orders_paginated()`
+    /// * `market::test_get_price_levels_paginated()`
     public fun next_list_node_id_in_access_key<V>(
         avlq_ref: &AVLqueue<V>,
         access_key: u64,
     ): (
-        // List node ID of next list node encoded in otherwise blank
-        // access key, else `NIL`.
         u64
     ) {
         let list_node_id = // Extract list node ID from access key.

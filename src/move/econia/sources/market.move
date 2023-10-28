@@ -103,8 +103,10 @@
 /// * `get_open_order()`
 /// * `get_open_orders()`
 /// * `get_open_orders_all()`
+/// * `get_open_orders_paginated()`
 /// * `get_price_levels()`
 /// * `get_price_levels_all()`
+/// * `get_price_levels_paginated()`
 /// * `has_open_order()`
 ///
 /// # Public function index
@@ -304,6 +306,7 @@
 /// get_price_levels --> get_open_orders
 /// get_price_levels --> get_price_levels_for_side
 /// get_price_levels_all --> get_price_levels
+/// get_price_levels_paginated --> get_price_levels_for_side_paginated
 /// get_open_order --> has_open_order
 /// get_open_order --> get_posted_order_id_side
 /// get_open_order --> get_order_id_avl_queue_access_key
@@ -313,6 +316,7 @@
 /// has_open_order --> get_order_id_avl_queue_access_key
 /// get_open_orders --> get_open_orders_for_side
 /// get_open_orders_all --> get_open_orders
+/// get_open_orders_paginated --> get_open_orders_for_side_paginated
 /// get_market_order_id_price --> did_order_post
 ///
 /// ```
@@ -1285,6 +1289,10 @@ module econia::market {
     /// Wrapped call to `get_open_orders()` for getting all open orders
     /// on both sides.
     ///
+    /// For a sufficiently large order book this function may fail due
+    /// to execution gas limits. Hence `get_open_orders_paginated()` is
+    /// recommended during production.
+    ///
     /// # Testing
     ///
     /// * `test_get_open_orders()`
@@ -1296,16 +1304,51 @@ module econia::market {
     }
 
     #[view]
+    /// Like `get_open_orders()`, but paginated.
+    ///
+    /// Kept as private view function to prevent runtime state
+    /// contention.
+    ///
+    /// When paginating via an SDK, specify the same transaction version
+    /// number for each function call until done paginating.
+    ///
+    /// # Parameters
+    ///
+    /// * `market_id`: Market ID of maker orders to index.
+    /// * `n_asks_to_index_max`: Maximum number of asks to index.
+    /// * `n_bids_to_index_max`: Maximum number of bids to index.
+    /// * `starting_ask_order_id`: Order ID of ask to start indexing
+    ///   from. If `NIL`, start from best ask.
+    /// * `starting_bid_order_id`: Order ID of bid to start indexing
+    ///   from. If `NIL`, start from best bid.
+    ///
+    /// # Returns
+    ///
+    /// * `PriceLevels`: Price level vectors.
+    /// * `u128`: Order ID for next ask to start indexing from. `NIL` if
+    ///   done indexing asks.
+    /// * `u128`: Order ID for next bid to start indexing from. `NIL` if
+    ///   done indexing bids.
+    ///
+    /// # Expected value testing
+    ///
+    /// * `test_get_open_orders_paginated()`
+    ///
+    /// # Failure testing
+    ///
+    /// * `test_get_open_orders_paginated_invalid_market_id()`
+    /// * `test_get_open_orders_paginated_invalid_market_order_id_ask()`
+    /// * `test_get_open_orders_paginated_invalid_market_order_id_bid()`
     fun get_open_orders_paginated(
         market_id: u64,
         n_asks_to_index_max: u64,
         n_bids_to_index_max: u64,
-        starting_ask_order_id: u128, // If `NIL`, start from best ask.
-        starting_bid_order_id: u128, // If `NIL`, start from best bid.
+        starting_ask_order_id: u128,
+        starting_bid_order_id: u128,
     ): (
         OrdersView,
-        u128, // Order ID for start of next asks page, `NIL` if done.
-        u128, // Order ID for start of next bids page, `NIL` if done.
+        u128,
+        u128,
     ) acquires OrderBooks {
         if (starting_ask_order_id != (NIL as u128)) {
             assert!(has_open_order(market_id, starting_ask_order_id),
@@ -1409,6 +1452,10 @@ module econia::market {
     /// Wrapped call to `get_price_levels()` for getting all price
     /// levels on both sides.
     ///
+    /// For a sufficiently large order book this function may fail due
+    /// to execution gas limits. Hence `get_price_levels_paginated()` is
+    /// recommended during production.
+    ///
     /// # Testing
     ///
     /// * `test_get_price_levels()`
@@ -1420,16 +1467,51 @@ module econia::market {
     }
 
     #[view]
+    /// Like `get_price_levels()`, but paginated.
+    ///
+    /// Kept as private view function to prevent runtime state
+    /// contention.
+    ///
+    /// When paginating via an SDK, specify the same transaction version
+    /// number for each function call until done paginating.
+    ///
+    /// # Parameters
+    ///
+    /// * `market_id`: Market ID of price levels to index.
+    /// * `n_asks_to_index_max`: Maximum number of asks to index.
+    /// * `n_bids_to_index_max`: Maximum number of bids to index.
+    /// * `starting_ask_order_id`: Order ID of ask to start indexing
+    ///   from. If `NIL`, start from best ask.
+    /// * `starting_bid_order_id`: Order ID of bid to start indexing
+    ///   from. If `NIL`, start from best bid.
+    ///
+    /// # Returns
+    ///
+    /// * `PriceLevels`: Price level vectors.
+    /// * `u128`: Order ID for next ask to start indexing from. `NIL` if
+    ///   done indexing asks.
+    /// * `u128`: Order ID for next bid to start indexing from. `NIL` if
+    ///   done indexing bids.
+    ///
+    /// # Expected value testing
+    ///
+    /// * `test_get_price_levels_paginated()`
+    ///
+    /// # Failure testing
+    ///
+    /// * `test_get_price_levels_paginated_invalid_market_id()`
+    /// * `test_get_price_levels_paginated_invalid_market_order_id_ask()`
+    /// * `test_get_price_levels_paginated_invalid_market_order_id_bid()`
     fun get_price_levels_paginated(
         market_id: u64,
         n_asks_to_index_max: u64,
         n_bids_to_index_max: u64,
-        starting_ask_order_id: u128, // If `NIL`, start from best ask.
-        starting_bid_order_id: u128, // If `NIL`, start from best bid.
+        starting_ask_order_id: u128,
+        starting_bid_order_id: u128,
     ): (
         PriceLevels,
-        u128, // Order ID for start of next asks page, `NIL` if done.
-        u128, // Order ID for start of next bids page, `NIL` if done.
+        u128,
+        u128,
     ) acquires OrderBooks {
         if (starting_ask_order_id != (NIL as u128)) {
             assert!(has_open_order(market_id, starting_ask_order_id),
@@ -2894,15 +2976,23 @@ module econia::market {
         orders // Return vector of view-friendly orders.
     }
 
+    /// Index specified number of open orders for given side of order
+    /// book, from given starting order ID.
+    ///
+    /// See `get_open_orders_paginated()`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_open_orders_paginated()`
     fun get_open_orders_for_side_paginated(
         order_book_ref: &OrderBook,
         market_id: u64,
         side: bool,
         n_orders_to_index_max: u64,
-        starting_order_id: u128 // If `NIL`, start from best bid/ask.
+        starting_order_id: u128
     ): (
         vector<OrderView>,
-        u128, // Order ID for start of next page, `NIL` if done.
+        u128,
     ) {
         // Get immutable reference to orders AVL queue for given side.
         let avlq_ref = if (side == ASK) &order_book_ref.asks else
@@ -3028,6 +3118,14 @@ module econia::market {
         price_levels // Return vector of price levels.
     }
 
+    /// Index specified number of open orders for given side of order
+    /// book into price levels, starting from given starting order ID.
+    ///
+    /// See `get_price_levels_paginated()`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_price_levels_paginated()`
     fun get_price_levels_for_side_paginated(
         order_book_ref: &OrderBook,
         market_id: u64,

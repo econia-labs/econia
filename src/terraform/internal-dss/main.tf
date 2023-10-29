@@ -412,6 +412,10 @@ resource "google_cloud_run_v2_service" "postgrest" {
         container_port = 3000
       }
     }
+    scaling {
+        min_instance_count = 1
+        max_instance_count = 1
+    }
     vpc_access {
       connector = google_vpc_access_connector.vpc_connector.id
       egress    = "ALL_TRAFFIC"
@@ -451,6 +455,10 @@ resource "google_cloud_run_v2_service" "websockets" {
       ports {
         container_port = 3000
       }
+    }
+    scaling {
+        min_instance_count = 1
+        max_instance_count = 1
     }
     vpc_access {
       connector = google_vpc_access_connector.vpc_connector.id

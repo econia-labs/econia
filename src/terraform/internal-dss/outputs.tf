@@ -11,5 +11,5 @@ output "postgrest_url" {
 }
 
 output "websockets_url" {
-  value = google_cloud_run_v2_service.websockets.uri
+  value = replace(google_cloud_run_v2_service.websockets.uri, "https", "wss")
 }

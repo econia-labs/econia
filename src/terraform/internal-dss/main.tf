@@ -46,7 +46,7 @@ locals {
   ssh_pubkey            = "ssh/gcp.pub"
   ssh_secret            = "ssh/gcp"
   ssh_username          = "bootstrapper"
-  terraform_dir         = "src/terraform/internal-diss"
+  terraform_dir         = "src/terraform/internal-dss"
 }
 
 resource "terraform_data" "config_environment" {

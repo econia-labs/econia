@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "WITH parameters AS (\n    SELECT\n        $1::int AS duration),\nmaxstart AS (\n    SELECT current_timestamp - '1 day'::interval as start\n),\nfills AS (\n    SELECT\n        fill_events.*,\n        to_timestamp(extract(epoch from time)::bigint / duration * duration) AS start_time\n    FROM\n        fill_events,\n        maxstart,\n        parameters\n    WHERE\n        time >= maxstart.start\n    AND\n        time < maxstart.start + '1 second'::interval * duration\n    ORDER BY\n        market_id\n)\nINSERT INTO aggregator.candlesticks\nSELECT\n    fills.market_id,                                -- market_id\n    '1 second'::interval * duration,                -- resolution\n    start_time,                                     -- start_time\n    FIRST(fills.price) OVER w,                      -- open\n    MAX(fills.price) OVER w,                        -- high\n    MIN(fills.price) OVER w,                        -- low\n    LAST(fills.price) OVER w,                       -- close\n    COALESCE(SUM(fills.size*fills.price) OVER w, 0) -- volume\nFROM\n    parameters,\n    fills\nWINDOW w AS (PARTITION BY start_time, duration)\n",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "35dd41a38d1927a3f3b4b046873f74ff1e27a13677b742932ceb8d423d3649d4"
+}

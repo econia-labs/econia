@@ -21,8 +21,8 @@ impl MarketsRegisteredPerDay {
 
 #[async_trait::async_trait]
 impl Pipeline for MarketsRegisteredPerDay {
-    fn model_name(&self) -> &'static str {
-        "MarketsRegisteredPerDay"
+    fn model_name(&self) -> String {
+        String::from("MarketsRegisteredPerDay")
     }
 
     fn ready(&self) -> bool {

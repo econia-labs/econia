@@ -95,7 +95,14 @@ async fn main() -> Result<()> {
     for pipeline in pipelines {
         match pipeline {
             Pipelines::Candlesticks => {
-                data.push(Arc::new(Mutex::new(Candlesticks::new(pool.clone()))));
+                data.push(Arc::new(Mutex::new(Candlesticks::new(pool.clone(), 60))));
+                data.push(Arc::new(Mutex::new(Candlesticks::new(pool.clone(), 60 * 5))));
+                data.push(Arc::new(Mutex::new(Candlesticks::new(pool.clone(), 60 * 15))));
+                data.push(Arc::new(Mutex::new(Candlesticks::new(pool.clone(), 60 * 30))));
+                data.push(Arc::new(Mutex::new(Candlesticks::new(pool.clone(), 60 * 60))));
+                data.push(Arc::new(Mutex::new(Candlesticks::new(pool.clone(), 60 * 60 * 4))));
+                data.push(Arc::new(Mutex::new(Candlesticks::new(pool.clone(), 60 * 60 * 12))));
+                data.push(Arc::new(Mutex::new(Candlesticks::new(pool.clone(), 60 * 60 * 24))));
             }
             Pipelines::Leaderboards => {
                 data.push(Arc::new(Mutex::new(Leaderboards::new(pool.clone()))));

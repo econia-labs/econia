@@ -42,8 +42,8 @@ impl UserHistory {
 
 #[async_trait::async_trait]
 impl Pipeline for UserHistory {
-    fn model_name(&self) -> &'static str {
-        "UserHistory"
+    fn model_name(&self) -> String {
+        String::from("UserHistory")
     }
 
     fn ready(&self) -> bool {

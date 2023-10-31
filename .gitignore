@@ -35,3 +35,7 @@ src/move/econia/target/*
 
 # Temporary markdown file for prototyping
 temp.md
+
+# Terraform
+.terraform*
+*.tfstate*

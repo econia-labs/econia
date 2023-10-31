@@ -4,10 +4,11 @@ use std::{
 };
 
 use anyhow::Result;
-use data::{leaderboards::Leaderboards, user_history::UserHistory, Data};
+use data::{
+    candlesticks::Candlesticks, leaderboards::Leaderboards, user_history::UserHistory, Data,
+};
 use sqlx::PgPool;
 use tokio::{sync::Mutex, task::JoinSet};
-use tracing_subscriber;
 
 mod data;
 
@@ -29,11 +30,11 @@ async fn main() -> Result<()> {
 
     let default_interval = Duration::from_secs(5);
 
-    let mut data: Vec<Arc<Mutex<dyn Data + Send + Sync>>> = vec![];
-
-    data.push(Arc::new(Mutex::new(UserHistory::new(pool.clone()))));
-
-    data.push(Arc::new(Mutex::new(Leaderboards::new(pool.clone()))));
+    let data: Vec<Arc<Mutex<dyn Data + Send + Sync>>> = vec![
+        Arc::new(Mutex::new(UserHistory::new(pool.clone()))),
+        Arc::new(Mutex::new(Candlesticks::new(pool.clone()))),
+        Arc::new(Mutex::new(Leaderboards::new(pool.clone()))),
+    ];
 
     let mut handles = JoinSet::new();
 

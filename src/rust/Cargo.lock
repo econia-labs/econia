@@ -72,6 +72,7 @@ dependencies = [
  "serde 1.0.188",
  "serde_json",
  "sqlx",
+ "sqlx-postgres",
  "thiserror",
  "tokio",
  "tracing",

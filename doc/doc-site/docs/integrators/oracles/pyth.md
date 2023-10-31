@@ -18,7 +18,7 @@ By leveraging Pyth’s price data feeds to build these exchange components, and 
 
 ## Updating price feeds
 
-The mechanism by which Pyth price feeds are updated on Aptos is explained [here](https://docs.pyth.network/pythnet-price-feeds).
+The mechanism by which Pyth price feeds are updated on Aptos is explained [here](https://docs.pyth.network/documentation/pythnet-price-feeds).
 The [pyth-aptos-js](https://github.com/pyth-network/pyth-crosschain/tree/main/target_chains/aptos/sdk/js) package can be used to fetch price feed update data, which can then be passed to the `pyth::update_price` on-chain function.
 
 ## Examples
@@ -65,7 +65,7 @@ When deploying contracts using Pyth, the [named addresses](https://move-language
 <div className="link-card-container">
     <a
         className="link-card"
-        href="https://docs.pyth.network/design-overview"
+        href="https://docs.pyth.network/documentation/how-pyth-works"
         target="_blank"
         rel="noopener noreferrer"
     >
@@ -74,7 +74,7 @@ When deploying contracts using Pyth, the [named addresses](https://move-language
     </a>
     <a
         className="link-card"
-        href="https://docs.pyth.network/pythnet-price-feeds/aptos"
+        href="https://docs.pyth.network/documentation/pythnet-price-feeds/aptos"
         target="_blank"
         rel="noopener noreferrer"
     >
@@ -83,7 +83,7 @@ When deploying contracts using Pyth, the [named addresses](https://move-language
     </a>
     <a
         className="link-card"
-        href="https://docs.pyth.network/benchmarks"
+        href="https://docs.pyth.network/documentation/benchmarks"
         target="_blank"
         rel="noopener noreferrer"
     >
@@ -92,7 +92,7 @@ When deploying contracts using Pyth, the [named addresses](https://move-language
     </a>
     <a
         className="link-card"
-        href="https://docs.pyth.network/tradingview-integration"
+        href="https://docs.pyth.network/guides/how-to-create-tradingview-charts"
         target="_blank"
         rel="noopener noreferrer"
     >

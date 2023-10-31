@@ -7,10 +7,9 @@ use std::{
 use aggregator::Pipeline;
 use anyhow::{anyhow, Result};
 use clap::{Parser, ValueEnum};
-use pipelines::{Leaderboards, UserHistory};
+use pipelines::{Candlesticks, Leaderboards, UserHistory};
 use sqlx::PgPool;
 use tokio::{sync::Mutex, task::JoinSet};
-use tracing_subscriber;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -34,8 +33,9 @@ struct Args {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Pipelines {
-    UserHistory,
+    Candlesticks,
     Leaderboards,
+    UserHistory,
 }
 
 impl ValueEnum for Pipelines {
@@ -44,7 +44,7 @@ impl ValueEnum for Pipelines {
     }
 
     fn value_variants<'a>() -> &'a [Self] {
-        &[Self::UserHistory, Self::Leaderboards]
+        &[Self::Candlesticks, Self::Leaderboards, Self::UserHistory]
     }
 }
 
@@ -86,7 +86,7 @@ async fn main() -> Result<()> {
             .ok_or(anyhow!("No data is included and --no-default is set."))?)
         .clone()
     } else {
-        let mut x = vec![Pipelines::UserHistory, Pipelines::Leaderboards];
+        let mut x = vec![Pipelines::Candlesticks, Pipelines::Leaderboards, Pipelines::UserHistory];
         let exclude = args.exclude.unwrap_or(vec![]);
         x = x.into_iter().filter(|a| !exclude.contains(a)).collect();
         x
@@ -94,11 +94,14 @@ async fn main() -> Result<()> {
 
     for pipeline in pipelines {
         match pipeline {
-            Pipelines::UserHistory => {
-                data.push(Arc::new(Mutex::new(UserHistory::new(pool.clone()))));
+            Pipelines::Candlesticks => {
+                data.push(Arc::new(Mutex::new(Candlesticks::new(pool.clone()))));
             }
             Pipelines::Leaderboards => {
                 data.push(Arc::new(Mutex::new(Leaderboards::new(pool.clone()))));
+            }
+            Pipelines::UserHistory => {
+                data.push(Arc::new(Mutex::new(UserHistory::new(pool.clone()))));
             }
         }
     }

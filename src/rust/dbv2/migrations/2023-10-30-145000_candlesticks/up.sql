@@ -1,6 +1,6 @@
 CREATE TABLE aggregator.candlesticks(
     "market_id" numeric NOT NULL,
-    "resolution" interval NOT NULL,
+    "resolution" int NOT NULL,
     "start_time" timestamptz NOT NULL,
     PRIMARY KEY ("market_id", "start_time", "resolution"),
     "open" numeric,
@@ -8,6 +8,11 @@ CREATE TABLE aggregator.candlesticks(
     "low" numeric,
     "close" numeric,
     "volume" numeric NOT NULL
+);
+
+CREATE TABLE aggregator.candlesticks_last_indexed_txn(
+    "resolution" int NOT NULL UNIQUE PRIMARY KEY,
+    "txn_version" numeric(20) NOT NULL
 );
 
 CREATE VIEW api.candlestick_resolutions AS
@@ -31,7 +36,7 @@ RETURNS anyelement LANGUAGE sql IMMUTABLE STRICT AS $$
 $$;
 
 CREATE AGGREGATE first (
-    sfunc    = public.first_agg,
+    sfunc    = first_agg,
     basetype = anyelement,
     stype    = anyelement
 );
@@ -42,7 +47,7 @@ RETURNS anyelement LANGUAGE sql IMMUTABLE STRICT AS $$
 $$;
 
 CREATE AGGREGATE last (
-    sfunc    = public.first_agg,
+    sfunc    = last_agg,
     basetype = anyelement,
     stype    = anyelement
 );

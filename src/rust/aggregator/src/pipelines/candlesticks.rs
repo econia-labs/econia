@@ -1,7 +1,7 @@
 use anyhow::anyhow;
 use chrono::{DateTime, Duration, Utc};
-use sqlx::{PgConnection, PgPool};
-use sqlx_postgres::types::PgInterval;
+use sqlx::PgPool;
+use sqlx_postgres::PgConnection;
 
 use aggregator::{Pipeline, PipelineError, PipelineAggregationResult};
 
@@ -30,36 +30,47 @@ impl Pipeline for Candlesticks {
 
     /// Init resolutions and last indexed transaction version number, then process and save.
     async fn process_and_save_historical_data(&mut self) -> PipelineAggregationResult {
-
-        sqlx::query_file!(
-            "sqlx_queries/candlesticks/insert_candlestick.sql",
-            self.resolution
-        )
-        .execute(&self.pool)
-        .await
-        .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
-        Ok(())
+        self.process_and_save_internal().await
     }
 
     fn ready(&self) -> bool {
         self.last_indexed_timestamp.is_none()
-            || self.last_indexed_timestamp.unwrap() + Duration::from_std(std::time::Duration::from_secs(self.resolution as u64)).unwrap()
+            || self.last_indexed_timestamp.unwrap()
+                + Duration::from_std(std::time::Duration::from_secs(5)).unwrap()
                 < Utc::now()
     }
 
     fn poll_interval(&self) -> Option<std::time::Duration> {
-        Some(std::time::Duration::from_secs((self.resolution / 2) as u64))
+        Some(std::time::Duration::from_secs(5))
     }
 
     async fn process_and_save_internal(&mut self) -> PipelineAggregationResult {
-        let interval =
-                PgInterval::from(std::time::Duration::from_secs(self.resolution as u64).try_into().unwrap());
-
         let mut transaction = self
             .pool
             .begin()
             .await
             .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
+
+        sqlx::query_file!(
+            "sqlx_queries/candlesticks/init_last_indexed_txn_version.sql",
+            self.resolution,
+        )
+        .execute(&mut transaction as &mut PgConnection)
+        .await
+        .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
+
+        sqlx::query_file!("sqlx_queries/candlesticks/insert_data.sql", self.resolution,)
+            .execute(&mut transaction as &mut PgConnection)
+            .await
+            .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
+
+        sqlx::query_file!(
+            "sqlx_queries/candlesticks/update_last_indexed_txn_version.sql",
+            self.resolution,
+        )
+        .execute(&mut transaction as &mut PgConnection)
+        .await
+        .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
 
         transaction
             .commit()

@@ -1,3 +1,9 @@
-INSERT INTO aggregator.candlestick_last_indexed_txn_version
-    VALUES (0);
-
+WITH parameters AS (
+    SELECT
+        $1::int AS resolution)
+INSERT INTO aggregator.candlesticks_last_indexed_txn
+SELECT
+    resolution, 0
+FROM
+    parameters
+ON CONFLICT DO NOTHING

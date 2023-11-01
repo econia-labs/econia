@@ -13,3 +13,5 @@ DROP VIEW api.candlestick_resolutions;
 DROP INDEX aggregator.candlestick_time;
 
 DROP TABLE aggregator.candlesticks;
+
+DROP TABLE aggregator.candlesticks_last_indexed_txn;

@@ -86,8 +86,8 @@ async fn main() -> Result<()> {
         .clone()
     } else {
         let mut x = vec![Pipelines::UserHistory, Pipelines::Leaderboards];
-        x.append(&mut args.include.unwrap_or(vec![]));
-        x.dedup();
+        let exclude = args.exclude.unwrap_or(vec![]);
+        x = x.into_iter().filter(|a| !exclude.contains(a)).collect();
         x
     };
 

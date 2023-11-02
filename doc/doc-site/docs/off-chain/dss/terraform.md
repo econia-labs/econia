@@ -76,14 +76,19 @@ class rest-service yellow;
 1. [Configure a billable GCP project](gcp#configure-project):
 
    ```sh
+   PROJECT_NAME=leaderboard-backend
+   ```
+
+   ```sh
    echo $PROJECT_ID
+   echo $PROJECT_NAME
    echo $ORGANIZATION_ID
    echo $BILLING_ACCOUNT_ID
    ```
 
    ```sh
    gcloud projects create $PROJECT_ID \
-       --name leaderboard-backend \
+       --name $PROJECT_NAME \
        --organization $ORGANIZATION_ID
    gcloud alpha billing projects link $PROJECT_ID \
        --billing-account $BILLING_ACCOUNT_ID

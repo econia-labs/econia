@@ -113,7 +113,7 @@ impl EconiaClient {
     pub async fn connect(
         node_url: Url,
         econia: AccountAddress,
-        mut account: LocalAccount,
+        account: LocalAccount,
         config: Option<EconiaClientConfig>,
     ) -> EconiaResult<Self> {
         let aptos = Client::new(node_url);

@@ -175,6 +175,7 @@ pub async fn account(
 }
 
 /// Funds an amount with the coin specified
+#[allow(dead_code)]
 pub async fn fund(
     coin: &TypeTag,
     amount: u64,

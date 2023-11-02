@@ -1,11 +1,6 @@
 use thiserror::Error;
 
-pub mod candlesticks;
-pub mod leaderboards;
-pub mod markets;
-pub mod user_history;
-
-type PipelineAggregationResult = Result<(), PipelineError>;
+pub type PipelineAggregationResult = Result<(), PipelineError>;
 
 /// This trait represents a data pipeline.
 #[async_trait::async_trait]

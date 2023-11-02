@@ -4,9 +4,10 @@ use std::{
     time::{Duration, SystemTime},
 };
 
+use aggregator::Pipeline;
 use anyhow::{anyhow, Result};
 use clap::{Parser, ValueEnum};
-use data::{leaderboards::Leaderboards, user_history::UserHistory, Pipeline};
+use pipelines::{Leaderboards, UserHistory};
 use sqlx::PgPool;
 use tokio::{sync::Mutex, task::JoinSet};
 use tracing_subscriber;
@@ -53,7 +54,7 @@ impl Display for Pipelines {
     }
 }
 
-mod data;
+mod pipelines;
 
 #[tokio::main]
 async fn main() -> Result<()> {

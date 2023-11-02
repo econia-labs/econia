@@ -8,6 +8,7 @@ anyhow = "1.0.75"
 async-trait = "0.1.73"
 bigdecimal.workspace = true
 chrono.workspace = true
+clap = { workspace = true, features = ["derive", "string"] }
 dotenvy.workspace = true
 env_logger = "0.10.0"
 log = "0.4.20"

@@ -6,7 +6,7 @@ use std::{
 
 use anyhow::{anyhow, Result};
 use clap::{Parser, ValueEnum};
-use data::{leaderboards::Leaderboards, user_history::UserHistory, Processor};
+use data::{leaderboards::Leaderboards, user_history::UserHistory, Pipeline};
 use sqlx::PgPool;
 use tokio::{sync::Mutex, task::JoinSet};
 use tracing_subscriber;
@@ -14,17 +14,17 @@ use tracing_subscriber;
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    /// If set, no processor will be included by default.
+    /// If set, no pipeline will be included by default.
     #[arg(short, long)]
     no_default: bool,
 
-    /// Exclusion list. Processors specified here will not be executed. Ignored if --no-default passed.
+    /// Exclusion list. Pipelines specified here will not be executed. Ignored if --no-default passed.
     #[arg(short, long)]
-    exclude: Option<Vec<Processors>>,
+    exclude: Option<Vec<Pipelines>>,
 
-    /// Inclusion list. Processors specified here will be executed. Ignored if --no-default is not passed.
+    /// Inclusion list. Pipelines specified here will be executed. Ignored if --no-default is not passed.
     #[arg(short, long, value_enum)]
-    include: Option<Vec<Processors>>,
+    include: Option<Vec<Pipelines>>,
 
     /// Database URL.
     #[arg(short, long)]
@@ -32,12 +32,12 @@ struct Args {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum Processors {
+pub enum Pipelines {
     UserHistory,
     Leaderboards,
 }
 
-impl ValueEnum for Processors {
+impl ValueEnum for Pipelines {
     fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
         Some(clap::builder::PossibleValue::new(self.to_string()))
     }
@@ -47,7 +47,7 @@ impl ValueEnum for Processors {
     }
 }
 
-impl Display for Processors {
+impl Display for Pipelines {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{self:?}")
     }
@@ -77,26 +77,26 @@ async fn main() -> Result<()> {
 
     let default_interval = Duration::from_secs(5);
 
-    let mut data: Vec<Arc<Mutex<dyn Processor + Send + Sync>>> = vec![];
+    let mut data: Vec<Arc<Mutex<dyn Pipeline + Send + Sync>>> = vec![];
 
-    let processors = if args.no_default {
+    let pipelines = if args.no_default {
         (args
             .include
             .ok_or(anyhow!("No data is included and --no-default is set."))?)
         .clone()
     } else {
-        let mut x = vec![Processors::UserHistory];
+        let mut x = vec![Pipelines::UserHistory];
         x.append(&mut args.include.unwrap_or(vec![]));
         x.dedup();
         x
     };
 
-    for processor in processors {
-        match processor {
-            Processors::UserHistory => {
+    for pipeline in pipelines {
+        match pipeline {
+            Pipelines::UserHistory => {
                 data.push(Arc::new(Mutex::new(UserHistory::new(pool.clone()))));
             }
-            Processors::Leaderboards => {
+            Pipelines::Leaderboards => {
                 data.push(Arc::new(Mutex::new(Leaderboards::new(pool.clone()))));
             }
         }

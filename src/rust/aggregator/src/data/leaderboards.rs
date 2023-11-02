@@ -3,7 +3,7 @@ use bigdecimal::{BigDecimal, Zero};
 use chrono::{DateTime, Duration, Utc};
 use sqlx::{PgConnection, PgPool, Postgres, Transaction};
 
-use super::{Processor, ProcessorAggregationResult, ProcessorError};
+use super::{Pipeline, PipelineAggregationResult, PipelineError};
 
 pub const TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
 
@@ -31,7 +31,7 @@ struct Competition {
 }
 
 #[async_trait::async_trait]
-impl Processor for Leaderboards {
+impl Pipeline for Leaderboards {
     fn model_name(&self) -> &'static str {
         "Leaderboard"
     }
@@ -42,7 +42,7 @@ impl Processor for Leaderboards {
                 < Utc::now()
     }
 
-    async fn process_and_save_historical_data(&mut self) -> ProcessorAggregationResult {
+    async fn process_and_save_historical_data(&mut self) -> PipelineAggregationResult {
         self.process_and_save_internal().await
     }
 
@@ -50,12 +50,12 @@ impl Processor for Leaderboards {
         Some(TIMEOUT)
     }
 
-    async fn process_and_save_internal(&mut self) -> ProcessorAggregationResult {
+    async fn process_and_save_internal(&mut self) -> PipelineAggregationResult {
         let mut transaction = self
             .pool
             .begin()
             .await
-            .map_err(|e| ProcessorError::ProcessingError(anyhow!(e)))?;
+            .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
         // Get all competitions having created markets
         let competitions = sqlx::query_as!(
             Competition,
@@ -70,14 +70,14 @@ impl Processor for Leaderboards {
         )
         .fetch_all(&mut transaction as &mut PgConnection)
         .await
-        .map_err(|e| ProcessorError::ProcessingError(anyhow!(e)))?;
+        .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
         for comp in competitions {
             aggregate_data_for_competition(&mut transaction, comp).await?;
         }
         transaction
             .commit()
             .await
-            .map_err(|e| ProcessorError::ProcessingError(anyhow!(e)))?;
+            .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
         Ok(())
     }
 }
@@ -85,7 +85,7 @@ impl Processor for Leaderboards {
 async fn aggregate_data_for_competition<'a>(
     transaction: &mut Transaction<'a, Postgres>,
     comp: Competition,
-) -> ProcessorAggregationResult {
+) -> PipelineAggregationResult {
     // Insert new users
     sqlx::query!(
         r#"
@@ -125,7 +125,7 @@ async fn aggregate_data_for_competition<'a>(
     )
     .execute(transaction as &mut PgConnection)
     .await
-    .map_err(|e| ProcessorError::ProcessingError(anyhow!(e)))?;
+    .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
 
     sqlx::query!(
         r#"
@@ -141,7 +141,7 @@ async fn aggregate_data_for_competition<'a>(
     )
     .execute(transaction as &mut PgConnection)
     .await
-    .map_err(|e| ProcessorError::ProcessingError(anyhow!(e)))?;
+    .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
 
     sqlx::query!(
         r#"
@@ -156,7 +156,7 @@ async fn aggregate_data_for_competition<'a>(
     )
     .execute(transaction as &mut PgConnection)
     .await
-    .map_err(|e| ProcessorError::ProcessingError(anyhow!(e)))?;
+    .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
 
     sqlx::query!(
         r#"
@@ -176,7 +176,7 @@ async fn aggregate_data_for_competition<'a>(
     )
     .execute(transaction as &mut PgConnection)
     .await
-    .map_err(|e| ProcessorError::ProcessingError(anyhow!(e)))?;
+    .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
 
     // Set last aggregated transaction version
     let max_txnv_fills = sqlx::query!(
@@ -187,7 +187,7 @@ async fn aggregate_data_for_competition<'a>(
     )
     .fetch_one(transaction as &mut PgConnection)
     .await
-    .map_err(|e| ProcessorError::ProcessingError(anyhow!(e)))?
+    .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?
     .max;
 
     let max_txnv_places = sqlx::query!(
@@ -198,7 +198,7 @@ async fn aggregate_data_for_competition<'a>(
     )
     .fetch_one(transaction as &mut PgConnection)
     .await
-    .map_err(|e| ProcessorError::ProcessingError(anyhow!(e)))?
+    .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?
     .max;
 
     let max = BigDecimal::max(
@@ -218,7 +218,7 @@ async fn aggregate_data_for_competition<'a>(
         )
         .execute(transaction as &mut PgConnection)
         .await
-        .map_err(|e| ProcessorError::ProcessingError(anyhow!(e)))?;
+        .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
     }
     Ok(())
 }

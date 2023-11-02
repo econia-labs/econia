@@ -5,12 +5,12 @@ pub mod leaderboards;
 pub mod markets;
 pub mod user_history;
 
-type ProcessorAggregationResult = Result<(), ProcessorError>;
+type PipelineAggregationResult = Result<(), PipelineError>;
 
-/// This trait represents a data processor.
+/// This trait represents a data pipeline.
 #[async_trait::async_trait]
-pub trait Processor {
-    /// Returns `true` if the processor is ready to be executed (if the process function should be
+pub trait Pipeline {
+    /// Returns `true` if the pipeline is ready to be executed (if the process function should be
     /// called now).
     fn ready(&self) -> bool;
 
@@ -19,21 +19,21 @@ pub trait Processor {
 
     /// Processes the data and saves the result.
     ///
-    /// Before any real work is done, [`Processor::ready`] is called. If it returns `false`,
-    /// [`ProcessorError::NotReady`] is returned.
-    async fn process_and_save(&mut self) -> ProcessorAggregationResult {
+    /// Before any real work is done, [`Pipeline::ready`] is called. If it returns `false`,
+    /// [`PipelineError::NotReady`] is returned.
+    async fn process_and_save(&mut self) -> PipelineAggregationResult {
         if self.ready() {
             self.process_and_save_internal().await
         } else {
-            Err(ProcessorError::NotReady)
+            Err(PipelineError::NotReady)
         }
     }
 
     /// Processes the data and saves the result.
     ///
     /// This is an internal function. It should never be called, except in
-    /// [`Processor::process_and_save`].
-    async fn process_and_save_internal(&mut self) -> ProcessorAggregationResult;
+    /// [`Pipeline::process_and_save`].
+    async fn process_and_save_internal(&mut self) -> PipelineAggregationResult;
 
     /// Process and save historical data that is missing in the database.
     ///
@@ -42,9 +42,9 @@ pub trait Processor {
     ///
     /// It is recommended that this fuction is run once, before the program starts, to make
     /// sure that the data is up to date.
-    async fn process_and_save_historical_data(&mut self) -> ProcessorAggregationResult;
+    async fn process_and_save_historical_data(&mut self) -> PipelineAggregationResult;
 
-    /// The interval at which the [`Processor::ready`] function should be polled.
+    /// The interval at which the [`Pipeline::ready`] function should be polled.
     ///
     /// If `None` is returned, it is up to the caller to decide when to poll.
     fn poll_interval(&self) -> Option<std::time::Duration>;
@@ -52,11 +52,11 @@ pub trait Processor {
 
 /// Error while trying to process data.
 #[derive(Debug, Error)]
-pub enum ProcessorError {
+pub enum PipelineError {
     /// The data is not ready to be processed.
     ///
-    /// If this error arises, it means that [`Processor::ready`] returns `false`.
-    /// Wait for [`Processor::ready`] to return `true` before calling [`Processor::process_and_save`] again.
+    /// If this error arises, it means that [`Pipeline::ready`] returns `false`.
+    /// Wait for [`Pipeline::ready`] to return `true` before calling [`Pipeline::process_and_save`] again.
     #[error("Data is not ready to be processed")]
     NotReady,
 
@@ -64,7 +64,7 @@ pub enum ProcessorError {
     ///
     /// An error occured in the processing process.
     /// There are two possible causes to this:
-    /// - [`Processor::process_internal`] has a bug.
+    /// - [`Pipeline::process_internal`] has a bug.
     /// - an external data source is not responding as it should.
     ///
     /// This error should be returned when an error occured, and some action must be taken to fix

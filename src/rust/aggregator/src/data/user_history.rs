@@ -3,7 +3,7 @@ use bigdecimal::{num_bigint::ToBigInt, BigDecimal, Zero};
 use chrono::{DateTime, Duration, Utc};
 use sqlx::{Executor, PgConnection, PgPool, Postgres, Transaction};
 
-use super::{Processor, ProcessorAggregationResult, ProcessorError};
+use super::{Pipeline, PipelineAggregationResult, PipelineError};
 
 /// Number of bits to shift when encoding transaction version.
 const SHIFT_TXN_VERSION: u8 = 64;
@@ -39,7 +39,7 @@ impl UserHistory {
 }
 
 #[async_trait::async_trait]
-impl Processor for UserHistory {
+impl Pipeline for UserHistory {
     fn model_name(&self) -> &'static str {
         "UserHistory"
     }
@@ -49,7 +49,7 @@ impl Processor for UserHistory {
             || self.last_indexed_timestamp.unwrap() + Duration::seconds(5) < Utc::now()
     }
 
-    async fn process_and_save_historical_data(&mut self) -> ProcessorAggregationResult {
+    async fn process_and_save_historical_data(&mut self) -> PipelineAggregationResult {
         self.process_and_save_internal().await
     }
 
@@ -57,19 +57,19 @@ impl Processor for UserHistory {
         Some(std::time::Duration::from_secs(5))
     }
 
-    /// All database interactions are handled in a single atomic transaction. Processor insertions
+    /// All database interactions are handled in a single atomic transaction. Pipeline insertions
     /// are also handled in a single atomic transaction for each batch of transactions, such that
     /// user history aggregation logic is effectively serialized across historical chain state.
-    async fn process_and_save_internal(&mut self) -> ProcessorAggregationResult {
+    async fn process_and_save_internal(&mut self) -> PipelineAggregationResult {
         let mut transaction = self
             .pool
             .begin()
             .await
-            .map_err(|e| ProcessorError::ProcessingError(anyhow!(e)))?;
+            .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
         transaction
             .execute("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;")
             .await
-            .map_err(|e| ProcessorError::ProcessingError(anyhow!(e)))?;
+            .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
         struct TxnVersion {
             txn_version: BigDecimal,
         }
@@ -79,7 +79,7 @@ impl Processor for UserHistory {
         )
         .fetch_optional(&mut transaction as &mut PgConnection)
         .await
-        .map_err(|e| ProcessorError::ProcessingError(anyhow!(e)))?;
+        .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
         let txnv_exists = max_txn_version.is_some();
         let max_txn_version = max_txn_version
             .unwrap_or(TxnVersion {
@@ -92,56 +92,56 @@ impl Processor for UserHistory {
         )
         .fetch_all(&mut transaction as &mut PgConnection)
         .await
-        .map_err(|e| ProcessorError::ProcessingError(anyhow!(e)))?;
+        .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
         let change_events = sqlx::query_file!(
             "sqlx_queries/user_history/get_change_order_size_events.sql",
             max_txn_version
         )
         .fetch_all(&mut transaction as &mut PgConnection)
         .await
-        .map_err(|e| ProcessorError::ProcessingError(anyhow!(e)))?;
+        .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
         sqlx::query_file!(
             "sqlx_queries/user_history/parse_order_events_limit.sql",
             max_txn_version,
         )
         .execute(&mut transaction as &mut PgConnection)
         .await
-        .map_err(|e| ProcessorError::ProcessingError(anyhow!(e)))?;
+        .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
         sqlx::query_file!(
             "sqlx_queries/user_history/insert_user_history_limit.sql",
             max_txn_version,
         )
         .execute(&mut transaction as &mut PgConnection)
         .await
-        .map_err(|e| ProcessorError::ProcessingError(anyhow!(e)))?;
+        .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
         sqlx::query_file!(
             "sqlx_queries/user_history/parse_order_events_market.sql",
             max_txn_version,
         )
         .execute(&mut transaction as &mut PgConnection)
         .await
-        .map_err(|e| ProcessorError::ProcessingError(anyhow!(e)))?;
+        .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
         sqlx::query_file!(
             "sqlx_queries/user_history/insert_user_history_market.sql",
             max_txn_version,
         )
         .execute(&mut transaction as &mut PgConnection)
         .await
-        .map_err(|e| ProcessorError::ProcessingError(anyhow!(e)))?;
+        .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
         sqlx::query_file!(
             "sqlx_queries/user_history/parse_order_events_swap.sql",
             max_txn_version,
         )
         .execute(&mut transaction as &mut PgConnection)
         .await
-        .map_err(|e| ProcessorError::ProcessingError(anyhow!(e)))?;
+        .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
         sqlx::query_file!(
             "sqlx_queries/user_history/insert_user_history_swap.sql",
             max_txn_version,
         )
         .execute(&mut transaction as &mut PgConnection)
         .await
-        .map_err(|e| ProcessorError::ProcessingError(anyhow!(e)))?;
+        .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
         // Step through fill and change events in total order.
         let mut fill_index = 0;
         let mut change_index = 0;
@@ -200,12 +200,12 @@ impl Processor for UserHistory {
         )
         .execute(&mut transaction as &mut PgConnection)
         .await
-        .map_err(|e| ProcessorError::ProcessingError(anyhow!(e)))?;
+        .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
         update_max_txn_version(&mut transaction, txnv_exists).await?;
         transaction
             .commit()
             .await
-            .map_err(|e| ProcessorError::ProcessingError(anyhow!(e)))?;
+            .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
         Ok(())
     }
 }
@@ -217,7 +217,7 @@ async fn aggregate_fill_for_maker_and_taker<'a>(
     taker_order_id: &BigDecimal,
     market_id: &BigDecimal,
     time: &DateTime<Utc>,
-) -> ProcessorAggregationResult {
+) -> PipelineAggregationResult {
     aggregate_fill(tx, size, maker_order_id, market_id, time).await?;
     aggregate_fill(tx, size, taker_order_id, market_id, time).await?;
     Ok(())
@@ -229,7 +229,7 @@ async fn aggregate_fill<'a>(
     order_id: &BigDecimal,
     market_id: &BigDecimal,
     time: &DateTime<Utc>,
-) -> ProcessorAggregationResult {
+) -> PipelineAggregationResult {
     // Only limit orders can remain open after a transaction during which they are filled against,
     // so flag market orders and swaps as closed by default: if they end up being cancelled instead
     // of closed, the cancel event emitted during the same transaction (aggregated after fills) will
@@ -243,7 +243,7 @@ async fn aggregate_fill<'a>(
     )
     .execute(tx as &mut PgConnection)
     .await
-    .map_err(|e| ProcessorError::ProcessingError(anyhow!(e)))?;
+    .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
     Ok(())
 }
 
@@ -255,7 +255,7 @@ async fn aggregate_change<'a>(
     time: &DateTime<Utc>,
     txn_version: &BigDecimal,
     event_idx: &BigDecimal,
-) -> ProcessorAggregationResult {
+) -> PipelineAggregationResult {
     // Get some info
     let record = sqlx::query_file!(
         "sqlx_queries/user_history/get_order_type_with_remaining_size.sql",
@@ -264,20 +264,20 @@ async fn aggregate_change<'a>(
     )
     .fetch_one(tx as &mut PgConnection)
     .await
-    .map_err(|e| ProcessorError::ProcessingError(anyhow!(e)))?;
+    .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
     let (order_type, original_size): (OrderType, BigDecimal) =
         (record.order_type, record.remaining_size);
     // If it's a limit order and needs reordering
     if matches!(order_type, OrderType::Limit) && &original_size < new_size {
         let txn = txn_version
             .to_bigint()
-            .ok_or(ProcessorError::ProcessingError(anyhow!(
+            .ok_or(PipelineError::ProcessingError(anyhow!(
                 "txn_version not integer"
             )))?
             << SHIFT_TXN_VERSION;
         let event = event_idx
             .to_bigint()
-            .ok_or(ProcessorError::ProcessingError(anyhow!(
+            .ok_or(PipelineError::ProcessingError(anyhow!(
                 "event_idx not integer"
             )))?;
         let txn_event: BigDecimal = BigDecimal::from(txn | event);
@@ -289,7 +289,7 @@ async fn aggregate_change<'a>(
         )
         .execute(tx as &mut PgConnection)
         .await
-        .map_err(|e| ProcessorError::ProcessingError(anyhow!(e)))?;
+        .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
     }
     sqlx::query_file!(
         "sqlx_queries/user_history/aggregate_size_change.sql",
@@ -300,19 +300,19 @@ async fn aggregate_change<'a>(
     )
     .execute(tx as &mut PgConnection)
     .await
-    .map_err(|e| ProcessorError::ProcessingError(anyhow!(e)))?;
+    .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
     Ok(())
 }
 
 async fn update_max_txn_version<'a>(
     tx: &mut Transaction<'a, Postgres>,
     already_exists: bool,
-) -> ProcessorAggregationResult {
+) -> PipelineAggregationResult {
     let new_max_txn_version =
         sqlx::query_file!("sqlx_queries/user_history/get_new_last_indexed_txn_version.sql",)
             .fetch_one(tx as &mut PgConnection)
             .await
-            .map_err(|e| ProcessorError::ProcessingError(anyhow!(e)))?
+            .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?
             .max
             .unwrap_or(BigDecimal::zero());
     if already_exists {
@@ -322,7 +322,7 @@ async fn update_max_txn_version<'a>(
         )
         .execute(tx as &mut PgConnection)
         .await
-        .map_err(|e| ProcessorError::ProcessingError(anyhow!(e)))?;
+        .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
     } else {
         sqlx::query_file!(
             "sqlx_queries/user_history/init_last_indexed_txn_version.sql",
@@ -330,7 +330,7 @@ async fn update_max_txn_version<'a>(
         )
         .execute(tx as &mut PgConnection)
         .await
-        .map_err(|e| ProcessorError::ProcessingError(anyhow!(e)))?;
+        .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
     }
     Ok(())
 }

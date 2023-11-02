@@ -42,6 +42,8 @@
 - [`get_open_order()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#function-get_open_order)
 - [`get_open_orders()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#function-get_open_orders)
 - [`get_open_orders_all()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#function-get_open_orders_all)
+- [`get_open_orders_paginated()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#function-get_open_orders_paginated)
 - [`get_price_levels()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#function-get_price_levels)
 - [`get_price_levels_all()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#function-get_price_levels_all)
+- [`get_price_levels_paginated()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#function-get_price_levels_paginated)
 - [`has_open_order()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#function-has_open_order)

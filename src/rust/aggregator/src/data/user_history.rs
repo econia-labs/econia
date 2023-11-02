@@ -57,7 +57,7 @@ impl Pipeline for UserHistory {
         Some(std::time::Duration::from_secs(5))
     }
 
-    /// All database interactions are handled in a single atomic transaction. Pipeline insertions
+    /// All database interactions are handled in a single atomic transaction. Processor insertions
     /// are also handled in a single atomic transaction for each batch of transactions, such that
     /// user history aggregation logic is effectively serialized across historical chain state.
     async fn process_and_save_internal(&mut self) -> PipelineAggregationResult {

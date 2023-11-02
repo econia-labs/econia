@@ -159,6 +159,15 @@ resource "google_service_networking_connection" "sql_network_connection" {
   provider                = google-beta
   reserved_peering_ranges = [google_compute_global_address.private_ip_address.name]
   service                 = "servicenetworking.googleapis.com"
+  provisioner "local-exec" {
+    when = destroy
+    command = join(" ", [
+      "gcloud compute networks peerings delete",
+      "servicenetworking-googleapis-com",
+      "--network sql-network",
+      "--quiet"
+    ])
+  }
 }
 
 resource "google_artifact_registry_repository" "images" {
@@ -401,6 +410,10 @@ resource "google_cloud_run_v2_service" "postgrest" {
         value = "web_anon"
       }
       env {
+        name  = "PGRST_DB_MAX_ROWS"
+        value = var.postgrest_max_rows
+      }
+      env {
         name  = "PGRST_DB_SCHEMA"
         value = "api"
       }
@@ -413,8 +426,8 @@ resource "google_cloud_run_v2_service" "postgrest" {
       }
     }
     scaling {
-        min_instance_count = 1
-        max_instance_count = 1
+      min_instance_count = 1
+      max_instance_count = 1
     }
     vpc_access {
       connector = google_vpc_access_connector.vpc_connector.id
@@ -457,8 +470,8 @@ resource "google_cloud_run_v2_service" "websockets" {
       }
     }
     scaling {
-        min_instance_count = 1
-        max_instance_count = 1
+      min_instance_count = 1
+      max_instance_count = 1
     }
     vpc_access {
       connector = google_vpc_access_connector.vpc_connector.id

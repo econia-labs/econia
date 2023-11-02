@@ -8,6 +8,8 @@ use super::{Data, DataAggregationError, DataAggregationResult};
 /// Number of bits to shift when encoding transaction version.
 const SHIFT_TXN_VERSION: u8 = 64;
 
+pub const TIMEOUT: std::time::Duration = std::time::Duration::from_millis(500);
+
 #[derive(sqlx::Type, Debug)]
 #[sqlx(type_name = "order_status", rename_all = "lowercase")]
 pub enum OrderStatus {
@@ -46,7 +48,8 @@ impl Data for UserHistory {
 
     fn ready(&self) -> bool {
         self.last_indexed_timestamp.is_none()
-            || self.last_indexed_timestamp.unwrap() + Duration::seconds(5) < Utc::now()
+            || self.last_indexed_timestamp.unwrap() + Duration::from_std(TIMEOUT).unwrap()
+                < Utc::now()
     }
 
     async fn process_and_save_historical_data(&mut self) -> DataAggregationResult {
@@ -54,7 +57,7 @@ impl Data for UserHistory {
     }
 
     fn poll_interval(&self) -> Option<std::time::Duration> {
-        Some(std::time::Duration::from_secs(5))
+        Some(TIMEOUT)
     }
 
     /// All database interactions are handled in a single atomic transaction. Processor insertions

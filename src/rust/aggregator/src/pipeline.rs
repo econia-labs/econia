@@ -9,8 +9,8 @@ pub trait Pipeline {
     /// called now).
     fn ready(&self) -> bool;
 
-    // Used for visibility/logging, returns a static string e.g. "ModelName"
-    fn model_name(&self) -> &'static str;
+    // Used for visibility/logging, returns a string e.g. "ModelName"
+    fn model_name(&self) -> String;
 
     /// Processes the data and saves the result.
     ///

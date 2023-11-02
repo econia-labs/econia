@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "WITH parameters AS (\n    SELECT\n        $1::int AS resolution)\nINSERT INTO aggregator.candlesticks_last_indexed_txn\nSELECT\n    resolution, 0\nFROM\n    parameters\nON CONFLICT DO NOTHING\n",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "6cbefe01f0ceb6a44a542607a471b857e1babde1856b0ae07c0394de3b9547a6"
+}

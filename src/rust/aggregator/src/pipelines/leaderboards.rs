@@ -28,8 +28,8 @@ struct Competition {
 
 #[async_trait::async_trait]
 impl Pipeline for Leaderboards {
-    fn model_name(&self) -> &'static str {
-        "Leaderboard"
+    fn model_name(&self) -> String {
+        String::from("Leaderboard")
     }
 
     fn ready(&self) -> bool {

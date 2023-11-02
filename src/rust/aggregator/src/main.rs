@@ -85,7 +85,7 @@ async fn main() -> Result<()> {
             .ok_or(anyhow!("No data is included and --no-default is set."))?)
         .clone()
     } else {
-        let mut x = vec![Pipelines::UserHistory];
+        let mut x = vec![Pipelines::UserHistory, Pipelines::Leaderboards];
         x.append(&mut args.include.unwrap_or(vec![]));
         x.dedup();
         x

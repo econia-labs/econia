@@ -14,10 +14,10 @@ RETURNS numeric AS $$
     WHERE
         maker_address = emit_address
     AND
-        fill_events.market_id = 3
+        fill_events.market_id = $1.market_id
     AND (
-            fill_events.maker_order_id = 44689488021338381355057152
+            fill_events.maker_order_id = $1.order_id
         OR
-            fill_events.taker_order_id = 44689488021338381355057152
+            fill_events.taker_order_id = $1.order_id
     )
 $$ LANGUAGE SQL;

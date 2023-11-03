@@ -20,7 +20,7 @@ The WebSocket server uses a general format for all WebSocket messages:
 
 ## Channels
 
-Each event type has a its own channel.
+Each event type has its own channel.
 
 Channels include:
 

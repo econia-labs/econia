@@ -1,9 +1,9 @@
 use anyhow::anyhow;
 use chrono::{DateTime, Duration, Utc};
-use sqlx::{Executor,PgPool};
+use sqlx::{Executor, PgPool};
 use sqlx_postgres::PgConnection;
 
-use aggregator::{Pipeline, PipelineError, PipelineAggregationResult};
+use aggregator::{Pipeline, PipelineAggregationResult, PipelineError};
 
 pub struct Candlesticks {
     pool: PgPool,

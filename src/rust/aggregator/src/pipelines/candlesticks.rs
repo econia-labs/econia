@@ -1,6 +1,6 @@
 use anyhow::anyhow;
 use chrono::{DateTime, Duration, Utc};
-use sqlx::PgPool;
+use sqlx::{Executor,PgPool};
 use sqlx_postgres::PgConnection;
 
 use aggregator::{Pipeline, PipelineError, PipelineAggregationResult};
@@ -28,8 +28,15 @@ impl Pipeline for Candlesticks {
         format!("Candlesticks({})", self.resolution)
     }
 
-    /// Init resolutions and last indexed transaction version number, then process and save.
     async fn process_and_save_historical_data(&mut self) -> PipelineAggregationResult {
+        sqlx::query_file!(
+            "sqlx_queries/candlesticks/init_last_indexed_txn_version.sql",
+            self.resolution,
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
+
         self.process_and_save_internal().await
     }
 
@@ -51,13 +58,10 @@ impl Pipeline for Candlesticks {
             .await
             .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
 
-        sqlx::query_file!(
-            "sqlx_queries/candlesticks/init_last_indexed_txn_version.sql",
-            self.resolution,
-        )
-        .execute(&mut transaction as &mut PgConnection)
-        .await
-        .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
+        transaction
+            .execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;")
+            .await
+            .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
 
         sqlx::query_file!("sqlx_queries/candlesticks/insert_data.sql", self.resolution,)
             .execute(&mut transaction as &mut PgConnection)

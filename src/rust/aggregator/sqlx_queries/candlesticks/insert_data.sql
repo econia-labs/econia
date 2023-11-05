@@ -13,7 +13,7 @@ fills AS (
     SELECT
         market_id,
         price,
-        size,
+        "size",
         -- Calculate start_time as now - (now % resolution)
         to_timestamp(extract(epoch from time)::bigint / resolution * resolution) AS start_time
     FROM
@@ -34,7 +34,7 @@ SELECT
     MAX(fills.price),                               -- high
     MIN(fills.price),                               -- low
     LAST(fills.price),                              -- close
-    COALESCE(SUM(fills.size*fills.price), 0)        -- volume
+    COALESCE(SUM(fills."size"*fills.price), 0)        -- volume
 FROM
     parameters,
     fills

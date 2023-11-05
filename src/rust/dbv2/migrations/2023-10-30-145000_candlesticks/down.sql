@@ -1,16 +1,14 @@
-DROP AGGREGATE last;
+DROP AGGREGATE last (anyelement);
 
-DROP FUNCTION last;
+DROP FUNCTION last_agg;
 
-DROP AGGREGATE first;
+DROP AGGREGATE first (anyelement);
 
-DROP FUNCTION first;
+DROP FUNCTION first_agg;
 
 DROP VIEW api.candlesticks;
 
 DROP VIEW api.candlestick_resolutions;
-
-DROP INDEX aggregator.candlestick_time;
 
 DROP TABLE aggregator.candlesticks;
 

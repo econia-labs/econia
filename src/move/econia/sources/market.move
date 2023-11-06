@@ -317,13 +317,15 @@
 /// has_open_order --> get_posted_order_id_side
 /// has_open_order --> get_order_id_avl_queue_access_key
 /// get_open_orders_paginated --> get_open_orders_for_side_paginated
-/// get_open_orders_paginated --> has_open_order
+/// get_open_orders_paginated --> verify_pagination_order_ids
 /// get_open_orders_for_side_paginated -->
 ///     get_order_id_avl_queue_access_key
 /// get_price_levels_paginated --> get_price_levels_for_side_paginated
-/// get_price_levels_paginated --> has_open_order
+/// get_price_levels_paginated --> verify_pagination_order_ids
 /// get_price_levels_for_side_paginated -->
 ///     get_order_id_avl_queue_access_key
+/// verify_pagination_order_ids --> has_open_order
+/// verify_pagination_order_ids --> get_posted_order_id_side
 ///
 /// ```
 ///

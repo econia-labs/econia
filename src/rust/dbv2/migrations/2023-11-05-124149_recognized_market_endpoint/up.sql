@@ -1,5 +1,5 @@
 -- Your SQL goes here
-CREATE VIEW api.recognized_markets AS
+CREATE VIEW aggregator.recognized_markets AS
     SELECT
     DISTINCT ON (
         base_account_address,
@@ -25,6 +25,15 @@ CREATE VIEW api.recognized_markets AS
         event_idx DESC;
 
 
+CREATE VIEW api.recognized_markets AS
+    SELECT
+        *
+    FROM
+        aggregator.recognized_markets
+    WHERE
+        market_id IS NOT NULL;
+
+
 GRANT SELECT ON api.recognized_markets TO web_anon;
 
 
@@ -38,7 +47,7 @@ CREATE VIEW api.markets AS
     FROM
         market_registration_events AS m
     LEFT JOIN
-        api.recognized_markets AS r
+        aggregator.recognized_markets AS r
     ON
         COALESCE(r.base_account_address, '') = COALESCE(m.base_account_address, '')
     AND

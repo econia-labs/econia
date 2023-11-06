@@ -10,7 +10,19 @@ CREATE VIEW aggregator.recognized_markets AS
         quote_module_name,
         quote_struct_name
     )
-        *
+        market_id,
+        "time",
+        "base_account_address",
+        "base_module_name",
+        "base_struct_name",
+        "base_name_generic",
+        "quote_account_address",
+        "quote_module_name",
+        "quote_struct_name",
+        "lot_size",
+        "tick_size",
+        "min_size",
+        "underwriter_id"
     FROM
         recognized_market_events
     ORDER BY

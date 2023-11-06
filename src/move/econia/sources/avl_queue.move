@@ -1666,7 +1666,7 @@ module econia::avl_queue {
     ///
     /// # Testing
     ///
-    /// * `test_next_list_node_id_in_access_key`
+    /// * `test_next_list_node_id_in_access_key()`
     public fun next_list_node_id_in_access_key<V>(
         avlq_ref: &AVLqueue<V>,
         access_key: u64,

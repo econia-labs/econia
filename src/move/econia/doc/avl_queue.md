@@ -2945,7 +2945,7 @@ Get list node ID of the next list node in AVL queue, encoded in
 an otherwise blank access key.
 
 This function is optimized for performance and leaves access key
-validity checking to calling functions. See tests.
+validity checking to calling functions.
 
 
 <a name="@Parameters_65"></a>
@@ -2965,7 +2965,8 @@ returned.
 
 
 * <code>u64</code>: The list node ID of the next active list node in the
-AVL queue if there is one, otherwise <code><a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a></code>.
+AVL queue, if there is one, encoded in an otherwise blank
+access key, otherwise <code><a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a></code>.
 
 
 <a name="@Testing_67"></a>
@@ -2973,8 +2974,7 @@ AVL queue if there is one, otherwise <code><a href="avl_queue.md#0xc0deb00c_avl_
 ### Testing
 
 
-* <code>market::test_get_open_orders_paginated()</code>
-* <code>market::test_get_price_levels_paginated()</code>
+* <code>test_next_list_node_id_in_access_key()</code>
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_next_list_node_id_in_access_key">next_list_node_id_in_access_key</a>&lt;V&gt;(avlq_ref: &<a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, access_key: u64): u64

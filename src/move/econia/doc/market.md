@@ -386,13 +386,15 @@ get_posted_order_id_side --> get_order_id_avl_queue_access_key
 has_open_order --> get_posted_order_id_side
 has_open_order --> get_order_id_avl_queue_access_key
 get_open_orders_paginated --> get_open_orders_for_side_paginated
-get_open_orders_paginated --> has_open_order
+get_open_orders_paginated --> verify_pagination_order_ids
 get_open_orders_for_side_paginated -->
 get_order_id_avl_queue_access_key
 get_price_levels_paginated --> get_price_levels_for_side_paginated
-get_price_levels_paginated --> has_open_order
+get_price_levels_paginated --> verify_pagination_order_ids
 get_price_levels_for_side_paginated -->
 get_order_id_avl_queue_access_key
+verify_pagination_order_ids --> has_open_order
+verify_pagination_order_ids --> get_posted_order_id_side
 
 ```
 
@@ -928,8 +930,10 @@ The below index is automatically generated from source code:
     -  [Aborts](#@Aborts_162)
     -  [Expected value testing](#@Expected_value_testing_163)
     -  [Failure testing](#@Failure_testing_164)
+-  [Function `verify_pagination_order_ids`](#0xc0deb00c_market_verify_pagination_order_ids)
+    -  [Failure testing](#@Failure_testing_165)
 -  [Function `index_orders_sdk`](#0xc0deb00c_market_index_orders_sdk)
-    -  [Coverage testing](#@Coverage_testing_165)
+    -  [Coverage testing](#@Coverage_testing_166)
 
 
 <pre><code><b>use</b> <a href="">0x1::account</a>;
@@ -3403,8 +3407,6 @@ done indexing bids.
 
 
 * <code>test_get_open_orders_paginated_invalid_market_id()</code>
-* <code>test_get_open_orders_paginated_invalid_market_order_id_ask()</code>
-* <code>test_get_open_orders_paginated_invalid_market_order_id_bid()</code>
 
 
 <pre><code>#[view]
@@ -3427,14 +3429,8 @@ done indexing bids.
     u128,
     u128,
 ) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
-    <b>if</b> (starting_ask_order_id != (<a href="market.md#0xc0deb00c_market_NIL">NIL</a> <b>as</b> u128)) {
-        <b>assert</b>!(<a href="market.md#0xc0deb00c_market_has_open_order">has_open_order</a>(market_id, starting_ask_order_id),
-                <a href="market.md#0xc0deb00c_market_E_INVALID_MARKET_ORDER_ID">E_INVALID_MARKET_ORDER_ID</a>);
-    };
-    <b>if</b> (starting_bid_order_id != (<a href="market.md#0xc0deb00c_market_NIL">NIL</a> <b>as</b> u128)) {
-        <b>assert</b>!(<a href="market.md#0xc0deb00c_market_has_open_order">has_open_order</a>(market_id, starting_bid_order_id),
-                <a href="market.md#0xc0deb00c_market_E_INVALID_MARKET_ORDER_ID">E_INVALID_MARKET_ORDER_ID</a>);
-    };
+    <a href="market.md#0xc0deb00c_market_verify_pagination_order_ids">verify_pagination_order_ids</a>( // Verify order IDs.
+        market_id, starting_ask_order_id, starting_bid_order_id);
     // Get <b>address</b> of resource <a href="">account</a> <b>where</b> order books are stored.
     <b>let</b> resource_address = resource_account::get_address();
     <b>let</b> order_books_map_ref = // Immutably borrow order books map.
@@ -3670,8 +3666,6 @@ done indexing bids.
 
 
 * <code>test_get_price_levels_paginated_invalid_market_id()</code>
-* <code>test_get_price_levels_paginated_invalid_market_order_id_ask()</code>
-* <code>test_get_price_levels_paginated_invalid_market_order_id_bid()</code>
 
 
 <pre><code>#[view]
@@ -3694,14 +3688,8 @@ done indexing bids.
     u128,
     u128,
 ) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
-    <b>if</b> (starting_ask_order_id != (<a href="market.md#0xc0deb00c_market_NIL">NIL</a> <b>as</b> u128)) {
-        <b>assert</b>!(<a href="market.md#0xc0deb00c_market_has_open_order">has_open_order</a>(market_id, starting_ask_order_id),
-                <a href="market.md#0xc0deb00c_market_E_INVALID_MARKET_ORDER_ID">E_INVALID_MARKET_ORDER_ID</a>);
-    };
-    <b>if</b> (starting_bid_order_id != (<a href="market.md#0xc0deb00c_market_NIL">NIL</a> <b>as</b> u128)) {
-        <b>assert</b>!(<a href="market.md#0xc0deb00c_market_has_open_order">has_open_order</a>(market_id, starting_bid_order_id),
-                <a href="market.md#0xc0deb00c_market_E_INVALID_MARKET_ORDER_ID">E_INVALID_MARKET_ORDER_ID</a>);
-    };
+    <a href="market.md#0xc0deb00c_market_verify_pagination_order_ids">verify_pagination_order_ids</a>( // Verify order IDs.
+        market_id, starting_ask_order_id, starting_bid_order_id);
     // Get <b>address</b> of resource <a href="">account</a> <b>where</b> order books are stored.
     <b>let</b> resource_address = resource_account::get_address();
     <b>let</b> order_books_map_ref = // Immutably borrow order books map.
@@ -7892,6 +7880,54 @@ filling, when swap is from non-signing swapper.
 
 
 
+<a name="0xc0deb00c_market_verify_pagination_order_ids"></a>
+
+## Function `verify_pagination_order_ids`
+
+Verify pagination function order IDs are valid for market.
+
+
+<a name="@Failure_testing_165"></a>
+
+### Failure testing
+
+
+* <code>test_verify_pagination_order_ids_ask_does_not_exist()</code>
+* <code>test_verify_pagination_order_ids_ask_wrong_side()</code>
+* <code>test_verify_pagination_order_ids_bid_does_not_exist()</code>
+* <code>test_verify_pagination_order_ids_bid_wrong_side()</code>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_verify_pagination_order_ids">verify_pagination_order_ids</a>(market_id: u64, starting_ask_order_id: u128, starting_bid_order_id: u128)
+</code></pre>
+
+
+
+##### Implementation
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_verify_pagination_order_ids">verify_pagination_order_ids</a>(
+    market_id: u64,
+    starting_ask_order_id: u128,
+    starting_bid_order_id: u128,
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    <b>if</b> (starting_ask_order_id != (<a href="market.md#0xc0deb00c_market_NIL">NIL</a> <b>as</b> u128)) {
+        <b>assert</b>!(<a href="market.md#0xc0deb00c_market_has_open_order">has_open_order</a>(market_id, starting_ask_order_id),
+                <a href="market.md#0xc0deb00c_market_E_INVALID_MARKET_ORDER_ID">E_INVALID_MARKET_ORDER_ID</a>);
+        <b>assert</b>!(<a href="market.md#0xc0deb00c_market_get_posted_order_id_side">get_posted_order_id_side</a>(starting_ask_order_id) == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>,
+                <a href="market.md#0xc0deb00c_market_E_INVALID_MARKET_ORDER_ID">E_INVALID_MARKET_ORDER_ID</a>);
+    };
+    <b>if</b> (starting_bid_order_id != (<a href="market.md#0xc0deb00c_market_NIL">NIL</a> <b>as</b> u128)) {
+        <b>assert</b>!(<a href="market.md#0xc0deb00c_market_has_open_order">has_open_order</a>(market_id, starting_bid_order_id),
+                <a href="market.md#0xc0deb00c_market_E_INVALID_MARKET_ORDER_ID">E_INVALID_MARKET_ORDER_ID</a>);
+        <b>assert</b>!(<a href="market.md#0xc0deb00c_market_get_posted_order_id_side">get_posted_order_id_side</a>(starting_bid_order_id) == <a href="market.md#0xc0deb00c_market_BID">BID</a>,
+                <a href="market.md#0xc0deb00c_market_E_INVALID_MARKET_ORDER_ID">E_INVALID_MARKET_ORDER_ID</a>);
+    };
+}
+</code></pre>
+
+
+
 <a name="0xc0deb00c_market_index_orders_sdk"></a>
 
 ## Function `index_orders_sdk`
@@ -7899,7 +7935,7 @@ filling, when swap is from non-signing swapper.
 Deprecated function retained for compatible upgrade policy.
 
 
-<a name="@Coverage_testing_165"></a>
+<a name="@Coverage_testing_166"></a>
 
 ### Coverage testing
 

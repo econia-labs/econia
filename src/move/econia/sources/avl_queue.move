@@ -1649,7 +1649,7 @@ module econia::avl_queue {
     /// an otherwise blank access key.
     ///
     /// This function is optimized for performance and leaves access key
-    /// validity checking to calling functions. See tests.
+    /// validity checking to calling functions.
     ///
     /// # Parameters
     ///
@@ -1661,12 +1661,12 @@ module econia::avl_queue {
     /// # Returns
     ///
     /// * `u64`: The list node ID of the next active list node in the
-    ///   AVL queue if there is one, otherwise `NIL`.
+    ///   AVL queue, if there is one, encoded in an otherwise blank
+    ///   access key, otherwise `NIL`.
     ///
     /// # Testing
     ///
-    /// * `market::test_get_open_orders_paginated()`
-    /// * `market::test_get_price_levels_paginated()`
+    /// * `test_next_list_node_id_in_access_key()`
     public fun next_list_node_id_in_access_key<V>(
         avlq_ref: &AVLqueue<V>,
         access_key: u64,
@@ -6584,6 +6584,78 @@ module econia::avl_queue {
     fun test_new_too_many_tree_nodes() {
         // Attempt invalid invocation.
         let avlq = new<u8>(ASCENDING, N_NODES_MAX + 1, 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    /// Verify returns for ascending and descending AVL queue.
+    fun test_next_list_node_id_in_access_key() {
+        let n_list_nodes = 15;
+        let list_nodes_per_tree_node = 3;
+        let avlq = new(ASCENDING, 0, 0);
+        let access_keys = vector[];
+        let i = 0;
+        // Insert multiple list nodes per tree node.
+        while (i < n_list_nodes) {
+            vector::push_back(
+                &mut access_keys,
+                insert(&mut avlq, i / list_nodes_per_tree_node, i)
+            );
+            i = i + 1;
+        };
+        let list_node_id_in_access_key = *vector::borrow(&access_keys, 0);
+        i = 0;
+        // Assert next operation for all nodes except last.
+        while (i < (n_list_nodes - 1)) {
+            list_node_id_in_access_key = next_list_node_id_in_access_key(
+                &avlq,
+                list_node_id_in_access_key
+            );
+            assert!(*borrow(&avlq, list_node_id_in_access_key) == i + 1, 0);
+            i = i + 1;
+        };
+        // Assert operation for last node.
+        assert!(
+            (NIL as u64) == next_list_node_id_in_access_key(
+                &avlq,
+                list_node_id_in_access_key
+            ),
+            0
+        );
+        drop_avlq_test(avlq); // Drop AVL queue.
+        // Repeat for descending AVL queue.
+        avlq = new(DESCENDING, 0, 0);
+        i = 0;
+        // Insert multiple list nodes per tree node, descending queue.
+        while (i < n_list_nodes) {
+            vector::push_back(
+                &mut access_keys,
+                insert(
+                    &mut avlq,
+                    HI_INSERTION_KEY - i / list_nodes_per_tree_node, i
+                )
+            );
+            i = i + 1;
+        };
+        list_node_id_in_access_key = *vector::borrow(&access_keys, 0);
+        i = 0;
+        // Assert next operation for all nodes except last.
+        while (i < (n_list_nodes - 1)) {
+            list_node_id_in_access_key = next_list_node_id_in_access_key(
+                &avlq,
+                list_node_id_in_access_key
+            );
+            assert!(*borrow(&avlq, list_node_id_in_access_key) == i + 1, 0);
+            i = i + 1;
+        };
+        // Assert operation for last node.
+        assert!(
+            (NIL as u64) == next_list_node_id_in_access_key(
+                &avlq,
+                list_node_id_in_access_key
+            ),
+            0
+        );
         drop_avlq_test(avlq); // Drop AVL queue.
     }
 

@@ -89,9 +89,7 @@ async fn main() -> Result<()> {
         let mut x = vec![Pipelines::Candlesticks, Pipelines::UserHistory];
         let exclude = args.exclude.unwrap_or(vec![]);
         x = x.into_iter().filter(|a| !exclude.contains(a)).collect();
-        x.append(&mut args
-            .include
-            .unwrap_or(vec![]));
+        x.append(&mut args.include.unwrap_or(vec![]));
         x
     };
 
@@ -99,13 +97,34 @@ async fn main() -> Result<()> {
         match pipeline {
             Pipelines::Candlesticks => {
                 data.push(Arc::new(Mutex::new(Candlesticks::new(pool.clone(), 60))));
-                data.push(Arc::new(Mutex::new(Candlesticks::new(pool.clone(), 60 * 5))));
-                data.push(Arc::new(Mutex::new(Candlesticks::new(pool.clone(), 60 * 15))));
-                data.push(Arc::new(Mutex::new(Candlesticks::new(pool.clone(), 60 * 30))));
-                data.push(Arc::new(Mutex::new(Candlesticks::new(pool.clone(), 60 * 60))));
-                data.push(Arc::new(Mutex::new(Candlesticks::new(pool.clone(), 60 * 60 * 4))));
-                data.push(Arc::new(Mutex::new(Candlesticks::new(pool.clone(), 60 * 60 * 12))));
-                data.push(Arc::new(Mutex::new(Candlesticks::new(pool.clone(), 60 * 60 * 24))));
+                data.push(Arc::new(Mutex::new(Candlesticks::new(
+                    pool.clone(),
+                    60 * 5,
+                ))));
+                data.push(Arc::new(Mutex::new(Candlesticks::new(
+                    pool.clone(),
+                    60 * 15,
+                ))));
+                data.push(Arc::new(Mutex::new(Candlesticks::new(
+                    pool.clone(),
+                    60 * 30,
+                ))));
+                data.push(Arc::new(Mutex::new(Candlesticks::new(
+                    pool.clone(),
+                    60 * 60,
+                ))));
+                data.push(Arc::new(Mutex::new(Candlesticks::new(
+                    pool.clone(),
+                    60 * 60 * 4,
+                ))));
+                data.push(Arc::new(Mutex::new(Candlesticks::new(
+                    pool.clone(),
+                    60 * 60 * 12,
+                ))));
+                data.push(Arc::new(Mutex::new(Candlesticks::new(
+                    pool.clone(),
+                    60 * 60 * 24,
+                ))));
             }
             Pipelines::Leaderboards => {
                 data.push(Arc::new(Mutex::new(Leaderboards::new(pool.clone()))));

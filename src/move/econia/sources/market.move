@@ -1353,8 +1353,6 @@ module econia::market {
     /// # Failure testing
     ///
     /// * `test_get_open_orders_paginated_invalid_market_id()`
-    /// * `test_get_open_orders_paginated_invalid_market_order_id_ask()`
-    /// * `test_get_open_orders_paginated_invalid_market_order_id_bid()`
     fun get_open_orders_paginated(
         market_id: u64,
         n_asks_to_index_max: u64,
@@ -1366,14 +1364,8 @@ module econia::market {
         u128,
         u128,
     ) acquires OrderBooks {
-        if (starting_ask_order_id != (NIL as u128)) {
-            assert!(has_open_order(market_id, starting_ask_order_id),
-                    E_INVALID_MARKET_ORDER_ID);
-        };
-        if (starting_bid_order_id != (NIL as u128)) {
-            assert!(has_open_order(market_id, starting_bid_order_id),
-                    E_INVALID_MARKET_ORDER_ID);
-        };
+        verify_pagination_order_ids( // Verify order IDs.
+            market_id, starting_ask_order_id, starting_bid_order_id);
         // Get address of resource account where order books are stored.
         let resource_address = resource_account::get_address();
         let order_books_map_ref = // Immutably borrow order books map.
@@ -1516,8 +1508,6 @@ module econia::market {
     /// # Failure testing
     ///
     /// * `test_get_price_levels_paginated_invalid_market_id()`
-    /// * `test_get_price_levels_paginated_invalid_market_order_id_ask()`
-    /// * `test_get_price_levels_paginated_invalid_market_order_id_bid()`
     fun get_price_levels_paginated(
         market_id: u64,
         n_asks_to_index_max: u64,
@@ -1529,14 +1519,8 @@ module econia::market {
         u128,
         u128,
     ) acquires OrderBooks {
-        if (starting_ask_order_id != (NIL as u128)) {
-            assert!(has_open_order(market_id, starting_ask_order_id),
-                    E_INVALID_MARKET_ORDER_ID);
-        };
-        if (starting_bid_order_id != (NIL as u128)) {
-            assert!(has_open_order(market_id, starting_bid_order_id),
-                    E_INVALID_MARKET_ORDER_ID);
-        };
+        verify_pagination_order_ids( // Verify order IDs.
+            market_id, starting_ask_order_id, starting_bid_order_id);
         // Get address of resource account where order books are stored.
         let resource_address = resource_account::get_address();
         let order_books_map_ref = // Immutably borrow order books map.
@@ -4639,6 +4623,33 @@ module econia::market {
          place_swap_order_event_option, cancel_order_event_option)
     }
 
+    /// Verify pagination function order IDs are valid for market.
+    ///
+    /// # Failure testing
+    ///
+    /// * `test_verify_pagination_order_ids_ask_does_not_exist()`
+    /// * `test_verify_pagination_order_ids_ask_wrong_side()`
+    /// * `test_verify_pagination_order_ids_bid_does_not_exist()`
+    /// * `test_verify_pagination_order_ids_bid_wrong_side()`
+    fun verify_pagination_order_ids(
+        market_id: u64,
+        starting_ask_order_id: u128,
+        starting_bid_order_id: u128,
+    ) acquires OrderBooks {
+        if (starting_ask_order_id != (NIL as u128)) {
+            assert!(has_open_order(market_id, starting_ask_order_id),
+                    E_INVALID_MARKET_ORDER_ID);
+            assert!(get_posted_order_id_side(starting_ask_order_id) == ASK,
+                    E_INVALID_MARKET_ORDER_ID);
+        };
+        if (starting_bid_order_id != (NIL as u128)) {
+            assert!(has_open_order(market_id, starting_bid_order_id),
+                    E_INVALID_MARKET_ORDER_ID);
+            assert!(get_posted_order_id_side(starting_bid_order_id) == BID,
+                    E_INVALID_MARKET_ORDER_ID);
+        };
+    }
+
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Deprecated structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -6648,28 +6659,6 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = E_INVALID_MARKET_ORDER_ID)]
-    /// Verify indexing results.
-    fun test_get_open_orders_paginated_invalid_market_order_id_ask()
-    acquires OrderBooks {
-        init_markets_users_integrator_test(); // Initialize for testing.
-        // Attempt invalid lookup.
-        get_open_orders_paginated(
-            MARKET_ID_COIN, HI_64, HI_64, 1, (NIL as u128));
-    }
-
-    #[test]
-    #[expected_failure(abort_code = E_INVALID_MARKET_ORDER_ID)]
-    /// Verify indexing results.
-    fun test_get_open_orders_paginated_invalid_market_order_id_bid()
-    acquires OrderBooks {
-        init_markets_users_integrator_test(); // Initialize for testing.
-        // Attempt invalid lookup.
-        get_open_orders_paginated(
-            MARKET_ID_COIN, HI_64, HI_64, (NIL as u128), 1);
-    }
-
-    #[test]
     /// Verify indexing results.
     fun test_get_price_levels() acquires OrderBooks {
         // Initialize markets, users, and an integrator.
@@ -6920,28 +6909,6 @@ module econia::market {
         init_test(); // Initialize for testing.
         // Attempt invalid lookup.
         get_price_levels_paginated(0, HI_64, HI_64, 0, 0);
-    }
-
-    #[test]
-    #[expected_failure(abort_code = E_INVALID_MARKET_ORDER_ID)]
-    /// Verify indexing results.
-    fun test_get_price_levels_paginated_invalid_market_order_id_ask()
-    acquires OrderBooks {
-        init_markets_users_integrator_test(); // Initialize for testing.
-        // Attempt invalid lookup.
-        get_price_levels_paginated(
-            MARKET_ID_COIN, HI_64, HI_64, 1, (NIL as u128));
-    }
-
-    #[test]
-    #[expected_failure(abort_code = E_INVALID_MARKET_ORDER_ID)]
-    /// Verify indexing results.
-    fun test_get_price_levels_paginated_invalid_market_order_id_bid()
-    acquires OrderBooks {
-        init_markets_users_integrator_test(); // Initialize for testing.
-        // Attempt invalid lookup.
-        get_price_levels_paginated(
-            MARKET_ID_COIN, HI_64, HI_64, (NIL as u128), 1);
     }
 
     #[test]
@@ -18227,6 +18194,91 @@ module econia::market {
         assets::burn(quote_coins);
         // Drop underwriter capability.
         registry::drop_underwriter_capability_test(underwriter_capability);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = E_INVALID_MARKET_ORDER_ID)]
+    /// Verify failure for no such ask for market.
+    fun test_verify_pagination_order_ids_ask_does_not_exist()
+    acquires OrderBooks {
+        init_markets_users_integrator_test(); // Initialize for testing.
+        // Attempt invalid lookup.
+        verify_pagination_order_ids(MARKET_ID_COIN, 1, (NIL as u128));
+    }
+
+    #[test]
+    #[expected_failure(abort_code = E_INVALID_MARKET_ORDER_ID)]
+    /// Verify failure for ask order ID that is actually a bid.
+    fun test_verify_pagination_order_ids_ask_wrong_side()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (maker, _) = init_markets_users_integrator_test();
+        // Declare order parameters.
+        let side                = BID;
+        let market_id           = MARKET_ID_COIN;
+        let integrator          = @integrator;
+        let custodian_id        = NO_CUSTODIAN;
+        let maker_address       = address_of(&maker);
+        let restriction         = NO_RESTRICTION;
+        let price               = 10;
+        let size                = MIN_SIZE_COIN;
+        let self_match_behavior = ABORT;
+        // Declare maker deposit amounts.
+        let deposit_base  = HI_64 / 2;
+        let deposit_quote = HI_64 / 2;
+        // Deposit maker coins.
+        user::deposit_coins<BC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(deposit_base));
+        user::deposit_coins<QC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(deposit_quote));
+        // Place maker order, storing market order ID for lookup.
+        let (market_order_id, _, _, _) = place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, side, size, price, restriction,
+            self_match_behavior);
+        verify_pagination_order_ids(
+            MARKET_ID_COIN, market_order_id, (NIL as u128));
+    }
+
+    #[test]
+    #[expected_failure(abort_code = E_INVALID_MARKET_ORDER_ID)]
+    /// Verify failure for no such ask for market.
+    fun test_verify_pagination_order_ids_bid_does_not_exist()
+    acquires OrderBooks {
+        init_markets_users_integrator_test(); // Initialize for testing.
+        verify_pagination_order_ids(MARKET_ID_COIN, (NIL as u128), 1);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = E_INVALID_MARKET_ORDER_ID)]
+    /// Verify failure for bid order ID that is actually an ask.
+    fun test_verify_pagination_order_ids_bid_wrong_side()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (maker, _) = init_markets_users_integrator_test();
+        // Declare order parameters.
+        let side                = ASK;
+        let market_id           = MARKET_ID_COIN;
+        let integrator          = @integrator;
+        let custodian_id        = NO_CUSTODIAN;
+        let maker_address       = address_of(&maker);
+        let restriction         = NO_RESTRICTION;
+        let price               = 10;
+        let size                = MIN_SIZE_COIN;
+        let self_match_behavior = ABORT;
+        // Declare maker deposit amounts.
+        let deposit_base  = HI_64 / 2;
+        let deposit_quote = HI_64 / 2;
+        // Deposit maker coins.
+        user::deposit_coins<BC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(deposit_base));
+        user::deposit_coins<QC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(deposit_quote));
+        // Place maker order, storing market order ID for lookup.
+        let (market_order_id, _, _, _) = place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, side, size, price, restriction,
+            self_match_behavior);
+        verify_pagination_order_ids(
+            MARKET_ID_COIN, (NIL as u128), market_order_id);
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

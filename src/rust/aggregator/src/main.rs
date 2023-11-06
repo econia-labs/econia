@@ -86,13 +86,10 @@ async fn main() -> Result<()> {
             .ok_or(anyhow!("No data is included and --no-default is set."))?)
         .clone()
     } else {
-        let mut x = vec![
-            Pipelines::Candlesticks,
-            Pipelines::Leaderboards,
-            Pipelines::UserHistory,
-        ];
+        let mut x = vec![Pipelines::Candlesticks, Pipelines::UserHistory];
         let exclude = args.exclude.unwrap_or(vec![]);
         x = x.into_iter().filter(|a| !exclude.contains(a)).collect();
+        x.append(&mut args.include.unwrap_or(vec![]));
         x
     };
 

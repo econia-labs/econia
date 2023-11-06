@@ -1,7 +1,7 @@
 use anyhow::anyhow;
 use bigdecimal::{BigDecimal, Zero};
 use chrono::{DateTime, Duration, Utc};
-use sqlx::{PgConnection, PgPool, Postgres, Transaction};
+use sqlx::{Executor, PgConnection, PgPool, Postgres, Transaction};
 
 use aggregator::{Pipeline, PipelineAggregationResult, PipelineError};
 
@@ -52,6 +52,12 @@ impl Pipeline for Leaderboards {
             .begin()
             .await
             .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
+
+        transaction
+            .execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;")
+            .await
+            .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
+
         // Get all competitions having created markets
         let competitions = sqlx::query_as!(
             Competition,

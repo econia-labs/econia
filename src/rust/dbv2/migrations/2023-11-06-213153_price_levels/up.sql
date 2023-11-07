@@ -10,7 +10,8 @@ CREATE VIEW api.price_levels AS
             ELSE 'bid'
         END AS side,
         price,
-        SUM(remaining_size) AS total_size
+        SUM(remaining_size) AS total_size,
+        (SELECT txn_version FROM aggregator.user_history_last_indexed_txn LIMIT 1) AS version
     FROM
         aggregator.user_history_limit
     NATURAL JOIN

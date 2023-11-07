@@ -5,7 +5,10 @@ CREATE INDEX price_levels ON aggregator.user_history (order_status);
 CREATE VIEW api.price_levels AS
     SELECT
         market_id,
-        side,
+        CASE
+            WHEN side = true THEN 'ask'
+            ELSE 'bid'
+        END AS side,
         price,
         SUM(remaining_size) AS total_size
     FROM

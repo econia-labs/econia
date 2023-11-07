@@ -32,13 +32,13 @@ CREATE VIEW api.orders AS
                 END
             WHEN u.order_type = 'market' THEN
                 CASE
-                    WHEN m.direction = true THEN 'buy'
-                    ELSE 'sell'
+                    WHEN m.direction = true THEN 'sell'
+                    ELSE 'buy'
                 END
             WHEN u.order_type = 'swap' THEN
                 CASE
-                    WHEN s.direction = true THEN 'buy'
-                    ELSE 'sell'
+                    WHEN s.direction = true THEN 'sell'
+                    ELSE 'buy'
                 END
         END AS direction,
 

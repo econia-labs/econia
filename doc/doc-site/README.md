@@ -26,14 +26,14 @@ Econia's docs are built using [Docusaurus].
 
 1. Open http://localhost:3000
 
+## Updating API docs
+
+With data service stack running per `/src/docker/README.md`, run in this directory:
+
+```sh
+curl localhost:3000 > openapi.json
+```
+
 [docusaurus]: https://docusaurus.io/
 [homebrew]: https://brew.sh
 [pnpm]: https://pnpm.io/
-
-## Updating API docs
-
-1. Make your changes to the database migrations.
-2. Run the local end-to-end docker compose according to instructions in `/src/docker/README.md`
-3. Visit `localhost:3000` and copy the JSON it returns.
-4. Paste the JSON into `/doc/doc-site/openapi.json`
-5. Done!

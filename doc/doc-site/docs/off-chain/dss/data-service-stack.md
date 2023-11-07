@@ -66,15 +66,19 @@ A `starting_version` that is too late will lead to missed events and corrupted d
 
 :::
 
-### Updating the git submodules
+### Checking out the right branch
 
-Before starting the DSS, make sure to have the git submodules cloned.
-If not, run the following command:
+The Econia DSS is developed on a [Rust-like train schedule](https://doc.rust-lang.org/book/appendix-07-nightly-rust.html):
+
+- Experimental DSS features are merged directly to `main`.
+- The latest stable DSS features are merged from `main` into the `dss-stable` branch.
+
+Before you start working with the DSS, make sure you are on the right branch and have cloned submodules:
 
 ```bash
 # From Econia repo root
-git submodule init
-git submodule update src/rust/dependencies/aptos-indexer-processors
+git checkout dss-stable
+git submodule update --init --recursive
 ```
 
 ### Starting the DSS
@@ -106,6 +110,15 @@ docker compose --file src/docker/compose.dss-global.yaml down
 
 :::tip
 When switching chains, don't forget to prune the Docker database volume (`docker volume prune -af` to prune all Docker volumes).
+
+If you ever need to rebuild images, make sure to remove all containers and clear your image cache too:
+
+```sh
+docker ps -aq | xargs docker stop | xargs docker rm
+docker system prune -af
+docker volume prune -af
+```
+
 :::
 
 ### Verifying the DSS
@@ -122,7 +135,7 @@ Once the processor has parsed all transactions up until the chain tip, then chec
 
 :::tip
 
-It may take up to ten minutes before the `market_registration_events_table` has data in it.
+It may take up to ten minutes before the `market_registration_events_table` has data in it, and several hours to fully sync to chain tip on testnet.
 
 To see what transaction the DSS processor has synced through, do not run in detached mode.
 

@@ -21,8 +21,11 @@ CREATE VIEW api.price_levels AS
     GROUP BY
         market_id,
         side,
+        price
+    ORDER BY
+        market_id,
+        side,
         price;
-
 
 GRANT
 SELECT

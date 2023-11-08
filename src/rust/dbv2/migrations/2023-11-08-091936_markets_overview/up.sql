@@ -30,13 +30,25 @@ CREATE VIEW api.markets AS
             event_idx ASC
     )
     SELECT
-        m.*,
+        m.market_id,
+        m.time AS registration_time,
+        m.base_account_address,
+        m.base_module_name,
+        m.base_struct_name,
+        m.base_name_generic,
+        m.quote_account_address,
+        m.quote_module_name,
+        m.quote_struct_name,
+        m.lot_size,
+        m.tick_size,
+        m.min_size,
+        m.underwriter_id,
         CASE
             WHEN r.market_id = m.market_id THEN true
             ELSE false
         END AS is_recognized,
-        l.price,
-        (COALESCE(l.price, 1) - COALESCE(f.price, 1)) / COALESCE(f.price, 1) * 100 AS change
+        l.price AS last_fill_price_24hr,
+        (COALESCE(l.price, 1) - COALESCE(f.price, 1)) / COALESCE(f.price, 1) * 100 AS percent_change_24h
     FROM
         market_registration_events AS m
     LEFT JOIN

@@ -1395,7 +1395,8 @@ collisions with the matching engine.
 * <code>test_get_cost_to_upgrade_integrator_fee_store_not_upgrade()</code>
 
 
-<pre><code><b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_get_cost_to_upgrade_integrator_fee_store_view">get_cost_to_upgrade_integrator_fee_store_view</a>&lt;QuoteCoinType, UtilityCoinType&gt;(integrator_address: <b>address</b>, market_id: u64, new_tier: u8): u64
+<pre><code>#[view]
+<b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_get_cost_to_upgrade_integrator_fee_store_view">get_cost_to_upgrade_integrator_fee_store_view</a>&lt;QuoteCoinType, UtilityCoinType&gt;(integrator_address: <b>address</b>, market_id: u64, new_tier: u8): u64
 </code></pre>
 
 
@@ -1456,7 +1457,8 @@ Return custodian registration fee.
 * <code>test_init_update_get_incentives()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_get_custodian_registration_fee">get_custodian_registration_fee</a>(): u64
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_get_custodian_registration_fee">get_custodian_registration_fee</a>(): u64
 </code></pre>
 
 
@@ -1489,7 +1491,8 @@ Return integrator fee share divisor for <code>tier</code>.
 * <code>test_init_update_get_incentives()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_get_fee_share_divisor">get_fee_share_divisor</a>(tier: u8): u64
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_get_fee_share_divisor">get_fee_share_divisor</a>(tier: u8): u64
 </code></pre>
 
 
@@ -1537,7 +1540,8 @@ public queries on an <code><a href="incentives.md#0xc0deb00c_incentives_Integrat
 collisions with the matching engine.
 
 
-<pre><code><b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_get_integrator_withdrawal_fee_view">get_integrator_withdrawal_fee_view</a>&lt;QuoteCoinType&gt;(integrator_address: <b>address</b>, market_id: u64): u64
+<pre><code>#[view]
+<b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_get_integrator_withdrawal_fee_view">get_integrator_withdrawal_fee_view</a>&lt;QuoteCoinType&gt;(integrator_address: <b>address</b>, market_id: u64): u64
 </code></pre>
 
 
@@ -1583,7 +1587,8 @@ Return market registration fee.
 * <code>test_init_update_get_incentives()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_get_market_registration_fee">get_market_registration_fee</a>(): u64
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_get_market_registration_fee">get_market_registration_fee</a>(): u64
 </code></pre>
 
 
@@ -1615,7 +1620,8 @@ Return number of fee store tiers.
 * <code>test_init_update_get_incentives()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_get_n_fee_store_tiers">get_n_fee_store_tiers</a>(): u64
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_get_n_fee_store_tiers">get_n_fee_store_tiers</a>(): u64
 </code></pre>
 
 
@@ -1653,7 +1659,8 @@ Return taker fee divisor.
 * <code>test_init_update_get_incentives()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_get_taker_fee_divisor">get_taker_fee_divisor</a>(): u64
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_get_taker_fee_divisor">get_taker_fee_divisor</a>(): u64
 </code></pre>
 
 
@@ -1686,7 +1693,8 @@ Return fee to activate an <code><a href="incentives.md#0xc0deb00c_incentives_Int
 * <code>test_init_update_get_incentives()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_get_tier_activation_fee">get_tier_activation_fee</a>(tier: u8): u64
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_get_tier_activation_fee">get_tier_activation_fee</a>(tier: u8): u64
 </code></pre>
 
 
@@ -1733,7 +1741,8 @@ given <code>tier</code>.
 * <code>test_init_update_get_incentives()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_get_tier_withdrawal_fee">get_tier_withdrawal_fee</a>(tier: u8): u64
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_get_tier_withdrawal_fee">get_tier_withdrawal_fee</a>(tier: u8): u64
 </code></pre>
 
 
@@ -1778,7 +1787,8 @@ Return underwriter registration fee.
 * <code>test_init_update_get_incentives()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_get_underwriter_registration_fee">get_underwriter_registration_fee</a>(): u64
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_get_underwriter_registration_fee">get_underwriter_registration_fee</a>(): u64
 </code></pre>
 
 
@@ -1811,7 +1821,8 @@ Return <code><b>true</b></code> if <code>T</code> is the utility coin type.
 * <code>test_init_update_get_incentives()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_is_utility_coin_type">is_utility_coin_type</a>&lt;T&gt;(): bool
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_is_utility_coin_type">is_utility_coin_type</a>&lt;T&gt;(): bool
 </code></pre>
 
 

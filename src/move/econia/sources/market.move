@@ -103,8 +103,10 @@
 /// * `get_open_order()`
 /// * `get_open_orders()`
 /// * `get_open_orders_all()`
+/// * `get_open_orders_paginated()`
 /// * `get_price_levels()`
 /// * `get_price_levels_all()`
+/// * `get_price_levels_paginated()`
 /// * `has_open_order()`
 ///
 /// # Public function index
@@ -301,8 +303,11 @@
 ///
 /// flowchart LR
 ///
+/// get_open_orders --> get_open_orders_for_side
+/// get_open_orders_all --> get_open_orders
 /// get_price_levels --> get_open_orders
 /// get_price_levels --> get_price_levels_for_side
+/// get_market_order_id_price --> did_order_post
 /// get_price_levels_all --> get_price_levels
 /// get_open_order --> has_open_order
 /// get_open_order --> get_posted_order_id_side
@@ -311,9 +316,16 @@
 /// get_posted_order_id_side --> get_order_id_avl_queue_access_key
 /// has_open_order --> get_posted_order_id_side
 /// has_open_order --> get_order_id_avl_queue_access_key
-/// get_open_orders --> get_open_orders_for_side
-/// get_open_orders_all --> get_open_orders
-/// get_market_order_id_price --> did_order_post
+/// get_open_orders_paginated --> get_open_orders_for_side_paginated
+/// get_open_orders_paginated --> verify_pagination_order_ids
+/// get_open_orders_for_side_paginated -->
+///     get_order_id_avl_queue_access_key
+/// get_price_levels_paginated --> get_price_levels_for_side_paginated
+/// get_price_levels_paginated --> verify_pagination_order_ids
+/// get_price_levels_for_side_paginated -->
+///     get_order_id_avl_queue_access_key
+/// verify_pagination_order_ids --> has_open_order
+/// verify_pagination_order_ids --> get_posted_order_id_side
 ///
 /// ```
 ///
@@ -400,6 +412,10 @@
 /// get_market_event_handle_creation_info -->
 ///     resource_account::get_address
 ///
+/// get_open_orders_paginated --> resource_account::get_address
+///
+/// get_price_levels_paginated --> resource_account::get_address
+///
 /// ```
 ///
 /// `user`:
@@ -436,6 +452,12 @@
 ///
 /// swap --> user::create_cancel_order_event_internal
 /// swap --> user::emit_swap_maker_fill_events_internal
+///
+/// get_open_orders_for_side_paginated -->
+///     user::get_open_order_id_internal
+///
+/// get_price_levels_for_side_paginated -->
+///     user::get_open_order_id_internal
 ///
 /// ```
 ///
@@ -1282,25 +1304,70 @@ module econia::market {
     }
 
     #[view]
+    /// Wrapped call to `get_open_orders()` for getting all open orders
+    /// on both sides.
+    ///
+    /// For a sufficiently large order book this function may fail due
+    /// to execution gas limits. Hence `get_open_orders_paginated()` is
+    /// recommended during production.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_open_orders()`
+    fun get_open_orders_all(
+        market_id: u64
+    ): OrdersView
+    acquires OrderBooks {
+        get_open_orders(market_id, HI_64, HI_64)
+    }
+
+    #[view]
+    /// Like `get_open_orders()`, but paginated.
+    ///
+    /// Kept as private view function to prevent runtime state
+    /// contention.
+    ///
+    /// When paginating via an SDK, specify the same transaction version
+    /// number for each function call until done paginating.
+    ///
+    /// # Parameters
+    ///
+    /// * `market_id`: Market ID of maker orders to index.
+    /// * `n_asks_to_index_max`: Maximum number of asks to index.
+    /// * `n_bids_to_index_max`: Maximum number of bids to index.
+    /// * `starting_ask_order_id`: Order ID of ask to start indexing
+    ///   from. If `NIL`, start from best ask.
+    /// * `starting_bid_order_id`: Order ID of bid to start indexing
+    ///   from. If `NIL`, start from best bid.
+    ///
+    /// # Returns
+    ///
+    /// * `PriceLevels`: Price level vectors.
+    /// * `u128`: Order ID for next ask to start indexing from. `NIL` if
+    ///   done indexing asks.
+    /// * `u128`: Order ID for next bid to start indexing from. `NIL` if
+    ///   done indexing bids.
+    ///
+    /// # Expected value testing
+    ///
+    /// * `test_get_open_orders_paginated()`
+    ///
+    /// # Failure testing
+    ///
+    /// * `test_get_open_orders_paginated_invalid_market_id()`
     fun get_open_orders_paginated(
         market_id: u64,
         n_asks_to_index_max: u64,
         n_bids_to_index_max: u64,
-        starting_ask_order_id: u128, // If `NIL`, start from best ask.
-        starting_bid_order_id: u128, // If `NIL`, start from best bid.
+        starting_ask_order_id: u128,
+        starting_bid_order_id: u128,
     ): (
         OrdersView,
-        u128, // Order ID for start of next asks page, `NIL` if done.
-        u128, // Order ID for start of next bids page, `NIL` if done.
+        u128,
+        u128,
     ) acquires OrderBooks {
-        if (starting_ask_order_id != (NIL as u128)) {
-            assert!(has_open_order(market_id, starting_ask_order_id),
-                    E_INVALID_MARKET_ORDER_ID);
-        };
-        if (starting_bid_order_id != (NIL as u128)) {
-            assert!(has_open_order(market_id, starting_bid_order_id),
-                    E_INVALID_MARKET_ORDER_ID);
-        };
+        verify_pagination_order_ids( // Verify order IDs.
+            market_id, starting_ask_order_id, starting_bid_order_id);
         // Get address of resource account where order books are stored.
         let resource_address = resource_account::get_address();
         let order_books_map_ref = // Immutably borrow order books map.
@@ -1318,20 +1385,6 @@ module econia::market {
             order_book_ref, market_id, BID, n_bids_to_index_max,
             starting_bid_order_id);
         (OrdersView{asks, bids}, ask_next, bid_next)
-    }
-
-    #[view]
-    /// Wrapped call to `get_open_orders()` for getting all open orders
-    /// on both sides.
-    ///
-    /// # Testing
-    ///
-    /// * `test_get_open_orders()`
-    fun get_open_orders_all(
-        market_id: u64
-    ): OrdersView
-    acquires OrderBooks {
-        get_open_orders(market_id, HI_64, HI_64)
     }
 
     #[view]
@@ -1406,25 +1459,70 @@ module econia::market {
     }
 
     #[view]
+    /// Wrapped call to `get_price_levels()` for getting all price
+    /// levels on both sides.
+    ///
+    /// For a sufficiently large order book this function may fail due
+    /// to execution gas limits. Hence `get_price_levels_paginated()` is
+    /// recommended during production.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_price_levels()`
+    fun get_price_levels_all(
+        market_id: u64
+    ): PriceLevels
+    acquires OrderBooks {
+        get_price_levels(market_id, HI_64, HI_64)
+    }
+
+    #[view]
+    /// Like `get_price_levels()`, but paginated.
+    ///
+    /// Kept as private view function to prevent runtime state
+    /// contention.
+    ///
+    /// When paginating via an SDK, specify the same transaction version
+    /// number for each function call until done paginating.
+    ///
+    /// # Parameters
+    ///
+    /// * `market_id`: Market ID of price levels to index.
+    /// * `n_asks_to_index_max`: Maximum number of asks to index.
+    /// * `n_bids_to_index_max`: Maximum number of bids to index.
+    /// * `starting_ask_order_id`: Order ID of ask to start indexing
+    ///   from. If `NIL`, start from best ask.
+    /// * `starting_bid_order_id`: Order ID of bid to start indexing
+    ///   from. If `NIL`, start from best bid.
+    ///
+    /// # Returns
+    ///
+    /// * `PriceLevels`: Price level vectors.
+    /// * `u128`: Order ID for next ask to start indexing from. `NIL` if
+    ///   done indexing asks.
+    /// * `u128`: Order ID for next bid to start indexing from. `NIL` if
+    ///   done indexing bids.
+    ///
+    /// # Expected value testing
+    ///
+    /// * `test_get_price_levels_paginated()`
+    ///
+    /// # Failure testing
+    ///
+    /// * `test_get_price_levels_paginated_invalid_market_id()`
     fun get_price_levels_paginated(
         market_id: u64,
         n_asks_to_index_max: u64,
         n_bids_to_index_max: u64,
-        starting_ask_order_id: u128, // If `NIL`, start from best ask.
-        starting_bid_order_id: u128, // If `NIL`, start from best bid.
+        starting_ask_order_id: u128,
+        starting_bid_order_id: u128,
     ): (
         PriceLevels,
-        u128, // Order ID for start of next asks page, `NIL` if done.
-        u128, // Order ID for start of next bids page, `NIL` if done.
+        u128,
+        u128,
     ) acquires OrderBooks {
-        if (starting_ask_order_id != (NIL as u128)) {
-            assert!(has_open_order(market_id, starting_ask_order_id),
-                    E_INVALID_MARKET_ORDER_ID);
-        };
-        if (starting_bid_order_id != (NIL as u128)) {
-            assert!(has_open_order(market_id, starting_bid_order_id),
-                    E_INVALID_MARKET_ORDER_ID);
-        };
+        verify_pagination_order_ids( // Verify order IDs.
+            market_id, starting_ask_order_id, starting_bid_order_id);
         // Get address of resource account where order books are stored.
         let resource_address = resource_account::get_address();
         let order_books_map_ref = // Immutably borrow order books map.
@@ -1450,20 +1548,6 @@ module econia::market {
             ask_next,
             bid_next
         )
-    }
-
-    #[view]
-    /// Wrapped call to `get_price_levels()` for getting all price
-    /// levels on both sides.
-    ///
-    /// # Testing
-    ///
-    /// * `test_get_price_levels()`
-    fun get_price_levels_all(
-        market_id: u64
-    ): PriceLevels
-    acquires OrderBooks {
-        get_price_levels(market_id, HI_64, HI_64)
     }
 
     #[view]
@@ -2897,15 +2981,23 @@ module econia::market {
         orders // Return vector of view-friendly orders.
     }
 
+    /// Index specified number of open orders for given side of order
+    /// book, from given starting order ID.
+    ///
+    /// See `get_open_orders_paginated()`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_open_orders_paginated()`
     fun get_open_orders_for_side_paginated(
         order_book_ref: &OrderBook,
         market_id: u64,
         side: bool,
         n_orders_to_index_max: u64,
-        starting_order_id: u128 // If `NIL`, start from best bid/ask.
+        starting_order_id: u128
     ): (
         vector<OrderView>,
-        u128, // Order ID for start of next page, `NIL` if done.
+        u128,
     ) {
         // Get immutable reference to orders AVL queue for given side.
         let avlq_ref = if (side == ASK) &order_book_ref.asks else
@@ -3031,6 +3123,14 @@ module econia::market {
         price_levels // Return vector of price levels.
     }
 
+    /// Index specified number of open orders for given side of order
+    /// book into price levels, starting from given starting order ID.
+    ///
+    /// See `get_price_levels_paginated()`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_price_levels_paginated()`
     fun get_price_levels_for_side_paginated(
         order_book_ref: &OrderBook,
         market_id: u64,
@@ -4530,6 +4630,33 @@ module econia::market {
         // place swap order event option, and cancel order event option.
         (optional_base_coins, quote_coins, base_traded, quote_traded, fees,
          place_swap_order_event_option, cancel_order_event_option)
+    }
+
+    /// Verify pagination function order IDs are valid for market.
+    ///
+    /// # Failure testing
+    ///
+    /// * `test_verify_pagination_order_ids_ask_does_not_exist()`
+    /// * `test_verify_pagination_order_ids_ask_wrong_side()`
+    /// * `test_verify_pagination_order_ids_bid_does_not_exist()`
+    /// * `test_verify_pagination_order_ids_bid_wrong_side()`
+    fun verify_pagination_order_ids(
+        market_id: u64,
+        starting_ask_order_id: u128,
+        starting_bid_order_id: u128,
+    ) acquires OrderBooks {
+        if (starting_ask_order_id != (NIL as u128)) {
+            assert!(has_open_order(market_id, starting_ask_order_id),
+                    E_INVALID_MARKET_ORDER_ID);
+            assert!(get_posted_order_id_side(starting_ask_order_id) == ASK,
+                    E_INVALID_MARKET_ORDER_ID);
+        };
+        if (starting_bid_order_id != (NIL as u128)) {
+            assert!(has_open_order(market_id, starting_bid_order_id),
+                    E_INVALID_MARKET_ORDER_ID);
+            assert!(get_posted_order_id_side(starting_bid_order_id) == BID,
+                    E_INVALID_MARKET_ORDER_ID);
+        };
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -6541,28 +6668,6 @@ module econia::market {
     }
 
     #[test]
-    #[expected_failure(abort_code = E_INVALID_MARKET_ORDER_ID)]
-    /// Verify indexing results.
-    fun test_get_open_orders_paginated_invalid_market_order_id_ask()
-    acquires OrderBooks {
-        init_markets_users_integrator_test(); // Initialize for testing.
-        // Attempt invalid lookup.
-        get_open_orders_paginated(
-            MARKET_ID_COIN, HI_64, HI_64, 1, (NIL as u128));
-    }
-
-    #[test]
-    #[expected_failure(abort_code = E_INVALID_MARKET_ORDER_ID)]
-    /// Verify indexing results.
-    fun test_get_open_orders_paginated_invalid_market_order_id_bid()
-    acquires OrderBooks {
-        init_markets_users_integrator_test(); // Initialize for testing.
-        // Attempt invalid lookup.
-        get_open_orders_paginated(
-            MARKET_ID_COIN, HI_64, HI_64, (NIL as u128), 1);
-    }
-
-    #[test]
     /// Verify indexing results.
     fun test_get_price_levels() acquires OrderBooks {
         // Initialize markets, users, and an integrator.
@@ -6813,28 +6918,6 @@ module econia::market {
         init_test(); // Initialize for testing.
         // Attempt invalid lookup.
         get_price_levels_paginated(0, HI_64, HI_64, 0, 0);
-    }
-
-    #[test]
-    #[expected_failure(abort_code = E_INVALID_MARKET_ORDER_ID)]
-    /// Verify indexing results.
-    fun test_get_price_levels_paginated_invalid_market_order_id_ask()
-    acquires OrderBooks {
-        init_markets_users_integrator_test(); // Initialize for testing.
-        // Attempt invalid lookup.
-        get_price_levels_paginated(
-            MARKET_ID_COIN, HI_64, HI_64, 1, (NIL as u128));
-    }
-
-    #[test]
-    #[expected_failure(abort_code = E_INVALID_MARKET_ORDER_ID)]
-    /// Verify indexing results.
-    fun test_get_price_levels_paginated_invalid_market_order_id_bid()
-    acquires OrderBooks {
-        init_markets_users_integrator_test(); // Initialize for testing.
-        // Attempt invalid lookup.
-        get_price_levels_paginated(
-            MARKET_ID_COIN, HI_64, HI_64, (NIL as u128), 1);
     }
 
     #[test]
@@ -18120,6 +18203,91 @@ module econia::market {
         assets::burn(quote_coins);
         // Drop underwriter capability.
         registry::drop_underwriter_capability_test(underwriter_capability);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = E_INVALID_MARKET_ORDER_ID)]
+    /// Verify failure for no such ask for market.
+    fun test_verify_pagination_order_ids_ask_does_not_exist()
+    acquires OrderBooks {
+        init_markets_users_integrator_test(); // Initialize for testing.
+        // Attempt invalid lookup.
+        verify_pagination_order_ids(MARKET_ID_COIN, 1, (NIL as u128));
+    }
+
+    #[test]
+    #[expected_failure(abort_code = E_INVALID_MARKET_ORDER_ID)]
+    /// Verify failure for ask order ID that is actually a bid.
+    fun test_verify_pagination_order_ids_ask_wrong_side()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (maker, _) = init_markets_users_integrator_test();
+        // Declare order parameters.
+        let side                = BID;
+        let market_id           = MARKET_ID_COIN;
+        let integrator          = @integrator;
+        let custodian_id        = NO_CUSTODIAN;
+        let maker_address       = address_of(&maker);
+        let restriction         = NO_RESTRICTION;
+        let price               = 10;
+        let size                = MIN_SIZE_COIN;
+        let self_match_behavior = ABORT;
+        // Declare maker deposit amounts.
+        let deposit_base  = HI_64 / 2;
+        let deposit_quote = HI_64 / 2;
+        // Deposit maker coins.
+        user::deposit_coins<BC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(deposit_base));
+        user::deposit_coins<QC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(deposit_quote));
+        // Place maker order, storing market order ID for lookup.
+        let (market_order_id, _, _, _) = place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, side, size, price, restriction,
+            self_match_behavior);
+        verify_pagination_order_ids(
+            MARKET_ID_COIN, market_order_id, (NIL as u128));
+    }
+
+    #[test]
+    #[expected_failure(abort_code = E_INVALID_MARKET_ORDER_ID)]
+    /// Verify failure for no such ask for market.
+    fun test_verify_pagination_order_ids_bid_does_not_exist()
+    acquires OrderBooks {
+        init_markets_users_integrator_test(); // Initialize for testing.
+        verify_pagination_order_ids(MARKET_ID_COIN, (NIL as u128), 1);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = E_INVALID_MARKET_ORDER_ID)]
+    /// Verify failure for bid order ID that is actually an ask.
+    fun test_verify_pagination_order_ids_bid_wrong_side()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (maker, _) = init_markets_users_integrator_test();
+        // Declare order parameters.
+        let side                = ASK;
+        let market_id           = MARKET_ID_COIN;
+        let integrator          = @integrator;
+        let custodian_id        = NO_CUSTODIAN;
+        let maker_address       = address_of(&maker);
+        let restriction         = NO_RESTRICTION;
+        let price               = 10;
+        let size                = MIN_SIZE_COIN;
+        let self_match_behavior = ABORT;
+        // Declare maker deposit amounts.
+        let deposit_base  = HI_64 / 2;
+        let deposit_quote = HI_64 / 2;
+        // Deposit maker coins.
+        user::deposit_coins<BC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(deposit_base));
+        user::deposit_coins<QC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(deposit_quote));
+        // Place maker order, storing market order ID for lookup.
+        let (market_order_id, _, _, _) = place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, side, size, price, restriction,
+            self_match_behavior);
+        verify_pagination_order_ids(
+            MARKET_ID_COIN, (NIL as u128), market_order_id);
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

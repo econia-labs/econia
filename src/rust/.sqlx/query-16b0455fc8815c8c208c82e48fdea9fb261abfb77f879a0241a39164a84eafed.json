@@ -1,0 +1,40 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "WITH parameters AS (\n    SELECT\n        $1::numeric change_market_id,\n        $2::numeric change_order_id\n)\nSELECT\n    order_type AS \"order_type: OrderType\",\n    remaining_size\nFROM\n    parameters,\n    aggregator.user_history\nWHERE\n    market_id = change_market_id\n    AND order_id = change_order_id\n",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "order_type: OrderType",
+        "type_info": {
+          "Custom": {
+            "name": "order_type",
+            "kind": {
+              "Enum": [
+                "limit",
+                "market",
+                "swap"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "remaining_size",
+        "type_info": "Numeric"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Numeric",
+        "Numeric"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "16b0455fc8815c8c208c82e48fdea9fb261abfb77f879a0241a39164a84eafed"
+}

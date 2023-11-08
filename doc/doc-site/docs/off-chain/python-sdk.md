@@ -157,7 +157,7 @@ Install the Aptos CLI & run your local node/faucet:
 ```bash
 brew install aptos # only if necessary
 mkdir aptos && cd aptos
-aptos node run-local-testnet --with-faucet
+aptos node run-local-testnet --with-faucet --test-dir data
 ```
 
 In another terminal, run the following:
@@ -173,8 +173,16 @@ It's time to deploy our own Econia Faucet to the local chain:
 ```bash
 git clone https://github.com/econia-labs/econia.git # only if necessary
 cd ./econia/src/move/faucet
-aptos init --profile econia_faucet_deploy # enter "local" for the chain
-export FAUCET_ADDR=<ACCOUNT-FROM-ABOVE> # make sure to put 0x at the start
+# enter "local" for the chain
+aptos init --profile econia_faucet_deploy
+```
+
+```sh
+# make sure to put 0x at the start
+export FAUCET_ADDR=<ACCOUNT-FROM-ABOVE>
+```
+
+```sh
 # deploy the faucet (all one command)
 aptos move publish \
         --named-addresses econia_faucet=$FAUCET_ADDR \
@@ -185,9 +193,17 @@ aptos move publish \
 You also need to deploy Econia:
 
 ```bash
-cd ./econia/src/move/econia
-aptos init --profile econia_exchange_deploy # enter "local" for the chain
-export ECONIA_ADDR=<ACCOUNT-FROM-ABOVE> # make sure to put 0x at the start
+cd ../econia/
+# enter "local" for the chain
+aptos init --profile econia_exchange_deploy
+```
+
+```sh
+# make sure to put 0x at the start
+export ECONIA_ADDR=<ACCOUNT-FROM-ABOVE>
+```
+
+```sh
 # deploy the exchange (all one command)
 aptos move publish \
         --override-size-check \
@@ -203,8 +219,15 @@ In order to run, install Poetry then install dependencies and run the script:
 
 ```bash
 brew install poetry # only if necessary
-cd ./econia/src/python/sdk && poetry install # only if necessary
+cd ../../python/sdk/
+poetry install # only if necessary
 poetry run trade # we're off to the races!
+```
+
+There will be a few more prompts; enter nothing for them until you reach this printout:
+
+```
+Press enter to initialize (or obtain) the market.
 ```
 
 ### Understanding the example script
@@ -288,7 +311,48 @@ Limit orders make an asset available for purchase at a given price.
 When a market order comes along and pays the price of a limit order, this is called a "fill" event.
 We're about to witness such a fill event in the coming steps.
 
-#### Step #4: Setup the account "B"
+#### Step #4: Change order sizes (as Account A)
+
+```
+Press enter to change Account A's order sizes.
+TRANSACTIONS EXECUTED (first-to-last):
+  * Increase bid order size (#1): 0x47bf742b9ec506d1ccfb26cec23e8a4a68b9e8803f5cca88a7b8cdbf51b08359
+  * Decrease ask order size (#1): 0x532f26500b7d0f0147b1ee534857b7b775a945bf82905401e8bf95fee3f64637
+```
+
+Limit orders can be size-changed by their owner, including size increases.
+**If the size increases, the order is sent to the back of the time priority queue at its price!**
+This ensures price-time priority is preserved within the exchange.
+Here, the script has increased the size of the one bid order created above.
+It's also decreased the size of the one ask order created above.
+Both of these transactions emit a `ChangeOrderSizeEvent`.
+
+#### Step #5: Self-trade with swap orders (as Account A)
+
+```
+Press enter to swap with Account A.
+TRANSACTIONS EXECUTED (first-to-last):
+  * Execute BID swap order for Account A: 0x8b7506df5e75320d35ffaf29410a993c168bda38c3c24145d42dad2cf39afd6b
+  * Execute ASK swap order for Account A: 0x3ae0c79f9dca26552d42b700b4de319d0dda65f12acc8d2328d0c9f057792c4e
+```
+
+It's possible for an account to match (but not fill) against itself, such as with the swap orders above.
+Swaps are trades performed without a market account involved.
+Since the limit orders have the `CancelMaker` self-match behavior, the above swaps do not emit fill events.
+However, the swaps do result in `PlaceSwapOrderEvent` emissions even though the trade doesn't fill anything.
+
+#### Step #6: Re-create limit orders (as Account A)
+
+```
+Press enter to place limit orders with Account A (again).
+TRANSACTIONS EXECUTED (first-to-last):
+  * Place limit BID/BUY order (1000 lots) (1000 ticks/lot): 0x53933e783433ff0d205901cfc113cdcfcd8b419fd096f5f80754292c9c2bfd68
+  * Place limit ASK/SELL order (1000 lots) (2000 ticks/lot): 0x8c88653058da8cfaddda4322e58995935528cea74878bd4924e194a3d29e718d
+```
+
+See step #3 above.
+
+#### Step #7: Setup the account "B"
 
 ```
 Press enter to setup an Account B with funds.
@@ -306,7 +370,7 @@ TRANSACTIONS EXECUTED (first-to-last):
 
 Same as step #2, but for a new account.
 
-#### Step 5: Place market orders (as account B)
+#### Step #8: Place market orders (as account B)
 
 ```
 Press enter to place market orders (buy and sell) with Account B.
@@ -323,7 +387,7 @@ CURRENT BEST PRICE LEVELS:
 Here after Account B has placed their market orders in both directions, the best price level in both directions has gone down in total size.
 This is expected, because some of the liquidity available has been taken at the agreed-upon prices in both the "buy base asset" (bid) and "sell base asset" (ask) cases.
 
-#### Step 6: Cancel all limit orders (as account A)
+#### Step #9: Cancel all limit orders (as account A)
 
 ```
 Press enter to cancel all of Account A's outstanding orders
@@ -338,7 +402,7 @@ There is no eAPT being bought or sold right now!
 This one is straightforward, but it's worth nothing that there are no longer orders on the book unlike in the step above.
 That's because in this case, all of the liquidity in the order book has been cancelled by our cancelling all of Account A's orders (since Account A's orders were all the orders on the book).
 
-#### Step 7: Place multiple competitive limit orders (as account A)
+#### Step #10: Place multiple competitive limit orders (as account A)
 
 ```
 Press enter to place competitive limit orders (top-of-book) with Account A.
@@ -366,7 +430,7 @@ Likewise the lowest price the base asset (tETH) is being sold for right now is 1
 
 We'll see the sequence of these limit orders clearer in the next step, where Account B places spread-crossing limit orders.
 
-#### Step #8: Place spread-crossing limit orders (as account B)
+#### Step #11: Place spread-crossing limit orders (as account B)
 
 ```
 Press enter to place spread-crossing limit order with Account B (no remainder).

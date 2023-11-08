@@ -3,17 +3,31 @@ from typing import Any, List, Optional
 from aptos_sdk.account import Account
 from aptos_sdk.account_address import AccountAddress
 from aptos_sdk.client import RestClient
+from aptos_sdk.async_client import RestClient as AsyncRestClient
 from aptos_sdk.transactions import EntryFunction, TransactionPayload
 
 
 class EconiaClient:
     econia_address: AccountAddress
     aptos_client: RestClient
+    aptos_client_async: AsyncRestClient
     user_account: Account
 
-    def __init__(self, node_url: str, econia: AccountAddress, account: Account):
+    def __init__(
+            self,
+            node_url: str,
+            econia: AccountAddress,
+            account: Account,
+            rest_client: Optional[RestClient] = None,
+            rest_client_async: Optional[AsyncRestClient] = None
+        ):
         self.econia_address = econia
-        self.aptos_client = RestClient(node_url)
+        if rest_client == None and rest_client_async == None:
+            self.aptos_client = RestClient(node_url)
+        elif rest_client != None:
+            self.aptos_client = rest_client
+        elif rest_client_async != None:
+            self.aptos_client_async = rest_client_async
         self.user_account = account
 
     def submit_tx(self, entry: EntryFunction) -> str:
@@ -22,10 +36,22 @@ class EconiaClient:
             self.user_account, payload
         )
         return self.aptos_client.submit_bcs_transaction(signed_tx)
+    
+    async def gen_submit_tx(self, entry: EntryFunction) -> str:
+        payload = TransactionPayload(entry)
+        signed_tx = await self.aptos_client_async.create_bcs_signed_transaction(
+            self.user_account, payload
+        )
+        return await self.aptos_client_async.submit_bcs_transaction(signed_tx)
 
     def submit_tx_wait(self, entry: EntryFunction) -> str:
         txn_hash = self.submit_tx(entry)
         self.aptos_client.wait_for_transaction(txn_hash)
+        return txn_hash
+    
+    async def gen_submit_tx_wait(self, entry: EntryFunction) -> str:
+        txn_hash = await self.gen_submit_tx(entry)
+        await self.aptos_client_async.wait_for_transaction(txn_hash)
         return txn_hash
 
 

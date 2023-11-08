@@ -1,0 +1,22 @@
+images:
+  - '${_REPO}/aggregator'
+
+options:
+  dynamicSubstitutions: true
+
+steps:
+
+  - id: build-aggregator
+    args:
+      - 'build'
+      - '--file'
+      - '${_DOCKER_DIR}/aggregator/Dockerfile'
+      - '--tag'
+      - '${_REPO}/aggregator'
+      - '.'
+    name: '${_BUILDER}'
+
+substitutions:
+  _BUILDER: 'gcr.io/cloud-builders/docker'
+  _DOCKER_DIR: 'src/docker'
+  _REPO: '${_REGION}-docker.pkg.dev/${PROJECT_ID}/images'

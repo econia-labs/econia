@@ -1,0 +1,68 @@
+# GCP cloud builder config for DSS tutorial on docs site.
+
+images:
+  - '${_REPO}/aggregator'
+  - '${_REPO}/postgres'
+  - '${_REPO}/postgrest'
+  - '${_REPO}/processor'
+  - '${_REPO}/websockets'
+
+options:
+  dynamicSubstitutions: true
+
+steps:
+
+  - id: build-aggregator
+    args:
+      - 'build'
+      - '--file'
+      - '${_DOCKER_DIR}/aggregator/Dockerfile'
+      - '--tag'
+      - '${_REPO}/aggregator'
+      - '.'
+    name: '${_BUILDER}'
+
+  - id: build-postgres
+    args:
+      - 'build'
+      - '--file'
+      - '${_DOCKER_DIR}/database/Dockerfile.postgres'
+      - '--tag'
+      - '${_REPO}/postgres'
+      - '.'
+    name: '${_BUILDER}'
+
+  - id: build-processor
+    args:
+      - 'build'
+      - '--file'
+      - '${_DOCKER_DIR}/processor/Dockerfile'
+      - '--tag'
+      - '${_REPO}/processor'
+      - '.'
+    name: '${_BUILDER}'
+
+  - id: build-websockets
+    args:
+      - 'build'
+      - '--file'
+      - '${_DOCKER_DIR}/api/Dockerfile.ws'
+      - '--tag'
+      - '${_REPO}/websockets'
+      - '.'
+    name: '${_BUILDER}'
+
+  - id: pull-postgrest
+    args:
+      - 'build'
+      - '--file'
+      - '${_DOCKER_DIR}/api/Dockerfile.postgrest'
+      - '--tag'
+      - '${_REPO}/postgrest'
+      - '.'
+    name: '${_BUILDER}'
+
+substitutions:
+  _BUILDER: 'gcr.io/cloud-builders/docker'
+  _DOCKER_DIR: 'src/docker'
+  _REPO: '${_REGION}-docker.pkg.dev/${PROJECT_ID}/images'

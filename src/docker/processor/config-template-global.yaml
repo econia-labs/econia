@@ -7,5 +7,5 @@ server_config:
   indexer_grpc_data_service_address: https://grpc.mainnet.aptoslabs.com:443
   indexer_grpc_http2_ping_interval_in_secs: 60
   indexer_grpc_http2_ping_timeout_in_secs: 10
-  auth_token: aptoslabs_479ADoo8zMT_Dv3bzwFo9yeLPLsrjAtXgYsvZr__FIXME
+  auth_token: aptoslabs_grpc_token_or_token_for_another_grpc_endpoint
   starting_version: 0

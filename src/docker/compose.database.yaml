@@ -9,7 +9,9 @@ services:
       context: ../../
       dockerfile: src/docker/database/Dockerfile.diesel
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+        restart: true
 
   postgres:
     environment:

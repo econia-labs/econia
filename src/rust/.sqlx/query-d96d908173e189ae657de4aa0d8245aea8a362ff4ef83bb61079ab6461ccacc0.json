@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "WITH parameters AS (\n    SELECT\n        $1::int AS resolution),\nlast_txn AS (\n    SELECT\n        txn_version\n    FROM\n        aggregator.candlesticks_last_indexed_txn AS c,\n        parameters AS p\n    WHERE\n        c.resolution = p.resolution),\nfills AS (\n    SELECT\n        market_id,\n        price,\n        \"size\",\n        -- Calculate start_time as now - (now % resolution)\n        to_timestamp(extract(epoch from time)::bigint / resolution * resolution) AS start_time\n    FROM\n        fill_events,\n        parameters,\n        last_txn\n    WHERE -- take only unindexed\n        fill_events.txn_version > last_txn.txn_version\n    AND -- remove duplicates\n        maker_address = emit_address\n    ORDER BY fill_events.txn_version, event_idx)\nINSERT INTO aggregator.candlesticks\nSELECT\n    fills.market_id,                                -- market_id\n    resolution,                                     -- resolution\n    start_time,                                     -- start_time\n    FIRST(fills.price),                             -- open\n    MAX(fills.price),                               -- high\n    MIN(fills.price),                               -- low\n    LAST(fills.price),                              -- close\n    COALESCE(SUM(fills.\"size\"*fills.price), 0)        -- volume\nFROM\n    parameters,\n    fills\nGROUP BY market_id, start_time, resolution\nON CONFLICT ON CONSTRAINT candlesticks_pkey DO\nUPDATE SET\n    high = GREATEST(EXCLUDED.high,candlesticks.high),\n    low = LEAST(EXCLUDED.low,candlesticks.low),\n    close = EXCLUDED.close,\n    volume = EXCLUDED.volume + candlesticks.volume\n",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d96d908173e189ae657de4aa0d8245aea8a362ff4ef83bb61079ab6461ccacc0"
+}

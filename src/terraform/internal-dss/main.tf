@@ -107,6 +107,11 @@ resource "google_sql_database_instance" "postgres" {
   provider      = google-beta
   root_password = var.db_root_password
   settings {
+    insights_config {
+      query_insights_enabled = true
+      query_plans_per_minute = 20
+      query_string_length    = 4500
+    }
     ip_configuration {
       authorized_networks {
         value = var.db_admin_public_ip
@@ -161,11 +166,17 @@ resource "google_service_networking_connection" "sql_network_connection" {
   service                 = "servicenetworking.googleapis.com"
   provisioner "local-exec" {
     when = destroy
-    command = join(" ", [
-      "gcloud compute networks peerings delete",
-      "servicenetworking-googleapis-com",
-      "--network sql-network",
-      "--quiet"
+    # Manually destroy VPC peering, wait for changes to propagate.
+    # This is because the dependency solver doesn't properly destroy.
+    # https://github.com/hashicorp/terraform-provider-google/issues/16275
+    command = join(" && ", [
+      join(" ", [
+        "gcloud compute networks peerings delete",
+        "servicenetworking-googleapis-com",
+        "--network sql-network",
+        "--quiet"
+      ]),
+      "sleep 300"
     ])
   }
 }

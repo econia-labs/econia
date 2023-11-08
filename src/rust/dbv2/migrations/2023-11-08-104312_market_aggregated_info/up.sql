@@ -5,7 +5,8 @@ DROP FUNCTION api.price_info;
 CREATE FUNCTION api.market_aggregated_info(market integer, "seconds" integer)
 RETURNS TABLE(
     last_price numeric,
-    price_change numeric,
+    price_change_percentage numeric,
+    price_change_nominal numeric,
     high_price numeric,
     low_price numeric,
     base_volume numeric,
@@ -45,6 +46,7 @@ first_fill AS(
 SELECT
     last_fill.price,
     (last_fill.price - first_fill.price) / first_fill.price * 100,
+    last_fill.price - first_fill.price,
     MIN(fills.price),
     MAX(fills.price),
     SUM(fills.size),

@@ -320,6 +320,150 @@ def get_price_levels_all(view: EconiaViewer, market_id: int) -> dict:
     return get_price_levels(view, market_id)
 
 
+def get_open_orders_paginated(
+    viewer: EconiaViewer,
+    market_id: int,
+    ask_page_size: int,
+    bid_page_size: int,
+    next_ask_idx: int,
+    next_bid_idx: int,
+    ledger_version: int,
+):
+    returns = viewer.get_returns(
+        "market",
+        "get_open_orders_paginated",
+        [],
+        [
+            str(market_id),
+            str(ask_page_size),
+            str(bid_page_size),
+            str(next_ask_idx),
+            str(next_bid_idx),
+        ],
+        ledger_version=ledger_version,
+    )
+    return returns
+
+
+def get_open_orders_with_pagination(
+    viewer: EconiaViewer, market_id: int, max_levels: int = 100, page_size: int = 100
+) -> dict:
+    info = viewer.aptos_client.info()
+    ledger_version = int(info["ledger_version"])
+
+    next_ask_idx = "0"
+    next_bid_idx = "0"
+    bid_page_size = ask_page_size = page_size
+
+    asks = []
+    bids = []
+
+    keep_looping = True
+    while keep_looping:
+        returns = get_open_orders_paginated(
+            viewer,
+            market_id,
+            min(ask_page_size, max(max_levels - len(asks), 0)),
+            min(bid_page_size, max(max_levels - len(bids), 0)),
+            int(next_ask_idx),
+            int(next_bid_idx),
+            ledger_version,
+        )
+
+        value = returns[0]
+        next_ask_idx = returns[1]
+        next_bid_idx = returns[2]
+
+        for ask in value["asks"]:
+            asks.append(_convert_open_order_value(ask))
+        for bid in value["bids"]:
+            bids.append(_convert_open_order_value(bid))
+
+        if next_ask_idx == "0" and next_bid_idx == "0":
+            keep_looping = False
+        elif len(asks) >= max_levels or len(bids) >= max_levels:
+            keep_looping = False
+        elif next_ask_idx == "0" or next_bid_idx == "0":
+            if next_ask_idx == "0":
+                ask_page_size = 0
+            else:
+                bid_page_size = 0
+
+    return {"asks": asks, "bids": bids, "market_id": market_id}
+
+
+def get_price_levels_paginated(
+    viewer: EconiaViewer,
+    market_id: int,
+    ask_page_size: int,
+    bid_page_size: int,
+    next_ask_idx: int,
+    next_bid_idx: int,
+    ledger_version: int,
+):
+    returns = viewer.get_returns(
+        "market",
+        "get_price_levels_paginated",
+        [],
+        [
+            str(market_id),
+            str(ask_page_size),
+            str(bid_page_size),
+            str(next_ask_idx),
+            str(next_bid_idx),
+        ],
+        ledger_version=ledger_version,
+    )
+    return returns
+
+
+def get_price_levels_with_pagination(
+    viewer: EconiaViewer, market_id: int, max_levels: int = 100, page_size: int = 100
+) -> dict:
+    info = viewer.aptos_client.info()
+    ledger_version = int(info["ledger_version"])
+
+    next_ask_idx = "0"
+    next_bid_idx = "0"
+    bid_page_size = ask_page_size = page_size
+
+    asks = []
+    bids = []
+
+    keep_looping = True
+    while keep_looping:
+        returns = get_price_levels_paginated(
+            viewer,
+            market_id,
+            min(ask_page_size, max(max_levels - len(asks), 0)),
+            min(bid_page_size, max(max_levels - len(bids), 0)),
+            int(next_ask_idx),
+            int(next_bid_idx),
+            ledger_version,
+        )
+
+        value = returns[0]
+        next_ask_idx = returns[1]
+        next_bid_idx = returns[2]
+
+        for ask in value["asks"]:
+            asks.append({"price": int(ask["price"]), "size": int(ask["size"])})
+        for bid in value["bids"]:
+            bids.append({"price": int(bid["price"]), "size": int(bid["size"])})
+
+        if next_ask_idx == "0" and next_bid_idx == "0":
+            keep_looping = False
+        elif len(asks) >= max_levels or len(bids) >= max_levels:
+            keep_looping = False
+        elif next_ask_idx == "0" or next_bid_idx == "0":
+            if next_ask_idx == "0":
+                ask_page_size = 0
+            else:
+                bid_page_size = 0
+
+    return {"asks": asks, "bids": bids, "market_id": market_id}
+
+
 def has_open_order(view: EconiaViewer, market_id: int, market_order_id: int) -> bool:
     """
     Return `True` if `order_id` corresponds to open order for given

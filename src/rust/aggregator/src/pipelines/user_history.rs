@@ -8,7 +8,7 @@ use aggregator::{Pipeline, PipelineAggregationResult, PipelineError};
 /// Number of bits to shift when encoding transaction version.
 const SHIFT_TXN_VERSION: u8 = 64;
 
-pub const TIMEOUT: std::time::Duration = std::time::Duration::from_millis(500);
+pub const TIMEOUT: std::time::Duration = std::time::Duration::from_millis(100);
 
 #[derive(sqlx::Type, Debug)]
 #[sqlx(type_name = "order_status", rename_all = "lowercase")]

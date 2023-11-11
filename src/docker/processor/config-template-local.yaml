@@ -7,5 +7,6 @@ server_config:
   indexer_grpc_data_service_address: http://streamer:50051
   indexer_grpc_http2_ping_interval_in_secs: 60
   indexer_grpc_http2_ping_timeout_in_secs: 10
+  number_concurrent_processing_tasks: 1
   auth_token: dummy_token
   starting_version: 0

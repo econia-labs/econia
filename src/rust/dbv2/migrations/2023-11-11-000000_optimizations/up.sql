@@ -193,6 +193,9 @@ WHERE f.market_id = u.market_id AND f.order_id = u.order_id;
 -- Drop old objects
 
 
+DROP FUNCTION api.average_execution_price;
+
+
 DROP VIEW api.limit_orders;
 DROP VIEW api.market_orders;
 DROP VIEW api.swap_orders;
@@ -200,9 +203,6 @@ DROP VIEW api.orders;
 
 
 DROP VIEW api.price_levels;
-
-
-DROP FUNCTION api.average_execution_price;
 
 
 DROP TABLE aggregator.user_history_limit;

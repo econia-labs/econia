@@ -104,13 +104,6 @@ impl Pipeline for UserHistory {
         .await
         .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
         sqlx::query_file!(
-            "sqlx_queries/user_history/parse_order_events_limit.sql",
-            max_txn_version,
-        )
-        .execute(&mut transaction as &mut PgConnection)
-        .await
-        .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
-        sqlx::query_file!(
             "sqlx_queries/user_history/insert_user_history_limit.sql",
             max_txn_version,
         )
@@ -118,21 +111,7 @@ impl Pipeline for UserHistory {
         .await
         .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
         sqlx::query_file!(
-            "sqlx_queries/user_history/parse_order_events_market.sql",
-            max_txn_version,
-        )
-        .execute(&mut transaction as &mut PgConnection)
-        .await
-        .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
-        sqlx::query_file!(
             "sqlx_queries/user_history/insert_user_history_market.sql",
-            max_txn_version,
-        )
-        .execute(&mut transaction as &mut PgConnection)
-        .await
-        .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
-        sqlx::query_file!(
-            "sqlx_queries/user_history/parse_order_events_swap.sql",
             max_txn_version,
         )
         .execute(&mut transaction as &mut PgConnection)
@@ -176,6 +155,7 @@ impl Pipeline for UserHistory {
                             &fill.taker_order_id,
                             &fill.market_id,
                             &fill.time,
+                            &fill.price,
                         )
                         .await?;
                     }
@@ -220,9 +200,10 @@ async fn aggregate_fill_for_maker_and_taker<'a>(
     taker_order_id: &BigDecimal,
     market_id: &BigDecimal,
     time: &DateTime<Utc>,
+    price: &BigDecimal,
 ) -> PipelineAggregationResult {
-    aggregate_fill(tx, size, maker_order_id, market_id, time).await?;
-    aggregate_fill(tx, size, taker_order_id, market_id, time).await?;
+    aggregate_fill(tx, size, maker_order_id, market_id, time, price).await?;
+    aggregate_fill(tx, size, taker_order_id, market_id, time, price).await?;
     Ok(())
 }
 
@@ -232,6 +213,7 @@ async fn aggregate_fill<'a>(
     order_id: &BigDecimal,
     market_id: &BigDecimal,
     time: &DateTime<Utc>,
+    price: &BigDecimal,
 ) -> PipelineAggregationResult {
     // Only limit orders can remain open after a transaction during which they are filled against,
     // so flag market orders and swaps as closed by default: if they end up being cancelled instead
@@ -242,7 +224,8 @@ async fn aggregate_fill<'a>(
         size,
         order_id,
         market_id,
-        time
+        time,
+        price,
     )
     .execute(tx as &mut PgConnection)
     .await

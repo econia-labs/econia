@@ -8,7 +8,7 @@ use aggregator::Pipeline;
 use anyhow::{anyhow, Result};
 use clap::{Parser, ValueEnum};
 use pipelines::{Candlesticks, Leaderboards, UserHistory};
-use sqlx::{Executor};
+use sqlx::Executor;
 use sqlx_postgres::PgPoolOptions;
 use tokio::{sync::Mutex, task::JoinSet};
 
@@ -74,11 +74,15 @@ async fn main() -> Result<()> {
         .expect("DATABASE_URL should be set");
 
     let pool = PgPoolOptions::new()
-        .after_connect(|conn, _| Box::pin(async move {
-            conn.execute("SET default_transaction_isolation TO 'repeatable read'").await?;
-            Ok(())
-        }))
-        .connect(&database_url).await?;
+        .after_connect(|conn, _| {
+            Box::pin(async move {
+                conn.execute("SET default_transaction_isolation TO 'repeatable read'")
+                    .await?;
+                Ok(())
+            })
+        })
+        .connect(&database_url)
+        .await?;
 
     tracing::info!("Connected to DB.");
 

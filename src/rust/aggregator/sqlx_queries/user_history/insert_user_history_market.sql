@@ -35,8 +35,8 @@ SELECT
     'market',
     "user",
     CASE
-        WHEN direction = true THEN 'buy'::order_direction
-        ELSE 'sell'::order_direction
+        WHEN direction = true THEN 'sell'::order_direction
+        ELSE 'buy'::order_direction
     END,
     NULL,
     NULL,

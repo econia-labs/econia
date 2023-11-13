@@ -8,8 +8,6 @@ WITH parameters AS (
 UPDATE
     aggregator.user_history
 SET
-    remaining_size = remaining_size - fill_size,
-    total_filled = total_filled + fill_size,
     order_status = CASE order_type
     WHEN 'limit' THEN
         CASE remaining_size - fill_size
@@ -22,7 +20,9 @@ SET
         'closed'
     END,
     last_updated_at = fill_time,
-    average_execution_price = (total_filled * COALESCE(average_execution_price, 0) + fill_size * fill_price) / (total_filled + fill_size)
+    average_execution_price = (total_filled * COALESCE(average_execution_price, 0) + fill_size * fill_price) / (total_filled + fill_size),
+    total_filled = total_filled + fill_size,
+    remaining_size = remaining_size - fill_size
 FROM
     parameters
 WHERE

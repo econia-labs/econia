@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "WITH parameters AS (\n    SELECT\n        $1::numeric AS max_txn_version)\nINSERT INTO aggregator.user_history (\n    market_id,\n    order_id,\n    created_at,\n    last_updated_at,\n    integrator,\n    total_filled,\n    remaining_size,\n    order_status,\n    order_type,\n    \"user\",\n    direction,\n    price,\n    average_execution_price,\n    custodian_id,\n    self_match_behavior,\n    restriction,\n    min_base,\n    max_base,\n    min_quote,\n    max_quote\n)\nSELECT\n    market_id,\n    order_id,\n    \"time\",\n    NULL,\n    integrator,\n    0,\n    initial_size,\n    'open',\n    'limit',\n    \"user\",\n    CASE\n        WHEN side = true THEN 'ask'::order_direction\n        ELSE 'bid'::order_direction\n    END,\n    price,\n    NULL,\n    custodian_id,\n    self_match_behavior,\n    restriction,\n    NULL,\n    NULL,\n    NULL,\n    NULL\nFROM\n    parameters,\n    place_limit_order_events\nWHERE\n    txn_version > max_txn_version\n",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Numeric"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b42e8281fa87850576a3714bb9cdbf98de866bc9cde3907ea15457c3f434c8b1"
+}

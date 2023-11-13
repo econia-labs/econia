@@ -108,8 +108,8 @@ UPDATE aggregator.user_history AS u
 SET
     "user" = m."user",
     direction = CASE
-        WHEN m.direction = true THEN 'buy'::order_direction
-        ELSE 'sell'::order_direction
+        WHEN m.direction = true THEN 'sell'::order_direction
+        ELSE 'buy'::order_direction
     END,
     price = NULL,
     custodian_id = m.custodian_id,
@@ -127,8 +127,8 @@ UPDATE aggregator.user_history AS u
 SET
     "user" = s.signing_account,
     direction = CASE
-        WHEN s.direction = true THEN 'buy'::order_direction
-        ELSE 'sell'::order_direction
+        WHEN s.direction = true THEN 'sell'::order_direction
+        ELSE 'buy'::order_direction
     END,
     price = s.limit_price,
     custodian_id = NULL,

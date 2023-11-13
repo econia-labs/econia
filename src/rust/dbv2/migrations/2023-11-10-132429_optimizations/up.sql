@@ -5,6 +5,7 @@
 -- | |) | '_/ _ \ '_ \ / _ \ / _` | | | ' \/ _` / -_) \ / -_|_-<
 -- |___/|_| \___/ .__/ \___/_\__,_| |_|_||_\__,_\___/_\_\___/__/
 --              |_|
+-- Drop old indexes
 
 
 DROP INDEX timeprice;
@@ -23,6 +24,7 @@ DROP INDEX aggregator.ranking_idx;
 --   /_\  __| |__| |  __ ___| |___ (_)_ _    _  _ ___ ___ _ _| |_ (_)__| |_ ___ _ _ _  _
 --  / _ \/ _` / _` | / _/ _ \ (_-< | | ' \  | || (_-</ -_) '_| ' \| (_-<  _/ _ \ '_| || |
 -- /_/ \_\__,_\__,_| \__\___/_/__/ |_|_||_|  \_,_/__/\___|_|_|_||_|_/__/\__\___/_|  \_, |
+-- Add cols in user_history
 
 
 CREATE TYPE order_direction AS ENUM('sell', 'buy', 'ask', 'bid');
@@ -80,6 +82,7 @@ ADD COLUMN max_quote numeric(20,0);
 -- | __(_) | |  _ _  _____ __ __  __ ___| |___
 -- | _|| | | | | ' \/ -_) V  V / / _/ _ \ (_-<
 -- |_| |_|_|_| |_||_\___|\_/\_/  \__\___/_/__/
+-- Fill new cols
 
 
 UPDATE aggregator.user_history AS u
@@ -187,6 +190,7 @@ WHERE f.market_id = u.market_id AND f.order_id = u.order_id;
 -- | |) | '_/ _ \ '_ \ / _ \ / _` | / _ \ '_ \| / -_) _|  _(_-<
 -- |___/|_| \___/ .__/ \___/_\__,_| \___/_.__// \___\__|\__/__/
 --              |_|                         |__/
+-- Drop old objects
 
 
 DROP VIEW api.limit_orders;
@@ -215,6 +219,7 @@ DROP FUNCTION notify_updated_order;
 -- | (__| '_/ -_) _` |  _/ -_) | ' \/ -_) V  V / / _ \ '_ \| / -_) _|  _(_-<
 --  \___|_| \___\__,_|\__\___| |_||_\___|\_/\_/  \___/_.__// \___\__|\__/__/
 --                                                       |__/
+-- Create new objects
 
 
 CREATE FUNCTION notify_updated_order () RETURNS TRIGGER AS $$
@@ -265,6 +270,7 @@ GRANT SELECT ON api.orders TO web_anon;
 --  / __|_ _ ___ __ _| |_ ___   _ _  _____ __ __ (_)_ _  __| |_____ _____ ___
 -- | (__| '_/ -_) _` |  _/ -_) | ' \/ -_) V  V / | | ' \/ _` / -_) \ / -_|_-<
 --  \___|_| \___\__,_|\__\___| |_||_\___|\_/\_/  |_|_||_\__,_\___/_\_\___/__/
+-- Create new indexes
 
 
 CREATE INDEX fill_events_time ON fill_events ("time");

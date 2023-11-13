@@ -160,6 +160,31 @@ DROP TABLE aggregator.user_history_market;
 DROP TABLE aggregator.user_history_swap;
 
 
+CREATE VIEW api.price_levels AS
+    SELECT
+        market_id,
+        direction,
+        price,
+        SUM(remaining_size) AS total_size,
+        (SELECT txn_version FROM aggregator.user_history_last_indexed_txn LIMIT 1) AS version
+    FROM
+        aggregator.user_history
+    WHERE
+        order_status = 'open'
+    GROUP BY
+        market_id,
+        direction,
+        price
+    ORDER BY
+        market_id,
+        direction,
+        price;
+
+GRANT
+SELECT
+  ON api.price_levels TO web_anon;
+
+
 DROP TRIGGER updated_order_trigger ON aggregator.user_history;
 DROP FUNCTION notify_updated_order;
 

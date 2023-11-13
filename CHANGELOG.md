@@ -7,6 +7,7 @@
 #### Breaking changes
 
 - removed `/{limit,market,swap}_orders` endpoints
+- renamed `side` to `direction` in `/price_levels`
 
 #### Important changes
 

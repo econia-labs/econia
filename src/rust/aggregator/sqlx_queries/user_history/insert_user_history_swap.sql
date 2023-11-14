@@ -35,8 +35,8 @@ SELECT
     'swap',
     swaps.signing_account,
     CASE
-        WHEN swaps.direction = true THEN 'buy'::order_direction
-        ELSE 'sell'::order_direction
+        WHEN swaps.direction = true THEN 'sell'::order_direction
+        ELSE 'buy'::order_direction
     END,
     swaps.limit_price,
     NULL,

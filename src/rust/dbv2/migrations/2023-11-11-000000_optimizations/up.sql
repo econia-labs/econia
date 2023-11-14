@@ -108,8 +108,8 @@ UPDATE aggregator.user_history AS u
 SET
     "user" = m."user",
     direction = CASE
-        WHEN m.direction = true THEN 'buy'::order_direction
-        ELSE 'sell'::order_direction
+        WHEN m.direction = true THEN 'sell'::order_direction
+        ELSE 'buy'::order_direction
     END,
     price = NULL,
     custodian_id = m.custodian_id,
@@ -127,8 +127,8 @@ UPDATE aggregator.user_history AS u
 SET
     "user" = s.signing_account,
     direction = CASE
-        WHEN s.direction = true THEN 'buy'::order_direction
-        ELSE 'sell'::order_direction
+        WHEN s.direction = true THEN 'sell'::order_direction
+        ELSE 'buy'::order_direction
     END,
     price = s.limit_price,
     custodian_id = NULL,
@@ -193,6 +193,9 @@ WHERE f.market_id = u.market_id AND f.order_id = u.order_id;
 -- Drop old objects
 
 
+DROP FUNCTION api.average_execution_price;
+
+
 DROP VIEW api.limit_orders;
 DROP VIEW api.market_orders;
 DROP VIEW api.swap_orders;
@@ -200,9 +203,6 @@ DROP VIEW api.orders;
 
 
 DROP VIEW api.price_levels;
-
-
-DROP FUNCTION api.average_execution_price;
 
 
 DROP TABLE aggregator.user_history_limit;

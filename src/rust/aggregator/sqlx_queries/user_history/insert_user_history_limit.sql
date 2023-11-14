@@ -39,7 +39,7 @@ SELECT
         ELSE 'bid'::order_direction
     END,
     price,
-    0,
+    NULL,
     custodian_id,
     self_match_behavior,
     restriction,

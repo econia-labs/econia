@@ -436,17 +436,17 @@ def get_price_levels_with_pagination(
     bid_page_size = ask_page_size = page_size
 
     asks = dict()
-    asks_size = 0
+    n_indexed_asks = 0
     bids = dict()
-    bids_size = 0
+    n_indexed_bids = 0
 
     keep_looping = True
     while keep_looping:
         returns = get_price_levels_paginated(
             viewer,
             market_id,
-            ask_page_size,
-            bid_page_size,
+            min(ask_page_size, max(max_asks - n_indexed_asks, 0)),
+            min(bid_page_size, max(max_bids - n_indexed_bids, 0)),
             int(next_ask_idx),
             int(next_bid_idx),
             ledger_version,
@@ -470,11 +470,11 @@ def get_price_levels_with_pagination(
                 bids[price] += size
             else:
                 bids[price] = size
-        asks_size += ask_page_size
-        bids_size += bid_page_size
+        n_indexed_asks += ask_page_size
+        n_indexed_bids += bid_page_size
 
-        if (asks_size >= max_asks or next_ask_idx == "0") and (
-            bids_size >= max_bids or next_bid_idx == "0"
+        if (n_indexed_asks >= max_asks or next_ask_idx == "0") and (
+            n_indexed_bids >= max_bids or next_bid_idx == "0"
         ):
             keep_looping = False
         elif next_ask_idx == "0" or next_bid_idx == "0":
@@ -483,13 +483,9 @@ def get_price_levels_with_pagination(
             else:
                 bid_page_size = 0
 
-    asks_ls = []
-    bids_ls = []
-    for price, size in asks.items():
-        asks_ls.append({"price": price, "size": size})
-    for price, size in bids.items():
-        bids_ls.append({"price": price, "size": size})
-    return {"asks": asks_ls, "bids": bids_ls, "market_id": market_id}
+    asks_levels = [{"price": price, "size": size} for price, size in asks.items()]
+    bids_levels = [{"price": price, "size": size} for price, size in bids.items()]
+    return {"asks": asks_levels, "bids": bids_levels, "market_id": market_id}
 
 
 def has_open_order(view: EconiaViewer, market_id: int, market_order_id: int) -> bool:

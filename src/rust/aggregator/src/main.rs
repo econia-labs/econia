@@ -7,7 +7,7 @@ use std::{
 use aggregator::Pipeline;
 use anyhow::{anyhow, Result};
 use clap::{Parser, ValueEnum};
-use pipelines::{Candlesticks, Leaderboards, UpdateMaterializedView, UserHistory};
+use pipelines::{Candlesticks, Leaderboards, RefreshMaterializedView, UserHistory};
 use sqlx::Executor;
 use sqlx_postgres::PgPoolOptions;
 use tokio::{sync::Mutex, task::JoinSet};
@@ -150,7 +150,7 @@ async fn main() -> Result<()> {
                 data.push(Arc::new(Mutex::new(Leaderboards::new(pool.clone()))));
             }
             Pipelines::Market24hData => {
-                data.push(Arc::new(Mutex::new(UpdateMaterializedView::new(
+                data.push(Arc::new(Mutex::new(RefreshMaterializedView::new(
                     pool.clone(),
                     "aggregator.markets_24h_data",
                     Duration::from_secs(5 * 60),

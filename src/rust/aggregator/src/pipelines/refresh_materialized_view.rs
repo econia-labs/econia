@@ -4,15 +4,14 @@ use sqlx::PgPool;
 
 use aggregator::{Pipeline, PipelineAggregationResult, PipelineError};
 
-pub struct UpdateMaterializedView {
+pub struct RefreshMaterializedView {
     pool: PgPool,
     view_name: String,
     update_interval: std::time::Duration,
     last_indexed_timestamp: Option<DateTime<Utc>>,
 }
 
-#[allow(dead_code)]
-impl UpdateMaterializedView {
+impl RefreshMaterializedView {
     pub fn new(
         pool: PgPool,
         view_name: impl Into<String>,
@@ -28,7 +27,7 @@ impl UpdateMaterializedView {
 }
 
 #[async_trait::async_trait]
-impl Pipeline for UpdateMaterializedView {
+impl Pipeline for RefreshMaterializedView {
     fn model_name(&self) -> String {
         String::from("UpdateMaterializedView")
     }
@@ -49,18 +48,10 @@ impl Pipeline for UpdateMaterializedView {
     }
 
     async fn process_and_save_internal(&mut self) -> PipelineAggregationResult {
-        sqlx::query(
-            format!(
-                r#"
-                REFRESH MATERIALIZED VIEW {};
-            "#,
-                self.view_name
-            )
-            .as_str(),
-        )
-        .execute(&self.pool)
-        .await
-        .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
+        sqlx::query(format!("REFRESH MATERIALIZED VIEW {};", self.view_name).as_str())
+            .execute(&self.pool)
+            .await
+            .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
         Ok(())
     }
 }

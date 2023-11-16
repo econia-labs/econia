@@ -70,8 +70,8 @@ CREATE VIEW api.markets AS
             ELSE false
         END AS is_recognized,
         l.price AS last_fill_price_24hr,
-        (COALESCE(l.price, 1) - COALESCE(f.price, 1)) / COALESCE(f.price, 1) * 100 AS percent_change_24h,
-        l.price - f.price AS nominal_change_24h,
+        (COALESCE(l.price, 1) - COALESCE(f.price, 1)) / COALESCE(f.price, 1) * 100 AS price_change_as_percent_24hr,
+        l.price - f.price AS price_change_24hr,
         v.min_price_24h,
         v.max_price_24h,
         v.base_volume_24h,

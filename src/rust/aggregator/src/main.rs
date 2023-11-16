@@ -7,7 +7,7 @@ use std::{
 use aggregator::Pipeline;
 use anyhow::{anyhow, Result};
 use clap::{Parser, ValueEnum};
-use pipelines::{Candlesticks, Leaderboards, RefreshMaterializedView, UserHistory};
+use pipelines::{Candlesticks, Coins, Leaderboards, RefreshMaterializedView, UserHistory};
 use sqlx::Executor;
 use sqlx_postgres::PgPoolOptions;
 use tokio::{sync::Mutex, task::JoinSet};
@@ -35,6 +35,7 @@ struct Args {
 #[derive(Clone, Debug, PartialEq)]
 pub enum Pipelines {
     Candlesticks,
+    Coins,
     Leaderboards,
     Market24hData,
     UserHistory,
@@ -48,6 +49,7 @@ impl ValueEnum for Pipelines {
     fn value_variants<'a>() -> &'a [Self] {
         &[
             Self::Candlesticks,
+            Self::Coins,
             Self::Leaderboards,
             Self::Market24hData,
             Self::UserHistory,
@@ -104,6 +106,7 @@ async fn main() -> Result<()> {
     } else {
         let mut x = vec![
             Pipelines::Candlesticks,
+            Pipelines::Coins
             Pipelines::Market24hData,
             Pipelines::UserHistory,
         ];
@@ -144,6 +147,11 @@ async fn main() -> Result<()> {
                 data.push(Arc::new(Mutex::new(Candlesticks::new(
                     pool.clone(),
                     60 * 60 * 24,
+                ))));
+            },
+            Pipelines::Coins => {
+                data.push(Arc::new(Mutex::new(Coins::new(
+                    pool.clone(),
                 ))));
             }
             Pipelines::Leaderboards => {

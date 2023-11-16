@@ -4,6 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+aptos-sdk.workspace = true
+
 anyhow = "1.0.75"
 async-trait = "0.1.73"
 bigdecimal.workspace = true

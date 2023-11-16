@@ -29,7 +29,7 @@ impl RefreshMaterializedView {
 #[async_trait::async_trait]
 impl Pipeline for RefreshMaterializedView {
     fn model_name(&self) -> String {
-        String::from("UpdateMaterializedView")
+        String::from("RefreshMaterializedView")
     }
 
     fn ready(&self) -> bool {

@@ -114,7 +114,7 @@ resource "google_sql_database_instance" "postgres" {
     }
     ip_configuration {
       authorized_networks {
-        value = "0.0.0.0/0"
+        value = var.db_admin_public_ip
       }
       ipv4_enabled    = true
       private_network = google_compute_network.sql_network.id

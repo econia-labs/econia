@@ -2917,7 +2917,7 @@ module econia::market {
     ///
     /// * `Option<u8>`: An optional cancel reason, if the order needs
     ///   to be cancelled.
-    /*inline*/ fun get_cancel_reason_option_for_market_order_or_swap(
+    inline fun get_cancel_reason_option_for_market_order_or_swap(
         self_match_taker_cancel: bool,
         base_traded: u64,
         max_base: u64,

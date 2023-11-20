@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "WITH parameters AS (\n    SELECT\n        $1::numeric change_market_id,\n        $2::numeric change_order_id,\n        $3::numeric change_increase_stamp)\nUPDATE\n    aggregator.user_history\nSET\n    last_increase_stamp = change_increase_stamp\nFROM\n    parameters\nWHERE\n    market_id = change_market_id\n    AND order_id = change_order_id\n",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Numeric",
+        "Numeric",
+        "Numeric"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "df9298ff5cc75fa81779fdfa779fec9960034a783c93702c2206ec1346ae92fc"
+}

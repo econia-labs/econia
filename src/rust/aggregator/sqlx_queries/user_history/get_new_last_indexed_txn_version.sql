@@ -2,6 +2,16 @@ WITH max_per_table AS (
     SELECT
         MAX(txn_version) AS max
     FROM
+        cancel_order_events
+    UNION ALL
+    SELECT
+        MAX(txn_version) AS max
+    FROM
+        change_order_size_events
+    UNION ALL
+    SELECT
+        MAX(txn_version) AS max
+    FROM
         fill_events
     UNION ALL
     SELECT
@@ -22,4 +32,5 @@ WITH max_per_table AS (
 SELECT
     MAX(max) AS max
 FROM
-    max_per_table
+    max_per_table;
+

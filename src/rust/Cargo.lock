@@ -71,6 +71,7 @@ dependencies = [
  "dotenvy",
  "env_logger",
  "log",
+ "reqwest",
  "serde 1.0.188",
  "serde_json",
  "sqlx",
@@ -79,6 +80,7 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
+ "url",
 ]
 
 [[package]]

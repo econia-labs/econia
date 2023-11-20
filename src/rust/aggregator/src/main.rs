@@ -6,11 +6,13 @@ use std::{
 
 use aggregator::Pipeline;
 use anyhow::{anyhow, Result};
+use aptos_sdk::rest_client::AptosBaseUrl;
 use clap::{Parser, ValueEnum};
 use pipelines::{Candlesticks, Coins, Leaderboards, RefreshMaterializedView, UserHistory};
 use sqlx::Executor;
 use sqlx_postgres::PgPoolOptions;
 use tokio::{sync::Mutex, task::JoinSet};
+use url::Url;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -30,6 +32,10 @@ struct Args {
     /// Database URL.
     #[arg(short, long)]
     database_url: Option<String>,
+
+    /// Aptos network.
+    #[arg(short, long)]
+    aptos_network: Option<AptosNetwork>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -63,6 +69,49 @@ impl Display for Pipelines {
     }
 }
 
+#[derive(Clone, Debug, PartialEq)]
+pub enum AptosNetwork {
+    Mainnet,
+    Testnet,
+    Devnet,
+    Custom(&'static str),
+}
+
+impl ValueEnum for AptosNetwork {
+    fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
+        Some(clap::builder::PossibleValue::new(self.to_string()))
+    }
+
+    fn value_variants<'a>() -> &'a [Self] {
+        &[Self::Mainnet, Self::Testnet, Self::Devnet, Self::Custom("url")]
+    }
+}
+
+impl Display for AptosNetwork {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{self:?}")
+    }
+}
+
+impl AptosNetwork {
+    pub fn to_base_url(&self) -> AptosBaseUrl {
+        match self {
+            Self::Mainnet => {
+                AptosBaseUrl::Mainnet
+            }
+            Self::Testnet => {
+                AptosBaseUrl::Testnet
+            }
+            Self::Devnet => {
+                AptosBaseUrl::Devnet
+            }
+            Self::Custom(s) => {
+                AptosBaseUrl::Custom(Url::parse(&s).expect("Invalid custom url."))
+            }
+        }
+    }
+}
+
 mod pipelines;
 
 #[tokio::main]
@@ -73,6 +122,8 @@ async fn main() -> Result<()> {
     tracing::info!("Started up.");
     dotenvy::dotenv().ok();
     let args: Args = Args::parse();
+
+    let network = args.aptos_network.unwrap_or(AptosNetwork::Testnet);
 
     let database_url = std::env::var("DATABASE_URL")
         .or_else(|_| -> Result<String> {
@@ -116,6 +167,8 @@ async fn main() -> Result<()> {
         x
     };
 
+    println!("{:?}", pipelines);
+
     for pipeline in pipelines {
         match pipeline {
             Pipelines::Candlesticks => {
@@ -152,6 +205,7 @@ async fn main() -> Result<()> {
             Pipelines::Coins => {
                 data.push(Arc::new(Mutex::new(Coins::new(
                     pool.clone(),
+                    network.to_base_url(),
                 ))));
             }
             Pipelines::Leaderboards => {

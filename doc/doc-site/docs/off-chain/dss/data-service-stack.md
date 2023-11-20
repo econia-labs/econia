@@ -42,9 +42,12 @@ The process is the same as running against mainnet, just with a slightly differe
 Unless you are an infrastructure provider or want to run a fullnode yourself, the simplest way to get indexed transaction data is from the Aptos Labs gRPC endpoint (indexer v2 API).
 To connect to this service, you'll need to get an API key [here](https://aptos-api-gateway-prod.firebaseapp.com/).
 
+### Generating a config
+
 Once you have the API key, you'll need to create the processor configuration file.
 A template can be found at `src/docker/processor/config-template-global.yaml`.
-In the same folder as the template, create a copy of the file named `config.yaml`, then fill it as follows:
+In the same folder as the template, create a copy of the file named `config.yaml`.
+For testnet:
 
 - health_check_port: `8085`
 - server_config:
@@ -66,6 +69,40 @@ In the same folder as the template, create a copy of the file named `config.yaml
 A `starting_version` that is too late will lead to missed events and corrupted data.
 
 :::
+
+Hence, the complete `config.yaml` file for testnet:
+
+```yaml
+health_check_port: 8085
+server_config:
+  processor_config:
+    type: econia_transaction_processor
+    econia_address: 0xc0de11113b427d35ece1d8991865a941c0578b0f349acabbe9753863c24109ff
+  postgres_connection_string: postgres://econia:econia@postgres:5432/econia
+  indexer_grpc_data_service_address: https://grpc.testnet.aptoslabs.com:443
+  indexer_grpc_http2_ping_interval_in_secs: 60
+  indexer_grpc_http2_ping_timeout_in_secs: 10
+  number_concurrent_processing_tasks: 1
+  auth_token: aptoslabs_grpc_token_or_token_for_another_grpc_endpoint
+  starting_version: 649555969
+```
+
+Similarly, for mainnet:
+
+```yaml
+health_check_port: 8085
+server_config:
+  processor_config:
+    type: econia_transaction_processor
+    econia_address: 0xc0deb00c405f84c85dc13442e305df75d1288100cdd82675695f6148c7ece51c
+  postgres_connection_string: postgres://econia:econia@postgres:5432/econia
+  indexer_grpc_data_service_address: https://grpc.mainnet.aptoslabs.com:443
+  indexer_grpc_http2_ping_interval_in_secs: 60
+  indexer_grpc_http2_ping_timeout_in_secs: 10
+  number_concurrent_processing_tasks: 1
+  auth_token: aptoslabs_grpc_token_or_token_for_another_grpc_endpoint
+  starting_version: 154106802
+```
 
 ### Checking out the right branch
 

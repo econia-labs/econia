@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "econia-sdk"
-version = "1.0.6"
+version = "1.0.7"
 description = ""
 authors = ["Econia Labs <developers@econialabs.com>"]
 readme = "README.md"

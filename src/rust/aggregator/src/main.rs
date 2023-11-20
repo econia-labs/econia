@@ -7,8 +7,8 @@ use std::{
 use aggregator::Pipeline;
 use anyhow::{anyhow, Result};
 use clap::{Parser, ValueEnum};
-use pipelines::{Candlesticks, Leaderboards, UserHistory};
-use sqlx::{Executor};
+use pipelines::{Candlesticks, Leaderboards, RefreshMaterializedView, UserHistory};
+use sqlx::Executor;
 use sqlx_postgres::PgPoolOptions;
 use tokio::{sync::Mutex, task::JoinSet};
 
@@ -36,6 +36,7 @@ struct Args {
 pub enum Pipelines {
     Candlesticks,
     Leaderboards,
+    Market24hData,
     UserHistory,
 }
 
@@ -45,7 +46,12 @@ impl ValueEnum for Pipelines {
     }
 
     fn value_variants<'a>() -> &'a [Self] {
-        &[Self::Candlesticks, Self::Leaderboards, Self::UserHistory]
+        &[
+            Self::Candlesticks,
+            Self::Leaderboards,
+            Self::Market24hData,
+            Self::UserHistory,
+        ]
     }
 }
 
@@ -74,11 +80,15 @@ async fn main() -> Result<()> {
         .expect("DATABASE_URL should be set");
 
     let pool = PgPoolOptions::new()
-        .after_connect(|conn, _| Box::pin(async move {
-            conn.execute("SET default_transaction_isolation TO 'repeatable read'").await?;
-            Ok(())
-        }))
-        .connect(&database_url).await?;
+        .after_connect(|conn, _| {
+            Box::pin(async move {
+                conn.execute("SET default_transaction_isolation TO 'repeatable read'")
+                    .await?;
+                Ok(())
+            })
+        })
+        .connect(&database_url)
+        .await?;
 
     tracing::info!("Connected to DB.");
 
@@ -92,7 +102,11 @@ async fn main() -> Result<()> {
             .ok_or(anyhow!("No data is included and --no-default is set."))?)
         .clone()
     } else {
-        let mut x = vec![Pipelines::Candlesticks, Pipelines::UserHistory];
+        let mut x = vec![
+            Pipelines::Candlesticks,
+            Pipelines::Market24hData,
+            Pipelines::UserHistory,
+        ];
         let exclude = args.exclude.unwrap_or(vec![]);
         x = x.into_iter().filter(|a| !exclude.contains(a)).collect();
         x.append(&mut args.include.unwrap_or(vec![]));
@@ -134,6 +148,13 @@ async fn main() -> Result<()> {
             }
             Pipelines::Leaderboards => {
                 data.push(Arc::new(Mutex::new(Leaderboards::new(pool.clone()))));
+            }
+            Pipelines::Market24hData => {
+                data.push(Arc::new(Mutex::new(RefreshMaterializedView::new(
+                    pool.clone(),
+                    "aggregator.markets_24h_data",
+                    Duration::from_secs(5 * 60),
+                ))))
             }
             Pipelines::UserHistory => {
                 data.push(Arc::new(Mutex::new(UserHistory::new(pool.clone()))));

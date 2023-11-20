@@ -4,7 +4,7 @@ WITH parameters AS (
         $2::numeric change_order_id,
         $3::numeric change_increase_stamp)
 UPDATE
-    aggregator.user_history_limit
+    aggregator.user_history
 SET
     last_increase_stamp = change_increase_stamp
 FROM

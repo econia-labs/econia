@@ -110,11 +110,11 @@ async fn get_coin_info(move_struct_tag_str: impl Into<String>, network: &AptosBa
     let move_struct_tag_str: String = move_struct_tag_str.into();
     let client = Client::new(network.to_url());
     let ad = move_struct_tag_str.split("::").collect::<Vec<_>>()[0];
-    let ad = AccountAddress::from_str_strict(ad).map_err(|e| GetCoinInfoError::Other(anyhow!(e)))?;
+    let ad = AccountAddress::from_str_strict(ad).map_err(map_other)?;
     let res = client.get_account_resource(ad, &format!("0x1::coin::CoinInfo<{}>", move_struct_tag_str)).await;
     let res = res.map_err(|e| match e {
         aptos_sdk::rest_client::error::RestError::Http(reqwest::StatusCode::TOO_MANY_REQUESTS, _) => { GetCoinInfoError::RateLimited }
-        x => GetCoinInfoError::Other(anyhow!(x))
+        x => map_other(x)
     })?;
     let x = res.into_inner().ok_or(GetCoinInfoError::Other(anyhow!("Could not find resource.")))?;
     let r = CoinInfo {

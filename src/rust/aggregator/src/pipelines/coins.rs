@@ -9,7 +9,8 @@ use thiserror::Error;
 pub struct Coins {
     pool: PgPool,
     last_indexed_timestamp: Option<DateTime<Utc>>,
-    network: AptosBaseUrl
+    network: AptosBaseUrl,
+    rate_limited: bool,
 }
 
 #[allow(dead_code)]
@@ -19,6 +20,7 @@ impl Coins {
             pool,
             last_indexed_timestamp: None,
             network,
+            rate_limited: false,
         }
     }
 }
@@ -30,8 +32,13 @@ impl Pipeline for Coins {
     }
 
     fn ready(&self) -> bool {
-        self.last_indexed_timestamp.is_none()
-            || self.last_indexed_timestamp.unwrap() + Duration::minutes(5) < Utc::now()
+        if self.rate_limited {
+            self.last_indexed_timestamp.is_none()
+                || self.last_indexed_timestamp.unwrap() + Duration::minutes(5) < Utc::now()
+        } else {
+            self.last_indexed_timestamp.is_none()
+                || self.last_indexed_timestamp.unwrap() + Duration::seconds(5) < Utc::now()
+        }
     }
 
     async fn process_and_save_historical_data(&mut self) -> PipelineAggregationResult {
@@ -39,10 +46,15 @@ impl Pipeline for Coins {
     }
 
     fn poll_interval(&self) -> Option<std::time::Duration> {
-        Some(std::time::Duration::from_secs(60 * 60))
+        if self.rate_limited {
+            Some(std::time::Duration::from_secs(60 * 5))
+        } else {
+            Some(std::time::Duration::from_secs(5))
+        }
     }
 
     async fn process_and_save_internal(&mut self) -> PipelineAggregationResult {
+        self.rate_limited = false;
         let coins = sqlx::query_file!("sqlx_queries/coins/get_missing_coins.sql")
         .fetch_all(&self.pool)
         .await
@@ -62,7 +74,7 @@ impl Pipeline for Coins {
                     .await
                     .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
                 },
-                Err(GetCoinInfoError::RateLimited) => {tracing::warn!("Got rate limited by Aptos API.");},
+                Err(GetCoinInfoError::RateLimited) => {tracing::warn!("Got rate limited by Aptos API.");self.rate_limited = true;},
                 Err(GetCoinInfoError::Other(e)) => {tracing::error!("{e}");},
             }
         }

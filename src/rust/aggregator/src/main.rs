@@ -157,7 +157,7 @@ async fn main() -> Result<()> {
     } else {
         let mut x = vec![
             Pipelines::Candlesticks,
-            Pipelines::Coins
+            Pipelines::Coins,
             Pipelines::Market24hData,
             Pipelines::UserHistory,
         ];

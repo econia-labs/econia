@@ -1811,7 +1811,8 @@ Public constant getter for <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></
 * <code>test_get_ASK()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_ASK">get_ASK</a>(): bool
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_ASK">get_ASK</a>(): bool
 </code></pre>
 
 
@@ -1839,7 +1840,8 @@ Public constant getter for <code><a href="user.md#0xc0deb00c_user_BID">BID</a></
 * <code>test_get_BID()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_BID">get_BID</a>(): bool
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_BID">get_BID</a>(): bool
 </code></pre>
 
 
@@ -1867,7 +1869,8 @@ Public constant getter for <code><a href="user.md#0xc0deb00c_user_CANCEL_REASON_
 * <code>test_get_cancel_reasons()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_EVICTION">get_CANCEL_REASON_EVICTION</a>(): u8
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_EVICTION">get_CANCEL_REASON_EVICTION</a>(): u8
 </code></pre>
 
 
@@ -1897,7 +1900,8 @@ Public constant getter for <code><a href="user.md#0xc0deb00c_user_CANCEL_REASON_
 * <code>test_get_cancel_reasons()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_IMMEDIATE_OR_CANCEL">get_CANCEL_REASON_IMMEDIATE_OR_CANCEL</a>(): u8
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_IMMEDIATE_OR_CANCEL">get_CANCEL_REASON_IMMEDIATE_OR_CANCEL</a>(): u8
 </code></pre>
 
 
@@ -1927,7 +1931,8 @@ Public constant getter for <code><a href="user.md#0xc0deb00c_user_CANCEL_REASON_
 * <code>test_get_cancel_reasons()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_MANUAL_CANCEL">get_CANCEL_REASON_MANUAL_CANCEL</a>(): u8
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_MANUAL_CANCEL">get_CANCEL_REASON_MANUAL_CANCEL</a>(): u8
 </code></pre>
 
 
@@ -1957,7 +1962,8 @@ Public constant getter for <code><a href="user.md#0xc0deb00c_user_CANCEL_REASON_
 * <code>test_get_cancel_reasons()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_MAX_QUOTE_TRADED">get_CANCEL_REASON_MAX_QUOTE_TRADED</a>(): u8
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_MAX_QUOTE_TRADED">get_CANCEL_REASON_MAX_QUOTE_TRADED</a>(): u8
 </code></pre>
 
 
@@ -1987,7 +1993,8 @@ Public constant getter for <code><a href="user.md#0xc0deb00c_user_CANCEL_REASON_
 * <code>test_get_cancel_reasons()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY">get_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY</a>(): u8
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY">get_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY</a>(): u8
 </code></pre>
 
 
@@ -2017,7 +2024,8 @@ Public constant getter for <code><a href="user.md#0xc0deb00c_user_CANCEL_REASON_
 * <code>test_get_cancel_reasons()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_SELF_MATCH_MAKER">get_CANCEL_REASON_SELF_MATCH_MAKER</a>(): u8
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_SELF_MATCH_MAKER">get_CANCEL_REASON_SELF_MATCH_MAKER</a>(): u8
 </code></pre>
 
 
@@ -2047,7 +2055,8 @@ Public constant getter for <code><a href="user.md#0xc0deb00c_user_CANCEL_REASON_
 * <code>test_get_cancel_reasons()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_SELF_MATCH_TAKER">get_CANCEL_REASON_SELF_MATCH_TAKER</a>(): u8
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_SELF_MATCH_TAKER">get_CANCEL_REASON_SELF_MATCH_TAKER</a>(): u8
 </code></pre>
 
 
@@ -2078,7 +2087,8 @@ Public constant getter for
 * <code>test_get_cancel_reasons()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_TOO_SMALL_TO_FILL_LOT">get_CANCEL_REASON_TOO_SMALL_TO_FILL_LOT</a>(): u8
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_TOO_SMALL_TO_FILL_LOT">get_CANCEL_REASON_TOO_SMALL_TO_FILL_LOT</a>(): u8
 </code></pre>
 
 
@@ -2108,7 +2118,8 @@ Public constant getter for <code><a href="user.md#0xc0deb00c_user_CANCEL_REASON_
 * <code>test_get_cancel_reasons()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_VIOLATED_LIMIT_PRICE">get_CANCEL_REASON_VIOLATED_LIMIT_PRICE</a>(): u8
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_CANCEL_REASON_VIOLATED_LIMIT_PRICE">get_CANCEL_REASON_VIOLATED_LIMIT_PRICE</a>(): u8
 </code></pre>
 
 
@@ -2138,7 +2149,8 @@ Public constant getter for <code><a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">
 * <code>test_get_NO_CUSTODIAN()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_NO_CUSTODIAN">get_NO_CUSTODIAN</a>(): u64
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_NO_CUSTODIAN">get_NO_CUSTODIAN</a>(): u64
 </code></pre>
 
 
@@ -2193,7 +2205,8 @@ item in global storage, and returns a vector via pass-by-value.
 * <code>test_market_account_getters()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_all_market_account_ids_for_market_id">get_all_market_account_ids_for_market_id</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_id: u64): <a href="">vector</a>&lt;u128&gt;
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_all_market_account_ids_for_market_id">get_all_market_account_ids_for_market_id</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_id: u64): <a href="">vector</a>&lt;u128&gt;
 </code></pre>
 
 
@@ -2278,7 +2291,8 @@ a vector via pass-by-value.
 * <code>test_market_account_getters()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_all_market_account_ids_for_user">get_all_market_account_ids_for_user</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>): <a href="">vector</a>&lt;u128&gt;
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_all_market_account_ids_for_user">get_all_market_account_ids_for_user</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>): <a href="">vector</a>&lt;u128&gt;
 </code></pre>
 
 
@@ -2341,7 +2355,8 @@ Return custodian ID encoded in market account ID.
 * <code>test_market_account_id_getters()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_custodian_id">get_custodian_id</a>(market_account_id: u128): u64
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_custodian_id">get_custodian_id</a>(market_account_id: u128): u64
 </code></pre>
 
 
@@ -2385,7 +2400,8 @@ Mutates state, so kept as a private view function.
 * <code>test_get_market_accounts_open_orders()</code>
 
 
-<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_get_market_account">get_market_account</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_id: u64, custodian_id: u64): <a href="user.md#0xc0deb00c_user_MarketAccountView">user::MarketAccountView</a>
+<pre><code>#[view]
+<b>fun</b> <a href="user.md#0xc0deb00c_user_get_market_account">get_market_account</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_id: u64, custodian_id: u64): <a href="user.md#0xc0deb00c_user_MarketAccountView">user::MarketAccountView</a>
 </code></pre>
 
 
@@ -2443,7 +2459,8 @@ Return market account ID with encoded market and custodian IDs.
 * <code>test_market_account_id_getters()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_market_account_id">get_market_account_id</a>(market_id: u64, custodian_id: u64): u128
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_market_account_id">get_market_account_id</a>(market_id: u64, custodian_id: u64): u128
 </code></pre>
 
 
@@ -2478,7 +2495,8 @@ Mutates state, so kept as a private view function.
 * <code>test_get_market_accounts_open_orders()</code>
 
 
-<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_get_market_accounts">get_market_accounts</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>): <a href="">vector</a>&lt;<a href="user.md#0xc0deb00c_user_MarketAccountView">user::MarketAccountView</a>&gt;
+<pre><code>#[view]
+<b>fun</b> <a href="user.md#0xc0deb00c_user_get_market_accounts">get_market_accounts</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>): <a href="">vector</a>&lt;<a href="user.md#0xc0deb00c_user_MarketAccountView">user::MarketAccountView</a>&gt;
 </code></pre>
 
 
@@ -2532,7 +2550,8 @@ contention.
 * <code>test_register_market_accounts()</code>
 
 
-<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_get_market_event_handle_creation_numbers">get_market_event_handle_creation_numbers</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_id: u64, custodian_id: u64): <a href="_Option">option::Option</a>&lt;<a href="user.md#0xc0deb00c_user_MarketEventHandleCreationNumbers">user::MarketEventHandleCreationNumbers</a>&gt;
+<pre><code>#[view]
+<b>fun</b> <a href="user.md#0xc0deb00c_user_get_market_event_handle_creation_numbers">get_market_event_handle_creation_numbers</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_id: u64, custodian_id: u64): <a href="_Option">option::Option</a>&lt;<a href="user.md#0xc0deb00c_user_MarketEventHandleCreationNumbers">user::MarketEventHandleCreationNumbers</a>&gt;
 </code></pre>
 
 
@@ -2595,7 +2614,8 @@ Return market ID encoded in market account ID.
 * <code>test_market_account_id_getters()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_market_id">get_market_id</a>(market_account_id: u128): u64
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_market_id">get_market_id</a>(market_account_id: u128): u64
 </code></pre>
 
 
@@ -2628,7 +2648,8 @@ given <code>market_id</code> and <code>custodian_id</code>.
 * <code>test_market_account_getters()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_has_market_account">has_market_account</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_id: u64, custodian_id: u64): bool
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_has_market_account">has_market_account</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_id: u64, custodian_id: u64): bool
 </code></pre>
 
 
@@ -2665,7 +2686,8 @@ given <code>market_account_id</code>.
 * <code>test_market_account_getters()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_has_market_account_by_market_account_id">has_market_account_by_market_account_id</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_account_id: u128): bool
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_has_market_account_by_market_account_id">has_market_account_by_market_account_id</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_account_id: u128): bool
 </code></pre>
 
 
@@ -2705,7 +2727,8 @@ registered with given <code>market_id</code>.
 * <code>test_market_account_getters()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_has_market_account_by_market_id">has_market_account_by_market_id</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_id: u64): bool
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_has_market_account_by_market_id">has_market_account_by_market_id</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_id: u64): bool
 </code></pre>
 
 

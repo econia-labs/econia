@@ -103,8 +103,10 @@
 /// * `get_open_order()`
 /// * `get_open_orders()`
 /// * `get_open_orders_all()`
+/// * `get_open_orders_paginated()`
 /// * `get_price_levels()`
 /// * `get_price_levels_all()`
+/// * `get_price_levels_paginated()`
 /// * `has_open_order()`
 ///
 /// # Public function index
@@ -301,8 +303,11 @@
 ///
 /// flowchart LR
 ///
+/// get_open_orders --> get_open_orders_for_side
+/// get_open_orders_all --> get_open_orders
 /// get_price_levels --> get_open_orders
 /// get_price_levels --> get_price_levels_for_side
+/// get_market_order_id_price --> did_order_post
 /// get_price_levels_all --> get_price_levels
 /// get_open_order --> has_open_order
 /// get_open_order --> get_posted_order_id_side
@@ -311,9 +316,16 @@
 /// get_posted_order_id_side --> get_order_id_avl_queue_access_key
 /// has_open_order --> get_posted_order_id_side
 /// has_open_order --> get_order_id_avl_queue_access_key
-/// get_open_orders --> get_open_orders_for_side
-/// get_open_orders_all --> get_open_orders
-/// get_market_order_id_price --> did_order_post
+/// get_open_orders_paginated --> get_open_orders_for_side_paginated
+/// get_open_orders_paginated --> verify_pagination_order_ids
+/// get_open_orders_for_side_paginated -->
+///     get_order_id_avl_queue_access_key
+/// get_price_levels_paginated --> get_price_levels_for_side_paginated
+/// get_price_levels_paginated --> verify_pagination_order_ids
+/// get_price_levels_for_side_paginated -->
+///     get_order_id_avl_queue_access_key
+/// verify_pagination_order_ids --> has_open_order
+/// verify_pagination_order_ids --> get_posted_order_id_side
 ///
 /// ```
 ///
@@ -400,6 +412,10 @@
 /// get_market_event_handle_creation_info -->
 ///     resource_account::get_address
 ///
+/// get_open_orders_paginated --> resource_account::get_address
+///
+/// get_price_levels_paginated --> resource_account::get_address
+///
 /// ```
 ///
 /// `user`:
@@ -436,6 +452,12 @@
 ///
 /// swap --> user::create_cancel_order_event_internal
 /// swap --> user::emit_swap_maker_fill_events_internal
+///
+/// get_open_orders_for_side_paginated -->
+///     user::get_open_order_id_internal
+///
+/// get_price_levels_for_side_paginated -->
+///     user::get_open_order_id_internal
 ///
 /// ```
 ///
@@ -1285,6 +1307,10 @@ module econia::market {
     /// Wrapped call to `get_open_orders()` for getting all open orders
     /// on both sides.
     ///
+    /// For a sufficiently large order book this function may fail due
+    /// to execution gas limits. Hence `get_open_orders_paginated()` is
+    /// recommended during production.
+    ///
     /// # Testing
     ///
     /// * `test_get_open_orders()`
@@ -1293,6 +1319,72 @@ module econia::market {
     ): OrdersView
     acquires OrderBooks {
         get_open_orders(market_id, HI_64, HI_64)
+    }
+
+    #[view]
+    /// Like `get_open_orders()`, but paginated.
+    ///
+    /// Kept as private view function to prevent runtime state
+    /// contention.
+    ///
+    /// When paginating via an SDK, specify the same transaction version
+    /// number for each function call until done paginating.
+    ///
+    /// # Parameters
+    ///
+    /// * `market_id`: Market ID of maker orders to index.
+    /// * `n_asks_to_index_max`: Maximum number of asks to index.
+    /// * `n_bids_to_index_max`: Maximum number of bids to index.
+    /// * `starting_ask_order_id`: Order ID of ask to start indexing
+    ///   from. If `NIL`, start from best ask.
+    /// * `starting_bid_order_id`: Order ID of bid to start indexing
+    ///   from. If `NIL`, start from best bid.
+    ///
+    /// # Returns
+    ///
+    /// * `PriceLevels`: Price level vectors.
+    /// * `u128`: Order ID for next ask to start indexing from. `NIL` if
+    ///   done indexing asks.
+    /// * `u128`: Order ID for next bid to start indexing from. `NIL` if
+    ///   done indexing bids.
+    ///
+    /// # Expected value testing
+    ///
+    /// * `test_get_open_orders_paginated()`
+    ///
+    /// # Failure testing
+    ///
+    /// * `test_get_open_orders_paginated_invalid_market_id()`
+    fun get_open_orders_paginated(
+        market_id: u64,
+        n_asks_to_index_max: u64,
+        n_bids_to_index_max: u64,
+        starting_ask_order_id: u128,
+        starting_bid_order_id: u128,
+    ): (
+        OrdersView,
+        u128,
+        u128,
+    ) acquires OrderBooks {
+        verify_pagination_order_ids( // Verify order IDs.
+            market_id, starting_ask_order_id, starting_bid_order_id);
+        // Get address of resource account where order books are stored.
+        let resource_address = resource_account::get_address();
+        let order_books_map_ref = // Immutably borrow order books map.
+            &borrow_global<OrderBooks>(resource_address).map;
+        // Assert order books map has order book with given market ID.
+        assert!(tablist::contains(order_books_map_ref, market_id),
+                E_INVALID_MARKET_ID);
+        // Immutably borrow order book with given market ID.
+        let order_book_ref =
+            tablist::borrow(order_books_map_ref, market_id);
+        let (asks, ask_next) = get_open_orders_for_side_paginated(
+            order_book_ref, market_id, ASK, n_asks_to_index_max,
+            starting_ask_order_id);
+        let (bids, bid_next) = get_open_orders_for_side_paginated(
+            order_book_ref, market_id, BID, n_bids_to_index_max,
+            starting_bid_order_id);
+        (OrdersView{asks, bids}, ask_next, bid_next)
     }
 
     #[view]
@@ -1370,6 +1462,10 @@ module econia::market {
     /// Wrapped call to `get_price_levels()` for getting all price
     /// levels on both sides.
     ///
+    /// For a sufficiently large order book this function may fail due
+    /// to execution gas limits. Hence `get_price_levels_paginated()` is
+    /// recommended during production.
+    ///
     /// # Testing
     ///
     /// * `test_get_price_levels()`
@@ -1378,6 +1474,80 @@ module econia::market {
     ): PriceLevels
     acquires OrderBooks {
         get_price_levels(market_id, HI_64, HI_64)
+    }
+
+    #[view]
+    /// Like `get_price_levels()`, but paginated.
+    ///
+    /// Kept as private view function to prevent runtime state
+    /// contention.
+    ///
+    /// When paginating via an SDK, specify the same transaction version
+    /// number for each function call until done paginating.
+    ///
+    /// # Parameters
+    ///
+    /// * `market_id`: Market ID of price levels to index.
+    /// * `n_asks_to_index_max`: Maximum number of asks to index.
+    /// * `n_bids_to_index_max`: Maximum number of bids to index.
+    /// * `starting_ask_order_id`: Order ID of ask to start indexing
+    ///   from. If `NIL`, start from best ask.
+    /// * `starting_bid_order_id`: Order ID of bid to start indexing
+    ///   from. If `NIL`, start from best bid.
+    ///
+    /// # Returns
+    ///
+    /// * `PriceLevels`: Price level vectors.
+    /// * `u128`: Order ID for next ask to start indexing from. `NIL` if
+    ///   done indexing asks.
+    /// * `u128`: Order ID for next bid to start indexing from. `NIL` if
+    ///   done indexing bids.
+    ///
+    /// # Expected value testing
+    ///
+    /// * `test_get_price_levels_paginated()`
+    ///
+    /// # Failure testing
+    ///
+    /// * `test_get_price_levels_paginated_invalid_market_id()`
+    fun get_price_levels_paginated(
+        market_id: u64,
+        n_asks_to_index_max: u64,
+        n_bids_to_index_max: u64,
+        starting_ask_order_id: u128,
+        starting_bid_order_id: u128,
+    ): (
+        PriceLevels,
+        u128,
+        u128,
+    ) acquires OrderBooks {
+        verify_pagination_order_ids( // Verify order IDs.
+            market_id, starting_ask_order_id, starting_bid_order_id);
+        // Get address of resource account where order books are stored.
+        let resource_address = resource_account::get_address();
+        let order_books_map_ref = // Immutably borrow order books map.
+            &borrow_global<OrderBooks>(resource_address).map;
+        // Assert order books map has order book with given market ID.
+        assert!(tablist::contains(order_books_map_ref, market_id),
+                E_INVALID_MARKET_ID);
+        // Immutably borrow order book with given market ID.
+        let order_book_ref =
+            tablist::borrow(order_books_map_ref, market_id);
+        let (ask_levels, ask_next) = get_price_levels_for_side_paginated(
+            order_book_ref, market_id, ASK, n_asks_to_index_max,
+            starting_ask_order_id);
+        let (bid_levels, bid_next) = get_price_levels_for_side_paginated(
+            order_book_ref, market_id, BID, n_bids_to_index_max,
+            starting_bid_order_id);
+        (
+            PriceLevels{
+                market_id,
+                asks: ask_levels,
+                bids: bid_levels
+            },
+            ask_next,
+            bid_next
+        )
     }
 
     #[view]
@@ -2808,6 +2978,78 @@ module econia::market {
         orders // Return vector of view-friendly orders.
     }
 
+    /// Index specified number of open orders for given side of order
+    /// book, from given starting order ID.
+    ///
+    /// See `get_open_orders_paginated()`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_open_orders_paginated()`
+    fun get_open_orders_for_side_paginated(
+        order_book_ref: &OrderBook,
+        market_id: u64,
+        side: bool,
+        n_orders_to_index_max: u64,
+        starting_order_id: u128
+    ): (
+        vector<OrderView>,
+        u128,
+    ) {
+        // Get immutable reference to orders AVL queue for given side.
+        let avlq_ref = if (side == ASK) &order_book_ref.asks else
+            &order_book_ref.bids;
+        let orders = vector[]; // Initialize empty vector of orders.
+        // Return early if no orders to index.
+        if (avl_queue::is_empty(avlq_ref) || n_orders_to_index_max == 0)
+            return (orders, (NIL as u128));
+        // Get order ID to index. If starting from best bid/ask:
+        let order_id = if (starting_order_id == (NIL as u128)) {
+            // Lookup order ID from user memory and reassign.
+            let order_ref = avl_queue::borrow_head(avlq_ref);
+            let optional_order_id = user::get_open_order_id_internal(
+                order_ref.user, market_id, order_ref.custodian_id, side,
+                order_ref.order_access_key);
+            option::destroy_some(optional_order_id)
+        } else {
+            starting_order_id
+        };
+        // Get AVL queue access key from order ID.
+        let avlq_access_key = get_order_id_avl_queue_access_key(order_id);
+        let n_indexed_orders = 0;
+        while (n_indexed_orders < n_orders_to_index_max) {
+            // Borrow next order to index in AVL queue.
+            let order_ref = avl_queue::borrow(avlq_ref, avlq_access_key);
+            // Get order ID from user-side order memory.
+            let order_id = option::destroy_some(
+                user::get_open_order_id_internal(
+                    order_ref.user, market_id, order_ref.custodian_id,
+                    side, order_ref.order_access_key));
+            // Push back an order view to orders view vector.
+            vector::push_back(&mut orders, OrderView{
+                market_id, side, order_id, remaining_size: order_ref.size,
+                price: order_ref.price, user: order_ref.user, custodian_id:
+                order_ref.custodian_id});
+            // Get access key for next order in AVL queue.
+            avlq_access_key = avl_queue::next_list_node_id_in_access_key(
+                avlq_ref, avlq_access_key);
+            // Stop indexing if no traversals left.
+            if (avlq_access_key == NIL) break;
+            n_indexed_orders = n_indexed_orders + 1;
+        };
+        let next_page_start = if (avlq_access_key == NIL) {
+            (NIL as u128)
+        } else {
+            // Borrow order for next page start.
+            let order_ref = avl_queue::borrow(avlq_ref, avlq_access_key);
+            let optional_order_id = user::get_open_order_id_internal(
+                order_ref.user, market_id, order_ref.custodian_id, side,
+                order_ref.order_access_key);
+            option::destroy_some(optional_order_id)
+        };
+        (orders, next_page_start)
+    }
+
     /// Get AVL queue access key encoded in `order_id`.
     ///
     /// # Testing
@@ -2876,6 +3118,84 @@ module econia::market {
             }
         };
         price_levels // Return vector of price levels.
+    }
+
+    /// Index specified number of open orders for given side of order
+    /// book into price levels, starting from given starting order ID.
+    ///
+    /// See `get_price_levels_paginated()`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_price_levels_paginated()`
+    fun get_price_levels_for_side_paginated(
+        order_book_ref: &OrderBook,
+        market_id: u64,
+        side: bool,
+        n_orders_to_index_max: u64,
+        starting_order_id: u128 // If `NIL`, start from best bid/ask.
+    ): (
+        vector<PriceLevel>,
+        u128, // Order ID for start of next page, `NIL` if done.
+    ) {
+        // Get immutable reference to orders AVL queue for given side.
+        let avlq_ref = if (side == ASK) &order_book_ref.asks else
+            &order_book_ref.bids;
+        // Initialize empty price levels vector.
+        let price_levels = vector[];
+        // Return early if no orders to index.
+        if (avl_queue::is_empty(avlq_ref) || n_orders_to_index_max == 0)
+            return (price_levels, (NIL as u128));
+        // Get order ID to index. If starting from best bid/ask:
+        let order_id = if (starting_order_id == (NIL as u128)) {
+            // Lookup order ID from user memory and reassign.
+            let order_ref = avl_queue::borrow_head(avlq_ref);
+            let optional_order_id = user::get_open_order_id_internal(
+                order_ref.user, market_id, order_ref.custodian_id, side,
+                order_ref.order_access_key);
+            option::destroy_some(optional_order_id)
+        } else {
+            starting_order_id
+        };
+        // Get AVL queue access key from order ID.
+        let avlq_access_key = get_order_id_avl_queue_access_key(order_id);
+        // Get price for starting price level.
+        let price = avl_queue::borrow(avlq_ref, avlq_access_key).price;
+        // Initialize size for price level to 0.
+        let size = 0;
+        let n_indexed_orders = 0;
+        while (n_indexed_orders < n_orders_to_index_max) {
+            // Borrow next order to index in AVL queue.
+            let order_ref = avl_queue::borrow(avlq_ref, avlq_access_key);
+            // If in same price level, increment size:
+            if (order_ref.price == price) {
+                size = size + (order_ref.size as u128);
+            // If in new level, push back prior one and start anew.
+            } else {
+                vector::push_back(&mut price_levels, PriceLevel{price, size});
+                price = order_ref.price;
+                size = (order_ref.size as u128);
+            };
+            // Get access key for next order in AVL queue.
+            avlq_access_key = avl_queue::next_list_node_id_in_access_key(
+                avlq_ref, avlq_access_key);
+            // Stop indexing if no traversals left.
+            if (avlq_access_key == NIL) break;
+            n_indexed_orders = n_indexed_orders + 1;
+        };
+        // Push back final price level.
+        vector::push_back(&mut price_levels, PriceLevel{price, size});
+        let next_page_start = if (avlq_access_key == NIL) {
+            (NIL as u128)
+        } else {
+            // Borrow order for next page start.
+            let order_ref = avl_queue::borrow(avlq_ref, avlq_access_key);
+            let optional_order_id = user::get_open_order_id_internal(
+                order_ref.user, market_id, order_ref.custodian_id, side,
+                order_ref.order_access_key);
+            option::destroy_some(optional_order_id)
+        };
+        (price_levels, next_page_start)
     }
 
     /// Initialize the order books map upon module publication.
@@ -4303,6 +4623,33 @@ module econia::market {
         // place swap order event option, and cancel order event option.
         (optional_base_coins, quote_coins, base_traded, quote_traded, fees,
          place_swap_order_event_option, cancel_order_event_option)
+    }
+
+    /// Verify pagination function order IDs are valid for market.
+    ///
+    /// # Failure testing
+    ///
+    /// * `test_verify_pagination_order_ids_ask_does_not_exist()`
+    /// * `test_verify_pagination_order_ids_ask_wrong_side()`
+    /// * `test_verify_pagination_order_ids_bid_does_not_exist()`
+    /// * `test_verify_pagination_order_ids_bid_wrong_side()`
+    fun verify_pagination_order_ids(
+        market_id: u64,
+        starting_ask_order_id: u128,
+        starting_bid_order_id: u128,
+    ) acquires OrderBooks {
+        if (starting_ask_order_id != (NIL as u128)) {
+            assert!(has_open_order(market_id, starting_ask_order_id),
+                    E_INVALID_MARKET_ORDER_ID);
+            assert!(get_posted_order_id_side(starting_ask_order_id) == ASK,
+                    E_INVALID_MARKET_ORDER_ID);
+        };
+        if (starting_bid_order_id != (NIL as u128)) {
+            assert!(has_open_order(market_id, starting_bid_order_id),
+                    E_INVALID_MARKET_ORDER_ID);
+            assert!(get_posted_order_id_side(starting_bid_order_id) == BID,
+                    E_INVALID_MARKET_ORDER_ID);
+        };
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -6064,6 +6411,256 @@ module econia::market {
     }
 
     #[test]
+    /// Verify indexing results. Based on `test_get_open_orders()` and
+    /// `test_get_price_levels_paginated()`.
+    fun test_get_open_orders_paginated() acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (maker, _) = init_markets_users_integrator_test();
+        // Declare common order parameters.
+        let market_id           = MARKET_ID_COIN;
+        let integrator          = @integrator;
+        let custodian_id        = NO_CUSTODIAN;
+        let maker_address       = address_of(&maker);
+        let restriction         = NO_RESTRICTION;
+        let self_match_behavior = ABORT;
+        // Declare ask and bid parameters.
+        let ask_hi_0_size = MIN_SIZE_COIN;
+        let ask_hi_1_size = ask_hi_0_size + 1;
+        let ask_lo_0_size = ask_hi_1_size + 1;
+        let ask_lo_1_size = ask_lo_0_size + 1;
+        let bid_hi_0_size = ask_lo_1_size + 1;
+        let bid_hi_1_size = bid_hi_0_size + 1;
+        let bid_lo_0_size = bid_hi_1_size + 1;
+        let bid_lo_1_size = bid_lo_0_size + 1;
+        let bid_lo_price = 1;
+        let bid_hi_price = bid_lo_price + 1;
+        let ask_lo_price = bid_hi_price + 1;
+        let ask_hi_price = ask_lo_price + 1;
+        // Deposit maker coins.
+        user::deposit_coins<BC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(HI_64 / 2));
+        user::deposit_coins<QC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(HI_64 / 2));
+        // Index orders with pagination.
+        let (
+            OrdersView{asks, bids},
+            ask_next,
+            bid_next
+        ) = get_open_orders_paginated(
+                market_id, 100, 0, (NIL as u128), (NIL as u128));
+        // Assert asks and bids levels both empty, next as NIL.
+        assert!(asks == vector[], 0);
+        assert!(bids == vector[], 0);
+        assert!(ask_next == (NIL as u128), 0);
+        assert!(bid_next == (NIL as u128), 0);
+        // Place maker orders.
+        let (order_id_ask_hi_0, _, _, _) = place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, ASK, ask_hi_0_size, ask_hi_price,
+            restriction, self_match_behavior);
+        let (order_id_ask_hi_1, _, _, _) = place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, ASK, ask_hi_1_size, ask_hi_price,
+            restriction, self_match_behavior);
+        let (order_id_ask_lo_0, _, _, _) = place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, ASK, ask_lo_0_size, ask_lo_price,
+            restriction, self_match_behavior);
+        let (order_id_ask_lo_1, _, _, _) = place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, ASK, ask_lo_1_size, ask_lo_price,
+            restriction, self_match_behavior);
+        let (order_id_bid_hi_0, _, _, _) = place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, BID, bid_hi_0_size, bid_hi_price,
+            restriction, self_match_behavior);
+        let (order_id_bid_hi_1, _, _, _) = place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, BID, bid_hi_1_size, bid_hi_price,
+            restriction, self_match_behavior);
+        let (order_id_bid_lo_0, _, _, _) = place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, BID, bid_lo_0_size, bid_lo_price,
+            restriction, self_match_behavior);
+        let (order_id_bid_lo_1, _, _, _) = place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, BID, bid_lo_1_size, bid_lo_price,
+            restriction, self_match_behavior);
+        // Index all asks and bids.
+        let (orders, ask_next, bid_next) = get_open_orders_paginated(
+            market_id,
+            HI_64,
+            HI_64,
+            (NIL as u128),
+            (NIL as u128),
+        );
+        // Assert no asks or bids left to paginate.
+        assert!(ask_next == (NIL as u128), 0);
+        assert!(bid_next == (NIL as u128), 0);
+        // Assert order state.
+        assert!(vector::length(&orders.asks) == 4, 0);
+        assert!(vector::length(&orders.bids) == 4, 0);
+        let order_ref = vector::borrow(&orders.asks, 0);
+        assert!(order_ref.market_id       == market_id, 0);
+        assert!(order_ref.side            == ASK, 0);
+        assert!(order_ref.order_id        == order_id_ask_lo_0, 0);
+        assert!(order_ref.remaining_size  == ask_lo_0_size, 0);
+        assert!(order_ref.price           == ask_lo_price, 0);
+        assert!(order_ref.user            == maker_address, 0);
+        assert!(order_ref.custodian_id    == custodian_id, 0);
+        let order_ref = vector::borrow(&orders.asks, 1);
+        assert!(order_ref.market_id       == market_id, 0);
+        assert!(order_ref.side            == ASK, 0);
+        assert!(order_ref.order_id        == order_id_ask_lo_1, 0);
+        assert!(order_ref.remaining_size  == ask_lo_1_size, 0);
+        assert!(order_ref.price           == ask_lo_price, 0);
+        assert!(order_ref.user            == maker_address, 0);
+        assert!(order_ref.custodian_id    == custodian_id, 0);
+        let order_ref = vector::borrow(&orders.asks, 2);
+        assert!(order_ref.market_id       == market_id, 0);
+        assert!(order_ref.side            == ASK, 0);
+        assert!(order_ref.order_id        == order_id_ask_hi_0, 0);
+        assert!(order_ref.remaining_size  == ask_hi_0_size, 0);
+        assert!(order_ref.price           == ask_hi_price, 0);
+        assert!(order_ref.user            == maker_address, 0);
+        assert!(order_ref.custodian_id    == custodian_id, 0);
+        let order_ref = vector::borrow(&orders.asks, 3);
+        assert!(order_ref.market_id       == market_id, 0);
+        assert!(order_ref.side            == ASK, 0);
+        assert!(order_ref.order_id        == order_id_ask_hi_1, 0);
+        assert!(order_ref.remaining_size  == ask_hi_1_size, 0);
+        assert!(order_ref.price           == ask_hi_price, 0);
+        assert!(order_ref.user            == maker_address, 0);
+        assert!(order_ref.custodian_id    == custodian_id, 0);
+        let order_ref = vector::borrow(&orders.bids, 0);
+        assert!(order_ref.market_id       == market_id, 0);
+        assert!(order_ref.side            == BID, 0);
+        assert!(order_ref.order_id        == order_id_bid_hi_0, 0);
+        assert!(order_ref.remaining_size  == bid_hi_0_size, 0);
+        assert!(order_ref.price           == bid_hi_price, 0);
+        assert!(order_ref.user            == maker_address, 0);
+        assert!(order_ref.custodian_id    == custodian_id, 0);
+        let order_ref = vector::borrow(&orders.bids, 1);
+        assert!(order_ref.market_id       == market_id, 0);
+        assert!(order_ref.side            == BID, 0);
+        assert!(order_ref.order_id        == order_id_bid_hi_1, 0);
+        assert!(order_ref.remaining_size  == bid_hi_1_size, 0);
+        assert!(order_ref.price           == bid_hi_price, 0);
+        assert!(order_ref.user            == maker_address, 0);
+        assert!(order_ref.custodian_id    == custodian_id, 0);
+        let order_ref = vector::borrow(&orders.bids, 2);
+        assert!(order_ref.market_id       == market_id, 0);
+        assert!(order_ref.side            == BID, 0);
+        assert!(order_ref.order_id        == order_id_bid_lo_0, 0);
+        assert!(order_ref.remaining_size  == bid_lo_0_size, 0);
+        assert!(order_ref.price           == bid_lo_price, 0);
+        assert!(order_ref.user            == maker_address, 0);
+        assert!(order_ref.custodian_id    == custodian_id, 0);
+        let order_ref = vector::borrow(&orders.bids, 3);
+        assert!(order_ref.market_id       == market_id, 0);
+        assert!(order_ref.side            == BID, 0);
+        assert!(order_ref.order_id        == order_id_bid_lo_1, 0);
+        assert!(order_ref.remaining_size  == bid_lo_1_size, 0);
+        assert!(order_ref.price           == bid_lo_price, 0);
+        assert!(order_ref.user            == maker_address, 0);
+        assert!(order_ref.custodian_id    == custodian_id, 0);
+        // Index some asks and some bids.
+        let (orders, ask_next, bid_next) = get_open_orders_paginated(
+            market_id,
+            2,
+            3,
+            (NIL as u128),
+            (NIL as u128),
+        );
+        // Assert pagination breaks.
+        assert!(ask_next == order_id_ask_hi_0, 0);
+        assert!(bid_next == order_id_bid_lo_1, 0);
+        // Assert order state.
+        assert!(vector::length(&orders.asks) == 2, 0);
+        assert!(vector::length(&orders.bids) == 3, 0);
+        let order_ref = vector::borrow(&orders.asks, 0);
+        assert!(order_ref.market_id       == market_id, 0);
+        assert!(order_ref.side            == ASK, 0);
+        assert!(order_ref.order_id        == order_id_ask_lo_0, 0);
+        assert!(order_ref.remaining_size  == ask_lo_0_size, 0);
+        assert!(order_ref.price           == ask_lo_price, 0);
+        assert!(order_ref.user            == maker_address, 0);
+        assert!(order_ref.custodian_id    == custodian_id, 0);
+        let order_ref = vector::borrow(&orders.asks, 1);
+        assert!(order_ref.market_id       == market_id, 0);
+        assert!(order_ref.side            == ASK, 0);
+        assert!(order_ref.order_id        == order_id_ask_lo_1, 0);
+        assert!(order_ref.remaining_size  == ask_lo_1_size, 0);
+        assert!(order_ref.price           == ask_lo_price, 0);
+        assert!(order_ref.user            == maker_address, 0);
+        assert!(order_ref.custodian_id    == custodian_id, 0);
+        let order_ref = vector::borrow(&orders.bids, 0);
+        assert!(order_ref.market_id       == market_id, 0);
+        assert!(order_ref.side            == BID, 0);
+        assert!(order_ref.order_id        == order_id_bid_hi_0, 0);
+        assert!(order_ref.remaining_size  == bid_hi_0_size, 0);
+        assert!(order_ref.price           == bid_hi_price, 0);
+        assert!(order_ref.user            == maker_address, 0);
+        assert!(order_ref.custodian_id    == custodian_id, 0);
+        let order_ref = vector::borrow(&orders.bids, 1);
+        assert!(order_ref.market_id       == market_id, 0);
+        assert!(order_ref.side            == BID, 0);
+        assert!(order_ref.order_id        == order_id_bid_hi_1, 0);
+        assert!(order_ref.remaining_size  == bid_hi_1_size, 0);
+        assert!(order_ref.price           == bid_hi_price, 0);
+        assert!(order_ref.user            == maker_address, 0);
+        assert!(order_ref.custodian_id    == custodian_id, 0);
+        let order_ref = vector::borrow(&orders.bids, 2);
+        assert!(order_ref.market_id       == market_id, 0);
+        assert!(order_ref.side            == BID, 0);
+        assert!(order_ref.order_id        == order_id_bid_lo_0, 0);
+        assert!(order_ref.remaining_size  == bid_lo_0_size, 0);
+        assert!(order_ref.price           == bid_lo_price, 0);
+        assert!(order_ref.user            == maker_address, 0);
+        assert!(order_ref.custodian_id    == custodian_id, 0);
+        // Index next page.
+        let (orders, ask_next, bid_next) = get_open_orders_paginated(
+            market_id,
+            2,
+            3,
+            ask_next,
+            bid_next,
+        );
+        // Assert no asks or bids left to paginate.
+        assert!(ask_next == (NIL as u128), 0);
+        assert!(bid_next == (NIL as u128), 0);
+        // Assert order state.
+        assert!(vector::length(&orders.asks) == 2, 0);
+        assert!(vector::length(&orders.bids) == 1, 0);
+        let order_ref = vector::borrow(&orders.asks, 0);
+        assert!(order_ref.market_id       == market_id, 0);
+        assert!(order_ref.side            == ASK, 0);
+        assert!(order_ref.order_id        == order_id_ask_hi_0, 0);
+        assert!(order_ref.remaining_size  == ask_hi_0_size, 0);
+        assert!(order_ref.price           == ask_hi_price, 0);
+        assert!(order_ref.user            == maker_address, 0);
+        assert!(order_ref.custodian_id    == custodian_id, 0);
+        let order_ref = vector::borrow(&orders.asks, 1);
+        assert!(order_ref.market_id       == market_id, 0);
+        assert!(order_ref.side            == ASK, 0);
+        assert!(order_ref.order_id        == order_id_ask_hi_1, 0);
+        assert!(order_ref.remaining_size  == ask_hi_1_size, 0);
+        assert!(order_ref.price           == ask_hi_price, 0);
+        assert!(order_ref.user            == maker_address, 0);
+        assert!(order_ref.custodian_id    == custodian_id, 0);
+        let order_ref = vector::borrow(&orders.bids, 0);
+        assert!(order_ref.market_id       == market_id, 0);
+        assert!(order_ref.side            == BID, 0);
+        assert!(order_ref.order_id        == order_id_bid_lo_1, 0);
+        assert!(order_ref.remaining_size  == bid_lo_1_size, 0);
+        assert!(order_ref.price           == bid_lo_price, 0);
+        assert!(order_ref.user            == maker_address, 0);
+        assert!(order_ref.custodian_id    == custodian_id, 0);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = E_INVALID_MARKET_ID)]
+    /// Verify indexing results.
+    fun test_get_open_orders_paginated_invalid_market_id()
+    acquires OrderBooks {
+        init_test(); // Initialize for testing.
+        // Attempt invalid lookup.
+        get_open_orders_paginated(0, HI_64, HI_64, 0, 0);
+    }
+
+    #[test]
     /// Verify indexing results.
     fun test_get_price_levels() acquires OrderBooks {
         // Initialize markets, users, and an integrator.
@@ -6152,6 +6749,168 @@ module econia::market {
                 PriceLevel{price: bid_0_price, size: (bid_0_size as u128)}, 0);
         assert!(*vector::borrow(&bids, 1) ==
                 PriceLevel{price: bid_1_price, size: (bid_1_size as u128)}, 0);
+    }
+
+    #[test]
+    /// Verify indexing results.
+    fun test_get_price_levels_paginated() acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (maker, _) = init_markets_users_integrator_test();
+        // Declare common order parameters.
+        let market_id           = MARKET_ID_COIN;
+        let integrator          = @integrator;
+        let custodian_id        = NO_CUSTODIAN;
+        let maker_address       = address_of(&maker);
+        let restriction         = NO_RESTRICTION;
+        let self_match_behavior = ABORT;
+        // Declare ask and bid parameters.
+        let ask_hi_0_size = MIN_SIZE_COIN;
+        let ask_hi_1_size = ask_hi_0_size + 1;
+        let ask_lo_0_size = ask_hi_1_size + 1;
+        let ask_lo_1_size = ask_lo_0_size + 1;
+        let bid_hi_0_size = ask_lo_1_size + 1;
+        let bid_hi_1_size = bid_hi_0_size + 1;
+        let bid_lo_0_size = bid_hi_1_size + 1;
+        let bid_lo_1_size = bid_lo_0_size + 1;
+        let bid_lo_price = 1;
+        let bid_hi_price = bid_lo_price + 1;
+        let ask_lo_price = bid_hi_price + 1;
+        let ask_hi_price = ask_lo_price + 1;
+        // Deposit maker coins.
+        user::deposit_coins<BC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(HI_64 / 2));
+        user::deposit_coins<QC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(HI_64 / 2));
+        // Index price levels with pagination.
+        let (
+            PriceLevels{market_id: market_id_r, asks, bids},
+            ask_next,
+            bid_next
+        ) = get_price_levels_paginated(
+                market_id, 100, 0, (NIL as u128), (NIL as u128));
+        // Assert market ID.
+        assert!(market_id_r == market_id, 0);
+        // Assert asks and bids levels both empty, next as NIL.
+        assert!(asks == vector[], 0);
+        assert!(bids == vector[], 0);
+        assert!(ask_next == (NIL as u128), 0);
+        assert!(bid_next == (NIL as u128), 0);
+        // Place maker orders.
+        let (order_id_ask_hi_0, _, _, _) = place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, ASK, ask_hi_0_size, ask_hi_price,
+            restriction, self_match_behavior);
+        place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, ASK, ask_hi_1_size, ask_hi_price,
+            restriction, self_match_behavior);
+        place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, ASK, ask_lo_0_size, ask_lo_price,
+            restriction, self_match_behavior);
+        place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, ASK, ask_lo_1_size, ask_lo_price,
+            restriction, self_match_behavior);
+        place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, BID, bid_hi_0_size, bid_hi_price,
+            restriction, self_match_behavior);
+        place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, BID, bid_hi_1_size, bid_hi_price,
+            restriction, self_match_behavior);
+        place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, BID, bid_lo_0_size, bid_lo_price,
+            restriction, self_match_behavior);
+        let (order_id_bid_lo_1, _, _, _) = place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, BID, bid_lo_1_size, bid_lo_price,
+            restriction, self_match_behavior);
+        // Index all asks and bids.
+        let (
+            PriceLevels{market_id: market_id_r, asks, bids},
+            ask_next,
+            bid_next
+        ) = get_price_levels_paginated(
+                market_id, HI_64, HI_64, (NIL as u128), (NIL as u128));
+        // Assert no asks or bids left to paginate.
+        assert!(ask_next == (NIL as u128), 0);
+        assert!(bid_next == (NIL as u128), 0);
+        // Assert market ID.
+        assert!(market_id_r == market_id, 0);
+        // Assert price levels state.
+        assert!(vector::length(&asks) == 2, 0);
+        assert!(vector::length(&bids) == 2, 0);
+        assert!(*vector::borrow(&asks, 0) == PriceLevel{
+            price: ask_lo_price,
+            size: ((ask_lo_0_size + ask_lo_1_size) as u128)
+        }, 0);
+        assert!(*vector::borrow(&asks, 1) == PriceLevel{
+            price: ask_hi_price,
+            size: ((ask_hi_0_size + ask_hi_1_size) as u128)
+        }, 0);
+        assert!(*vector::borrow(&bids, 0) == PriceLevel{
+            price: bid_hi_price,
+            size: ((bid_hi_0_size + bid_hi_1_size) as u128)
+        }, 0);
+        assert!(*vector::borrow(&bids, 1) == PriceLevel{
+            price: bid_lo_price,
+            size: ((bid_lo_0_size + bid_lo_1_size) as u128)
+        }, 0);
+        // Index some asks and some bids.
+        let (
+            PriceLevels{market_id: market_id_r, asks, bids},
+            ask_next,
+            bid_next
+        ) = get_price_levels_paginated(
+                market_id, 2, 3, (NIL as u128), (NIL as u128));
+        // Assert market ID.
+        assert!(market_id_r == market_id, 0);
+        // Assert pagination breaks.
+        assert!(ask_next == order_id_ask_hi_0, 0);
+        assert!(bid_next == order_id_bid_lo_1, 0);
+        // Assert price levels state.
+        assert!(vector::length(&asks) == 1, 0);
+        assert!(vector::length(&bids) == 2, 0);
+        assert!(*vector::borrow(&asks, 0) == PriceLevel{
+            price: ask_lo_price,
+            size: ((ask_lo_0_size + ask_lo_1_size) as u128)
+        }, 0);
+        assert!(*vector::borrow(&bids, 0) == PriceLevel{
+            price: bid_hi_price,
+            size: ((bid_hi_0_size + bid_hi_1_size) as u128)
+        }, 0);
+        assert!(*vector::borrow(&bids, 1) == PriceLevel{
+            price: bid_lo_price,
+            size: ((bid_lo_0_size) as u128)
+        }, 0);
+        // Index next page.
+        let (
+            PriceLevels{market_id: market_id_r, asks, bids},
+            ask_next,
+            bid_next
+        ) = get_price_levels_paginated(
+                market_id, 2, 1, ask_next, bid_next);
+        // Assert no asks or bids left to paginate.
+        assert!(ask_next == (NIL as u128), 0);
+        assert!(bid_next == (NIL as u128), 0);
+        // Assert market ID.
+        assert!(market_id_r == market_id, 0);
+        // Assert price levels state.
+        assert!(vector::length(&asks) == 1, 0);
+        assert!(vector::length(&bids) == 1, 0);
+        assert!(*vector::borrow(&asks, 0) == PriceLevel{
+            price: ask_hi_price,
+            size: ((ask_hi_0_size + ask_hi_1_size) as u128)
+        }, 0);
+        assert!(*vector::borrow(&bids, 0) == PriceLevel{
+            price: bid_lo_price,
+            size: ((bid_lo_1_size) as u128)
+        }, 0);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = E_INVALID_MARKET_ID)]
+    /// Verify indexing results.
+    fun test_get_price_levels_paginated_invalid_market_id()
+    acquires OrderBooks {
+        init_test(); // Initialize for testing.
+        // Attempt invalid lookup.
+        get_price_levels_paginated(0, HI_64, HI_64, 0, 0);
     }
 
     #[test]
@@ -17437,6 +18196,91 @@ module econia::market {
         assets::burn(quote_coins);
         // Drop underwriter capability.
         registry::drop_underwriter_capability_test(underwriter_capability);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = E_INVALID_MARKET_ORDER_ID)]
+    /// Verify failure for no such ask for market.
+    fun test_verify_pagination_order_ids_ask_does_not_exist()
+    acquires OrderBooks {
+        init_markets_users_integrator_test(); // Initialize for testing.
+        // Attempt invalid lookup.
+        verify_pagination_order_ids(MARKET_ID_COIN, 1, (NIL as u128));
+    }
+
+    #[test]
+    #[expected_failure(abort_code = E_INVALID_MARKET_ORDER_ID)]
+    /// Verify failure for ask order ID that is actually a bid.
+    fun test_verify_pagination_order_ids_ask_wrong_side()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (maker, _) = init_markets_users_integrator_test();
+        // Declare order parameters.
+        let side                = BID;
+        let market_id           = MARKET_ID_COIN;
+        let integrator          = @integrator;
+        let custodian_id        = NO_CUSTODIAN;
+        let maker_address       = address_of(&maker);
+        let restriction         = NO_RESTRICTION;
+        let price               = 10;
+        let size                = MIN_SIZE_COIN;
+        let self_match_behavior = ABORT;
+        // Declare maker deposit amounts.
+        let deposit_base  = HI_64 / 2;
+        let deposit_quote = HI_64 / 2;
+        // Deposit maker coins.
+        user::deposit_coins<BC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(deposit_base));
+        user::deposit_coins<QC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(deposit_quote));
+        // Place maker order, storing market order ID for lookup.
+        let (market_order_id, _, _, _) = place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, side, size, price, restriction,
+            self_match_behavior);
+        verify_pagination_order_ids(
+            MARKET_ID_COIN, market_order_id, (NIL as u128));
+    }
+
+    #[test]
+    #[expected_failure(abort_code = E_INVALID_MARKET_ORDER_ID)]
+    /// Verify failure for no such ask for market.
+    fun test_verify_pagination_order_ids_bid_does_not_exist()
+    acquires OrderBooks {
+        init_markets_users_integrator_test(); // Initialize for testing.
+        verify_pagination_order_ids(MARKET_ID_COIN, (NIL as u128), 1);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = E_INVALID_MARKET_ORDER_ID)]
+    /// Verify failure for bid order ID that is actually an ask.
+    fun test_verify_pagination_order_ids_bid_wrong_side()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (maker, _) = init_markets_users_integrator_test();
+        // Declare order parameters.
+        let side                = ASK;
+        let market_id           = MARKET_ID_COIN;
+        let integrator          = @integrator;
+        let custodian_id        = NO_CUSTODIAN;
+        let maker_address       = address_of(&maker);
+        let restriction         = NO_RESTRICTION;
+        let price               = 10;
+        let size                = MIN_SIZE_COIN;
+        let self_match_behavior = ABORT;
+        // Declare maker deposit amounts.
+        let deposit_base  = HI_64 / 2;
+        let deposit_quote = HI_64 / 2;
+        // Deposit maker coins.
+        user::deposit_coins<BC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(deposit_base));
+        user::deposit_coins<QC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(deposit_quote));
+        // Place maker order, storing market order ID for lookup.
+        let (market_order_id, _, _, _) = place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, side, size, price, restriction,
+            self_match_behavior);
+        verify_pagination_order_ids(
+            MARKET_ID_COIN, (NIL as u128), market_order_id);
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

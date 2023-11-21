@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "WITH parameters AS (\n    SELECT\n        $1::int AS resolution)\nUPDATE aggregator.candlesticks_last_indexed_txn\nSET\n    txn_version = COALESCE((SELECT (MAX(txn_version)) FROM fill_events), txn_version)\nFROM\n    parameters\nWHERE candlesticks_last_indexed_txn.resolution = parameters.resolution\n",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "42554ccd7cea9dc8eaf12ad22ee306077f39fc64a656f57393db78b8b22f2060"
+}

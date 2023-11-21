@@ -1,0 +1,9 @@
+{
+    "start": "2023-10-01T11:00:00Z",
+    "end": "2023-10-16T19:00:00Z",
+    "prize": 123456789,
+    "market_id": 3,
+    "integrators_required": [
+        "0xace"
+    ]
+}

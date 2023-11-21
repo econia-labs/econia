@@ -50,7 +50,7 @@ RUN rm g.tar.gz
 WORKDIR /app
 COPY /src/docker/processor/start.sh .
 RUN chmod u+x /app/start.sh
-WORKDIR $PROCESSOR_DIR
+WORKDIR /
 
 # Use JSON Rust logging.
 ENV RUST_LOG_FORMAT=json

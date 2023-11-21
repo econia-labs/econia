@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE aggregator.competition_leaderboard_users AS a\n            SET\n                volume = a.volume + COALESCE((\n                    user_volume.volume\n                ), 0) * (SELECT tick_size FROM market_registration_events WHERE market_id = $2)\n            FROM aggregator.user_volume($1) where a.\"user\" = user_volume.\"user\" AND a.competition_id = $1\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Numeric"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "39fd290a883da694b15e501079a090c78f308770ab5f7569d3b6126504c10e88"
+}

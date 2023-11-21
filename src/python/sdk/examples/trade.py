@@ -10,14 +10,14 @@ from aptos_sdk.type_tag import StructTag, TypeTag
 
 from econia_sdk.entry.market import (
     cancel_all_orders_user,
+    change_order_size_user,
     place_limit_order_user_entry,
     place_market_order_user_entry,
     register_market_base_coin_from_coinstore,
+    swap_between_coinstores_entry,
 )
-from econia_sdk.entry.user import (
-    deposit_from_coinstore,
-    register_market_account,
-)
+from econia_sdk.entry.registry import set_recognized_market
+from econia_sdk.entry.user import deposit_from_coinstore, register_market_account
 from econia_sdk.lib import EconiaClient, EconiaViewer
 from econia_sdk.types import Restriction, SelfMatchBehavior, Side
 from econia_sdk.view.market import get_open_orders_all, get_price_levels
@@ -33,64 +33,74 @@ from econia_sdk.view.user import (
 )
 
 """
-HOW TO RUN THIS SCRIPT: `poetry install && poetry run trade` in .../econia/src/python/sdk
+HOW TO RUN THIS SCRIPT: `poetry install && poetry run trade` in /econia/src/python/sdk
 
-RECOMMENDED: Use a local development chain (else you might hit rate-limiting issues)
-1. Run: aptos node run-local-testnet --with-faucet
-2. Do: "Deploy an Econia Faucet" (above, enter "local" for the `aptos init` chain)
-3. Do: "Deploy an Econia Exchange"
-2. Enter: http://0.0.0.0:8080/v1 when prompted node URL
-3. Enter: http://0.0.0.0:8081 when prompted for a faucet URL
+See instructions in /econia/src/docker/README.md to see how to run this script against
+a local deployment of Econia, including the data service stack.
 
-REQUIRED: Deploy an Econia Faucet.
-1. Run: cd .../econia/src/move/faucet # (whatever its full path is)
-2. Run: aptos init --profile econia_faucet_deploy
-3. Run: export FAUCET_ADDR=<ACCOUNT-FROM-ABOVE> # make sure to put 0x at the start
-4. Run: aptos move publish \
-        --named-addresses econia_faucet=$FAUCET_ADDR \
-        --profile econia_faucet_deploy \
-        --assume-yes
-
-OPTIONAL: Deploy an Econia Exchange.
-1. Run: cd /econia/src/move/econia # (or whatever its full path is)
-2. Run: aptos init --profile econia_exchange_deploy
-3. Run: export ECONIA_ADDR=<ACCOUNT-FROM-ABOVE> # make sure to put 0x at the start
-4. Run: aptos move publish \
-        --override-size-check \
-        --included-artifacts none \
-        --named-addresses econia=$ECONIA_ADDR \
-        --profile econia_exchange_deploy \
-        --assume-yes
+There are several prompts; entering nothing for all of them will result in:
+- Running against a local deployment of the data service stack.
+- No market will be listed as recognized.
 """
 
-NODE_URL_DEVNET = "https://fullnode.devnet.aptoslabs.com/v1"
-FAUCET_URL_DEVNET = "https://faucet.devnet.aptoslabs.com"
-ECONIA_ADDR_DEVNET = (
-    "0xc0de0000fe693e08f668613c502360dc48508197401d2ac1ae79571498cd8b74"
-)
+U64_MAX = (2**64) - 1
+NODE_URL_LOCAL = "http://0.0.0.0:8080/v1"
+FAUCET_URL_LOCAL = "http://0.0.0.0:8081"
+ECONIA_ADDR_LOCAL = "0xeeee0dd966cd4fc739f76006591239b32527edbb7c303c431f8c691bda150b40"
+ECONIA_KEY_LOCAL = "0x8eeb9bd1808d99ef54758060f5067b5707be379058cfd83cd983fe7e47063a09"
+FAUCET_ADDR_LOCAL = "0xffff094ef8ccfa9137adcb13a2fae2587e83c348b32c63f811cc19fcc9fc5878"
 COIN_TYPE_APT = "0x1::aptos_coin::AptosCoin"
+
+
+def get_minimum_size() -> int:
+    min_size_s = input(
+        "Enter the minimum order size to (re-)use for the market (enter nothing to default to 500==0.5 APT)\n"
+    ).strip()
+    if min_size_s == "":
+        return 500
+    min_size = int(min_size_s)
+    if min_size <= 0:
+        raise ValueError("Minimum size must be at least 1 lot")
+    else:
+        return min_size
 
 
 def get_econia_address() -> AccountAddress:
     addr = environ.get("ECONIA_ADDR")
     if addr == None:
         addr_in = input(
-            "Please enter the 0x-prefixed address of an Econia deployment (enter nothing to default to devnet OR re-run with ECONIA_ADDR environment variable)\n"
+            "Enter the 0x-prefixed address of an Econia deployment (enter nothing to default to local OR re-run with ECONIA_ADDR environment variable)\n"
         ).strip()
         if addr_in == "":
-            return AccountAddress.from_hex(ECONIA_ADDR_DEVNET)
+            return AccountAddress.from_hex(ECONIA_ADDR_LOCAL)
         else:
             return AccountAddress.from_hex(addr_in)
     else:
         return AccountAddress.from_hex(addr)
 
 
+def get_econia_account() -> Optional[Account]:
+    private_key = input(
+        'Enter the 0x-prefixed private key of the Econia deployment (enter "." to use local OR enter nothing to skip recognizing the market)\n'
+    ).strip()
+    if private_key == "":
+        return None
+    elif private_key == ".":
+        return Account.load_key(ECONIA_KEY_LOCAL)
+    else:
+        return Account.load_key(private_key)
+
+
 def get_faucet_address() -> AccountAddress:
     addr = environ.get("FAUCET_ADDR")
     if addr == None:
-        return input(
-            "Please enter the 0x-prefixed address of an Econia faucet (or re-run with FAUCET_ADDR environment variable)\n"
+        addr_in = input(
+            "Enter the 0x-prefixed address of an Econia faucet deployment (enter nothing to default to local OR re-run with FAUCET_ADDR environment variable)\n"
         ).strip()
+        if addr_in == "":
+            return AccountAddress.from_hex(FAUCET_ADDR_LOCAL)
+        else:
+            return AccountAddress.from_hex(addr_in)
     else:
         return AccountAddress.from_hex(addr)
 
@@ -99,10 +109,10 @@ def get_aptos_node_url() -> str:
     url = environ.get("APTOS_NODE_URL")
     if url == None:
         url_in = input(
-            "Please enter the URL of an Aptos node (enter nothing to default to devnet OR re-run with APTOS_NODE_URL environment variable)\n"
+            "Enter the URL of an Aptos node (enter nothing to default to local OR re-run with APTOS_NODE_URL environment variable)\n"
         ).strip()
         if url_in == "":
-            return NODE_URL_DEVNET  # devnet default
+            return NODE_URL_LOCAL
         else:
             return url_in
     else:
@@ -113,19 +123,21 @@ def get_aptos_faucet_url() -> str:
     url = environ.get("APTOS_FAUCET_URL")
     if url == None:
         url_in = input(
-            "Please enter the URL of an Aptos faucet (enter nothing to default to devnet OR re-run with APTOS_FAUCET_URL environment variable)\n"
+            "Please enter the URL of an Aptos faucet (enter nothing to default to local OR re-run with APTOS_FAUCET_URL environment variable)\n"
         ).strip()
         if url_in == "":
-            return FAUCET_URL_DEVNET  # devnet default
+            return FAUCET_URL_LOCAL
         else:
             return url_in
     else:
         return url
 
 
+MIN_SIZE = get_minimum_size()
 ECONIA_ADDR = (
     get_econia_address()
 )  # See https://econia.dev/ for up-to-date per-chain addresses
+ECONIA_ACCT = get_econia_account()
 FAUCET_ADDR = get_faucet_address()  # See (and deploy): /econia/src/move/faucet
 COIN_TYPE_EAPT = f"{FAUCET_ADDR}::example_apt::ExampleAPT"
 COIN_TYPE_EUSDC = f"{FAUCET_ADDR}::example_usdc::ExampleUSDC"
@@ -147,11 +159,11 @@ def start():
     bids_price, asks_price = get_best_prices(viewer, market_id)
     if bids_price is not None or asks_price is not None:
         input("\n\nPress enter to clean-up open orders on the market.")
-        account_ = setup_new_account(viewer, faucet_client, market_id, 9, 10_000 * 100)
+        account_ = setup_new_account(viewer, faucet_client, market_id, 1000000, 1000000)
         if bids_price is not None:
-            place_market_order(Side.ASK, account_, market_id, 9000)
+            place_market_order(Side.ASK, account_, market_id, 1000000)
         if asks_price is not None:
-            place_market_order(Side.BID, account_, market_id, 9000)
+            place_market_order(Side.BID, account_, market_id, 1000000)
 
         dump_txns()
         n_clears = len(get_fill_events(viewer, account_.account_address, market_id, 0))
@@ -174,7 +186,7 @@ def start():
         viewer, account_A.account_address, market_id, 0
     )
     report_place_limit_order_event(
-        list(filter(lambda ev: ev["data"]["side"] == Side.BID, events))[0]
+        next(filter(lambda ev: ev["data"]["side"] == Side.BID, events))
     )
     # Ask to sell 1 whole eAPT
     sell_base_lots = 1 * (10**3)
@@ -186,7 +198,7 @@ def start():
         viewer, account_A.account_address, market_id, 0
     )
     report_place_limit_order_event(
-        list(filter(lambda ev: ev["data"]["side"] == Side.ASK, events))[0]
+        next(filter(lambda ev: ev["data"]["side"] == Side.ASK, events))
     )
     print(f"Account A has finished placing limit orders.")
     fills = get_fill_events(viewer, account_A.account_address, market_id, 0)
@@ -198,19 +210,95 @@ def start():
     dump_txns()
     report_best_price_levels(viewer, market_id)
 
+    input("\n\nPress enter to change Account A's order sizes.")
+    (bids, asks) = get_order_ids(account_A.account_address, market_id)
+    bid_size = 0
+    for (i, bid) in enumerate(bids):
+        bid_size_new = bid["size"] * (i + 2)
+        bid_size = (bid_size + bid_size_new,)
+        exec_txn(
+            EconiaClient(NODE_URL, ECONIA_ADDR, account_A),
+            change_order_size_user(
+                ECONIA_ADDR,
+                market_id,
+                Side.BID,
+                bid["market_order_id"],
+                bid_size_new,
+            ),
+            f"Increase bid order size (#{i + 1})",
+        )
+    ask_size = 0
+    for (i, ask) in enumerate(asks):
+        ask_size_new = ask["size"] // (i + 2)
+        ask_size = (ask_size + ask_size_new,)
+        exec_txn(
+            EconiaClient(NODE_URL, ECONIA_ADDR, account_A),
+            change_order_size_user(
+                ECONIA_ADDR,
+                market_id,
+                Side.ASK,
+                ask["market_order_id"],
+                ask_size_new,
+            ),
+            f"Decrease ask order size (#{i + 1})",
+        )
+    dump_txns()
+
+    input("\n\nPress enter to swap with Account A.")
+    calldata = swap_between_coinstores_entry(
+        ECONIA_ADDR,
+        TypeTag(StructTag.from_str(COIN_TYPE_EAPT)),
+        TypeTag(StructTag.from_str(COIN_TYPE_EUSDC)),
+        market_id,
+        ECONIA_ADDR,
+        Side.BID,
+        0,
+        U64_MAX,
+        0,
+        U64_MAX,
+        U64_MAX >> 32,
+    )
+    exec_txn(
+        EconiaClient(NODE_URL, ECONIA_ADDR, account_A),
+        calldata,
+        "Execute BID swap order for Account A",
+    )
+    calldata = swap_between_coinstores_entry(
+        ECONIA_ADDR,
+        TypeTag(StructTag.from_str(COIN_TYPE_EAPT)),
+        TypeTag(StructTag.from_str(COIN_TYPE_EUSDC)),
+        market_id,
+        ECONIA_ADDR,
+        Side.ASK,
+        0,
+        U64_MAX,
+        0,
+        U64_MAX,
+        0,
+    )
+    exec_txn(
+        EconiaClient(NODE_URL, ECONIA_ADDR, account_A),
+        calldata,
+        "Execute ASK swap order for Account A",
+    )
+    dump_txns()
+
+    input("\n\nPress enter to place limit orders with Account A (again).")
+    place_limit_order(Side.BID, account_A, market_id, buy_base_lots, buy_ticks_per_lot)
+    place_limit_order(
+        Side.ASK, account_A, market_id, sell_base_lots, sell_ticks_per_lot
+    )
+    dump_txns()
+
     input("\n\nPress enter to setup an Account B with funds.")
     account_B = setup_new_account(viewer, faucet_client, market_id)
     print(f"Account B was setup: {account_B.account_address}")
     dump_txns()
 
-    input(
-        "\n\nPress enter to place market orders (buy and sell) with Account B."
-    )
+    input("\n\nPress enter to place market orders (buy and sell) with Account B.")
     place_market_order(Side.BID, account_B, market_id, 500)  # Buy 0.5 eAPT
     place_market_order(Side.ASK, account_B, market_id, 500)  # Sell 0.5 eAPT
-    fill_size = len(
-        get_fill_events(viewer, account_B.account_address, market_id, 0)
-    )
+    fill_size = len(get_fill_events(viewer, account_B.account_address, market_id, 0))
     print(f"Account B has finished placing 2 market orders.")
     print(f"  * This resulted in {fill_size} limit orders getting filled.")
     dump_txns()
@@ -279,6 +367,12 @@ def start():
     report_order_for_last_fill(fills, open_orders)
 
     print("\n\nTHE END!")
+
+
+def get_order_ids(account_address: AccountAddress, market_id: int) -> Tuple[set, set]:
+    viewer = EconiaViewer(NODE_URL, ECONIA_ADDR)
+    market_account = get_market_account(viewer, account_address, market_id, 0)
+    return (market_account["bids"], market_account["asks"])
 
 
 def place_market_order(
@@ -391,9 +485,9 @@ def setup_new_account(
     client = EconiaClient(NODE_URL, ECONIA_ADDR, account)
 
     # Fund with APT, "eAPT" and "eUSDC"
-    faucet.fund_account(account.address(), 1 * (10**8))
-    fund_APT(account, base_wholes)
-    fund_USDC(account, quote_wholes)
+    faucet.fund_account(account.address().hex(), 1 * (10**8))
+    fund_APT(account, base_wholes * 2)
+    fund_USDC(account, quote_wholes * 2)
 
     # Register market account
     calldata = register_market_account(
@@ -405,9 +499,7 @@ def setup_new_account(
     )
     exec_txn(client, calldata, f"Register a new account in market {market_id}")
 
-    mkt_account = get_market_account(
-        viewer, account.account_address, market_id, 0
-    )
+    mkt_account = get_market_account(viewer, account.account_address, market_id, 0)
     account_apt_pre = mkt_account["base_available"] // 10**8
     account_usdc_pre = mkt_account["quote_available"] // 10**6
 
@@ -455,7 +547,7 @@ def fund_APT(account: Account, wholes: int):
         ModuleId.from_str(f"{FAUCET_ADDR}::faucet"),  # module
         "mint",  # funcname
         [TypeTag(StructTag.from_str(COIN_TYPE_EAPT))],  # generics
-        [encoder(wholes * (10**18), Serializer.u64)],  # arguments
+        [encoder(wholes * (10**8), Serializer.u64)],  # arguments
     )
 
     return exec_txn(
@@ -486,18 +578,18 @@ def setup_market(faucet_client: FaucetClient, viewer: EconiaViewer) -> int:
     # 0.5 eAPT.
     lot_size = 100000
     tick_size = 1
-    min_size = 500
+    min_size = MIN_SIZE
     market_id = get_market_id_base_coin(
         viewer, COIN_TYPE_EAPT, COIN_TYPE_EUSDC, lot_size, tick_size, min_size
     )
     if market_id == None:
         account_XCH = Account.generate()
         # The faucet only gives out 1 APT at a time, have to go multiple times
-        faucet_client.fund_account(account_XCH.address(), 1 * (10**8))
-        faucet_client.fund_account(account_XCH.address(), 1 * (10**8))
-        faucet_client.fund_account(account_XCH.address(), 1 * (10**8))
-        faucet_client.fund_account(account_XCH.address(), 1 * (10**8))
-        faucet_client.fund_account(account_XCH.address(), 1 * (10**8))
+        faucet_client.fund_account(account_XCH.address().hex(), 1 * (10**8))
+        faucet_client.fund_account(account_XCH.address().hex(), 1 * (10**8))
+        faucet_client.fund_account(account_XCH.address().hex(), 1 * (10**8))
+        faucet_client.fund_account(account_XCH.address().hex(), 1 * (10**8))
+        faucet_client.fund_account(account_XCH.address().hex(), 1 * (10**8))
         print("Market does not exist yet, creating one...")
         calldata = register_market_base_coin_from_coinstore(
             ECONIA_ADDR,
@@ -518,11 +610,21 @@ def setup_market(faucet_client: FaucetClient, viewer: EconiaViewer) -> int:
         )
         events = get_market_registration_events(viewer)
         report_market_creation_event(
-            list(filter(lambda e: e["data"]["market_id"] == market_id, events))[0]
+            next(filter(lambda e: e["data"]["market_id"] == market_id, events))
         )
     if market_id == None:
         exit()
     print(f"Market ID: {market_id}")
+
+    if ECONIA_ACCT is None:
+        return market_id
+
+    fund_APT(ECONIA_ACCT, 1)
+    exec_txn(
+        EconiaClient(NODE_URL, ECONIA_ADDR, ECONIA_ACCT),
+        set_recognized_market(ECONIA_ADDR, market_id),
+        f"Recognize the market (id {market_id}, min size {MIN_SIZE})",
+    )
     return market_id
 
 
@@ -601,7 +703,7 @@ def report_fill_events(fill_events: list[dict]):
     print("LAST ORDER EXECUTION BREAKDOWN: FillEvent(s)")
     if len(fill_events) != 0:
         last_events = find_all_fill_events_with_last_taker_order_id(fill_events)
-        last_events_maker_side = last_events[0]["data"]["maker_side"]
+        last_events_maker_side = last_events[0]["data"]["maker_side"]  # type: ignore
         n_last_events = len(last_events)
         if last_events_maker_side == Side.ASK:
             print(
@@ -630,7 +732,7 @@ def report_fill_events(fill_events: list[dict]):
 
 
 def report_order_for_last_fill(fill_events: list[dict], open_orders: list[dict]):
-    order_id = fill_events[-1]["data"]["taker_order_id"]
+    order_id = fill_events[-1]["data"]["taker_order_id"]  # type: ignore
     open_order = list(filter(lambda ev: ev["order_id"] == order_id, open_orders))
     if len(open_order) == 1:
         print("  * The order WAS NOT fully satisfied by initial execution")
@@ -646,8 +748,8 @@ def find_all_fill_events_with_last_taker_order_id(
     index = len(events) - 1
     returns = []
     while index > 0:
-        last_fill_order_id = events[-1]["data"]["taker_order_id"]
-        ev = events[index]
+        last_fill_order_id = events[-1]["data"]["taker_order_id"]  # type: ignore
+        ev = events[index]  # type: ignore
         if ev["data"]["taker_order_id"] == last_fill_order_id:
             returns.append(ev)
         index = index - 1

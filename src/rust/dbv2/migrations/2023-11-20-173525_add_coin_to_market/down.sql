@@ -71,3 +71,6 @@ FROM
 GRANT
 SELECT
   ON api.markets TO web_anon;
+
+
+DROP TABLE aggregator.coins;

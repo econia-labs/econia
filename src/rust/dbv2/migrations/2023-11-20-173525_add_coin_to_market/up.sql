@@ -4,7 +4,7 @@ DROP VIEW api.markets;
 
 CREATE TABLE
   aggregator.coins (
-    NAME TEXT NOT NULL,
+    "name" TEXT NOT NULL,
     symbol TEXT NOT NULL,
     decimals SMALLINT NOT NULL,
     "address" TEXT NOT NULL,

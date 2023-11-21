@@ -27,6 +27,7 @@ ARG APTOS_NETWORK
 ARG BIN_PATH
 ARG DATABASE_URL
 RUN apt-get update && apt-get install -y \
+    ca-certificates \
     libudev-dev \
     build-essential \
     libclang-dev \

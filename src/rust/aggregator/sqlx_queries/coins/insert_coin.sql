@@ -1,4 +1,16 @@
+WITH
+  parameters AS (
+    SELECT
+      $1::TEXT "name",
+      $2::TEXT symbol,
+      $3::SMALLINT decimals,
+      $4::TEXT "address",
+      $5::TEXT module,
+      $6::TEXT struct
+  )
 INSERT INTO
   aggregator.coins
-VALUES
-  ($1, $2, $3, $4, $5, $6)
+SELECT
+  *
+FROM
+  parameters

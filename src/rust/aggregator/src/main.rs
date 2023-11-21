@@ -120,7 +120,12 @@ async fn main() -> Result<()> {
     dotenvy::dotenv().ok();
     let args: Args = Args::parse();
 
-    let network = args.aptos_network.unwrap_or(AptosNetwork::Testnet);
+    let network = match std::env::var("APTOS_NETWORK") {
+        Ok(network_env_var) => {
+            AptosNetwork::from_str(&network_env_var, true).expect("Invalid Aptos Network")
+        }
+        _ => args.aptos_network.unwrap_or(AptosNetwork::Testnet),
+    };
 
     let database_url = std::env::var("DATABASE_URL")
         .or_else(|_| -> Result<String> {

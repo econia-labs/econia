@@ -1,10 +1,11 @@
 -- Your SQL goes here
-CREATE TABLE aggregator.coins (
-    name text NOT NULL,
-    symbol text NOT NULL,
-    decimals smallint NOT NULL,
-    address text NOT NULL,
-    module text NOT NULL,
-    struct text NOT NULL,
+CREATE TABLE
+  aggregator.coins (
+    NAME TEXT NOT NULL,
+    symbol TEXT NOT NULL,
+    decimals SMALLINT NOT NULL,
+    address TEXT NOT NULL,
+    module TEXT NOT NULL,
+    struct TEXT NOT NULL,
     PRIMARY KEY (address, module, struct)
-);
+  );

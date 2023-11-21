@@ -13,4 +13,4 @@ if [[ "$HEALTHCHECK_BEFORE_START" == "true" ]];then
     done
 fi
 
-/usr/local/bin/processor -c /config.yaml
+/usr/local/bin/processor -c /config/data/config.yaml

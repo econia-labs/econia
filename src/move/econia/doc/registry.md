@@ -1217,7 +1217,8 @@ Public constant getter for <code><a href="registry.md#0xc0deb00c_registry_MAX_CH
 * <code>test_get_MAX_CHARACTERS_GENERIC()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_MAX_CHARACTERS_GENERIC">get_MAX_CHARACTERS_GENERIC</a>(): u64
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_MAX_CHARACTERS_GENERIC">get_MAX_CHARACTERS_GENERIC</a>(): u64
 </code></pre>
 
 
@@ -1245,7 +1246,8 @@ Public constant getter for <code><a href="registry.md#0xc0deb00c_registry_MIN_CH
 * <code>test_get_MIN_CHARACTERS_GENERIC()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_MIN_CHARACTERS_GENERIC">get_MIN_CHARACTERS_GENERIC</a>(): u64
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_MIN_CHARACTERS_GENERIC">get_MIN_CHARACTERS_GENERIC</a>(): u64
 </code></pre>
 
 
@@ -1273,7 +1275,8 @@ Public constant getter for <code><a href="registry.md#0xc0deb00c_registry_NO_CUS
 * <code>test_get_NO_CUSTODIAN()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_NO_CUSTODIAN">get_NO_CUSTODIAN</a>(): u64
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_NO_CUSTODIAN">get_NO_CUSTODIAN</a>(): u64
 </code></pre>
 
 
@@ -1301,7 +1304,8 @@ Public constant getter for <code><a href="registry.md#0xc0deb00c_registry_NO_UND
 * <code>test_get_NO_UNDERWRITER()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_NO_UNDERWRITER">get_NO_UNDERWRITER</a>(): u64
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_NO_UNDERWRITER">get_NO_UNDERWRITER</a>(): u64
 </code></pre>
 
 
@@ -1332,7 +1336,8 @@ transaction collisions against the registry.
 * <code>test_set_remove_check_recognized_markets()</code>
 
 
-<pre><code><b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_market_counts">get_market_counts</a>(): <a href="registry.md#0xc0deb00c_registry_MarketCounts">registry::MarketCounts</a>
+<pre><code>#[view]
+<b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_market_counts">get_market_counts</a>(): <a href="registry.md#0xc0deb00c_registry_MarketCounts">registry::MarketCounts</a>
 </code></pre>
 
 
@@ -1381,7 +1386,8 @@ transaction collisions against the registry.
 * <code>test_set_remove_check_recognized_markets()</code>
 
 
-<pre><code><b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_market_id_base_coin">get_market_id_base_coin</a>&lt;BaseType, QuoteType&gt;(lot_size: u64, tick_size: u64, min_size: u64): <a href="_Option">option::Option</a>&lt;u64&gt;
+<pre><code>#[view]
+<b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_market_id_base_coin">get_market_id_base_coin</a>&lt;BaseType, QuoteType&gt;(lot_size: u64, tick_size: u64, min_size: u64): <a href="_Option">option::Option</a>&lt;u64&gt;
 </code></pre>
 
 
@@ -1428,7 +1434,8 @@ transaction collisions against the registry.
 * <code>test_set_remove_check_recognized_markets()</code>
 
 
-<pre><code><b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_market_id_base_generic">get_market_id_base_generic</a>&lt;QuoteType&gt;(base_name_generic: <a href="_String">string::String</a>, lot_size: u64, tick_size: u64, min_size: u64, underwriter_id: u64): <a href="_Option">option::Option</a>&lt;u64&gt;
+<pre><code>#[view]
+<b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_market_id_base_generic">get_market_id_base_generic</a>&lt;QuoteType&gt;(base_name_generic: <a href="_String">string::String</a>, lot_size: u64, tick_size: u64, min_size: u64, underwriter_id: u64): <a href="_Option">option::Option</a>&lt;u64&gt;
 </code></pre>
 
 
@@ -1477,7 +1484,8 @@ transaction collisions against the registry.
 * <code>test_set_remove_check_recognized_markets()</code>
 
 
-<pre><code><b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_market_info">get_market_info</a>(market_id: u64): <a href="registry.md#0xc0deb00c_registry_MarketInfoView">registry::MarketInfoView</a>
+<pre><code>#[view]
+<b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_market_info">get_market_info</a>(market_id: u64): <a href="registry.md#0xc0deb00c_registry_MarketInfoView">registry::MarketInfoView</a>
 </code></pre>
 
 
@@ -1551,7 +1559,8 @@ Return recognized market ID for a pure coin trading pair.
 * <code>test_set_remove_check_recognized_markets()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_recognized_market_id_base_coin">get_recognized_market_id_base_coin</a>&lt;BaseCoinType, QuoteCoinType&gt;(): u64
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_recognized_market_id_base_coin">get_recognized_market_id_base_coin</a>&lt;BaseCoinType, QuoteCoinType&gt;(): u64
 </code></pre>
 
 
@@ -1590,7 +1599,8 @@ asset.
 * <code>test_set_remove_check_recognized_markets()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_recognized_market_id_base_generic">get_recognized_market_id_base_generic</a>&lt;QuoteCoinType&gt;(base_name_generic: <a href="_String">string::String</a>): u64
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_recognized_market_id_base_generic">get_recognized_market_id_base_generic</a>&lt;QuoteCoinType&gt;(base_name_generic: <a href="_String">string::String</a>): u64
 </code></pre>
 
 
@@ -1639,7 +1649,8 @@ parameters.
 * <code>test_set_remove_check_recognized_markets()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_has_recognized_market_base_coin_by_type">has_recognized_market_base_coin_by_type</a>&lt;BaseCoinType, QuoteCoinType&gt;(): bool
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_has_recognized_market_base_coin_by_type">has_recognized_market_base_coin_by_type</a>&lt;BaseCoinType, QuoteCoinType&gt;(): bool
 </code></pre>
 
 
@@ -1692,7 +1703,8 @@ type parameter.
 * <code>test_set_remove_check_recognized_markets()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_has_recognized_market_base_generic_by_type">has_recognized_market_base_generic_by_type</a>&lt;QuoteCoinType&gt;(base_name_generic: <a href="_String">string::String</a>): bool
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_has_recognized_market_base_generic_by_type">has_recognized_market_base_generic_by_type</a>&lt;QuoteCoinType&gt;(base_name_generic: <a href="_String">string::String</a>): bool
 </code></pre>
 
 

@@ -113,7 +113,7 @@ impl EconiaClient {
     pub async fn connect(
         node_url: Url,
         econia: AccountAddress,
-        mut account: LocalAccount,
+        account: LocalAccount,
         config: Option<EconiaClientConfig>,
     ) -> EconiaResult<Self> {
         let aptos = Client::new(node_url);
@@ -121,8 +121,7 @@ impl EconiaClient {
         let chain_id = ChainId::new(index.chain_id);
         let account_info = aptos.get_account(account.address()).await?.into_inner();
         let seq_num = account_info.sequence_number;
-        let acc_seq_num = account.sequence_number_mut();
-        *acc_seq_num = seq_num;
+        account.set_sequence_number(seq_num);
 
         Ok(Self {
             econia_address: econia,
@@ -319,8 +318,9 @@ impl EconiaClient {
                     | AptosErrorCode::SequenceNumberTooOld
                     | AptosErrorCode::VmError => {
                         let seq_num = self.get_sequence_number().await?;
-                        let acc_seq_num = self.user_account.sequence_number_mut();
-                        *acc_seq_num = max(seq_num, *acc_seq_num + 1);
+                        let acc_seq_num = self.user_account.sequence_number();
+                        self.user_account
+                            .set_sequence_number(max(seq_num, acc_seq_num + 1));
                         Err(EconiaError::AptosError(RestError::Api(a)))
                     }
                     _ => Err(EconiaError::AptosError(RestError::Api(a))),

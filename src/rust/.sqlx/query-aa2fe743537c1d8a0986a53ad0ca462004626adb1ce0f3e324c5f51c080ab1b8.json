@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "WITH parameters AS (\n    SELECT\n        $1::numeric AS new_max_txn_version)\nINSERT INTO aggregator.user_history_last_indexed_txn(txn_version)\nSELECT\n    new_max_txn_version\nFROM\n    parameters\n",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Numeric"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "aa2fe743537c1d8a0986a53ad0ca462004626adb1ce0f3e324c5f51c080ab1b8"
+}

@@ -1,4 +1,5 @@
 -- Your SQL goes here
+DROP ROLE IF EXISTS web_anon;
 CREATE ROLE web_anon nologin;
 
 
@@ -19,11 +20,3 @@ GRANT usage ON SCHEMA api TO web_anon;
 GRANT
 SELECT
   ON api.market_registration_events TO web_anon;
-
-
-CREATE EXTENSION pgjwt CASCADE;
-
-
-CREATE FUNCTION api.jwt (json) RETURNS TEXT AS $$
-  SELECT sign((CONCAT(CONCAT('{"mode": "r","channels": ', $1->>'channels'::text),'}'))::json, 'econia_is_dooooooooooooooooooope')
-$$ LANGUAGE SQL;

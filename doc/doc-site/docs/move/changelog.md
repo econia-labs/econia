@@ -2,12 +2,18 @@
 
 Econia Move source code adheres to [Semantic Versioning] and [Keep a Changelog] standards.
 
+## [v4.2.0]
+
+### Added
+
+- Paginated view functions for open orders and price levels ([#577], [#597]).
+
 ## [v4.1.1]
 
 ### Added
 
 - Abort for order size change below min size ([#500]).
-- Add check to evict empty orders during matching ([#504]).
+- Check for empty orders during matching ([#504]).
 
 ## [v4.1.0]
 
@@ -53,7 +59,10 @@ Econia Move source code adheres to [Semantic Versioning] and [Keep a Changelog] 
 [#429]: https://github.com/econia-labs/econia/pull/429
 [#500]: https://github.com/econia-labs/econia/pull/500
 [#504]: https://github.com/econia-labs/econia/pull/504
+[#577]: https://github.com/econia-labs/econia/pull/577
+[#597]: https://github.com/econia-labs/econia/pull/597
 [keep a changelog]: https://keepachangelog.com/en/1.0.0/
 [semantic versioning]: https://semver.org/spec/v2.0.0.html
-[v4.1.0]: https://github.com/econia-labs/econia/releases/tag/v4.1.0-audited
-[v4.1.1]: https://github.com/econia-labs/econia/releases/tag/v4.1.1-audited
+[v4.1.0]: https://github.com/econia-labs/econia/compare/v4.0.2-audited...v4.1.0-audited
+[v4.1.1]: https://github.com/econia-labs/econia/compare/v4.1.0-audited...v4.1.1-audited
+[v4.2.0]: https://github.com/econia-labs/econia/compare/v4.1.1-audited...v4.2.0-audited

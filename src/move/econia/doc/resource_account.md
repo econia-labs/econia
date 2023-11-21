@@ -75,7 +75,8 @@ Return resource account address.
 * <code>test_mixed()</code>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="resource_account.md#0xc0deb00c_resource_account_get_address">get_address</a>(): <b>address</b>
+<pre><code>#[view]
+<b>public</b>(<b>friend</b>) <b>fun</b> <a href="resource_account.md#0xc0deb00c_resource_account_get_address">get_address</a>(): <b>address</b>
 </code></pre>
 
 

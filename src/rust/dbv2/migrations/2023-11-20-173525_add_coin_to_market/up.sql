@@ -84,9 +84,9 @@ FROM
   LEFT JOIN aggregator.coins AS base ON base.address = COALESCE(m.base_account_address, '')
   AND base.module = COALESCE(m.base_module_name, '')
   AND base.struct = COALESCE(m.base_struct_name, '')
-  LEFT JOIN aggregator.coins AS "quote" ON "quote".address = COALESCE(m.base_account_address, '')
-  AND "quote".module = COALESCE(m.base_module_name, '')
-  AND "quote".struct = COALESCE(m.base_struct_name, '')
+  LEFT JOIN aggregator.coins AS "quote" ON "quote".address = COALESCE(m.quote_account_address, '')
+  AND "quote".module = COALESCE(m.quote_module_name, '')
+  AND "quote".struct = COALESCE(m.quote_struct_name, '')
   LEFT JOIN first_fills AS f ON f.market_id = m.market_id
   LEFT JOIN last_fills AS l ON l.market_id = m.market_id
   LEFT JOIN aggregator.markets_24h_data AS v ON v.market_id = m.market_id;

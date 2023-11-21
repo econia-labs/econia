@@ -7,10 +7,10 @@ CREATE TABLE
     NAME TEXT NOT NULL,
     symbol TEXT NOT NULL,
     decimals SMALLINT NOT NULL,
-    address TEXT NOT NULL,
+    "address" TEXT NOT NULL,
     module TEXT NOT NULL,
     struct TEXT NOT NULL,
-    PRIMARY KEY (address, module, struct)
+    PRIMARY KEY ("address", module, struct)
   );
 
 

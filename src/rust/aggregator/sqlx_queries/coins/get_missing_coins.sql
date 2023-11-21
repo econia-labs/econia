@@ -1,7 +1,7 @@
 WITH
   market_coins AS (
     SELECT DISTINCT
-      base_account_address AS address,
+      base_account_address AS "address",
       base_module_name AS module,
       base_struct_name AS struct
     FROM
@@ -12,7 +12,7 @@ WITH
       AND base_struct_name IS NOT NULL
     UNION
     SELECT DISTINCT
-      quote_account_address AS address,
+      quote_account_address AS "address",
       quote_module_name AS module,
       quote_struct_name AS struct
     FROM
@@ -29,7 +29,7 @@ WHERE
     FROM
       aggregator.coins AS c
     WHERE
-      c.address = m.address
+      c."address" = m."address"
       AND c.module = m.module
       AND c.struct = m.struct
   )

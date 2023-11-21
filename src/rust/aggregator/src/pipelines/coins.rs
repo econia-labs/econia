@@ -1,5 +1,8 @@
 use anyhow::anyhow;
-use aptos_sdk::{rest_client::{AptosBaseUrl, Client},types::account_address::AccountAddress};
+use aptos_sdk::{
+    rest_client::{AptosBaseUrl, Client},
+    types::account_address::AccountAddress,
+};
 use chrono::{DateTime, Duration, Utc};
 use sqlx::PgPool;
 
@@ -56,26 +59,44 @@ impl Pipeline for Coins {
     async fn process_and_save_internal(&mut self) -> PipelineAggregationResult {
         self.rate_limited = false;
         let coins = sqlx::query_file!("sqlx_queries/coins/get_missing_coins.sql")
-        .fetch_all(&self.pool)
-        .await
-        .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
         for coin in coins {
-            let (address, module, struct_name) = (coin.address.unwrap(), coin.module.unwrap(), coin.r#struct.unwrap());
+            let (address, module, struct_name) = (
+                coin.address.unwrap(),
+                coin.module.unwrap(),
+                coin.r#struct.unwrap(),
+            );
             let move_struct_tag_str = format!("{}::{}::{}", address, module, struct_name);
             let coin_info = get_coin_info(move_struct_tag_str, &self.network).await;
             match coin_info {
                 Ok(coin_info) => {
-                    let CoinInfo { name, symbol, decimals } = coin_info;
+                    let CoinInfo {
+                        name,
+                        symbol,
+                        decimals,
+                    } = coin_info;
                     sqlx::query_file!(
                         "sqlx_queries/coins/insert_coin.sql",
-                        name, symbol, decimals, address, module, struct_name
+                        name,
+                        symbol,
+                        decimals,
+                        address,
+                        module,
+                        struct_name
                     )
                     .execute(&self.pool)
                     .await
                     .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
-                },
-                Err(GetCoinInfoError::RateLimited) => {tracing::warn!("Got rate limited by Aptos API.");self.rate_limited = true;},
-                Err(GetCoinInfoError::Other(e)) => {tracing::error!("{e}");},
+                }
+                Err(GetCoinInfoError::RateLimited) => {
+                    tracing::warn!("Got rate limited by Aptos API.");
+                    self.rate_limited = true;
+                }
+                Err(GetCoinInfoError::Other(e)) => {
+                    tracing::error!("{e}");
+                }
             }
         }
         Ok(())
@@ -106,19 +127,30 @@ fn map_other<T: Into<anyhow::Error>>(t: T) -> GetCoinInfoError {
     GetCoinInfoError::Other(anyhow!(t))
 }
 
-async fn get_coin_info(move_struct_tag_str: impl Into<String>, network: &AptosBaseUrl) -> Result<CoinInfo, GetCoinInfoError> {
+async fn get_coin_info(
+    move_struct_tag_str: impl Into<String>,
+    network: &AptosBaseUrl,
+) -> Result<CoinInfo, GetCoinInfoError> {
     let move_struct_tag_str: String = move_struct_tag_str.into();
     let client = Client::new(network.to_url());
     let ad = move_struct_tag_str.split("::").collect::<Vec<_>>()[0];
     let ad = AccountAddress::from_str_strict(ad).map_err(map_other)?;
-    let res = client.get_account_resource(ad, &format!("0x1::coin::CoinInfo<{}>", move_struct_tag_str)).await;
+    let res = client
+        .get_account_resource(ad, &format!("0x1::coin::CoinInfo<{}>", move_struct_tag_str))
+        .await;
     let res = res.map_err(|e| match e {
-        aptos_sdk::rest_client::error::RestError::Http(reqwest::StatusCode::TOO_MANY_REQUESTS, _) => { GetCoinInfoError::RateLimited }
-        x => map_other(x)
+        aptos_sdk::rest_client::error::RestError::Http(
+            reqwest::StatusCode::TOO_MANY_REQUESTS,
+            _,
+        ) => GetCoinInfoError::RateLimited,
+        x => map_other(x),
     })?;
-    let x = res.into_inner().ok_or(GetCoinInfoError::Other(anyhow!("Could not find resource.")))?;
+    let x = res
+        .into_inner()
+        .ok_or(GetCoinInfoError::Other(anyhow!("Could not find resource.")))?;
     let r = CoinInfo {
-        name: x.data
+        name: x
+            .data
             .as_object()
             .ok_or(GetCoinInfoError::invalid_response())?
             .get("name")
@@ -126,7 +158,8 @@ async fn get_coin_info(move_struct_tag_str: impl Into<String>, network: &AptosBa
             .as_str()
             .ok_or(GetCoinInfoError::invalid_response())?
             .to_string(),
-        symbol: x.data
+        symbol: x
+            .data
             .as_object()
             .ok_or(GetCoinInfoError::invalid_response())?
             .get("symbol")
@@ -134,7 +167,8 @@ async fn get_coin_info(move_struct_tag_str: impl Into<String>, network: &AptosBa
             .as_str()
             .ok_or(GetCoinInfoError::invalid_response())?
             .to_string(),
-        decimals: x.data
+        decimals: x
+            .data
             .as_object()
             .ok_or(GetCoinInfoError::invalid_response())?
             .get("decimals")

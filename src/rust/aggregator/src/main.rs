@@ -83,7 +83,12 @@ impl ValueEnum for AptosNetwork {
     }
 
     fn value_variants<'a>() -> &'a [Self] {
-        &[Self::Mainnet, Self::Testnet, Self::Devnet, Self::Custom("url")]
+        &[
+            Self::Mainnet,
+            Self::Testnet,
+            Self::Devnet,
+            Self::Custom("url"),
+        ]
     }
 }
 
@@ -96,18 +101,10 @@ impl Display for AptosNetwork {
 impl AptosNetwork {
     pub fn to_base_url(&self) -> AptosBaseUrl {
         match self {
-            Self::Mainnet => {
-                AptosBaseUrl::Mainnet
-            }
-            Self::Testnet => {
-                AptosBaseUrl::Testnet
-            }
-            Self::Devnet => {
-                AptosBaseUrl::Devnet
-            }
-            Self::Custom(s) => {
-                AptosBaseUrl::Custom(Url::parse(&s).expect("Invalid custom url."))
-            }
+            Self::Mainnet => AptosBaseUrl::Mainnet,
+            Self::Testnet => AptosBaseUrl::Testnet,
+            Self::Devnet => AptosBaseUrl::Devnet,
+            Self::Custom(s) => AptosBaseUrl::Custom(Url::parse(&s).expect("Invalid custom url.")),
         }
     }
 }
@@ -201,7 +198,7 @@ async fn main() -> Result<()> {
                     pool.clone(),
                     60 * 60 * 24,
                 ))));
-            },
+            }
             Pipelines::Coins => {
                 data.push(Arc::new(Mutex::new(Coins::new(
                     pool.clone(),

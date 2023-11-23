@@ -10,8 +10,7 @@ Note that before you can use this file you will have to update the indexer submo
 
 ```sh
 # From Econia repo root
-git submodule init
-git submodule update src/rust/dependencies/aptos-indexer-processors
+git submodule update --init --recursive
 ```
 
 ## End-to-end docker compose
@@ -30,6 +29,7 @@ The new, copied and renamed file goes into the same folder as the template.
 
 ```sh
 # From Econia repo root
+APTOS_NETWORK='custom(http://0.0.0.0:8080)' \
 docker compose --file src/docker/compose.dss-local.yaml up
 ```
 
@@ -47,7 +47,7 @@ aptos account list --account $FAUCET_ADDRESS --url http://0.0.0.0:8080
 aptos account list --account $ECONIA_ADDRESS --url http://0.0.0.0:8080
 ```
 
-Both of the last two commands should spit out a bunch of resources deployed to the expected addresses.
+Both of the last two commands should report resources deployed to the expected addresses.
 
 **4. Verify working connectivity** (optional, recommended).
 

@@ -104,6 +104,12 @@ server_config:
   starting_version: 154106802
 ```
 
+:::tip
+
+Substitute `aptoslabs_grpc_token_or_token_for_another_grpc_endpoint` for your token.
+
+:::
+
 ### Checking out the right branch
 
 The Econia DSS is developed on a [Rust-like train schedule](https://doc.rust-lang.org/book/appendix-07-nightly-rust.html):

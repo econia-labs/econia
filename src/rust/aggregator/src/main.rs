@@ -1,5 +1,5 @@
 use std::{
-    fmt::Display,
+    str::FromStr,
     sync::Arc,
     time::{Duration, SystemTime},
 };
@@ -13,6 +13,8 @@ use sqlx::Executor;
 use sqlx_postgres::PgPoolOptions;
 use tokio::{sync::Mutex, task::JoinSet};
 use url::Url;
+
+mod pipelines;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -38,7 +40,7 @@ struct Args {
     aptos_network: Option<AptosNetwork>,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, ValueEnum)]
 pub enum Pipelines {
     Candlesticks,
     Coins,
@@ -47,54 +49,31 @@ pub enum Pipelines {
     UserHistory,
 }
 
-impl ValueEnum for Pipelines {
-    fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
-        Some(clap::builder::PossibleValue::new(self.to_string()))
-    }
-
-    fn value_variants<'a>() -> &'a [Self] {
-        &[
-            Self::Candlesticks,
-            Self::Coins,
-            Self::Leaderboards,
-            Self::Market24hData,
-            Self::UserHistory,
-        ]
-    }
-}
-
-impl Display for Pipelines {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{self:?}")
-    }
-}
-
 #[derive(Clone, Debug, PartialEq)]
 pub enum AptosNetwork {
     Mainnet,
     Testnet,
     Devnet,
-    Custom(&'static str),
+    Custom(String),
 }
 
-impl ValueEnum for AptosNetwork {
-    fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
-        Some(clap::builder::PossibleValue::new(self.to_string()))
-    }
+impl FromStr for AptosNetwork {
+    type Err = anyhow::Error;
 
-    fn value_variants<'a>() -> &'a [Self] {
-        &[
-            Self::Mainnet,
-            Self::Testnet,
-            Self::Devnet,
-            Self::Custom("url"),
-        ]
-    }
-}
-
-impl Display for AptosNetwork {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{self:?}")
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let network = match s {
+            "mainnet" => Self::Mainnet,
+            "testnet" => Self::Testnet,
+            "devnet" => Self::Devnet,
+            _ => {
+                if s.to_string().starts_with("custom(") && s.to_string().ends_with(')') {
+                    Self::Custom(s["custom(".len()..s.len() - ")".len()].to_string())
+                } else {
+                    return Err(anyhow!("Invalid Aptos Network"));
+                }
+            }
+        };
+        Ok(network)
     }
 }
 
@@ -109,8 +88,6 @@ impl AptosNetwork {
     }
 }
 
-mod pipelines;
-
 #[tokio::main]
 async fn main() -> Result<()> {
     tracing_subscriber::fmt()
@@ -122,7 +99,7 @@ async fn main() -> Result<()> {
 
     let network = match std::env::var("APTOS_NETWORK") {
         Ok(network_env_var) => {
-            AptosNetwork::from_str(&network_env_var, true).expect("Invalid Aptos Network")
+            AptosNetwork::from_str(&network_env_var).expect("Invalid Aptos Network")
         }
         _ => args.aptos_network.unwrap_or(AptosNetwork::Testnet),
     };

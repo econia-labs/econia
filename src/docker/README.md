@@ -29,7 +29,7 @@ The new, copied and renamed file goes into the same folder as the template.
 
 ```sh
 # From Econia repo root
-APTOS_NETWORK='custom(http://0.0.0.0:8080)' \
+APTOS_NETWORK='custom(http://streamer:8080)' \
 docker compose --file src/docker/compose.dss-local.yaml up
 ```
 

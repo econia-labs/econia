@@ -6668,9 +6668,11 @@ restriction, and
 * <code>test_place_limit_order_crosses_ask_exact()</code>
 * <code>test_place_limit_order_crosses_ask_partial()</code>
 * <code>test_place_limit_order_crosses_ask_partial_cancel()</code>
+* <code>test_place_limit_order_crosses_ask_partial_maker()</code>
 * <code>test_place_limit_order_crosses_ask_self_match_cancel()</code>
 * <code>test_place_limit_order_crosses_bid_exact()</code>
 * <code>test_place_limit_order_crosses_bid_partial()</code>
+* <code>test_place_limit_order_crosses_bid_partial_maker()</code>
 * <code>test_place_limit_order_crosses_bid_partial_post_under_min()</code>
 * <code>test_place_limit_order_evict()</code>
 * <code>test_place_limit_order_no_cross_ask_user()</code>
@@ -6867,15 +6869,6 @@ restriction, and
         <a href="user.md#0xc0deb00c_user_deposit_assets_internal">user::deposit_assets_internal</a>&lt;BaseType, QuoteType&gt;(
             user_address, market_id, custodian_id, base_deposit,
             optional_base_coins, quote_coins, underwriter_id);
-        // <a href="market.md#0xc0deb00c_market_Order">Order</a> still crosses spread <b>if</b> an ask and would trail
-        // behind bids AVL queue head, or <b>if</b> a bid and would trail
-        // behind asks AVL queue head: can happen <b>if</b> an ask (taker
-        // sell) and quote ceiling reached, or <b>if</b> a bid (taker buy)
-        // and all available quote spent.
-        <b>let</b> still_crosses_spread = <b>if</b> (side == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>)
-            !<a href="avl_queue.md#0xc0deb00c_avl_queue_would_update_head">avl_queue::would_update_head</a>(&order_book_ref_mut.bids, price)
-            <b>else</b>
-            !<a href="avl_queue.md#0xc0deb00c_avl_queue_would_update_head">avl_queue::would_update_head</a>(&order_book_ref_mut.asks, price);
         // Remaining size is amount not traded during matching.
         remaining_size =
             size - (base_traded / order_book_ref_mut.lot_size);
@@ -6883,13 +6876,27 @@ restriction, and
         <b>if</b> (self_match_cancel) {
             <a href="_fill">option::fill</a>(&<b>mut</b> cancel_reason_option,
                          <a href="market.md#0xc0deb00c_market_CANCEL_REASON_SELF_MATCH_TAKER">CANCEL_REASON_SELF_MATCH_TAKER</a>);
-        } <b>else</b> <b>if</b> ((remaining_size &gt; 0) &&
-                   (restriction == <a href="market.md#0xc0deb00c_market_IMMEDIATE_OR_CANCEL">IMMEDIATE_OR_CANCEL</a>)) {
-            <a href="_fill">option::fill</a>(&<b>mut</b> cancel_reason_option,
-                         <a href="market.md#0xc0deb00c_market_CANCEL_REASON_IMMEDIATE_OR_CANCEL">CANCEL_REASON_IMMEDIATE_OR_CANCEL</a>);
-        } <b>else</b> <b>if</b> (still_crosses_spread) {
-            <a href="_fill">option::fill</a>(&<b>mut</b> cancel_reason_option,
-                         <a href="market.md#0xc0deb00c_market_CANCEL_REASON_MAX_QUOTE_TRADED">CANCEL_REASON_MAX_QUOTE_TRADED</a>);
+        } <b>else</b> <b>if</b> (remaining_size &gt; 0) {
+            <b>if</b> (restriction == <a href="market.md#0xc0deb00c_market_IMMEDIATE_OR_CANCEL">IMMEDIATE_OR_CANCEL</a>) {
+                <a href="_fill">option::fill</a>(&<b>mut</b> cancel_reason_option,
+                             <a href="market.md#0xc0deb00c_market_CANCEL_REASON_IMMEDIATE_OR_CANCEL">CANCEL_REASON_IMMEDIATE_OR_CANCEL</a>);
+            } <b>else</b> {
+                // <a href="market.md#0xc0deb00c_market_Order">Order</a> still crosses spread <b>if</b> an ask and would
+                // trail behind bids AVL queue head, or <b>if</b> a bid and
+                // would trail behind asks AVL queue head: can
+                // happen <b>if</b> an ask (taker sell) and quote ceiling
+                // reached, or <b>if</b> a bid (taker buy) and all
+                // available quote spent.
+                <b>let</b> still_crosses_spread = <b>if</b> (side == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>)
+                    !<a href="avl_queue.md#0xc0deb00c_avl_queue_would_update_head">avl_queue::would_update_head</a>(
+                        &order_book_ref_mut.bids, price) <b>else</b>
+                    !<a href="avl_queue.md#0xc0deb00c_avl_queue_would_update_head">avl_queue::would_update_head</a>(
+                        &order_book_ref_mut.asks, price);
+                <b>if</b> (still_crosses_spread) {
+                    <a href="_fill">option::fill</a>(&<b>mut</b> cancel_reason_option,
+                                 <a href="market.md#0xc0deb00c_market_CANCEL_REASON_MAX_QUOTE_TRADED">CANCEL_REASON_MAX_QUOTE_TRADED</a>);
+                }
+            }
         };
     } <b>else</b> { // If spread not crossed (matching engine not called):
         // <a href="market.md#0xc0deb00c_market_Order">Order</a> book counter needs <b>to</b> be updated for new order ID.

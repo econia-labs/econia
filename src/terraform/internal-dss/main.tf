@@ -107,14 +107,19 @@ resource "google_sql_database_instance" "postgres" {
   provider      = google-beta
   root_password = var.db_root_password
   settings {
+    insights_config {
+      query_insights_enabled = true
+      query_plans_per_minute = 20
+      query_string_length    = 4500
+    }
     ip_configuration {
       authorized_networks {
-        value = var.db_admin_public_ip
+        value = "0.0.0.0/0"
       }
       ipv4_enabled    = true
       private_network = google_compute_network.sql_network.id
     }
-    tier = "db-custom-2-8192"
+    tier = "db-custom-4-16384"
   }
 }
 
@@ -161,6 +166,9 @@ resource "google_service_networking_connection" "sql_network_connection" {
   service                 = "servicenetworking.googleapis.com"
   provisioner "local-exec" {
     when = destroy
+    # Manually destroy VPC peering.
+    # This is because the dependency solver doesn't properly destroy.
+    # https://github.com/hashicorp/terraform-provider-google/issues/16275
     command = join(" ", [
       "gcloud compute networks peerings delete",
       "servicenetworking-googleapis-com",
@@ -467,6 +475,11 @@ resource "google_cloud_run_v2_service" "websockets" {
       }
       ports {
         container_port = 3000
+      }
+      resources {
+        limits = {
+          memory = "1024Mi"
+        }
       }
     }
     scaling {

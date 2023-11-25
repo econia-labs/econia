@@ -6,6 +6,10 @@ output "db_conn_str_admin" {
   value = local.db_conn_str_admin
 }
 
+output "aptos_network" {
+  value = var.aptos_network
+}
+
 output "postgrest_url" {
   value = google_cloud_run_v2_service.postgrest.uri
 }

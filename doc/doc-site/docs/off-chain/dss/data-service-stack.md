@@ -191,6 +191,12 @@ To verify the aggregator is running:
 docker logs docker-aggregator-1 --tail 5
 ```
 
+To connect directly to the database:
+
+```sh
+psql postgres://econia:econia@localhost:5432/econia
+```
+
 ### Result
 
 Great job!

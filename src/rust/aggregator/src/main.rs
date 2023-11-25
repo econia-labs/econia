@@ -146,8 +146,6 @@ async fn main() -> Result<()> {
         x
     };
 
-    println!("{:?}", pipelines);
-
     for pipeline in pipelines {
         match pipeline {
             Pipelines::Candlesticks => {

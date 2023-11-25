@@ -2,12 +2,20 @@
 
 ## DSS
 
-### V1.2
+### v1.3.0
+
+#### Added
+
+- Add materialized view support for 24hr market price/volume fields.
+- Add assorted market price/volume fields to `/markets` endpoint.
+- Incorporated average execution price as a field in `/orders` endpoint.
+
+### v1.2.0
 
 #### Breaking changes
 
-- removed `/{limit,market,swap}_orders` endpoints
-- renamed `side` to `direction` in `/price_levels`
+- removed `/{limit,market,swap}_orders` endpoints.
+- renamed `side` to `direction` in `/price_levels`.
 
 #### Important changes
 
@@ -16,4 +24,4 @@
 
 #### Misc
 
-- improved overall performance
+- improved overall performance.

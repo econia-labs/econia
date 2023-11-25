@@ -4,10 +4,4 @@ use thiserror::Error;
 pub enum TypeError {
     #[error("conversion error")]
     ConversionError { name: String },
-
-    #[error("missing value")]
-    MissingValue { name: String },
-
-    #[error("unexpected value")]
-    UnexpectedValue { name: String },
 }

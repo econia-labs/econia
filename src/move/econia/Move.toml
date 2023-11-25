@@ -1,6 +1,6 @@
 [package]
 name = "Econia"
-version = "4.2.0"
+version = "4.2.1"
 upgrade_policy = "compatible"
 authors = ["Econia Labs (developers@econialabs.com)"]
 

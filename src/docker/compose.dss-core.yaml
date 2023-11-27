@@ -14,6 +14,7 @@ services:
       - diesel
       - postgres
     environment:
+      APTOS_NETWORK: ${APTOS_NETWORK}
       DATABASE_URL: "postgres://econia:econia@postgres:5432/econia"
 
   postgrest:

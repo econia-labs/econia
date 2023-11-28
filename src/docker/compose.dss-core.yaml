@@ -11,8 +11,10 @@ services:
       context: ../../
       dockerfile: src/docker/aggregator/Dockerfile
     depends_on:
-      - diesel
-      - postgres
+      diesel:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
     environment:
       APTOS_NETWORK: ${APTOS_NETWORK}
       DATABASE_URL: "postgres://econia:econia@postgres:5432/econia"
@@ -36,8 +38,10 @@ services:
       args:
         - POSTGRES_WEBSOCKETS_VERSION=0.11.1.0
     depends_on:
-      - diesel
-      - postgres
+      diesel:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
     environment:
       - PGWS_DB_URI=postgres://econia:econia@postgres/econia
       # This has to be at least 32 characters long.

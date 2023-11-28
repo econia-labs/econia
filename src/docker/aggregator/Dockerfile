@@ -42,4 +42,4 @@ ENV APTOS_NETWORK=$APTOS_NETWORK
 ENV DATABASE_URL=$DATABASE_URL
 
 # Delay start to avoid migrations race condition
-ENTRYPOINT sleep 5 && /app/aggregator
+ENTRYPOINT /app/aggregator

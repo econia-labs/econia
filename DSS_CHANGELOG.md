@@ -6,6 +6,7 @@
 
 - Add coins pipeline with `APTOS_NETWORK` environment variable.
 - Coin fields to `/markets` endpoint.
+- Add `/user_balances` endpoint.
 
 ### Changed
 

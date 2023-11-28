@@ -1,7 +1,7 @@
 use anyhow::anyhow;
 use bigdecimal::{num_bigint::ToBigInt, BigDecimal, Zero};
 use chrono::{DateTime, Duration, Utc};
-use sqlx::{Executor, PgConnection, PgPool, Postgres, Transaction};
+use sqlx::{Executor, PgConnection, PgPool, Postgres, Transaction, Error};
 
 use aggregator::{Pipeline, PipelineAggregationResult, PipelineError};
 
@@ -188,7 +188,16 @@ impl Pipeline for UserHistory {
         transaction
             .commit()
             .await
-            .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
+            .or_else(|e| match &e {
+                Error::Database(dbe) => {
+                    if dbe.message() == "could not serialize access due to read/write dependencies among transactions" {
+                        Ok(())
+                    } else {
+                        Err(PipelineError::ProcessingError(anyhow!(e)))
+                    }
+                }
+                _ => {Err(PipelineError::ProcessingError(anyhow!(e)))}
+            })?;
         Ok(())
     }
 }

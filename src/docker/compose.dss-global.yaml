@@ -5,6 +5,9 @@ include:
 
 services:
     processsor:
+      depends_on:
+        diesel:
+          condition: service_completed_successfully
       environment:
         - HEALTHCHECK_BEFORE_START=false
       extends:

@@ -21,8 +21,10 @@ services:
 
   postgrest:
     depends_on:
-      - diesel
-      - postgres
+      diesel:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
     environment:
       PGRST_DB_URI: "postgres://econia:econia@postgres:5432/econia"
       PGRST_DB_ANON_ROLE: web_anon

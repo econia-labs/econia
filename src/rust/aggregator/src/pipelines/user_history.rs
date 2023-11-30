@@ -4,6 +4,7 @@ use chrono::{DateTime, Duration, Utc};
 use sqlx::{Executor, PgConnection, PgPool, Postgres, Transaction, Error};
 
 use aggregator::{Pipeline, PipelineAggregationResult, PipelineError};
+use tracing::warn;
 
 /// Number of bits to shift when encoding transaction version.
 const SHIFT_TXN_VERSION: u8 = 64;
@@ -191,6 +192,7 @@ impl Pipeline for UserHistory {
             .or_else(|e| match &e {
                 Error::Database(dbe) => {
                     if dbe.message() == "could not serialize access due to read/write dependencies among transactions" {
+                        warn!("transaction error, gracefully ignoring");
                         Ok(())
                     } else {
                         Err(PipelineError::ProcessingError(anyhow!(e)))

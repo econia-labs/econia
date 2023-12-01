@@ -192,7 +192,7 @@ impl Pipeline for UserHistory {
             .or_else(|e| match &e {
                 Error::Database(dbe) => {
                     if dbe.message() == "could not serialize access due to read/write dependencies among transactions" {
-                        warn!("transaction error, gracefully ignoring");
+                        warn!("transaction serialization error, gracefully ignoring, will retry next loop");
                         Ok(())
                     } else {
                         Err(PipelineError::ProcessingError(anyhow!(e)))

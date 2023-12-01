@@ -1,7 +1,7 @@
 use anyhow::anyhow;
 use bigdecimal::{num_bigint::ToBigInt, BigDecimal, Zero};
 use chrono::{DateTime, Duration, Utc};
-use sqlx::{Executor, PgConnection, PgPool, Postgres, Transaction, Error};
+use sqlx::{Error, Executor, PgConnection, PgPool, Postgres, Transaction};
 
 use aggregator::{Pipeline, PipelineAggregationResult, PipelineError};
 use tracing::warn;

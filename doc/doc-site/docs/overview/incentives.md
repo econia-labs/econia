@@ -30,35 +30,12 @@ Econia involves several major incentive parameters, defined at [`IncentiveParame
 
 See the assorted [incentives module getters] for parameter lookup during runtime.
 
-## Genesis parameters
+## Mainnet incentive parameters
 
-Upon module publication, Econia's incentive parameters will be set to genesis values that are calibrated against the market price of `APT`, denominated in US dollars (USD).
-Later, the incentive parameters can be tuned to account for variations in market prices.
+Upon mainnet publication, Econia's incentive parameters were set to hard-coded genesis values as discussed in [issue 49].
+The number of tiers cannot be decreased, which means that there must always be at least 7 tiers for the Econia mainnet deployment.
 
-See [issue 49] for an in-depth discussion of genesis parameter value selection, and [commit `8f892b`] which calibrates against an approximate market price of 4 USD per `APT`:
-
-| Incentive parameter          | Genesis value |
-| ---------------------------- | ------------- |
-| Utility coin type            | `APT`         |
-| Market registration fee      | 25 USD        |
-| Underwriter registration fee | 0.01 USD      |
-| Custodian registration fee   | 0.01 USD      |
-| Taker fee divisor (as a %)   | 2000 (0.05%)  |
-
-| Tier | Fee share (%) | Activation fee (USD) | Withdrawal fee (USD) |
-| ---- | ------------- | -------------------- | -------------------- |
-| Base | 0.01          | Free                 | 0.20                 |
-| 1    | 0.012         | 0.20                 | 0.19                 |
-| 2    | 0.013         | 3.00                 | 0.18                 |
-| 3    | 0.014         | 40                   | 0.17                 |
-| 4    | 0.015         | 500                  | 0.16                 |
-| 5    | 0.016         | 6000                 | 0.15                 |
-| 6    | 0.017         | 70000                | 0.14                 |
-
-For example, consider a hypothetical `APT/USDC` market:
-by default, an integrator who routes traffic through Econia can collect 0.01% of the 0.05% taker fees collected on the market, but can collect 0.014% if they pay the 40 USD equivalent fee to activate to tier 3.
-
-Hence if they route five million USD of volume through Econia on the given market, at the base tier they will only collect 500 `USDC` in fees, but if they activate to tier 3 they will collect 700 `USDC`, paying off the $40 USD equivalent charged for activation and thus profiting $160 for activating to tier 3.
+Since mainnet genesis, the incentive parameters have been modified via a community governance vote, with the actual values displayed under the [`IncentiveParameters`] resource at the [mainnet account address].
 
 ## Fee stores
 
@@ -77,10 +54,10 @@ If they route volume through Econia without first registering an [`IntegratorFee
 
 :::
 
-[commit `8f892b`]: https://github.com/econia-labs/econia/commit/8f892b96e2cde646837fd64330699b92736a3bc7
 [incentives module documentation]: https://github.com/econia-labs/econia/tree/main/src/move/econia/doc/incentives.md
 [incentives module getters]: https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/incentives.md#public-getters
 [issue 49]: https://github.com/econia-labs/econia/issues/49
+[mainnet account address]: ../welcome.md#account-addresses
 [matching]: ./matching
 [register a custodian capability]: ./registry#custodians
 [register a market]: ./registry#markets

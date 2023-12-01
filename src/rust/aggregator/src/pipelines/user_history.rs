@@ -156,6 +156,7 @@ impl Pipeline for UserHistory {
                             &fill.market_id,
                             &fill.time,
                             &fill.price,
+                            &fill.taker_quote_fees_paid,
                         )
                         .await?;
                     }
@@ -201,9 +202,10 @@ async fn aggregate_fill_for_maker_and_taker<'a>(
     market_id: &BigDecimal,
     time: &DateTime<Utc>,
     price: &BigDecimal,
+    fees: &BigDecimal,
 ) -> PipelineAggregationResult {
-    aggregate_fill(tx, size, maker_order_id, market_id, time, price).await?;
-    aggregate_fill(tx, size, taker_order_id, market_id, time, price).await?;
+    aggregate_fill(tx, size, maker_order_id, market_id, time, price, fees).await?;
+    aggregate_fill(tx, size, taker_order_id, market_id, time, price, fees).await?;
     Ok(())
 }
 
@@ -214,6 +216,7 @@ async fn aggregate_fill<'a>(
     market_id: &BigDecimal,
     time: &DateTime<Utc>,
     price: &BigDecimal,
+    fees: &BigDecimal,
 ) -> PipelineAggregationResult {
     // Only limit orders can remain open after a transaction during which they are filled against,
     // so flag market orders and swaps as closed by default: if they end up being cancelled instead
@@ -226,6 +229,7 @@ async fn aggregate_fill<'a>(
         market_id,
         time,
         price,
+        fees,
     )
     .execute(tx as &mut PgConnection)
     .await

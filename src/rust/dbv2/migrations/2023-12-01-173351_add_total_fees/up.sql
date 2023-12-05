@@ -6,9 +6,18 @@ ALTER TABLE aggregator.user_history
 ADD COLUMN total_fees_paid_in_quote_subunits NUMERIC(20,0);
 
 
+WITH total_fees AS (
+    SELECT
+        SUM(taker_quote_fees_paid) AS total_fees_paid_in_quote_subunits,
+        taker_order_id,
+        market_id
+    FROM fill_events AS f
+    WHERE f.taker_address = f.emit_address
+    GROUP BY market_id, taker_order_id
+)
 UPDATE aggregator.user_history AS u
-SET total_fees_paid_in_quote_subunits = SUM(taker_quote_fees_paid)
-FROM fill_events AS f
+SET total_fees_paid_in_quote_subunits = f.total_fees_paid_in_quote_subunits
+FROM total_fees AS f
 WHERE f.taker_order_id = u.order_id
 AND f.market_id = u.market_id;
 

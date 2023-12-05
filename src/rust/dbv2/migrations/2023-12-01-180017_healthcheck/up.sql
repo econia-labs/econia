@@ -2,7 +2,7 @@
 CREATE or replace FUNCTION api.healthcheck ()
 RETURNS boolean AS $$
     SELECT (
-        SELECT (
+        SELECT COALESCE((
             SELECT SUM(total_filled)
             FROM api.orders
         ) = (
@@ -12,8 +12,8 @@ RETURNS boolean AS $$
                 SELECT txn_version
                 FROM aggregator.user_history_last_indexed_txn
             )
-        )
-    ) AND (
+        ), true)
+    ) AND COALESCE((
         WITH last_candlesticks AS (
             SELECT DISTINCT ON (market_id, resolution)
                 volume,
@@ -38,5 +38,5 @@ RETURNS boolean AS $$
             AND "time" < start_time + '1 second'::interval * resolution
             GROUP BY volume, last_candlesticks.market_id, resolution
         ) AS lool
-    );
+    ), true);
 $$ LANGUAGE SQL;

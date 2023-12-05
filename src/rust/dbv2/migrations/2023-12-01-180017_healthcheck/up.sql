@@ -1,5 +1,5 @@
 -- Your SQL goes here
-CREATE or replace FUNCTION api.healthcheck ()
+CREATE FUNCTION api.healthcheck ()
 RETURNS boolean AS $$
     SELECT (
         SELECT COALESCE((

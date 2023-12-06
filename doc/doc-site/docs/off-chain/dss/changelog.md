@@ -1,4 +1,6 @@
-# Data Service Stack (DSS) Changelog
+# Changelog
+
+Stable DSS releases are tracked on the [`dss-stable`] branch with tags like [`dss-v1.3.0`]
 
 ## v1.4.0
 

@@ -29,7 +29,7 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 
 ### Changed
 
-- Refactor aggregator Dockerfile for `APTOS_NETWORK` environment variable, multi-stage build ([#625])
+- Refactor aggregator Dockerfile for `APTOS_NETWORK` environment variable, multi-stage build ([#625]).
 
 ## [v1.3.0]
 

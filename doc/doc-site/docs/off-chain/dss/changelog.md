@@ -1,8 +1,8 @@
 # Changelog
 
-Stable DSS releases are tracked on the [`dss-stable`] branch with tags like [`dss-v1.3.0`]
+Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-v1.3.0`][v1.3.0].
 
-## v1.4.0
+## [v1.4.0]
 
 ### Added
 
@@ -14,7 +14,7 @@ Stable DSS releases are tracked on the [`dss-stable`] branch with tags like [`ds
 
 - Refactor aggregator Dockerfile for `APTOS_NETWORK` environment variable, multi-stage build.
 
-## v1.3.0
+## [v1.3.0]
 
 ### Added
 
@@ -39,3 +39,7 @@ Stable DSS releases are tracked on the [`dss-stable`] branch with tags like [`ds
 ### Misc
 
 - Improve overall performance.
+
+[v1.3.0]: https://github.com/econia-labs/econia/releases/tag/dss-v1.3.0
+[v1.4.0]: https://github.com/econia-labs/econia/compare/dss-v1.3.0...dss-v1.4.0
+[`dss-stable`]: https://github.com/econia-labs/econia/tree/dss-stable

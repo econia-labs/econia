@@ -6,13 +6,20 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 
 ### Added
 
-- Add coins pipeline with `APTOS_NETWORK` environment variable.
-- Coin fields to `/markets` endpoint.
-- Add `/user_balances` endpoint.
+- Add coins pipeline with `APTOS_NETWORK` environment variable, add coin fields to `/markets` endpoint ([#624], [#625]).
+- Add `/user_balances` endpoint ([#641]).
+- Force local Docker compose services to wait for `diesel` completion ([#644], [#648]).
+- Function for getting `/markets` endpoint info when querying `/user_balances` endpoint ([#645]).
+- Retry mechanism for serialized PostgreSQL transaction failure ([#643], [Processor #21]).
+- Sanitize event type address in processor ([Processor #19], [Processor #20]).
+
+### Fixed
+
+- Reverse migrations ([#638]).
 
 ### Changed
 
-- Refactor aggregator Dockerfile for `APTOS_NETWORK` environment variable, multi-stage build.
+- Refactor aggregator Dockerfile for `APTOS_NETWORK` environment variable, multi-stage build ([#625])
 
 ## [v1.3.0]
 
@@ -40,6 +47,17 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 
 - Improve overall performance.
 
+[#624]: https://github.com/econia-labs/econia/pull/624
+[#625]: https://github.com/econia-labs/econia/pull/625
+[#638]: https://github.com/econia-labs/econia/pull/638
+[#641]: https://github.com/econia-labs/econia/pull/641
+[#643]: https://github.com/econia-labs/econia/pull/643
+[#644]: https://github.com/econia-labs/econia/pull/644
+[#645]: https://github.com/econia-labs/econia/pull/645
+[#648]: https://github.com/econia-labs/econia/pull/648
+[processor #19]: https://github.com/econia-labs/aptos-indexer-processors/pull/19
+[processor #20]: https://github.com/econia-labs/aptos-indexer-processors/pull/20
+[processor #21]: https://github.com/econia-labs/aptos-indexer-processors/pull/21
 [v1.3.0]: https://github.com/econia-labs/econia/releases/tag/dss-v1.3.0
 [v1.4.0]: https://github.com/econia-labs/econia/compare/dss-v1.3.0...dss-v1.4.0
 [`dss-stable`]: https://github.com/econia-labs/econia/tree/dss-stable

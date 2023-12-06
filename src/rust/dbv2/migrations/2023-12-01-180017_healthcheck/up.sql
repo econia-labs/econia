@@ -1,4 +1,29 @@
 -- Your SQL goes here
+CREATE VIEW
+  api.user_history_last_indexed_txn AS
+SELECT
+  *
+FROM
+  aggregator.user_history_last_indexed_txn;
+
+
+GRANT
+SELECT
+  ON api.user_history_last_indexed_txn TO web_anon;
+
+
+CREATE VIEW
+  api.candlesticks_last_indexed_txn AS
+SELECT
+  *
+FROM
+  aggregator.candlesticks_last_indexed_txn;
+
+
+GRANT
+SELECT
+  ON api.candlesticks_last_indexed_txn TO web_anon;
+
 CREATE FUNCTION api.healthcheck ()
 RETURNS boolean AS $$
     SELECT (
@@ -10,7 +35,7 @@ RETURNS boolean AS $$
             FROM fill_events
             WHERE txn_version <= (
                 SELECT txn_version
-                FROM aggregator.user_history_last_indexed_txn
+                FROM api.user_history_last_indexed_txn
             )
         ), true)
     ) AND COALESCE((
@@ -30,7 +55,7 @@ RETURNS boolean AS $$
             FROM fill_events, last_candlesticks
             WHERE txn_version <= (
                 SELECT txn_version
-                FROM aggregator.candlesticks_last_indexed_txn AS i
+                FROM api.candlesticks_last_indexed_txn AS i
                 WHERE i.resolution = last_candlesticks.resolution
             )
             AND fill_events.market_id = last_candlesticks.market_id
@@ -38,5 +63,5 @@ RETURNS boolean AS $$
             AND "time" < start_time + '1 second'::interval * resolution
             GROUP BY volume, last_candlesticks.market_id, resolution
         ) AS lool
-    ), true);
+    ), true) AS is_data_coherent;
 $$ LANGUAGE SQL;

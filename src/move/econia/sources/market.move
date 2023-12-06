@@ -2840,9 +2840,6 @@ module econia::market {
         // Assert new size is at least minimum size for market.
         assert!(new_size >= order_book_ref_mut.min_size,
                 E_SIZE_CHANGE_BELOW_MIN_SIZE);
-        // Throttle trade.
-        throttler::throttle::throttle_trade(
-            market_id, user, new_size * order_book_ref_mut.lot_size);
         // Mutably borrow corresponding orders AVL queue.
         let orders_ref_mut = if (side == ASK) &mut order_book_ref_mut.asks
             else &mut order_book_ref_mut.bids;
@@ -3537,8 +3534,6 @@ module econia::market {
         assert!(base_fill >= min_base, E_MIN_BASE_NOT_TRADED);
         // Assert minimum quote coin trade amount met.
         assert!(quote_traded >= min_quote, E_MIN_QUOTE_NOT_TRADED);
-        // Throttle the trade.
-        throttler::throttle::throttle_trade(market_id, taker, base_fill);
         // Return optional base coin, quote coins, trade amounts,
         // self match taker cancel flag, if liquidity is gone, and if
         // limit price was violated.
@@ -3731,8 +3726,6 @@ module econia::market {
         assert!(quote <= (HI_64 as u128), E_SIZE_PRICE_QUOTE_OVERFLOW);
         // Max base to trade is amount calculated from size, lot size.
         let max_base = (base as u64);
-        // Throttle trade.
-        throttler::throttle::throttle_trade(market_id, user_address, max_base);
         // If a fill-or-abort order, must fill as a taker order with
         // a minimum trade amount equal to max base. Else no min.
         let min_base = if (restriction == FILL_OR_ABORT) max_base else 0;

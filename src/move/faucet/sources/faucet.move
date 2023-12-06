@@ -71,13 +71,5 @@ module econia_faucet::faucet {
         ).mint_cap;
         // Deposit to caller's coin store the minted coins.
         coin::deposit(account_addr, coin::mint(amount, mint_cap_ref));
-        // Throttle the mint.
-        throttler::throttle::throttle_transfer(
-            0,
-            account_addr,
-            true,
-            coin::decimals<CoinType>() == 8,
-            amount,
-        );
     }
 }

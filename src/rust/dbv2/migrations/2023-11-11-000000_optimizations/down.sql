@@ -43,7 +43,8 @@ CREATE TABLE aggregator.user_history_limit (
     side BOOL NOT NULL,
     self_matching_behavior SMALLINT NOT NULL,
     restriction SMALLINT NOT NULL,
-    price NUMERIC(20) NOT NULL
+    price NUMERIC(20) NOT NULL,
+    last_increase_stamp numeric(39,0)
 );
 
 CREATE TABLE aggregator.user_history_market (
@@ -338,6 +339,26 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER updated_order_trigger
 AFTER UPDATE ON aggregator.user_history FOR EACH ROW
 EXECUTE PROCEDURE notify_updated_order ();
+
+
+CREATE TRIGGER new_limit_order_trigger
+AFTER INSERT ON aggregator.user_history_limit FOR EACH ROW
+EXECUTE PROCEDURE notify_new_limit_order ();
+
+
+CREATE TRIGGER new_market_order_trigger
+AFTER INSERT ON aggregator.user_history_market FOR EACH ROW
+EXECUTE PROCEDURE notify_new_market_order ();
+
+
+CREATE TRIGGER new_swap_order_trigger
+AFTER INSERT ON aggregator.user_history_swap FOR EACH ROW
+EXECUTE PROCEDURE notify_new_swap_order ();
+
+
+CREATE TRIGGER updated_limit_order_trigger
+AFTER UPDATE ON aggregator.user_history_limit FOR EACH ROW
+EXECUTE PROCEDURE notify_updated_limit_order ();
 
 
 DROP TYPE order_direction;

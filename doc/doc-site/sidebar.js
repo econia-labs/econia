@@ -60,6 +60,7 @@ module.exports = {
                         id: 'off-chain/dss/data-service-stack'
                     },
                     items: [
+                        'off-chain/dss/changelog',
                         'off-chain/dss/rest-api',
                         'off-chain/dss/websocket',
                         'off-chain/dss/gcp',

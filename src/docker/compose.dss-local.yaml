@@ -16,7 +16,10 @@ services:
 
   processor:
     depends_on:
-      - streamer
+      streamer:
+        condition: service_started
+      diesel:
+        condition: service_completed_successfully
     environment:
       - HEALTHCHECK_BEFORE_START=true
     extends:

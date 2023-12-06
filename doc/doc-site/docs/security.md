@@ -5,12 +5,6 @@ Move source code is audited through commit [`bfaf890`] (tag [`v4.2.1-audited`]),
 
 Moreover, Econia is deployed on Aptos mainnet under a community-governed multisig account in accordance with the [Econia signatory guide].
 
-:::note
-
-Anyone who uses the Econia protocol agrees to hold harmless all signatories to the multisig account, except in cases of intentional misconduct and fraud.
-
-:::
-
 [audit reports]: https://econia-labs.notion.site/Econia-Audit-Reports-27634e9c7d1249228e2cbc3e705a59c9
 [econia signatory guide]: https://econia-labs.notion.site/Aptos-Multisig-v2-and-Econia-v4-A-Signatory-s-Guide-to-On-Chain-Governance-96da99732f744044af6a3eca88a21fac?pvs=4
 [`bfaf890`]: https://github.com/econia-labs/econia/commit/bfaf890011a03b5ff68839bcac98a1d7ada0c6e3

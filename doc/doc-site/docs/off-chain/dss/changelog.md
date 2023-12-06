@@ -2,6 +2,16 @@
 
 Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-v1.3.0`][v1.3.0].
 
+## Release procedure
+
+1. Create preparatory pull request (PR) into `main` branch of `econia` repo (like [#653]).
+   1. Rebuild REST API docs.
+   1. Bump changelog with PRs since last preparatory PR:
+      1. In `econia` repo.
+      1. In processor submodule.
+1. Merge `main` into `dss-stable`.
+1. Push new tag to `dss-stable`.
+
 ## [v1.4.0]
 
 ### Added
@@ -55,6 +65,7 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 [#644]: https://github.com/econia-labs/econia/pull/644
 [#645]: https://github.com/econia-labs/econia/pull/645
 [#648]: https://github.com/econia-labs/econia/pull/648
+[#653]: https://github.com/econia-labs/econia/pull/653
 [processor #19]: https://github.com/econia-labs/aptos-indexer-processors/pull/19
 [processor #20]: https://github.com/econia-labs/aptos-indexer-processors/pull/20
 [processor #21]: https://github.com/econia-labs/aptos-indexer-processors/pull/21

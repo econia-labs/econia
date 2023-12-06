@@ -63,6 +63,7 @@ name = "aggregator"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "aptos-sdk",
  "async-trait",
  "bigdecimal",
  "chrono",
@@ -70,6 +71,7 @@ dependencies = [
  "dotenvy",
  "env_logger",
  "log",
+ "reqwest",
  "serde 1.0.188",
  "serde_json",
  "sqlx",
@@ -78,6 +80,7 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
+ "url",
 ]
 
 [[package]]

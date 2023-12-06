@@ -1,9 +1,10 @@
 use anyhow::anyhow;
 use bigdecimal::{num_bigint::ToBigInt, BigDecimal, Zero};
 use chrono::{DateTime, Duration, Utc};
-use sqlx::{Executor, PgConnection, PgPool, Postgres, Transaction};
+use sqlx::{Error, Executor, PgConnection, PgPool, Postgres, Transaction};
 
 use aggregator::{Pipeline, PipelineAggregationResult, PipelineError};
+use tracing::warn;
 
 /// Number of bits to shift when encoding transaction version.
 const SHIFT_TXN_VERSION: u8 = 64;
@@ -188,7 +189,17 @@ impl Pipeline for UserHistory {
         transaction
             .commit()
             .await
-            .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
+            .or_else(|e| match &e {
+                Error::Database(dbe) => {
+                    if dbe.message() == "could not serialize access due to read/write dependencies among transactions" {
+                        warn!("transaction serialization error, gracefully ignoring, will retry next loop");
+                        Ok(())
+                    } else {
+                        Err(PipelineError::ProcessingError(anyhow!(e)))
+                    }
+                }
+                _ => {Err(PipelineError::ProcessingError(anyhow!(e)))}
+            })?;
         Ok(())
     }
 }

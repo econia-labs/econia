@@ -104,6 +104,12 @@ server_config:
   starting_version: 154106802
 ```
 
+:::tip
+
+Substitute `aptoslabs_grpc_token_or_token_for_another_grpc_endpoint` for your token.
+
+:::
+
 ### Checking out the right branch
 
 The Econia DSS is developed on a [Rust-like train schedule](https://doc.rust-lang.org/book/appendix-07-nightly-rust.html):
@@ -121,35 +127,9 @@ git submodule update --init --recursive
 
 ### Starting the DSS
 
-Once you're done with the previous step, you can start the DSS:
-
-```bash
-# From Econia repo root
-docker compose --file src/docker/compose.dss-global.yaml up
-```
-
-This might take a while to start (expect anywhere from a couple minutes, to more, depending on the machine you have).
-
-Then, to shut it down simply press `Ctrl+C`.
-
-Alternatively, to run in detached mode (as a background process):
-
-```bash
-# From Econia repo root
-docker compose --file src/docker/compose.dss-global.yaml up --detach
-```
-
-Then, to shut it down:
-
-```bash
-# From Econia repo root
-docker compose --file src/docker/compose.dss-global.yaml down
-```
-
 :::tip
-When switching chains, don't forget to prune the Docker database volume (`docker volume prune -af` to prune all Docker volumes).
 
-If you ever need to rebuild images, make sure to remove all containers and clear your image cache too:
+If you've run the DSS before and want a clean build, clear your Docker containers, image cache, and volumes:
 
 ```sh
 docker ps -aq | xargs docker stop | xargs docker rm
@@ -157,7 +137,29 @@ docker system prune -af
 docker volume prune -af
 ```
 
+If you want to redeploy all the same images with a fresh database, just run `docker volume prune -af` to prune all Docker volumes.
+
 :::
+
+From the Econia repo root, run the command corresponding to your preferred network (testnet or mainnet):
+
+```bash
+APTOS_NETWORK=testnet docker compose --file src/docker/compose.dss-global.yaml up
+```
+
+```bash
+APTOS_NETWORK=mainnet docker compose --file src/docker/compose.dss-global.yaml up
+```
+
+This might take a while to start (expect anywhere from a couple minutes, to more, depending on the machine you have).
+
+Then, to shut it down simply press `Ctrl+C`.
+
+Alternatively, to run in detached mode (as a background process), simply add the `--detach` flag, then to shut it down:
+
+```bash
+docker compose --file src/docker/compose.dss-global.yaml down
+```
 
 ### Verifying the DSS
 
@@ -173,11 +175,27 @@ Once the processor has parsed all transactions up until the chain tip, then chec
 
 :::tip
 
-It may take up to ten minutes before the `market_registration_events_table` has data in it, and several hours to fully sync to chain tip on testnet.
-
-To see what transaction the DSS processor has synced through, do not run in detached mode.
+It may take up to ten minutes before the `market_registration_events_table` has data in it on testnet, and several hours to fully sync to chain tip on both testnet and mainnet.
 
 :::
+
+To see what transaction the DSS processor has synced through, check the logs:
+
+```sh
+docker logs docker-processor-1 --tail 5
+```
+
+To verify the aggregator is running:
+
+```sh
+docker logs docker-aggregator-1 --tail 5
+```
+
+To connect directly to the database:
+
+```sh
+psql postgres://econia:econia@localhost:5432/econia
+```
 
 ### Result
 

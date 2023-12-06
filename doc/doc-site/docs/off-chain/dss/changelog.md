@@ -10,7 +10,7 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
       1. In `econia` repo.
       1. In processor submodule.
 1. Merge `main` into `dss-stable`.
-1. Push new tag to `dss-stable`.
+1. Push annotated tag to head of `dss-stable`.
 
 ## [v1.4.0]
 

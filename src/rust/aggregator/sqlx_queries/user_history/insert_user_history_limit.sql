@@ -21,7 +21,8 @@ INSERT INTO aggregator.user_history (
     min_base,
     max_base,
     min_quote,
-    max_quote
+    max_quote,
+    total_fees_paid_in_quote_subunits
 )
 SELECT
     market_id,
@@ -46,7 +47,8 @@ SELECT
     NULL,
     NULL,
     NULL,
-    NULL
+    NULL,
+    0
 FROM
     parameters,
     place_limit_order_events

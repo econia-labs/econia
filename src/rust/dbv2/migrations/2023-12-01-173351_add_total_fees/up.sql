@@ -6,13 +6,20 @@ ALTER TABLE aggregator.user_history
 ADD COLUMN total_fees_paid_in_quote_subunits NUMERIC(20,0);
 
 
+UPDATE aggregator.user_history
+SET total_fees_paid_in_quote_subunits = 0;
+
+
 WITH total_fees AS (
     SELECT
         SUM(taker_quote_fees_paid) AS total_fees_paid_in_quote_subunits,
         taker_order_id,
         market_id
-    FROM fill_events AS f
+    FROM
+        fill_events AS f,
+        aggregator.user_history_last_indexed_txn AS last_txn
     WHERE f.maker_address = f.emit_address
+    AND f.txn_version <= last_txn.txn_version
     GROUP BY market_id, taker_order_id
 )
 UPDATE aggregator.user_history AS u

@@ -12,7 +12,7 @@ WITH total_fees AS (
         taker_order_id,
         market_id
     FROM fill_events AS f
-    WHERE f.taker_address = f.emit_address
+    WHERE f.maker_address = f.emit_address
     GROUP BY market_id, taker_order_id
 )
 UPDATE aggregator.user_history AS u

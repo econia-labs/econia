@@ -204,7 +204,7 @@ async fn aggregate_fill_for_maker_and_taker<'a>(
     price: &BigDecimal,
     fees: &BigDecimal,
 ) -> PipelineAggregationResult {
-    aggregate_fill(tx, size, maker_order_id, market_id, time, price, fees).await?;
+    aggregate_fill(tx, size, maker_order_id, market_id, time, price, &BigDecimal::zero()).await?;
     aggregate_fill(tx, size, taker_order_id, market_id, time, price, fees).await?;
     Ok(())
 }

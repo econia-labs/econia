@@ -24,14 +24,6 @@ GRANT
 SELECT
   ON api.candlesticks_last_indexed_txn TO web_anon;
 
-CREATE VIEW api.data_status AS
-SELECT
-    CURRENT_TIMESTAMP AS current_time,
-    processor_status.last_success_version AS processor_last_txn_version_processed,
-    user_history_last_indexed_txn.txn_version AS aggregator_user_history_last_txn_version_processed,
-    array_agg((resolution, candlesticks_last_indexed_txn.txn_version)) AS aggregator_candlesticks_last_txn_version_processed,
-    api.data_is_consistent() AS aggregator_data_passes_simple_consistency_check
-FROM 
 
 CREATE FUNCTION api.data_is_consistent ()
 RETURNS boolean AS $$

@@ -52,7 +52,7 @@ RETURNS boolean AS $$
         SELECT
             SUM(CASE WHEN ok THEN 0 ELSE 1 END) = 0
         FROM (
-            SELECT SUM(size*price)/2 = volume AS ok
+            SELECT SUM(size*price) = volume AS ok
             FROM fill_events, last_candlesticks
             WHERE txn_version <= (
                 SELECT txn_version
@@ -62,6 +62,7 @@ RETURNS boolean AS $$
             AND fill_events.market_id = last_candlesticks.market_id
             AND "time" >= start_time
             AND "time" < start_time + '1 second'::interval * resolution
+            AND maker_address = emit_address
             GROUP BY volume, last_candlesticks.market_id, resolution
         ) AS lool
     ), true) AS is_data_coherent;

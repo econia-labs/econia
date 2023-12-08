@@ -65,7 +65,7 @@ RETURNS boolean AS $$
             AND maker_address = emit_address
             GROUP BY volume, last_candlesticks.market_id, resolution
         ) AS lool
-    ), true) AS is_data_coherent;
+    ), true) AS is_data_consistent;
 $$ LANGUAGE SQL;
 
 

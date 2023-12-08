@@ -74,7 +74,7 @@ SELECT
     CURRENT_TIMESTAMP AS current_time,
     processor_status.last_success_version AS processor_last_txn_version_processed,
     user_history_last_indexed_txn.txn_version AS aggregator_user_history_last_txn_version_processed,
-    array_agg((resolution, candlesticks_last_indexed_txn.txn_version)) AS aggregator_candlesticks_last_txn_version_processed
+    array_agg(ARRAY[resolution, candlesticks_last_indexed_txn.txn_version]) AS aggregator_candlesticks_last_txn_version_processed
 FROM
     processor_status,
     aggregator.user_history_last_indexed_txn,

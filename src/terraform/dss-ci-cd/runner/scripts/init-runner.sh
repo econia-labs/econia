@@ -29,8 +29,9 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
     --role roles/editor
 
 echo && echo "Initializing runner:"
-echo "credentials_file = \"$CREDENTIALS_FILE\"" >terraform.tfvars
-echo "project = \"$PROJECT_ID\"" >>terraform.tfvars
+echo "\
+credentials_file = \"$CREDENTIALS_FILE\"
+project = \"$PROJECT_ID\"" >terraform.tfvars
 terraform fmt
 terraform init
 terraform apply -auto-approve

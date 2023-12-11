@@ -6,11 +6,12 @@ cd /app
 
 # Store DSS variables.
 echo "\
-APTOS_NETWORK=\"$APTOS_NETWORK\"
-ECONIA_ADDRESS=\"$ECONIA_ADDRESS\"
-STARTING_VERSION=\"$STARTING_VERSION\"
-GRPC_DATA_SERVICE_ADDRESS=\"$GRPC_DATA_SERVICE_ADDRESS\"
-GRPC_AUTH_TOKEN=\"$GRPC_AUTH_TOKEN\"" >dss-vars.sh
+project_id = \"$PROJECT_ID\"
+aptos_network = \"$APTOS_NETWORK\"
+econia_address = \"$ECONIA_ADDRESS\"
+starting_version = \"$STARTING_VERSION\"
+grpc_data_service_address = \"$GRPC_DATA_SERVICE_ADDRESS\"
+grpc_auth_token = \"$GRPC_AUTH_TOKEN\"" >terraform.tfvars
 
 # Install Git and Terraform.
 # https://developer.hashicorp.com/terraform/install

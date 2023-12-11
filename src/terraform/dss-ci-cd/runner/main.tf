@@ -14,14 +14,14 @@ provider "google" {
   zone        = var.zone
 }
 
-resource "google_compute_instance" "executor" {
+resource "google_compute_instance" "runner" {
   boot_disk {
     initialize_params {
       image = "debian-cloud/debian-12"
     }
   }
   machine_type = "e2-micro"
-  name         = "executor"
+  name         = "runner"
   network_interface {
     network = "default"
   }

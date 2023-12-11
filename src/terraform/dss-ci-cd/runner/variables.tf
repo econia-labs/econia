@@ -1,8 +1,6 @@
-variable "project" {}
+variable "credentials_file" {}
 
-variable "credentials_file" {
-  default = "gcp-key.json"
-}
+variable "project" {}
 
 variable "region" {
   default = "us-central1"

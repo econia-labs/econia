@@ -32,12 +32,13 @@ RETURNS boolean AS $$
             SELECT SUM(total_filled)
             FROM api.orders
         ) = (
-            SELECT SUM(size)
+            SELECT SUM(size)*2
             FROM fill_events
             WHERE txn_version <= (
                 SELECT txn_version
                 FROM api.user_history_last_indexed_txn
             )
+            AND emit_address = maker_address
         ), true)
     ) AND COALESCE((
         WITH last_candlesticks AS (

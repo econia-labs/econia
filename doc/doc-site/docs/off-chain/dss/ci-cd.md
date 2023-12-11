@@ -24,24 +24,23 @@ If you have already finished the [Terraform tutorial](terraform.md) and would ra
 1. Initialize the CI/CD runner:
 
    ```sh
-   source init-runner.sh
+   source scripts/init-runner.sh
    ```
 
    :::tip
    Once the runner has been created, it may take a minute or two before it completes the startup script and you can connect to it.
    :::
 
-1. You can then connect to the runner via [Identity-Aware Proxy from GCP](https://cloud.google.com/compute/docs/connect/ssh-using-iap):
+1. You can then connect to the runner via [GCP Identity-Aware Proxy](https://cloud.google.com/compute/docs/connect/ssh-using-iap):
 
-   ```sh title="Checking startup script logs"
-   gcloud compute ssh runner --tunnel-through-iap -- \
-   sudo journalctl --no-pager --unit google-startup-scripts.service
+   ```sh title="Get startup script logs"
+   source scripts/get-startup-logs.sh
    ```
 
    ```sh title="Starting interactive session"
-   gcloud compute ssh runner --tunnel-through-iap
+   source scripts/connect-ssh.sh
    ```
 
-   ```sh title="Disconnecting from interactive session"
+   ```sh title="Disconnect from interactive session"
    exit
    ```

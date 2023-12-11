@@ -21,7 +21,7 @@ resource "google_compute_instance" "runner" {
     }
   }
   machine_type            = "e2-micro"
-  metadata_startup_script = file("startup-script.sh")
+  metadata_startup_script = file("scripts/startup-script.sh")
   name                    = "runner"
   network_interface {
     access_config {}

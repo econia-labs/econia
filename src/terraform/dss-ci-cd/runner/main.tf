@@ -20,9 +20,11 @@ resource "google_compute_instance" "runner" {
       image = "debian-cloud/debian-12"
     }
   }
-  machine_type = "e2-micro"
-  name         = "runner"
+  machine_type            = "e2-micro"
+  metadata_startup_script = file("startup-script.sh")
+  name                    = "runner"
   network_interface {
+    access_config {}
     network = "default"
   }
 }

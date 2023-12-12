@@ -19,6 +19,8 @@ gcloud config set project $PROJECT_ID
 echo && echo "Enabling GCP APIs (be patient):"
 gcloud services enable compute.googleapis.com
 gcloud services enable iam.googleapis.com
+gcloud services enable servicenetworking.googleapis.com
+gcloud services enable sqladmin.googleapis.com
 
 echo && echo "Creating IAM account:"
 gcloud iam service-accounts create terraform

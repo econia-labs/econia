@@ -13,3 +13,7 @@ provider "google" {
   region      = var.region
   zone        = var.zone
 }
+
+module "db" {
+  source = "./modules/db"
+}

@@ -31,4 +31,8 @@ resource "google_compute_instance" "runner" {
     access_config {}
     network = "default"
   }
+  service_account {
+    email  = "terraform@${var.project}.iam.gserviceaccount.com"
+    scopes = ["cloud-platform"]
+  }
 }

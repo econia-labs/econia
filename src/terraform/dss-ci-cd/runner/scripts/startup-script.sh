@@ -4,8 +4,14 @@
 mkdir /app
 cd /app
 
+# Get service account key.
+SERVICE_ACCOUNT_NAME=terraform@$PROJECT_ID.iam.gserviceaccount.com
+gcloud iam service-accounts keys create $CREDENTIALS_FILE \
+    --iam-account $SERVICE_ACCOUNT_NAME
+
 # Store DSS variables.
 echo "\
+credentials_file = \"$CREDENTIALS_FILE\"
 project_id = \"$PROJECT_ID\"
 aptos_network = \"$APTOS_NETWORK\"
 econia_address = \"$ECONIA_ADDRESS\"
@@ -26,4 +32,6 @@ echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] \
     https://apt.releases.hashicorp.com $(lsb_release -cs) main" |
     sudo tee /etc/apt/sources.list.d/hashicorp.list
 sudo apt update && sudo apt install terraform
+
+# Get Econia.
 git clone https://github.com/econia-labs/econia.git --recurse-submodules

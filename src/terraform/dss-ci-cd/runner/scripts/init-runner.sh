@@ -17,12 +17,13 @@ gcloud alpha billing projects link $PROJECT_ID \
 gcloud config set project $PROJECT_ID
 
 echo && echo "Enabling GCP APIs (be patient):"
+gcloud services enable cloudresourcemanager.googleapis.com
 gcloud services enable compute.googleapis.com
 gcloud services enable iam.googleapis.com
 gcloud services enable servicenetworking.googleapis.com
 gcloud services enable sqladmin.googleapis.com
 
-echo && echo "Creating IAM account:"
+echo && echo "Creating service account:"
 gcloud iam service-accounts create terraform
 SERVICE_ACCOUNT_NAME=terraform@$PROJECT_ID.iam.gserviceaccount.com
 gcloud iam service-accounts keys create $CREDENTIALS_FILE \
@@ -30,6 +31,10 @@ gcloud iam service-accounts keys create $CREDENTIALS_FILE \
 gcloud projects add-iam-policy-binding $PROJECT_ID \
     --member serviceAccount:$SERVICE_ACCOUNT_NAME \
     --role roles/editor
+# https://serverfault.com/questions/942115
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member serviceAccount:$SERVICE_ACCOUNT_NAME \
+    --role roles/compute.networkAdmin
 
 echo && echo "Initializing runner:"
 echo "\

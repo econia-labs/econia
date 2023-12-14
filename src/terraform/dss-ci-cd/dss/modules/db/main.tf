@@ -8,7 +8,6 @@ terraform {
   }
 }
 
-
 resource "google_sql_database_instance" "postgres" {
   database_version    = "POSTGRES_14"
   deletion_protection = false

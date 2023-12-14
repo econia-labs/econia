@@ -65,8 +65,8 @@ RETURNS boolean AS $$
             AND "time" < start_time + '1 second'::interval * resolution
             AND maker_address = emit_address
             GROUP BY volume, last_candlesticks.market_id, resolution
-        ) AS lool
-    ), true) AS is_data_consistent;
+        ) AS are_candlesticks_ok
+    ), true) AS data_is_consistent;
 $$ LANGUAGE SQL;
 
 

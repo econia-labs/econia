@@ -1,3 +1,10 @@
+# https://github.com/hashicorp/terraform-provider-google/issues/16275#issuecomment-1825752152
+provider "google-beta" {
+  credentials = file(var.credentials_file)
+  project     = var.project
+  region      = var.region
+}
+
 resource "google_sql_database_instance" "postgres" {
   database_version    = "POSTGRES_14"
   deletion_protection = false
@@ -38,6 +45,7 @@ resource "google_compute_network" "sql_network" {
 
 resource "google_service_networking_connection" "sql_network_connection" {
   network                 = google_compute_network.sql_network.id
+  provider                = google-beta
   reserved_peering_ranges = [google_compute_global_address.postgres_private_ip_address.name]
   service                 = "servicenetworking.googleapis.com"
 }

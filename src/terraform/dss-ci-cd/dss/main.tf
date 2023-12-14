@@ -15,8 +15,5 @@ provider "google" {
 }
 
 module "db" {
-  credentials_file = var.credentials_file
-  project          = var.project
-  region           = var.region
-  source           = "./modules/db"
+  source = "./modules/db"
 }

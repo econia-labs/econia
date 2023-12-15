@@ -30,10 +30,9 @@ mv cloud-sql-proxy /usr/bin/cloud-sql-proxy
 # https://github.com/rust-lang-deprecated/rustup.sh/issues/83
 # https://stackoverflow.com/a/52445962
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -sSf | sh -s -- -y
-source "$HOME/.cargo/env"
+export PATH="/root/.cargo/bin:$PATH"
 # https://diesel.rs/guides/getting-started
 cargo install diesel_cli --no-default-features --features postgres
-cp $HOME/.cargo/bin/diesel /usr/bin/diesel
 
 # Get service account key.
 SERVICE_ACCOUNT_NAME=terraform@$PROJECT_ID.iam.gserviceaccount.com

@@ -85,10 +85,11 @@ resource "terraform_data" "run_migrations" {
         var.credentials_file,
         "&"
       ]),
-      "sleep 5",
-      "diesel database reset --migration-dir migrations",
+      "sleep 5", # Give proxy time to start up.
+      "diesel migration run --migration-dir migrations",
       "psql $DATABASE_URL -c 'GRANT web_anon to postgres'",
-      "kill %1",
+      # https://unix.stackexchange.com/a/104825
+      "kill $(pgrep cloud-sql-proxy)",
     ])
     environment = {
       DATABASE_URL = local.db_conn_str_auth_proxy,

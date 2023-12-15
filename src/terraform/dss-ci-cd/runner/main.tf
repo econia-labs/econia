@@ -5,6 +5,7 @@ terraform {
       version = "5.8.0"
     }
   }
+  required_version = ">= 0.12, < 2.0.0"
 }
 
 provider "google" {
@@ -20,7 +21,7 @@ resource "google_compute_instance" "runner" {
       image = "debian-cloud/debian-12"
     }
   }
-  machine_type = "e2-micro"
+  machine_type = "e2-standard-2"
   metadata_startup_script = join("\n", [
     file("project-vars.sh"),
     file("scripts/startup-script.sh")

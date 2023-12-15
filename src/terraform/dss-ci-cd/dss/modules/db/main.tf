@@ -8,12 +8,32 @@ terraform {
   }
 }
 
+locals {
+  db_connection_name = google_sql_database_instance.postgres.connection_name
+  db_conn_str_auth_proxy = replace(
+    local.db_conn_str_base,
+    "IP_ADDRESS",
+    "127.0.0.1"
+  )
+  db_conn_str_base = join("", [
+    "postgres://postgres:",
+    var.db_root_password,
+    "@IP_ADDRESS:5432/econia"
+  ])
+  db_conn_str_private = replace(
+    local.db_conn_str_base,
+    "IP_ADDRESS",
+    "${google_sql_database_instance.postgres.private_ip_address}"
+  )
+}
+
 resource "google_sql_database_instance" "postgres" {
   database_version    = "POSTGRES_14"
   deletion_protection = false
   depends_on = [
     google_service_networking_connection.sql_network_connection,
   ]
+  root_password = var.db_root_password
   settings {
     insights_config {
       query_insights_enabled = true
@@ -51,4 +71,27 @@ resource "google_service_networking_connection" "sql_network_connection" {
   provider                = google-beta-sql-network-workaround
   reserved_peering_ranges = [google_compute_global_address.postgres_private_ip_address.name]
   service                 = "servicenetworking.googleapis.com"
+}
+
+# Run Cloud SQL Auth Proxy in background, run migrations, kill proxy.
+resource "terraform_data" "run_migrations" {
+  depends_on = [google_sql_database.database]
+  provisioner "local-exec" {
+    command = join("\n", [
+      join(" ", [
+        "cloud-sql-proxy",
+        local.db_connection_name,
+        "--credentials-file",
+        var.credentials_file,
+        "&"
+      ]),
+      "sleep 5",
+      "diesel database reset --migration-dir migrations",
+      "psql $DATABASE_URL -c 'GRANT web_anon to postgres'",
+      "kill %1",
+    ])
+    environment = {
+      DATABASE_URL = local.db_conn_str_auth_proxy,
+    }
+  }
 }

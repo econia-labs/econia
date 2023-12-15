@@ -10,6 +10,8 @@ variable "zone" {
   default = "us-central1-c"
 }
 
+variable "db_root_password" {}
+
 variable "aptos_network" {}
 
 variable "econia_address" {}

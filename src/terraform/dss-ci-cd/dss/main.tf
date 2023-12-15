@@ -5,6 +5,7 @@ terraform {
       version = "5.8.0"
     }
   }
+  required_version = ">= 0.12, < 2.0.0"
 }
 
 provider "google" {
@@ -15,5 +16,7 @@ provider "google" {
 }
 
 module "db" {
-  source = "./modules/db"
+  db_root_password = var.db_root_password
+  credentials_file = var.credentials_file
+  source           = "./modules/db"
 }

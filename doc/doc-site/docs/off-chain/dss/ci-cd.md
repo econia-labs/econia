@@ -28,7 +28,7 @@ If you have already finished the [Terraform tutorial](terraform.md) and would ra
    ```
 
    :::tip
-   Once the runner has been created, it may take a minute or two before it completes the startup script and you can connect to it.
+   Once the runner has been created it may take up to 10 minutes to complete the startup script, since it has to compile binaries from source.
    :::
 
 1. You can then connect to the runner via [GCP Identity-Aware Proxy](https://cloud.google.com/compute/docs/connect/ssh-using-iap):

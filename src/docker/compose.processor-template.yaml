@@ -3,10 +3,9 @@ services:
     build:
       context: ../../
       dockerfile: src/docker/processor/Dockerfile
+    environment:
+      DATABASE_URL: "postgres://econia:econia@postgres:5432/econia"
     depends_on:
       - postgres
     ports:
       - "8085:8085"
-    volumes:
-      # Two down from root for GCP disk mounting.
-      - "./processor/config.yaml:/config/data/config.yaml"

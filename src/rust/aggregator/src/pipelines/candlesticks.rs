@@ -3,7 +3,7 @@ use chrono::{DateTime, Duration, Utc};
 use sqlx::{Executor, PgPool};
 use sqlx_postgres::PgConnection;
 
-use aggregator::{Pipeline, PipelineAggregationResult, PipelineError};
+use aggregator::{Pipeline, PipelineAggregationResult, PipelineError, util::commit_transaction};
 
 pub struct Candlesticks {
     pool: PgPool,
@@ -76,10 +76,7 @@ impl Pipeline for Candlesticks {
         .await
         .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
 
-        transaction
-            .commit()
-            .await
-            .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
+        commit_transaction(transaction).await?;
 
         Ok(())
     }

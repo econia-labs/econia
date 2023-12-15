@@ -8,12 +8,13 @@ use aggregator::Pipeline;
 use anyhow::{anyhow, Result};
 use aptos_sdk::rest_client::AptosBaseUrl;
 use clap::{Parser, ValueEnum};
-use pipelines::{Candlesticks, Coins, Leaderboards, RefreshMaterializedView, UserHistory};
+use pipelines::{Candlesticks, Coins, Leaderboards, OrderHistory, RefreshMaterializedView, RollingVolume, UserHistory};
 use sqlx::Executor;
 use sqlx_postgres::PgPoolOptions;
 use tokio::{sync::Mutex, task::JoinSet};
 use url::Url;
 
+mod dbtypes;
 mod pipelines;
 
 #[derive(Parser, Debug)]
@@ -46,6 +47,8 @@ pub enum Pipelines {
     Coins,
     Leaderboards,
     Market24hData,
+    OrderHistory,
+    RollingVolume,
     UserHistory,
 }
 
@@ -195,6 +198,8 @@ async fn main() -> Result<()> {
                     Duration::from_secs(5 * 60),
                 ))))
             }
+            Pipelines::OrderHistory => data.push(Arc::new(Mutex::new(OrderHistory::new(pool.clone())))),
+            Pipelines::RollingVolume => data.push(Arc::new(Mutex::new(RollingVolume::new(pool.clone())))),
             Pipelines::UserHistory => {
                 data.push(Arc::new(Mutex::new(UserHistory::new(pool.clone()))));
             }
@@ -208,13 +213,19 @@ async fn main() -> Result<()> {
             let mut data = data.lock().await;
 
             tracing::info!(
-                "[{}] Starting process & save (historical).",
+                "[{}] Starting process & saving (historical).",
                 data.model_name()
             );
+            let start = SystemTime::now();
             data.process_and_save_historical_data().await?;
+            let time = start
+                .elapsed()
+                .unwrap_or(Duration::from_secs(0))
+                .as_millis();
             tracing::info!(
-                "[{}] Finished process & save (historical).",
-                data.model_name()
+                "[{}] Finished process & saving in {}ms (historical).",
+                data.model_name(),
+                time
             );
 
             loop {

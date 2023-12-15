@@ -3,7 +3,7 @@ use bigdecimal::{BigDecimal, Zero};
 use chrono::{DateTime, Duration, Utc};
 use sqlx::{Executor, PgConnection, PgPool, Postgres, Transaction};
 
-use aggregator::{Pipeline, PipelineAggregationResult, PipelineError};
+use aggregator::{Pipeline, PipelineAggregationResult, PipelineError, util::commit_transaction};
 
 pub const TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
 
@@ -76,10 +76,7 @@ impl Pipeline for Leaderboards {
         for comp in competitions {
             aggregate_data_for_competition(&mut transaction, comp).await?;
         }
-        transaction
-            .commit()
-            .await
-            .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
+        commit_transaction(transaction).await?;
         Ok(())
     }
 }

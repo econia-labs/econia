@@ -41,4 +41,4 @@ COPY --from=builder $BIN_PATH $APP_DIR/
 ENV APTOS_NETWORK=$APTOS_NETWORK
 ENV DATABASE_URL=$DATABASE_URL
 
-ENTRYPOINT /app/aggregator
+ENTRYPOINT /app/aggregator --include rolling-volume --include order-history

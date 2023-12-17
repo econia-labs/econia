@@ -54,6 +54,5 @@ gcloud iam service-accounts keys create \
     dss/service-account-key.json \
     --iam-account $SERVICE_ACCOUNT_NAME
 cp -R /econia/src/rust/dbv2/migrations dss/migrations
-echo $TFVARS >dss/terraform.tfvars
 terraform fmt --recursive
 terraform -chdir=dss init

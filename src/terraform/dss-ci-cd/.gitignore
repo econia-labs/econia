@@ -1,4 +1,3 @@
-*gcp-key*.json
-*vars.sh*
+*service-account-key.json
 migrations*
 econia*

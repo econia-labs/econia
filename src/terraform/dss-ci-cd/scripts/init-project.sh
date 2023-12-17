@@ -1,7 +1,11 @@
+# Run from `dss-ci-cd` directory via `source scripts/init-project.sh`.
 echo && echo "Loading project variables:"
-source project-vars.sh
-ORGANIZATION_ID=$(gcloud organizations list --format "value(name)")
-BILLING_ACCOUNT_ID=$(gcloud alpha billing accounts list --format "value(name)")
+source scripts/get-tfvar.sh
+TFVARS=$(cat runner/terraform.tfvars)
+ORGANIZATION_ID=$(get_tfvar organization_id $TFVARS)
+BILLING_ACCOUNT_ID=$(get_tfvar billing_account_id $TFVARS)
+PROJECT_ID=$(get_tfvar project_id $TFVARS)
+PROJECT_NAME=$(get_tfvar project_name $TFVARS)
 echo "Organization ID:" $ORGANIZATION_ID
 echo "Billing account ID:" $BILLING_ACCOUNT_ID
 echo "Project ID:" $PROJECT_ID
@@ -26,7 +30,8 @@ gcloud services enable sqladmin.googleapis.com
 echo && echo "Creating service account:"
 gcloud iam service-accounts create terraform
 SERVICE_ACCOUNT_NAME=terraform@$PROJECT_ID.iam.gserviceaccount.com
-gcloud iam service-accounts keys create $CREDENTIALS_FILE \
+gcloud iam service-accounts keys create \
+    runner/service-account-key.json \
     --iam-account $SERVICE_ACCOUNT_NAME
 gcloud projects add-iam-policy-binding $PROJECT_ID \
     --member serviceAccount:$SERVICE_ACCOUNT_NAME \
@@ -37,9 +42,6 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
     --role roles/compute.networkAdmin
 
 echo && echo "Initializing runner:"
-echo "\
-credentials_file = \"$CREDENTIALS_FILE\"
-project = \"$PROJECT_ID\"" >terraform.tfvars
-terraform fmt
-terraform init
-terraform apply -auto-approve
+terraform fmt -recursive
+terraform -chdir=runner init
+terraform -chdir=runner apply -auto-approve

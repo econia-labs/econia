@@ -23,8 +23,8 @@ resource "google_compute_instance" "runner" {
   }
   machine_type = "e2-standard-2"
   metadata_startup_script = join("\n", [
-    file("project-vars.sh"),
-    file("scripts/startup-script.sh")
+    "TFVARS=${file("terraform.tfvars")}",
+    file("startup-script.sh")
     ]
   )
   name = "runner"

@@ -39,4 +39,4 @@ temp.md
 # Terraform
 .terraform*
 *.tfstate*
-*.tfvars*
+*terraform.tfvars*

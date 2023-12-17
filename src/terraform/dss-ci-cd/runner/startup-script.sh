@@ -1,9 +1,5 @@
 # Startup script for runner VM.
 
-# Create working directory.
-mkdir /dss
-cd /dss
-
 # Install dependencies.
 apt update && apt install -y \
     build-essential \
@@ -36,26 +32,17 @@ export PATH="/root/.cargo/bin:$PATH"
 # https://diesel.rs/guides/getting-started
 cargo install diesel_cli --no-default-features --features postgres
 
-# Get service account key.
-SERVICE_ACCOUNT_NAME=terraform@$PROJECT_ID.iam.gserviceaccount.com
-gcloud iam service-accounts keys create $CREDENTIALS_FILE \
-    --iam-account $SERVICE_ACCOUNT_NAME
-
 # Initialize Terraform project.
 git clone \
     https://github.com/econia-labs/econia.git \
     --branch ECO-1018 \
     --recurse-submodules
-cp -R econia/src/terraform/dss-ci-cd/dss/* .
-cp -R econia/src/rust/dbv2/migrations migrations
-echo "\
-project = \"$PROJECT_ID\"
-credentials_file = \"$CREDENTIALS_FILE\"
-db_root_password = \"$DB_ROOT_PASSWORD\"
-aptos_network = \"$APTOS_NETWORK\"
-econia_address = \"$ECONIA_ADDRESS\"
-starting_version = \"$STARTING_VERSION\"
-grpc_data_service_address = \"$GRPC_DATA_SERVICE_ADDRESS\"
-grpc_auth_token = \"$GRPC_AUTH_TOKEN\"" >terraform.tfvars
-terraform fmt
-terraform init
+cd econia/src/terraform/dss-ci-cd
+SERVICE_ACCOUNT_NAME=terraform@$PROJECT_ID.iam.gserviceaccount.com
+gcloud iam service-accounts keys create \
+    dss/service-account-key.json \
+    --iam-account $SERVICE_ACCOUNT_NAME
+cp -R /econia/src/rust/dbv2/migrations dss/migrations
+echo $TFVARS >dss/terraform.tfvars
+terraform fmt --recursive
+terraform -chdir=dss init

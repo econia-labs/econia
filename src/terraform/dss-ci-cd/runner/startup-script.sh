@@ -38,6 +38,8 @@ git clone \
     --branch ECO-1018 \
     --recurse-submodules
 cd econia/src/terraform/dss-ci-cd
+source scripts/get-tfvar.sh
+PROJECT_ID="$(get_tfvar project_id $TFVARS)"
 SERVICE_ACCOUNT_NAME=terraform@$PROJECT_ID.iam.gserviceaccount.com
 gcloud iam service-accounts keys create \
     dss/service-account-key.json \

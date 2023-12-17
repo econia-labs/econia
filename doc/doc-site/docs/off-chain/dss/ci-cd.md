@@ -8,23 +8,19 @@ If you have already finished the [Terraform tutorial](terraform.md) and would ra
 
 ## Initialize runner
 
-1. Clone the Econia repository and configure project variables for the `dss-ci-cd/runner` project:
+1. Clone the Econia repository and configure project variables:
 
    ```sh
    git clone https://github.com/econia-labs/econia.git
-   cd econia/src/terraform/dss-ci-cd/runner
-   cp project-vars.template.sh project-vars.sh
-   vim project-vars.sh
+   cd econia/src/terraform/dss-ci-cd
+   cp runner/template.tfvars runner/terraform.tfvars
+   vim runner/terraform.tfvars
    ```
 
-   :::tip
-   `.gitignore` ignores any files of pattern `*gcp-key*.json`.
-   :::
-
-1. Initialize the CI/CD runner:
+1. Initialize the CI/CD project runner:
 
    ```sh
-   source scripts/init-runner.sh
+   source scripts/init-project.sh
    ```
 
    :::tip
@@ -34,11 +30,11 @@ If you have already finished the [Terraform tutorial](terraform.md) and would ra
 1. You can then connect to the runner via [GCP Identity-Aware Proxy](https://cloud.google.com/compute/docs/connect/ssh-using-iap):
 
    ```sh title="Get startup script logs"
-   source scripts/get-startup-logs.sh
+   source scripts/get-runner-startup-logs.sh
    ```
 
    ```sh title="Starting interactive session"
-   source scripts/connect-ssh.sh
+   source scripts/connect-to-runner.sh
    ```
 
    ```sh title="Disconnect from interactive session"

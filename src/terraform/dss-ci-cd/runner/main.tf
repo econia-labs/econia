@@ -10,7 +10,7 @@ terraform {
 
 provider "google" {
   credentials = file(var.credentials_file)
-  project     = var.project
+  project     = var.project_id
   region      = var.region
   zone        = var.zone
 }
@@ -23,7 +23,9 @@ resource "google_compute_instance" "runner" {
   }
   machine_type = "e2-standard-2"
   metadata_startup_script = join("\n", [
-    "TFVARS=${file("terraform.tfvars")}",
+    "TFVARS=<<VARS",
+    "${file("terraform.tfvars")}",
+    "VARS",
     file("startup-script.sh")
     ]
   )
@@ -33,7 +35,7 @@ resource "google_compute_instance" "runner" {
     network = "default"
   }
   service_account {
-    email  = "terraform@${var.project}.iam.gserviceaccount.com"
+    email  = "terraform@${var.project_id}.iam.gserviceaccount.com"
     scopes = ["cloud-platform"]
   }
 }

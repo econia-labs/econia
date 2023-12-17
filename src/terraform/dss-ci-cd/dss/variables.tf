@@ -1,6 +1,6 @@
-variable "credentials_file" {}
-
-variable "project" {}
+variable "credentials_file" {
+  default = "service-account-key.json"
+}
 
 variable "region" {
   default = "us-central1"
@@ -9,6 +9,14 @@ variable "region" {
 variable "zone" {
   default = "us-central1-c"
 }
+
+variable "organization_id" {}
+
+variable "billing_account_id" {}
+
+variable "project_id" {}
+
+variable "project_name" {}
 
 variable "db_root_password" {}
 

@@ -1,4 +1,3 @@
-# Run from `dss-ci-cd` directory via `source scripts/init-project.sh`.
 echo && echo "Loading project variables:"
 source scripts/get-tfvar.sh
 TFVARS=$(cat runner/terraform.tfvars)

@@ -23,16 +23,8 @@ resource "google_compute_instance" "runner" {
   }
   machine_type = "e2-standard-2"
   metadata_startup_script = join("\n", [
-    "ORGANIZATION_ID=${var.organization_id}",
-    "BILLING_ACCOUNT_ID=${var.billing_account_id}",
-    "PROJECT_ID=${var.project_id}",
-    "PROJECT_NAME=${var.project_name}",
-    "DB_ROOT_PASSWORD=${var.db_root_password}",
-    "APTOS_NETWORK=${var.aptos_network}",
-    "ECONIA_ADDRESS=${var.econia_address}",
-    "STARTING_VERSION=${var.starting_version}",
-    "GRPC_DATA_SERVICE_ADDRESS=${var.grpc_data_service_address}",
-    "GRPC_AUTH_TOKEN=${var.grpc_auth_token}",
+    "KEY_BASE_64=${base64encode(file("service-account-key.json"))}",
+    "VARS_BASE_64=${base64encode(file("terraform.tfvars"))}",
     file("startup-script.sh")
     ]
   )

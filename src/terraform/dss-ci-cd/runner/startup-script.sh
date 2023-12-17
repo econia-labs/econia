@@ -38,21 +38,8 @@ git clone \
     --branch ECO-1018 \
     --recurse-submodules
 cd econia/src/terraform/dss-ci-cd
-echo "\
-organization_id = \"$ORGANIZATION_ID\"
-billing_account_id = \"$BILLING_ACCOUNT_ID\"
-project_id = \"$PROJECT_ID\"
-project_name = \"$PROJECT_NAME\"
-db_root_password = \"$DB_ROOT_PASSWORD\"
-aptos_network = \"$APTOS_NETWORK\"
-econia_address = \"$ECONIA_ADDRESS\"
-starting_version = \"$STARTING_VERSION\"
-grpc_data_service_address = \"$GRPC_DATA_SERVICE_ADDRESS\"
-grpc_auth_token = \"$GRPC_AUTH_TOKEN\"" >dss/terraform.tfvars
-SERVICE_ACCOUNT_NAME=terraform@$PROJECT_ID.iam.gserviceaccount.com
-gcloud iam service-accounts keys create \
-    dss/service-account-key.json \
-    --iam-account $SERVICE_ACCOUNT_NAME
+echo $KEY_BASE_64 | base64 --decode >dss/service-account-key.json
+echo $VARS_BASE_64 | base64 --decode >dss/terraform.tfvars
 cp -R /econia/src/rust/dbv2/migrations dss/migrations
 terraform fmt --recursive
 terraform -chdir=dss init

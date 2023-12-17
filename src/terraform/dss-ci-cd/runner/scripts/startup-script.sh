@@ -21,9 +21,11 @@ echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] \
     tee /etc/apt/sources.list.d/hashicorp.list
 apt update && apt install -y terraform
 # https://cloud.google.com/sql/docs/mysql/sql-proxy#linux-64-bit
-curl -o cloud-sql-proxy "\
-https://storage.googleapis.com/cloud-sql-connectors/\
-cloud-sql-proxy/v2.8.1/cloud-sql-proxy.linux.amd64"
+curl -o cloud-sql-proxy $(
+    printf '%s' \
+        "https://storage.googleapis.com/cloud-sql-connectors/" \
+        "cloud-sql-proxy/v2.8.1/cloud-sql-proxy.linux.amd64"
+)
 chmod +x cloud-sql-proxy
 mv cloud-sql-proxy /usr/bin/cloud-sql-proxy
 # https://www.rust-lang.org/tools/install

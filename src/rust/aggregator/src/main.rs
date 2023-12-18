@@ -80,13 +80,49 @@ impl FromStr for AptosNetwork {
     }
 }
 
+struct EnvConfig {
+    pipelines: Option<Vec<Pipelines>>,
+    database_url: Option<String>,
+    aptos_network: Option<AptosNetwork>,
+}
+
+impl EnvConfig {
+    pub fn new() -> Self {
+        EnvConfig {
+            pipelines: std::env::var("PIPELINES")
+                .ok()
+                .map(|s|
+                    s.split(',')
+                        .map(|s|
+                            ValueEnum::from_str(s, true)
+                                .unwrap_or_else(|_| {
+                                    tracing::error!("Invalid pipeline.");
+                                    panic!()
+                                })
+                        )
+                        .collect()
+                ),
+            database_url: std::env::var("DATABASE_URL").ok(),
+            aptos_network: std::env::var("APTOS_NETWORK").ok().map(|s|
+                AptosNetwork::from_str(&s).unwrap_or_else(|_| {
+                    tracing::error!("Invalid Aptos network.");
+                    panic!()
+                })
+            )
+        }
+    }
+}
+
 impl AptosNetwork {
     pub fn to_base_url(&self) -> AptosBaseUrl {
         match self {
             Self::Mainnet => AptosBaseUrl::Mainnet,
             Self::Testnet => AptosBaseUrl::Testnet,
             Self::Devnet => AptosBaseUrl::Devnet,
-            Self::Custom(s) => AptosBaseUrl::Custom(Url::parse(&s).expect("Invalid custom url.")),
+            Self::Custom(s) => AptosBaseUrl::Custom(Url::parse(&s).unwrap_or_else(|_| {
+                tracing::error!("Invalid custom Aptos network url.");
+                panic!()
+            })),
         }
     }
 }
@@ -97,22 +133,49 @@ async fn main() -> Result<()> {
         .with_max_level(tracing::Level::INFO)
         .init();
     tracing::info!("Started up.");
+
     dotenvy::dotenv().ok();
+
     let args: Args = Args::parse();
+    let env_config: EnvConfig = EnvConfig::new();
 
-    let network = match std::env::var("APTOS_NETWORK") {
-        Ok(network_env_var) => {
-            AptosNetwork::from_str(&network_env_var).expect("Invalid Aptos Network")
-        }
-        _ => args.aptos_network.unwrap_or(AptosNetwork::Testnet),
-    };
+    let network = env_config.aptos_network.unwrap_or_else(|| args.aptos_network.unwrap_or_else(|| {
+        tracing::warn!("APTOS_NETWORK is not set. Using AptosNetwork::Testnet by default.");
+        AptosNetwork::Testnet
+    }));
 
-    let database_url = std::env::var("DATABASE_URL")
-        .or_else(|_| -> Result<String> {
-            args.database_url
-                .ok_or(anyhow!("No database URL was provided."))
+    let database_url = env_config.database_url.unwrap_or_else(|| {
+        args.database_url.unwrap_or_else(|| {
+            tracing::error!("DATABASE_URL is not set.");
+            panic!();
         })
-        .expect("DATABASE_URL should be set");
+    });
+
+    let pipelines = env_config.pipelines.unwrap_or_else(|| {
+        if args.no_default {
+            (args
+                .include
+                .unwrap_or_else(|| {
+                    tracing::error!("No pipelines are included and --no-default is set.");
+                    panic!();
+                }))
+            .clone()
+        } else {
+            let mut x = vec![
+                Pipelines::Candlesticks,
+                Pipelines::Coins,
+                Pipelines::Market24hData,
+                Pipelines::UserHistory,
+            ];
+            let exclude = args.exclude.unwrap_or(vec![]);
+            x = x.into_iter().filter(|a| !exclude.contains(a)).collect();
+            x.append(&mut args.include.unwrap_or(vec![]));
+            x
+        }
+    });
+
+    tracing::info!("Using pipelines {pipelines:?}.");
+    tracing::info!("Using network {network:?}.");
 
     let pool = PgPoolOptions::new()
         .after_connect(|conn, _| {
@@ -130,24 +193,6 @@ async fn main() -> Result<()> {
     let default_interval = Duration::from_secs(5);
 
     let mut data: Vec<Arc<Mutex<dyn Pipeline + Send + Sync>>> = vec![];
-
-    let pipelines = if args.no_default {
-        (args
-            .include
-            .ok_or(anyhow!("No data is included and --no-default is set."))?)
-        .clone()
-    } else {
-        let mut x = vec![
-            Pipelines::Candlesticks,
-            Pipelines::Coins,
-            Pipelines::Market24hData,
-            Pipelines::UserHistory,
-        ];
-        let exclude = args.exclude.unwrap_or(vec![]);
-        x = x.into_iter().filter(|a| !exclude.contains(a)).collect();
-        x.append(&mut args.include.unwrap_or(vec![]));
-        x
-    };
 
     for pipeline in pipelines {
         match pipeline {

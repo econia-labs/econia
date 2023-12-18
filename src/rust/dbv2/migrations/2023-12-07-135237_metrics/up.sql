@@ -78,7 +78,7 @@ CREATE FUNCTION get_denom_for_market(numeric) RETURNS NUMERIC IMMUTABLE AS $$
     WHERE market_id = $1;
 $$ LANGUAGE sql;
 
-CREATE ROLE grafana ENCRYPTED PASSWORD 'grafana' LOGIN;
+CREATE ROLE grafana;
 GRANT USAGE ON SCHEMA api TO grafana;
 GRANT USAGE ON SCHEMA aggregator TO grafana;
 GRANT USAGE ON SCHEMA public TO grafana;

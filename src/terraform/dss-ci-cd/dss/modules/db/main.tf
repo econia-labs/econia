@@ -1,7 +1,5 @@
 # Enabling Private IP:
-# https://stackoverflow.com/a/54351644
 # https://stackoverflow.com/questions/54278828
-# https://serverfault.com/questions/942115
 # Destroying VPC peering:
 # https://github.com/hashicorp/terraform-provider-google/issues/16275#issuecomment-1825752152
 terraform {
@@ -35,11 +33,9 @@ locals {
 resource "google_sql_database_instance" "postgres" {
   database_version    = "POSTGRES_14"
   deletion_protection = false
-  depends_on = [
-    google_service_networking_connection.sql_network_connection,
-  ]
-  provider      = google-beta
-  root_password = var.db_root_password
+  depends_on          = [google_service_networking_connection.sql_network_connection]
+  provider            = google-beta
+  root_password       = var.db_root_password
   settings {
     insights_config {
       query_insights_enabled = true

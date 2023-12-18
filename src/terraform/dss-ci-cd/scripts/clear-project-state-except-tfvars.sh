@@ -1,8 +1,10 @@
-rm -rf dss/.terraform
-rm -rf dss/econia
-rm -rf dss/migrations
-rm -rf runner/.terraform
-find . \
+rm -rf \
+    dss/.terraform \
+    dss/econia \
+    dss/migrations \
+    runner/.terraform
+rm -f dss/terraform.tfvars
+find dss/ runner/ \
     -name '*.terraform*' \
     -o -name '*terraform.tfstate*' \
     -o -name '*service-account-key.json' |

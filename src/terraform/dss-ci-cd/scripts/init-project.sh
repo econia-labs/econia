@@ -18,8 +18,6 @@ gcloud projects create $PROJECT_ID \
 gcloud alpha billing projects link $PROJECT_ID \
     --billing-account $BILLING_ACCOUNT_ID
 gcloud config set project $PROJECT_ID
-gcloud config set compute/zone us-central1-c
-gcloud config set run/region us-central1
 
 echo && echo "Enabling GCP APIs (be patient):"
 gcloud services enable \
@@ -32,6 +30,8 @@ gcloud services enable \
     servicenetworking.googleapis.com \
     sqladmin.googleapis.com \
     vpcaccess.googleapis.com
+gcloud config set compute/zone us-central1-c
+gcloud config set run/region us-central1
 
 echo && echo "Creating service account:"
 gcloud iam service-accounts create terraform

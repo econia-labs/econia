@@ -3,8 +3,12 @@ resource "terraform_data" "processor_image" {
   provisioner "local-exec" {
     command = join(" ", [
       "gcloud builds submit econia",
-      "--config cloudbuild.processor.yaml",
-      "--substitutions _REPOSITORY_ID=${var.repository_id}"
+      "--config cloudbuild.yaml",
+      "--substitutions",
+      join(",", [
+        "_DOCKERFILE=processor/Dockerfile",
+        "_IMAGE_ID=${self.input}"
+      ])
     ])
   }
   provisioner "local-exec" {
@@ -15,6 +19,7 @@ resource "terraform_data" "processor_image" {
 
 # https://github.com/hashicorp/terraform-provider-google/issues/5832
 resource "terraform_data" "processor" {
+  depends_on = [var.migrations_complete]
   provisioner "local-exec" {
     command = join(" && ", [
       join(" ", [

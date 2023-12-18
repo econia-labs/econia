@@ -1,18 +1,18 @@
 images:
-  - '${_REPOSITORY_ID}/processor'
+  - '${_IMAGE_ID}'
 
 options:
   dynamicSubstitutions: true
 
 steps:
 
-  - id: build-processor
+  - id: build-image
     args:
       - 'build'
       - '--file'
-      - '${_DOCKER_DIR}/processor/Dockerfile'
+      - '${_DOCKER_DIR}/${_DOCKERFILE}'
       - '--tag'
-      - '${_REPOSITORY_ID}/processor'
+      - '${_IMAGE_ID}'
       - '.'
     name: '${_BUILDER}'
 

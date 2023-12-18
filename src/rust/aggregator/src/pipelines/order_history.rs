@@ -255,17 +255,17 @@ impl Pipeline for OrderHistory {
             return Ok(());
         }
         let last_indexed_timestamp = last_indexed_timestamp.unwrap().time;
-        let last_timestamp = sqlx::query_file!("sqlx_queries/order_history/get_latest_event_timestamp.sql")
+        let latest_event_timestamp = sqlx::query_file!("sqlx_queries/order_history/get_latest_event_timestamp.sql")
             .fetch_one(&mut transaction as &mut PgConnection)
             .await
             .map_err(to_pipeline_error)?
             .time;
-        let last_timestamp = if let Some(e) = last_timestamp {
+        let latest_event_timestamp = if let Some(e) = latest_event_timestamp {
             e
         } else {
             return Ok(());
         };
-        let intervals = (last_timestamp - last_indexed_timestamp).num_minutes() as usize;
+        let intervals = (latest_event_timestamp - last_indexed_timestamp).num_minutes() as usize;
         let mut timestamps = Vec::with_capacity(intervals);
         for i in 0..intervals {
             timestamps.push(last_indexed_timestamp + chrono::Duration::minutes(i as i64 + 1));

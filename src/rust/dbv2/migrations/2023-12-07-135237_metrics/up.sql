@@ -68,7 +68,7 @@ CREATE TABLE aggregator.daily_rolling_volume_history_last_indexed_timestamp (
     "time" timestamptz PRIMARY KEY
 );
 
-CREATE FUNCTION get_denom_for_market(numeric) RETURNS NUMERIC IMMUTABLE AS $$
+CREATE FUNCTION get_quote_volume_divisor_for_market(numeric) RETURNS NUMERIC IMMUTABLE AS $$
     SELECT tick_size * POW(10::numeric,decimals::numeric)
     FROM market_registration_events AS m
     INNER JOIN aggregator.coins AS c

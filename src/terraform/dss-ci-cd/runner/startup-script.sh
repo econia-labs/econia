@@ -44,5 +44,5 @@ cp -R /econia/src/rust/dbv2/migrations migrations
 git clone \
     https://github.com/econia-labs/econia.git \
     --branch ECO-1018 \
-    --recurse-submodules
+    --recurse-submodules # Clone repo again for Docker build source.
 terraform init

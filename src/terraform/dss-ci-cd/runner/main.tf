@@ -11,14 +11,14 @@ terraform {
 locals {
   credentials_file = "service-account-key.json"
   region           = "us-central1"
-  zode             = "us-central1-c"
+  zone             = "us-central1-c"
 }
 
 provider "google" {
-  credentials = file(locals.credentials_file)
+  credentials = file(local.credentials_file)
   project     = var.project_id
-  region      = var.region
-  zone        = var.zone
+  region      = local.region
+  zone        = local.zone
 }
 
 resource "google_compute_instance" "runner" {

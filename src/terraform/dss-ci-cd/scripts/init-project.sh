@@ -20,11 +20,15 @@ gcloud alpha billing projects link $PROJECT_ID \
 gcloud config set project $PROJECT_ID
 
 echo && echo "Enabling GCP APIs (be patient):"
-gcloud services enable cloudresourcemanager.googleapis.com
-gcloud services enable compute.googleapis.com
-gcloud services enable iam.googleapis.com
-gcloud services enable servicenetworking.googleapis.com
-gcloud services enable sqladmin.googleapis.com
+gcloud services enable \
+    artifactregistry.googleapis.com \
+    cloudbuild.googleapis.com \
+    cloudresourcemanager.googleapis.com \
+    compute.googleapis.com \
+    iam.googleapis.com \
+    servicenetworking.googleapis.com \
+    sqladmin.googleapis.com \
+    vpcaccess.googleapis.com
 
 echo && echo "Creating service account:"
 gcloud iam service-accounts create terraform

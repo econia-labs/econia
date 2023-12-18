@@ -96,3 +96,18 @@ resource "terraform_data" "run_migrations" {
     }
   }
 }
+
+resource "google_compute_subnetwork" "sql_connector_subnetwork" {
+  name          = "sql-connector-subnetwork"
+  ip_cidr_range = "10.8.0.0/28"
+  region        = var.region
+  network       = google_compute_network.sql_network.id
+}
+
+resource "google_vpc_access_connector" "sql_vpc_connector" {
+  depends_on = [terraform_data.run_migrations]
+  name       = "sql-vpc-connector"
+  subnet {
+    name = google_compute_subnetwork.sql_connector_subnetwork.name
+  }
+}

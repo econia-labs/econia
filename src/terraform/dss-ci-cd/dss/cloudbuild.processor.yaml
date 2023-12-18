@@ -1,0 +1,21 @@
+images:
+  - '${_REPOSITORY_ID}/processor'
+
+options:
+  dynamicSubstitutions: true
+
+steps:
+
+  - id: build-processor
+    args:
+      - 'build'
+      - '--file'
+      - '${_DOCKER_DIR}/processor/Dockerfile'
+      - '--tag'
+      - '${_REPOSITORY_ID}/processor'
+      - '.'
+    name: '${_BUILDER}'
+
+substitutions:
+  _BUILDER: 'gcr.io/cloud-builders/docker'
+  _DOCKER_DIR: 'src/docker'

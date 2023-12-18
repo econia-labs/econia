@@ -37,9 +37,12 @@ git clone \
     https://github.com/econia-labs/econia.git \
     --branch ECO-1018 \
     --recurse-submodules
-cd econia/src/terraform/dss-ci-cd
-echo $KEY_BASE_64 | base64 --decode >dss/service-account-key.json
-echo $VARS_BASE_64 | base64 --decode >dss/terraform.tfvars
-cp -R /econia/src/rust/dbv2/migrations dss/migrations
-terraform fmt --recursive
-terraform -chdir=dss init
+cd econia/src/terraform/dss-ci-cd/dss
+echo $KEY_BASE_64 | base64 --decode >service-account-key.json
+echo $VARS_BASE_64 | base64 --decode >terraform.tfvars
+cp -R /econia/src/rust/dbv2/migrations migrations
+git clone \
+    https://github.com/econia-labs/econia.git \
+    --branch ECO-1018 \
+    --recurse-submodules
+terraform init

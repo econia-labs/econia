@@ -1,0 +1,38 @@
+resource "terraform_data" "processor_image" {
+  input = "${var.repository_id}/processor" # Image ID.
+  provisioner "local-exec" {
+    command = join(" ", [
+      "gcloud builds submit econia",
+      "--config cloudbuild.processor.yaml",
+      "--substitutions _REPOSITORY_ID=${var.repository_id}"
+    ])
+  }
+  provisioner "local-exec" {
+    when    = destroy
+    command = "gcloud artifacts docker images delete ${self.output} --quiet"
+  }
+}
+
+# https://github.com/hashicorp/terraform-provider-google/issues/5832
+resource "terraform_data" "processor" {
+  provisioner "local-exec" {
+    command = join(" && ", [
+      join(" ", [
+        "gcloud compute instances create-with-container processor",
+        "--container-env",
+        join(",", [
+          "DATABASE_URL=${var.db_conn_str_private}",
+          "ECONIA_ADDRESS=${var.econia_address}",
+          "GRPC_AUTH_TOKEN=${var.grpc_auth_token}",
+          "GRPC_DATA_SERVICE_ADDRESS=${var.grpc_data_service_address}",
+          "STARTING_VERSION=${var.starting_version}",
+        ]),
+        "--container-image ${terraform_data.processor_image.output}"
+      ])
+    ])
+  }
+  provisioner "local-exec" {
+    when    = destroy
+    command = "gcloud compute instances delete processor --quiet"
+  }
+}

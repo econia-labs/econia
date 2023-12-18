@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT * FROM aggregator.last_time_indexed;\n",
+  "query": "SELECT * FROM aggregator.latest_event_timestamp;\n",
   "describe": {
     "columns": [
       {
@@ -16,5 +16,5 @@
       true
     ]
   },
-  "hash": "ede1ca93b310f0cb719ca3df525a08604adb85d8169066842006b983cc073fa8"
+  "hash": "15bc40d65432965db316e16575f37e0da9f352b1149a19eb81cb9a5d74d1e3cc"
 }

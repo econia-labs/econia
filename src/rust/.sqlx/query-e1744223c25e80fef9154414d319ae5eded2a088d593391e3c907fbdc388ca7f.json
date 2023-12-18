@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "WITH parameters AS (\n    SELECT\n        $1::numeric(20,0) AS txn_version_start,\n        $2::numeric(20,0) AS txn_version_end\n)\nSELECT\n    market_id,\n    order_id,\n    \"user\",\n    initial_size AS size,\n    side,\n    price\nFROM\n    place_limit_order_events,\n    parameters\nWHERE\n    txn_version > txn_version_start\nAND\n    txn_version <= txn_version_end;\n",
+  "query": "WITH parameters AS (\n    SELECT\n        $1::numeric(20,0) AS txn_version_start,\n        $2::numeric(20,0) AS txn_version_end\n)\nSELECT\n    market_id,\n    order_id,\n    \"user\",\n    initial_size AS \"size\",\n    side,\n    price\nFROM\n    place_limit_order_events,\n    parameters\nWHERE\n    txn_version > txn_version_start\nAND\n    txn_version <= txn_version_end;\n",
   "describe": {
     "columns": [
       {
@@ -49,5 +49,5 @@
       false
     ]
   },
-  "hash": "5c47218b1a326b99a01af7ba7eaa4817da0c8b723d56f2855e5f7c9953875f42"
+  "hash": "e1744223c25e80fef9154414d319ae5eded2a088d593391e3c907fbdc388ca7f"
 }

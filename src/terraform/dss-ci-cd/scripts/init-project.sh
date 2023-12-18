@@ -28,6 +28,7 @@ gcloud services enable \
     cloudresourcemanager.googleapis.com \
     compute.googleapis.com \
     iam.googleapis.com \
+    run.googleapis.com \
     servicenetworking.googleapis.com \
     sqladmin.googleapis.com \
     vpcaccess.googleapis.com
@@ -45,6 +46,10 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
 gcloud projects add-iam-policy-binding $PROJECT_ID \
     --member serviceAccount:$SERVICE_ACCOUNT_NAME \
     --role roles/compute.networkAdmin
+# https://stackoverflow.com/a/61250654
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member serviceAccount:$SERVICE_ACCOUNT_NAME \
+    --role roles/run.admin
 
 echo && echo "Initializing runner:"
 terraform fmt -recursive

@@ -11,8 +11,7 @@ output "db_conn_str_private" {
 }
 
 output "migrations_complete" {
-  depends_on = [terraform_data.run_migrations]
-  value      = true
+  value = terraform_data.run_migrations
 }
 
 output "sql_vpc_connector_id" {

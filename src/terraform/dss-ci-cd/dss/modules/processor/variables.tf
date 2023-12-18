@@ -11,3 +11,5 @@ variable "migrations_complete" {}
 variable "repository_id" {}
 
 variable "starting_version" {}
+
+variable "repository_created" {}

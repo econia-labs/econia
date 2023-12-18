@@ -1,5 +1,7 @@
 resource "terraform_data" "image" {
-  input = "${var.repository_id}/processor" # Image ID.
+  # To prevent out-of-order deletion via provisioner command.
+  depends_on = [var.repository_created]
+  input      = "${var.repository_id}/processor" # Image ID.
   provisioner "local-exec" {
     command = join(" ", [
       "gcloud builds submit econia",

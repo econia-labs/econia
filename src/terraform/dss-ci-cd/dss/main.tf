@@ -40,6 +40,7 @@ module "processor" {
   migrations_complete   = module.db.migrations_complete
   grpc_auth_token       = var.grpc_auth_token
   grpc_data_service_url = var.grpc_data_service_url
+  repository_created    = module.artifact_registry.repository_created
   repository_id         = module.artifact_registry.repository_id
   source                = "./modules/processor"
   starting_version      = var.starting_version
@@ -49,6 +50,7 @@ module "aggregator" {
   aptos_network       = var.aptos_network
   db_conn_str_private = module.db.db_conn_str_private
   migrations_complete = module.db.migrations_complete
+  repository_created  = module.artifact_registry.repository_created
   repository_id       = module.artifact_registry.repository_id
   source              = "./modules/aggregator"
 }

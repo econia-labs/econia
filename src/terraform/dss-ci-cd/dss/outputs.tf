@@ -55,3 +55,16 @@ output "grpc_auth_token" {
 output "postgrest_max_rows" {
   value = var.postgrest_max_rows
 }
+
+output "websockets_jwt_secret" {
+  sensitive = true
+  value     = var.websockets_jwt_secret
+}
+
+output "postgrest_url" {
+  value = module.postgrest.postgrest_url
+}
+
+output "websockets_url" {
+  value = module.websockets.websockets_url
+}

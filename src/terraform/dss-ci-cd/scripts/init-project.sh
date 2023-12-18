@@ -18,6 +18,8 @@ gcloud projects create $PROJECT_ID \
 gcloud alpha billing projects link $PROJECT_ID \
     --billing-account $BILLING_ACCOUNT_ID
 gcloud config set project $PROJECT_ID
+gcloud config set compute/zone us-central1-c
+gcloud config set run/region us-central1
 
 echo && echo "Enabling GCP APIs (be patient):"
 gcloud services enable \

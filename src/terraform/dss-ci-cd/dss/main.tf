@@ -59,9 +59,20 @@ module "no_auth_policy" {
 
 module "postgrest" {
   db_conn_str_private  = module.db.db_conn_str_private
+  migrations_complete  = module.db.migrations_complete
   no_auth_policy_data  = module.no_auth_policy.policy_data
   postgrest_max_rows   = var.postgrest_max_rows
   region               = local.region
   source               = "./modules/postgrest"
   sql_vpc_connector_id = module.db.sql_vpc_connector_id
+}
+
+module "websockets" {
+  db_conn_str_private   = module.db.db_conn_str_private
+  migrations_complete   = module.db.migrations_complete
+  no_auth_policy_data   = module.no_auth_policy.policy_data
+  region                = local.region
+  source                = "./modules/websockets"
+  sql_vpc_connector_id  = module.db.sql_vpc_connector_id
+  websockets_jwt_secret = var.websockets_jwt_secret
 }

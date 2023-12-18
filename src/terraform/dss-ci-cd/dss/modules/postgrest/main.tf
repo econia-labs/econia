@@ -1,6 +1,7 @@
 resource "google_cloud_run_v2_service" "postgrest" {
-  location = var.region
-  name     = "postgrest"
+  depends_on = [var.migrations_complete]
+  location   = var.region
+  name       = "postgrest"
   template {
     containers {
       image = "postgrest/postgrest:v11.2.1"

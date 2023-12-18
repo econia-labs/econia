@@ -4,12 +4,12 @@ output "db_connection_name" {
 
 output "db_conn_str_auth_proxy" {
   sensitive = true
-  value = module.db.db_conn_str_auth_proxy
+  value     = module.db.db_conn_str_auth_proxy
 }
 
 output "db_conn_str_private" {
   sensitive = true
-  value = module.db.db_conn_str_private
+  value     = module.db.db_conn_str_private
 }
 
 output "organization_id" {

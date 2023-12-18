@@ -8,8 +8,14 @@ terraform {
   required_version = ">= 0.12, < 2.0.0"
 }
 
+locals {
+  credentials_file = "service-account-key.json"
+  region           = "us-central1"
+  zode             = "us-central1-c"
+}
+
 provider "google" {
-  credentials = file(var.credentials_file)
+  credentials = file(locals.credentials_file)
   project     = var.project_id
   region      = var.region
   zone        = var.zone

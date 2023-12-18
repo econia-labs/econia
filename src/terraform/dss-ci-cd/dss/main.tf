@@ -8,23 +8,29 @@ terraform {
   required_version = ">= 0.12, < 2.0.0"
 }
 
+locals {
+  credentials_file = "service-account-key.json"
+  region           = "us-central1"
+  zone             = "us-central1-c"
+}
+
 provider "google" {
-  credentials = file(var.credentials_file)
+  credentials = file(local.credentials_file)
   project     = var.project_id
-  region      = var.region
-  zone        = var.zone
+  region      = local.region
+  zone        = local.zone
 }
 
 module "db" {
   db_root_password = var.db_root_password
   credentials_file = var.credentials_file
-  region           = var.region
+  region           = local.region
   source           = "./modules/db"
 }
 
 module "artifact_registry" {
   project_id = var.project_id
-  region     = var.region
+  region     = local.region
   source     = "./modules/artifact_registry"
 }
 
@@ -37,4 +43,12 @@ module "processor" {
   repository_id             = module.artifact_registry.repository_id
   source                    = "./modules/processor"
   starting_version          = var.starting_version
+}
+
+module "aggregator" {
+  aptos_network       = var.aptos_network
+  db_conn_str_private = module.db.db_conn_str_private
+  migrations_complete = module.db.migrations_complete
+  repository_id       = module.artifact_registry.repository_id
+  source              = "./modules/aggregator"
 }

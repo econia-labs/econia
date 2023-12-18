@@ -1,12 +1,12 @@
 resource "terraform_data" "image" {
-  input = "${var.repository_id}/processor" # Image ID.
+  input = "${var.repository_id}/aggregator" # Image ID.
   provisioner "local-exec" {
     command = join(" ", [
       "gcloud builds submit econia",
       "--config cloudbuild.yaml",
       "--substitutions",
       join(",", [
-        "_DOCKERFILE=processor/Dockerfile",
+        "_DOCKERFILE=aggregator/Dockerfile",
         "_IMAGE_ID=${self.input}"
       ])
     ])
@@ -23,14 +23,11 @@ resource "terraform_data" "instance" {
   provisioner "local-exec" {
     command = join(" && ", [
       join(" ", [
-        "gcloud compute instances create-with-container processor",
+        "gcloud compute instances create-with-container aggregator",
         "--container-env",
         join(",", [
+          "APTOS_NETWORK=${var.aptos_network}",
           "DATABASE_URL=${var.db_conn_str_private}",
-          "ECONIA_ADDRESS=${var.econia_address}",
-          "GRPC_AUTH_TOKEN=${var.grpc_auth_token}",
-          "GRPC_DATA_SERVICE_ADDRESS=${var.grpc_data_service_address}",
-          "STARTING_VERSION=${var.starting_version}",
         ]),
         "--container-image ${terraform_data.image.output}"
       ])
@@ -38,6 +35,6 @@ resource "terraform_data" "instance" {
   }
   provisioner "local-exec" {
     when    = destroy
-    command = "gcloud compute instances delete processor --quiet"
+    command = "gcloud compute instances delete aggregator --quiet"
   }
 }

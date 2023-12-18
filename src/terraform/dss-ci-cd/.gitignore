@@ -1,4 +1,4 @@
 *service-account-key.json
-migrations*
-econia*
+dss/migrations*
+dss/econia*
 stashed-projects/*

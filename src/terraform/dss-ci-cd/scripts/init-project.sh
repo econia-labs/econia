@@ -5,11 +5,14 @@ ORGANIZATION_ID=$(get_tfvar organization_id $TFVARS)
 BILLING_ACCOUNT_ID=$(get_tfvar billing_account_id $TFVARS)
 PROJECT_ID=$(get_tfvar project_id $TFVARS)
 PROJECT_NAME=$(get_tfvar project_name $TFVARS)
+REGION=$(get_tfvar region $TFVARS)
+ZONE=$(get_tfvar zone $TFVARS)
 echo "Organization ID:" $ORGANIZATION_ID
 echo "Billing account ID:" $BILLING_ACCOUNT_ID
 echo "Project ID:" $PROJECT_ID
 echo "Project name:" $PROJECT_NAME
-echo "Credentials file:" $CREDENTIALS_FILE
+echo "Region:" $REGION
+echo "Zone:" $REGION
 
 echo && echo "Creating project:"
 gcloud projects create $PROJECT_ID \
@@ -30,8 +33,8 @@ gcloud services enable \
     servicenetworking.googleapis.com \
     sqladmin.googleapis.com \
     vpcaccess.googleapis.com
-gcloud config set compute/zone us-central1-c
-gcloud config set run/region us-central1
+gcloud config set compute/zone $ZONE
+gcloud config set run/region $REGION
 
 echo && echo "Creating service account:"
 gcloud iam service-accounts create terraform

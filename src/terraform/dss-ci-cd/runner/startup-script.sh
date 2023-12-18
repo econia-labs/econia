@@ -45,4 +45,6 @@ git clone \
     https://github.com/econia-labs/econia.git \
     --branch ECO-1018 \
     --recurse-submodules # Clone repo again for Docker build source.
+gcloud config set compute/zone $ZONE
+gcloud config set run/region $REGION
 terraform init

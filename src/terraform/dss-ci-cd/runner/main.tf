@@ -8,17 +8,11 @@ terraform {
   required_version = ">= 0.12, < 2.0.0"
 }
 
-locals {
-  credentials_file = "service-account-key.json"
-  region           = "us-central1"
-  zone             = "us-central1-c"
-}
-
 provider "google" {
-  credentials = file(local.credentials_file)
+  credentials = file(var.credentials_file)
   project     = var.project_id
-  region      = local.region
-  zone        = local.zone
+  region      = var.region
+  zone        = var.zone
 }
 
 resource "google_compute_instance" "runner" {
@@ -31,6 +25,8 @@ resource "google_compute_instance" "runner" {
   metadata_startup_script = join("\n", [
     "KEY_BASE_64=${base64encode(file("service-account-key.json"))}",
     "VARS_BASE_64=${base64encode(file("terraform.tfvars"))}",
+    "REGION=${var.region}",
+    "ZONE=${var.zone}",
     file("startup-script.sh")
     ]
   )

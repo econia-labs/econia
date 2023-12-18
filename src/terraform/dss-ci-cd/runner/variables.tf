@@ -1,3 +1,7 @@
+variable "credentials_file" {
+  default = "service-account-key.json"
+}
+
 variable "organization_id" {}
 
 variable "billing_account_id" {}
@@ -5,6 +9,10 @@ variable "billing_account_id" {}
 variable "project_id" {}
 
 variable "project_name" {}
+
+variable "region" {}
+
+variable "zone" {}
 
 variable "db_root_password" {}
 

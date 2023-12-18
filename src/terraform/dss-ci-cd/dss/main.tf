@@ -8,35 +8,29 @@ terraform {
   required_version = ">= 0.12, < 2.0.0"
 }
 
-locals {
-  credentials_file = "service-account-key.json"
-  region           = "us-central1"
-  zone             = "us-central1-c"
-}
-
 provider "google" {
-  credentials = file(local.credentials_file)
+  credentials = file(var.credentials_file)
   project     = var.project_id
-  region      = local.region
-  zone        = local.zone
+  region      = var.region
+  zone        = var.zone
 }
 
 provider "google-beta" {
   project = var.project_id
-  region  = local.region
-  zone    = local.zone
+  region  = var.region
+  zone    = var.zone
 }
 
 module "db" {
   db_root_password = var.db_root_password
-  credentials_file = local.credentials_file
-  region           = local.region
+  credentials_file = var.credentials_file
+  region           = var.region
   source           = "./modules/db"
 }
 
 module "artifact_registry" {
   project_id = var.project_id
-  region     = local.region
+  region     = var.region
   source     = "./modules/artifact_registry"
 }
 
@@ -50,6 +44,7 @@ module "processor" {
   repository_id         = module.artifact_registry.repository_id
   source                = "./modules/processor"
   starting_version      = var.starting_version
+  zone                  = var.zone
 }
 
 module "aggregator" {
@@ -59,6 +54,7 @@ module "aggregator" {
   repository_created  = module.artifact_registry.repository_created
   repository_id       = module.artifact_registry.repository_id
   source              = "./modules/aggregator"
+  zone                = var.zone
 }
 
 module "no_auth_policy" {
@@ -70,7 +66,7 @@ module "postgrest" {
   migrations_complete  = module.db.migrations_complete
   no_auth_policy_data  = module.no_auth_policy.policy_data
   postgrest_max_rows   = var.postgrest_max_rows
-  region               = local.region
+  region               = var.region
   source               = "./modules/postgrest"
   sql_vpc_connector_id = module.db.sql_vpc_connector_id
 }
@@ -79,7 +75,7 @@ module "websockets" {
   db_conn_str_private   = module.db.db_conn_str_private
   migrations_complete   = module.db.migrations_complete
   no_auth_policy_data   = module.no_auth_policy.policy_data
-  region                = local.region
+  region                = var.region
   source                = "./modules/websockets"
   sql_vpc_connector_id  = module.db.sql_vpc_connector_id
   websockets_jwt_secret = var.websockets_jwt_secret

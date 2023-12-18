@@ -13,3 +13,5 @@ variable "repository_id" {}
 variable "starting_version" {}
 
 variable "repository_created" {}
+
+variable "zone" {}

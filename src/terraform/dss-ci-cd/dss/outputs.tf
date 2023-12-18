@@ -26,6 +26,14 @@ output "project_name" {
   value = var.project_name
 }
 
+output "region" {
+  value = var.region
+}
+
+output "zone" {
+  value = var.zone
+}
+
 output "db_root_password" {
   sensitive = true
   value     = var.db_root_password

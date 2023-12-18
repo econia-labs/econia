@@ -34,7 +34,8 @@ resource "terraform_data" "instance" {
           "GRPC_DATA_SERVICE_URL=${var.grpc_data_service_url}",
           "STARTING_VERSION=${var.starting_version}",
         ]),
-        "--container-image ${terraform_data.image.output}"
+        "--container-image ${terraform_data.image.output}",
+        "--zone ${var.zone}"
       ])
     ])
   }

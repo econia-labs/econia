@@ -31,7 +31,8 @@ resource "terraform_data" "instance" {
           "APTOS_NETWORK=${var.aptos_network}",
           "DATABASE_URL=${var.db_conn_str_private}",
         ]),
-        "--container-image ${terraform_data.image.output}"
+        "--container-image ${terraform_data.image.output}",
+        "--zone ${var.zone}"
       ])
     ])
   }

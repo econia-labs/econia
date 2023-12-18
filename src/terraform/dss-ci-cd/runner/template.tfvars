@@ -8,3 +8,4 @@ econia_address            = "0xc0de11113b427d35ece1d8991865a941c0578b0f349acabbe
 starting_version          = "649555969"
 grpc_data_service_address = "https://grpc.testnet.aptoslabs.com:443"
 grpc_auth_token           = "your-auth-token"
+postgrest_max_rows        = "500"

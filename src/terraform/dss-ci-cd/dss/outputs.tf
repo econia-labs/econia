@@ -51,3 +51,7 @@ output "grpc_auth_token" {
   sensitive = true
   value     = var.grpc_auth_token
 }
+
+output "postgrest_max_rows" {
+  value = var.postgrest_max_rows
+}

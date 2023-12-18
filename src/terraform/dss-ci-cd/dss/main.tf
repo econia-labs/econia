@@ -23,7 +23,7 @@ provider "google" {
 
 module "db" {
   db_root_password = var.db_root_password
-  credentials_file = var.credentials_file
+  credentials_file = local.credentials_file
   region           = local.region
   source           = "./modules/db"
 }
@@ -51,4 +51,17 @@ module "aggregator" {
   migrations_complete = module.db.migrations_complete
   repository_id       = module.artifact_registry.repository_id
   source              = "./modules/aggregator"
+}
+
+module "no_auth_policy" {
+  source = "./modules/no_auth_policy"
+}
+
+module "postgrest" {
+  db_conn_str_private  = module.db.db_conn_str_private
+  no_auth_policy_data  = module.no_auth_policy.policy_data
+  postgrest_max_rows   = var.postgrest_max_rows
+  region               = local.region
+  source               = "./modules/postgrest"
+  sql_vpc_connector_id = module.db.sql_vpc_connector_id
 }

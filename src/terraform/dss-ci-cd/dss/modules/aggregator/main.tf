@@ -22,6 +22,8 @@ resource "terraform_data" "image" {
 # https://github.com/hashicorp/terraform-provider-google/issues/5832
 resource "terraform_data" "instance" {
   depends_on = [var.migrations_complete]
+  # Store zone since variables not accessible at destroy time.
+  input = var.zone
   provisioner "local-exec" {
     command = join(" && ", [
       join(" ", [
@@ -32,12 +34,17 @@ resource "terraform_data" "instance" {
           "DATABASE_URL=${var.db_conn_str_private}",
         ]),
         "--container-image ${terraform_data.image.output}",
+        "--network ${var.sql_network_id}",
         "--zone ${var.zone}"
       ])
     ])
   }
   provisioner "local-exec" {
-    when    = destroy
-    command = "gcloud compute instances delete aggregator --quiet"
+    command = join(" ", [
+      "gcloud compute instances delete aggregator",
+      "--quiet",
+      "--zone ${self.output}"
+    ])
+    when = destroy
   }
 }

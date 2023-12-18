@@ -15,3 +15,5 @@ variable "starting_version" {}
 variable "repository_created" {}
 
 variable "zone" {}
+
+variable "sql_network_id" {}

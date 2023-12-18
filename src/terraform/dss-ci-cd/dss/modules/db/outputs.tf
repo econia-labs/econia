@@ -17,3 +17,7 @@ output "migrations_complete" {
 output "sql_vpc_connector_id" {
   value = google_vpc_access_connector.sql_vpc_connector.id
 }
+
+output "sql_network_id" {
+  value = google_compute_network.sql_network.id
+}

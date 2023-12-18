@@ -43,6 +43,7 @@ module "processor" {
   repository_created    = module.artifact_registry.repository_created
   repository_id         = module.artifact_registry.repository_id
   source                = "./modules/processor"
+  sql_network_id        = module.db.sql_network_id
   starting_version      = var.starting_version
   zone                  = var.zone
 }
@@ -54,6 +55,7 @@ module "aggregator" {
   repository_created  = module.artifact_registry.repository_created
   repository_id       = module.artifact_registry.repository_id
   source              = "./modules/aggregator"
+  sql_network_id      = module.db.sql_network_id
   zone                = var.zone
 }
 

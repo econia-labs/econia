@@ -1,9 +1,9 @@
 use anyhow::anyhow;
 use bigdecimal::{BigDecimal, Zero};
 use chrono::{DateTime, Duration, Utc};
-use sqlx::{Executor, PgConnection, PgPool, Postgres, Transaction};
+use sqlx::{PgConnection, PgPool, Postgres, Transaction};
 
-use aggregator::{Pipeline, PipelineAggregationResult, PipelineError, util::commit_transaction};
+use aggregator::{Pipeline, PipelineAggregationResult, PipelineError, util::{commit_transaction, create_repeatable_read_transaction}};
 
 pub const TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
 
@@ -47,16 +47,7 @@ impl Pipeline for Leaderboards {
     }
 
     async fn process_and_save_internal(&mut self) -> PipelineAggregationResult {
-        let mut transaction = self
-            .pool
-            .begin()
-            .await
-            .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
-
-        transaction
-            .execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;")
-            .await
-            .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
+        let mut transaction = create_repeatable_read_transaction(&self.pool).await?;
 
         // Get all competitions having created markets
         let competitions = sqlx::query_as!(

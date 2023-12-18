@@ -7,7 +7,7 @@ SELECT
     market_id,
     order_id,
     "user",
-    initial_size AS size,
+    initial_size AS "size",
     side,
     price
 FROM

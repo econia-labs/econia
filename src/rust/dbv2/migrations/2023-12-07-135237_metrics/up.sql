@@ -20,11 +20,11 @@ maxes AS (
     UNION
     SELECT * FROM fill_max
 )
-SELECT MAX("time") AS time FROM maxes;
+SELECT MAX("time") AS "time" FROM maxes;
 
 
 CREATE TABLE aggregator.daily_rolling_volume_history (
-    time timestamptz,
+    "time" timestamptz,
     market_id NUMERIC(20,0),
     volume_in_quote_subunits NUMERIC(20,0)
 );
@@ -34,7 +34,7 @@ CREATE TABLE aggregator.order_history (
     market_id numeric(20,0) NOT NULL,
     order_id numeric(39,0) NOT NULL,
     "user" text NOT NULL,
-    size numeric(20,0) NOT NULL,
+    "size" numeric(20,0) NOT NULL,
     direction order_direction NOT NULL,
     price numeric(20,0) NOT NULL,
     "time" timestamptz NOT NULL,

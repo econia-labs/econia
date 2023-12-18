@@ -9,7 +9,7 @@ SELECT
     market_id,
     maker_order_id,
     taker_order_id,
-    size
+    "size"
 FROM
     fill_events,
     parameters

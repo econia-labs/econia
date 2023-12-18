@@ -61,5 +61,8 @@ ENV RUST_LOG_FORMAT=json
 # Health check port.
 EXPOSE 8084
 
+# This helps the processor stop faster
+STOPSIGNAL SIGKILL
+
 # Do the streamer ready-check and start
 CMD /app/start.sh

@@ -255,7 +255,7 @@ impl Pipeline for OrderHistory {
             return Ok(());
         }
         let last_indexed_timestamp = last_indexed_timestamp.unwrap().time;
-        let last_timestamp = sqlx::query_file!("sqlx_queries/order_history/get_last_time_indexed.sql")
+        let last_timestamp = sqlx::query_file!("sqlx_queries/order_history/get_latest_event_timestamp.sql")
             .fetch_one(&mut transaction as &mut PgConnection)
             .await
             .map_err(to_pipeline_error)?

@@ -39,6 +39,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
         net-tools \
         netcat \
         tcpdump \
+        postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=builder $BIN_PATH /usr/local/bin
 
@@ -49,6 +50,8 @@ RUN rm g.tar.gz
 
 WORKDIR /app
 COPY /src/docker/processor/start.sh .
+RUN mkdir -p /config/data
+COPY /src/docker/processor/config.yaml /config/data/config.yaml
 RUN chmod u+x /app/start.sh
 WORKDIR /
 
@@ -57,6 +60,9 @@ ENV RUST_LOG_FORMAT=json
 
 # Health check port.
 EXPOSE 8084
+
+# This helps the processor stop faster
+STOPSIGNAL SIGKILL
 
 # Do the streamer ready-check and start
 CMD /app/start.sh

@@ -43,8 +43,8 @@ output "starting_version" {
   value = var.starting_version
 }
 
-output "grpc_data_service_address" {
-  value = var.grpc_data_service_address
+output "grpc_data_service_url" {
+  value = var.grpc_data_service_url
 }
 
 output "grpc_auth_token" {

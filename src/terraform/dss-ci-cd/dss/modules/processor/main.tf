@@ -29,7 +29,7 @@ resource "terraform_data" "instance" {
           "DATABASE_URL=${var.db_conn_str_private}",
           "ECONIA_ADDRESS=${var.econia_address}",
           "GRPC_AUTH_TOKEN=${var.grpc_auth_token}",
-          "GRPC_DATA_SERVICE_ADDRESS=${var.grpc_data_service_address}",
+          "GRPC_DATA_SERVICE_URL=${var.grpc_data_service_url}",
           "STARTING_VERSION=${var.starting_version}",
         ]),
         "--container-image ${terraform_data.image.output}"

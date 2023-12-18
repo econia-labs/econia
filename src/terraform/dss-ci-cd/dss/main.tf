@@ -35,14 +35,14 @@ module "artifact_registry" {
 }
 
 module "processor" {
-  db_conn_str_private       = module.db.db_conn_str_private
-  econia_address            = var.econia_address
-  migrations_complete       = module.db.migrations_complete
-  grpc_auth_token           = var.grpc_auth_token
-  grpc_data_service_address = var.grpc_data_service_address
-  repository_id             = module.artifact_registry.repository_id
-  source                    = "./modules/processor"
-  starting_version          = var.starting_version
+  db_conn_str_private   = module.db.db_conn_str_private
+  econia_address        = var.econia_address
+  migrations_complete   = module.db.migrations_complete
+  grpc_auth_token       = var.grpc_auth_token
+  grpc_data_service_url = var.grpc_data_service_url
+  repository_id         = module.artifact_registry.repository_id
+  source                = "./modules/processor"
+  starting_version      = var.starting_version
 }
 
 module "aggregator" {

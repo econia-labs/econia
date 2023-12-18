@@ -14,7 +14,7 @@ variable "econia_address" {}
 
 variable "starting_version" {}
 
-variable "grpc_data_service_address" {}
+variable "grpc_data_service_url" {}
 
 variable "grpc_auth_token" {}
 

@@ -4,39 +4,63 @@ title: CI/CD
 
 # Continuous integration and deployment
 
-If you have already finished the [Terraform tutorial](terraform.md) and would rather not rebuild the entire DSS every time a new upgrade comes out, this guide will help you set up continuous integration/continuous deployment (CI/CD) workflows for your DSS deployment.
+This guide will help you set up continuous integration/continuous deployment (CI/CD) workflows for a DSS deployment on Google Cloud Platform (GCP).
+
+## Dependencies
+
+1. [Create a GCP organization](https://cloud.google.com/resource-manager/docs/creating-managing-organization), [try GCP for free](https://cloud.google.com/free), or otherwise get access to GCP.
+
+1. [Install the Google Cloud CLI](https://cloud.google.com/sdk/docs/install-sdk).
+
+1. [Install Terraform](https://developer.hashicorp.com/terraform/tutorials/gcp-get-started/install-cli).
 
 ## Initialize runner
 
-1. Clone the Econia repository and configure project variables:
+1. Check your GCP metadata:
+
+   ```sh
+   gcloud organizations list
+   ```
+
+   ```sh
+   gcloud alpha billing accounts list
+   ```
+
+1. Clone the Econia repository and configure project variables using the values from above:
 
    ```sh
    git clone https://github.com/econia-labs/econia.git
    cd econia/src/terraform/dss-ci-cd
    cp runner/template.tfvars runner/terraform.tfvars
+   ```
+
+   ```sh
    vim runner/terraform.tfvars
    ```
 
-1. Initialize the CI/CD project runner:
+   :::tip
+   [You can get a gRPC auth token from Aptos Labs](https://aptos-api-gateway-prod.firebaseapp.com/)
+   :::
+
+1. Initialize the CI/CD project runner, which on startup will run a script that installs dependencies:
 
    ```sh
    source scripts/init-project.sh
    ```
 
-   :::tip
-   Once the runner has been created it may take up to 10 minutes to complete the startup script, since it has to compile binaries from source.
-   :::
+1. After the runner has been created, you can pull the startup script logs via:
 
-1. You can then connect to the runner via [GCP Identity-Aware Proxy](https://cloud.google.com/compute/docs/connect/ssh-using-iap):
-
-   ```sh title="Get startup script logs"
+   ```sh
    source scripts/get-runner-startup-logs.sh
    ```
 
-   ```sh title="Starting interactive session"
-   source scripts/connect-to-runner.sh
-   ```
+1. After 5–10 minutes, the startup script logs should show something like:
 
-   ```sh title="Disconnect from interactive session"
-   exit
+   ```sh
+   ...
+   ... google_metadata_script_runner[754]: startup-script exit status 0
+   ... google_metadata_script_runner[754]: Finished running startup scripts.
+   ... systemd[1]: google-startup-scripts.service: Deactivated successfully.
+   ... systemd[1]: Finished google-startup-scripts.service - Google Compute Engine Startup Scripts.
+   ... systemd[1]: google-startup-scripts.service: Consumed 7min 17.688s CPU time.
    ```

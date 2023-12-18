@@ -63,6 +63,52 @@ struct Order {
     price: BigDecimal,
 }
 
+struct Fill {
+    market_id: BigDecimal,
+    maker_order_id: BigDecimal,
+    taker_order_id: BigDecimal,
+    txn_version: BigDecimal,
+    event_idx: BigDecimal,
+    size: BigDecimal,
+}
+
+fn handle_fill (fill: &Fill, orders: &mut HashMap<OrderKey, Order>, index: &mut usize) {
+    *index += 1;
+    let order_key_maker = (fill.market_id.clone(), fill.maker_order_id.clone());
+    if let Some(order) = orders.get_mut(&order_key_maker) {
+        order.size -= fill.size.clone();
+        if order.size.is_zero() {
+            orders.remove(&order_key_maker);
+        }
+    }
+    let order_key_taker = (fill.market_id.clone(), fill.taker_order_id.clone());
+    if let Some(order) = orders.get_mut(&order_key_taker) {
+        order.size -= fill.size.clone();
+        if order.size.is_zero() {
+            orders.remove(&order_key_taker);
+        }
+    }
+}
+
+struct Change {
+    market_id: BigDecimal,
+    order_id: BigDecimal,
+    txn_version: BigDecimal,
+    event_idx: BigDecimal,
+    new_size: BigDecimal,
+}
+
+fn handle_change (change: &Change, orders: &mut HashMap<OrderKey, Order>, index: &mut usize) {
+    *index += 1;
+    let order_key = (change.market_id.clone(), change.order_id.clone());
+    if let Some(order) = orders.get_mut(&order_key) {
+        order.size = change.new_size.clone();
+        if order.size.is_zero() {
+            orders.remove(&order_key);
+        }
+    }
+}
+
 impl OrderHistory {
     /// Given a previous state (and the last transaction version included in that state), computes
     /// the new state at the given timestamp.
@@ -98,14 +144,6 @@ impl OrderHistory {
 
         // Get all fill events that happened between the last transaction included in the previous
         // state and the last transaction that happened before the given timestamp.
-        struct Fill {
-            market_id: BigDecimal,
-            maker_order_id: BigDecimal,
-            taker_order_id: BigDecimal,
-            txn_version: BigDecimal,
-            event_idx: BigDecimal,
-            size: BigDecimal,
-        }
         let fills = sqlx::query_file_as!(
             Fill,
             "sqlx_queries/order_history/get_fill_events_between_txn_versions.sql",
@@ -118,13 +156,6 @@ impl OrderHistory {
 
         // Get all change events that happened between the last transaction included in the previous
         // state and the last transaction that happened before the given timestamp.
-        struct Change {
-            market_id: BigDecimal,
-            order_id: BigDecimal,
-            txn_version: BigDecimal,
-            event_idx: BigDecimal,
-            new_size: BigDecimal,
-        }
         let changes = sqlx::query_file_as!(
             Change,
             "sqlx_queries/order_history/get_change_order_size_events_between_txn_versions.sql",
@@ -159,55 +190,27 @@ impl OrderHistory {
         // Handle fills and changes chronologically.
         let mut fills_index = 0;
         let mut changes_index = 0;
-        let handle_fill =
-            |fill: &Fill, orders: &mut HashMap<OrderKey, Order>, index: &mut usize| {
-                *index += 1;
-                let order_key_maker = (fill.market_id.clone(), fill.maker_order_id.clone());
-                if let Some(order) = orders.get_mut(&order_key_maker) {
-                    order.size -= fill.size.clone();
-                    if order.size.is_zero() {
-                        orders.remove(&order_key_maker);
+        for _ in 0..(fills.len() + changes.len()) {
+            let fill = fills.get(fills_index);
+            let change = changes.get(changes_index);
+            match (fill, change) {
+                (Some(fill), Some(change)) => {
+                    let fill_index = (fill.txn_version.clone(), fill.event_idx.clone());
+                    let change_index = (change.txn_version.clone(), change.event_idx.clone());
+                    if fill_index < change_index {
+                        handle_fill(fill, &mut orders, &mut fills_index);
+                    } else {
+                        handle_change(change, &mut orders, &mut changes_index);
                     }
+                },
+                (Some(fill), None) => {
+                    handle_fill(fill, &mut orders, &mut fills_index);
+                },
+                (None, Some(change)) => {
+                    handle_change(change, &mut orders, &mut changes_index);
                 }
-                let order_key_taker = (fill.market_id.clone(), fill.taker_order_id.clone());
-                if let Some(order) = orders.get_mut(&order_key_taker) {
-                    order.size -= fill.size.clone();
-                    if order.size.is_zero() {
-                        orders.remove(&order_key_taker);
-                    }
-                }
-            };
-        let handle_change =
-            |change: &Change, orders: &mut HashMap<OrderKey, Order>, index: &mut usize| {
-                *index += 1;
-                let order_key = (change.market_id.clone(), change.order_id.clone());
-                if let Some(order) = orders.get_mut(&order_key) {
-                    order.size = change.new_size.clone();
-                    if order.size.is_zero() {
-                        orders.remove(&order_key);
-                    }
-                }
-            };
-        while fills_index < fills.len() && changes_index < changes.len() {
-            let fill = fills.get(fills_index).unwrap();
-            let fill_index = (fill.txn_version.clone(), fill.event_idx.clone());
-
-            let change = changes.get(changes_index).unwrap();
-            let change_index = (change.txn_version.clone(), change.event_idx.clone());
-
-            if fill_index < change_index {
-                handle_fill(fill, &mut orders, &mut fills_index);
-            } else {
-                handle_change(change, &mut orders, &mut changes_index);
+                (None, None) => unreachable!(),
             }
-        }
-        while fills_index < fills.len() {
-            let fill = fills.get(fills_index).unwrap();
-            handle_fill(fill, &mut orders, &mut fills_index);
-        }
-        while changes_index < changes.len() {
-            let change = changes.get(changes_index).unwrap();
-            handle_change(change, &mut orders, &mut changes_index);
         }
         Ok(OrderHistoryState::new(txn_version, orders))
     }

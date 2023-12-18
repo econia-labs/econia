@@ -1,6 +1,11 @@
+# Enabling Private IP:
+# https://stackoverflow.com/a/54351644
+# https://stackoverflow.com/questions/54278828
+# https://serverfault.com/questions/942115
+# Destroying VPC peering:
+# https://github.com/hashicorp/terraform-provider-google/issues/16275#issuecomment-1825752152
 terraform {
   required_providers {
-    # https://github.com/hashicorp/terraform-provider-google/issues/16275#issuecomment-1825752152
     google-beta-sql-network-workaround = {
       source  = "hashicorp/google-beta"
       version = "~>4"
@@ -33,6 +38,7 @@ resource "google_sql_database_instance" "postgres" {
   depends_on = [
     google_service_networking_connection.sql_network_connection,
   ]
+  provider      = google-beta
   root_password = var.db_root_password
   settings {
     insights_config {
@@ -59,11 +65,13 @@ resource "google_compute_global_address" "postgres_private_ip_address" {
   name          = "postgres-private-ip-address"
   network       = google_compute_network.sql_network.id
   prefix_length = 16
+  provider      = google-beta
   purpose       = "VPC_PEERING"
 }
 
 resource "google_compute_network" "sql_network" {
-  name = "sql-network"
+  name     = "sql-network"
+  provider = google-beta
 }
 
 resource "google_service_networking_connection" "sql_network_connection" {

@@ -21,6 +21,12 @@ provider "google" {
   zone        = local.zone
 }
 
+provider "google-beta" {
+  project = var.project_id
+  region  = local.region
+  zone    = local.zone
+}
+
 module "db" {
   db_root_password = var.db_root_password
   credentials_file = local.credentials_file

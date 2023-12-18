@@ -42,14 +42,17 @@ gcloud iam service-accounts keys create \
 gcloud projects add-iam-policy-binding $PROJECT_ID \
     --member serviceAccount:$SERVICE_ACCOUNT_NAME \
     --role roles/editor
-# https://serverfault.com/questions/942115
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-    --member serviceAccount:$SERVICE_ACCOUNT_NAME \
-    --role roles/compute.networkAdmin
 # https://stackoverflow.com/a/61250654
 gcloud projects add-iam-policy-binding $PROJECT_ID \
     --member serviceAccount:$SERVICE_ACCOUNT_NAME \
     --role roles/run.admin
+# Next two are for Cloud SQL (see module).
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member serviceAccount:$SERVICE_ACCOUNT_NAME \
+    --role roles/compute.networkAdmin
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member serviceAccount:$SERVICE_ACCOUNT_NAME \
+    --role roles/servicenetworking.serviceAgent
 
 echo && echo "Initializing runner:"
 terraform fmt -recursive

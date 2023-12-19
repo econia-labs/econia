@@ -14,6 +14,12 @@ This guide will help you set up continuous integration/continuous deployment (CI
 
 1. [Install Terraform](https://developer.hashicorp.com/terraform/tutorials/gcp-get-started/install-cli).
 
+1. Add the [Cloud SQL Auth Proxy client](https://cloud.google.com/sql/docs/postgres/connect-instance-auth-proxy#install-proxy) to your `PATH`.
+
+   :::tip
+   Try `brew install cloud-sql-proxy`
+   :::
+
 ## Initialize runner
 
 1. Check your GCP metadata:

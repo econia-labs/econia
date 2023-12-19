@@ -13,11 +13,13 @@ if [[ "$HEALTHCHECK_BEFORE_START" == "true" ]];then
     done
 fi
 
-psql $DATABASE_URL -c '\copy processor_status to out.csv csv'
+psql $DATABASE_URL -c '\copy processor_status to /app/out.csv csv'
 
 if [ -s "out.csv" ];then
-    export STARTING_VERSION=$(cut -d, -f2 out.csv)
+    export STARTING_VERSION=$(cut -d, -f2 /app/out.csv)
 fi
+
+rm /app/out.csv
 
 echo "health_check_port: 8085
 server_config:

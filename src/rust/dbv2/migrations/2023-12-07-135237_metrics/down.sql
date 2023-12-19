@@ -1,5 +1,5 @@
 -- This file should undo anything in `up.sql`
-DROP VIEW aggregator.latest_event_timestamp;
+DROP VIEW aggregator.order_history_latest_event_timestamp;
 
 
 DROP TABLE aggregator.daily_rolling_volume_history;

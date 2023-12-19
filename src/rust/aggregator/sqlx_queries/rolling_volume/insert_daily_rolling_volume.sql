@@ -4,7 +4,7 @@ WITH "times" AS (
     SELECT
         DATE_TRUNC('minute', dd) AS "time"
     FROM
-        generate_series((SELECT "time" FROM fill_events ORDER BY "time" LIMIT 1), (SELECT * FROM aggregator.latest_event_timestamp), '1 minute'::interval) dd
+        generate_series((SELECT "time" FROM fill_events ORDER BY "time" LIMIT 1), (SELECT * FROM aggregator.order_history_latest_event_timestamp), '1 minute'::interval) dd
     WHERE
         (SELECT * FROM aggregator.daily_rolling_volume_history_last_indexed_timestamp) IS NOT NULL
     OR

@@ -1,5 +1,5 @@
 -- Your SQL goes here
-CREATE VIEW aggregator.latest_event_timestamp AS
+CREATE VIEW aggregator.order_history_latest_event_timestamp AS
 WITH place_max AS (
     SELECT "time" FROM place_limit_order_events ORDER BY "time" DESC LIMIT 1
 ), cancel_max AS (

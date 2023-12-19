@@ -1,9 +1,9 @@
 use anyhow::anyhow;
 use bigdecimal::{num_bigint::ToBigInt, BigDecimal, Zero};
 use chrono::{DateTime, Duration, Utc};
-use sqlx::{Executor, PgConnection, PgPool, Postgres, Transaction};
+use sqlx::{PgConnection, PgPool, Postgres, Transaction};
 
-use aggregator::{Pipeline, PipelineAggregationResult, PipelineError, util::commit_transaction};
+use aggregator::{Pipeline, PipelineAggregationResult, PipelineError, util::{commit_transaction, create_repeatable_read_transaction}};
 
 use crate::dbtypes::OrderType;
 
@@ -50,15 +50,7 @@ impl Pipeline for UserHistory {
     /// are also handled in a single atomic transaction for each batch of transactions, such that
     /// user history aggregation logic is effectively serialized across historical chain state.
     async fn process_and_save_internal(&mut self) -> PipelineAggregationResult {
-        let mut transaction = self
-            .pool
-            .begin()
-            .await
-            .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
-        transaction
-            .execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;")
-            .await
-            .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
+        let mut transaction = create_repeatable_read_transaction(&self.pool).await?;
         struct TxnVersion {
             txn_version: BigDecimal,
         }

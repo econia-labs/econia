@@ -91,7 +91,6 @@ resource "terraform_data" "run_migrations" {
       ]),
       "sleep 5", # Give proxy time to start up.
       "diesel migration run --migration-dir migrations",
-      "psql $DATABASE_URL -c 'GRANT web_anon to postgres'",
       # https://unix.stackexchange.com/a/104825
       "kill $(pgrep cloud-sql-proxy)",
     ])

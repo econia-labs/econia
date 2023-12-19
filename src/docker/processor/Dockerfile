@@ -50,8 +50,6 @@ RUN rm g.tar.gz
 
 WORKDIR /app
 COPY /src/docker/processor/start.sh .
-RUN mkdir -p /config/data
-COPY /src/docker/processor/config.yaml /config/data/config.yaml
 RUN chmod u+x /app/start.sh
 WORKDIR /
 

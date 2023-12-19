@@ -78,12 +78,13 @@ CREATE FUNCTION get_quote_volume_divisor_for_market(numeric) RETURNS NUMERIC IMM
     WHERE market_id = $1;
 $$ LANGUAGE sql;
 
-CREATE ROLE grafana;
-GRANT USAGE ON SCHEMA api TO grafana;
-GRANT USAGE ON SCHEMA aggregator TO grafana;
-GRANT USAGE ON SCHEMA public TO grafana;
-GRANT SELECT ON ALL TABLES IN SCHEMA api TO grafana ;
-GRANT SELECT ON ALL TABLES IN SCHEMA aggregator TO grafana ;
-GRANT SELECT ON ALL TABLES IN SCHEMA public TO grafana ;
-ALTER ROLE grafana SET search_path = public,aggregator,api;
+-- This compromised password is not problematic for a cloud deployment with private IP networking
+CREATE ROLE grafana_read_only_read_only ENCRYPTED PASSWORD 'grafana_read_only' LOGIN;
+GRANT USAGE ON SCHEMA api TO grafana_read_only;
+GRANT USAGE ON SCHEMA aggregator TO grafana_read_only;
+GRANT USAGE ON SCHEMA public TO grafana_read_only;
+GRANT SELECT ON ALL TABLES IN SCHEMA api TO grafana_read_only ;
+GRANT SELECT ON ALL TABLES IN SCHEMA aggregator TO grafana_read_only ;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO grafana_read_only ;
+ALTER ROLE grafana_read_only SET search_path = public,aggregator,api;
 

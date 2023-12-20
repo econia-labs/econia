@@ -98,7 +98,7 @@ impl EnvConfig {
             exclude: std::env::var("AGGREGATOR_EXCLUDE")
                 .ok()
                 .map(|s|
-                    s.split(',')
+                    s.split('+')
                         .map(|s|
                             ValueEnum::from_str(s, true)
                                 .unwrap_or_else(|_| {
@@ -112,7 +112,7 @@ impl EnvConfig {
             include: std::env::var("AGGREGATOR_INCLUDE")
                 .ok()
                 .map(|s|
-                    s.split(',')
+                    s.split('+')
                         .map(|s|
                             ValueEnum::from_str(s, true)
                                 .unwrap_or_else(|_| {
@@ -175,12 +175,14 @@ async fn main() -> Result<()> {
 
     let pipelines =
         if env_config.no_default || args.no_default {
-            if args.include.is_empty() {
+            let mut include = env_config.include.clone();
+            include.append(&mut args.include);
+            include.sort();
+            include.dedup();
+            if include.is_empty() {
                     tracing::error!("No pipelines are included and --no-default is set.");
                     panic!();
             }
-            let mut include = env_config.include.clone();
-            include.append(&mut args.include);
             include
         } else {
             let mut x = vec![

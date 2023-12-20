@@ -33,6 +33,3 @@ DROP TABLE aggregator.daily_rolling_volume_history_last_indexed_timestamp;
 
 DROP FUNCTION get_quote_volume_divisor_for_market;
 
-
-DROP OWNED BY grafana_read_only;
-DROP ROLE grafana_read_only;

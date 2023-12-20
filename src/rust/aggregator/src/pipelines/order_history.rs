@@ -193,24 +193,26 @@ impl OrderHistory {
         for _ in 0..(fills.len() + changes.len()) {
             let fill = fills.get(fills_index);
             let change = changes.get(changes_index);
-            match (fill, change) {
+            let (f,c) = match (fill, change) {
                 (Some(fill), Some(change)) => {
-                    let fill_index = (fill.txn_version.clone(), fill.event_idx.clone());
-                    let change_index = (change.txn_version.clone(), change.event_idx.clone());
-                    if fill_index < change_index {
-                        handle_fill(fill, &mut orders, &mut fills_index);
+                    if (fill.txn_version.clone(), fill.event_idx.clone()) < (change.txn_version.clone(), change.event_idx.clone()) {
+                        (Some(fill), None)
                     } else {
-                        handle_change(change, &mut orders, &mut changes_index);
+                        (None, Some(change))
                     }
                 },
+                (None, None) => unreachable!(),
+                other => other,
+            };
+            match (f,c) {
                 (Some(fill), None) => {
                     handle_fill(fill, &mut orders, &mut fills_index);
                 },
                 (None, Some(change)) => {
                     handle_change(change, &mut orders, &mut changes_index);
                 }
-                (None, None) => unreachable!(),
-            }
+                _ => unreachable!()
+            };
         }
         Ok(OrderHistoryState::new(txn_version, orders))
     }

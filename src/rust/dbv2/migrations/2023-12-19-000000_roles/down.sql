@@ -11,6 +11,7 @@ IF EXISTS (
     usename = 'postgres'
 ) THEN
 REVOKE grafana FROM postgres;
+REVOKE web_anon FROM postgres;
 END IF;
 END $$;
 

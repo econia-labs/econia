@@ -28,6 +28,10 @@ locals {
     "IP_ADDRESS",
     "${google_sql_database_instance.postgres.private_ip_address}"
   )
+  db_conn_str_private_grafana = join("", [
+    trimsuffix(local.db_conn_str_private, "econia"),
+    "grafana"
+  ])
 }
 
 resource "google_sql_database_instance" "postgres" {
@@ -54,6 +58,12 @@ resource "google_sql_database" "database" {
   deletion_policy = "ABANDON"
   instance        = google_sql_database_instance.postgres.name
   name            = "econia"
+}
+
+resource "google_sql_database" "grafana_state" {
+  deletion_policy = "ABANDON"
+  instance        = google_sql_database_instance.postgres.name
+  name            = "grafana"
 }
 
 resource "google_compute_global_address" "postgres_private_ip_address" {

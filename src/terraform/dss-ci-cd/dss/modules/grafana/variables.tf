@@ -1,3 +1,5 @@
+variable "db_conn_str_private_grafana" {}
+
 variable "migrations_complete" {}
 
 variable "no_auth_policy_data" {}

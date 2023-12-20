@@ -10,6 +10,10 @@ output "db_conn_str_private" {
   value = local.db_conn_str_private
 }
 
+output "db_conn_str_private_grafana" {
+  value = local.db_conn_str_private_grafana
+}
+
 output "migrations_complete" {
   value = terraform_data.run_migrations
 }

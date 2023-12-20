@@ -6,6 +6,14 @@ resource "google_cloud_run_v2_service" "grafana" {
     containers {
       image = "grafana/grafana-enterprise"
       env {
+        name  = "GF_DATABASE_TYPE"
+        value = "postgres"
+      }
+      env {
+        name  = "GF_DATABASE_URL"
+        value = var.db_conn_str_private_grafana
+      }
+      env {
         name  = "GF_SECURITY_ADMIN_PASSWORD"
         value = var.grafana_admin_password
       }

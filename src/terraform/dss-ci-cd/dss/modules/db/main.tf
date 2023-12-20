@@ -87,25 +87,39 @@ resource "google_service_networking_connection" "sql_network_connection" {
   service                 = "servicenetworking.googleapis.com"
 }
 
-# Run Cloud SQL Auth Proxy in background, run migrations, kill proxy.
+# Run migrations for the first time.
 resource "terraform_data" "run_migrations" {
   depends_on = [google_sql_database.database]
   provisioner "local-exec" {
-    command = join("\n", [
-      join(" ", [
-        "cloud-sql-proxy",
-        local.db_connection_name,
-        "--credentials-file",
-        var.credentials_file,
-        "&"
-      ]),
-      "sleep 5", # Give proxy time to start up.
-      "diesel migration run --migration-dir migrations",
-      # https://unix.stackexchange.com/a/104825
-      "kill $(pgrep cloud-sql-proxy)",
-    ])
+    # Relative to DSS terraform project root.
+    command = file("modules/db/run-migrations.sh")
     environment = {
-      DATABASE_URL = local.db_conn_str_auth_proxy,
+      DATABASE_URL       = local.db_conn_str_auth_proxy,
+      DB_CONNECTION_NAME = local.db_connection_name,
+      CREDENTIALS_FILE   = var.credentials_file
+    }
+  }
+}
+
+# Re-run migrations after database initialization.
+#
+# Tracked as a separate resource so that followup migrations can be run
+# by simply destroying and re-applying this resource. The destroy/re-apply
+# approach doesn't work for the initial migrations resource since other
+# resources depend on initial migrations and they would have to be deleted
+# too if initial migrations were, hence this duplicate.
+#
+# Upon database creation, migrations will be run twice, but this is not a
+# problem because diesel only runs new migrations upon subsequent calls to the
+# same database.
+resource "terraform_data" "re_run_migrations" {
+  depends_on = [terraform_data.run_migrations]
+  provisioner "local-exec" {
+    command = file("modules/db/run-migrations.sh")
+    environment = {
+      DATABASE_URL       = local.db_conn_str_auth_proxy,
+      DB_CONNECTION_NAME = local.db_connection_name,
+      CREDENTIALS_FILE   = var.credentials_file
     }
   }
 }

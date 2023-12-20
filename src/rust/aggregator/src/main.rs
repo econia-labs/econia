@@ -25,12 +25,12 @@ struct Args {
     no_default: bool,
 
     /// Exclusion list. Pipelines specified here will not be executed. Ignored if --no-default passed.
-    #[arg(short, long)]
-    exclude: Option<Vec<Pipelines>>,
+    #[arg(short, long, default_values = Vec::<String>::new())]
+    exclude: Vec<Pipelines>,
 
     /// Inclusion list. Pipelines specified here will be executed. Ignored if --no-default is not passed.
-    #[arg(short, long, value_enum)]
-    include: Option<Vec<Pipelines>>,
+    #[arg(short, long, value_enum, default_values = Vec::<String>::new())]
+    include: Vec<Pipelines>,
 
     /// Database URL.
     #[arg(short, long)]
@@ -41,7 +41,7 @@ struct Args {
     aptos_network: Option<AptosNetwork>,
 }
 
-#[derive(Clone, Debug, PartialEq, ValueEnum)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 pub enum Pipelines {
     Candlesticks,
     Coins,
@@ -81,7 +81,9 @@ impl FromStr for AptosNetwork {
 }
 
 struct EnvConfig {
-    pipelines: Option<Vec<Pipelines>>,
+    no_default: bool,
+    exclude: Vec<Pipelines>,
+    include: Vec<Pipelines>,
     database_url: Option<String>,
     aptos_network: Option<AptosNetwork>,
 }
@@ -89,19 +91,38 @@ struct EnvConfig {
 impl EnvConfig {
     pub fn new() -> Self {
         EnvConfig {
-            pipelines: std::env::var("PIPELINES")
+            no_default: std::env::var("AGGREGATOR_NO_DEFAULT").unwrap_or(String::from("false")).parse().unwrap_or_else(|_| {
+                tracing::error!("Invalid value for AGGREGATOR_NO_DEFAULT, must be either true or false.");
+                panic!()
+            }),
+            exclude: std::env::var("AGGREGATOR_EXCLUDE")
                 .ok()
                 .map(|s|
                     s.split(',')
                         .map(|s|
                             ValueEnum::from_str(s, true)
                                 .unwrap_or_else(|_| {
-                                    tracing::error!("Invalid pipeline.");
+                                    tracing::error!("Invalid value for AGGREGATOR_EXCLUDE. Run the aggregator with --help to list possible values.");
                                     panic!()
                                 })
                         )
                         .collect()
-                ),
+                )
+                .unwrap_or_default(),
+            include: std::env::var("AGGREGATOR_INCLUDE")
+                .ok()
+                .map(|s|
+                    s.split(',')
+                        .map(|s|
+                            ValueEnum::from_str(s, true)
+                                .unwrap_or_else(|_| {
+                                    tracing::error!("Invalid value for AGGREGATOR_INCLUDE. Run the aggregator with --help to list possible values.");
+                                    panic!()
+                                })
+                        )
+                        .collect()
+                )
+                .unwrap_or_default(),
             database_url: std::env::var("DATABASE_URL").ok(),
             aptos_network: std::env::var("APTOS_NETWORK").ok().map(|s|
                 AptosNetwork::from_str(&s).unwrap_or_else(|_| {
@@ -129,6 +150,8 @@ impl AptosNetwork {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    let mut args: Args = Args::parse();
+
     tracing_subscriber::fmt()
         .with_max_level(tracing::Level::INFO)
         .init();
@@ -136,7 +159,6 @@ async fn main() -> Result<()> {
 
     dotenvy::dotenv().ok();
 
-    let args: Args = Args::parse();
     let env_config: EnvConfig = EnvConfig::new();
 
     let network = env_config.aptos_network.unwrap_or_else(|| args.aptos_network.unwrap_or_else(|| {
@@ -151,15 +173,15 @@ async fn main() -> Result<()> {
         })
     });
 
-    let pipelines = env_config.pipelines.unwrap_or_else(|| {
-        if args.no_default {
-            (args
-                .include
-                .unwrap_or_else(|| {
+    let pipelines =
+        if env_config.no_default || args.no_default {
+            if args.include.is_empty() {
                     tracing::error!("No pipelines are included and --no-default is set.");
                     panic!();
-                }))
-            .clone()
+            }
+            let mut include = env_config.include.clone();
+            include.append(&mut args.include);
+            include
         } else {
             let mut x = vec![
                 Pipelines::Candlesticks,
@@ -167,13 +189,16 @@ async fn main() -> Result<()> {
                 Pipelines::Market24hData,
                 Pipelines::UserHistory,
             ];
-            let exclude = args.exclude.unwrap_or(vec![]);
+            let mut exclude = env_config.exclude.clone();
+            let mut include = env_config.include.clone();
+            exclude.append(&mut args.exclude);
+            include.append(&mut args.include);
             x = x.into_iter().filter(|a| !exclude.contains(a)).collect();
-            x.append(&mut args.include.unwrap_or(vec![]));
+            x.append(&mut include);
+            x.sort();
+            x.dedup();
             x
-        }
-    });
-
+        };
     tracing::info!("Using pipelines {pipelines:?}.");
     tracing::info!("Using network {network:?}.");
 

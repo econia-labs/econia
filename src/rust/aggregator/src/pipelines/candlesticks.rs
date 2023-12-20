@@ -1,9 +1,9 @@
 use anyhow::anyhow;
 use chrono::{DateTime, Duration, Utc};
-use sqlx::{Executor, PgPool};
+use sqlx::PgPool;
 use sqlx_postgres::PgConnection;
 
-use aggregator::{Pipeline, PipelineAggregationResult, PipelineError};
+use aggregator::{Pipeline, PipelineAggregationResult, PipelineError, util::{commit_transaction, create_repeatable_read_transaction}};
 
 pub struct Candlesticks {
     pool: PgPool,
@@ -52,16 +52,7 @@ impl Pipeline for Candlesticks {
     }
 
     async fn process_and_save_internal(&mut self) -> PipelineAggregationResult {
-        let mut transaction = self
-            .pool
-            .begin()
-            .await
-            .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
-
-        transaction
-            .execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;")
-            .await
-            .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
+        let mut transaction = create_repeatable_read_transaction(&self.pool).await?;
 
         sqlx::query_file!("sqlx_queries/candlesticks/insert_data.sql", self.resolution,)
             .execute(&mut transaction as &mut PgConnection)
@@ -76,10 +67,7 @@ impl Pipeline for Candlesticks {
         .await
         .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
 
-        transaction
-            .commit()
-            .await
-            .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
+        commit_transaction(transaction).await?;
 
         Ok(())
     }

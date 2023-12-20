@@ -82,3 +82,13 @@ module "websockets" {
   sql_vpc_connector_id  = module.db.sql_vpc_connector_id
   websockets_jwt_secret = var.websockets_jwt_secret
 }
+
+module "grafana" {
+  grafana_admin_password  = var.grafana_admin_password
+  grafana_public_password = var.grafana_public_password
+  migrations_complete     = module.db.migrations_complete
+  no_auth_policy_data     = module.no_auth_policy.policy_data
+  region                  = var.region
+  source                  = "./modules/grafana"
+  sql_vpc_connector_id    = module.db.sql_vpc_connector_id
+}

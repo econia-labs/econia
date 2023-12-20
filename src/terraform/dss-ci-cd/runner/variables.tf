@@ -29,3 +29,7 @@ variable "grpc_auth_token" {}
 variable "postgrest_max_rows" {}
 
 variable "websockets_jwt_secret" {}
+
+variable "grafana_admin_password" {}
+
+variable "grafana_public_password" {}

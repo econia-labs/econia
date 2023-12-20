@@ -78,3 +78,17 @@ output "postgrest_url" {
 output "websockets_url" {
   value = module.websockets.websockets_url
 }
+
+output "grafana_url" {
+  value = module.grafana.grafana_url
+}
+
+output "grafana_admin_password" {
+  sensitive = true
+  value     = var.grafana_admin_password
+}
+
+output "grafana_public_password" {
+  sensitive = true
+  value     = var.grafana_public_password
+}

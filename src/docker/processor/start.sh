@@ -15,7 +15,7 @@ fi
 
 psql $DATABASE_URL -c '\copy processor_status to /app/out.csv csv'
 
-if [ -s "out.csv" ];then
+if [ -s "/app/out.csv" ];then
     export STARTING_VERSION=$(cut -d, -f2 /app/out.csv)
 fi
 

@@ -32,6 +32,10 @@ locals {
     trimsuffix(local.db_conn_str_private, "econia"),
     "grafana"
   ])
+  db_private_ip_and_port = join("", [
+    google_sql_database_instance.postgres.private_ip_address,
+    ":5432"
+  ])
 }
 
 resource "google_sql_database_instance" "postgres" {

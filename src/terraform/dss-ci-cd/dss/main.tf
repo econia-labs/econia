@@ -85,6 +85,7 @@ module "websockets" {
 
 module "grafana" {
   db_conn_str_private_grafana = module.db.db_conn_str_private_grafana
+  db_private_ip_and_port      = module.db.db_private_ip_and_port
   grafana_admin_password      = var.grafana_admin_password
   grafana_public_password     = var.grafana_public_password
   migrations_complete         = module.db.migrations_complete

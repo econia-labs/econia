@@ -5,6 +5,7 @@ apt update && apt install -y \
     build-essential \
     git \
     gnupg \
+    jq \
     libpq-dev \
     postgresql-client \
     software-properties-common

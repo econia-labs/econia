@@ -22,7 +22,8 @@ There are a few steps to start up the local end-to-end testing environment:
 **1. Set environment variables.**
 
 See the file `example.env` for an example configuration.
-Copy and rename this file to `.env`, which is ignored by git, so that the docker compose will pick it up.
+Copy and rename this file to `.env`, which is ignored by git, so that the Docker Compose will pick it up.
+Then modify the options to use a local end-to-end testing chain.
 The new, copied and renamed file goes into the same folder as the template.
 
 **2. Run the docker compose.**
@@ -103,7 +104,7 @@ docker compose --file src/docker/compose.dss-local.yaml down
 ```
 
 This will delete the containers, and you will lose state with this command.
-It is recommended to use this only if you want to restart reindexing from scratch.
+It is recommended to use this only if you want to restart re-indexing from scratch.
 
 Note that this will not delete all DSS related state, like the database volume.
 

@@ -25,17 +25,15 @@ The REST API is actually a PostgREST instance.
 You can find the REST API documentation [here](./rest-api.md).
 You can learn more about how to query a PostgREST instance on their [official documentation](https://postgrest.org/en/stable/).
 
-## Testnet walkthrough
+## Walkthrough
 
 There are two ways of running the DSS:
 
-1. Against a local chain.
 1. Against a public chain like Aptos devnet, testnet, or mainnet.
+1. Against a local chain, as described [here](https://github.com/econia-labs/econia/tree/main/src/docker).
 
-For continuous integration (CI) or development, running the DSS against a local chain is recommended.
-
-This walkthrough will use the official Aptos testnet.
-The process is the same as running against mainnet, just with a slightly different config process.
+This walkthrough will use the official Aptos mainnet.
+The process is the same as running against testnet, just with a slightly different config process.
 
 ### Getting the API key
 
@@ -44,14 +42,14 @@ To connect to this service, you'll need to get an API key [here](https://aptos-a
 
 ### Generating a config
 
-Once you have the API key, you'll need to create the environment configuration file.
+Once you have the API key, you'll need to create an environment configuration file.
 A template can be found at `src/docker/example.env`.
 In the same folder as the template, create a copy of the file named `.env`.
 
-The file is preconfigured to index the Econia mainnet package.
-The only field you'll have to set is you Aptos GRPC API key.
+The file is pre-configured to index the Econia mainnet package.
+The only field you'll have to set is you Aptos gRPC API key.
 
-If you wish to run against another chain (for example `testnet`), follow the instructions in the file, where you can find the values to put for each supported chain.
+If you wish to run against another chain (for example `testnet`), follow the instructions in the file, where you can find the necessary values to put for each supported chain.
 
 ### Checking out the right branch
 
@@ -68,7 +66,7 @@ git checkout dss-stable
 git submodule update --init --recursive
 ```
 
-### Starting the DSS
+### Running the DSS
 
 :::tip
 
@@ -94,7 +92,7 @@ This might take a while to start (expect anywhere from a couple minutes, to more
 
 Then, to shut it down simply press `Ctrl+C`.
 
-Alternatively, to run in detached mode (as a background process), simply add the `--detach` flag, then to shut it down:
+Alternatively, to run in detached mode (as a background process), simply add the `--detach` flag, then to temporarily stop it:
 
 ```bash
 docker compose --file src/docker/compose.dss-global.yaml stop
@@ -104,6 +102,12 @@ To start it again, use:
 
 ```bash
 docker compose --file src/docker/compose.dss-global.yaml start
+```
+
+Finally, to fully shut it down:
+
+```bash
+docker compose --file src/docker/compose.dss-global.yaml down
 ```
 
 ### Verifying the DSS

@@ -45,6 +45,11 @@ resource "google_sql_database_instance" "postgres" {
   provider            = google-beta
   root_password       = var.db_root_password
   settings {
+    # Prevents large backfill operations from erroring out.
+    database_flags {
+      name  = "temp_file_limit"
+      value = "2147483647"
+    }
     insights_config {
       query_insights_enabled = true
       query_plans_per_minute = 20

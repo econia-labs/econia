@@ -247,7 +247,7 @@ impl Pipeline for OrderHistory {
                 .map_err(to_pipeline_error)?;
         if last_indexed_timestamp.is_none() {
             sqlx::query_file!("sqlx_queries/order_history/init_last_indexed_timestamp.sql")
-                .execute(&self.pool)
+                .execute(&mut transaction as &mut PgConnection)
                 .await
                 .map_err(to_pipeline_error)?;
         }

@@ -19,17 +19,16 @@ This Docker compose is designed to work with an end-to-end testing environment, 
 
 There are a few steps to start up the local end-to-end testing environment:
 
-**1. Configure the processor.**
+**1. Set environment variables.**
 
-See the file `processor/config-template-local.yaml` for an example configuration.
-Copy and rename this file to `config.yaml`, which is ignored by git, so that the docker compose will pick it up.
+See the file `example.env` for an example configuration.
+Copy and rename this file to `.env`, which is ignored by git, so that the docker compose will pick it up.
 The new, copied and renamed file goes into the same folder as the template.
 
 **2. Run the docker compose.**
 
 ```sh
 # From Econia repo root
-APTOS_NETWORK='custom(http://streamer:8080)' \
 docker compose --file src/docker/compose.dss-local.yaml up
 ```
 
@@ -81,12 +80,32 @@ Verify that the database is accessible by navigating to `http://0.0.0.0:3000`, a
 
 If each of these tables is visible and containing data then that means the processor, database and PostgREST are all working together!
 
-**5. Shut down the local DSS**
+**5. Stop the local DSS**
+
+```sh
+# From Econia repo root
+docker compose --file src/docker/compose.dss-local.yaml stop
+```
+
+This will stop all docker containers, but keep their state on disk.
+You can later start it up by using:
+
+```sh
+# From Econia repo root
+docker compose --file src/docker/compose.dss-local.yaml start
+```
+
+**6. Shut down the local DSS**
 
 ```sh
 # From Econia repo root
 docker compose --file src/docker/compose.dss-local.yaml down
 ```
+
+This will delete the containers, and you will lose state with this command.
+It is recommended to use this only if you want to restart reindexing from scratch.
+
+Note that this will not delete all DSS related state, like the database volume.
 
 # Helpful Docker commands
 

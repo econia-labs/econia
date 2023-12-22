@@ -92,3 +92,11 @@ output "grafana_public_password" {
   sensitive = true
   value     = var.grafana_public_password
 }
+
+output "dss_source_rev" {
+  value = var.dss_source_rev
+}
+
+output "terraform_project_rev" {
+  value = var.terraform_project_rev
+}

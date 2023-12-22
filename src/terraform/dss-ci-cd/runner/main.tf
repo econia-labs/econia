@@ -27,6 +27,8 @@ resource "google_compute_instance" "runner" {
     "VARS_BASE_64=${base64encode(file("terraform.tfvars"))}",
     "REGION=${var.region}",
     "ZONE=${var.zone}",
+    "DSS_SOURCE_REV=${var.dss_source_rev}",
+    "TERRAFORM_PROJECT_REV=${var.terraform_project_rev}",
     file("startup-script.sh")
     ]
   )

@@ -1,7 +1,6 @@
 rm -rf \
     dss/.terraform \
     dss/econia \
-    dss/migrations \
     runner/.terraform
 rm -f dss/terraform.tfvars
 find dss/ runner/ \

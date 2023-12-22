@@ -33,19 +33,21 @@ export PATH="/root/.cargo/bin:$PATH"
 # https://diesel.rs/guides/getting-started
 cargo install diesel_cli --no-default-features --features postgres
 
+function init_econia_repo_at_rev {
+    local revision=$1
+    git clone https://github.com/econia-labs/econia.git
+    cd econia
+    git checkout $revision
+    git submodule update --init --recursive
+    cd ..
+}
+
 # Initialize Terraform project.
-git clone \
-    https://github.com/econia-labs/econia.git \
-    --branch ECO-1018 \
-    --recurse-submodules
-cd econia/src/terraform/dss-ci-cd/dss
+init_econia_repo_at_rev $TERRAFORM_PROJECT_REV
+cd /econia/src/terraform/dss-ci-cd/dss
+init_econia_repo_at_rev $DSS_SOURCE_REV
 echo $KEY_BASE_64 | base64 --decode >service-account-key.json
 echo $VARS_BASE_64 | base64 --decode >terraform.tfvars
-cp -R /econia/src/rust/dbv2/migrations migrations
-git clone \
-    https://github.com/econia-labs/econia.git \
-    --branch ECO-1018 \
-    --recurse-submodules # Clone repo again for Docker build source.
 gcloud config set compute/zone $ZONE
 gcloud config set run/region $REGION
 terraform init

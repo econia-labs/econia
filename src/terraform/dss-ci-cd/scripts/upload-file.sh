@@ -1,9 +1,8 @@
-# Upload file to runner.
-
-FROM=$1 # Relative path on current machine.
-TO=$2   # Absolute path on runner.
-
-ENCODED=$(base64 -i $FROM)
-gcloud compute ssh runner \
-    --command "echo $ENCODED | base64 --decode | sudo tee $TO > /dev/null" \
-    --tunnel-through-iap
+# Upload file from current machine to runner.
+# Relative to `dss-ci-cd` directory in both cases.
+(
+    local from=$1 # Relative path on current machine.
+    local to=$2   # Relative path on runner.
+    local encoded=$(base64 -i $from)
+    source scripts/upload-base64-text-to-file.sh $encoded $to
+)

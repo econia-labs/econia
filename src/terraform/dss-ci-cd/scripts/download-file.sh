@@ -1,11 +1,13 @@
 # Download file from runner.
-
-FROM=$1 # Absolute path on runner.
-TO=$2   # Relative path on current machine.
-
-ENCODED=$(
-    gcloud compute ssh runner \
-        --tunnel-through-iap \
-        --command "base64 -i $FROM"
+# Relative to `dss-ci-cd` directory in both cases.
+(
+    local from=$1 # Relative path on runner.
+    local to=$2   # Relative path on current machine.
+    local abs_path=/econia/src/terraform/dss-ci-cd/$from
+    local encoded=$(
+        gcloud compute ssh runner \
+            --command "base64 -i $abs_path" \
+            --tunnel-through-iap
+    )
+    echo $encoded | base64 --decode >$to
 )
-echo $ENCODED | base64 --decode >$TO

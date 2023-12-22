@@ -19,7 +19,7 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 - Optional rolling volume pipeline ([#658], [#663]).
 - Global order history snapshot pipeline ([#658], [#664]).
 - Health check endpoints ([#651]).
-- Fees in `/user_history` ([#650]) endpoint.
+- Fees in `/user_history` endpoint ([#650]).
 - Hot restart support ([#657], [#659]).
 - CI/CD Terraform project with walkthrough ([#657]).
 - Automatic schema reloading for PostgREST ([#661]).

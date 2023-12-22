@@ -16,16 +16,20 @@
     source scripts/run.sh " \
         echo $new_tfvars_encoded | base64 --decode | \
             sudo tee dss/terraform.tfvars >/dev/null; \
+        git fetch;
         git checkout $terraform_project_rev; \
+        git pull; \
         git submodule update --init --recursive; \
         cd dss/econia; \
+        git fetch;
         git checkout $dss_source_rev; \
+        git pull; \
         git submodule update --init --recursive; \
         cd ..; \
+        terraform init; \
         terraform destroy -target module.db.terraform_data.re_run_migrations \
             -auto-approve; \
         terraform destroy -target module.aggregator -auto-approve; \
         terraform destroy -target module.processor -auto-approve; \
-        terraform apply -parallelism 50 -auto-approve; \
-    "
+        terraform apply -parallelism 50 -auto-approve;"
 )

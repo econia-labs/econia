@@ -64,7 +64,8 @@ module.exports = {
                         'off-chain/dss/rest-api',
                         'off-chain/dss/websocket',
                         'off-chain/dss/gcp',
-                        'off-chain/dss/terraform'
+                        'off-chain/dss/terraform',
+                        'off-chain/dss/ci-cd',
                     ]
                 },
             ]

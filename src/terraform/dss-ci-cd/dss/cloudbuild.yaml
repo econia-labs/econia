@@ -1,0 +1,21 @@
+images:
+  - '${_IMAGE_ID}'
+
+options:
+  dynamicSubstitutions: true
+
+steps:
+
+  - id: build-image
+    args:
+      - 'build'
+      - '--file'
+      - '${_DOCKER_DIR}/${_DOCKERFILE}'
+      - '--tag'
+      - '${_IMAGE_ID}'
+      - '.'
+    name: '${_BUILDER}'
+
+substitutions:
+  _BUILDER: 'gcr.io/cloud-builders/docker'
+  _DOCKER_DIR: 'src/docker'

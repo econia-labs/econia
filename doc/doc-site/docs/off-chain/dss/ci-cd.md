@@ -71,29 +71,43 @@ This guide will help you set up continuous integration/continuous deployment (CI
    ... systemd[1]: google-startup-scripts.service: Consumed 7min 17.688s CPU time.
    ```
 
-1. Then you can remotely execute commands on the runner.
-   For example, to deploy the DSS:
-
-   ```sh
-   source scripts/run.sh "terraform -chdir=dss apply"
-   ```
-
 1. Archive Terraform state for the runner on the runner itself, now that it has been bootstrapped:
 
    ```sh
-   source scripts/archive-runner-state.sh
+   source scripts/archive-runner-tfstate.sh
    ```
 
    :::tip
    This will upload `runner/terraform.tfstate` to `/econia/src/terraform/dss-ci-cd/runner` on the runner.
    Other relevant data is stored on the runner under `/econia/src/terraform/dss-ci-cd/dss`, including:
 
-   1. Terraform state for the DSS.
+   1. Terraform state for the DSS (generated upon deployment, the next step)
    1. GCP service account credentials.
    1. `terraform.tfvars`, used by both the DSS and runner Terraform projects.
-      :::
 
-1. If you want to modify the runner later, anyone with access to the runner can harvest project state using `scripts/download-file.sh`
+1. Now you can remotely execute commands on the runner.
+   For example, to deploy the DSS:
+
+   ```sh
+   source scripts/run.sh "terraform -chdir=dss apply"
+   ```
+
+1. And, if you'd like to connect to the runner for an interactive session as root user:
+
+   ```sh
+   source scripts/connect-to-runner.sh
+   ```
+
+## Starting a new project
+
+If you'd like to start a new project, make sure you've archived the runner state as described above.
+Then, before running the init-project script again, clear local project state:
+
+```sh
+source scripts/clear-local-project-state.sh
+```
+
+This will leave behind `runner/terraform.tfvars` so you can manually edit it, then initialize a new project.
 
 ## Continued operations
 

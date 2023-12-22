@@ -13,6 +13,8 @@
     local project_name=$(source $get_tfvar $tfvars project_name)
     local region=$(source $get_tfvar $tfvars region)
     gcloud config set run/region $region
+    gcloud config set artifacts/location $region
+    gcloud config set artifacts/repository images
     echo "\ngcloud CLI config for $project_name:\n"
     gcloud config list
 )

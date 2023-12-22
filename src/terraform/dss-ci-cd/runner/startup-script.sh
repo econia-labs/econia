@@ -49,4 +49,6 @@ echo $KEY_BASE_64 | base64 --decode >service-account-key.json
 echo $VARS_BASE_64 | base64 --decode >terraform.tfvars
 gcloud config set compute/zone $ZONE
 gcloud config set run/region $REGION
+gcloud config set artifacts/location $REGION
+gcloud config set artifacts/repository images
 terraform init

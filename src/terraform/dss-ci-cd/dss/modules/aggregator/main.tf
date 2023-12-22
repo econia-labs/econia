@@ -14,8 +14,13 @@ resource "terraform_data" "image" {
     ])
   }
   provisioner "local-exec" {
-    when    = destroy
-    command = "gcloud artifacts docker images delete ${self.output} --quiet"
+    when = destroy
+    command = join("\n", [
+      "result=$(gcloud artifacts docker images list --filter IMAGE=${self.output})",
+      "if [ -n \"$result\" ]; then",
+      "gcloud artifacts docker images delete ${self.output} --quiet",
+      "fi"
+    ])
   }
 }
 
@@ -41,10 +46,15 @@ resource "terraform_data" "instance" {
     ])
   }
   provisioner "local-exec" {
-    command = join(" ", [
-      "gcloud compute instances delete aggregator",
-      "--quiet",
-      "--zone ${self.output}"
+    command = join("\n", [
+      "result=$(gcloud compute instances list --filter NAME=aggregator)",
+      "if [ -n \"$result\" ]; then",
+      join(" ", [
+        "gcloud compute instances delete aggregator",
+        "--quiet",
+        "--zone ${self.output}"
+      ]),
+      "fi"
     ])
     when = destroy
   }

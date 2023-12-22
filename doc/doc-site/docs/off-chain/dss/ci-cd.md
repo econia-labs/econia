@@ -89,7 +89,7 @@ This guide will help you set up continuous integration/continuous deployment (CI
    For example, to deploy the DSS:
 
    ```sh
-   source scripts/run.sh "terraform -chdir=dss apply"
+   source scripts/run.sh "terraform -chdir=dss apply -parallelism 50"
    ```
 
 1. And, if you'd like to connect to the runner for an interactive session as root user:

@@ -36,6 +36,8 @@
         vpcaccess.googleapis.com
     gcloud config set compute/zone $zone
     gcloud config set run/region $region
+    gcloud config set artifacts/location $region
+    gcloud config set artifacts/repository images
 
     echo && echo "Creating service account:"
     gcloud iam service-accounts create terraform

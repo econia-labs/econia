@@ -70,3 +70,61 @@ This guide will help you set up continuous integration/continuous deployment (CI
    ... systemd[1]: Finished google-startup-scripts.service - Google Compute Engine Startup Scripts.
    ... systemd[1]: google-startup-scripts.service: Consumed 7min 17.688s CPU time.
    ```
+
+1. Then you can remotely execute commands on the runner.
+   For example, to deploy the DSS:
+
+   ```sh
+   source scripts/run.sh "terraform -chdir=dss apply"
+   ```
+
+1. Archive Terraform state for the runner on the runner itself, now that it has been bootstrapped:
+
+   ```sh
+   source scripts/archive-runner-state.sh
+   ```
+
+   :::tip
+   This will upload `runner/terraform.tfstate` to `/econia/src/terraform/dss-ci-cd/runner` on the runner.
+   Other relevant data is stored on the runner under `/econia/src/terraform/dss-ci-cd/dss`, including:
+
+   1. Terraform state for the DSS.
+   1. GCP service account credentials.
+   1. `terraform.tfvars`, used by both the DSS and runner Terraform projects.
+      :::
+
+1. If you want to modify the runner later, anyone with access to the runner can harvest project state using `scripts/download-file.sh`
+
+## Continued operations
+
+After the DSS has been deployed and the runner state has been archived, you can change your `gcloud` CLI config options to work on other GCP projects.
+
+If you'd like to resume operations, or if someone else would like to get involved (and they have permissions for the relevant GCP project), then all that is required is the GCP project ID:
+
+```sh
+source scripts/engage-dss-project GCP_PROJECT_ID
+```
+
+This command will simply update the local `gcloud` CLI config to the same project, region, and zone as the runner.
+Updating the config enables local development, for example, like downloading Terraform state files to simulate a runner on the local machine in order to test out modifications to Terraform configuration files.
+
+If you'd like to engage in this or other complex development operations, see the scripts directory.
+
+## Hot upgrade
+
+If you'd like to redeploy your DSS after a release without having to sync data from chain tip, you can perform a "hot upgrade", which involves:
+
+1. Shutting off the aggregator and processor.
+1. Running the latest migrations.
+1. Redeploying the aggregator and processor.
+
+To perform a hot upgrade, you'll need to pick two Git revisions (e.g. a tag like `dss-v1.5.0`):
+
+1. A revision for the DSS source code (including migrations and Docker image source).
+1. A revision for the Terraform project.
+
+```sh
+DSS_SOURCE_REV=dss-v1.5.0
+TERRAFORM_PROJECT_REV=dss-v1.5.0
+source scripts/hot-upgrade.sh $DSS_SOURCE_REV $TERRAFORM_PROJECT_REV
+```

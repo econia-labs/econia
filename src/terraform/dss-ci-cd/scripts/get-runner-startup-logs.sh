@@ -1,2 +1,3 @@
-gcloud compute ssh runner --tunnel-through-iap -- \
-    sudo journalctl --no-pager --unit google-startup-scripts.service
+# Print all startup logs from runner.
+source scripts/run.sh \
+    "journalctl --no-pager --unit google-startup-scripts.service"

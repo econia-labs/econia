@@ -33,6 +33,7 @@ export PATH="/root/.cargo/bin:$PATH"
 # https://diesel.rs/guides/getting-started
 cargo install diesel_cli --no-default-features --features postgres
 
+# Initialize Terraform project.
 function init_econia_repo_at_rev {
     local revision=$1
     git clone https://github.com/econia-labs/econia.git
@@ -41,8 +42,6 @@ function init_econia_repo_at_rev {
     git submodule update --init --recursive
     cd ..
 }
-
-# Initialize Terraform project.
 init_econia_repo_at_rev $TERRAFORM_PROJECT_REV
 cd /econia/src/terraform/dss-ci-cd/dss
 init_econia_repo_at_rev $DSS_SOURCE_REV

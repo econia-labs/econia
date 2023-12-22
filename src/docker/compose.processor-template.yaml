@@ -4,7 +4,7 @@ services:
       context: ../../
       dockerfile: src/docker/processor/Dockerfile
     environment:
-      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_URL: "postgres://econia:econia@postgres:5432/econia"
       ECONIA_ADDRESS: ${ECONIA_ADDRESS}
       GRPC_AUTH_TOKEN: ${GRPC_AUTH_TOKEN}
       GRPC_DATA_SERVICE_URL: ${GRPC_DATA_SERVICE_URL}

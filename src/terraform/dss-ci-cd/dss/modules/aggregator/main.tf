@@ -30,19 +30,17 @@ resource "terraform_data" "instance" {
   # Store zone since variables not accessible at destroy time.
   input = var.zone
   provisioner "local-exec" {
-    command = join(" && ", [
-      join(" ", [
-        "gcloud compute instances create-with-container aggregator",
-        "--container-env",
-        join(",", [
-          "AGGREGATOR_INCLUDE=order-history+rolling-volume",
-          "APTOS_NETWORK=${var.aptos_network}",
-          "DATABASE_URL=${var.db_conn_str_private}"
-        ]),
-        "--container-image ${terraform_data.image.output}",
-        "--network ${var.sql_network_id}",
-        "--zone ${var.zone}"
-      ])
+    command = join(" ", [
+      "gcloud compute instances create-with-container aggregator",
+      "--container-env",
+      join(",", [
+        "AGGREGATOR_INCLUDE=order-history+rolling-volume",
+        "APTOS_NETWORK=${var.aptos_network}",
+        "DATABASE_URL=${var.db_conn_str_private}"
+      ]),
+      "--container-image ${terraform_data.image.output}",
+      "--network ${var.sql_network_id}",
+      "--zone ${var.zone}"
     ])
   }
   provisioner "local-exec" {

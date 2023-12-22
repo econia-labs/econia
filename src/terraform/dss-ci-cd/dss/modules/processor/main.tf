@@ -30,21 +30,19 @@ resource "terraform_data" "instance" {
   # Store zone since variables not accessible at destroy time.
   input = var.zone
   provisioner "local-exec" {
-    command = join(" && ", [
-      join(" ", [
-        "gcloud compute instances create-with-container processor",
-        "--container-env",
-        join(",", [
-          "DATABASE_URL=${var.db_conn_str_private}",
-          "ECONIA_ADDRESS=${var.econia_address}",
-          "GRPC_AUTH_TOKEN=${var.grpc_auth_token}",
-          "GRPC_DATA_SERVICE_URL=${var.grpc_data_service_url}",
-          "STARTING_VERSION=${var.starting_version}",
-        ]),
-        "--container-image ${terraform_data.image.output}",
-        "--network ${var.sql_network_id}",
-        "--zone ${var.zone}"
-      ])
+    command = join(" ", [
+      "gcloud compute instances create-with-container processor",
+      "--container-env",
+      join(",", [
+        "DATABASE_URL=${var.db_conn_str_private}",
+        "ECONIA_ADDRESS=${var.econia_address}",
+        "GRPC_AUTH_TOKEN=${var.grpc_auth_token}",
+        "GRPC_DATA_SERVICE_URL=${var.grpc_data_service_url}",
+        "STARTING_VERSION=${var.starting_version}",
+      ]),
+      "--container-image ${terraform_data.image.output}",
+      "--network ${var.sql_network_id}",
+      "--zone ${var.zone}"
     ])
   }
   provisioner "local-exec" {

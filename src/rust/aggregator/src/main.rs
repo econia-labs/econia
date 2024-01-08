@@ -48,6 +48,7 @@ struct Args {
 pub enum Pipelines {
     Candlesticks,
     Coins,
+    EnumeratedVolume,
     Leaderboards,
     Market24hData,
     OrderHistory,
@@ -180,35 +181,37 @@ async fn main() -> Result<()> {
         })
     });
 
-    let pipelines = if env_config.no_default || args.no_default {
-        let mut include = env_config.include.clone();
-        include.append(&mut args.include);
-        include.sort();
-        include.dedup();
-        if include.is_empty() {
-            tracing::error!("No pipelines are included and --no-default is set.");
-            panic!();
-        }
-        include
-    } else {
-        let mut x = vec![
-            Pipelines::Candlesticks,
-            Pipelines::Coins,
-            Pipelines::Market24hData,
-            Pipelines::UserHistory,
-            Pipelines::TvlPerAsset,
-            Pipelines::TvlPerMarket,
-        ];
-        let mut exclude = env_config.exclude.clone();
-        let mut include = env_config.include.clone();
-        exclude.append(&mut args.exclude);
-        include.append(&mut args.include);
-        x = x.into_iter().filter(|a| !exclude.contains(a)).collect();
-        x.append(&mut include);
-        x.sort();
-        x.dedup();
-        x
-    };
+    let pipelines =
+        if env_config.no_default || args.no_default {
+            let mut include = env_config.include.clone();
+            include.append(&mut args.include);
+            include.sort();
+            include.dedup();
+            if include.is_empty() {
+                    tracing::error!("No pipelines are included and --no-default is set.");
+                    panic!();
+            }
+            include
+        } else {
+            let mut x = vec![
+                Pipelines::Candlesticks,
+                Pipelines::Coins,
+                Pipelines::EnumeratedVolume,
+                Pipelines::Market24hData,
+                Pipelines::UserHistory,
+                Pipelines::TvlPerAsset,
+                Pipelines::TvlPerMarket,
+            ];
+            let mut exclude = env_config.exclude.clone();
+            let mut include = env_config.include.clone();
+            exclude.append(&mut args.exclude);
+            include.append(&mut args.include);
+            x = x.into_iter().filter(|a| !exclude.contains(a)).collect();
+            x.append(&mut include);
+            x.sort();
+            x.dedup();
+            x
+        };
     tracing::info!("Using pipelines {pipelines:?}.");
     tracing::info!("Using network {network:?}.");
 
@@ -267,6 +270,13 @@ async fn main() -> Result<()> {
                     pool.clone(),
                     network.to_base_url(),
                 ))));
+            }
+            Pipelines::EnumeratedVolume => {
+                data.push(Arc::new(Mutex::new(RefreshMaterializedView::new(
+                    pool.clone(),
+                    "aggregator.enumerated_volume",
+                    Duration::from_secs(60)
+                ))))
             }
             Pipelines::Leaderboards => {
                 data.push(Arc::new(Mutex::new(Leaderboards::new(pool.clone()))));

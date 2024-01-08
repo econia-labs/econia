@@ -49,6 +49,7 @@ pub enum Pipelines {
     Market24hData,
     OrderHistory,
     RollingVolume,
+    Tvl,
     UserHistory,
 }
 
@@ -190,6 +191,7 @@ async fn main() -> Result<()> {
                 Pipelines::Coins,
                 Pipelines::Market24hData,
                 Pipelines::UserHistory,
+                Pipelines::Tvl,
             ];
             let mut exclude = env_config.exclude.clone();
             let mut include = env_config.include.clone();
@@ -274,6 +276,9 @@ async fn main() -> Result<()> {
             Pipelines::RollingVolume => data.push(Arc::new(Mutex::new(RollingVolume::new(pool.clone())))),
             Pipelines::UserHistory => {
                 data.push(Arc::new(Mutex::new(UserHistory::new(pool.clone()))));
+            }
+            Pipelines::Tvl => {
+                data.push(Arc::new(Mutex::new(RefreshMaterializedView::new(pool.clone(), "aggregator.tvl", Duration::from_secs(60)))));
             }
         }
     }

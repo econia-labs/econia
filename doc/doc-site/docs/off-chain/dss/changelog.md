@@ -12,6 +12,23 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 1. Merge `main` into `dss-stable`.
 1. Push annotated tag to head of `dss-stable`.
 
+## [v1.5.0]
+
+### Added
+
+- Optional rolling volume pipeline ([#658], [#663]).
+- Global order history snapshot pipeline ([#658], [#664]).
+- Health check endpoints ([#651]).
+- Fees in `/user_history` endpoint ([#650]).
+- Hot restart support ([#657], [#659]).
+- CI/CD Terraform project with walkthrough ([#657]).
+- Automatic schema reloading for PostgREST ([#661]).
+- Demo Grafana configuration ([#657]).
+
+### Changed
+
+- Docker compose and processor config style, associated docs ([#659], [#665], [#660]).
+
 ## [v1.4.0]
 
 ### Added
@@ -65,10 +82,21 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 [#644]: https://github.com/econia-labs/econia/pull/644
 [#645]: https://github.com/econia-labs/econia/pull/645
 [#648]: https://github.com/econia-labs/econia/pull/648
+[#650]: https://github.com/econia-labs/econia/pull/650
+[#651]: https://github.com/econia-labs/econia/pull/651
 [#653]: https://github.com/econia-labs/econia/pull/653
+[#657]: https://github.com/econia-labs/econia/pull/657
+[#658]: https://github.com/econia-labs/econia/pull/658
+[#659]: https://github.com/econia-labs/econia/pull/659
+[#660]: https://github.com/econia-labs/econia/pull/661
+[#661]: https://github.com/econia-labs/econia/pull/661
+[#663]: https://github.com/econia-labs/econia/pull/663
+[#664]: https://github.com/econia-labs/econia/pull/664
+[#665]: https://github.com/econia-labs/econia/pull/665
 [processor #19]: https://github.com/econia-labs/aptos-indexer-processors/pull/19
 [processor #20]: https://github.com/econia-labs/aptos-indexer-processors/pull/20
 [processor #21]: https://github.com/econia-labs/aptos-indexer-processors/pull/21
 [v1.3.0]: https://github.com/econia-labs/econia/releases/tag/dss-v1.3.0
 [v1.4.0]: https://github.com/econia-labs/econia/compare/dss-v1.3.0...dss-v1.4.0
+[v1.5.0]: https://github.com/econia-labs/econia/compare/dss-v1.4.0...dss-v1.5.0
 [`dss-stable`]: https://github.com/econia-labs/econia/tree/dss-stable

@@ -21,7 +21,8 @@ INSERT INTO aggregator.user_history (
     min_base,
     max_base,
     min_quote,
-    max_quote
+    max_quote,
+    total_fees_paid_in_quote_subunits
 )
 SELECT
     swaps.market_id,
@@ -46,7 +47,8 @@ SELECT
     swaps.min_base,
     swaps.max_base,
     swaps.min_quote,
-    swaps.max_quote
+    swaps.max_quote,
+    0
 FROM
     parameters,
     place_swap_order_events AS swaps

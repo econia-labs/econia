@@ -41,4 +41,7 @@ COPY --from=builder $BIN_PATH $APP_DIR/
 ENV APTOS_NETWORK=$APTOS_NETWORK
 ENV DATABASE_URL=$DATABASE_URL
 
+# This helps the aggregator stop faster
+STOPSIGNAL SIGKILL
+
 ENTRYPOINT /app/aggregator

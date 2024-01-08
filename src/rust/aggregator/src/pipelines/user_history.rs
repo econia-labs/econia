@@ -1,31 +1,16 @@
 use anyhow::anyhow;
 use bigdecimal::{num_bigint::ToBigInt, BigDecimal, Zero};
 use chrono::{DateTime, Duration, Utc};
-use sqlx::{Error, Executor, PgConnection, PgPool, Postgres, Transaction};
+use sqlx::{PgConnection, PgPool, Postgres, Transaction};
 
-use aggregator::{Pipeline, PipelineAggregationResult, PipelineError};
-use tracing::warn;
+use aggregator::{Pipeline, PipelineAggregationResult, PipelineError, util::{commit_transaction, create_repeatable_read_transaction}};
+
+use crate::dbtypes::OrderType;
 
 /// Number of bits to shift when encoding transaction version.
 const SHIFT_TXN_VERSION: u8 = 64;
 
 pub const TIMEOUT: std::time::Duration = std::time::Duration::from_millis(100);
-
-#[derive(sqlx::Type, Debug)]
-#[sqlx(type_name = "order_status", rename_all = "lowercase")]
-pub enum OrderStatus {
-    Open,
-    Closed,
-    Cancelled,
-}
-
-#[derive(sqlx::Type, Debug)]
-#[sqlx(type_name = "order_type", rename_all = "lowercase")]
-pub enum OrderType {
-    Limit,
-    Market,
-    Swap,
-}
 
 pub struct UserHistory {
     pool: PgPool,
@@ -65,15 +50,7 @@ impl Pipeline for UserHistory {
     /// are also handled in a single atomic transaction for each batch of transactions, such that
     /// user history aggregation logic is effectively serialized across historical chain state.
     async fn process_and_save_internal(&mut self) -> PipelineAggregationResult {
-        let mut transaction = self
-            .pool
-            .begin()
-            .await
-            .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
-        transaction
-            .execute("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;")
-            .await
-            .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
+        let mut transaction = create_repeatable_read_transaction(&self.pool).await?;
         struct TxnVersion {
             txn_version: BigDecimal,
         }
@@ -157,6 +134,7 @@ impl Pipeline for UserHistory {
                             &fill.market_id,
                             &fill.time,
                             &fill.price,
+                            &fill.taker_quote_fees_paid,
                         )
                         .await?;
                     }
@@ -186,20 +164,7 @@ impl Pipeline for UserHistory {
         .await
         .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
         update_max_txn_version(&mut transaction, txnv_exists).await?;
-        transaction
-            .commit()
-            .await
-            .or_else(|e| match &e {
-                Error::Database(dbe) => {
-                    if dbe.message() == "could not serialize access due to read/write dependencies among transactions" {
-                        warn!("transaction serialization error, gracefully ignoring, will retry next loop");
-                        Ok(())
-                    } else {
-                        Err(PipelineError::ProcessingError(anyhow!(e)))
-                    }
-                }
-                _ => {Err(PipelineError::ProcessingError(anyhow!(e)))}
-            })?;
+        commit_transaction(transaction).await?;
         Ok(())
     }
 }
@@ -212,9 +177,19 @@ async fn aggregate_fill_for_maker_and_taker<'a>(
     market_id: &BigDecimal,
     time: &DateTime<Utc>,
     price: &BigDecimal,
+    fees: &BigDecimal,
 ) -> PipelineAggregationResult {
-    aggregate_fill(tx, size, maker_order_id, market_id, time, price).await?;
-    aggregate_fill(tx, size, taker_order_id, market_id, time, price).await?;
+    aggregate_fill(
+        tx,
+        size,
+        maker_order_id,
+        market_id,
+        time,
+        price,
+        &BigDecimal::zero(),
+    )
+    .await?;
+    aggregate_fill(tx, size, taker_order_id, market_id, time, price, fees).await?;
     Ok(())
 }
 
@@ -225,6 +200,7 @@ async fn aggregate_fill<'a>(
     market_id: &BigDecimal,
     time: &DateTime<Utc>,
     price: &BigDecimal,
+    fees: &BigDecimal,
 ) -> PipelineAggregationResult {
     // Only limit orders can remain open after a transaction during which they are filled against,
     // so flag market orders and swaps as closed by default: if they end up being cancelled instead
@@ -237,6 +213,7 @@ async fn aggregate_fill<'a>(
         market_id,
         time,
         price,
+        fees,
     )
     .execute(tx as &mut PgConnection)
     .await

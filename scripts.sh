@@ -3,6 +3,8 @@
 # This file contains assorted developer scripts for common workflows, with
 # shorthands defined in the argument parser case section at the bottom.
 
+# This file is not actively maintained.
+
 # Constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 # URL to download homebrew.

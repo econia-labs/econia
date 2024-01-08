@@ -25,17 +25,15 @@ The REST API is actually a PostgREST instance.
 You can find the REST API documentation [here](./rest-api.md).
 You can learn more about how to query a PostgREST instance on their [official documentation](https://postgrest.org/en/stable/).
 
-## Testnet walkthrough
+## Walkthrough
 
 There are two ways of running the DSS:
 
-1. Against a local chain.
 1. Against a public chain like Aptos devnet, testnet, or mainnet.
+1. Against a local chain, as described [here](https://github.com/econia-labs/econia/tree/main/src/docker).
 
-For continuous integration (CI) or development, running the DSS against a local chain is recommended.
-
-This walkthrough will use the official Aptos testnet.
-The process is the same as running against mainnet, just with a slightly different config process.
+This walkthrough will use the official Aptos mainnet.
+The process is the same as running against testnet, just with a slightly different config process.
 
 ### Getting the API key
 
@@ -44,71 +42,14 @@ To connect to this service, you'll need to get an API key [here](https://aptos-a
 
 ### Generating a config
 
-Once you have the API key, you'll need to create the processor configuration file.
-A template can be found at `src/docker/processor/config-template-global.yaml`.
-In the same folder as the template, create a copy of the file named `config.yaml`.
-For testnet:
+Once you have the API key, you'll need to create an environment configuration file.
+A template can be found at `src/docker/example.env`.
+In the same folder as the template, create a copy of the file named `.env`.
 
-- health_check_port: `8085`
-- server_config:
-  - processor_config:
-    - type: `econia_transaction_processor`.
-    - econia_address: the testnet Econia address (`0xc0de11113b427d35ece1d8991865a941c0578b0f349acabbe9753863c24109ff`).
-  - postgres_connection_string: `postgres://econia:econia@postgres:5432/econia` if you are using the database which comes with the Docker compose file.
-  - indexer_grpc_data_service_address: `https://grpc.testnet.aptoslabs.com:443` for testnet.
-    See [the Aptos official documentation](https://aptos.dev/indexer/txn-stream/labs-hosted) for other networks.
-  - indexer_grpc_http2_ping_interval_in_secs: `60`.
-  - indexer_grpc_http2_ping_timeout_in_secs: `10`.
-  - number_concurrent_processing_tasks: `1`.
-  - auth_token: the key you got earlier.
-  - starting_version: where to start indexing.
-    For this walkthrough, use the first transaction of the [Econia testnet account](../../welcome.md#account-addresses) (`649555969`), which is a prudent starting point that slightly precedes the publication of the Econia Move package on testnet.
+The file is pre-configured to index the Econia mainnet package.
+The only field you'll have to set is you Aptos gRPC API key.
 
-:::warning
-
-A `starting_version` that is too late will lead to missed events and corrupted data.
-
-:::
-
-Hence, the complete `config.yaml` file for testnet:
-
-```yaml
-health_check_port: 8085
-server_config:
-  processor_config:
-    type: econia_transaction_processor
-    econia_address: 0xc0de11113b427d35ece1d8991865a941c0578b0f349acabbe9753863c24109ff
-  postgres_connection_string: postgres://econia:econia@postgres:5432/econia
-  indexer_grpc_data_service_address: https://grpc.testnet.aptoslabs.com:443
-  indexer_grpc_http2_ping_interval_in_secs: 60
-  indexer_grpc_http2_ping_timeout_in_secs: 10
-  number_concurrent_processing_tasks: 1
-  auth_token: aptoslabs_grpc_token_or_token_for_another_grpc_endpoint
-  starting_version: 649555969
-```
-
-Similarly, for mainnet:
-
-```yaml
-health_check_port: 8085
-server_config:
-  processor_config:
-    type: econia_transaction_processor
-    econia_address: 0xc0deb00c405f84c85dc13442e305df75d1288100cdd82675695f6148c7ece51c
-  postgres_connection_string: postgres://econia:econia@postgres:5432/econia
-  indexer_grpc_data_service_address: https://grpc.mainnet.aptoslabs.com:443
-  indexer_grpc_http2_ping_interval_in_secs: 60
-  indexer_grpc_http2_ping_timeout_in_secs: 10
-  number_concurrent_processing_tasks: 1
-  auth_token: aptoslabs_grpc_token_or_token_for_another_grpc_endpoint
-  starting_version: 154106802
-```
-
-:::tip
-
-Substitute `aptoslabs_grpc_token_or_token_for_another_grpc_endpoint` for your token.
-
-:::
+If you wish to run against another chain (for example `testnet`), follow the instructions in the file, where you can find the necessary values to put for each supported chain.
 
 ### Checking out the right branch
 
@@ -125,7 +66,7 @@ git checkout dss-stable
 git submodule update --init --recursive
 ```
 
-### Starting the DSS
+### Running the DSS
 
 :::tip
 
@@ -141,21 +82,29 @@ If you want to redeploy all the same images with a fresh database, just run `doc
 
 :::
 
-From the Econia repo root, run the command corresponding to your preferred network (testnet or mainnet):
+From the Econia repo root, run the following command:
 
 ```bash
-APTOS_NETWORK=testnet docker compose --file src/docker/compose.dss-global.yaml up
-```
-
-```bash
-APTOS_NETWORK=mainnet docker compose --file src/docker/compose.dss-global.yaml up
+docker compose --file src/docker/compose.dss-global.yaml up
 ```
 
 This might take a while to start (expect anywhere from a couple minutes, to more, depending on the machine you have).
 
 Then, to shut it down simply press `Ctrl+C`.
 
-Alternatively, to run in detached mode (as a background process), simply add the `--detach` flag, then to shut it down:
+Alternatively, to run in detached mode (as a background process), simply add the `--detach` flag, then to temporarily stop it:
+
+```bash
+docker compose --file src/docker/compose.dss-global.yaml stop
+```
+
+To start it again, use:
+
+```bash
+docker compose --file src/docker/compose.dss-global.yaml start
+```
+
+Finally, to fully shut it down:
 
 ```bash
 docker compose --file src/docker/compose.dss-global.yaml down

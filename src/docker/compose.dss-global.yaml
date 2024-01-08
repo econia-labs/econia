@@ -4,7 +4,7 @@ include:
   - compose.dss-core.yaml
 
 services:
-    processsor:
+    processor:
       depends_on:
         diesel:
           condition: service_completed_successfully

@@ -1,5 +1,5 @@
 -- Your SQL goes here
-CREATE TABLE annotations (
+CREATE TABLE grafana_annotations (
     "time" timestamptz NOT NULL,
     "timeEnd" timestamptz,
     "title" text NOT NULL,

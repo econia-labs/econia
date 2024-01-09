@@ -19,10 +19,10 @@ services:
       APTOS_NETWORK: ${APTOS_NETWORK}
       DATABASE_URL: "postgres://econia:econia@postgres:5432/econia"
 
-  grafana:
+  grafana_annotations:
     build:
       context: ../../
-      dockerfile: src/docker/grafana/Dockerfile
+      dockerfile: src/docker/grafana_annotations/Dockerfile
     depends_on:
       diesel:
         condition: service_completed_successfully
@@ -31,7 +31,7 @@ services:
     environment:
       DATABASE_URL: "postgres://econia:econia@postgres:5432/econia"
     volumes:
-      - "./grafana/annotations.csv:/annotations.csv"
+      - "./grafana_annotations/annotations.csv:/annotations.csv"
 
   postgrest:
     depends_on:

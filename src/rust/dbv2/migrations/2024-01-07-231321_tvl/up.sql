@@ -83,10 +83,17 @@ UNION
 SELECT value, NULL AS coin, coin_name_generic, market_id
 FROM fake_coins;
 
-CREATE VIEW api.tvl AS
-SELECT * FROM aggregator.tvl;
+CREATE VIEW api.tvl_per_market AS
+SELECT * FROM aggregator.tvl_per_market;
 
 GRANT
 SELECT
-  ON api.tvl TO web_anon;
+  ON api.tvl_per_market TO web_anon;
+
+CREATE VIEW api.tvl_per_asset AS
+SELECT * FROM aggregator.tvl_per_asset;
+
+GRANT
+SELECT
+  ON api.tvl_per_asset TO web_anon;
 

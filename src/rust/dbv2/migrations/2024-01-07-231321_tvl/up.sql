@@ -26,8 +26,8 @@ GROUP BY
 CREATE MATERIALIZED VIEW aggregator.tvl_per_asset AS
 WITH sums AS (
 SELECT
-    SUM(base_total) AS value,
-    base_account_address AS address, base_module_name AS module, base_struct_name AS struct
+    SUM(base_total) AS "value",
+    base_account_address AS "address", base_module_name AS module, base_struct_name AS struct
 FROM
     api.user_balances,
     api.markets
@@ -43,8 +43,8 @@ GROUP BY
     base_name_generic
 UNION
 SELECT
-    SUM(quote_total) AS value,
-    quote_account_address AS address, quote_module_name AS module, quote_struct_name AS struct
+    SUM(quote_total) AS "value",
+    quote_account_address AS "address", quote_module_name AS module, quote_struct_name AS struct
 FROM
     api.user_balances,
     api.markets
@@ -56,14 +56,14 @@ GROUP BY
     quote_struct_name,
     markets.market_id
 ),
-real_coins AS (
-    SELECT SUM(value) AS value, address, module, struct
+coin_assets AS (
+    SELECT SUM("value") AS "value", "address", module, struct
     FROM sums
-    GROUP BY address, module, struct
+    GROUP BY "address", module, struct
 ),
-fake_coins AS (
+generic_assets AS (
 SELECT
-    SUM(base_total) AS value,
+    SUM(base_total) AS "value",
     base_name_generic AS coin_name_generic,
     markets.market_id
 FROM
@@ -77,11 +77,11 @@ GROUP BY
     base_name_generic,
     markets.market_id
 )
-SELECT value, address, module, struct, NULL AS coin_name_generic, NULL AS market_id
-FROM real_coins
+SELECT "value", "address", module, struct, NULL AS coin_name_generic, NULL AS market_id
+FROM coin_assets
 UNION
-SELECT value, NULL AS address, NULL AS module, NULL AS struct, coin_name_generic, market_id
-FROM fake_coins;
+SELECT "value", NULL AS "address", NULL AS module, NULL AS struct, coin_name_generic, market_id
+FROM generic_assets;
 
 CREATE VIEW api.tvl_per_market AS
 SELECT * FROM aggregator.tvl_per_market;

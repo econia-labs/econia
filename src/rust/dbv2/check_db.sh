@@ -2,9 +2,9 @@
 
 echo "Starting a dedicated PostgreSQL Docker instance"
 
-docker run -d --rm --name econia_db_test -e POSTGRES_PASSWORD=pgpw -p 1984:5432 postgres > /dev/null
+docker run -d --rm --name econia_db_test -e POSTGRES_PASSWORD=pgpw -p 37949:5432 postgres > /dev/null
 
-DATABASE_URL=postgres://postgres:pgpw@localhost:1984/econia
+DATABASE_URL=postgres://postgres:pgpw@localhost:37949/econia
 
 echo "Waiting 5 seconds for the database to start..." && sleep 5
 

@@ -3,7 +3,10 @@ use bigdecimal::{num_bigint::ToBigInt, BigDecimal, Zero};
 use chrono::{DateTime, Duration, Utc};
 use sqlx::{PgConnection, PgPool, Postgres, Transaction};
 
-use aggregator::{Pipeline, PipelineAggregationResult, PipelineError, util::{commit_transaction, create_repeatable_read_transaction}};
+use aggregator::{
+    util::{commit_transaction, create_repeatable_read_transaction},
+    Pipeline, PipelineAggregationResult, PipelineError,
+};
 
 use crate::dbtypes::OrderType;
 

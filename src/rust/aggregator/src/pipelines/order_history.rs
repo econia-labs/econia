@@ -72,7 +72,7 @@ struct Fill {
     size: BigDecimal,
 }
 
-fn handle_fill (fill: &Fill, orders: &mut HashMap<OrderKey, Order>, index: &mut usize) {
+fn handle_fill(fill: &Fill, orders: &mut HashMap<OrderKey, Order>, index: &mut usize) {
     *index += 1;
     let order_key_maker = (fill.market_id.clone(), fill.maker_order_id.clone());
     if let Some(order) = orders.get_mut(&order_key_maker) {
@@ -98,7 +98,7 @@ struct Change {
     new_size: BigDecimal,
 }
 
-fn handle_change (change: &Change, orders: &mut HashMap<OrderKey, Order>, index: &mut usize) {
+fn handle_change(change: &Change, orders: &mut HashMap<OrderKey, Order>, index: &mut usize) {
     *index += 1;
     let order_key = (change.market_id.clone(), change.order_id.clone());
     if let Some(order) = orders.get_mut(&order_key) {
@@ -193,25 +193,27 @@ impl OrderHistory {
         for _ in 0..(fills.len() + changes.len()) {
             let fill = fills.get(fills_index);
             let change = changes.get(changes_index);
-            let (f,c) = match (fill, change) {
+            let (f, c) = match (fill, change) {
                 (Some(fill), Some(change)) => {
-                    if (fill.txn_version.clone(), fill.event_idx.clone()) < (change.txn_version.clone(), change.event_idx.clone()) {
+                    if (fill.txn_version.clone(), fill.event_idx.clone())
+                        < (change.txn_version.clone(), change.event_idx.clone())
+                    {
                         (Some(fill), None)
                     } else {
                         (None, Some(change))
                     }
-                },
+                }
                 (None, None) => unreachable!(),
                 other => other,
             };
-            match (f,c) {
+            match (f, c) {
                 (Some(fill), None) => {
                     handle_fill(fill, &mut orders, &mut fills_index);
-                },
+                }
                 (None, Some(change)) => {
                     handle_change(change, &mut orders, &mut changes_index);
                 }
-                _ => unreachable!()
+                _ => unreachable!(),
             };
         }
         Ok(OrderHistoryState::new(txn_version, orders))
@@ -260,11 +262,12 @@ impl Pipeline for OrderHistory {
             return Ok(());
         }
         let last_indexed_timestamp = last_indexed_timestamp.unwrap().time;
-        let latest_event_timestamp = sqlx::query_file!("sqlx_queries/order_history/get_latest_event_timestamp.sql")
-            .fetch_one(&mut transaction as &mut PgConnection)
-            .await
-            .map_err(to_pipeline_error)?
-            .time;
+        let latest_event_timestamp =
+            sqlx::query_file!("sqlx_queries/order_history/get_latest_event_timestamp.sql")
+                .fetch_one(&mut transaction as &mut PgConnection)
+                .await
+                .map_err(to_pipeline_error)?
+                .time;
         let latest_event_timestamp = if let Some(e) = latest_event_timestamp {
             e
         } else {

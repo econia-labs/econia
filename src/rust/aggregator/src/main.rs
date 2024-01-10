@@ -8,10 +8,7 @@ use aggregator::Pipeline;
 use anyhow::{anyhow, Result};
 use aptos_sdk::rest_client::AptosBaseUrl;
 use clap::{Parser, ValueEnum};
-use pipelines::{
-    Candlesticks, Coins, Leaderboards, OrderHistory, RefreshMaterializedView, RollingVolume,
-    UserHistory,
-};
+use pipelines::{Candlesticks, Coins, EnumeratedVolume, Leaderboards, OrderHistory, RefreshMaterializedView, RollingVolume, UserHistory};
 use sqlx::Executor;
 use sqlx_postgres::PgPoolOptions;
 use tokio::{sync::Mutex, task::JoinSet};
@@ -272,10 +269,8 @@ async fn main() -> Result<()> {
                 ))));
             }
             Pipelines::EnumeratedVolume => {
-                data.push(Arc::new(Mutex::new(RefreshMaterializedView::new(
+                data.push(Arc::new(Mutex::new(EnumeratedVolume::new(
                     pool.clone(),
-                    "aggregator.enumerated_volume",
-                    Duration::from_secs(60)
                 ))))
             }
             Pipelines::Leaderboards => {

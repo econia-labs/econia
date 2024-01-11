@@ -104,14 +104,31 @@ SELECT
 FROM generic_assets;
 
 CREATE VIEW api.tvl_per_market AS
-SELECT * FROM aggregator.tvl_per_market;
+SELECT
+    tvl.*,
+    base.name AS base_name,
+    base.symbol AS base_symbol,
+    base.decimals AS base_decimals,
+    quote.name AS quote_name,
+    quote.symbol AS quote_symbol,
+    quote.decimals AS quote_decimals
+FROM aggregator.tvl_per_market tvl
+LEFT JOIN aggregator.coins base
+ON base_account_address = base.address
+AND base_module_name = base.module
+AND base_struct_name = base.struct
+INNER JOIN aggregator.coins quote
+ON quote_account_address = quote.address
+AND quote_module_name = quote.module
+AND quote_struct_name = quote.struct;
 
 GRANT
 SELECT
   ON api.tvl_per_market TO web_anon;
 
 CREATE VIEW api.tvl_per_asset AS
-SELECT * FROM aggregator.tvl_per_asset;
+SELECT * FROM aggregator.tvl_per_asset
+NATURAL LEFT JOIN aggregator.coins;
 
 GRANT
 SELECT

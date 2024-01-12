@@ -1,7 +1,7 @@
 INSERT INTO aggregator.enumerated_volume (volume_as_base, volume_as_quote, address, module, struct, generic_asset_name, last_indexed_txn)
 WITH base_volumes AS (
     SELECT
-        SUM("size") AS volume_as_base,
+        size_to_base_indivisible_subunits(markets.market_id, SUM("size")) AS volume_as_base,
         base_account_address AS "address",
         base_module_name AS module,
         base_struct_name AS struct,
@@ -26,6 +26,7 @@ WITH base_volumes AS (
         )
     ), 0)
     GROUP BY
+        markets.market_id,
         base_account_address,
         base_module_name,
         base_struct_name,
@@ -33,7 +34,7 @@ WITH base_volumes AS (
 ),
 quote_volumes AS (
     SELECT
-        SUM("size"*price) AS volume_as_quote,
+        SUM(size_and_price_to_quote_indivisible_subunits(markets.market_id, "size", price)) AS volume_as_quote,
         quote_account_address AS "address",
         quote_module_name AS module,
         quote_struct_name AS struct
@@ -57,6 +58,7 @@ quote_volumes AS (
     ), 0)
     AND markets.market_id = fill_events.market_id
     GROUP BY
+        markets.market_id,
         quote_account_address,
         quote_module_name,
         quote_struct_name

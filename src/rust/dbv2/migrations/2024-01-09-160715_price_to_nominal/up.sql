@@ -1,6 +1,6 @@
 -- Your SQL goes here
 CREATE FUNCTION integer_price_to_quote_indivisible_subunits(market_id numeric, price numeric) RETURNS NUMERIC IMMUTABLE AS $$
-    SELECT ($2 / ((tick_size / POW(10::numeric,quote.decimals)) / (lot_size / POW(10,COALESCE(base.decimals, 0)))))
+    SELECT ($2 * (tick_size / lot_size) * POW(10,COALESCE(base.decimals, 0)))
     FROM market_registration_events
     LEFT JOIN aggregator.coins base
     ON base_account_address = base."address" AND base_module_name = base.module AND base_struct_name = base.struct
@@ -10,7 +10,7 @@ CREATE FUNCTION integer_price_to_quote_indivisible_subunits(market_id numeric, p
 $$ LANGUAGE sql;
 
 CREATE FUNCTION quote_indivisible_subunits_to_integer_price(market_id numeric, price numeric) RETURNS NUMERIC IMMUTABLE AS $$
-    SELECT $2 * ((tick_size / POW(10::numeric,quote.decimals)) / (lot_size / POW(10,COALESCE(base.decimals, 0))))
+    SELECT ($2 / ((tick_size / lot_size) * POW(10,COALESCE(base.decimals, 0))))
     FROM market_registration_events
     LEFT JOIN aggregator.coins base
     ON base_account_address = base."address" AND base_module_name = base.module AND base_struct_name = base.struct

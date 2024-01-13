@@ -41,27 +41,20 @@ impl Pipeline for RollingVolume {
 
     async fn process_and_save_internal(&mut self) -> PipelineAggregationResult {
         let mut transaction = create_repeatable_read_transaction(&self.pool).await?;
-        sqlx::query_file!(
-            "sqlx_queries/rolling_volume/insert_daily_rolling_volume.sql",
-        )
-        .execute(&mut transaction as &mut PgConnection)
-        .await
-        .map_err(to_pipeline_error)?;
+        sqlx::query_file!("sqlx_queries/rolling_volume/insert_daily_rolling_volume.sql",)
+            .execute(&mut transaction as &mut PgConnection)
+            .await
+            .map_err(to_pipeline_error)?;
 
-        sqlx::query_file!(
-            "sqlx_queries/rolling_volume/delete_last_indexed_timestamp.sql",
-        )
-        .execute(&mut transaction as &mut PgConnection)
-        .await
-        .map_err(to_pipeline_error)?;
-        sqlx::query_file!(
-            "sqlx_queries/rolling_volume/update_last_indexed_timestamp.sql",
-        )
-        .execute(&mut transaction as &mut PgConnection)
-        .await
-        .map_err(to_pipeline_error)?;
+        sqlx::query_file!("sqlx_queries/rolling_volume/delete_last_indexed_timestamp.sql",)
+            .execute(&mut transaction as &mut PgConnection)
+            .await
+            .map_err(to_pipeline_error)?;
+        sqlx::query_file!("sqlx_queries/rolling_volume/update_last_indexed_timestamp.sql",)
+            .execute(&mut transaction as &mut PgConnection)
+            .await
+            .map_err(to_pipeline_error)?;
         commit_transaction(transaction).await?;
         Ok(())
     }
 }
-

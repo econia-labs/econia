@@ -1,4 +1,4 @@
-INSERT INTO aggregator.enumerated_volume (volume_as_base, volume_as_quote, address, module, struct, generic_asset_name, last_indexed_txn)
+INSERT INTO aggregator.enumerated_volume (volume_as_base, volume_as_quote, "address", module, struct, generic_asset_name, last_indexed_txn)
 WITH base_volumes AS (
     SELECT
         size_to_base_indivisible_subunits(markets.market_id, SUM("size")) AS volume_as_base,
@@ -43,18 +43,10 @@ quote_volumes AS (
     AND fill_events.txn_version > COALESCE((
         SELECT last_indexed_txn
         FROM aggregator.enumerated_volume
-        WHERE (
-            markets.base_account_address = enumerated_volume."address"
-            AND markets.base_module_name = enumerated_volume.module
-            AND markets.base_struct_name = enumerated_volume.struct
-            AND enumerated_volume.generic_asset_name = ''
-        )
-        OR (
-            enumerated_volume."address" = ''
-            AND enumerated_volume.module = ''
-            AND enumerated_volume.struct = ''
-            AND enumerated_volume.generic_asset_name = markets.base_name_generic
-        )
+        WHERE
+            markets.quote_account_address = enumerated_volume."address"
+            AND markets.quote_module_name = enumerated_volume.module
+            AND markets.quote_struct_name = enumerated_volume.struct
     ), 0)
     AND markets.market_id = fill_events.market_id
     GROUP BY

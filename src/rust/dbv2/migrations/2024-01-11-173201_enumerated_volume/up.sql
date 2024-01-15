@@ -7,7 +7,7 @@ CREATE TABLE aggregator.enumerated_volume (
     struct TEXT,
     generic_asset_name TEXT,
     last_indexed_txn NUMERIC(20,0) NOT NULL,
-    PRIMARY KEY (address, module, struct, generic_asset_name)
+    PRIMARY KEY ("address", module, struct, generic_asset_name)
 );
 
 CREATE VIEW api.enumerated_volume AS
@@ -35,7 +35,7 @@ WITH base_volumes AS (
 ),
 quote_volumes AS (
     SELECT
-        SUM(size_and_price_to_quote_indivisible_subunits(markets.market_id, size, price)) AS volume_as_quote,
+        SUM(size_and_price_to_quote_indivisible_subunits(markets.market_id, "size", price)) AS volume_as_quote,
         quote_account_address AS "address",
         quote_module_name AS module,
         quote_struct_name AS struct

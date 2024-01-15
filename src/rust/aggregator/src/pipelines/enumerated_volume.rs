@@ -11,7 +11,8 @@ pub struct EnumeratedVolume {
 }
 
 impl EnumeratedVolume {
-    pub fn new(pool: PgPool) -> Self { Self {
+    pub fn new(pool: PgPool) -> Self {
+        Self {
             pool,
             last_indexed_timestamp: None,
         }
@@ -40,20 +41,15 @@ impl Pipeline for EnumeratedVolume {
 
     async fn process_and_save_internal(&mut self) -> PipelineAggregationResult {
         let mut transaction = create_repeatable_read_transaction(&self.pool).await?;
-        sqlx::query_file!(
-            "sqlx_queries/enumerated_volume/update.sql",
-        )
-        .execute(&mut transaction as &mut PgConnection)
-        .await
-        .map_err(to_pipeline_error)?;
-        sqlx::query!(
-            "REFRESH MATERIALIZED VIEW aggregator.enumerated_volume_24h",
-        )
-        .execute(&mut transaction as &mut PgConnection)
-        .await
-        .map_err(to_pipeline_error)?;
+        sqlx::query_file!("sqlx_queries/enumerated_volume/update.sql",)
+            .execute(&mut transaction as &mut PgConnection)
+            .await
+            .map_err(to_pipeline_error)?;
+        sqlx::query!("REFRESH MATERIALIZED VIEW aggregator.enumerated_volume_24h",)
+            .execute(&mut transaction as &mut PgConnection)
+            .await
+            .map_err(to_pipeline_error)?;
         commit_transaction(transaction).await?;
         Ok(())
     }
 }
-

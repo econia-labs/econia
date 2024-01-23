@@ -2,11 +2,12 @@
 DROP VIEW api.historical_trades;
 DROP FUNCTION api.orderbook;
 DROP VIEW api.tickers;
+DROP FUNCTION api.get_market_mid_price;
 DROP FUNCTION api.get_market_liquidity;
 DROP FUNCTION api.get_market_24h_low;
 DROP FUNCTION api.get_market_24h_high;
-DROP FUNCTION api.get_market_bid;
-DROP FUNCTION api.get_market_ask;
+DROP FUNCTION api.get_market_best_bid_price;
+DROP FUNCTION api.get_market_best_ask_price;
 DROP FUNCTION api.get_market_last_price;
 DROP FUNCTION integer_price_to_quote_nominal;
 

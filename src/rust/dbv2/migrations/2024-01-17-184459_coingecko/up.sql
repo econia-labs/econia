@@ -56,17 +56,30 @@ CREATE FUNCTION integer_price_to_quote_nominal(market_id numeric, price numeric)
 $$ LANGUAGE sql;
 
 
+CREATE FUNCTION api.get_market_last_price (market_id numeric) RETURNS NUMERIC AS $$
+    SELECT price
+    FROM fill_events
+    ORDER BY txn_version DESC, event_idx DESC
+    LIMIT 1;
+$$ LANGUAGE SQL;
+
+
+CREATE FUNCTION api.get_market_mid_price(market_id numeric) RETURNS NUMERIC IMMUTABLE AS $$
+    SELECT
+      (MIN(price) FILTER (WHERE direction = 'ask') + MAX(price) FILTER (WHERE direction = 'bid')) / 2 AS mid_price
+    FROM api.orders
+    WHERE orders.market_id = $1
+    AND order_status = 'open'
+$$ LANGUAGE sql;
+
+
 CREATE FUNCTION api.get_market_liquidity (market_id numeric, depth numeric) RETURNS NUMERIC AS $$
     WITH mid_price AS (
-        SELECT
-          (MIN(price) FILTER (WHERE direction = 'ask') + MAX(price) FILTER (WHERE direction = 'bid')) / 2 AS mid_price
-        FROM api.orders
-        WHERE orders.market_id = $1
-        AND order_status = 'open'
+        SELECT api.get_market_mid_price($1) AS mid_price
     )
     SELECT SUM(CASE
         WHEN direction = 'bid' THEN size_and_price_to_quote_indivisible_subunits($1,remaining_size,price)
-        ELSE size_and_price_to_quote_indivisible_subunits($1,remaining_size,mid_price)
+        ELSE size_and_price_to_quote_indivisible_subunits($1,remaining_size,api.get_market_last_price($1))
     END)
     AS liquidity_in_quote
     FROM api.orders, mid_price
@@ -92,7 +105,7 @@ CREATE FUNCTION api.get_market_24h_high (market_id numeric) RETURNS NUMERIC AS $
 $$ LANGUAGE SQL;
 
 
-CREATE FUNCTION api.get_market_ask (market_id numeric) RETURNS NUMERIC AS $$
+CREATE FUNCTION api.get_market_best_ask_price (market_id numeric) RETURNS NUMERIC AS $$
     SELECT MIN(price)
     FROM api.orders
     WHERE orders.market_id = $1
@@ -101,20 +114,12 @@ CREATE FUNCTION api.get_market_ask (market_id numeric) RETURNS NUMERIC AS $$
 $$ LANGUAGE SQL;
 
 
-CREATE FUNCTION api.get_market_bid (market_id numeric) RETURNS NUMERIC AS $$
+CREATE FUNCTION api.get_market_best_bid_price (market_id numeric) RETURNS NUMERIC AS $$
     SELECT MAX(price)
     FROM api.orders
     WHERE orders.market_id = $1
     AND order_status = 'open'
     AND direction = 'bid';
-$$ LANGUAGE SQL;
-
-
-CREATE FUNCTION api.get_market_last_price (market_id numeric) RETURNS NUMERIC AS $$
-    SELECT price
-    FROM fill_events
-    ORDER BY txn_version DESC, event_idx DESC
-    LIMIT 1;
 $$ LANGUAGE SQL;
 
 
@@ -127,8 +132,8 @@ SELECT
     base_volume_24h AS base_volume,
     quote_volume_24h AS quote_volume,
     integer_price_to_quote_nominal(market_id, api.get_market_last_price(market_id)) AS last_price,
-    integer_price_to_quote_nominal(market_id, api.get_market_ask(market_id)) AS ask,
-    integer_price_to_quote_nominal(market_id, api.get_market_bid(market_id)) AS bid,
+    integer_price_to_quote_nominal(market_id, api.get_market_best_ask_price(market_id)) AS ask,
+    integer_price_to_quote_nominal(market_id, api.get_market_best_bid_price(market_id)) AS bid,
     integer_price_to_quote_nominal(market_id, api.get_market_24h_high(market_id)) AS high,
     integer_price_to_quote_nominal(market_id, api.get_market_24h_low(market_id)) AS low,
     api.get_market_liquidity(market_id,200) / get_quote_volume_divisor_for_market(market_id) AS liquidity_in_quote
@@ -138,10 +143,7 @@ FROM
 
 CREATE FUNCTION api.orderbook (market_id numeric, depth numeric) RETURNS TABLE(market_id numeric(20,0), txn_version numeric(20,0), bids numeric[], asks numeric[]) AS $$
     WITH mid_price AS (
-        SELECT
-          (MIN(price) FILTER (WHERE direction = 'ask') + MAX(price) FILTER (WHERE direction = 'bid')) / 2 AS mid_price
-        FROM api.orders
-        WHERE orders.market_id = $1 AND order_status = 'open'
+        SELECT api.get_market_mid_price($1) AS mid_price
     ),
     t AS (
       SELECT

@@ -1,3 +1,13 @@
+//! The [`view`](crate::view) module exposes the view functionalities of the Econia package.
+//!
+//! You can create a [`EconiaViewClient`] from a [`EconiaClient`](crate::EconiaClient) using the
+//! [`EconiaClient::view_client`](crate::EconiaClient::view_client) function.
+//!
+//! You can then call the functions provided here.
+//!
+//! There are also stand alone functions which do not need any blockchain state and compute
+//! locally. Those do not need a [`EconiaViewClient`] to execute.
+
 use std::fmt::Display;
 use std::str::FromStr;
 

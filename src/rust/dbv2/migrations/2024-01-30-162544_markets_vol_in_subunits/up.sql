@@ -78,7 +78,8 @@ SELECT
   base.symbol AS base_symbol,
   "quote".name AS quote_name,
   "quote".decimals AS quote_decimals,
-  "quote".symbol AS quote_symbol
+  "quote".symbol AS quote_symbol,
+  (SELECT SUM(volume) FROM api.candlesticks AS c WHERE c.market_id = m.market_id AND resolution = 86400) AS quote_volume
 FROM
   market_registration_events AS m
   LEFT JOIN aggregator.recognized_markets AS r ON COALESCE(r.base_account_address, '') = COALESCE(m.base_account_address, '')

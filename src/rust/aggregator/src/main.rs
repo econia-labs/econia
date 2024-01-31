@@ -198,6 +198,7 @@ async fn main() -> Result<()> {
                 Pipelines::Coins,
                 Pipelines::EnumeratedVolume,
                 Pipelines::Market24hData,
+                Pipelines::RollingVolume,
                 Pipelines::UserHistory,
                 Pipelines::TvlPerAsset,
                 Pipelines::TvlPerMarket,

@@ -34,7 +34,7 @@ resource "terraform_data" "instance" {
       "gcloud compute instances create-with-container aggregator",
       "--container-env",
       join(",", [
-        "AGGREGATOR_INCLUDE=order-history+rolling-volume",
+        "AGGREGATOR_INCLUDE=order-history",
         "APTOS_NETWORK=${var.aptos_network}",
         "DATABASE_URL=${var.db_conn_str_private}"
       ]),

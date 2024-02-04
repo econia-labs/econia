@@ -7,7 +7,10 @@ use sqlx::{PgConnection, PgPool, Transaction};
 use aggregator::{util::*, Pipeline, PipelineAggregationResult, PipelineError};
 use sqlx_postgres::Postgres;
 
-use crate::dbtypes::{OrderDirection, OrderType};
+use crate::{
+    dbtypes::{OrderDirection, OrderType},
+    MAX_BATCH_SIZE,
+};
 
 pub const TIMEOUT: std::time::Duration = std::time::Duration::from_secs(1);
 
@@ -115,108 +118,120 @@ impl OrderHistory {
     async fn get_state_from_timestamp_with_state<'a>(
         &self,
         mut orders: HashMap<OrderKey, Order>,
-        txn_version_of_state: &BigDecimal,
+        mut txn_version_of_state: BigDecimal,
         timestamp: &DateTime<Utc>,
         transaction: &mut Transaction<'a, Postgres>,
     ) -> Result<OrderHistoryState, PipelineError> {
-        // Get the biggest transaction version that happened before the given timestamp.
-        let txn_version = sqlx::query_file!(
-            "sqlx_queries/order_history/get_max_txn_version_before_timestamp.sql",
-            timestamp
-        )
-        .fetch_one(transaction as &mut PgConnection)
-        .await
-        .map_err(to_pipeline_error)?
-        .txn_version
-        .unwrap_or(BigDecimal::zero());
+        loop {
+            // Get the biggest transaction version that happened before the given timestamp.
+            let txn_version = sqlx::query_file!(
+                "sqlx_queries/order_history/get_max_txn_version_before_timestamp.sql",
+                timestamp
+            )
+            .fetch_one(transaction as &mut PgConnection)
+            .await
+            .map_err(to_pipeline_error)?
+            .txn_version
+            .unwrap_or(BigDecimal::zero());
 
-        // Get all place events that happened between the last transaction included in the previous
-        // state and the last transaction that happened before the given timestamp.
-        let places = sqlx::query_file_as!(
-            Order,
-            "sqlx_queries/order_history/get_place_limit_order_events_between_txn_versions.sql",
-            txn_version_of_state,
-            txn_version,
-        )
-        .fetch_all(transaction as &mut PgConnection)
-        .await
-        .map_err(to_pipeline_error)?;
+            if txn_version == txn_version_of_state {
+                return Ok(OrderHistoryState::new(txn_version, orders));
+            }
 
-        // Get all fill events that happened between the last transaction included in the previous
-        // state and the last transaction that happened before the given timestamp.
-        let fills = sqlx::query_file_as!(
-            Fill,
-            "sqlx_queries/order_history/get_fill_events_between_txn_versions.sql",
-            txn_version_of_state,
-            txn_version
-        )
-        .fetch_all(transaction as &mut PgConnection)
-        .await
-        .map_err(to_pipeline_error)?;
+            // Limit the number of transactions that will be processed in one batch. Not limiting this
+            // could cause out of memory issues.
+            let txn_version =
+                (txn_version_of_state.clone() + BigDecimal::from(MAX_BATCH_SIZE)).min(txn_version);
 
-        // Get all change events that happened between the last transaction included in the previous
-        // state and the last transaction that happened before the given timestamp.
-        let changes = sqlx::query_file_as!(
-            Change,
-            "sqlx_queries/order_history/get_change_order_size_events_between_txn_versions.sql",
-            txn_version_of_state,
-            txn_version
-        )
-        .fetch_all(transaction as &mut PgConnection)
-        .await
-        .map_err(to_pipeline_error)?;
+            // Get all place events that happened between the last transaction included in the previous
+            // state and the last transaction that happened before the given timestamp.
+            let places = sqlx::query_file_as!(
+                Order,
+                "sqlx_queries/order_history/get_place_limit_order_events_between_txn_versions.sql",
+                txn_version_of_state,
+                txn_version,
+            )
+            .fetch_all(transaction as &mut PgConnection)
+            .await
+            .map_err(to_pipeline_error)?;
 
-        // Get all cancel events that happened between the last transaction included in the previous
-        // state and the last transaction that happened before the given timestamp.
-        let cancels = sqlx::query_file!(
-            "sqlx_queries/order_history/get_cancel_order_events_between_txn_versions.sql",
-            txn_version_of_state,
-            txn_version
-        )
-        .fetch_all(transaction as &mut PgConnection)
-        .await
-        .map_err(to_pipeline_error)?;
+            // Get all fill events that happened between the last transaction included in the previous
+            // state and the last transaction that happened before the given timestamp.
+            let fills = sqlx::query_file_as!(
+                Fill,
+                "sqlx_queries/order_history/get_fill_events_between_txn_versions.sql",
+                txn_version_of_state,
+                txn_version
+            )
+            .fetch_all(transaction as &mut PgConnection)
+            .await
+            .map_err(to_pipeline_error)?;
 
-        // Insert all places as orders into the state.
-        for place in places {
-            orders.insert((place.market_id.clone(), place.order_id.clone()), place);
-        }
+            // Get all change events that happened between the last transaction included in the previous
+            // state and the last transaction that happened before the given timestamp.
+            let changes = sqlx::query_file_as!(
+                Change,
+                "sqlx_queries/order_history/get_change_order_size_events_between_txn_versions.sql",
+                txn_version_of_state,
+                txn_version
+            )
+            .fetch_all(transaction as &mut PgConnection)
+            .await
+            .map_err(to_pipeline_error)?;
 
-        // Remove all orders that have been cancelled.
-        for cancel in cancels {
-            orders.remove(&(cancel.market_id, cancel.order_id));
-        }
+            // Get all cancel events that happened between the last transaction included in the previous
+            // state and the last transaction that happened before the given timestamp.
+            let cancels = sqlx::query_file!(
+                "sqlx_queries/order_history/get_cancel_order_events_between_txn_versions.sql",
+                txn_version_of_state,
+                txn_version
+            )
+            .fetch_all(transaction as &mut PgConnection)
+            .await
+            .map_err(to_pipeline_error)?;
 
-        // Handle fills and changes chronologically.
-        let mut fills_index = 0;
-        let mut changes_index = 0;
-        for _ in 0..(fills.len() + changes.len()) {
-            let fill = fills.get(fills_index);
-            let change = changes.get(changes_index);
-            let (f, c) = match (fill, change) {
-                (Some(fill), Some(change)) => {
-                    if (fill.txn_version.clone(), fill.event_idx.clone())
-                        < (change.txn_version.clone(), change.event_idx.clone())
-                    {
-                        (Some(fill), None)
-                    } else {
-                        (None, Some(change))
+            // Insert all places as orders into the state.
+            for place in places {
+                orders.insert((place.market_id.clone(), place.order_id.clone()), place);
+            }
+
+            // Remove all orders that have been cancelled.
+            for cancel in cancels {
+                orders.remove(&(cancel.market_id, cancel.order_id));
+            }
+
+            // Handle fills and changes chronologically.
+            let mut fills_index = 0;
+            let mut changes_index = 0;
+            for _ in 0..(fills.len() + changes.len()) {
+                let fill = fills.get(fills_index);
+                let change = changes.get(changes_index);
+                let (f, c) = match (fill, change) {
+                    (Some(fill), Some(change)) => {
+                        if (fill.txn_version.clone(), fill.event_idx.clone())
+                            < (change.txn_version.clone(), change.event_idx.clone())
+                        {
+                            (Some(fill), None)
+                        } else {
+                            (None, Some(change))
+                        }
                     }
-                }
-                (None, None) => unreachable!(),
-                other => other,
-            };
-            match (f, c) {
-                (Some(fill), None) => {
-                    handle_fill(fill, &mut orders, &mut fills_index);
-                }
-                (None, Some(change)) => {
-                    handle_change(change, &mut orders, &mut changes_index);
-                }
-                _ => unreachable!(),
-            };
+                    (None, None) => unreachable!(),
+                    other => other,
+                };
+                match (f, c) {
+                    (Some(fill), None) => {
+                        handle_fill(fill, &mut orders, &mut fills_index);
+                    }
+                    (None, Some(change)) => {
+                        handle_change(change, &mut orders, &mut changes_index);
+                    }
+                    _ => unreachable!(),
+                };
+            }
+
+            txn_version_of_state = txn_version;
         }
-        Ok(OrderHistoryState::new(txn_version, orders))
     }
 }
 
@@ -286,7 +301,7 @@ impl Pipeline for OrderHistory {
             state = if state.orders.is_empty() && state.last_txn_indexed == BigDecimal::zero() {
                 self.get_state_from_timestamp_with_state(
                     state.orders,
-                    &BigDecimal::zero(),
+                    BigDecimal::zero(),
                     timestamp,
                     &mut transaction,
                 )
@@ -294,7 +309,7 @@ impl Pipeline for OrderHistory {
             } else {
                 self.get_state_from_timestamp_with_state(
                     state.orders,
-                    &state.last_txn_indexed,
+                    state.last_txn_indexed.clone(),
                     timestamp,
                     &mut transaction,
                 )

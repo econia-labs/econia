@@ -44,6 +44,8 @@ struct Args {
     aptos_network: Option<AptosNetwork>,
 }
 
+const MAX_BATCH_SIZE: u64 = 100_000;
+
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 pub enum Pipelines {
     Candlesticks,
@@ -199,6 +201,7 @@ async fn main() -> Result<()> {
             Pipelines::EnumeratedVolume,
             Pipelines::Market24hData,
             Pipelines::UserBalances,
+            Pipelines::RollingVolume,
             Pipelines::UserHistory,
             Pipelines::TvlPerAsset,
             Pipelines::TvlPerMarket,

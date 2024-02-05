@@ -1,65 +1,72 @@
 {
   "db_name": "PostgreSQL",
-  "query": "WITH parameters AS (\n    SELECT\n        $1::numeric AS max_txn_version\n)\nSELECT\n    *\nFROM\n    parameters,\n    change_order_size_events\nWHERE\n    txn_version > max_txn_version\nORDER BY\n    txn_version,\n    event_idx\n",
+  "query": "WITH parameters AS (\n    SELECT\n        $1::numeric AS txn_version_start,\n        $2::numeric AS txn_version_stop\n)\nSELECT\n    *\nFROM\n    parameters,\n    change_order_size_events\nWHERE\n    txn_version > txn_version_start\nAND\n    txn_version <= txn_version_stop\nORDER BY\n    txn_version,\n    event_idx\n",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "max_txn_version",
+        "name": "txn_version_start",
         "type_info": "Numeric"
       },
       {
         "ordinal": 1,
-        "name": "txn_version",
+        "name": "txn_version_stop",
         "type_info": "Numeric"
       },
       {
         "ordinal": 2,
-        "name": "event_idx",
+        "name": "txn_version",
         "type_info": "Numeric"
       },
       {
         "ordinal": 3,
-        "name": "market_id",
+        "name": "event_idx",
         "type_info": "Numeric"
       },
       {
         "ordinal": 4,
+        "name": "market_id",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 5,
         "name": "time",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 5,
+        "ordinal": 6,
         "name": "order_id",
         "type_info": "Numeric"
       },
       {
-        "ordinal": 6,
+        "ordinal": 7,
         "name": "user",
         "type_info": "Varchar"
       },
       {
-        "ordinal": 7,
+        "ordinal": 8,
         "name": "custodian_id",
         "type_info": "Numeric"
       },
       {
-        "ordinal": 8,
+        "ordinal": 9,
         "name": "side",
         "type_info": "Bool"
       },
       {
-        "ordinal": 9,
+        "ordinal": 10,
         "name": "new_size",
         "type_info": "Numeric"
       }
     ],
     "parameters": {
       "Left": [
+        "Numeric",
         "Numeric"
       ]
     },
     "nullable": [
+      null,
       null,
       false,
       false,
@@ -72,5 +79,5 @@
       false
     ]
   },
-  "hash": "ea1189ce11e27e6195a0d70398b5e30b78e513b2c122c21c8a1bf0c592248eac"
+  "hash": "7001fe2197df9c92650750ea7ddf57e06d1d49827d8b63bc27e4c7bd9e111f26"
 }

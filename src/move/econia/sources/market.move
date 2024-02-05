@@ -1324,9 +1324,6 @@ module econia::market {
     #[view]
     /// Like `get_open_orders()`, but paginated.
     ///
-    /// Kept as private view function to prevent runtime state
-    /// contention.
-    ///
     /// When paginating via an SDK, specify the same transaction version
     /// number for each function call until done paginating.
     ///
@@ -1355,7 +1352,7 @@ module econia::market {
     /// # Failure testing
     ///
     /// * `test_get_open_orders_paginated_invalid_market_id()`
-    fun get_open_orders_paginated(
+    public fun get_open_orders_paginated(
         market_id: u64,
         n_asks_to_index_max: u64,
         n_bids_to_index_max: u64,
@@ -1479,9 +1476,6 @@ module econia::market {
     #[view]
     /// Like `get_price_levels()`, but paginated.
     ///
-    /// Kept as private view function to prevent runtime state
-    /// contention.
-    ///
     /// When paginating via an SDK, specify the same transaction version
     /// number for each function call until done paginating.
     ///
@@ -1510,7 +1504,7 @@ module econia::market {
     /// # Failure testing
     ///
     /// * `test_get_price_levels_paginated_invalid_market_id()`
-    fun get_price_levels_paginated(
+    public fun get_price_levels_paginated(
         market_id: u64,
         n_asks_to_index_max: u64,
         n_bids_to_index_max: u64,
@@ -1593,14 +1587,12 @@ module econia::market {
     /// Return `true` if `order_id` corresponds to open order for given
     /// `market_id`.
     ///
-    /// Kept private to prevent runtime order book state contention.
-    ///
     /// # Testing
     ///
     /// * `test_change_order_size_ask_custodian()`
     /// * `test_change_order_size_bid_user()`
     /// * `test_has_open_order_no_market()`
-    fun has_open_order(
+    public fun has_open_order(
         market_id: u64,
         order_id: u128
     ): bool
@@ -1705,6 +1697,60 @@ module econia::market {
             side,
             market_order_id,
             new_size);
+    }
+
+    public fun get_order_view_fields(
+        order_view_ref: &OrderView
+    ): (
+        u64,
+        bool,
+        u128,
+        u64,
+        u64,
+        address,
+        u64,
+    ) {
+        (
+            order_view_ref.market_id,
+            order_view_ref.side,
+            order_view_ref.order_id,
+            order_view_ref.remaining_size,
+            order_view_ref.price,
+            order_view_ref.user,
+            order_view_ref.custodian_id
+        )
+    }
+
+    public fun get_orders_view_fields(
+        orders_view_ref: &OrdersView
+    ): (
+        &vector<OrderView>,
+        &vector<OrderView>
+    ) {
+        (&orders_view_ref.asks, &orders_view_ref.bids)
+    }
+
+    public fun get_price_levels_fields(
+        price_levels_ref: &PriceLevels
+    ): (
+        u64,
+        &vector<PriceLevel>,
+        &vector<PriceLevel>
+    ) {
+        (
+            price_levels_ref.market_id,
+            &price_levels_ref.asks,
+            &price_levels_ref.bids
+        )
+    }
+
+    public fun get_price_level_fields(
+        price_level_ref: &PriceLevel
+    ): (
+        u64,
+        u128
+    ) {
+        (price_level_ref.price, price_level_ref.size)
     }
 
     /// Public function wrapper for `place_limit_order()` for placing

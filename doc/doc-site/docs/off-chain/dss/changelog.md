@@ -12,6 +12,23 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 1. Merge `main` into `dss-stable`.
 1. Push annotated tag to head of `dss-stable`.
 
+## [v1.6.0]
+
+### Added
+
+- Assorted CoinGecko endpoints ([#675]).
+- Assorted TVL endpoints ([#670], [#674]).
+- Price conversion endpoint ([#672]).
+- Assorted volume endpoints ([#669], [#682]).
+- Grafana annotation support ([#667]).
+
+### Changed
+
+- Make `/user_balances` endpoint a pipeline ([#685], [#688]).
+- Grant `SELECT` on `api.coins` to `web_anon` and `grafana` ([#687], [#688]).
+- Reduce aggregator memory consumption via batched operations ([#688], [#689]).
+- Make rolling volume a default pipeline ([#683], [#684]).
+
 ## [v1.5.0]
 
 ### Added
@@ -93,10 +110,24 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 [#663]: https://github.com/econia-labs/econia/pull/663
 [#664]: https://github.com/econia-labs/econia/pull/664
 [#665]: https://github.com/econia-labs/econia/pull/665
+[#667]: https://github.com/econia-labs/econia/pull/667
+[#669]: https://github.com/econia-labs/econia/pull/669
+[#670]: https://github.com/econia-labs/econia/pull/670
+[#672]: https://github.com/econia-labs/econia/pull/672
+[#674]: https://github.com/econia-labs/econia/pull/674
+[#675]: https://github.com/econia-labs/econia/pull/675
+[#682]: https://github.com/econia-labs/econia/pull/682
+[#683]: https://github.com/econia-labs/econia/pull/683
+[#684]: https://github.com/econia-labs/econia/pull/684
+[#685]: https://github.com/econia-labs/econia/pull/685
+[#687]: https://github.com/econia-labs/econia/pull/687
+[#688]: https://github.com/econia-labs/econia/pull/688
+[#689]: https://github.com/econia-labs/econia/pull/689
 [processor #19]: https://github.com/econia-labs/aptos-indexer-processors/pull/19
 [processor #20]: https://github.com/econia-labs/aptos-indexer-processors/pull/20
 [processor #21]: https://github.com/econia-labs/aptos-indexer-processors/pull/21
 [v1.3.0]: https://github.com/econia-labs/econia/releases/tag/dss-v1.3.0
 [v1.4.0]: https://github.com/econia-labs/econia/compare/dss-v1.3.0...dss-v1.4.0
 [v1.5.0]: https://github.com/econia-labs/econia/compare/dss-v1.4.0...dss-v1.5.0
+[v1.6.0]: https://github.com/econia-labs/econia/compare/dss-v1.5.0...dss-v1.6.0
 [`dss-stable`]: https://github.com/econia-labs/econia/tree/dss-stable

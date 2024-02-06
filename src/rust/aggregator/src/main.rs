@@ -8,7 +8,10 @@ use aggregator::Pipeline;
 use anyhow::{anyhow, Result};
 use aptos_sdk::rest_client::AptosBaseUrl;
 use clap::{Parser, ValueEnum};
-use pipelines::{Candlesticks, Coins, Leaderboards, OrderHistory, RefreshMaterializedView, RollingVolume, UserHistory};
+use pipelines::{
+    Candlesticks, Coins, EnumeratedVolume, Leaderboards, OrderHistory, RefreshMaterializedView,
+    RollingVolume, UserBalances, UserHistory,
+};
 use sqlx::Executor;
 use sqlx_postgres::PgPoolOptions;
 use tokio::{sync::Mutex, task::JoinSet};
@@ -41,14 +44,20 @@ struct Args {
     aptos_network: Option<AptosNetwork>,
 }
 
+const MAX_BATCH_SIZE: u64 = 100_000;
+
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 pub enum Pipelines {
     Candlesticks,
     Coins,
+    EnumeratedVolume,
     Leaderboards,
     Market24hData,
     OrderHistory,
     RollingVolume,
+    TvlPerAsset,
+    TvlPerMarket,
+    UserBalances,
     UserHistory,
 }
 
@@ -161,10 +170,12 @@ async fn main() -> Result<()> {
 
     let env_config: EnvConfig = EnvConfig::new();
 
-    let network = env_config.aptos_network.unwrap_or_else(|| args.aptos_network.unwrap_or_else(|| {
-        tracing::warn!("APTOS_NETWORK is not set. Using AptosNetwork::Testnet by default.");
-        AptosNetwork::Testnet
-    }));
+    let network = env_config.aptos_network.unwrap_or_else(|| {
+        args.aptos_network.unwrap_or_else(|| {
+            tracing::warn!("APTOS_NETWORK is not set. Using AptosNetwork::Testnet by default.");
+            AptosNetwork::Testnet
+        })
+    });
 
     let database_url = env_config.database_url.unwrap_or_else(|| {
         args.database_url.unwrap_or_else(|| {
@@ -173,34 +184,38 @@ async fn main() -> Result<()> {
         })
     });
 
-    let pipelines =
-        if env_config.no_default || args.no_default {
-            let mut include = env_config.include.clone();
-            include.append(&mut args.include);
-            include.sort();
-            include.dedup();
-            if include.is_empty() {
-                    tracing::error!("No pipelines are included and --no-default is set.");
-                    panic!();
-            }
-            include
-        } else {
-            let mut x = vec![
-                Pipelines::Candlesticks,
-                Pipelines::Coins,
-                Pipelines::Market24hData,
-                Pipelines::UserHistory,
-            ];
-            let mut exclude = env_config.exclude.clone();
-            let mut include = env_config.include.clone();
-            exclude.append(&mut args.exclude);
-            include.append(&mut args.include);
-            x = x.into_iter().filter(|a| !exclude.contains(a)).collect();
-            x.append(&mut include);
-            x.sort();
-            x.dedup();
-            x
-        };
+    let pipelines = if env_config.no_default || args.no_default {
+        let mut include = env_config.include.clone();
+        include.append(&mut args.include);
+        include.sort();
+        include.dedup();
+        if include.is_empty() {
+            tracing::error!("No pipelines are included and --no-default is set.");
+            panic!();
+        }
+        include
+    } else {
+        let mut x = vec![
+            Pipelines::Candlesticks,
+            Pipelines::Coins,
+            Pipelines::EnumeratedVolume,
+            Pipelines::Market24hData,
+            Pipelines::UserBalances,
+            Pipelines::RollingVolume,
+            Pipelines::UserHistory,
+            Pipelines::TvlPerAsset,
+            Pipelines::TvlPerMarket,
+        ];
+        let mut exclude = env_config.exclude.clone();
+        let mut include = env_config.include.clone();
+        exclude.append(&mut args.exclude);
+        include.append(&mut args.include);
+        x = x.into_iter().filter(|a| !exclude.contains(a)).collect();
+        x.append(&mut include);
+        x.sort();
+        x.dedup();
+        x
+    };
     tracing::info!("Using pipelines {pipelines:?}.");
     tracing::info!("Using network {network:?}.");
 
@@ -260,6 +275,9 @@ async fn main() -> Result<()> {
                     network.to_base_url(),
                 ))));
             }
+            Pipelines::EnumeratedVolume => {
+                data.push(Arc::new(Mutex::new(EnumeratedVolume::new(pool.clone()))))
+            }
             Pipelines::Leaderboards => {
                 data.push(Arc::new(Mutex::new(Leaderboards::new(pool.clone()))));
             }
@@ -270,10 +288,31 @@ async fn main() -> Result<()> {
                     Duration::from_secs(5 * 60),
                 ))))
             }
-            Pipelines::OrderHistory => data.push(Arc::new(Mutex::new(OrderHistory::new(pool.clone())))),
-            Pipelines::RollingVolume => data.push(Arc::new(Mutex::new(RollingVolume::new(pool.clone())))),
+            Pipelines::OrderHistory => {
+                data.push(Arc::new(Mutex::new(OrderHistory::new(pool.clone()))))
+            }
+            Pipelines::RollingVolume => {
+                data.push(Arc::new(Mutex::new(RollingVolume::new(pool.clone()))))
+            }
+            Pipelines::UserBalances => {
+                data.push(Arc::new(Mutex::new(UserBalances::new(pool.clone()))));
+            }
             Pipelines::UserHistory => {
                 data.push(Arc::new(Mutex::new(UserHistory::new(pool.clone()))));
+            }
+            Pipelines::TvlPerAsset => {
+                data.push(Arc::new(Mutex::new(RefreshMaterializedView::new(
+                    pool.clone(),
+                    "aggregator.tvl_per_asset",
+                    Duration::from_secs(60),
+                ))));
+            }
+            Pipelines::TvlPerMarket => {
+                data.push(Arc::new(Mutex::new(RefreshMaterializedView::new(
+                    pool.clone(),
+                    "aggregator.tvl_per_market",
+                    Duration::from_secs(60),
+                ))));
             }
         }
     }

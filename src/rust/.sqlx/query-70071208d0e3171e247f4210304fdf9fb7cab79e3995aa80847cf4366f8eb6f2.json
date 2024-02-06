@@ -1,0 +1,20 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT\n    txn_version\nFROM\n    aggregator.user_balances_last_indexed_txn\n",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "txn_version",
+        "type_info": "Numeric"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "70071208d0e3171e247f4210304fdf9fb7cab79e3995aa80847cf4366f8eb6f2"
+}

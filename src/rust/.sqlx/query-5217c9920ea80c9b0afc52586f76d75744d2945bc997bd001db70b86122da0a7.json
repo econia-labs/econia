@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "REFRESH MATERIALIZED VIEW aggregator.enumerated_volume_24h",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "5217c9920ea80c9b0afc52586f76d75744d2945bc997bd001db70b86122da0a7"
+}

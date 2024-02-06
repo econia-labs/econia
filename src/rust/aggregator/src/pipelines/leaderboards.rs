@@ -3,7 +3,10 @@ use bigdecimal::{BigDecimal, Zero};
 use chrono::{DateTime, Duration, Utc};
 use sqlx::{PgConnection, PgPool, Postgres, Transaction};
 
-use aggregator::{Pipeline, PipelineAggregationResult, PipelineError, util::{commit_transaction, create_repeatable_read_transaction}};
+use aggregator::{
+    util::{commit_transaction, create_repeatable_read_transaction},
+    Pipeline, PipelineAggregationResult, PipelineError,
+};
 
 pub const TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
 

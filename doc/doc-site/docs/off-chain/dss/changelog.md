@@ -24,8 +24,8 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 
 ### Changed
 
-- Make `/user_balances` endpoint a pipeline ([#685], [#688]).
-- Grant `SELECT` on `api.coins` to `web_anon` and `grafana` ([#687], [#688]).
+- Optimize `/user_balances` queries ([#685], [#688]).
+- Allow `/coins` endpoint to be queried from assorted PostgreSQL roles ([#687], [#688]).
 - Reduce aggregator memory consumption via batched operations ([#688], [#689]).
 - Make rolling volume a default pipeline ([#683], [#684]).
 

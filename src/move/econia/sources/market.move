@@ -1730,6 +1730,15 @@ module econia::market {
         (&orders_view_ref.asks, &orders_view_ref.bids)
     }
 
+    public fun get_price_level_fields(
+        price_level_ref: &PriceLevel
+    ): (
+        u64,
+        u128
+    ) {
+        (price_level_ref.price, price_level_ref.size)
+    }
+
     public fun get_price_levels_fields(
         price_levels_ref: &PriceLevels
     ): (
@@ -1742,15 +1751,6 @@ module econia::market {
             &price_levels_ref.asks,
             &price_levels_ref.bids
         )
-    }
-
-    public fun get_price_level_fields(
-        price_level_ref: &PriceLevel
-    ): (
-        u64,
-        u128
-    ) {
-        (price_level_ref.price, price_level_ref.size)
     }
 
     /// Public function wrapper for `place_limit_order()` for placing

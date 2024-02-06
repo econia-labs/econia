@@ -1,3 +1,5 @@
+//! Misc error types.
+
 use aptos_sdk::{
     bcs,
     crypto::CryptoMaterialError,

@@ -3,7 +3,10 @@ use chrono::{DateTime, Duration, Utc};
 use sqlx::PgPool;
 use sqlx_postgres::PgConnection;
 
-use aggregator::{Pipeline, PipelineAggregationResult, PipelineError, util::{commit_transaction, create_repeatable_read_transaction}};
+use aggregator::{
+    util::{commit_transaction, create_repeatable_read_transaction},
+    Pipeline, PipelineAggregationResult, PipelineError,
+};
 
 pub struct Candlesticks {
     pool: PgPool,

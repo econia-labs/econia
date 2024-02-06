@@ -1,6 +1,7 @@
 WITH parameters AS (
     SELECT
-        $1::numeric AS max_txn_version
+        $1::numeric AS txn_version_start,
+        $2::numeric AS txn_version_stop
 )
 SELECT
     *
@@ -8,7 +9,9 @@ FROM
     parameters,
     fill_events
 WHERE
-    txn_version > max_txn_version
+    txn_version > txn_version_start
+AND
+    txn_version <= txn_version_stop
 ORDER BY
     txn_version,
     event_idx

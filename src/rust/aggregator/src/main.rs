@@ -9,8 +9,8 @@ use anyhow::{anyhow, Result};
 use aptos_sdk::rest_client::AptosBaseUrl;
 use clap::{Parser, ValueEnum};
 use pipelines::{
-    Candlesticks, Coins, EnumeratedVolume, Leaderboards, OrderHistory, RefreshMaterializedView,
-    RollingVolume, UserBalances, UserHistory,
+    Candlesticks, Coins, EnumeratedVolume, Fees, Leaderboards, OrderHistory,
+    RefreshMaterializedView, RollingVolume, UserBalances, UserHistory,
 };
 use sqlx::Executor;
 use sqlx_postgres::PgPoolOptions;
@@ -51,6 +51,7 @@ pub enum Pipelines {
     Candlesticks,
     Coins,
     EnumeratedVolume,
+    Fees,
     Leaderboards,
     Market24hData,
     OrderHistory,
@@ -199,6 +200,7 @@ async fn main() -> Result<()> {
             Pipelines::Candlesticks,
             Pipelines::Coins,
             Pipelines::EnumeratedVolume,
+            Pipelines::Fees,
             Pipelines::Market24hData,
             Pipelines::UserBalances,
             Pipelines::RollingVolume,
@@ -278,6 +280,7 @@ async fn main() -> Result<()> {
             Pipelines::EnumeratedVolume => {
                 data.push(Arc::new(Mutex::new(EnumeratedVolume::new(pool.clone()))))
             }
+            Pipelines::Fees => data.push(Arc::new(Mutex::new(Fees::new(pool.clone())))),
             Pipelines::Leaderboards => {
                 data.push(Arc::new(Mutex::new(Leaderboards::new(pool.clone()))));
             }

@@ -16,7 +16,7 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 
 ### Fixed
 
-- Processing of events that are not a struct type ([#694], [processor #22])
+- Processing of events that are not a struct type ([#694], [processor #22]).
 
 ## [v1.6.0]
 

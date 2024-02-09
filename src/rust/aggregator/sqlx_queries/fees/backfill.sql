@@ -1,8 +1,8 @@
 INSERT INTO aggregator.fees
 WITH fees AS (
   SELECT
-    sum(taker_quote_fees_paid) AS fees,
-    date_trunc('hour', "time") as "time",
+    sum(taker_quote_fees_paid) AS fees_in_quote_subunits,
+    date_trunc('hour', "time") as start_time_1hr_period,
     market_id
   FROM
     fill_events f
@@ -13,12 +13,12 @@ WITH fees AS (
     date_trunc('hour', "time")
 )
 SELECT
-  "time",
+  start_time_1hr_period,
   market_id,
-  fees
+  fees_in_quote_subunits
 FROM
   fees
 ORDER BY
-  "time"
+  start_time_1hr_period
 ON CONFLICT ON CONSTRAINT fees_pkey DO UPDATE SET
-  amount = fees.amount + EXCLUDED.amount;
+  fees_in_quote_subunits = fees.fees_in_quote_subunits + EXCLUDED.fees_in_quote_subunits;

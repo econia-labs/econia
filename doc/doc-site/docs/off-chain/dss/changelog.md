@@ -12,6 +12,12 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 1. Merge `main` into `dss-stable`.
 1. Push annotated tag to head of `dss-stable`.
 
+## [v1.6.1]
+
+### Fixed
+
+- Processing of events that are not a struct type ([#694], [processor #22])
+
 ## [v1.6.0]
 
 ### Added
@@ -123,11 +129,14 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 [#687]: https://github.com/econia-labs/econia/pull/687
 [#688]: https://github.com/econia-labs/econia/pull/688
 [#689]: https://github.com/econia-labs/econia/pull/689
+[#694]: https://github.com/econia-labs/econia/pull/694
 [processor #19]: https://github.com/econia-labs/aptos-indexer-processors/pull/19
 [processor #20]: https://github.com/econia-labs/aptos-indexer-processors/pull/20
 [processor #21]: https://github.com/econia-labs/aptos-indexer-processors/pull/21
+[processor #22]: https://github.com/econia-labs/aptos-indexer-processors/pull/22
 [v1.3.0]: https://github.com/econia-labs/econia/releases/tag/dss-v1.3.0
 [v1.4.0]: https://github.com/econia-labs/econia/compare/dss-v1.3.0...dss-v1.4.0
 [v1.5.0]: https://github.com/econia-labs/econia/compare/dss-v1.4.0...dss-v1.5.0
 [v1.6.0]: https://github.com/econia-labs/econia/compare/dss-v1.5.0...dss-v1.6.0
+[v1.6.1]: https://github.com/econia-labs/econia/compare/dss-v1.6.0...dss-v1.6.1
 [`dss-stable`]: https://github.com/econia-labs/econia/tree/dss-stable

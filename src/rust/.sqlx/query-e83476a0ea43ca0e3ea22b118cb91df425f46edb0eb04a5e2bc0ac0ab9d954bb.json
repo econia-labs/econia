@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO aggregator.fees\nWITH fees AS (\n  SELECT\n    sum(taker_quote_fees_paid) AS fees_in_quote_subunits,\n    date_trunc('hour', \"time\") as start_time_1hr_period,\n    market_id\n  FROM\n    fill_events f\n  WHERE ((SELECT * FROM aggregator.fees_last_indexed_txn) IS NULL OR f.txn_version > (SELECT * FROM aggregator.fees_last_indexed_txn))\n  AND emit_address = maker_address\n  GROUP BY\n    market_id,\n    date_trunc('hour', \"time\")\n)\nSELECT\n  start_time_1hr_period,\n  market_id,\n  fees_in_quote_subunits\nFROM\n  fees\nORDER BY\n  start_time_1hr_period\nON CONFLICT ON CONSTRAINT fees_pkey DO UPDATE SET\n  fees_in_quote_subunits = fees.fees_in_quote_subunits + EXCLUDED.fees_in_quote_subunits;\n",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "e83476a0ea43ca0e3ea22b118cb91df425f46edb0eb04a5e2bc0ac0ab9d954bb"
+}

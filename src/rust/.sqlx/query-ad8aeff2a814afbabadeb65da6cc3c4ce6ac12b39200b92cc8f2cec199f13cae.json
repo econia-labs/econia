@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM aggregator.prices_last_indexed_txn;\n",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "ad8aeff2a814afbabadeb65da6cc3c4ce6ac12b39200b92cc8f2cec199f13cae"
+}

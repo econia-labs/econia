@@ -6,6 +6,7 @@ pub mod markets;
 pub mod order_history;
 pub mod refresh_materialized_view;
 pub mod rolling_volume;
+pub mod prices;
 pub mod user_balances;
 pub mod user_history;
 
@@ -15,6 +16,7 @@ pub use enumerated_volume::EnumeratedVolume;
 pub use leaderboards::Leaderboards;
 pub use markets::MarketsRegisteredPerDay;
 pub use order_history::OrderHistory;
+pub use prices::Prices;
 pub use refresh_materialized_view::RefreshMaterializedView;
 pub use rolling_volume::RollingVolume;
 pub use user_balances::UserBalances;

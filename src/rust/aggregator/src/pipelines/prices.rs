@@ -46,14 +46,16 @@ impl Pipeline for Prices {
             .await
             .map_err(to_pipeline_error)?;
 
-        sqlx::query_file!("sqlx_queries/prices/delete_last_indexed_timestamp.sql",)
+        let res = sqlx::query_file!("sqlx_queries/prices/update_last_indexed_timestamp.sql",)
             .execute(&mut transaction as &mut PgConnection)
             .await
             .map_err(to_pipeline_error)?;
-        sqlx::query_file!("sqlx_queries/prices/update_last_indexed_timestamp.sql",)
-            .execute(&mut transaction as &mut PgConnection)
-            .await
-            .map_err(to_pipeline_error)?;
+        if res.rows_affected() == 0 {
+            sqlx::query_file!("sqlx_queries/prices/insert_last_indexed_timestamp.sql",)
+                .execute(&mut transaction as &mut PgConnection)
+                .await
+                .map_err(to_pipeline_error)?;
+        }
         commit_transaction(transaction).await?;
         Ok(())
     }

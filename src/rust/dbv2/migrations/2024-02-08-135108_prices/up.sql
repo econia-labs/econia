@@ -1,10 +1,10 @@
 -- Your SQL goes here
 CREATE TABLE aggregator.prices (
     "market_id" NUMERIC(20,0),
-    "time" TIMESTAMPTZ,
+    "start_time_1m_period" TIMESTAMPTZ,
     "price" NUMERIC(20,0) NOT NULL,
-    "weight" NUMERIC(20,0) NOT NULL,
-    PRIMARY KEY ("market_id", "time")
+    "sum_fill_size_1m_period" NUMERIC(20,0) NOT NULL,
+    PRIMARY KEY ("market_id", "start_time_1m_period")
 );
 
 

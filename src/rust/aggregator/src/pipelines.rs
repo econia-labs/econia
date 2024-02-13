@@ -1,6 +1,7 @@
 pub mod candlesticks;
 pub mod coins;
 pub mod enumerated_volume;
+pub mod fees;
 pub mod leaderboards;
 pub mod markets;
 pub mod order_history;
@@ -13,6 +14,7 @@ pub mod user_history;
 pub use candlesticks::Candlesticks;
 pub use coins::Coins;
 pub use enumerated_volume::EnumeratedVolume;
+pub use fees::Fees;
 pub use leaderboards::Leaderboards;
 pub use markets::MarketsRegisteredPerDay;
 pub use order_history::OrderHistory;

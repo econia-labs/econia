@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "-- We can assume that everything before this timestamp was indexed, since\n-- there's nothing to index.\nINSERT INTO aggregator.spreads_last_indexed_timestamp (\"time\")\nSELECT\n    DATE_TRUNC('minute', \"time\")\nFROM\n    place_limit_order_events\nORDER BY\n    \"time\"\nLIMIT 1\n",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "cc462e52c6ec09a136bf9357d4434ff325cd3a56926fa1e7829e552ab8eeac9c"
+}

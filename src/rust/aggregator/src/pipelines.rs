@@ -5,9 +5,10 @@ pub mod fees;
 pub mod leaderboards;
 pub mod markets;
 pub mod order_history;
+pub mod prices;
 pub mod refresh_materialized_view;
 pub mod rolling_volume;
-pub mod prices;
+pub mod spreads;
 pub mod user_balances;
 pub mod user_history;
 
@@ -21,5 +22,6 @@ pub use order_history::OrderHistory;
 pub use prices::Prices;
 pub use refresh_materialized_view::RefreshMaterializedView;
 pub use rolling_volume::RollingVolume;
+pub use spreads::Spreads;
 pub use user_balances::UserBalances;
 pub use user_history::UserHistory;

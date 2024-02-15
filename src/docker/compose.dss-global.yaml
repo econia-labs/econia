@@ -13,4 +13,3 @@ services:
       extends:
         file: compose.processor-template.yaml
         service: processor-template
-      restart: unless-stopped

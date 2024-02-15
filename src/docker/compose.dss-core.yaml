@@ -20,7 +20,6 @@ services:
       DATABASE_URL: "postgres://econia:econia@postgres:5432/econia"
     restart: unless-stopped
 
-
   grafana_annotations:
     build:
       context: ../../

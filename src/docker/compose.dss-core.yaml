@@ -45,7 +45,7 @@ services:
       PGRST_DB_URI: "postgres://econia:econia@postgres:5432/econia"
       PGRST_DB_ANON_ROLE: web_anon
       PGRST_DB_SCHEMA: api
-      PGRST_DB_MAX_ROWS: 500
+      PGRST_DB_MAX_ROWS: ${POSTGREST_MAX_ROWS}
     image: postgrest/postgrest
     ports:
       - "3000:3000"

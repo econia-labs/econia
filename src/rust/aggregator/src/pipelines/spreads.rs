@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use anyhow::bail;
 use bigdecimal::{BigDecimal, Zero};
 use chrono::{DateTime, Duration, Utc};
 use sqlx::{PgConnection, PgPool, Transaction};
@@ -10,6 +11,8 @@ use sqlx_postgres::Postgres;
 use crate::MAX_BATCH_SIZE;
 
 pub const TIMEOUT: std::time::Duration = std::time::Duration::from_secs(1);
+
+const ASK: bool = true;
 
 pub struct Spreads {
     pool: PgPool,
@@ -27,21 +30,14 @@ impl Spreads {
     }
 }
 
+// The first element is market_id, the second one is order_id.
+// This allows us to uniquely identify an order.
 type OrderKey = (BigDecimal, BigDecimal);
 
 #[derive(Clone)]
 struct SpreadsState {
     orders: HashMap<OrderKey, Order>,
     last_txn_indexed: BigDecimal,
-}
-
-impl SpreadsState {
-    pub fn new(last_txn: BigDecimal, orders: HashMap<OrderKey, Order>) -> Self {
-        Self {
-            last_txn_indexed: last_txn,
-            orders,
-        }
-    }
 }
 
 impl Default for SpreadsState {
@@ -112,12 +108,14 @@ impl Spreads {
     /// Given a previous state (and the last transaction version included in that state), computes
     /// the new state at the given timestamp.
     async fn get_state_from_timestamp_with_state<'a>(
-        &self,
-        mut orders: HashMap<OrderKey, Order>,
-        mut txn_version_of_state: BigDecimal,
+        &mut self,
         timestamp: &DateTime<Utc>,
         transaction: &mut Transaction<'a, Postgres>,
-    ) -> Result<SpreadsState, PipelineError> {
+    ) -> Result<(), PipelineError> {
+        let SpreadsState {
+            orders,
+            last_txn_indexed: txn_version_of_state,
+        } = self.state.get_or_insert(Default::default());
         loop {
             // Get the biggest transaction version that happened before the given timestamp.
             let txn_version = sqlx::query_file!(
@@ -130,8 +128,8 @@ impl Spreads {
             .txn_version
             .unwrap_or(BigDecimal::zero());
 
-            if txn_version == txn_version_of_state {
-                return Ok(SpreadsState::new(txn_version, orders));
+            if txn_version == *txn_version_of_state {
+                return Ok(());
             }
 
             // Limit the number of transactions that will be processed in one batch. Not limiting this
@@ -144,7 +142,7 @@ impl Spreads {
             let places = sqlx::query_file_as!(
                 Order,
                 "sqlx_queries/spreads/get_place_limit_order_events_between_txn_versions.sql",
-                txn_version_of_state,
+                *txn_version_of_state,
                 txn_version,
             )
             .fetch_all(transaction as &mut PgConnection)
@@ -156,7 +154,7 @@ impl Spreads {
             let fills = sqlx::query_file_as!(
                 Fill,
                 "sqlx_queries/spreads/get_fill_events_between_txn_versions.sql",
-                txn_version_of_state,
+                *txn_version_of_state,
                 txn_version
             )
             .fetch_all(transaction as &mut PgConnection)
@@ -168,7 +166,7 @@ impl Spreads {
             let changes = sqlx::query_file_as!(
                 Change,
                 "sqlx_queries/spreads/get_change_order_size_events_between_txn_versions.sql",
-                txn_version_of_state,
+                *txn_version_of_state,
                 txn_version
             )
             .fetch_all(transaction as &mut PgConnection)
@@ -179,7 +177,7 @@ impl Spreads {
             // state and the last transaction that happened before the given timestamp.
             let cancels = sqlx::query_file!(
                 "sqlx_queries/spreads/get_cancel_order_events_between_txn_versions.sql",
-                txn_version_of_state,
+                *txn_version_of_state,
                 txn_version
             )
             .fetch_all(transaction as &mut PgConnection)
@@ -217,47 +215,52 @@ impl Spreads {
                 };
                 match (f, c) {
                     (Some(fill), None) => {
-                        handle_fill(fill, &mut orders, &mut fills_index);
+                        handle_fill(fill, orders, &mut fills_index);
                     }
                     (None, Some(change)) => {
-                        handle_change(change, &mut orders, &mut changes_index);
+                        handle_change(change, orders, &mut changes_index);
                     }
                     _ => unreachable!(),
                 };
             }
 
-            txn_version_of_state = txn_version;
+            *txn_version_of_state = txn_version;
         }
     }
-    fn get_spreads_form_state<'a>(
+    fn get_spreads_from_state<'a>(
         &self,
-        orders: &HashMap<OrderKey, Order>,
-    ) -> (HashMap<BigDecimal, BigDecimal>, HashMap<BigDecimal, BigDecimal>) {
-
+    ) -> anyhow::Result<(
+        HashMap<BigDecimal, BigDecimal>,
+        HashMap<BigDecimal, BigDecimal>,
+    )> {
         let mut min_asks: HashMap<BigDecimal, BigDecimal> = Default::default();
         let mut max_bids: HashMap<BigDecimal, BigDecimal> = Default::default();
 
-        for element in orders.values().cloned() {
-            if element.side {
-                if let Some(min) = min_asks.get(&element.market_id).clone() {
-                    if min > &element.price {
-                        min_asks.insert(element.market_id, element.price);
+        if let Some(state) = &self.state {
+            for element in state.orders.values() {
+                if element.side == ASK {
+                    if let Some(min) = min_asks.get(&element.market_id) {
+                        if *min > element.price {
+                            min_asks.insert(element.market_id.clone(), element.price.clone());
+                        }
+                    } else {
+                        min_asks.insert(element.market_id.clone(), element.price.clone());
                     }
                 } else {
-                    min_asks.insert(element.market_id, element.price);
-                }
-            } else {
-                if let Some(max) = max_bids.get(&element.market_id).clone() {
-                    if max < &element.price {
-                        max_bids.insert(element.market_id, element.price);
+                    if let Some(max) = max_bids.get(&element.market_id) {
+                        if *max < element.price {
+                            max_bids.insert(element.market_id.clone(), element.price.clone());
+                        }
+                    } else {
+                        max_bids.insert(element.market_id.clone(), element.price.clone());
                     }
-                } else {
-                    max_bids.insert(element.market_id, element.price);
                 }
             }
-        }
 
-        (min_asks, max_bids)
+            Ok((min_asks, max_bids))
+        } else {
+            bail!("State is not yet computed.")
+        }
     }
 }
 #[async_trait::async_trait]
@@ -321,26 +324,12 @@ impl Pipeline for Spreads {
         if timestamps.len() == 0 {
             return Ok(());
         }
-        let mut state = self.state.clone().unwrap_or_default();
         for timestamp in &timestamps {
-            state = if state.orders.is_empty() && state.last_txn_indexed == BigDecimal::zero() {
-                self.get_state_from_timestamp_with_state(
-                    state.orders,
-                    BigDecimal::zero(),
-                    timestamp,
-                    &mut transaction,
-                )
-                .await?
-            } else {
-                self.get_state_from_timestamp_with_state(
-                    state.orders,
-                    state.last_txn_indexed.clone(),
-                    timestamp,
-                    &mut transaction,
-                )
-                .await?
-            };
-            let (min_asks, max_bids) = self.get_spreads_form_state(&state.orders);
+            self.get_state_from_timestamp_with_state(timestamp, &mut transaction)
+                .await?;
+            let (min_asks, max_bids) = self
+                .get_spreads_from_state()
+                .map_err(|e| PipelineError::ProcessingError(e))?;
             let mut markets = min_asks.keys().chain(max_bids.keys()).collect::<Vec<_>>();
             markets.sort();
             markets.dedup();
@@ -367,7 +356,6 @@ impl Pipeline for Spreads {
             .map_err(to_pipeline_error)?;
         }
         commit_transaction(transaction).await?;
-        self.state = Some(state);
         Ok(())
     }
 }

@@ -9,8 +9,8 @@ use anyhow::{anyhow, Result};
 use aptos_sdk::rest_client::AptosBaseUrl;
 use clap::{Parser, ValueEnum};
 use pipelines::{
-    Candlesticks, Coins, EnumeratedVolume, Fees, Leaderboards, OrderHistory, Prices, RefreshMaterializedView,
-    RollingVolume, Spreads, UserBalances, UserHistory,
+    Candlesticks, Coins, EnumeratedVolume, Fees, Leaderboards, OrderHistory, Prices,
+    RefreshMaterializedView, RollingVolume, Spreads, UserBalances, UserHistory,
 };
 use sqlx::Executor;
 use sqlx_postgres::PgPoolOptions;
@@ -298,9 +298,7 @@ async fn main() -> Result<()> {
             Pipelines::OrderHistory => {
                 data.push(Arc::new(Mutex::new(OrderHistory::new(pool.clone()))))
             }
-            Pipelines::Prices => {
-                data.push(Arc::new(Mutex::new(Prices::new(pool.clone()))))
-            }
+            Pipelines::Prices => data.push(Arc::new(Mutex::new(Prices::new(pool.clone())))),
             Pipelines::RollingVolume => {
                 data.push(Arc::new(Mutex::new(RollingVolume::new(pool.clone()))))
             }

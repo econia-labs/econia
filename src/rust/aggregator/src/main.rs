@@ -9,8 +9,8 @@ use anyhow::{anyhow, Result};
 use aptos_sdk::rest_client::AptosBaseUrl;
 use clap::{Parser, ValueEnum};
 use pipelines::{
-    Candlesticks, Coins, EnumeratedVolume, Fees, Leaderboards, OrderHistory, Prices, RefreshMaterializedView,
-    RollingVolume, UserBalances, UserHistory,
+    Candlesticks, Coins, EnumeratedVolume, Fees, Leaderboards, OrderHistory, Prices,
+    RefreshMaterializedView, RollingVolume, Spreads, UserBalances, UserHistory,
 };
 use sqlx::Executor;
 use sqlx_postgres::PgPoolOptions;
@@ -57,6 +57,7 @@ pub enum Pipelines {
     OrderHistory,
     Prices,
     RollingVolume,
+    Spreads,
     TvlPerAsset,
     TvlPerMarket,
     UserBalances,
@@ -207,6 +208,7 @@ async fn main() -> Result<()> {
             Pipelines::RollingVolume,
             Pipelines::UserBalances,
             Pipelines::UserHistory,
+            Pipelines::Spreads,
             Pipelines::TvlPerAsset,
             Pipelines::TvlPerMarket,
         ];
@@ -296,17 +298,12 @@ async fn main() -> Result<()> {
             Pipelines::OrderHistory => {
                 data.push(Arc::new(Mutex::new(OrderHistory::new(pool.clone()))))
             }
-            Pipelines::Prices => {
-                data.push(Arc::new(Mutex::new(Prices::new(pool.clone()))))
-            }
+            Pipelines::Prices => data.push(Arc::new(Mutex::new(Prices::new(pool.clone())))),
             Pipelines::RollingVolume => {
                 data.push(Arc::new(Mutex::new(RollingVolume::new(pool.clone()))))
             }
-            Pipelines::UserBalances => {
-                data.push(Arc::new(Mutex::new(UserBalances::new(pool.clone()))));
-            }
-            Pipelines::UserHistory => {
-                data.push(Arc::new(Mutex::new(UserHistory::new(pool.clone()))));
+            Pipelines::Spreads => {
+                data.push(Arc::new(Mutex::new(Spreads::new(pool.clone()))));
             }
             Pipelines::TvlPerAsset => {
                 data.push(Arc::new(Mutex::new(RefreshMaterializedView::new(
@@ -321,6 +318,12 @@ async fn main() -> Result<()> {
                     "aggregator.tvl_per_market",
                     Duration::from_secs(60),
                 ))));
+            }
+            Pipelines::UserBalances => {
+                data.push(Arc::new(Mutex::new(UserBalances::new(pool.clone()))));
+            }
+            Pipelines::UserHistory => {
+                data.push(Arc::new(Mutex::new(UserHistory::new(pool.clone()))));
             }
         }
     }

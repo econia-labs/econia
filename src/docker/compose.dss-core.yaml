@@ -18,6 +18,7 @@ services:
     environment:
       APTOS_NETWORK: ${APTOS_NETWORK}
       DATABASE_URL: "postgres://econia:econia@postgres:5432/econia"
+    restart: unless-stopped
 
   grafana_annotations:
     build:
@@ -43,9 +44,11 @@ services:
       PGRST_DB_URI: "postgres://econia:econia@postgres:5432/econia"
       PGRST_DB_ANON_ROLE: web_anon
       PGRST_DB_SCHEMA: api
+      PGRST_DB_MAX_ROWS: ${POSTGREST_MAX_ROWS}
     image: postgrest/postgrest
     ports:
       - "3000:3000"
+    restart: unless-stopped
 
   ws:
     build:
@@ -66,3 +69,4 @@ services:
       - PGWS_LISTEN_CHANNEL=econiaws
     ports:
       - "3001:3000"
+    restart: unless-stopped

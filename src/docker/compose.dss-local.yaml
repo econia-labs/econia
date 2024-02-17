@@ -1,8 +1,5 @@
 version: "3.9"
 
-include:
-  - compose.dss-core.yaml
-
 services:
   streamer:
     build:
@@ -17,11 +14,4 @@ services:
   processor:
     depends_on:
       streamer:
-        condition: service_started
-      diesel:
-        condition: service_completed_successfully
-    environment:
-      - HEALTHCHECK_BEFORE_START=true
-    extends:
-      file: compose.processor-template.yaml
-      service: processor-template
+        condition: service_healthy

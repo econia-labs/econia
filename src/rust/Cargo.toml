@@ -8,7 +8,7 @@ members = [
   "e2e/metadata",
   "types",
   "sdk",
-  "sdk/example",
+  "sdk/example", "mqtt-publisher",
 ]
 exclude = ["api", "db", "dependencies"]
 

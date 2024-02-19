@@ -12,7 +12,6 @@ profile = "black"
 [tool.poetry.dependencies]
 aptos-sdk = "^0.6.4"
 python = "^3.8"
-websocket-client = "^1.6.3"
 httpx = "0.23.0"
 rel = "^0.4.9"
 pyjwt = "1.7.1"

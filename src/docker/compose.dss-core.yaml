@@ -1,7 +1,5 @@
 version: "3.9"
 
-# The processor is kept in its own template file since it needs to be
-# configured differently when running against a local vs public chain.
 services:
   aggregator:
     build:
@@ -42,11 +40,11 @@ services:
       - "./grafana_annotations/annotations.csv:/annotations.csv"
 
   mosquitto:
-    image: eclipse-mosquitto:2.0.18-openssl
+    build:
+      context: ../../
+      dockerfile: src/docker/mqtt/Dockerfile.mosquitto
     ports:
       - "21883:21883"
-    volumes:
-      - "./mqtt/mosquitto.conf:/mosquitto/config/mosquitto.conf"
 
   mqtt_publisher:
     build:

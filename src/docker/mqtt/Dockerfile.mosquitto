@@ -1,0 +1,3 @@
+FROM eclipse-mosquitto:2.0.18-openssl
+
+COPY src/docker/mqtt/mosquitto.conf /mosquitto/config/mosquitto.conf

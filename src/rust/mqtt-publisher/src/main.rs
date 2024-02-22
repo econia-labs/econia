@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{collections::HashSet, time::Duration};
 
 use anyhow::Result;
 use bigdecimal::BigDecimal;
@@ -99,6 +99,14 @@ struct FillNotif {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    let mut emitted_fills: HashSet<(
+        BigDecimal,
+        String,
+        BigDecimal,
+        String,
+        BigDecimal,
+        BigDecimal,
+    )> = Default::default();
     let mqtt_url = std::env::var("MQTT_URL")?;
     let db_url = std::env::var("DATABASE_URL")?;
 
@@ -190,7 +198,7 @@ async fn main() -> Result<()> {
                 client
                     .publish(
                         format!(
-                            "cancel_order_notif/{}/{}/{}",
+                            "cancel_order/{}/{}/{}",
                             data.market_id, data.user, data.custodian_id
                         ),
                         QoS::AtLeastOnce,
@@ -201,28 +209,45 @@ async fn main() -> Result<()> {
             }
             "fill" => {
                 let data: FillNotif = serde_json::from_str(notification.payload())?;
-                client
-                    .publish(
-                        format!(
-                            "fill_notif/{}/{}/{}",
-                            data.market_id, data.maker_address, data.maker_custodian_id
-                        ),
-                        QoS::AtLeastOnce,
-                        false,
-                        serde_json::to_string(&data)?,
-                    )
-                    .await?;
-                client
-                    .publish(
-                        format!(
-                            "fill_notif/{}/{}/{}",
-                            data.market_id, data.taker_address, data.taker_custodian_id
-                        ),
-                        QoS::AtLeastOnce,
-                        false,
-                        serde_json::to_string(&data)?,
-                    )
-                    .await?;
+                if !emitted_fills.remove(&(
+                    data.market_id.clone(),
+                    data.maker_address.clone(),
+                    data.maker_custodian_id.clone(),
+                    data.taker_address.clone(),
+                    data.taker_custodian_id.clone(),
+                    data.sequence_number_for_trade.clone(),
+                )) {
+                    client
+                        .publish(
+                            format!(
+                                "fill/{}/{}/{}",
+                                data.market_id, data.maker_address, data.maker_custodian_id
+                            ),
+                            QoS::AtLeastOnce,
+                            false,
+                            serde_json::to_string(&data)?,
+                        )
+                        .await?;
+                    client
+                        .publish(
+                            format!(
+                                "fill/{}/{}/{}",
+                                data.market_id, data.taker_address, data.taker_custodian_id
+                            ),
+                            QoS::AtLeastOnce,
+                            false,
+                            serde_json::to_string(&data)?,
+                        )
+                        .await?;
+                    emitted_fills.insert((
+                        data.market_id,
+                        data.maker_address,
+                        data.maker_custodian_id,
+                        data.taker_address,
+                        data.taker_custodian_id,
+                        data.sequence_number_for_trade,
+                    ));
+                }
             }
             _ => {}
         }

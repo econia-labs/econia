@@ -67,7 +67,7 @@ RUN /app/install_deps.sh
 
 ENV PATH=/root/.local/bin:$PATH
 
-# This helps the aggregator stop faster
+# This helps the container stop faster
 STOPSIGNAL SIGKILL
 
 CMD /app/start.sh

@@ -84,7 +84,7 @@ If you want to redeploy all the same images with a fresh database, just run `doc
 From the Econia repo root, run the following command:
 
 ```bash
-docker compose --file src/docker/compose.dss-global.yaml up
+docker compose --file src/docker/compose.dss-core.yaml up
 ```
 
 This might take a while to start (expect anywhere from a couple minutes, to more, depending on the machine you have).
@@ -94,19 +94,19 @@ Then, to shut it down simply press `Ctrl+C`.
 Alternatively, to run in detached mode (as a background process), simply add the `--detach` flag, then to temporarily stop it:
 
 ```bash
-docker compose --file src/docker/compose.dss-global.yaml stop
+docker compose --file src/docker/compose.dss-core.yaml stop
 ```
 
 To start it again, use:
 
 ```bash
-docker compose --file src/docker/compose.dss-global.yaml start
+docker compose --file src/docker/compose.dss-core.yaml start
 ```
 
 Finally, to fully shut it down:
 
 ```bash
-docker compose --file src/docker/compose.dss-global.yaml down
+docker compose --file src/docker/compose.dss-core.yaml down
 ```
 
 ### Verifying the DSS

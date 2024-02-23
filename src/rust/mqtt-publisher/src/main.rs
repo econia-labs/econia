@@ -101,9 +101,6 @@ struct FillNotif {
 async fn main() -> Result<()> {
     let mut emitted_fills: HashSet<(
         BigDecimal,
-        String,
-        BigDecimal,
-        String,
         BigDecimal,
         BigDecimal,
     )> = Default::default();
@@ -211,10 +208,7 @@ async fn main() -> Result<()> {
                 let data: FillNotif = serde_json::from_str(notification.payload())?;
                 if !emitted_fills.remove(&(
                     data.market_id.clone(),
-                    data.maker_address.clone(),
-                    data.maker_custodian_id.clone(),
-                    data.taker_address.clone(),
-                    data.taker_custodian_id.clone(),
+                    data.taker_order_id.clone(),
                     data.sequence_number_for_trade.clone(),
                 )) {
                     client
@@ -241,10 +235,7 @@ async fn main() -> Result<()> {
                         .await?;
                     emitted_fills.insert((
                         data.market_id,
-                        data.maker_address,
-                        data.maker_custodian_id,
-                        data.taker_address,
-                        data.taker_custodian_id,
+                        data.taker_order_id,
                         data.sequence_number_for_trade,
                     ));
                 }

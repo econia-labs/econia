@@ -9,8 +9,8 @@ use anyhow::{anyhow, Result};
 use aptos_sdk::rest_client::AptosBaseUrl;
 use clap::{Parser, ValueEnum};
 use pipelines::{
-    Candlesticks, Coins, EnumeratedVolume, Leaderboards, OrderHistory, RefreshMaterializedView,
-    RollingVolume, UserHistory,
+    Candlesticks, Coins, EnumeratedVolume, Fees, Leaderboards, OrderHistory, Prices,
+    RefreshMaterializedView, RollingVolume, Spreads, UserBalances, UserHistory,
 };
 use sqlx::Executor;
 use sqlx_postgres::PgPoolOptions;
@@ -44,17 +44,23 @@ struct Args {
     aptos_network: Option<AptosNetwork>,
 }
 
+const MAX_BATCH_SIZE: u64 = 100_000;
+
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 pub enum Pipelines {
     Candlesticks,
     Coins,
     EnumeratedVolume,
+    Fees,
     Leaderboards,
     Market24hData,
     OrderHistory,
+    Prices,
     RollingVolume,
+    Spreads,
     TvlPerAsset,
     TvlPerMarket,
+    UserBalances,
     UserHistory,
 }
 
@@ -181,37 +187,41 @@ async fn main() -> Result<()> {
         })
     });
 
-    let pipelines =
-        if env_config.no_default || args.no_default {
-            let mut include = env_config.include.clone();
-            include.append(&mut args.include);
-            include.sort();
-            include.dedup();
-            if include.is_empty() {
-                    tracing::error!("No pipelines are included and --no-default is set.");
-                    panic!();
-            }
-            include
-        } else {
-            let mut x = vec![
-                Pipelines::Candlesticks,
-                Pipelines::Coins,
-                Pipelines::EnumeratedVolume,
-                Pipelines::Market24hData,
-                Pipelines::UserHistory,
-                Pipelines::TvlPerAsset,
-                Pipelines::TvlPerMarket,
-            ];
-            let mut exclude = env_config.exclude.clone();
-            let mut include = env_config.include.clone();
-            exclude.append(&mut args.exclude);
-            include.append(&mut args.include);
-            x = x.into_iter().filter(|a| !exclude.contains(a)).collect();
-            x.append(&mut include);
-            x.sort();
-            x.dedup();
-            x
-        };
+    let pipelines = if env_config.no_default || args.no_default {
+        let mut include = env_config.include.clone();
+        include.append(&mut args.include);
+        include.sort();
+        include.dedup();
+        if include.is_empty() {
+            tracing::error!("No pipelines are included and --no-default is set.");
+            panic!();
+        }
+        include
+    } else {
+        let mut x = vec![
+            Pipelines::Candlesticks,
+            Pipelines::Coins,
+            Pipelines::EnumeratedVolume,
+            Pipelines::Fees,
+            Pipelines::Market24hData,
+            Pipelines::Prices,
+            Pipelines::RollingVolume,
+            Pipelines::UserBalances,
+            Pipelines::UserHistory,
+            Pipelines::Spreads,
+            Pipelines::TvlPerAsset,
+            Pipelines::TvlPerMarket,
+        ];
+        let mut exclude = env_config.exclude.clone();
+        let mut include = env_config.include.clone();
+        exclude.append(&mut args.exclude);
+        include.append(&mut args.include);
+        x = x.into_iter().filter(|a| !exclude.contains(a)).collect();
+        x.append(&mut include);
+        x.sort();
+        x.dedup();
+        x
+    };
     tracing::info!("Using pipelines {pipelines:?}.");
     tracing::info!("Using network {network:?}.");
 
@@ -274,6 +284,7 @@ async fn main() -> Result<()> {
             Pipelines::EnumeratedVolume => {
                 data.push(Arc::new(Mutex::new(EnumeratedVolume::new(pool.clone()))))
             }
+            Pipelines::Fees => data.push(Arc::new(Mutex::new(Fees::new(pool.clone())))),
             Pipelines::Leaderboards => {
                 data.push(Arc::new(Mutex::new(Leaderboards::new(pool.clone()))));
             }
@@ -287,11 +298,12 @@ async fn main() -> Result<()> {
             Pipelines::OrderHistory => {
                 data.push(Arc::new(Mutex::new(OrderHistory::new(pool.clone()))))
             }
+            Pipelines::Prices => data.push(Arc::new(Mutex::new(Prices::new(pool.clone())))),
             Pipelines::RollingVolume => {
                 data.push(Arc::new(Mutex::new(RollingVolume::new(pool.clone()))))
             }
-            Pipelines::UserHistory => {
-                data.push(Arc::new(Mutex::new(UserHistory::new(pool.clone()))));
+            Pipelines::Spreads => {
+                data.push(Arc::new(Mutex::new(Spreads::new(pool.clone()))));
             }
             Pipelines::TvlPerAsset => {
                 data.push(Arc::new(Mutex::new(RefreshMaterializedView::new(
@@ -306,6 +318,12 @@ async fn main() -> Result<()> {
                     "aggregator.tvl_per_market",
                     Duration::from_secs(60),
                 ))));
+            }
+            Pipelines::UserBalances => {
+                data.push(Arc::new(Mutex::new(UserBalances::new(pool.clone()))));
+            }
+            Pipelines::UserHistory => {
+                data.push(Arc::new(Mutex::new(UserHistory::new(pool.clone()))));
             }
         }
     }

@@ -1,3 +1,10 @@
+//! The [`entry`](crate::entry) module exposes the entry functionalities of the Econia package.
+//!
+//! Here you can find helper functions to generate payloads for the
+//! [`EconiaClient::submit_tx`](crate::EconiaClient::submit_tx).
+//!
+//! For every entry function that the Econia package exposes, there is a corresponding function
+//! here.
 use std::str::FromStr;
 
 use aptos_api_types::MoveModuleId;

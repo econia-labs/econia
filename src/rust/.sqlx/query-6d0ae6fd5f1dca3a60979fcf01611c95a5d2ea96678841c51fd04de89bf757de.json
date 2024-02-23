@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "WITH parameters AS (\n    SELECT\n        $1::numeric(20,0) AS \"market_id\",\n        $2::timestamptz AS \"time\",\n        $3::numeric(20,0) AS min_ask,\n        $4::numeric(20,0) AS max_bid\n)\nINSERT INTO aggregator.spreads\nSELECT\n    *\nFROM\n    parameters;\n",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Numeric",
+        "Timestamptz",
+        "Numeric",
+        "Numeric"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "6d0ae6fd5f1dca3a60979fcf01611c95a5d2ea96678841c51fd04de89bf757de"
+}

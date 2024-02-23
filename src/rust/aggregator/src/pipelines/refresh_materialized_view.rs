@@ -29,7 +29,7 @@ impl RefreshMaterializedView {
 #[async_trait::async_trait]
 impl Pipeline for RefreshMaterializedView {
     fn model_name(&self) -> String {
-        String::from("RefreshMaterializedView")
+        format!("{}(RMV)", self.view_name)
     }
 
     fn ready(&self) -> bool {

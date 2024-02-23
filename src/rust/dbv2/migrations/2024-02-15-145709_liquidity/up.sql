@@ -20,6 +20,10 @@ CREATE TABLE aggregator.liquidity (
     PRIMARY KEY (group_id, "time", bps)
 );
 
+GRANT SELECT ON aggregator.liquidity TO grafana;
+GRANT SELECT ON aggregator.liquidity_groups TO grafana;
+GRANT SELECT ON aggregator.liquidity_group_members TO grafana;
+
 CREATE FUNCTION aggregator.add_member_to_liquidity_group(NUMERIC(20,0), TEXT) RETURNS VOID AS $$
 BEGIN
     DELETE FROM aggregator.liquidity;

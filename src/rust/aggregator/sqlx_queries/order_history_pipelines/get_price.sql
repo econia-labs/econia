@@ -6,6 +6,6 @@ WITH parameters AS (
 SELECT price
 FROM fill_events, parameters
 WHERE fill_events.market_id = parameters.market_id
-AND fill_events.txn_version < parameters.txn_version
+AND fill_events.txn_version <= parameters.txn_version
 ORDER BY fill_events."time" DESC
 LIMIT 1;

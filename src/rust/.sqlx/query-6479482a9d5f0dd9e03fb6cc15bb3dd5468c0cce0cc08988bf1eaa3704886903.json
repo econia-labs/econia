@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "WITH parameters AS (\n    SELECT\n        $1::NUMERIC(20,0) AS \"market_id\",\n        $2::NUMERIC(20,0) AS \"txn_version\"\n)\nSELECT price\nFROM fill_events, parameters\nWHERE fill_events.market_id = parameters.market_id\nAND fill_events.txn_version <= parameters.txn_version\nORDER BY fill_events.\"time\" DESC\nLIMIT 1;\n",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "price",
+        "type_info": "Numeric"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Numeric",
+        "Numeric"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "6479482a9d5f0dd9e03fb6cc15bb3dd5468c0cce0cc08988bf1eaa3704886903"
+}

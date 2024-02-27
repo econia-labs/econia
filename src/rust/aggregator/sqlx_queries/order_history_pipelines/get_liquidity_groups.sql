@@ -1,1 +1,1 @@
-SELECT address, group_id FROM aggregator.liquidity_group_members;
+SELECT "address", group_id FROM aggregator.liquidity_group_members;

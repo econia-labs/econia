@@ -12,6 +12,12 @@ use crate::MAX_BATCH_SIZE;
 
 pub const TIMEOUT: std::time::Duration = std::time::Duration::from_secs(1);
 
+const BPSS_TIMES_TEN: [i32;8] = [0, 25, 50, 100, 250, 500, 1000, 2000];
+
+const BPS_DIVISOR: i32 = 10_000;
+
+const BPS_TIMES_TEN_DIVISOR: i32 = 10 * 10_000;
+
 const ASK: bool = true;
 
 pub struct OrderHistoryPipelines {
@@ -300,9 +306,7 @@ async fn get_liquidities_from_state<'a>(
         return Ok(liquidities);
     }
 
-    let bpss = vec![0, 5, 10, 25, 50, 100, 200];
-
-    for bps in bpss {
+    for bps in BPSS_TIMES_TEN {
         for order in orders.values() {
             let price = if let Some(price) = get_cached_last_price(
                 &order.market_id,
@@ -316,7 +320,7 @@ async fn get_liquidities_from_state<'a>(
             } else {
                 continue;
             };
-            let delta = &price * &BigDecimal::from(bps) / 10_000;
+            let delta = &price * &BigDecimal::from(bps) / BPS_TIMES_TEN_DIVISOR;
             if bps == 0 || (order.price > &price - &delta && order.price < &price + &delta) {
                 if let Some(group_id) = market_id_to_gr.get(&order.market_id) {
                     add_to_map(&mut liquidities, &order, *group_id, bps, &price)?;
@@ -373,7 +377,7 @@ async fn get_cached_last_price<'a>(
         let price = {
             let mut tx = transaction.write().await;
             let price = sqlx::query_file!(
-                "sqlx_queries/order_history_pipelines/get_prices.sql",
+                "sqlx_queries/order_history_pipelines/get_price.sql",
                 market_id,
                 txn_version
             )

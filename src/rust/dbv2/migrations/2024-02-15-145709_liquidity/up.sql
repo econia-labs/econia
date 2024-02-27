@@ -1,14 +1,14 @@
 -- Your SQL goes here
 CREATE TABLE aggregator.liquidity_groups (
     group_id SERIAL NOT NULL PRIMARY KEY,
-    name TEXT NOT NULL,
+    "name" TEXT NOT NULL,
     market_id NUMERIC(20,0) NOT NULL
 );
 
 CREATE TABLE aggregator.liquidity_group_members (
     group_id INT REFERENCES aggregator.liquidity_groups ("group_id"),
-    address TEXT,
-    PRIMARY KEY (group_id, address)
+    "address" TEXT,
+    PRIMARY KEY (group_id, "address")
 );
 
 CREATE TABLE aggregator.liquidity (
@@ -34,7 +34,7 @@ $$ LANGUAGE plpgsql;
 CREATE FUNCTION aggregator.remove_member_from_liquidity_group(NUMERIC(20,0), TEXT) RETURNS VOID AS $$
 BEGIN
     DELETE FROM aggregator.liquidity;
-    DELETE FROM aggregator.liquidity_group_members WHERE group_id = $1 AND address = $2;
+    DELETE FROM aggregator.liquidity_group_members WHERE group_id = $1 AND "address" = $2;
 END;
 $$ LANGUAGE plpgsql;
 

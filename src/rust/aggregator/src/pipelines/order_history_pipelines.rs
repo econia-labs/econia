@@ -12,11 +12,12 @@ use crate::MAX_BATCH_SIZE;
 
 pub const TIMEOUT: std::time::Duration = std::time::Duration::from_secs(1);
 
+// Basis point amounts multiplied by 10, to enable 2.5 bps indexing.
 const BPSS_TIMES_TEN: [i32;8] = [0, 25, 50, 100, 250, 500, 1000, 2000];
 
 const BPS_DIVISOR: i32 = 10_000;
 
-const BPS_TIMES_TEN_DIVISOR: i32 = 10 * 10_000;
+const BPS_TIMES_TEN_DIVISOR: i32 = 10 * BPS_DIVISOR;
 
 const ASK: bool = true;
 
@@ -60,7 +61,7 @@ impl Default for SpreadsState {
 #[derive(PartialEq, Eq, Hash)]
 struct LiquidityKey {
     group_id: i32,
-    bps: i32,
+    bps_times_tem: i32,
 }
 
 struct LiquidityValue {
@@ -285,11 +286,11 @@ fn get_spreads_from_state<'a>(
     (min_asks, max_bids)
 }
 
-/// Returns the amount of base and quote per group per BPS from a given state.
+/// Returns the amount of base and quote per group per BPS times ten from a given state.
 ///
 /// hashmap type:
 ///
-/// - key: (group_id, bps)
+/// - key: (group_id, bps_times_ten)
 /// - value: (base_amount, quote_amount)
 async fn get_liquidities_from_state<'a>(
     addr_to_gr: &HashMap<String, i32>,
@@ -306,7 +307,7 @@ async fn get_liquidities_from_state<'a>(
         return Ok(liquidities);
     }
 
-    for bps in BPSS_TIMES_TEN {
+    for bps_times_ten in BPSS_TIMES_TEN {
         for order in orders.values() {
             let price = if let Some(price) = get_cached_last_price(
                 &order.market_id,
@@ -320,10 +321,10 @@ async fn get_liquidities_from_state<'a>(
             } else {
                 continue;
             };
-            let delta = &price * &BigDecimal::from(bps) / BPS_TIMES_TEN_DIVISOR;
-            if bps == 0 || (order.price > &price - &delta && order.price < &price + &delta) {
+            let delta = &price * &BigDecimal::from(bps_times_ten) / BPS_TIMES_TEN_DIVISOR;
+            if bps_times_ten == 0 || (order.price > &price - &delta && order.price < &price + &delta) {
                 if let Some(group_id) = market_id_to_gr.get(&order.market_id) {
-                    add_to_map(&mut liquidities, &order, *group_id, bps, &price)?;
+                    add_to_map(&mut liquidities, &order, *group_id, bps_times_ten, &price)?;
                 }
                 if let Some(group_id) = &order
                     .user
@@ -331,7 +332,7 @@ async fn get_liquidities_from_state<'a>(
                     .map(|addr| addr_to_gr.get(&addr))
                     .flatten()
                 {
-                    add_to_map(&mut liquidities, &order, **group_id, bps, &price)?;
+                    add_to_map(&mut liquidities, &order, **group_id, bps_times_ten, &price)?;
                 }
             }
         }
@@ -344,18 +345,18 @@ fn add_to_map<'a>(
     map: &mut HashMap<LiquidityKey, LiquidityValue>,
     order: &Order,
     group_id: i32,
-    bps: i32,
+    bps_times_ten: i32,
     price: &BigDecimal,
 ) -> Result<(), PipelineError> {
     if order.side == ASK {
-        map.entry(LiquidityKey { group_id, bps })
+        map.entry(LiquidityKey { group_id, bps_times_tem: bps_times_ten })
             .and_modify(|e| e.base += &order.size * &order.price)
             .or_insert(LiquidityValue {
                 base: &order.size * &order.price,
                 quote: BigDecimal::zero(),
             });
     } else {
-        map.entry(LiquidityKey { group_id, bps })
+        map.entry(LiquidityKey { group_id, bps_times_tem: bps_times_ten })
             .and_modify(|e| e.quote += &order.size * price)
             .or_insert(LiquidityValue {
                 base: BigDecimal::zero(),
@@ -585,7 +586,7 @@ async fn liquidities<'a>(
         sqlx::query_file!(
             "sqlx_queries/order_history_pipelines/insert_liquidity.sql",
             key.group_id,
-            key.bps,
+            key.bps_times_tem,
             timestamp,
             value.base,
             value.quote,

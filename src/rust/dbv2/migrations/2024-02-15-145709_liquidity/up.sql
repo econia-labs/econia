@@ -14,10 +14,10 @@ CREATE TABLE aggregator.liquidity_group_members (
 CREATE TABLE aggregator.liquidity (
     group_id INT NOT NULL REFERENCES aggregator.liquidity_groups ("group_id"),
     "time" TIMESTAMPTZ,
-    bps SMALLINT,
+    bps_times_ten SMALLINT,
     amount_ask_lots NUMERIC(20,0),
     amount_bid_lots NUMERIC(20,0),
-    PRIMARY KEY (group_id, "time", bps)
+    PRIMARY KEY (group_id, "time", bps_times_ten)
 );
 
 GRANT SELECT ON aggregator.liquidity TO grafana;

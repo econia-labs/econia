@@ -32,6 +32,7 @@ resource "terraform_data" "instance" {
     command = join(" ", [
       "gcloud compute instances create-with-container mosquitto",
       "--container-image ${terraform_data.image.output}",
+      "--container-env MQTT_PASSWORD=${var.mosquitto_password}",
       "--network ${var.sql_network_id}",
       "--zone ${var.zone}"
     ])

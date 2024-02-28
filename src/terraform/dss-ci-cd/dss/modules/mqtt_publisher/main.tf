@@ -32,7 +32,11 @@ resource "terraform_data" "instance" {
   provisioner "local-exec" {
     command = join(" ", [
       "gcloud compute instances create-with-container mqtt_publisher",
-      "--container-env DATABASE_URL=${var.db_conn_str_private}",
+      "--container-env",
+      join(",", [
+        "MQTT_URL=mqtt://mqtt_publisher:${var.mosquitto_password}@???/?client_id=publisher",
+        "DATABASE_URL=${var.db_conn_str_private}"
+      ]),
       "--container-image ${terraform_data.image.output}",
       "--network ${var.sql_network_id}",
       "--zone ${var.zone}"

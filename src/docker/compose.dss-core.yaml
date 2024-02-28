@@ -44,6 +44,8 @@ services:
     build:
       context: ../../
       dockerfile: src/docker/mqtt/Dockerfile.mosquitto
+    environment:
+      MQTT_PASSWORD: my_qute_tiny_turtle
     ports:
       - "21883:21883"
 
@@ -59,7 +61,7 @@ services:
     restart: unless-stopped
     environment:
       DATABASE_URL: "postgres://econia:econia@postgres:5432/econia"
-      MQTT_URL: "mqtt://mosquitto:21883?client_id=publisher"
+      MQTT_URL: "mqtt://mqtt_publisher:my_qute_tiny_turtle@mosquitto:21883?client_id=publisher"
 
   postgres:
     environment:

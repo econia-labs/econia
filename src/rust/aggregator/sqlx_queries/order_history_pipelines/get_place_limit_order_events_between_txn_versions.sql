@@ -4,18 +4,16 @@ WITH parameters AS (
         $2::numeric(20,0) AS txn_version_end
 )
 SELECT
-    txn_version,
-    event_idx,
     market_id,
     order_id,
-    new_size
+    initial_size AS "size",
+    side,
+    price,
+    "user"
 FROM
-    change_order_size_events,
+    place_limit_order_events,
     parameters
 WHERE
     txn_version > txn_version_start
 AND
-    txn_version <= txn_version_end
-ORDER BY
-    txn_version,
-    event_idx;
+    txn_version <= txn_version_end;

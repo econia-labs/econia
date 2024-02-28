@@ -1,0 +1,26 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT group_id, market_id FROM aggregator.liquidity_groups WHERE name = 'all';\n",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "group_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "market_id",
+        "type_info": "Numeric"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "4f031262ebb7fcd310ea0b81c8edb51b4ea2b3bbf247efc85b29f9a56ef18791"
+}

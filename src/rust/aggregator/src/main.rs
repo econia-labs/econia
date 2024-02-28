@@ -9,8 +9,8 @@ use anyhow::{anyhow, Result};
 use aptos_sdk::rest_client::AptosBaseUrl;
 use clap::{Parser, ValueEnum};
 use pipelines::{
-    Candlesticks, Coins, EnumeratedVolume, Fees, Leaderboards, OrderHistory, Prices,
-    RefreshMaterializedView, RollingVolume, Spreads, UserBalances, UserHistory,
+    Candlesticks, Coins, EnumeratedVolume, Fees, Leaderboards, Prices,
+    RefreshMaterializedView, RollingVolume, OrderHistoryPipelines, UserBalances, UserHistory,
 };
 use sqlx::Executor;
 use sqlx_postgres::PgPoolOptions;
@@ -54,10 +54,9 @@ pub enum Pipelines {
     Fees,
     Leaderboards,
     Market24hData,
-    OrderHistory,
     Prices,
     RollingVolume,
-    Spreads,
+    OrderHistoryPipelines,
     TvlPerAsset,
     TvlPerMarket,
     UserBalances,
@@ -208,7 +207,7 @@ async fn main() -> Result<()> {
             Pipelines::RollingVolume,
             Pipelines::UserBalances,
             Pipelines::UserHistory,
-            Pipelines::Spreads,
+            Pipelines::OrderHistoryPipelines,
             Pipelines::TvlPerAsset,
             Pipelines::TvlPerMarket,
         ];
@@ -295,15 +294,12 @@ async fn main() -> Result<()> {
                     Duration::from_secs(5 * 60),
                 ))))
             }
-            Pipelines::OrderHistory => {
-                data.push(Arc::new(Mutex::new(OrderHistory::new(pool.clone()))))
-            }
             Pipelines::Prices => data.push(Arc::new(Mutex::new(Prices::new(pool.clone())))),
             Pipelines::RollingVolume => {
                 data.push(Arc::new(Mutex::new(RollingVolume::new(pool.clone()))))
             }
-            Pipelines::Spreads => {
-                data.push(Arc::new(Mutex::new(Spreads::new(pool.clone()))));
+            Pipelines::OrderHistoryPipelines => {
+                data.push(Arc::new(Mutex::new(OrderHistoryPipelines::new(pool.clone()))));
             }
             Pipelines::TvlPerAsset => {
                 data.push(Arc::new(Mutex::new(RefreshMaterializedView::new(

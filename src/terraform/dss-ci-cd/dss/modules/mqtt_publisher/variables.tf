@@ -4,6 +4,8 @@ variable "migrations_complete" {}
 
 variable "mosquitto_password" {}
 
+variable "mosquitto_url" {}
+
 variable "repository_created" {}
 
 variable "repository_id" {}

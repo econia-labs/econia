@@ -91,3 +91,7 @@ output "dss_source_rev" {
 output "terraform_project_rev" {
   value = var.terraform_project_rev
 }
+
+output "mosquitto_url" {
+  value = module.mosquitto.mosquitto_url
+}

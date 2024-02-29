@@ -108,7 +108,8 @@ async fn main() -> Result<()> {
     let mqtt_password = std::env::var("MQTT_PASSWORD")?;
     let db_url = std::env::var("DATABASE_URL")?;
 
-    let mut mqttoptions = MqttOptions::parse_url(mqtt_url).unwrap().set_credentials("mqtt_publisher", mqtt_password);
+    let mut mqttoptions = MqttOptions::parse_url(mqtt_url).unwrap();
+    mqttoptions.set_credentials("mqtt_publisher", mqtt_password);
     mqttoptions.set_transport(Transport::Tcp);
     mqttoptions.set_keep_alive(Duration::from_secs(5));
     let (client, mut eventloop) = AsyncClient::new(mqttoptions, 10);

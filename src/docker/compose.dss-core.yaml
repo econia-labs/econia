@@ -61,7 +61,8 @@ services:
     restart: unless-stopped
     environment:
       DATABASE_URL: "postgres://econia:econia@postgres:5432/econia"
-      MQTT_URL: "mqtt://mqtt_publisher:my_qute_tiny_turtle@mosquitto:21883?client_id=publisher"
+      MQTT_URL: "ws://mosquitto:21883"
+      MQTT_PASSWORD: my_qute_tiny_turtle
 
   postgres:
     environment:

@@ -75,11 +75,10 @@ module "postgrest" {
 
 module "mosquitto" {
   mosquitto_password    = var.mosquitto_password
-  no_auth_policy_data         = module.no_auth_policy.policy_data
   repository_created    = module.artifact_registry.repository_created
   repository_id         = module.artifact_registry.repository_id
   source                = "./modules/mosquitto"
-  region                = var.region
+  zone                  = var.zone
 }
 
 module "mqtt_publisher" {

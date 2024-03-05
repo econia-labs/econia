@@ -24,31 +24,28 @@ resource "terraform_data" "image" {
   }
 }
 
-resource "google_cloud_run_v2_service" "mosquitto" {
-  depends_on = []
-  location   = var.region
-  name       = "mosquitto"
-  template {
-    containers {
-      image = "${terraform_data.image.output}"
-      env {
-        name  = "MQTT_PASSWORD"
-        value = var.mosquitto_password
-      }
-      ports {
-        container_port = 21883
-      }
-    }
-    scaling {
-      min_instance_count = 1
-      max_instance_count = 1
-    }
+resource "terraform_data" "instance" {
+  # Store zone since variables not accessible at destroy time.
+  input = var.zone
+  provisioner "local-exec" {
+    command = join(" ", [
+      "gcloud compute instances create-with-container mosquitto",
+      "--container-env MQTT_PASSWORD=${var.mosquitto_password}",
+      "--container-image ${terraform_data.image.output}",
+      "--zone ${var.zone}"
+    ])
   }
-}
-
-resource "google_cloud_run_service_iam_policy" "no_auth_mosquitto" {
-  location    = google_cloud_run_v2_service.mosquitto.location
-  project     = google_cloud_run_v2_service.mosquitto.project
-  service     = google_cloud_run_v2_service.mosquitto.name
-  policy_data = var.no_auth_policy_data
+  provisioner "local-exec" {
+    command = join("\n", [
+      "result=$(gcloud compute instances list --filter NAME=mosquitto)",
+      "if [ -n \"$result\" ]; then",
+      join(" ", [
+        "gcloud compute instances delete mosquitto",
+        "--quiet",
+        "--zone ${self.output}"
+      ]),
+      "fi"
+    ])
+    when = destroy
+  }
 }

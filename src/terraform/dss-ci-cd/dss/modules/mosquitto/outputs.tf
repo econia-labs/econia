@@ -1,3 +1,3 @@
 output "mosquitto_url" {
-  value = format("%s%s",replace(google_cloud_run_v2_service.mosquitto.uri, "http", "ws"), ":443")
+  value = format("ws://%s:21883",terraform_data.instance.ip)
 }

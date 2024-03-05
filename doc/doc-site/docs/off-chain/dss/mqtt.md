@@ -66,9 +66,7 @@ The JSON format for this message is the same as the REST API `/cancel_order_even
 
 The JSON format for this message is the same as the REST API `/fill_events` endpoint.
 
-Note that this event is emitted twice: once for the maker, and once for the taker.
-This means that you will get this event no matter what if you're subscribed to the maker or taker, but you will receive it twice if you're subscribed to both.
-You can detect if you got a duplicate by using the `txn_version` and the `event_idx` fields, which in conjuctions, are a unique identifier of the event.
+Note that if you subscribe to fill events for two different user/custodian ID combinations on the same market and they fill against eachother, you will recieve the same fill event notification twice, once on each channel.
 
 ## Example
 

@@ -40,29 +40,19 @@ services:
     volumes:
       - "./grafana_annotations/annotations.csv:/annotations.csv"
 
-  mosquitto:
+  mqtt:
     build:
       context: ../../
-      dockerfile: src/docker/mqtt/Dockerfile.mosquitto
-    environment:
-      MQTT_PASSWORD: my_qute_tiny_turtle
-    ports:
-      - "21883:21883"
-
-  mqtt_publisher:
-    build:
-      context: ../../
-      dockerfile: src/docker/mqtt/Dockerfile.mqtt_publisher
+      dockerfile: src/docker/mqtt/Dockerfile
     depends_on:
-      mosquitto:
-        condition: service_started
       postgres:
         condition: service_healthy
-    restart: unless-stopped
     environment:
       DATABASE_URL: "postgres://econia:econia@postgres:5432/econia"
-      MQTT_URL: "ws://mosquitto:21883"
-      MQTT_PASSWORD: my_qute_tiny_turtle
+      MQTT_PASSWORD: ${MQTT_PASSWORD}
+    ports:
+      - "21883:21883"
+    restart: unless-stopped
 
   postgres:
     environment:

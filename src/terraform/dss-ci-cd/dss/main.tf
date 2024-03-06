@@ -74,22 +74,11 @@ module "postgrest" {
 }
 
 module "mosquitto" {
-  mosquitto_password    = var.mosquitto_password
-  repository_created    = module.artifact_registry.repository_created
-  repository_id         = module.artifact_registry.repository_id
-  source                = "./modules/mosquitto"
-  zone                  = var.zone
-}
-
-module "mqtt_publisher" {
   db_conn_str_private   = module.db.db_conn_str_private
-  migrations_complete   = module.db.migrations_complete
   mosquitto_password    = var.mosquitto_password
-  mosquitto_url         = module.mosquitto.mosquitto_url
   repository_created    = module.artifact_registry.repository_created
   repository_id         = module.artifact_registry.repository_id
-  source                = "./modules/mqtt_publisher"
-  sql_network_id        = module.db.sql_network_id
+  source                = "./modules/mqtt"
   zone                  = var.zone
 }
 

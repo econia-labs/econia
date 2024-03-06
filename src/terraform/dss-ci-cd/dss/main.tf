@@ -79,6 +79,7 @@ module "mqtt" {
   repository_created    = module.artifact_registry.repository_created
   repository_id         = module.artifact_registry.repository_id
   source                = "./modules/mqtt"
+  sql_network_id        = module.db.sql_network_id
   zone                  = var.zone
 }
 

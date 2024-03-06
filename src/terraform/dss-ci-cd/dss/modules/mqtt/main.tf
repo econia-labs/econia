@@ -36,6 +36,7 @@ resource "terraform_data" "instance" {
         "DATABASE_URL=${var.db_conn_str_private}"
       ]),
       "--container-image ${terraform_data.image.output}",
+      "--network ${var.sql_network_id}",
       "--zone ${var.zone}"
     ])
   }

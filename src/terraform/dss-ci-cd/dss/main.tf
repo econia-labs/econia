@@ -73,7 +73,7 @@ module "postgrest" {
   sql_vpc_connector_id = module.db.sql_vpc_connector_id
 }
 
-module "mosquitto" {
+module "mqtt" {
   db_conn_str_private   = module.db.db_conn_str_private
   mosquitto_password    = var.mosquitto_password
   repository_created    = module.artifact_registry.repository_created

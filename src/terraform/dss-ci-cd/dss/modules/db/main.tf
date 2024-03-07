@@ -89,6 +89,18 @@ resource "google_compute_network" "sql_network" {
   provider = google-beta
 }
 
+resource "google_compute_firewall" "default" {
+  name    = "allow-mqtt"
+  network = google_compute_network.sql_network.name
+
+  allow {
+    protocol = "tcp"
+    ports    = ["21883"]
+  }
+
+  source_ranges = ["0.0.0.0/0"]
+}
+
 resource "google_service_networking_connection" "sql_network_connection" {
   network                 = google_compute_network.sql_network.id
   provider                = google-beta-sql-network-workaround

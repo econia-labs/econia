@@ -86,7 +86,7 @@ def on_message(client, userdata, msg):
     print("New event with topic " + msg.topic + " on market " + str(data["market_id"]) + ".")
 
 # Create a new mqtt client
-mqttc = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, transport='websockets')
+mqttc = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
 
 # Set the handling functions
 mqttc.on_connect = on_connect

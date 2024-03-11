@@ -25,8 +25,8 @@ When specifying the topic you want to subscribe to, you can put a + instead of a
 ### Example:
 
 We use the topic `fill/MARKET_ID/USER_ADDRESS/CUSTODIAN_ID`.
-Fill events by the user `0xdeadbeef` with custodian ID 1 on market 3 will have `fill/3/0xdeadbeef/1` as a topic.
-But you could subscribe to `fill/+/0xdeadbeef/+` to get all fill events from the user `0xdeadbeef`.
+Fill events by the user `0xc0deface` with custodian ID 1 on market 3 will have `fill/3/0xc0deface/1` as a topic.
+But you could subscribe to `fill/+/0xc0deface/+` to get all fill events from the user `0xc0deface`.
 
 ## Topics
 

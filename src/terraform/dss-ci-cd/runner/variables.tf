@@ -35,3 +35,5 @@ variable "grafana_public_password" {}
 variable "dss_source_rev" {}
 
 variable "terraform_project_rev" {}
+
+variable "mosquitto_password" {}

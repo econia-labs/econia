@@ -91,3 +91,8 @@ output "dss_source_rev" {
 output "terraform_project_rev" {
   value = var.terraform_project_rev
 }
+
+output "mosquitto_password" {
+  value = var.mosquitto_password
+}
+

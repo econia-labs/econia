@@ -1216,14 +1216,12 @@ module econia::market {
     #[view]
     /// Return `OrderView` for `market_id` and `order_id`.
     ///
-    /// Mutates state, so kept as a private view function.
-    ///
     /// # Testing
     ///
     /// * `test_change_order_size_ask_custodian()`
     /// * `test_change_order_size_bid_user()`
     /// * `test_get_open_order_no_such_order()`
-    fun get_open_order(
+    public fun get_open_order(
         market_id: u64,
         order_id: u128
     ): Option<OrderView>

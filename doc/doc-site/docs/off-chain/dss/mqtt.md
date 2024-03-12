@@ -70,8 +70,30 @@ Note that if you subscribe to fill events for two different user/custodian ID co
 
 ## Example
 
-You can find a Python example on how to use the MQTT protocol in `src/python/sdk/examples/event.py`.
+The Econia repository contains a Docker compose environment for running a DSS against a local testnet.
+This compose environment is designed for end-to-end testing, and can be used for monitoring MQTT notifications via the event.py example script.
+In order to run the example script, you'll need to install Poetry.
 
-First, run `poetry install` to install all the necessary dependencies.
-Then, run `poetry run event` to start the example script.
+If you'd like to run the example script against the end-to-end Docker compose environment, first initialize the environment according to the steps [here](https://github.com/econia-labs/econia/blob/main/src/docker/README.md).
+Then once the compose environment is running, open up a new terminal and run the following:
 
+```bash
+# From Econia repo root
+cd src/python/sdk
+poetry install
+poetry run event
+```
+
+Enter nothing for all of the prompts to use the default local configuration.
+
+Now you can perform actions on the locally-deployed exchange to trigger events, or run the trade.py script:
+
+```bash
+# From Econia repo root, new terminal
+cd src/python/sdk
+poetry run trade
+```
+
+Enter nothing for all of the prompts to use the default local configuration.
+
+As you run through the assorted sections in the trading script, you should see fill events coming in over the WebSockets channel.

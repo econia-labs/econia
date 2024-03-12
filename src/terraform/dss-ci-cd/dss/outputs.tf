@@ -93,6 +93,7 @@ output "terraform_project_rev" {
 }
 
 output "mosquitto_password" {
+  sensitive = true
   value = var.mosquitto_password
 }
 

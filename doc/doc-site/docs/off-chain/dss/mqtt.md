@@ -66,7 +66,7 @@ The JSON format for this message is the same as the REST API `/cancel_order_even
 
 The JSON format for this message is the same as the REST API `/fill_events` endpoint.
 
-Note that if you subscribe to fill events for two different user/custodian ID combinations on the same market and they fill against eachother, you will recieve the same fill event notification twice, once on each channel.
+Note that if you subscribe to fill events for two different user/custodian ID combinations on the same market and they fill against each other, you will receive the same fill event notification twice, once on each channel.
 
 ## Example
 

@@ -25,7 +25,7 @@ def get_port() -> int:
     port = environ.get("MQTT_PORT")
     if port == None:
         port_in = input(
-            "Enter the MQTT port (enter nothing to use 21883 which is the default MQTT port when depolying the DSS with docker compose).\n"
+            "Enter the MQTT port (enter nothing to use 21883 which is the default MQTT port when deploying the DSS with docker compose).\n"
         ).strip()
         if port_in == "":
             return PORT

@@ -71,6 +71,16 @@ diesel::table! {
 }
 
 diesel::table! {
+    grafana_annotations (title, tag) {
+        time -> Timestamptz,
+        timeEnd -> Nullable<Timestamptz>,
+        title -> Text,
+        text -> Nullable<Text>,
+        tag -> Text,
+    }
+}
+
+diesel::table! {
     ledger_infos (chain_id) {
         chain_id -> Int8,
     }
@@ -203,6 +213,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     cancel_order_events,
     change_order_size_events,
     fill_events,
+    grafana_annotations,
     ledger_infos,
     market_account_handles,
     market_registration_events,

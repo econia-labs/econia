@@ -6,6 +6,7 @@ members = [
   "e2e",
   "e2e/e2e-proc-macro",
   "e2e/metadata",
+  "mqtt-publisher",
   "types",
   "sdk",
   "sdk/example",

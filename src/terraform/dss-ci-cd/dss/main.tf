@@ -73,14 +73,14 @@ module "postgrest" {
   sql_vpc_connector_id = module.db.sql_vpc_connector_id
 }
 
-module "websockets" {
+module "mqtt" {
   db_conn_str_private   = module.db.db_conn_str_private
-  migrations_complete   = module.db.migrations_complete
-  no_auth_policy_data   = module.no_auth_policy.policy_data
-  region                = var.region
-  source                = "./modules/websockets"
-  sql_vpc_connector_id  = module.db.sql_vpc_connector_id
-  websockets_jwt_secret = var.websockets_jwt_secret
+  mosquitto_password    = var.mosquitto_password
+  repository_created    = module.artifact_registry.repository_created
+  repository_id         = module.artifact_registry.repository_id
+  source                = "./modules/mqtt"
+  sql_network_id        = module.db.sql_network_id
+  zone                  = var.zone
 }
 
 module "grafana" {

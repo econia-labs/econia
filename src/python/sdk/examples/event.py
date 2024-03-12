@@ -1,88 +1,77 @@
 from os import environ
 
-import httpx
-import rel
-import websocket
-import jwt
+import paho.mqtt.client as mqtt
+import json
 
-JWT_SECRET_DEFAULT = "econia_0000000000000000000000000"
-WS_URL_LOCAL_DEFAULT = "ws://0.0.0.0:3001"
-WS_CHANNEL_DEFAULT = "fill_event"
+# This is an example on how to use subscribe to events emitted by the DSS.
 
+HOST = "127.0.0.1"
+PORT = 21883
 
-def on_message(ws, message):
-    print(message)
-
-
-def on_error(ws, error):
-    print(error)
-
-
-def on_close(ws, close_status_code, close_msg):
-    print("### closed ###")
-
-
-def on_open(ws):
-    print("Opened connection")
-
-
-def get_ws_host() -> str:
-    url = environ.get("WS_URL")
-    if url == None:
-        url_in = input(
-            "Enter the URL of the WebSocket host (enter nothing to default to local OR re-run with WS_URL environment variable)\n"
+def get_host() -> str:
+    host = environ.get("MQTT_HOST")
+    if host == None:
+        host_in = input(
+            "Enter the MQTT host (enter nothing to use 127.0.0.1).\n"
         ).strip()
-        if url_in == "":
-            return WS_URL_LOCAL_DEFAULT
+        if host_in == "":
+            return HOST
         else:
-            return url_in
+            return host_in
     else:
-        return url
+        return host
 
-
-def get_channel() -> str:
-    url = environ.get("WS_CHANNEL")
-    if url == None:
-        url_in = input(
-            "Enter the channel to listen to (enter nothing to default to `fill_event` OR re-run with WS_CHANNEL environment variable)\n"
+def get_port() -> int:
+    port = environ.get("MQTT_PORT")
+    if port == None:
+        port_in = input(
+            "Enter the MQTT port (enter nothing to use 21883 which is the default MQTT port when deploying the DSS with docker compose).\n"
         ).strip()
-        if url_in == "":
-            return WS_CHANNEL_DEFAULT
+        if port_in == "":
+            return PORT
         else:
-            return url_in
+            return int(port_in)
     else:
-        return url
-    
-def get_jwt_secret() -> str:
-    jwt_sec = environ.get("JWT_SECRET")
-    if jwt_sec == None:
-        jwt_sec = input(
-            "Enter the JWT secret (enter nothing to used default compromised key OR re-run with JWT_SECRET environment variable)\n"
+        return int(port)
+
+def get_topic() -> str:
+    topic = environ.get("MQTT_TOPIC")
+    if topic == None:
+        event_type_in = input(
+            "Enter the event type to subscribe to (enter + or nothing to subscribe to all event types, or fill, place_limit_order, cancel_order, etc.).\n"
         ).strip()
-        if jwt_sec == "":
-            return JWT_SECRET_DEFAULT
-        else:
-            return jwt_sec
+        if event_type_in == "":
+            event_type_in = "+"
+        market_id_in = input(
+            "Enter the market ID of the market you want to watch (enter + or nothing to subscribe to events from all markets).\n"
+        ).strip()
+        if market_id_in == "":
+            market_id_in = "+"
+        return "{}/{}/#".format(event_type_in, market_id_in)
     else:
-        return jwt_sec
+        return topic
 
+def on_connect(client, userdata, flags, reason_code, properties):
+    # Subscribe to the given topic
+    topic = get_topic()
+    print("Subscribing to {}.".format(topic))
+    client.subscribe(topic)
 
-def start():
-    token = jwt.encode(
-        {'mode': 'r', 'channels': [get_channel()]},
-        get_jwt_secret(),
-        algorithm='HS256'
-    ).decode('utf-8')
-    host_ws = get_ws_host()
-    ws = websocket.WebSocketApp(
-        f"{host_ws}/{token}",
-        on_open=on_open,
-        on_message=on_message,
-        on_error=on_error,
-        on_close=on_close,
-    )
-    ws.run_forever(
-        dispatcher=rel # type: ignore
-    )  # Set dispatcher to automatic reconnection, 5 second reconnect delay if connection closed unexpectedly
-    rel.signal(2, rel.abort)  # Keyboard Interrupt
-    rel.dispatch()
+def on_message(client, userdata, msg):
+    # Decode the JSON payload.
+    data = json.loads(msg.payload.decode("utf-8"))
+
+    # Print data about the event.
+    print("New event with topic " + msg.topic + " on market " + str(data["market_id"]) + ".")
+
+# Create a new mqtt client
+mqttc = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+
+# Set the handling functions
+mqttc.on_connect = on_connect
+mqttc.on_message = on_message
+
+# Connect to the MQTT server (mosquitto)
+mqttc.connect(get_host(), get_port(), 60)
+
+mqttc.loop_forever()

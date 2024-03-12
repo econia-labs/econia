@@ -30,7 +30,9 @@ The new, copied and renamed file goes into the same folder as the template.
 
 ```sh
 # From Econia repo root
-docker compose --file src/docker/compose.dss-local.yaml up
+docker compose \
+    --file src/docker/compose.dss-core.yaml \
+    --file src/docker/compose.dss-local.yaml up
 ```
 
 Expect this to take a little over 10 minutes to compile (on an M1 OSX machine).

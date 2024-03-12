@@ -1,0 +1,2 @@
+INSERT INTO aggregator.prices_last_indexed_txn
+SELECT txn_version FROM fill_events ORDER BY txn_version DESC LIMIT 1;

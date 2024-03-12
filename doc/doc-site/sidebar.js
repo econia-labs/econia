@@ -62,7 +62,7 @@ module.exports = {
                     items: [
                         'off-chain/dss/changelog',
                         'off-chain/dss/rest-api',
-                        'off-chain/dss/websocket',
+                        'off-chain/dss/mqtt',
                         'off-chain/dss/gcp',
                         'off-chain/dss/terraform',
                         'off-chain/dss/ci-cd',

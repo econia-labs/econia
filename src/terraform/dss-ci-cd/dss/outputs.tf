@@ -96,3 +96,6 @@ output "mosquitto_password" {
   value = var.mosquitto_password
 }
 
+output "mqtt_ip" {
+  value = module.mqtt.mqtt_ip
+}

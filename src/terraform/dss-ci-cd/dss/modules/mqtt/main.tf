@@ -54,3 +54,12 @@ resource "terraform_data" "instance" {
     when = destroy
   }
 }
+
+data "external" "ip" {
+  depends_on = [terraform_data.instance]
+  program = [
+    "bash",
+    "-c",
+    "gcloud compute instances list --filter name=mqtt --format 'json(networkInterfaces[0].accessConfigs[0].natIP)' | jq '.[0].networkInterfaces[0].accessConfigs[0]'",
+  ]
+}

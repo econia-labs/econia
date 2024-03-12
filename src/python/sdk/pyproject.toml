@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "econia-sdk"
-version = "1.0.7"
+version = "2.0.0"
 description = ""
 authors = ["Econia Labs <developers@econialabs.com>"]
 readme = "README.md"
@@ -12,10 +12,10 @@ profile = "black"
 [tool.poetry.dependencies]
 aptos-sdk = "^0.6.4"
 python = "^3.8"
-websocket-client = "^1.6.3"
 httpx = "0.23.0"
 rel = "^0.4.9"
 pyjwt = "1.7.1"
+paho-mqtt = "2.0.0"
 
 [tool.poetry.group.dev.dependencies]
 autoflake = "^2.2.0"

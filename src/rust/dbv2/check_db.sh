@@ -13,7 +13,8 @@ echo "Running migrations back and forth"
 if diesel database setup --database-url $TEST_DATABASE_URL && diesel migration redo --database-url $TEST_DATABASE_URL --all; then
     echo "All good !"
 else
-    echo "An error occured."
+    docker logs econia_db_test
+    echo "An error occured. Above are the PostgreSQL logs."
 fi
 
 docker stop econia_db_test > /dev/null

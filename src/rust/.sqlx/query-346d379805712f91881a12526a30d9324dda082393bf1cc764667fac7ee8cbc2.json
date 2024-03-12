@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO aggregator.prices_last_indexed_txn\nSELECT txn_version FROM fill_events ORDER BY txn_version DESC LIMIT 1;\n",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "346d379805712f91881a12526a30d9324dda082393bf1cc764667fac7ee8cbc2"
+}

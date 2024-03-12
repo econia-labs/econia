@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO aggregator.prices\nSELECT\n    market_id,\n    date_trunc('minute', \"time\"),\n    AVG(price),\n    SUM(\"size\")\nFROM fill_events\nWHERE emit_address = maker_address\nAND txn_version > COALESCE((SELECT * FROM aggregator.prices_last_indexed_txn), 0)\nGROUP BY date_trunc('minute', \"time\"), market_id\nORDER BY date_trunc('minute', \"time\"), market_id\nON CONFLICT ON CONSTRAINT prices_pkey DO UPDATE SET\nprice = (EXCLUDED.price * EXCLUDED.sum_fill_size_1m_period + prices.price * prices.sum_fill_size_1m_period) / (EXCLUDED.sum_fill_size_1m_period + prices.sum_fill_size_1m_period),\nsum_fill_size_1m_period = EXCLUDED.sum_fill_size_1m_period + prices.sum_fill_size_1m_period;\n",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "0c4b742ba8bc837d6e40b4a7fde06c786067ad6a68bf55651251be73b15c2655"
+}

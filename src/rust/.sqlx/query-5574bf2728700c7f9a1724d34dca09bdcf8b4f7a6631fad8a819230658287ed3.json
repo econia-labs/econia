@@ -1,0 +1,53 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "WITH parameters AS (\n    SELECT\n        $1::numeric(20,0) AS txn_version_start,\n        $2::numeric(20,0) AS txn_version_end\n)\nSELECT\n    market_id,\n    order_id,\n    initial_size AS \"size\",\n    side,\n    price,\n    \"user\"\nFROM\n    place_limit_order_events,\n    parameters\nWHERE\n    txn_version > txn_version_start\nAND\n    txn_version <= txn_version_end;\n",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "market_id",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 1,
+        "name": "order_id",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 2,
+        "name": "size",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 3,
+        "name": "side",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 4,
+        "name": "price",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 5,
+        "name": "user",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Numeric",
+        "Numeric"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "5574bf2728700c7f9a1724d34dca09bdcf8b4f7a6631fad8a819230658287ed3"
+}

@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE aggregator.prices_last_indexed_txn\nSET txn_version = (SELECT txn_version FROM fill_events ORDER BY txn_version DESC LIMIT 1);\n",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "3e1806a43dde9835e7dab471e401f655ce42a646ca44fb821623db659851a1d5"
+}

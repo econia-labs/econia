@@ -714,7 +714,7 @@ ZONE=a-zone
    echo $WS_URL
    ```
 
-1. Monitor events using the [WebSockets listening script](./websocket.md):
+1. Monitor events using the WebSockets listening script:
 
    ```sh
    echo $WS_URL

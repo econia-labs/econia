@@ -14,7 +14,7 @@
     local new_tfvars_encoded=$(echo $new_tfvars | base64)
     echo "Uploading variables, checking out revisions, redeploying..."
     source scripts/run.sh " \
-        echo $new_tfvars_encoded | base64 --decode | \
+        echo \"$new_tfvars_encoded\" | base64 --decode | \
             sudo tee dss/terraform.tfvars >/dev/null; \
         git fetch;
         git checkout $terraform_project_rev; \

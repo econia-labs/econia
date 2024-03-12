@@ -42,7 +42,9 @@ resource "google_cloud_run_v2_service" "grafana" {
       connector = var.sql_vpc_connector_id
       egress    = "ALL_TRAFFIC"
     }
+
   }
+  ingress = "INGRESS_TRAFFIC_ALL"
 }
 
 # After Grafana starts, wait until HTTP API is available.

@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "WITH parameters AS (\n    SELECT\n        $1::numeric(20,0) AS txn_version_start,\n        $2::numeric(20,0) AS txn_version_end\n)\nSELECT\n    txn_version,\n    event_idx,\n    market_id,\n    maker_order_id,\n    taker_order_id,\n    \"size\"\nFROM\n    fill_events,\n    parameters\nWHERE\n    txn_version > txn_version_start\nAND\n    txn_version <= txn_version_end\nAND\n    emit_address = maker_address\nORDER BY\n    txn_version,\n    event_idx;\n",
+  "query": "WITH parameters AS (\n    SELECT\n        $1::numeric(20,0) AS txn_version_start,\n        $2::numeric(20,0) AS txn_version_end\n)\nSELECT\n    txn_version,\n    event_idx,\n    market_id,\n    maker_order_id,\n    taker_order_id,\n    \"size\",\n    price\nFROM\n    fill_events,\n    parameters\nWHERE\n    txn_version > txn_version_start\nAND\n    txn_version <= txn_version_end\nAND\n    emit_address = maker_address\nORDER BY\n    txn_version,\n    event_idx;\n",
   "describe": {
     "columns": [
       {
@@ -32,6 +32,11 @@
         "ordinal": 5,
         "name": "size",
         "type_info": "Numeric"
+      },
+      {
+        "ordinal": 6,
+        "name": "price",
+        "type_info": "Numeric"
       }
     ],
     "parameters": {
@@ -46,8 +51,9 @@
       false,
       false,
       false,
+      false,
       false
     ]
   },
-  "hash": "f2faaaa782bfcaac7a2f3f76027e5d5d23a7d478478d5da04100635ce2e0f850"
+  "hash": "4d3ddafec7b4498580fc08ebbad1314c500fb3932d616ee5e1cad670cdd7c879"
 }

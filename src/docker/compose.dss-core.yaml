@@ -1,10 +1,5 @@
 version: "3.9"
 
-include:
-  - compose.database.yaml
-
-# The processor is kept in its own template file since it needs to be
-# configured differently when running against a local vs public chain.
 services:
   aggregator:
     build:
@@ -20,6 +15,17 @@ services:
       DATABASE_URL: "postgres://econia:econia@postgres:5432/econia"
     restart: unless-stopped
 
+  diesel:
+    build:
+      args:
+        DATABASE_URL: "postgres://econia:econia@postgres:5432/econia"
+      context: ../../
+      dockerfile: src/docker/diesel/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+        restart: true
+
   grafana_annotations:
     build:
       context: ../../
@@ -33,6 +39,37 @@ services:
       DATABASE_URL: "postgres://econia:econia@postgres:5432/econia"
     volumes:
       - "./grafana_annotations/annotations.csv:/annotations.csv"
+
+  mqtt:
+    build:
+      context: ../../
+      dockerfile: src/docker/mqtt/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgres://econia:econia@postgres:5432/econia"
+      MQTT_PASSWORD: ${MQTT_PASSWORD}
+    ports:
+      - "21883:21883"
+    restart: unless-stopped
+
+  postgres:
+    environment:
+      POSTGRES_USER: "econia"
+      POSTGRES_PASSWORD: "econia"
+    image: postgres:14-bookworm
+    ports:
+      - "5432:5432"
+    volumes:
+      - "db:/var/lib/postgresql/data"
+    healthcheck:
+      test: pg_isready -h localhost -p 5432 -U econia || exit 1
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 15s
+      start_interval: 5s
 
   postgrest:
     depends_on:
@@ -50,23 +87,25 @@ services:
       - "3000:3000"
     restart: unless-stopped
 
-  ws:
+  processor:
     build:
       context: ../../
-      dockerfile: src/docker/api/Dockerfile.ws
-      args:
-        - POSTGRES_WEBSOCKETS_VERSION=0.11.1.0
+      dockerfile: src/docker/processor/Dockerfile
+    environment:
+      DATABASE_URL: "postgres://econia:econia@postgres:5432/econia"
+      ECONIA_ADDRESS: ${ECONIA_ADDRESS}
+      GRPC_AUTH_TOKEN: ${GRPC_AUTH_TOKEN}
+      GRPC_DATA_SERVICE_URL: ${GRPC_DATA_SERVICE_URL}
+      STARTING_VERSION: ${STARTING_VERSION}
     depends_on:
       diesel:
         condition: service_completed_successfully
       postgres:
         condition: service_healthy
-    environment:
-      - PGWS_DB_URI=postgres://econia:econia@postgres/econia
-      # This has to be at least 32 characters long.
-      - PGWS_JWT_SECRET=econia_0000000000000000000000000
-      - PGWS_CHECK_LISTENER_INTERVAL=1000
-      - PGWS_LISTEN_CHANNEL=econiaws
     ports:
-      - "3001:3000"
+      - "8085:8085"
     restart: unless-stopped
+
+volumes:
+  db:
+    driver: local

@@ -1,2 +1,0 @@
-# Stub Dockerfile used to pull postgrest image into GCP artifact registry.
-FROM postgrest/postgrest:v11.2.1

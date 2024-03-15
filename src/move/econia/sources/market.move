@@ -48,6 +48,7 @@
 /// * [Swaps](#swaps)
 /// * [Change order size](#change-order-size)
 /// * [Cancel orders](#cancel-orders)
+/// # [View function return decoders](#view-function-return-decoders)
 ///
 /// [Dependency charts](#dependency-charts)
 ///
@@ -156,6 +157,13 @@
 /// * `cancel_order_user()`
 /// * `cancel_all_orders_custodian()`
 /// * `cancel_all_orders_user()`
+///
+/// ## View function return decoders
+///
+/// * `get_order_view_fields()`
+/// * `get_orders_view_fields()`
+/// * `get_price_level_fields()`
+/// * `get_price_levels_fields()`
 ///
 /// # Dependency charts
 ///
@@ -1697,6 +1705,7 @@ module econia::market {
             new_size);
     }
 
+    /// Return the fields in an `OrderView`.
     public fun get_order_view_fields(
         order_view_ref: &OrderView
     ): (
@@ -1719,6 +1728,7 @@ module econia::market {
         )
     }
 
+    /// Return the fields in an `OrdersView`.
     public fun get_orders_view_fields(
         orders_view_ref: &OrdersView
     ): (
@@ -1728,6 +1738,7 @@ module econia::market {
         (&orders_view_ref.asks, &orders_view_ref.bids)
     }
 
+    /// Return the fields in a `PriceLevel`.
     public fun get_price_level_fields(
         price_level_ref: &PriceLevel
     ): (
@@ -1737,6 +1748,7 @@ module econia::market {
         (price_level_ref.price, price_level_ref.size)
     }
 
+    /// Return the fields in a `PriceLevels`.
     public fun get_price_levels_fields(
         price_levels_ref: &PriceLevels
     ): (

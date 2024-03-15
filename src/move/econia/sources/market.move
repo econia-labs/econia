@@ -48,7 +48,7 @@
 /// * [Swaps](#swaps)
 /// * [Change order size](#change-order-size)
 /// * [Cancel orders](#cancel-orders)
-/// # [View function return decoders](#view-function-return-decoders)
+/// * [View function return decoders](#view-function-return-decoders)
 ///
 /// [Dependency charts](#dependency-charts)
 ///

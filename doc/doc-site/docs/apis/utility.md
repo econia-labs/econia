@@ -77,4 +77,3 @@
 - [`get_CANCEL_REASON_SELF_MATCH_MAKER()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/user.md#function-get_CANCEL_REASON_SELF_MATCH_MAKER)
 - [`get_CANCEL_REASON_SELF_MATCH_TAKER()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/user.md#function-get_CANCEL_REASON_SELF_MATCH_TAKER)
 - [`get_NO_CUSTODIAN()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/user.md#function-get_no_custodian)
-

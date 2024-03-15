@@ -4262,7 +4262,6 @@ name = "mqtt-publisher"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "bigdecimal",
  "chrono",
  "rumqttc",
  "serde 1.0.188",

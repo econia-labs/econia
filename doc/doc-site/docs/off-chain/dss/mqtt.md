@@ -96,4 +96,4 @@ poetry run trade
 
 Enter nothing for all of the prompts to use the default local configuration.
 
-As you run through the assorted sections in the trading script, you should see fill events coming in over the WebSockets channel.
+As you run through the assorted sections in the trading script, you should see fill events coming in over the MQTT channel.

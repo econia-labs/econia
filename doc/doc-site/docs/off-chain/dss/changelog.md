@@ -12,6 +12,17 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 1. Merge `main` into `dss-stable`.
 1. Push annotated tag to head of `dss-stable`.
 
+## [v2.0.1]
+
+### Fixed
+
+- MQTT order ID rounding ([#719]).
+
+### Added
+
+- MQTT rebuild in hot upgrade script ([#720]).
+- `fees` function ([#717]).
+
 ## [v2.0.0]
 
 ### Added
@@ -173,6 +184,9 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 [#710]: https://github.com/econia-labs/econia/pull/710
 [#711]: https://github.com/econia-labs/econia/pull/711
 [#712]: https://github.com/econia-labs/econia/pull/712
+[#717]: https://github.com/econia-labs/econia/pull/717
+[#719]: https://github.com/econia-labs/econia/pull/719
+[#720]: https://github.com/econia-labs/econia/pull/720
 [processor #19]: https://github.com/econia-labs/aptos-indexer-processors/pull/19
 [processor #20]: https://github.com/econia-labs/aptos-indexer-processors/pull/20
 [processor #21]: https://github.com/econia-labs/aptos-indexer-processors/pull/21
@@ -184,4 +198,5 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 [v1.6.0]: https://github.com/econia-labs/econia/compare/dss-v1.5.0...dss-v1.6.0
 [v1.6.1]: https://github.com/econia-labs/econia/compare/dss-v1.6.0...dss-v1.6.1
 [v2.0.0]: https://github.com/econia-labs/econia/compare/dss-v1.6.1...dss-v2.0.0
+[v2.0.1]: https://github.com/econia-labs/econia/compare/dss-v2.0.0...dss-v2.0.1
 [`dss-stable`]: https://github.com/econia-labs/econia/tree/dss-stable

@@ -1,10 +1,5 @@
 # Using Terraform
 
-:::danger
-This guide is not actively maintained.
-See the [DSS CI/CD guide](./ci-cd.md) for the most up-to-date deployment steps.
-:::
-
 If you have already finished the [Google Cloud Platform (GCP) tutorial](gcp.md) and are looking for a more programmatic deployment process, this guide will show you how to use [Terraform](https://developer.hashicorp.com/terraform/tutorials/gcp-get-started/infrastructure-as-code) to deploy the Econia DSS via declarative configurations.
 
 This guide is for a specific use case, the Econia testnet trading competition leaderboard backend, but you can adapt as needed for your particular use case.

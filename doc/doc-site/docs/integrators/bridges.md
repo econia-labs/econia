@@ -28,7 +28,7 @@ Before we begin, you will need to have the following:
 
 ### Start Trading on Econia
 
-Connect your Aptos wallet with the USDC (LayerZero) to any of Econia’s [frontend integrators](https://www.econialabs.com/explore) to deposit the coins into your Econia Market Account!
+Connect your Aptos wallet with the USDC (LayerZero) to any of The Econia [frontend integrators](https://www.econialabs.com/explore) to deposit the coins into your Econia Market Account!
 
 ### Conclusion
 

@@ -72,7 +72,7 @@ module.exports = {
         },
         {
             type: 'category',
-            label: 'Integrator resources',
+            label: 'Integrator Resources',
             link: {
                 type: 'generated-index'
             },
@@ -90,6 +90,7 @@ module.exports = {
                 },
                 'integrators/bridges',
                 'integrators/notifications',
+                'integrators/reference-frontend',
             ]
         },
         'security',

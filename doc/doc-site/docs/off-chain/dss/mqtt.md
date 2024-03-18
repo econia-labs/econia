@@ -52,7 +52,7 @@ The JSON format for this message is the same as the REST API [`/place_swap_order
 
 `change_order_size/MARKET_ID/USER_ADDRESS/CUSTODIAN_ID`
 
-The JSON format for this message is the same as the REST API [`/change_order_size_events` endpoint](./dss/rest-api#tag/change_order_size_events).
+The JSON format for this message is the same as the REST API [`/change_order_size_events` endpoint](./rest-api#tag/change_order_size_events).
 
 ### CancelOrderEvents
 

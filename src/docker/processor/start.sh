@@ -10,6 +10,9 @@ rm /app/out.csv
 
 echo "health_check_port: 8085
 server_config:
+  transaction_filter:
+    focus_contract_addresses:
+      - $ECONIA_ADDRESS
   processor_config:
     type: econia_transaction_processor
     econia_address: $ECONIA_ADDRESS

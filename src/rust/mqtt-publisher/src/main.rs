@@ -1,7 +1,6 @@
 use std::{collections::HashSet, time::Duration};
 
 use anyhow::Result;
-use bigdecimal::BigDecimal;
 use chrono::{DateTime, Utc};
 use rumqttc::{AsyncClient, MqttOptions, QoS, Transport};
 use serde::{Deserialize, Serialize};
@@ -9,100 +8,100 @@ use sqlx_postgres::PgListener;
 
 #[derive(Serialize, Deserialize)]
 struct PlaceLimitOrderNotif {
-    txn_version: BigDecimal,
-    event_idx: BigDecimal,
+    txn_version: u128,
+    event_idx: u128,
     time: DateTime<Utc>,
-    market_id: BigDecimal,
+    market_id: u128,
     user: String,
-    custodian_id: BigDecimal,
-    order_id: BigDecimal,
+    custodian_id: u128,
+    order_id: u128,
     side: bool,
     integrator: String,
-    initial_size: BigDecimal,
-    price: BigDecimal,
+    initial_size: u128,
+    price: u128,
     restriction: i16,
     self_match_behavior: i16,
-    size: BigDecimal,
+    size: u128,
 }
 #[derive(Serialize, Deserialize)]
 struct PlaceMarketOrderNotif {
-    txn_version: BigDecimal,
-    event_idx: BigDecimal,
+    txn_version: u128,
+    event_idx: u128,
     time: DateTime<Utc>,
-    market_id: BigDecimal,
+    market_id: u128,
     user: String,
-    custodian_id: BigDecimal,
-    order_id: BigDecimal,
+    custodian_id: u128,
+    order_id: u128,
     direction: bool,
     integrator: String,
     self_match_behavior: i16,
-    size: BigDecimal,
+    size: u128,
 }
 #[derive(Serialize, Deserialize)]
 struct PlaceSwapOrderNotif {
-    txn_version: BigDecimal,
-    event_idx: BigDecimal,
+    txn_version: u128,
+    event_idx: u128,
     time: DateTime<Utc>,
-    market_id: BigDecimal,
-    order_id: BigDecimal,
+    market_id: u128,
+    order_id: u128,
     direction: bool,
     signing_account: String,
     integrator: String,
-    min_base: BigDecimal,
-    max_base: BigDecimal,
-    min_quote: BigDecimal,
-    max_quote: BigDecimal,
-    limit_price: BigDecimal,
+    min_base: u128,
+    max_base: u128,
+    min_quote: u128,
+    max_quote: u128,
+    limit_price: u128,
 }
 #[derive(Serialize, Deserialize)]
 struct ChangeOrderSizeNotif {
-    txn_version: BigDecimal,
-    event_idx: BigDecimal,
+    txn_version: u128,
+    event_idx: u128,
     time: DateTime<Utc>,
-    market_id: BigDecimal,
+    market_id: u128,
     user: String,
-    custodian_id: BigDecimal,
-    order_id: BigDecimal,
+    custodian_id: u128,
+    order_id: u128,
     side: bool,
-    new_size: BigDecimal,
+    new_size: u128,
 }
 #[derive(Serialize, Deserialize)]
 struct CancelOrderNotif {
-    txn_version: BigDecimal,
-    event_idx: BigDecimal,
+    txn_version: u128,
+    event_idx: u128,
     time: DateTime<Utc>,
-    market_id: BigDecimal,
+    market_id: u128,
     user: String,
-    custodian_id: BigDecimal,
-    order_id: BigDecimal,
+    custodian_id: u128,
+    order_id: u128,
     reason: i16,
 }
 #[derive(Serialize, Deserialize)]
 struct FillNotif {
-    txn_version: BigDecimal,
-    event_idx: BigDecimal,
+    txn_version: u128,
+    event_idx: u128,
     emit_address: String,
     time: DateTime<Utc>,
     maker_address: String,
-    maker_custodian_id: BigDecimal,
-    maker_order_id: BigDecimal,
+    maker_custodian_id: u128,
+    maker_order_id: u128,
     maker_side: bool,
-    market_id: BigDecimal,
-    price: BigDecimal,
-    sequence_number_for_trade: BigDecimal,
-    size: BigDecimal,
+    market_id: u128,
+    price: u128,
+    sequence_number_for_trade: u128,
+    size: u128,
     taker_address: String,
-    taker_custodian_id: BigDecimal,
-    taker_order_id: BigDecimal,
-    taker_quote_fees_paid: BigDecimal,
+    taker_custodian_id: u128,
+    taker_order_id: u128,
+    taker_quote_fees_paid: u128,
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let mut emitted_fills: HashSet<(
-        BigDecimal,
-        BigDecimal,
-        BigDecimal,
+        u128,
+        u128,
+        u128,
     )> = Default::default();
     let mqtt_url = std::env::var("MQTT_URL")?;
     let mqtt_password = std::env::var("MQTT_PASSWORD")?;

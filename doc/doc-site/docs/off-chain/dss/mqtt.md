@@ -34,37 +34,37 @@ But you could subscribe to `fill/+/0xc0deface/+` to get all fill events from the
 
 `place_limit_order/MARKET_ID/USER_ADDRESS/CUSTODIAN_ID/INTEGRATOR`
 
-The JSON format for this message is the same as the REST API [`/place_limit_order_events` endpoint](https://econia.dev/off-chain/dss/rest-api#tag/place_limit_order_events).
+The JSON format for this message is the same as the REST API [`/place_limit_order_events` endpoint](./rest-api#tag/place_limit_order_events).
 
 ### PlaceMarketOrderEvents
 
 `place_market_order/MARKET_ID/USER_ADDRESS/CUSTODIAN_ID/INTEGRATOR`
 
-The JSON format for this message is the same as the REST API [`/place_market_order_events` endpoint](https://econia.dev/off-chain/dss/rest-api#tag/place_market_order_events).
+The JSON format for this message is the same as the REST API [`/place_market_order_events` endpoint](./rest-api#tag/place_market_order_events).
 
 ### PlaceSwapOrderEvents
 
 `place_swap_order/MARKET_ID/INTEGRATOR/SIGNING_ACCOUNT`
 
-The JSON format for this message is the same as the REST API [`/place_swap_order_events` endpoint](https://econia.dev/off-chain/dss/rest-api#tag/place_swap_order_events).
+The JSON format for this message is the same as the REST API [`/place_swap_order_events` endpoint](./rest-api#tag/place_swap_order_events).
 
 ### ChangeOrderSizeEvents
 
 `change_order_size/MARKET_ID/USER_ADDRESS/CUSTODIAN_ID`
 
-The JSON format for this message is the same as the REST API [`/change_order_size_events` endpoint](https://econia.dev/off-chain/dss/rest-api#tag/change_order_size_events).
+The JSON format for this message is the same as the REST API [`/change_order_size_events` endpoint](./rest-api#tag/change_order_size_events).
 
 ### CancelOrderEvents
 
 `cancel_order/MARKET_ID/USER_ADDRESS/CUSTODIAN_ID`
 
-The JSON format for this message is the same as the REST API [`/cancel_order_events` endpoint](https://econia.dev/off-chain/dss/rest-api#tag/cancel_order_events).
+The JSON format for this message is the same as the REST API [`/cancel_order_events` endpoint](./rest-api#tag/cancel_order_events).
 
 ### FillEvents
 
 `fill/MARKET_ID/USER_ADDRESS/CUSTODIAN_ID`
 
-The JSON format for this message is the same as the REST API [`/fill_events` endpoint](https://econia.dev/off-chain/dss/rest-api#tag/fill_events).
+The JSON format for this message is the same as the REST API [`/fill_events` endpoint](./rest-api#tag/fill_events).
 
 Note that if you subscribe to fill events for two different user/custodian ID combinations on the same market and they fill against each other, you will receive the same fill event notification twice, once on each channel.
 
@@ -96,4 +96,4 @@ poetry run trade
 
 Enter nothing for all of the prompts to use the default local configuration.
 
-As you run through the assorted sections in the trading script, you should see fill events coming in over the WebSockets channel.
+As you run through the assorted sections in the trading script, you should see fill events coming in over the MQTT channel.

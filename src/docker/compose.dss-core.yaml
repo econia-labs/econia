@@ -52,6 +52,7 @@ services:
       MQTT_PASSWORD: ${MQTT_PASSWORD}
     ports:
       - "21883:21883"
+      - "21884:21884"
     restart: unless-stopped
 
   postgres:

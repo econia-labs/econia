@@ -17,7 +17,7 @@ The objective of The Econia [reference frontend](https://reference.econia.exchan
 1. VSCode, terminal, or your favorite code editor
 1. Pnpm installed 
 
-## Step 1: Clone Econia’s Frontend [Github](https://github.com/econia-labs/econia-frontend) Repo
+## Step 1: Clone The Econia Frontend [Github](https://github.com/econia-labs/econia-frontend) Repo
 
 You can either clone the repo using git commands, fork to your own github, or download the zip.
 
@@ -134,7 +134,7 @@ To generate a `GITHUB_ACCESS_TOKEN`:
 5. Click `Generate token`
 6. Copy the generated token to your Vercel environment variables and name it `GITHUB_ACCESS_TOKEN`
 
-## 1: Log into Vercel
+## Step 1: Log into Vercel
 
 ![](/img/Vercel.png)
 

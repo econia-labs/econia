@@ -9,7 +9,7 @@ The objective of The Econia [reference frontend](https://reference.econia.exchan
 # In this Tutorial, you will learn how to:
 
 1. Fork Econia Reference FrontEnd 
-1. Run the Frontend locally with and without Trading View
+1. Run the Frontend locally with and without TradingView
 1. Deploy the Frontend on Vercel 
 
 # Prerequisites: 

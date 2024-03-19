@@ -28,10 +28,10 @@ You can either clone the repo using git commands, fork to your own github, or do
 
 ## Step 2 (Optional): TradingView Set Up
 
-> NOTE: Skip this part if you do not want to show the trading chart or have no access rights to the TradingView repository
+> NOTE: Skip this part if you do not want to show the trading chart or have no access rights to the TradingView repository.
 > 
 
-> NOTE: You will not be able to deploy the app on Vercel without the TradingView submodule
+> NOTE: You will not be able to deploy the app on Vercel without the TradingView submodule.
 > 
 
 The [TradingView](https://github.com/tradingview/charting_library) repository is the submodule of this repository which is used for displaying the trading chart of a specific martket and initialized at `src/frontend/public/static`.
@@ -64,6 +64,7 @@ graph TD;
     trade-->TradeHistories;
 ``````
 
+
 *We will work inside the "src/frontend" folder*
 
 ## Step 4: Run Project Locally
@@ -90,9 +91,9 @@ pnpm is a package manager
 cp -R .env.example .env.local
 ```
 
-The command is copying the contents of the **`.env.example`** file to a file named **`.env.local`**. The **`-R`** flag indicates a recursive copy, which is typically used when dealing with directories
+The command is copying the contents of the **`.env.example`** file to a file named **`.env.local`**. The **`-R`** flag indicates a recursive copy, which is typically used when dealing with directories.
 
-If you take a look at the .env files note that the environment variable for the REST URL is now set to https://aptos-testnet-econia.nodeinfra.com/ because Nodeinfra’s testnet DSS supports Econia’s frontend data.
+If you take a look at the .env files note that the environment variable for the REST URL is now set to https://aptos-testnet-econia.nodeinfra.com/ because Nodeinfra’s testnet DSS supports The Econia Frontend's data.
 
 | Variable | Meaning |
 | --- | --- |
@@ -114,23 +115,24 @@ pnpm run dev
 
 Doing so should open http://localhost:3000/ in your browser, where you'll see the frontend for the project.
 
-*Note: you must change coloring and branding of the front-end before publishing* 
+*Note: you must change coloring and branding of the front-end before publishing.* 
 
 ## Steps to deploy on Vercel
 
 Vercel is a user-friendly cloud platform for frontend development and deployment. It streamlines the deployment process by automating Git-based deployments and serverless functions.
 
 Prerequisites: 
-1) Github Account
 
-2) Github Access Token
+1. Github Account
+
+1. Github Access Token
 
 To generate a `GITHUB_ACCESS_TOKEN`:
 
 1. Go to https://github.com/settings/tokens/new
-2. Provide a descriptive `note`.
+2. Provide a descriptive `note`
 3. In `Expiration` selection box, choose `No expiration`
-4. In the `Select scopes` section, click on `repo - Full control of private repositories` to select all repository-related options.
+4. In the `Select scopes` section, click on `repo - Full control of private repositories` to select all repository-related options
 5. Click `Generate token`
 6. Copy the generated token to your Vercel environment variables and name it `GITHUB_ACCESS_TOKEN`
 
@@ -192,11 +194,11 @@ Click the `Deploy` button, wait for several minutes and see the results.
 
 ![](/img/VercelDeploy.png)
 
-*note you may see the errors below if you do not have access to the TradingView submodule, but the website will still deploy normally!
+*Note: You may see the errors below if you do not have access to the TradingView submodule, but the website will still deploy normally!
 
 ![](/img/VercelErrors.png)
 
-Congrats! You will then be taken to the page hosted on vercel!
+Congrats! You will then be taken to the page hosted on Vercel!
 
 ![](/img/VercelCongrats.png)
 

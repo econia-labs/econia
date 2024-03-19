@@ -34,7 +34,7 @@ You can either clone the repo using git commands, fork to your own github, or do
 > NOTE: You will not be able to deploy the app on Vercel without the TradingView submodule.
 > 
 
-The [TradingView](https://github.com/tradingview/charting_library) repository is the submodule of this repository which is used for displaying the trading chart of a specific martket and initialized at `src/frontend/public/static`.
+The [TradingView](https://github.com/tradingview/charting_library) repository is the submodule of this repository which is used for displaying the trading chart of a specific market and initialized at `src/frontend/public/static`.
 
 In essence, adding the `TradingView` as a submodule is that you are cloning the `TradingView` repository and build it into static files. Therefore, you need to have the access rights to the `TradingView` repository.
 

@@ -22,6 +22,7 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 
 - MQTT rebuild in hot upgrade script ([#720]).
 - `fees` function ([#717]).
+- MQTT over WebSockets support ([#723]).
 
 ## [v2.0.0]
 
@@ -187,6 +188,7 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 [#717]: https://github.com/econia-labs/econia/pull/717
 [#719]: https://github.com/econia-labs/econia/pull/719
 [#720]: https://github.com/econia-labs/econia/pull/720
+[#723]: https://github.com/econia-labs/econia/pull/723
 [processor #19]: https://github.com/econia-labs/aptos-indexer-processors/pull/19
 [processor #20]: https://github.com/econia-labs/aptos-indexer-processors/pull/20
 [processor #21]: https://github.com/econia-labs/aptos-indexer-processors/pull/21

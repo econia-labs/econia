@@ -3,97 +3,146 @@ use std::{collections::HashSet, time::Duration};
 use anyhow::Result;
 use chrono::{DateTime, Utc};
 use rumqttc::{AsyncClient, MqttOptions, QoS, Transport};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, Serializer};
 use sqlx_postgres::PgListener;
 
 #[derive(Serialize, Deserialize)]
 struct PlaceLimitOrderNotif {
+    #[serde(serialize_with = "serialize_to_str")]
     txn_version: u128,
+    #[serde(serialize_with = "serialize_to_str")]
     event_idx: u128,
     time: DateTime<Utc>,
+    #[serde(serialize_with = "serialize_to_str")]
     market_id: u128,
     user: String,
+    #[serde(serialize_with = "serialize_to_str")]
     custodian_id: u128,
+    #[serde(serialize_with = "serialize_to_str")]
     order_id: u128,
     side: bool,
     integrator: String,
+    #[serde(serialize_with = "serialize_to_str")]
     initial_size: u128,
+    #[serde(serialize_with = "serialize_to_str")]
     price: u128,
     restriction: i16,
     self_match_behavior: i16,
+    #[serde(serialize_with = "serialize_to_str")]
     size: u128,
 }
 #[derive(Serialize, Deserialize)]
 struct PlaceMarketOrderNotif {
+    #[serde(serialize_with = "serialize_to_str")]
     txn_version: u128,
+    #[serde(serialize_with = "serialize_to_str")]
     event_idx: u128,
     time: DateTime<Utc>,
+    #[serde(serialize_with = "serialize_to_str")]
     market_id: u128,
     user: String,
+    #[serde(serialize_with = "serialize_to_str")]
     custodian_id: u128,
+    #[serde(serialize_with = "serialize_to_str")]
     order_id: u128,
     direction: bool,
     integrator: String,
     self_match_behavior: i16,
+    #[serde(serialize_with = "serialize_to_str")]
     size: u128,
 }
 #[derive(Serialize, Deserialize)]
 struct PlaceSwapOrderNotif {
+    #[serde(serialize_with = "serialize_to_str")]
     txn_version: u128,
+    #[serde(serialize_with = "serialize_to_str")]
     event_idx: u128,
     time: DateTime<Utc>,
+    #[serde(serialize_with = "serialize_to_str")]
     market_id: u128,
+    #[serde(serialize_with = "serialize_to_str")]
     order_id: u128,
     direction: bool,
     signing_account: String,
     integrator: String,
+    #[serde(serialize_with = "serialize_to_str")]
     min_base: u128,
+    #[serde(serialize_with = "serialize_to_str")]
     max_base: u128,
+    #[serde(serialize_with = "serialize_to_str")]
     min_quote: u128,
+    #[serde(serialize_with = "serialize_to_str")]
     max_quote: u128,
+    #[serde(serialize_with = "serialize_to_str")]
     limit_price: u128,
 }
 #[derive(Serialize, Deserialize)]
 struct ChangeOrderSizeNotif {
+    #[serde(serialize_with = "serialize_to_str")]
     txn_version: u128,
+    #[serde(serialize_with = "serialize_to_str")]
     event_idx: u128,
     time: DateTime<Utc>,
+    #[serde(serialize_with = "serialize_to_str")]
     market_id: u128,
     user: String,
+    #[serde(serialize_with = "serialize_to_str")]
     custodian_id: u128,
+    #[serde(serialize_with = "serialize_to_str")]
     order_id: u128,
     side: bool,
+    #[serde(serialize_with = "serialize_to_str")]
     new_size: u128,
 }
 #[derive(Serialize, Deserialize)]
 struct CancelOrderNotif {
+    #[serde(serialize_with = "serialize_to_str")]
     txn_version: u128,
+    #[serde(serialize_with = "serialize_to_str")]
     event_idx: u128,
     time: DateTime<Utc>,
+    #[serde(serialize_with = "serialize_to_str")]
     market_id: u128,
     user: String,
+    #[serde(serialize_with = "serialize_to_str")]
     custodian_id: u128,
+    #[serde(serialize_with = "serialize_to_str")]
     order_id: u128,
     reason: i16,
 }
 #[derive(Serialize, Deserialize)]
 struct FillNotif {
+    #[serde(serialize_with = "serialize_to_str")]
     txn_version: u128,
+    #[serde(serialize_with = "serialize_to_str")]
     event_idx: u128,
     emit_address: String,
     time: DateTime<Utc>,
     maker_address: String,
+    #[serde(serialize_with = "serialize_to_str")]
     maker_custodian_id: u128,
+    #[serde(serialize_with = "serialize_to_str")]
     maker_order_id: u128,
     maker_side: bool,
+    #[serde(serialize_with = "serialize_to_str")]
     market_id: u128,
+    #[serde(serialize_with = "serialize_to_str")]
     price: u128,
+    #[serde(serialize_with = "serialize_to_str")]
     sequence_number_for_trade: u128,
+    #[serde(serialize_with = "serialize_to_str")]
     size: u128,
     taker_address: String,
+    #[serde(serialize_with = "serialize_to_str")]
     taker_custodian_id: u128,
+    #[serde(serialize_with = "serialize_to_str")]
     taker_order_id: u128,
+    #[serde(serialize_with = "serialize_to_str")]
     taker_quote_fees_paid: u128,
+}
+
+fn serialize_to_str<S>(value: &u128, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+    serializer.serialize_str(&value.to_string())
 }
 
 #[tokio::main]

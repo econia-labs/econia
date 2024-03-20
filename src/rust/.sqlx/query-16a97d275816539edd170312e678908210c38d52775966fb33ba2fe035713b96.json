@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO aggregator.liquidity_groups (name, market_id)\nSELECT 'all', market_id FROM market_registration_events m WHERE NOT EXISTS (\n    SELECT *\n    FROM aggregator.liquidity_groups lg\n    WHERE lg.market_id = m.market_id\n    AND lg.name = 'all'\n);\n",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "16a97d275816539edd170312e678908210c38d52775966fb33ba2fe035713b96"
+}

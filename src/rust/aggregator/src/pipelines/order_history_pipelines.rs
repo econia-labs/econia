@@ -453,6 +453,10 @@ impl Pipeline for OrderHistoryPipelines {
                 .map(|e| (e.address, e.group_id));
         let address_to_group = HashMap::from_iter(address_to_group);
 
+        sqlx::query_file!("sqlx_queries/order_history_pipelines/insert_new_liquidity_groups.sql")
+            .execute(&mut transaction as &mut PgConnection)
+            .await
+            .map_err(to_pipeline_error)?;
         let market_id_to_group =
             sqlx::query_file!("sqlx_queries/order_history_pipelines/get_liquidity_group_all.sql")
                 .fetch_all(&mut transaction as &mut PgConnection)

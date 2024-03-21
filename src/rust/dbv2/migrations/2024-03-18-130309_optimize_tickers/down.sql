@@ -25,7 +25,7 @@ CREATE OR REPLACE FUNCTION api.get_market_liquidity (market_id numeric, depth nu
 $$ LANGUAGE SQL;
 
 
-CREATE FUNCTION api.get_market_best_ask_price (market_id numeric) RETURNS NUMERIC AS $$
+CREATE OR REPLACE FUNCTION api.get_market_best_ask_price (market_id numeric) RETURNS NUMERIC AS $$
     SELECT MIN(price)
     FROM api.orders
     WHERE orders.market_id = $1
@@ -34,7 +34,7 @@ CREATE FUNCTION api.get_market_best_ask_price (market_id numeric) RETURNS NUMERI
 $$ LANGUAGE SQL;
 
 
-CREATE FUNCTION api.get_market_best_bid_price (market_id numeric) RETURNS NUMERIC AS $$
+CREATE OR REPLACE FUNCTION api.get_market_best_bid_price (market_id numeric) RETURNS NUMERIC AS $$
     SELECT MAX(price)
     FROM api.orders
     WHERE orders.market_id = $1

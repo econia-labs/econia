@@ -352,7 +352,7 @@ fn add_to_map<'a>(
         map.entry(LiquidityKey { group_id, bps_times_tem: bps_times_ten })
             .and_modify(|e| e.base += &order.size * &order.price)
             .or_insert(LiquidityValue {
-                base: &order.size * &order.price,
+                base: &order.size * price,
                 quote: BigDecimal::zero(),
             });
     } else {
@@ -360,7 +360,7 @@ fn add_to_map<'a>(
             .and_modify(|e| e.quote += &order.size * price)
             .or_insert(LiquidityValue {
                 base: BigDecimal::zero(),
-                quote: &order.size * price,
+                quote: &order.size * &order.price,
             });
     }
     Ok(())

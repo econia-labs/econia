@@ -61,11 +61,14 @@ impl Default for SpreadsState {
 #[derive(PartialEq, Eq, Hash)]
 struct LiquidityKey {
     group_id: i32,
-    bps_times_tem: i32,
+    bps_times_ten: i32,
 }
 
 struct LiquidityValue {
+    /// Effective value of base locked in asks, quoted in ticks.
+    /// Price taken as the last fill price at the time of calculation.
     base: BigDecimal,
+    /// Amount of quote locked in bids, quoted in ticks.
     quote: BigDecimal,
 }
 
@@ -349,14 +352,14 @@ fn add_to_map<'a>(
     price: &BigDecimal,
 ) -> Result<(), PipelineError> {
     if order.side == ASK {
-        map.entry(LiquidityKey { group_id, bps_times_tem: bps_times_ten })
+        map.entry(LiquidityKey { group_id, bps_times_ten: bps_times_ten })
             .and_modify(|e| e.base += &order.size * &order.price)
             .or_insert(LiquidityValue {
                 base: &order.size * price,
                 quote: BigDecimal::zero(),
             });
     } else {
-        map.entry(LiquidityKey { group_id, bps_times_tem: bps_times_ten })
+        map.entry(LiquidityKey { group_id, bps_times_ten: bps_times_ten })
             .and_modify(|e| e.quote += &order.size * price)
             .or_insert(LiquidityValue {
                 base: BigDecimal::zero(),
@@ -590,7 +593,7 @@ async fn liquidities<'a>(
         sqlx::query_file!(
             "sqlx_queries/order_history_pipelines/insert_liquidity.sql",
             key.group_id,
-            key.bps_times_tem,
+            key.bps_times_ten,
             timestamp,
             value.base,
             value.quote,

@@ -62,6 +62,7 @@ Before you start working with the DSS, make sure you are on the right branch and
 ```bash
 # From Econia repo root
 git checkout dss-stable
+git pull
 git submodule update --init --recursive
 ```
 
@@ -129,7 +130,6 @@ See the [changelog](./changelog.md) to verify that the latest release supports a
 1. Clean your Docker containers and image cache:
 
    ```bash
-   docker ps -aq | xargs docker stop | xargs docker rm
    docker system prune -af
    ```
 
@@ -141,13 +141,14 @@ See the [changelog](./changelog.md) to verify that the latest release supports a
 
    ```bash
    git checkout dss-stable
+   git pull
    git submodule update --init --recursive
    ```
 
 1. Restart the DSS:
 
    ```bash
-   docker compose --file src/docker/compose.dss-core.yaml up
+   docker compose --file src/docker/compose.dss-core.yaml up --force-recreate
    ```
 
 ### Verifying the DSS

@@ -148,6 +148,7 @@ See the [changelog](./changelog.md) to verify that the latest release supports a
 1. Restart the DSS:
 
    ```bash
+   docker compose --file src/docker/compose.dss-core.yaml build --no-cache
    docker compose --file src/docker/compose.dss-core.yaml up --force-recreate
    ```
 

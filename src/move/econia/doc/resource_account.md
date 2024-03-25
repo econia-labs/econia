@@ -1,5 +1,5 @@
 
-<a name="0xc0deb00c_resource_account"></a>
+<a id="0xc0deb00c_resource_account"></a>
 
 # Module `0xc0deb00c::resource_account`
 
@@ -35,7 +35,7 @@ Manages an Econia-owned resource account.
 ![](img/resource_account_backward_dep.svg)
 
 
-<a name="0xc0deb00c_resource_account_SignerCapabilityStore"></a>
+<a id="0xc0deb00c_resource_account_SignerCapabilityStore"></a>
 
 ## Resource `SignerCapabilityStore`
 
@@ -60,14 +60,14 @@ Stores a signing capability for the Econia resource account.
 </dl>
 
 
-<a name="0xc0deb00c_resource_account_get_address"></a>
+<a id="0xc0deb00c_resource_account_get_address"></a>
 
 ## Function `get_address`
 
 Return resource account address.
 
 
-<a name="@Testing_0"></a>
+<a id="@Testing_0"></a>
 
 ### Testing
 
@@ -97,14 +97,14 @@ Return resource account address.
 
 
 
-<a name="0xc0deb00c_resource_account_get_signer"></a>
+<a id="0xc0deb00c_resource_account_get_signer"></a>
 
 ## Function `get_signer`
 
 Return resource account signer.
 
 
-<a name="@Testing_1"></a>
+<a id="@Testing_1"></a>
 
 ### Testing
 
@@ -133,14 +133,14 @@ Return resource account signer.
 
 
 
-<a name="0xc0deb00c_resource_account_init_module"></a>
+<a id="0xc0deb00c_resource_account_init_module"></a>
 
 ## Function `init_module`
 
 Initialize the Econia resource account upon module publication.
 
 
-<a name="@Seed_considerations_2"></a>
+<a id="@Seed_considerations_2"></a>
 
 ### Seed considerations
 
@@ -153,7 +153,7 @@ assuming in this case that multiple resource accounts are not
 created during the same block.
 
 
-<a name="@Testing_3"></a>
+<a id="@Testing_3"></a>
 
 ### Testing
 

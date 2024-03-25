@@ -78,16 +78,7 @@ module.exports = {
       },
       items: [
         'integrators/econia-labs',
-        {
-          type: 'category',
-          label: 'Oracles',
-          link: {
-            type: 'generated-index'
-          },
-          items: [
-            'integrators/oracles/pyth',
-          ]
-        },
+        'integrators/pyth',
         'integrators/bridges',
         'integrators/notifications',
       ]

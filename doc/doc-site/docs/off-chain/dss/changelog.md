@@ -9,10 +9,11 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
    1. Bump changelog with PRs since last preparatory PR:
       1. In `econia` repo.
       1. In processor submodule.
+      1. Note if a hot upgrade is possible relative to the last release.
 1. Merge `main` into `dss-stable`.
 1. Push annotated tag to head of `dss-stable`.
 
-## [v2.0.1]
+## [v2.0.1] (hot upgradable)
 
 ### Fixed
 

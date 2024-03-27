@@ -25,7 +25,6 @@ You can either clone the repo using git commands, fork to your own github, or do
 
 ![](/img/frontendrepo.png)
 
-
 ## Step 2 (Optional): TradingView repo setup
 
 By default the candlestick chart functionality in the Econia reference frontend relies on the closed source [TradingView Advanced Charts] repository.
@@ -63,7 +62,7 @@ Before we start, it's important to check out the architecture of the code. You c
       trade-->TradeHistories;
       TradingViewChart-->TVChartContainer;
       TVChartContainer--"*if the charting_library submodule isn't available*"-->LightweightChartsContainer;
-``````
+```
 
 *We will work inside the "src/frontend" folder*
 
@@ -95,18 +94,18 @@ The command is copying the contents of the **`.env.example`** file to a file nam
 
 If you take a look at the `.env` files you may note that the environment variable for the REST URL is set to https://aptos-testnet-econia.nodeinfra.com/, since Nodeinfra runs a community deployment of the [Econia DSS](../off-chain/dss/data-service-stack.md), which provides data feeds for the Econia reference frontend data.
 
-| Variable | Meaning |
-| --- | --- |
-| `NEXT_PUBLIC_ECONIA_ADDR` | The Econia address |
-| `NEXT_PUBLIC_FAUCET_ADDR` | The Econia faucet address |
-| `NEXT_PUBLIC_NETWORK_NAME` | The network name (for example, testnet) |
-| `NEXT_PUBLIC_API_URL` | The Econia REST API URL |
-| `NEXT_PUBLIC_RPC_NODE_URL` | Aptos RPC URL |
+| Variable                                 | Meaning                                                            |
+| ---------------------------------------- | ------------------------------------------------------------------ |
+| `NEXT_PUBLIC_ECONIA_ADDR`                | The Econia address                                                 |
+| `NEXT_PUBLIC_FAUCET_ADDR`                | The Econia faucet address                                          |
+| `NEXT_PUBLIC_NETWORK_NAME`               | The network name (for example, testnet)                            |
+| `NEXT_PUBLIC_API_URL`                    | The Econia REST API URL                                            |
+| `NEXT_PUBLIC_RPC_NODE_URL`               | Aptos RPC URL                                                      |
 | `NEXT_PUBLIC_UNCONNECTED_NOTICE_MESSAGE` | Message that shows in modal when user has not connected wallet yet |
-| `NEXT_PUBLIC_READ_ONLY` | Config read only mode, 1 OR 0 |
-| `NEXT_PUBLIC_READ_ONLY_MESSAGE` | Error message when user attempt do a require sign operator |
-| `NEXT_PUBLIC_DEFAULT_MARKET_ID` | Default market id |
-| `TRY_CLONING_TRADINGVIEW` | Set to any value other than "1" to skip private submodule cloning |
+| `NEXT_PUBLIC_READ_ONLY`                  | Config read only mode, 1 OR 0                                      |
+| `NEXT_PUBLIC_READ_ONLY_MESSAGE`          | Error message when user attempt do a require sign operator         |
+| `NEXT_PUBLIC_DEFAULT_MARKET_ID`          | Default market id                                                  |
+| `TRY_CLONING_TRADINGVIEW`                | Set to any value other than "1" to skip private submodule cloning  |
 
 - Run the development server
 
@@ -130,11 +129,11 @@ Prerequisites:
 To generate a `GITHUB_ACCESS_TOKEN`:
 
 1. Go to https://github.com/settings/tokens/new
-2. Provide a descriptive `note`
-3. In `Expiration` selection box, choose `No expiration`
-4. In the `Select scopes` section, click on `repo - Full control of private repositories` to select all repository-related options
-5. Click `Generate token`
-6. Copy the generated token to your Vercel environment variables and name it `GITHUB_ACCESS_TOKEN`
+1. Provide a descriptive `note`
+1. In `Expiration` selection box, choose `No expiration`
+1. In the `Select scopes` section, click on `repo - Full control of private repositories` to select all repository-related options
+1. Click `Generate token`
+1. Copy the generated token to your Vercel environment variables and name it `GITHUB_ACCESS_TOKEN`
 
 ## Step 1: Log into Vercel
 
@@ -142,7 +141,7 @@ To generate a `GITHUB_ACCESS_TOKEN`:
 
 ## Step 2: Create a Vercel project
 
- Import project - on your screen, click `Add New` button and select `Project` to create a new project or shortly clicks `Import project` to import the Github repository.
+Import project - on your screen, click `Add New` button and select `Project` to create a new project or shortly clicks `Import project` to import the Github repository.
 
 The Vercel webiste displays a list of repositories existing in your Github account.
 
@@ -168,19 +167,19 @@ Now click the `Import` button on the `econia-frontend` repository.
 
 To deploy on Vercel, you'll need to set up the following environment variables:
 
-| Variable | Meaning |
-| --- | --- |
-| `NEXT_PUBLIC_ECONIA_ADDR` | The Econia address |
-| `NEXT_PUBLIC_FAUCET_ADDR` | The Econia faucet address |
-| `NEXT_PUBLIC_NETWORK_NAME` | The network name (for example, testnet) |
-| `NEXT_PUBLIC_API_URL` | The Econia REST API URL |
-| `NEXT_PUBLIC_RPC_NODE_URL` | Aptos RPC URL |
-| `GITHUB_ACCESS_TOKEN` | Access token for GitHub account with private `TradingView` repo access (only required in Vercel) |
-| `NEXT_PUBLIC_UNCONNECTED_NOTICE_MESSAGE` | Message that shows in modal when user has not connected wallet yet |
-| `NEXT_PUBLIC_READ_ONLY` | Config read only mode, 1 OR 0 |
-| `NEXT_PUBLIC_READ_ONLY_MESSAGE` | Error message when user attempt do a require sign operator |
-| `NEXT_PUBLIC_DEFAULT_MARKET_ID` | Default market id |
-| `TRY_CLONING_TRADINGVIEW` | Set to any value other than "1" to skip private submodule cloning |
+| Variable                                 | Meaning                                                                                          |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `NEXT_PUBLIC_ECONIA_ADDR`                | The Econia address                                                                               |
+| `NEXT_PUBLIC_FAUCET_ADDR`                | The Econia faucet address                                                                        |
+| `NEXT_PUBLIC_NETWORK_NAME`               | The network name (for example, testnet)                                                          |
+| `NEXT_PUBLIC_API_URL`                    | The Econia REST API URL                                                                          |
+| `NEXT_PUBLIC_RPC_NODE_URL`               | Aptos RPC URL                                                                                    |
+| `GITHUB_ACCESS_TOKEN`                    | Access token for GitHub account with private `TradingView` repo access (only required in Vercel) |
+| `NEXT_PUBLIC_UNCONNECTED_NOTICE_MESSAGE` | Message that shows in modal when user has not connected wallet yet                               |
+| `NEXT_PUBLIC_READ_ONLY`                  | Config read only mode, 1 OR 0                                                                    |
+| `NEXT_PUBLIC_READ_ONLY_MESSAGE`          | Error message when user attempt do a require sign operator                                       |
+| `NEXT_PUBLIC_DEFAULT_MARKET_ID`          | Default market id                                                                                |
+| `TRY_CLONING_TRADINGVIEW`                | Set to any value other than "1" to skip private submodule cloning                                |
 
 Note: If you do not have access to the private `TradingView` submodule then set `TRY_CLONING_TRADINGVIEW` to any value other than “1”.
 
@@ -198,7 +197,7 @@ Click the `Deploy` button, wait for several minutes and see the results.
 
 ![](/img/VercelDeploy.png)
 
-*Note: You may see the errors below if you do not have access to the private `TradingView` submodule, but the website will still deploy with the open source fallback!
+\*Note: You may see the errors below if you do not have access to the private `TradingView` submodule, but the website will still deploy with the open source fallback!
 
 ![](/img/VercelErrors.png)
 

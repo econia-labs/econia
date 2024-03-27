@@ -152,6 +152,7 @@ pub async fn account(
 
     let econia_client = EconiaClient::connect(
         reqwest::Url::parse(&node_url).unwrap(),
+        None,
         econia_address.clone(),
         account,
         None,

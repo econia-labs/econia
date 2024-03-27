@@ -2,13 +2,14 @@
 
 ## Background
 
-The objective of The Econia [reference frontend](https://reference.econia.exchange/) is to streamline the challenges encountered in product development during the initial phases of creating DeFi products. This tutorial is designed to guide developers, whether experienced or novice, through the process from forking on GitHub to project completion.
+The Econia [reference frontend](https://reference.econia.exchange/) is designed to streamline the challenges encountered during the initial phases of DeFi product development.
+This tutorial is designed to guide developers, whether experienced or novice, through the process from forking on GitHub to project completion.
 
 ![](/img/referencefrontend.png)
 
 ## In this tutorial, you will learn how to:
 
-1. Fork Econia reference frontend
+1. Fork the Econia reference frontend
 1. Run the frontend locally
 1. Deploy the frontend on Vercel
 
@@ -19,7 +20,7 @@ The objective of The Econia [reference frontend](https://reference.econia.exchan
 
 ## Step 1: Clone The Econia frontend [Github](https://github.com/econia-labs/econia-frontend) repo
 
-You can either clone the repo using git commands, fork to your own github, or download the zip.
+You can either clone the repo using git commands, fork to your own GitHub account, or download the zip.
 
 *Don't know how to clone a repository? Check out **[this guide](https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/cloning-a-repository)** from Github.*
 
@@ -30,18 +31,22 @@ You can either clone the repo using git commands, fork to your own github, or do
 By default the candlestick chart functionality in the Econia reference frontend relies on the closed source [TradingView Advanced Charts] repository.
 If you do not have access to the private repository, the candlestick functionality falls back on the open source [Lightweight Charts](https://github.com/tradingview/lightweight-charts) repository.
 
-> NOTE: Skip this part if you want to use the open source version
+:::note
+Skip this part if you want to use the open source version.
+:::
 
-The [TradingView Advanced Charts] repository is the submodule of this repository which is used for displaying the trading chart of a specific market and initialized at `src/frontend/public/static`.
+The [TradingView Advanced Charts] repository is used as a submodule in the Econia reference frontend, and is used for displaying the candlestick chart of a specific market.
+It is initialized at `src/frontend/public/static`.
 
-In essence, adding the `TradingView` as a submodule clones the `TradingView` repository and build it into static files.
+In essence, adding the `TradingView` as a submodule clones the `TradingView` repository and builds it into static files.
 Therefore, you need to have the access rights to the `TradingView` repository.
 
 > To get the access rights, you have to contact the TradingView team and wait for approval.
 
 ## Step 3: Open your fork of `econia-frontend`
 
-Before we start, it's important to check out the architecture of the code. You can see a diagram of components and files for each page and view here:
+First check out the architecture of the code.
+You can see a diagram of components and files for each page and view here:
 
 ```mermaid
    graph TD;
@@ -64,8 +69,6 @@ Before we start, it's important to check out the architecture of the code. You c
       TVChartContainer--"*if the charting_library submodule isn't available*"-->LightweightChartsContainer;
 ```
 
-*We will work inside the "src/frontend" folder*
-
 ## Step 4: Run project locally
 
 - Navigate to the Frontend Folder
@@ -74,25 +77,20 @@ Before we start, it's important to check out the architecture of the code. You c
 cd src/frontend
 ```
 
-`cd` means “change directory” to the src/frontend directory
-
 - Install dependencies
 
 ```bash
 pnpm i # pnpm is required
 ```
 
-`pnpm` is a package manager
-
-- Copy .env.example file
+- Copy `.env.example` to `.env.local`
 
 ```bash
 cp -R .env.example .env.local
 ```
 
-The command is copying the contents of the **`.env.example`** file to a file named **`.env.local`**. The **`-R`** flag indicates a recursive copy, which is typically used when dealing with directories.
-
-If you take a look at the `.env` files you may note that the environment variable for the REST URL is set to https://aptos-testnet-econia.nodeinfra.com/, since Nodeinfra runs a community deployment of the [Econia DSS](../off-chain/dss/data-service-stack.md), which provides data feeds for the Econia reference frontend data.
+If you take a look at the `.env` files you may note that the environment variable for the REST URL is set to https://aptos-testnet-econia.nodeinfra.com/.
+This is because Nodeinfra runs a community deployment of the [Econia DSS](../off-chain/dss/data-service-stack.md), which provides data feeds for Econia reference frontend data.
 
 | Variable                                 | Meaning                                                            |
 | ---------------------------------------- | ------------------------------------------------------------------ |
@@ -113,9 +111,7 @@ If you take a look at the `.env` files you may note that the environment variabl
 pnpm run dev
 ```
 
-Doing so should open http://localhost:3000/ in your browser, where you'll see the local version of the frontend.
-
-*Note: change the coloring and branding of the frontend before publishing.*
+Doing so should open [http://localhost:3000](http://localhost:3000) in your browser, where you'll see the local version of the frontend.
 
 ## Steps to deploy on Vercel
 
@@ -123,8 +119,8 @@ Vercel is a user-friendly cloud platform for frontend development and deployment
 
 Prerequisites:
 
-1. Github Account
-1. Github Access Token
+1. Github account
+1. Github access token
 
 To generate a `GITHUB_ACCESS_TOKEN`:
 
@@ -141,15 +137,15 @@ To generate a `GITHUB_ACCESS_TOKEN`:
 
 ## Step 2: Create a Vercel project
 
-Import project - on your screen, click `Add New` button and select `Project` to create a new project or shortly clicks `Import project` to import the Github repository.
+**Import project**: on your screen, click `Add New` button and select `Project` to create a new project or shortly clicks `Import project` to import the Github repository.
 
-The Vercel webiste displays a list of repositories existing in your Github account.
+The Vercel website should display a list of repositories in your Github account.
 
 Now click the `Import` button on the `econia-frontend` repository.
 
 ![](/img/Vercel2.png)
 
-## Step 3: Configure Project
+## Step 3: Configure project
 
 **Project Name**: The project name is automatically generated, you can change it as you want.
 
@@ -181,15 +177,17 @@ To deploy on Vercel, you'll need to set up the following environment variables:
 | `NEXT_PUBLIC_DEFAULT_MARKET_ID`          | Default market id                                                                                |
 | `TRY_CLONING_TRADINGVIEW`                | Set to any value other than "1" to skip private submodule cloning                                |
 
-Note: If you do not have access to the private `TradingView` submodule then set `TRY_CLONING_TRADINGVIEW` to any value other than “1”.
+:::note
+If you do not have access to the private `TradingView` submodule then set `TRY_CLONING_TRADINGVIEW` to any value other than “1”.
+:::
 
 **Environment Variables**: Paste all the environment variables in `.env.local`  or  `.env.example`  file to the table.
 
-:::tip
-There's a trick that you don't need to copy and paste each variable at a time, just copy your file and paste into the input field.
-:::
-
 ![](/img/VercelEnvironment.png)
+
+:::tip
+You don't need to copy and paste each variable at a time, just copy your file and paste into the input field.
+:::
 
 ## Step 4: Deploy your project
 
@@ -197,7 +195,9 @@ Click the `Deploy` button, wait for several minutes and see the results.
 
 ![](/img/VercelDeploy.png)
 
-\*Note: You may see the errors below if you do not have access to the private `TradingView` submodule, but the website will still deploy with the open source fallback!
+:::note
+You may see the errors below if you do not have access to the private `TradingView` submodule, but the website will still deploy with the open source fallback!
+:::
 
 ![](/img/VercelErrors.png)
 
@@ -205,6 +205,8 @@ Congrats! You will then be taken to the page hosted on Vercel!
 
 ![](/img/VercelCongrats.png)
 
-*Note: Change all design, logos, and branding before publishing.*
+:::note
+Change all design, logos, and branding before publishing.
+:::
 
 [tradingview advanced charts]: https://github.com/tradingview/charting_library

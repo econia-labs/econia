@@ -9,7 +9,7 @@ This tutorial is designed to guide developers, whether experienced or novice, th
 
 ## In this tutorial, you will learn how to:
 
-1. Fork the Econia reference frontend
+1. Clone the Econia reference frontend
 1. Run the frontend locally
 1. Deploy the frontend on Vercel
 
@@ -18,7 +18,7 @@ This tutorial is designed to guide developers, whether experienced or novice, th
 1. VSCode, terminal, or your favorite code editor
 1. `pnpm` installed
 
-## Step 1: Clone The Econia frontend [Github](https://github.com/econia-labs/econia-frontend) repo
+## Step 1: Clone the Econia frontend [Github](https://github.com/econia-labs/econia-frontend) repo
 
 You can either clone the repo using git commands, fork to your own GitHub account, or download the zip.
 
@@ -69,18 +69,18 @@ You can see a diagram of components and files for each page and view here:
       TVChartContainer--"*if the charting_library submodule isn't available*"-->LightweightChartsContainer;
 ```
 
-## Step 4: Run project locally
+## Step 4: Run the project locally
 
-- Navigate to the Frontend Folder
+- Navigate to the frontend folder
 
 ```bash
 cd src/frontend
 ```
 
-- Install dependencies
+- Install dependencies with `pnpm`
 
 ```bash
-pnpm i # pnpm is required
+pnpm i
 ```
 
 - Copy `.env.example` to `.env.local`

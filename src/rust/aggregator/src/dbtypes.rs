@@ -22,21 +22,3 @@ pub enum OrderType {
     Market,
     Swap,
 }
-
-impl OrderDirection {
-    pub fn from_bool_type(direction: bool, order_type: OrderType) -> Self {
-        if direction {
-            match order_type {
-                OrderType::Limit => OrderDirection::Ask,
-                OrderType::Market => OrderDirection::Sell,
-                OrderType::Swap => OrderDirection::Sell,
-            }
-        } else {
-            match order_type {
-                OrderType::Limit => OrderDirection::Bid,
-                OrderType::Market => OrderDirection::Buy,
-                OrderType::Swap => OrderDirection::Buy,
-            }
-        }
-    }
-}

@@ -66,17 +66,8 @@ output "postgrest_max_rows" {
   value = var.postgrest_max_rows
 }
 
-output "websockets_jwt_secret" {
-  sensitive = true
-  value     = var.websockets_jwt_secret
-}
-
 output "postgrest_url" {
   value = module.postgrest.postgrest_url
-}
-
-output "websockets_url" {
-  value = module.websockets.websockets_url
 }
 
 output "grafana_url" {
@@ -99,4 +90,13 @@ output "dss_source_rev" {
 
 output "terraform_project_rev" {
   value = var.terraform_project_rev
+}
+
+output "mosquitto_password" {
+  sensitive = true
+  value = var.mosquitto_password
+}
+
+output "mqtt_ip" {
+  value = module.mqtt.mqtt_ip
 }

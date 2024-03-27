@@ -2,6 +2,16 @@
 
 Econia Move source code adheres to [Semantic Versioning] and [Keep a Changelog] standards.
 
+## [v4.3.0]
+
+### Changed
+
+- Change orders and price levels view functions to have public visibility ([#691]).
+
+### Added
+
+- View function struct return decoders for public view functions ([#691]).
+
 ## [v4.2.1]
 
 ### Fixed
@@ -68,9 +78,11 @@ Econia Move source code adheres to [Semantic Versioning] and [Keep a Changelog] 
 [#577]: https://github.com/econia-labs/econia/pull/577
 [#597]: https://github.com/econia-labs/econia/pull/597
 [#629]: https://github.com/econia-labs/econia/pull/629
+[#691]: https://github.com/econia-labs/econia/pull/691
 [keep a changelog]: https://keepachangelog.com/en/1.0.0/
 [semantic versioning]: https://semver.org/spec/v2.0.0.html
 [v4.1.0]: https://github.com/econia-labs/econia/compare/v4.0.2-audited...v4.1.0-audited
 [v4.1.1]: https://github.com/econia-labs/econia/compare/v4.1.0-audited...v4.1.1-audited
 [v4.2.0]: https://github.com/econia-labs/econia/compare/v4.1.1-audited...v4.2.0-audited
 [v4.2.1]: https://github.com/econia-labs/econia/compare/v4.2.0-audited...v4.2.1-audited
+[v4.3.0]: https://github.com/econia-labs/econia/compare/v4.2.1-audited...v4.3.0-audited

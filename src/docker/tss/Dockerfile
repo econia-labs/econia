@@ -67,4 +67,10 @@ RUN /app/install_deps.sh
 
 ENV PATH=/root/.local/bin:$PATH
 
+# This helps the container stop faster
+STOPSIGNAL SIGKILL
+
 CMD /app/start.sh
+
+HEALTHCHECK --start-period=1m30s --start-interval=5s --interval=5s --timeout=3s \
+    CMD curl -f localhost:8090 || exit 1

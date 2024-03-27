@@ -24,6 +24,13 @@
 - [`market::get_swapper_event_handle_creation_numbers()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#function-get_swapper_event_handle_creation_numbers)
 - [`user::get_market_event_handle_creation_numbers()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/user.md#function-get_market_event_handle_creation_numbers)
 
+## View function struct decoders
+
+- [`market::get_order_view_fields()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#function-get_order_view_fields)
+- [`market::get_orders_view_fields()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#function-get_orders_view_fields)
+- [`market::get_price_level_fields()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#function-get_price_level_fields)
+- [`market::get_price_levels_fields()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#function-get_price_levels_fields)
+
 ## Constant getters
 
 ### Market module

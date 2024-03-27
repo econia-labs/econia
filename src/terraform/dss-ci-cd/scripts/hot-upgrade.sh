@@ -31,5 +31,6 @@
             -auto-approve; \
         terraform destroy -target module.aggregator -auto-approve; \
         terraform destroy -target module.processor -auto-approve; \
+        terraform destroy -target module.mqtt -auto-approve; \
         terraform apply -parallelism 50 -auto-approve;"
 )

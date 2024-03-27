@@ -9,12 +9,13 @@ use anyhow::{anyhow, Result};
 use aptos_sdk::rest_client::AptosBaseUrl;
 use clap::{Parser, ValueEnum};
 use pipelines::{
-    Candlesticks, Coins, EnumeratedVolume, Fees, Leaderboards, Prices,
-    RefreshMaterializedView, RollingVolume, OrderHistoryPipelines, UserBalances, UserHistory,
+    Candlesticks, Coins, EnumeratedVolume, Fees, Leaderboards, OrderHistoryPipelines, Prices,
+    RefreshMaterializedView, RollingVolume, UserBalances, UserHistory,
 };
 use sqlx::Executor;
 use sqlx_postgres::PgPoolOptions;
 use tokio::{sync::Mutex, task::JoinSet};
+use tracing::Instrument;
 use url::Url;
 
 mod dbtypes;
@@ -299,7 +300,9 @@ async fn main() -> Result<()> {
                 data.push(Arc::new(Mutex::new(RollingVolume::new(pool.clone()))))
             }
             Pipelines::OrderHistoryPipelines => {
-                data.push(Arc::new(Mutex::new(OrderHistoryPipelines::new(pool.clone()))));
+                data.push(Arc::new(Mutex::new(OrderHistoryPipelines::new(
+                    pool.clone(),
+                ))));
             }
             Pipelines::TvlPerAsset => {
                 data.push(Arc::new(Mutex::new(RefreshMaterializedView::new(
@@ -327,24 +330,47 @@ async fn main() -> Result<()> {
     let mut handles = JoinSet::new();
 
     for data in data {
+        let name = {
+            let locked = data.lock().await;
+            locked.model_name()
+        };
+        let span = tracing::info_span!("pipeline", name);
         handles.spawn(async move {
+
+            let span_hist = tracing::info_span!("historical");
+            let data_hist = data.clone();
+            async move {
+                let mut data = data_hist.lock().await;
+                tracing::info!("Starting processing batch.");
+                let start = SystemTime::now();
+                let result = data.process_and_save_historical_data()
+                    .await;
+                let time = start
+                    .elapsed()
+                    .unwrap_or(Duration::from_secs(0))
+                    .as_millis();
+                if let Err(e) = result {
+                    match &e {
+                        aggregator::PipelineError::ProcessingError(e) => {
+                            tracing::error!(elapsed_ms = time, error = %e, backtrace = %e.backtrace(), "Could not process batch.");
+                        },
+                        aggregator::PipelineError::SavingError(e) => {
+                            tracing::error!(elapsed_ms = time, error = %e, backtrace = %e.backtrace(), "Could not process batch.");
+                        }
+                        _ => {
+                            tracing::error!(elapsed_ms = time, error = %e, "Could not process batch.");
+                        }
+                    }
+                    Err(e)?;
+                };
+                tracing::info!(elapsed_ms = time, "Finished processing batch.");
+                anyhow::Result::<()>::Ok(())
+            }.instrument(span_hist).await?;
+
             let mut data = data.lock().await;
 
-            tracing::info!(
-                "[{}] Starting process & saving (historical).",
-                data.model_name()
-            );
-            let start = SystemTime::now();
-            data.process_and_save_historical_data().await?;
-            let time = start
-                .elapsed()
-                .unwrap_or(Duration::from_secs(0))
-                .as_millis();
-            tracing::info!(
-                "[{}] Finished process & saving in {}ms (historical).",
-                data.model_name(),
-                time
-            );
+            let mut retries = 0;
+            let max_retries = 3;
 
             loop {
                 let interval = data.poll_interval().unwrap_or(default_interval);
@@ -352,26 +378,43 @@ async fn main() -> Result<()> {
                 tokio::time::sleep(interval).await;
 
                 if data.ready() {
-                    tracing::info!("[{}] Starting process & saving.", data.model_name());
+                    tracing::info!("Starting processing batch.");
                     let start = SystemTime::now();
-                    data.process_and_save().await?;
+                    let result = data.process_and_save().await;
                     let time = start
                         .elapsed()
                         .unwrap_or(Duration::from_secs(0))
                         .as_millis();
-                    tracing::info!(
-                        "[{}] Finished process & saving in {}ms.",
-                        data.model_name(),
-                        time
-                    );
+                    if let Err(e) = result {
+                        match &e {
+                            aggregator::PipelineError::ProcessingError(e) => {
+                                tracing::error!(elapsed_ms = time, error = %e, backtrace = %e.backtrace(), "Could not process batch.");
+                            },
+                            aggregator::PipelineError::SavingError(e) => {
+                                tracing::error!(elapsed_ms = time, error = %e, backtrace = %e.backtrace(), "Could not process batch.");
+                            }
+                            _ => {
+                                tracing::error!(elapsed_ms = time, error = %e, "Could not process batch.");
+                            }
+                        }
+                        retries += 1;
+                        if retries > max_retries {
+                            Err(e)?;
+                        } else {
+                            tracing::warn!(retries_left = max_retries - retries + 1, "Retrying.");
+                        }
+                    } else {
+                        retries = 0;
+                        tracing::info!(elapsed_ms = time, "Finished processing batchng.");
+                    }
                 } else {
-                    tracing::info!("[{}] Data is not ready.", data.model_name());
+                    tracing::warn!("Data is not ready.");
                 }
             }
 
             #[allow(unreachable_code)]
             Ok::<(), anyhow::Error>(())
-        });
+        }.instrument(span));
     }
 
     while let Some(res) = handles.join_next().await {

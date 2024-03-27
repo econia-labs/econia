@@ -121,5 +121,5 @@ pub enum EconiaError {
     MarketError(#[from] MarketError),
 
     #[error("Custom error: {0}")]
-    Custom(Box<dyn std::error::Error + Send + Sync>),
+    Custom(#[from] anyhow::Error),
 }

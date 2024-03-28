@@ -28,7 +28,7 @@ server-framework = { path = "dependencies/aptos-indexer-processors/rust/server-f
 aptos-moving-average = { path = "dependencies/aptos-indexer-processors/rust/moving-average" }
 aptos-sdk = { git = "https://github.com/aptos-labs/aptos-core", tag = "aptos-node-v1.7.2" }
 
-anyhow = "1.0.62"
+anyhow = { version = "1.0.62", features = ["backtrace"] }
 async-trait = "0.1.53"
 axum = "0.6.19"
 backtrace = "0.3.58"

@@ -80,6 +80,7 @@ module.exports = {
         'integrators/econia-labs',
         'integrators/pyth',
         'integrators/bridges',
+        'integrators/reference-frontend'
       ]
     },
     'security',

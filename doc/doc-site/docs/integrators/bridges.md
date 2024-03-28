@@ -2,7 +2,7 @@
 
 ## Bridging USDC (LayerZero)
 
-### What is Stargate and Why is it Relevant?
+### What is Stargate and why is it relevant?
 
 Stargate is a cross-chain liquidity protocol that allows users to swap assets between different chains with low fees and fast transaction speeds.
 Bridges are a critical component of the decentralized finance (DeFi) landscape, as they allow users to access a wider range of financial products and services.
@@ -15,7 +15,7 @@ Before we begin, you will need to have the following:
 - A browser with the given wallet extension installed
 - An Aptos wallet
 
-### Steps to Bridge USDC (LayzerZero) into Aptos
+### Steps to bridge USDC (LayerZero) into Aptos
 
 1. Go to [The Aptos Bridge](https://theaptosbridge.com) website.
 1. Connect to Stargate with the wallet from your non-Aptos chain.
@@ -26,9 +26,9 @@ Before we begin, you will need to have the following:
 1. Review the transaction details and click on the "Confirm" button.
 1. The bridge will be executed and your wrapped USDC (LayerZero) coins for Aptos will be deposited into your Aptos wallet.
 
-### Start Trading on Econia
+### Start trading on Econia
 
-Connect your Aptos wallet with the USDC (LayerZero) to any of Econia’s [frontend integrators](https://www.econialabs.com/explore) to deposit the coins into your Econia Market Account!
+Connect your Aptos wallet with the USDC (LayerZero) to any of The Econia [frontend integrators](https://econia.org/explore) to deposit the coins into your Econia Market Account!
 
 ### Conclusion
 

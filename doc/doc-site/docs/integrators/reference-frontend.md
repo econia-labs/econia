@@ -8,7 +8,7 @@ This tutorial is designed to guide developers, whether experienced or novice, th
 ![](/img/referencefrontend.png)
 
 :::note
-Change all design, logos, and branding before publishing. Please reference the [Figma](https://www.figma.com/file/SGWAXYwpvLThiA27HXbzSY/Econia-Labs-%7C-Reference-Frontend-%7C-Public?type=design&node-id=5171-12582&mode=design) to change styling.
+Change all design, logos, and branding before publishing. Please reference the [Figma] to change styling.
 :::
 
 ## In this tutorial, you will learn how to:
@@ -210,7 +210,8 @@ Congrats! You will then be taken to the page hosted on Vercel!
 ![](/img/VercelCongrats.png)
 
 :::note
-Change all design, logos, and branding before publishing. Please reference the [Figma](https://www.figma.com/file/SGWAXYwpvLThiA27HXbzSY/Econia-Labs-%7C-Reference-Frontend-%7C-Public?type=design&node-id=5171-12582&mode=design) to change styling.
+Change all design, logos, and branding before publishing. Please reference the [Figma] to change styling.
 :::
 
+[figma]: https://www.figma.com/file/SGWAXYwpvLThiA27HXbzSY/Econia-Labs-%7C-Reference-Frontend-%7C-Public?type=design&node-id=5171-12582&mode=design
 [tradingview advanced charts]: https://github.com/tradingview/charting_library

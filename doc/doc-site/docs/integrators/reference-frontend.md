@@ -6,10 +6,10 @@ The Econia [reference frontend](https://reference.econia.exchange/) is designed 
 This tutorial is designed to guide developers, whether experienced or novice, through the process from forking on GitHub to project completion.
 
 ![](/img/referencefrontend.png)
+
 :::note
 Change all design, logos, and branding before publishing. Please reference the [Figma](https://www.figma.com/file/SGWAXYwpvLThiA27HXbzSY/Econia-Labs-%7C-Reference-Frontend-%7C-Public?type=design&node-id=5171-12582&mode=design) to change styling.
 :::
-
 
 ## In this tutorial, you will learn how to:
 

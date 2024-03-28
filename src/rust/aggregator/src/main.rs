@@ -405,7 +405,7 @@ async fn main() -> Result<()> {
                         }
                     } else {
                         retries = 0;
-                        tracing::info!(elapsed_ms = time, "Finished processing batchng.");
+                        tracing::info!(elapsed_ms = time, "Finished processing batch.");
                     }
                 } else {
                     tracing::warn!("Data is not ready.");

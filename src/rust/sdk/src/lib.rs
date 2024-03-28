@@ -117,6 +117,7 @@ impl EconiaClient {
     /// # Arguments:
     ///
     /// * `node_url` - Url of aptos node.
+    /// * `node_api_key` - API key to use when connecting to the node.
     /// * `econia_address` - Aptos `AccountAddress`.
     /// * `account` - `LocalAccount` representing Aptos user account.
     /// * `config` - `EconiaClientConfig` to configure the Econia client, if `None` default values will be used.
@@ -155,6 +156,7 @@ impl EconiaClient {
     /// # Arguments:
     ///
     /// * `node_url` - url string of aptos node to connect to.
+    /// * `node_api_key` - API key to use when connecting to the node.
     /// * `econia_address` - hex encoded address string of account that holds the econia modules.
     /// * `account_address` - hex encoded address string of user using this client.
     /// * `account_private_key` - hex encoded private key string of user using this client.
@@ -182,6 +184,7 @@ impl EconiaClient {
     /// # Arguments:
     ///
     /// * `node_url` - Url string of aptos node to connect to.
+    /// * `node_api_key` - API key to use when connecting to the node.
     /// * `econia_address` - Hex encoded address string of account that holds the econia modules.
     /// * `config_path` - Path to config file.
     /// * `config_profile_name` - Name of profile to use in the config file.

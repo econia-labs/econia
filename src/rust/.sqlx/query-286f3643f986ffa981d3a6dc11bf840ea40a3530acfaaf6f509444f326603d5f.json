@@ -1,0 +1,32 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "WITH\n  market_coins AS (\n    SELECT DISTINCT\n      base_account_address AS \"address\",\n      base_module_name AS module,\n      base_struct_name AS struct\n    FROM\n      market_registration_events\n    WHERE\n      base_account_address IS NOT NULL\n      AND base_module_name IS NOT NULL\n      AND base_struct_name IS NOT NULL\n    UNION\n    SELECT DISTINCT\n      quote_account_address AS \"address\",\n      quote_module_name AS module,\n      quote_struct_name AS struct\n    FROM\n      market_registration_events\n  )\nSELECT\n  *\nFROM\n  market_coins AS m\nWHERE\n  NOT EXISTS (\n    SELECT\n      *\n    FROM\n      aggregator.coins AS c\n    WHERE\n      c.\"address\" = m.\"address\"\n      AND c.module = m.module\n      AND c.struct = m.struct\n  )\n",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "address",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 1,
+        "name": "module",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "struct",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "286f3643f986ffa981d3a6dc11bf840ea40a3530acfaaf6f509444f326603d5f"
+}

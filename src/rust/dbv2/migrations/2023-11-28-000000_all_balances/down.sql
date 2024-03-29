@@ -1,0 +1,1 @@
+DROP VIEW api.user_balances;

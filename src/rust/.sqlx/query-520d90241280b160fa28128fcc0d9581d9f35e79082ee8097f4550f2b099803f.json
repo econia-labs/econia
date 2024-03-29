@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "WITH parameters AS (\n    SELECT\n        $1::numeric last_txn_version)\nINSERT INTO\n  aggregator.user_balances (\n      address,\n      custodian_id,\n      market_id,\n      handle,\n      base_total,\n      base_available,\n      base_ceiling,\n      quote_total,\n      quote_available,\n      quote_ceiling\n    )\nWITH b AS (\n  SELECT DISTINCT\n    ON (handle, market_id, custodian_id) handle,\n    market_id,\n    custodian_id,\n    base_total,\n    base_available,\n    base_ceiling,\n    quote_total,\n    quote_available,\n    quote_ceiling\n  FROM\n    balance_updates_by_handle,\n    parameters\n  WHERE txn_version > parameters.last_txn_version\n  ORDER BY\n    handle ASC,\n    market_id ASC,\n    custodian_id ASC,\n    txn_version DESC\n)\nSELECT\n    m.\"user\",\n    b.custodian_id,\n    b.market_id,\n    m.handle,\n    b.base_total,\n    b.base_available,\n    b.base_ceiling,\n    b.quote_total,\n    b.quote_available,\n    b.quote_ceiling\nFROM b NATURAL JOIN market_account_handles AS m\nON CONFLICT ON CONSTRAINT user_balances_pkey DO UPDATE SET\nbase_total = EXCLUDED.base_total,\nbase_available = EXCLUDED.base_available,\nbase_ceiling = EXCLUDED.base_ceiling,\nquote_total = EXCLUDED.quote_total,\nquote_available = EXCLUDED.quote_available,\nquote_ceiling = EXCLUDED.quote_ceiling;\n",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Numeric"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "520d90241280b160fa28128fcc0d9581d9f35e79082ee8097f4550f2b099803f"
+}

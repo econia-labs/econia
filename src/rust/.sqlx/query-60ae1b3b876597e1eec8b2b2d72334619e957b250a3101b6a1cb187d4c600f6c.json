@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO aggregator.user_balances_last_indexed_txn\n((SELECT txn_version FROM balance_updates_by_handle ORDER BY txn_version DESC LIMIT 1));\n",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "60ae1b3b876597e1eec8b2b2d72334619e957b250a3101b6a1cb187d4c600f6c"
+}

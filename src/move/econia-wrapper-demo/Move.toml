@@ -1,0 +1,10 @@
+[package]
+name = "EconiaWrapperDemo"
+version = '0.1.0'
+upgrade_policy = 'compatible'
+
+[addresses]
+wrapper_publisher = "_"
+
+[dependencies.Econia]
+local = "../econia"

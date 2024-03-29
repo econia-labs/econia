@@ -114,7 +114,7 @@ resource "google_sql_database_instance" "postgres" {
     }
     ip_configuration {
       authorized_networks {
-        value = "0.0.0.0/0"
+        value = var.db_admin_public_ip
       }
       ipv4_enabled    = true
       private_network = google_compute_network.sql_network.id
@@ -370,7 +370,11 @@ resource "terraform_data" "deploy_aggregator" {
     command = join(" && ", [
       join(" ", [
         "gcloud compute instances create-with-container aggregator",
-        "--container-env DATABASE_URL=${local.db_conn_str_private}",
+        "--container-env",
+        join(",", [
+          "APTOS_NETWORK=${var.aptos_network}",
+          "DATABASE_URL=${local.db_conn_str_private}"
+        ]),
         "--container-image",
         replace(local.docker_artifact_base, "IMAGE", "aggregator"),
         "--network ${google_compute_network.sql_network.id}"

@@ -1,5 +1,10 @@
 # Deploying on GCP
 
+:::danger
+Manual deployment is not recommended, and this guide is not actively maintained.
+See the [DSS CI/CD guide](./ci-cd.md) for the most up-to-date deployment steps.
+:::
+
 The Econia DSS is portable infrastructure that can be run locally or on cloud compute.
 
 This guide will show you how to run the DSS on [Google Gloud Platform (GCP)](https://cloud.google.com/), assuming you have admin privileges.

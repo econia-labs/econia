@@ -1,0 +1,125 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "WITH parameters AS (\n    SELECT\n        $1::numeric AS txn_version_start,\n        $2::numeric AS txn_version_stop\n)\nSELECT\n    *\nFROM\n    parameters,\n    fill_events\nWHERE\n    txn_version > txn_version_start\nAND\n    txn_version <= txn_version_stop\nORDER BY\n    txn_version,\n    event_idx\n",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "txn_version_start",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 1,
+        "name": "txn_version_stop",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 2,
+        "name": "txn_version",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 3,
+        "name": "event_idx",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 4,
+        "name": "emit_address",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "time",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "maker_address",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 7,
+        "name": "maker_custodian_id",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 8,
+        "name": "maker_order_id",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 9,
+        "name": "maker_side",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 10,
+        "name": "market_id",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 11,
+        "name": "price",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 12,
+        "name": "sequence_number_for_trade",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 13,
+        "name": "size",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 14,
+        "name": "taker_address",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 15,
+        "name": "taker_custodian_id",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 16,
+        "name": "taker_order_id",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 17,
+        "name": "taker_quote_fees_paid",
+        "type_info": "Numeric"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Numeric",
+        "Numeric"
+      ]
+    },
+    "nullable": [
+      null,
+      null,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "f4af8d71c72e612de1bdf8c2ae9a9297ce1e1ba744411f9018402f5d3994a414"
+}

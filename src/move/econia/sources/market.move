@@ -48,6 +48,7 @@
 /// * [Swaps](#swaps)
 /// * [Change order size](#change-order-size)
 /// * [Cancel orders](#cancel-orders)
+/// * [View function return decoders](#view-function-return-decoders)
 ///
 /// [Dependency charts](#dependency-charts)
 ///
@@ -156,6 +157,13 @@
 /// * `cancel_order_user()`
 /// * `cancel_all_orders_custodian()`
 /// * `cancel_all_orders_user()`
+///
+/// ## View function return decoders
+///
+/// * `get_order_view_fields()`
+/// * `get_orders_view_fields()`
+/// * `get_price_level_fields()`
+/// * `get_price_levels_fields()`
 ///
 /// # Dependency charts
 ///
@@ -1216,14 +1224,12 @@ module econia::market {
     #[view]
     /// Return `OrderView` for `market_id` and `order_id`.
     ///
-    /// Mutates state, so kept as a private view function.
-    ///
     /// # Testing
     ///
     /// * `test_change_order_size_ask_custodian()`
     /// * `test_change_order_size_bid_user()`
     /// * `test_get_open_order_no_such_order()`
-    fun get_open_order(
+    public fun get_open_order(
         market_id: u64,
         order_id: u128
     ): Option<OrderView>
@@ -1324,9 +1330,6 @@ module econia::market {
     #[view]
     /// Like `get_open_orders()`, but paginated.
     ///
-    /// Kept as private view function to prevent runtime state
-    /// contention.
-    ///
     /// When paginating via an SDK, specify the same transaction version
     /// number for each function call until done paginating.
     ///
@@ -1355,7 +1358,7 @@ module econia::market {
     /// # Failure testing
     ///
     /// * `test_get_open_orders_paginated_invalid_market_id()`
-    fun get_open_orders_paginated(
+    public fun get_open_orders_paginated(
         market_id: u64,
         n_asks_to_index_max: u64,
         n_bids_to_index_max: u64,
@@ -1479,9 +1482,6 @@ module econia::market {
     #[view]
     /// Like `get_price_levels()`, but paginated.
     ///
-    /// Kept as private view function to prevent runtime state
-    /// contention.
-    ///
     /// When paginating via an SDK, specify the same transaction version
     /// number for each function call until done paginating.
     ///
@@ -1510,7 +1510,7 @@ module econia::market {
     /// # Failure testing
     ///
     /// * `test_get_price_levels_paginated_invalid_market_id()`
-    fun get_price_levels_paginated(
+    public fun get_price_levels_paginated(
         market_id: u64,
         n_asks_to_index_max: u64,
         n_bids_to_index_max: u64,
@@ -1593,14 +1593,12 @@ module econia::market {
     /// Return `true` if `order_id` corresponds to open order for given
     /// `market_id`.
     ///
-    /// Kept private to prevent runtime order book state contention.
-    ///
     /// # Testing
     ///
     /// * `test_change_order_size_ask_custodian()`
     /// * `test_change_order_size_bid_user()`
     /// * `test_has_open_order_no_market()`
-    fun has_open_order(
+    public fun has_open_order(
         market_id: u64,
         order_id: u128
     ): bool
@@ -1705,6 +1703,80 @@ module econia::market {
             side,
             market_order_id,
             new_size);
+    }
+
+    /// Return the fields in an `OrderView`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_open_orders_paginated()`
+    public fun get_order_view_fields(
+        order_view_ref: &OrderView
+    ): (
+        u64,
+        bool,
+        u128,
+        u64,
+        u64,
+        address,
+        u64,
+    ) {
+        (
+            order_view_ref.market_id,
+            order_view_ref.side,
+            order_view_ref.order_id,
+            order_view_ref.remaining_size,
+            order_view_ref.price,
+            order_view_ref.user,
+            order_view_ref.custodian_id
+        )
+    }
+
+    /// Return the fields in an `OrdersView`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_open_orders_paginated()`
+    public fun get_orders_view_fields(
+        orders_view_ref: &OrdersView
+    ): (
+        &vector<OrderView>,
+        &vector<OrderView>
+    ) {
+        (&orders_view_ref.asks, &orders_view_ref.bids)
+    }
+
+    /// Return the fields in a `PriceLevel`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_price_levels()`
+    public fun get_price_level_fields(
+        price_level_ref: &PriceLevel
+    ): (
+        u64,
+        u128
+    ) {
+        (price_level_ref.price, price_level_ref.size)
+    }
+
+    /// Return the fields in a `PriceLevels`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_price_levels()`
+    public fun get_price_levels_fields(
+        price_levels_ref: &PriceLevels
+    ): (
+        u64,
+        &vector<PriceLevel>,
+        &vector<PriceLevel>
+    ) {
+        (
+            price_levels_ref.market_id,
+            &price_levels_ref.asks,
+            &price_levels_ref.bids
+        )
     }
 
     /// Public function wrapper for `place_limit_order()` for placing
@@ -6628,17 +6700,27 @@ module econia::market {
         // Assert no asks or bids left to paginate.
         assert!(ask_next == (NIL as u128), 0);
         assert!(bid_next == (NIL as u128), 0);
+        let (asks_ref, bids_ref) = get_orders_view_fields(&orders);
         // Assert order state.
-        assert!(vector::length(&orders.asks) == 2, 0);
-        assert!(vector::length(&orders.bids) == 1, 0);
+        assert!(vector::length(asks_ref) == 2, 0);
+        assert!(vector::length(bids_ref) == 1, 0);
         let order_ref = vector::borrow(&orders.asks, 0);
-        assert!(order_ref.market_id       == market_id, 0);
-        assert!(order_ref.side            == ASK, 0);
-        assert!(order_ref.order_id        == order_id_ask_hi_0, 0);
-        assert!(order_ref.remaining_size  == ask_hi_0_size, 0);
-        assert!(order_ref.price           == ask_hi_price, 0);
-        assert!(order_ref.user            == maker_address, 0);
-        assert!(order_ref.custodian_id    == custodian_id, 0);
+        let (
+            market_id,
+            side,
+            order_id,
+            remaining_size,
+            price,
+            user,
+            custodian_id
+        ) = get_order_view_fields(order_ref);
+        assert!(market_id       == market_id, 0);
+        assert!(side            == ASK, 0);
+        assert!(order_id        == order_id_ask_hi_0, 0);
+        assert!(remaining_size  == ask_hi_0_size, 0);
+        assert!(price           == ask_hi_price, 0);
+        assert!(user            == maker_address, 0);
+        assert!(custodian_id    == custodian_id, 0);
         let order_ref = vector::borrow(&orders.asks, 1);
         assert!(order_ref.market_id       == market_id, 0);
         assert!(order_ref.side            == ASK, 0);
@@ -6707,22 +6789,27 @@ module econia::market {
             &maker, market_id, integrator, ASK, ask_1_size, ask_1_price,
             restriction, self_match_behavior);
         // Index price levels.
-        let PriceLevels{market_id: market_id_r, asks, bids} =
-            get_price_levels_all(market_id);
+        let (market_id_r, asks_ref, bids_ref)=
+            get_price_levels_fields(&get_price_levels_all(market_id));
         // Assert market ID.
         assert!(market_id_r == market_id, 0);
         // Assert ask price levels state.
-        assert!(vector::length(&asks) == 2, 0);
-        assert!(*vector::borrow(&asks, 1) ==
-                PriceLevel{price: ask_1_price, size: (ask_1_size as u128)}, 0);
-        assert!(*vector::borrow(&asks, 0) ==
-                PriceLevel{price: ask_0_price, size: (ask_0_size as u128)}, 0);
+        assert!(vector::length(asks_ref) == 2, 0);
+        let (price, size) =
+            get_price_level_fields(vector::borrow(asks_ref, 1));
+        assert!(price == ask_1_price, 0);
+        assert!(size == (ask_1_size as u128), 0);
+        (price, size) = get_price_level_fields(vector::borrow(asks_ref, 0));
+        assert!(price == ask_0_price, 0);
+        assert!(size == (ask_0_size as u128), 0);
         // Assert bid price levels state.
-        assert!(vector::length(&bids) == 2, 0);
-        assert!(*vector::borrow(&bids, 0) ==
-                PriceLevel{price: bid_0_price, size: (bid_0_size as u128)}, 0);
-        assert!(*vector::borrow(&bids, 1) ==
-                PriceLevel{price: bid_1_price, size: (bid_1_size as u128)}, 0);
+        assert!(vector::length(bids_ref) == 2, 0);
+        (price, size) = get_price_level_fields(vector::borrow(bids_ref, 0));
+        assert!(price == bid_0_price, 0);
+        assert!(size == (bid_0_size as u128), 0);
+        (price, size) = get_price_level_fields(vector::borrow(bids_ref, 1));
+        assert!(price == bid_1_price, 0);
+        assert!(size == (bid_1_size as u128), 1);
         // Place same maker orders again.
         place_limit_order_user<BC, QC>(
             &maker, market_id, integrator, BID, bid_1_size, bid_1_price,

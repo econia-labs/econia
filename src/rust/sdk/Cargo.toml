@@ -7,13 +7,14 @@ license = "MIT OR Apache-2.0"
 readme = "README.md"
 description = "SDK for interacting with Econia on Aptos"
 homepage = "https://econialabs.com"
-repository = "https://github.com/econia-labs/rust_sdk"
+documentation = "https://econia.dev"
+repository = "https://github.com/econia-labs/econia"
 keywords = ["aptos", "econia", "dex", "clob", "sdk", "blockchain"]
 
 [dependencies]
 aptos-api-types = { git = "https://github.com/aptos-labs/aptos-core", tag = "aptos-node-v1.7.2" }
 aptos-sdk.workspace = true
-econia-types = { package = "types", path = "../types", features = ["serde"] }
+econia-types = { package = "econia-types", path = "../types", features = ["serde"] }
 futures = "0.3.24"
 hex = { version = "0.4.3" }
 reqwest = { version = "0.11.11" }

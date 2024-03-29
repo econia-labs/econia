@@ -1,3 +1,12 @@
+//! # Econia SDK
+//!
+//! The Econia Rust SDK is an SDK to interact with the Econia V4 protocol. You can read more about
+//! the protocol at <https://econia.dev/>.
+//!
+//! To use the SDK create an [EconiaClient], then either use it to get an [EconiaViewClient], or
+//! create a payload using helper functions from the [entry] module and submit it using
+//! [`EconiaClient::submit_tx`].
+
 use aptos_api_types::{
     AptosErrorCode, MoveType, Transaction, TransactionInfo, UserTransactionRequest, VersionedEvent,
     U64,

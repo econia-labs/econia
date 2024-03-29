@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "WITH\n  parameters AS (\n    SELECT\n      $1::TEXT \"name\",\n      $2::TEXT symbol,\n      $3::SMALLINT decimals,\n      $4::TEXT \"address\",\n      $5::TEXT module,\n      $6::TEXT struct\n  )\nINSERT INTO\n  aggregator.coins\nSELECT\n  *\nFROM\n  parameters",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Int2",
+        "Text",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "74bfd6d2c43a179e21c1ccdc1484b33e2b141d36144448e33b2677ab9829e617"
+}

@@ -26,7 +26,7 @@ rust-version = "1.70"
 aptos-indexer-protos = { path = "dependencies/aptos-indexer-processors/rust/aptos-indexer-protos" }
 server-framework = { path = "dependencies/aptos-indexer-processors/rust/server-framework" }
 aptos-moving-average = { path = "dependencies/aptos-indexer-processors/rust/moving-average" }
-aptos-sdk = { git = "https://github.com/aptos-labs/aptos-core", tag = "aptos-node-v1.7.2" }
+aptos-sdk = { git = "https://github.com/aptos-labs/aptos-core", tag = "aptos-node-v1.10.1" }
 
 anyhow = { version = "1.0.62", features = ["backtrace"] }
 async-trait = "0.1.53"
@@ -49,7 +49,7 @@ diesel-derive-enum = "2.1.0"
 dotenvy = "0.15.7"
 envy = "0.4.2"
 field_count = "0.1.1"
-futures = "0.3.24"
+futures = "0.3.29"
 futures-util = "0.3.28"
 gcloud-sdk = { version = "0.20.4", features = [
     "google-cloud-bigquery-storage-v1",

@@ -19,14 +19,21 @@ class EconiaClient:
             econia: AccountAddress,
             account: Account,
             rest_client: Optional[RestClient] = None,
-            rest_client_async: Optional[AsyncRestClient] = None
+            rest_client_async: Optional[AsyncRestClient] = None,
+            node_api_key: Optional[str] = None
         ):
         self.econia_address = econia
         if rest_client == None and rest_client_async == None:
             self.aptos_client = RestClient(node_url)
+            if node_api_key != None:
+                self.aptos_client.client.headers["Authorization"] = f"Bearer {node_api_key}"
         elif rest_client != None:
+            if node_api_key != None:
+                rest_client.client.headers["Authorization"] = f"Bearer {node_api_key}"
             self.aptos_client = rest_client
         elif rest_client_async != None:
+            if node_api_key != None:
+                rest_client_async.client.headers["Authorization"] = f"Bearer {node_api_key}"
             self.aptos_client_async = rest_client_async
         self.user_account = account
 
@@ -59,9 +66,11 @@ class EconiaViewer:
     econia_address: AccountAddress
     aptos_client: RestClient
 
-    def __init__(self, node_url: str, econia: AccountAddress):
+    def __init__(self, node_url: str, econia: AccountAddress, node_api_key: Optional[str] = None):
         self.econia_address = econia
         self.aptos_client = RestClient(node_url)
+        if node_api_key != None:
+            self.aptos_client.client.headers["Authorization"] = f"Bearer {node_api_key}"
 
     def get_returns(
         self,

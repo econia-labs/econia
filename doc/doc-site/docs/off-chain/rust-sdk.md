@@ -8,6 +8,7 @@ The SDK provides direct access to the Econia protocol, and comes with an example
 - The main struct of the SDK is `EconiaClient`.
   This allows you to submit transactions, query events and get a view client (`EconiaViewClient`).
   To create a new `EconiaClient`, you need a node URL, the Econia package address, an `aptos_sdk::types::LocalAccount`, and you can optionally pass a client config.
+  You can also pass an API key, that you can get on the [Aptos Developer Portal](https://developers.aptoslabs.com).
 
 - In `econia_sdk::entry`, you can find helper functions to create transactions for every entry function of the Econia package.
   These can then be submitted using the `EconiaClient::submit_tx`.

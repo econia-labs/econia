@@ -142,3 +142,26 @@ DSS_SOURCE_REV=dss-v1.5.0
 TERRAFORM_PROJECT_REV=dss-v1.5.0
 source scripts/hot-upgrade.sh $DSS_SOURCE_REV $TERRAFORM_PROJECT_REV
 ```
+
+## Suspend/resume runner
+
+In order to avoid getting charged for a mostly unused service, you can suspend the runner when you're not using it, and resume it before hot upgrading for example.
+
+To do so, you can use `scripts/suspend-runner.sh` like so:
+
+```bash
+source scripts/suspend-runner.sh GCP_PROJECT_ID
+```
+
+and `scripts/resume-runner.sh` like so:
+
+```bash
+source scripts/resume-runner.sh GCP_PROJECT_ID
+```
+
+Note that when resuming, you should wait for the runner to be running before using it.
+You can check its status by running:
+
+```bash
+gcloud compute instances list --filter name=runner
+```

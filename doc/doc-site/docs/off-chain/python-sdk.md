@@ -48,6 +48,9 @@ This package contains `EconiaClient`, which takes care of executing transactions
 These are not meant to be used without help from this Python SDK.
 Both are sufficiently capable to handle all possible functions to which they may apply, as long as those functions exist in the deployed Move contract code.
 
+Note that you can get an API key and add it using the [Aptos Developer Portal](https://developers.aptoslabs.com).
+You can then use this key when creating the `EconiaClient` to avoid being rate limited.
+
 ## `econia_sdk.types`
 
 This package contains various enum types useful for parsing and referring to important values.

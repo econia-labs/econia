@@ -1,2 +1,2 @@
-gcloud compute instances resume runner
+gcloud compute instances resume runner --project "$1"
 

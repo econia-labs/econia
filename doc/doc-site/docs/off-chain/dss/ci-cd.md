@@ -150,11 +150,18 @@ In order to avoid getting charged for a mostly unused service, you can suspend t
 To do so, you can use `scripts/suspend-runner.sh` like so:
 
 ```bash
-source scripts/suspend-runner.sh
+source scripts/suspend-runner.sh GCP_PROJECT_ID
 ```
 
 and `scripts/resume-runner.sh` like so:
 
 ```bash
-source scripts/resume-runner.sh
+source scripts/resume-runner.sh GCP_PROJECT_ID
+```
+
+Note that when resuming, you should wait for the runner to be running before using it.
+You can check its status by running:
+
+```bash
+gcloud compute instances list --filter name=runner
 ```

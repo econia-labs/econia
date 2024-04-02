@@ -25,7 +25,7 @@ RUN apt-get update && apt-get install -y \
         lld \
         pkg-config \
     && rm -rf /var/lib/apt/lists/*
-RUN cargo build --release -p processor
+RUN RUSTFLAGS="--cfg tokio_unstable" cargo build --release -p processor
 
 # Install dependencies, copy over compiled binary.
 FROM debian:bullseye-slim AS runtime

@@ -1,16 +1,16 @@
-module econia_faucet::example_apt {
+module econia_faucet::example_poop {
     use aptos_std::string;
     use econia_faucet::faucet;
 
-    struct ExampleAPT {}
+    struct ExamplePoop {}
 
-    const NAME: vector<u8> = b"Example Aptos Coin";
-    const SYMBOL: vector<u8> = b"eAPT";
-    const DECIMALS: u8 = 8;
+    const NAME: vector<u8> = x"F09F92A9";
+    const SYMBOL: vector<u8> = x"F09F92A9";
+    const DECIMALS: u8 = 6;
     const MONITOR_SUPPLY: bool = false;
 
     fun init_module(account: &signer) {
-        faucet::initialize<ExampleAPT>(
+        faucet::initialize<ExamplePoop>(
             account,
             string::utf8(NAME),
             string::utf8(SYMBOL),

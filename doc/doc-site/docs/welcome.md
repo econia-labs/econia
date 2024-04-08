@@ -51,7 +51,7 @@ The Econia Move package is persisted indefinitely on both Aptos mainnet and test
 
 :::tip
 
-The testnet account also contains a [permissionless faucet] for example assets `eAPT` and `eUSDC`.
+The testnet account also contains a [permissionless faucet] for example assets `🚀` and `💩`.
 
 :::
 

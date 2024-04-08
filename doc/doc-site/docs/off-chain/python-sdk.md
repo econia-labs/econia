@@ -87,8 +87,8 @@ In order to proceed, we must decide the granularity of base and quote sizes as w
 Consider that "price" in the exchange is an integer expressed in terms of "ticks per lot", which means that tick size and lot size affect the prices that can be expressed.
 **That is: price granularity is a function of lot size _and_ tick size.**
 In general the desire is to have one _tick_ be "small" relative to one **_lot_** in terms of value, since the minimum expressible price is 1 tick per lot. The second smallest possible price is 2 ticks per lot, and so on.
-Let's use `eAPT` and `eUSDC` used in the faucet below as example base and quote types, respectively, for a market.
-We know that `eAPT` (the base type) has 8 decimals and `eUSDC` (the quote type) has 6 decimals:
+Let's use `🚀` and `💩` used in the faucet below as example base and quote types, respectively, for a market.
+We know that `🚀` (the base type) has 8 decimals and `💩` (the quote type) has 6 decimals:
 
 ```python
 >>> base_decimals = 8
@@ -101,9 +101,9 @@ We have a few objectives when it comes to configuring the market:
 - Granular prices such that the value of an asset is roughly continuous.
 - Specific minimum order sizes such that everyone can trade, and attacks are stopped.
 
-Towards those ends, let's use 0.001 `eAPT` for the order size granularity, that is lot size precision.
-Let's also use 0.001 `eUSDC` for the price granularity, equivalent to one-hundredth of a penny.
-Last, we'll use a minimum order size of 0.5 `eAPT` so that small orders are allowed while preventing attacks.
+Towards those ends, let's use 0.001 `🚀` for the order size granularity, that is lot size precision.
+Let's also use 0.001 `💩` for the price granularity, equivalent to one-hundredth of a penny.
+Last, we'll use a minimum order size of 0.5 `🚀` so that small orders are allowed while preventing attacks.
 
 The `get_market_parameters_integer` helper from the SDK will give us the configuration variables needed to achieve these outcomes:
 
@@ -131,7 +131,7 @@ Let's also check the maximum price given our price granularity:
 Decimal('4294967.295')
 ```
 
-That's a maximum price of \$4,294,967.295 per `eAPT` which is plenty high.
+That's a maximum price of \$4,294,967.295 per `🚀` which is plenty high.
 So, our market parameters would be:
 
 | Parameter | Value  | Units             |
@@ -140,7 +140,7 @@ So, our market parameters would be:
 | Tick size | 1      | Subunits of quote |
 | Min size  | 500    | Lots of base      |
 
-This gives us a market with a price granularity of 0.1 cent and minimum order size of 0.5 `eAPT`!
+This gives us a market with a price granularity of 0.1 cent and minimum order size of 0.5 `🚀`!
 We'd get an error if we tried to use a more granular price, or more granular size without changing price granularity.
 This is because our tick size is 1, which represents the most possible price precision for the given size and the highest possible granularity of the quote asset.
 
@@ -241,15 +241,15 @@ Press enter to initialize (or obtain) the market.
 Press enter to initialize (or obtain) the market.
 Market does not exist yet, creating one...
 EVENT SUMMARY: MarketRegistrationEvent
-  * Base Type (unit of lots): 0x...::example_apt::ExampleAPT
-  * Quote Type (unit of ticks): 0x...::example_usdc::ExampleUSDC
+  * Base Type (unit of lots): 0x...::example_apt::ExampleRocket
+  * Quote Type (unit of ticks): 0x...::example_poop::ExamplePoop
 Market ID: 4
 TRANSACTIONS EXECUTED (first-to-last):
   * Create a new market: 0xc349ace5607dc230bce9299c87ce3ce5e5d4df28338ed09026cb83d0fe5aa4f9
 There are no open orders on this market right now.
 ```
 
-In this case, the market did not exist for the pair of faucet currencies (`ExampleAPT` and `ExampleUSDC`) that we deployed.
+In this case, the market did not exist for the pair of faucet currencies (`ExampleRocket` and `ExamplePoop`) that we deployed.
 Only one market can exist per unique configuration so once it's created here, it won't be created again in future runs.
 Instead it'll be detected as existing via a view function, and then re-used from thereafter.
 There don't appear to be any open orders on this brand-new market which makes a lot of sense!
@@ -262,15 +262,15 @@ The long hex string is a transaction hash, which can be looked up on an explorer
 ```
 Press enter to setup an Account A with funds.
 New market account after deposit:
-  * eAPT: 0 -> 10.0
-  * eUSDC: 0 -> 10000.0
+  * 🚀: 0 -> 10.0
+  * 💩: 0 -> 10000.0
 Account A was setup: 0xfb456eeadbb32a392263e56ff682f080be9cae2a97c7113813e3e6bfaa5b0c6b
 TRANSACTIONS EXECUTED (first-to-last):
-  * Mint 10.0 eAPT (yet to be deposited): 0x3e2d3431ec77b51a47efc64ea4565ef365e68623d7cf22689bf025eee27e3f67
-  * Mint 10000.0 eUSDC (yet to be deposited): 0x6ae9b23119347499f685c768ba73a593f0182157de0daecde54861f700287d37
+  * Mint 10.0 🚀 (yet to be deposited): 0x3e2d3431ec77b51a47efc64ea4565ef365e68623d7cf22689bf025eee27e3f67
+  * Mint 10000.0 💩 (yet to be deposited): 0x6ae9b23119347499f685c768ba73a593f0182157de0daecde54861f700287d37
   * Register a new account in market 4: 0x84054125ea208beb322333404db4b2776706c7c8516db7bf3456ddcca4e0bf5e
-  * Deposit 10.0 eAPT to market account: 0xdbe0636240082324b50c9e077b06606c6f4ba6bb9391cb2b79bbbeacbcd73726
-  * Deposit 10000.0 eUSDC to market account: 0x081330a8e094e99d7f55324a53fd103d1e0107202138dddd146888fe100efe01
+  * Deposit 10.0 🚀 to market account: 0xdbe0636240082324b50c9e077b06606c6f4ba6bb9391cb2b79bbbeacbcd73726
+  * Deposit 10000.0 💩 to market account: 0x081330a8e094e99d7f55324a53fd103d1e0107202138dddd146888fe100efe01
 ```
 
 Interacting with the exchange as an address requires a market account for each trading pair.
@@ -291,14 +291,14 @@ EVENT SUMMARY: PlaceLimitOrderEvent
   * User address: 0xfb456eeadbb32a392263e56ff682f080be9cae2a97c7113813e3e6bfaa5b0c6b
   * Order ID: 18446884819787842536
   * Side: BID (Buying)
-  * Price: 1000 eUSDC ticks per eAPT lot
-  * Size: 1000 available eAPT lots / 1000
+  * Price: 1000 💩 ticks per 🚀 lot
+  * Size: 1000 available 🚀 lots / 1000
 EVENT SUMMARY: PlaceLimitOrderEvent
   * User address: 0xfb456eeadbb32a392263e56ff682f080be9cae2a97c7113813e3e6bfaa5b0c6b
   * Order ID: 36893628897792362448
   * Side: ASK (Selling)
-  * Price: 2000 eUSDC ticks per eAPT lot
-  * Size: 1000 available eAPT lots / 1000
+  * Price: 2000 💩 ticks per 🚀 lot
+  * Size: 1000 available 🚀 lots / 1000
 Account A has finished placing limit orders.
   * There were no limit orders filled by any orders placed.
 TRANSACTIONS EXECUTED (first-to-last):
@@ -360,15 +360,15 @@ See step #3 above.
 ```
 Press enter to setup an Account B with funds.
 New market account after deposit:
-  * eAPT: 0 -> 10.0
-  * eUSDC: 0 -> 10000.0
+  * 🚀: 0 -> 10.0
+  * 💩: 0 -> 10000.0
 Account B was setup: 0xcaebb3c924ff16721bb4df186592e2e1282a64bf468090d2168659aa730a70cb
 TRANSACTIONS EXECUTED (first-to-last):
-  * Mint 10.0 eAPT (yet to be deposited): 0x512781d089ab0baedfeb8e6d2ef11058589a5d8912b9c921efcd3ec2dc6d2e91
-  * Mint 10000.0 eUSDC (yet to be deposited): 0x731244203e1eb3b76f8834cbd65b8aedc17340e60f6eaaa0186f0a536fdae13b
+  * Mint 10.0 🚀 (yet to be deposited): 0x512781d089ab0baedfeb8e6d2ef11058589a5d8912b9c921efcd3ec2dc6d2e91
+  * Mint 10000.0 💩 (yet to be deposited): 0x731244203e1eb3b76f8834cbd65b8aedc17340e60f6eaaa0186f0a536fdae13b
   * Register a new account in market 4: 0x402bfb900154cd9988ba532cb684a33ab7c39312509f9922b78ff53829bd8561
-  * Deposit 10.0 eAPT to market account: 0xfe2b0b76689a4e813fc1ac4fc6f769f62ff5b43ee2073271cd2fdb70b1be514c
-  * Deposit 10000.0 eUSDC to market account: 0x7b8796ccb21206bf082cfeb3a14e00dfb0b614a702ca7d39a1b4c4d680d4215c
+  * Deposit 10.0 🚀 to market account: 0xfe2b0b76689a4e813fc1ac4fc6f769f62ff5b43ee2073271cd2fdb70b1be514c
+  * Deposit 10000.0 💩 to market account: 0x7b8796ccb21206bf082cfeb3a14e00dfb0b614a702ca7d39a1b4c4d680d4215c
 ```
 
 Same as step #2, but for a new account.
@@ -399,7 +399,7 @@ TRANSACTIONS EXECUTED (first-to-last):
   * Cancel all ASKS for Account A: 0x8282a02796e53b9154b8ece8864deb9cb56cf65f14b59d8533d90202c014766b
   * Cancel all BIDS for Account A:: 0x9574bc34a613e7a36a306b61bc59dc9dda6994a2224a11ed63e017d6af7dd0d9
 CURRENT BEST PRICE LEVELS:
-There is no eAPT being bought or sold right now!
+There is no 🚀 being bought or sold right now!
 ```
 
 This one is straightforward, but it's worth nothing that there are no longer orders on the book unlike in the step above.

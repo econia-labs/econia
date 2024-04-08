@@ -2,12 +2,12 @@ module throttler::throttle {
 
     // Constants for trading competition rules. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Maximum amount of APT that can change hands in a single trade.
-    const MAX_TRADE_VOLUME_APT: u64 =  500;
-    /// Maximum amount of APT that can be deposited/minted at a time.
-    const MAX_TRANSFER_APT: u64 =  100;
-    /// Maximum amount of USDC that can be deposited/minted at a time.
-    const MAX_TRANSFER_USDC: u64 =  600;
+    /// Maximum amount of 🚀 that can change hands in a single trade.
+    const MAX_TRADE_VOLUME_ROCKET: u64 =  500;
+    /// Maximum amount of 🚀 that can be deposited/minted at a time.
+    const MAX_TRANSFER_ROCKET: u64 =  100;
+    /// Maximum amount of 💩 that can be deposited/minted at a time.
+    const MAX_TRANSFER_POOP: u64 =  600;
     /// The market ID that activity is throttled on.
     const THROTTLED_MARKET_ID: u64 = 3;
     /// How long user must wait between faucet mints or market account
@@ -33,8 +33,8 @@ module throttler::throttle {
     use std::signer;
     use std::vector;
 
-    const SUBUNIT_CONVERSION_FACTOR_APT: u64 = 100000000;
-    const SUBUNIT_CONVERSION_FACTOR_USDC: u64 = 1000000;
+    const SUBUNIT_CONVERSION_FACTOR_ROCKET: u64 = 100000000;
+    const SUBUNIT_CONVERSION_FACTOR_POOP: u64 = 1000000;
 
     /// You do not have permission to modify the throttler.
     const E_NOT_ADMIN: u64 = 3;
@@ -44,9 +44,9 @@ module throttler::throttle {
     public fun config_parameters(): ConfigView {
         assert!(false, E_DEPRECATED_CONFIG_PARAMETERS);
         ConfigView {
-            max_trade_volume_apt: 0,
-            max_transfer_apt: 0,
-            max_transfer_usdc: 0,
+            max_trade_volume_rocket: 0,
+            max_transfer_rocket: 0,
+            max_transfer_poop: 0,
             throttled_market_id: 0,
             wait_time_in_minutes: 0,
         }
@@ -55,9 +55,9 @@ module throttler::throttle {
     #[view]
     public fun get_config_parameters(): ConfigViewV2 {
         ConfigViewV2 {
-            max_trade_volume_apt: MAX_TRADE_VOLUME_APT,
-            max_transfer_apt: MAX_TRANSFER_APT,
-            max_transfer_usdc: MAX_TRANSFER_USDC,
+            max_trade_volume_rocket: MAX_TRADE_VOLUME_ROCKET,
+            max_transfer_rocket: MAX_TRANSFER_ROCKET,
+            max_transfer_poop: MAX_TRANSFER_POOP,
             throttled_market_id: THROTTLED_MARKET_ID,
             wait_time_in_seconds: WAIT_TIME_IN_SECONDS,
         }
@@ -91,17 +91,17 @@ module throttler::throttle {
     }
 
     struct ConfigView has copy, drop, store {
-        max_trade_volume_apt: u64,
-        max_transfer_apt: u64,
-        max_transfer_usdc: u64,
+        max_trade_volume_rocket: u64,
+        max_transfer_rocket: u64,
+        max_transfer_poop: u64,
         throttled_market_id: u64,
         wait_time_in_minutes: u64,
     }
 
     struct ConfigViewV2 has copy, drop, store {
-        max_trade_volume_apt: u64,
-        max_transfer_apt: u64,
-        max_transfer_usdc: u64,
+        max_trade_volume_rocket: u64,
+        max_transfer_rocket: u64,
+        max_transfer_poop: u64,
         throttled_market_id: u64,
         wait_time_in_seconds: u64,
     }
@@ -115,10 +115,10 @@ module throttler::throttle {
     /// All times in seconds.
     struct ThrottledAccount has copy, drop, store {
         account_address: address,
-        last_mint_time_apt: u64,
-        last_mint_time_usdc: u64,
-        last_deposit_time_apt: u64,
-        last_deposit_time_usdc: u64,
+        last_mint_time_rocket: u64,
+        last_mint_time_poop: u64,
+        last_deposit_time_rocket: u64,
+        last_deposit_time_poop: u64,
     }
 
     fun init_module(throttler: &signer) {
@@ -133,7 +133,7 @@ module throttler::throttle {
         market_id: u64,
         account: address,
         is_mint: bool,
-        is_apt: bool,
+        is_rocket: bool,
         amount_in_subunits: u64,
     ) acquires Throttler {
         if (!is_mint && market_id != THROTTLED_MARKET_ID) return;
@@ -150,10 +150,10 @@ module throttler::throttle {
             account,
             ThrottledAccount {
                 account_address: account,
-                last_mint_time_apt: 0,
-                last_mint_time_usdc: 0,
-                last_deposit_time_apt: 0,
-                last_deposit_time_usdc: 0,
+                last_mint_time_rocket: 0,
+                last_mint_time_poop: 0,
+                last_deposit_time_rocket: 0,
+                last_deposit_time_poop: 0,
             }
         );
         let account_ref_mut = smart_table::borrow_mut(
@@ -161,18 +161,18 @@ module throttler::throttle {
             account
         );
         let last_time_ref_mut = if (is_mint) {
-            if (is_apt) &mut account_ref_mut.last_mint_time_apt else
-            &mut account_ref_mut.last_mint_time_usdc
+            if (is_rocket) &mut account_ref_mut.last_mint_time_rocket else
+            &mut account_ref_mut.last_mint_time_poop
         } else {
-            if (is_apt) &mut account_ref_mut.last_deposit_time_apt else
-            &mut account_ref_mut.last_deposit_time_usdc
+            if (is_rocket) &mut account_ref_mut.last_deposit_time_rocket else
+            &mut account_ref_mut.last_deposit_time_poop
         };
         let now = timestamp::now_seconds();
         let eligible = (now - *last_time_ref_mut) > (WAIT_TIME_IN_SECONDS);
         assert!(eligible, E_WAIT_TIME);
-        let (conversion_factor, max_nominal) = if (is_apt)
-            (SUBUNIT_CONVERSION_FACTOR_APT , MAX_TRANSFER_APT ) else
-            (SUBUNIT_CONVERSION_FACTOR_USDC, MAX_TRANSFER_USDC);
+        let (conversion_factor, max_nominal) = if (is_rocket)
+            (SUBUNIT_CONVERSION_FACTOR_ROCKET , MAX_TRANSFER_ROCKET ) else
+            (SUBUNIT_CONVERSION_FACTOR_POOP, MAX_TRANSFER_POOP);
         assert!(
             amount_in_subunits <= max_nominal * conversion_factor,
             E_TRANSFER_AMOUNT
@@ -183,15 +183,15 @@ module throttler::throttle {
     public fun throttle_trade(
         market_id: u64,
         taker: address,
-        apt_trade_amount_in_octas: u64,
+        rocket_trade_amount_in_octas: u64,
     ) acquires Throttler {
         if (market_id != THROTTLED_MARKET_ID) return;
         let throttler_ref = borrow_global<Throttler>(@throttler);
         if (!throttler_ref.is_active) return;
         if (vector::contains(&throttler_ref.exempt_accounts, &taker)) return;
         let max_volume_octas =
-            MAX_TRADE_VOLUME_APT * SUBUNIT_CONVERSION_FACTOR_APT;
-        assert!(apt_trade_amount_in_octas <= max_volume_octas, E_TRADE_AMOUNT);
+            MAX_TRADE_VOLUME_ROCKET * SUBUNIT_CONVERSION_FACTOR_ROCKET;
+        assert!(rocket_trade_amount_in_octas <= max_volume_octas, E_TRADE_AMOUNT);
     }
 
     public entry fun deactivate(admin: &signer) acquires Throttler {

@@ -81,8 +81,8 @@ pub struct Args {
 }
 
 pub struct Init {
-    e_apt: TypeTag,
-    e_usdc: TypeTag,
+    rocket: TypeTag,
+    poop: TypeTag,
     faucet_address: AccountAddress,
     faucet_client: FaucetClient,
     econia_address: AccountAddress,
@@ -105,13 +105,13 @@ macro_rules! wait_for_enter {
 
 /// Creates the initial variables needed
 async fn init(args: &Args) -> Init {
-    // Create eAPT and eUSDC `TypeTag`s
+    // Create 🚀 and 💩 `TypeTag`s
     let faucet_address = AccountAddress::from_hex_literal(&args.faucet_address).unwrap();
-    let e_apt = TypeTag::Struct(Box::new(
-        StructTag::from_str(&format!("0x{faucet_address}::example_apt::ExampleAPT")).unwrap(),
+    let rocket = TypeTag::Struct(Box::new(
+        StructTag::from_str(&format!("0x{faucet_address}::example_rocket::ExampleRocket")).unwrap(),
     ));
-    let e_usdc = TypeTag::Struct(Box::new(
-        StructTag::from_str(&format!("0x{faucet_address}::example_usdc::ExampleUSDC")).unwrap(),
+    let poop = TypeTag::Struct(Box::new(
+        StructTag::from_str(&format!("0x{faucet_address}::example_poop::ExamplePoop")).unwrap(),
     ));
 
     // Create a `FaucetClient`
@@ -127,8 +127,8 @@ async fn init(args: &Args) -> Init {
     let (_, econia_client) = account(&faucet_client, &args.node_url, econia_address.clone()).await;
 
     Init {
-        e_apt,
-        e_usdc,
+        rocket,
+        poop,
         faucet_address,
         faucet_client,
         econia_address,
@@ -209,8 +209,8 @@ pub async fn get_best_levels(
 pub async fn place_limit_orders_at_market(
     view_client: EconiaViewClient<'_>,
     econia_address: AccountAddress,
-    e_apt: &TypeTag,
-    e_usdc: &TypeTag,
+    rocket: &TypeTag,
+    poop: &TypeTag,
     market_id: u64,
     size_lots_of_base: u64,
     min_bid_price_ticks_of_quote: u64,
@@ -222,8 +222,8 @@ pub async fn place_limit_orders_at_market(
         let best_bid_price = best_bid_level.price;
         place_limit_order_user_entry(
             econia_address,
-            &e_apt,
-            &e_usdc,
+            &rocket,
+            &poop,
             market_id,
             &econia_address,
             Side::Bid,
@@ -235,8 +235,8 @@ pub async fn place_limit_orders_at_market(
     } else {
         place_limit_order_user_entry(
             econia_address,
-            &e_apt,
-            &e_usdc,
+            &rocket,
+            &poop,
             market_id,
             &econia_address,
             Side::Bid,
@@ -251,8 +251,8 @@ pub async fn place_limit_orders_at_market(
         let best_ask_price = best_ask_level.price;
         place_limit_order_user_entry(
             econia_address,
-            &e_apt,
-            &e_usdc,
+            &rocket,
+            &poop,
             market_id,
             &econia_address,
             Side::Ask,
@@ -264,8 +264,8 @@ pub async fn place_limit_orders_at_market(
     } else {
         place_limit_order_user_entry(
             econia_address,
-            &e_apt,
-            &e_usdc,
+            &rocket,
+            &poop,
             market_id,
             &econia_address,
             Side::Ask,
@@ -286,7 +286,7 @@ pub async fn report_best_price_levels(
     let (best_bid_level, best_ask_level) = get_best_levels(view_client, market_id).await?;
 
     if best_bid_level.is_none() && best_ask_level.is_none() {
-        println!("There is no eAPT being bought or sold right now");
+        println!("There is no 🚀 being bought or sold right now");
         return Ok(());
     }
 
@@ -316,25 +316,25 @@ async fn main() -> EconiaResult<()> {
     let args = Args::parse();
 
     let Init {
-        e_apt,
-        e_usdc,
+        rocket,
+        poop,
         faucet_address,
         faucet_client,
         econia_address,
         mut econia_client,
     } = init(&args).await;
 
-    print_title!("Create a market for eAPT/eUSDC");
+    print_title!("Create a market for 🚀/💩");
 
-    let lot_size = 10u64.pow(8 - 3); // eAPT has 8 decimals, want 1/1000th granularity
-    let tick_size = 10u64.pow(6 - 3); // eAPT has 6 decimals, want 1/1000th granularity
+    let lot_size = 10u64.pow(8 - 3); // 🚀 has 8 decimals, want 1/1000th granularity
+    let tick_size = 10u64.pow(6 - 3); // 🚀 has 6 decimals, want 1/1000th granularity
     let min_size = 1;
 
     let market_id = econia_client
         .view_client()
         .get_market_id_base_coin(
-            e_apt.clone().into(),
-            e_usdc.clone().into(),
+            rocket.clone().into(),
+            poop.clone().into(),
             lot_size,
             tick_size,
             min_size,
@@ -346,16 +346,16 @@ async fn main() -> EconiaResult<()> {
 
         let (_, mut econia_client) =
             account(&faucet_client, &args.node_url, econia_address.clone()).await;
-        fund(&e_apt, 10u64.pow(19), &mut econia_client, faucet_address).await?;
-        fund(&e_usdc, 10u64.pow(19), &mut econia_client, faucet_address).await?;
-        let entry = register_market_account(econia_address, &e_apt, &e_usdc, market_id, 0)?;
+        fund(&rocket, 10u64.pow(19), &mut econia_client, faucet_address).await?;
+        fund(&poop, 10u64.pow(19), &mut econia_client, faucet_address).await?;
+        let entry = register_market_account(econia_address, &rocket, &poop, market_id, 0)?;
         econia_client.submit_tx(entry).await?;
-        let e_apt_subunits = 1000 * 10u64.pow(8);
-        let entry = deposit_from_coinstore(econia_address, &e_apt, market_id, 0, e_apt_subunits)?;
+        let rocket_subunits = 1000 * 10u64.pow(8);
+        let entry = deposit_from_coinstore(econia_address, &rocket, market_id, 0, rocket_subunits)?;
         econia_client.submit_tx(entry).await?;
 
-        let e_usdc_subunits = 10_000_000 * 10u64.pow(6);
-        let entry = deposit_from_coinstore(econia_address, &e_usdc, market_id, 0, e_usdc_subunits)?;
+        let poop_subunits = 10_000_000 * 10u64.pow(6);
+        let entry = deposit_from_coinstore(econia_address, &poop, market_id, 0, poop_subunits)?;
         econia_client.submit_tx(entry).await?;
 
         let (bids_level, asks_level) =
@@ -364,8 +364,8 @@ async fn main() -> EconiaResult<()> {
         if bids_level.is_some() {
             let entry = place_market_order_user_entry(
                 econia_address,
-                &e_apt,
-                &e_usdc,
+                &rocket,
+                &poop,
                 market_id,
                 &econia_address,
                 Side::Ask,
@@ -378,8 +378,8 @@ async fn main() -> EconiaResult<()> {
         if asks_level.is_some() {
             let entry = place_market_order_user_entry(
                 econia_address,
-                &e_apt,
-                &e_usdc,
+                &rocket,
+                &poop,
                 market_id,
                 &econia_address,
                 Side::Bid,
@@ -395,8 +395,8 @@ async fn main() -> EconiaResult<()> {
     } else {
         let entry = register_market_base_coin_from_coinstore(
             econia_address,
-            &e_apt,
-            &e_usdc,
+            &rocket,
+            &poop,
             &APTOS_COIN_TYPE,
             lot_size,
             tick_size,
@@ -409,8 +409,8 @@ async fn main() -> EconiaResult<()> {
         let market_id = econia_client
             .view_client()
             .get_market_id_base_coin(
-                e_apt.clone().into(),
-                e_usdc.clone().into(),
+                rocket.clone().into(),
+                poop.clone().into(),
                 lot_size,
                 tick_size,
                 min_size,
@@ -433,25 +433,25 @@ async fn main() -> EconiaResult<()> {
     let (account_address_a, mut econia_client_a) =
         account(&faucet_client, &args.node_url, econia_address.clone()).await;
 
-    fund(&e_apt, 10u64.pow(18), &mut econia_client_a, faucet_address).await?;
-    println!("Minted eAPT to {account_address_a}");
+    fund(&rocket, 10u64.pow(18), &mut econia_client_a, faucet_address).await?;
+    println!("Minted 🚀 to {account_address_a}");
 
-    fund(&e_usdc, 10u64.pow(10), &mut econia_client_a, faucet_address).await?;
-    println!("Minted eUSDC to {account_address_a}");
+    fund(&poop, 10u64.pow(10), &mut econia_client_a, faucet_address).await?;
+    println!("Minted 💩 to {account_address_a}");
 
-    let entry = register_market_account(econia_address, &e_apt, &e_usdc, market_id, 0)?;
+    let entry = register_market_account(econia_address, &rocket, &poop, market_id, 0)?;
     econia_client_a.submit_tx(entry).await?;
     println!("Registered market account for {account_address_a}");
 
-    let e_apt_subunits = 10 * 10u64.pow(8);
-    let entry = deposit_from_coinstore(econia_address, &e_apt, market_id, 0, e_apt_subunits)?;
+    let rocket_subunits = 10 * 10u64.pow(8);
+    let entry = deposit_from_coinstore(econia_address, &rocket, market_id, 0, rocket_subunits)?;
     econia_client_a.submit_tx(entry).await?;
-    println!("Deposited eAPT from coinstore for account {account_address_a}");
+    println!("Deposited 🚀 from coinstore for account {account_address_a}");
 
-    let e_usdc_subunits = 10_000 * 10u64.pow(6);
-    let entry = deposit_from_coinstore(econia_address, &e_usdc, market_id, 0, e_usdc_subunits)?;
+    let poop_subunits = 10_000 * 10u64.pow(6);
+    let entry = deposit_from_coinstore(econia_address, &poop, market_id, 0, poop_subunits)?;
     econia_client_a.submit_tx(entry).await?;
-    println!("Deposited eUSDC from coinstore for account {account_address_a}");
+    println!("Deposited 💩 from coinstore for account {account_address_a}");
 
     println!("{account_address_a} was successfully set up");
 
@@ -459,14 +459,14 @@ async fn main() -> EconiaResult<()> {
 
     print_title!("Place two limit orders with account A");
 
-    // Bid to purchase 1 whole eAPT at a price of 1 whole eUSDC per lot
-    // = $1000/eAPT ince there are 1000 lots in a wole eAPT & 1 tick = 0.001 USDC
+    // Bid to purchase 1 whole 🚀 at a price of 1 whole 💩 per lot
+    // = $1000/🚀 ince there are 1000 lots in a wole 🚀 & 1 tick = 0.001 💩
     let buy_base_lots = 10u64.pow(3);
     let buy_ticks_per_lot = 10u64.pow(3);
     let entry = place_limit_order_user_entry(
         econia_address,
-        &e_apt,
-        &e_usdc,
+        &rocket,
+        &poop,
         market_id,
         &econia_address,
         Side::Bid,
@@ -478,14 +478,14 @@ async fn main() -> EconiaResult<()> {
     econia_client_a.submit_tx(entry).await?;
     println!("Placed bid order for account {account_address_a}");
 
-    // Ask to sell 1 whole eAPT at a price of 2 whole eUSDC per lot
-    // = $2000-eAPT since there are 1000 lots in a whole eAPT & 1 tick = 0.001 USDC
+    // Ask to sell 1 whole 🚀 at a price of 2 whole 💩 per lot
+    // = $2000-🚀 since there are 1000 lots in a whole 🚀 & 1 tick = 0.001 💩
     let sell_base_lots = 10u64.pow(3);
     let sell_ticks_per_lot = 2 * 10u64.pow(3);
     let entry = place_limit_order_user_entry(
         econia_address,
-        &e_apt,
-        &e_usdc,
+        &rocket,
+        &poop,
         market_id,
         &econia_address,
         Side::Ask,
@@ -504,24 +504,24 @@ async fn main() -> EconiaResult<()> {
     let (account_address_b, mut econia_client_b) =
         account(&faucet_client, &args.node_url, econia_address.clone()).await;
 
-    fund(&e_apt, 10u64.pow(19), &mut econia_client_b, faucet_address).await?;
-    println!("Minted eAPT to {account_address_b}");
+    fund(&rocket, 10u64.pow(19), &mut econia_client_b, faucet_address).await?;
+    println!("Minted 🚀 to {account_address_b}");
 
-    fund(&e_usdc, 10u64.pow(19), &mut econia_client_b, faucet_address).await?;
-    println!("Minted eUSDC to {account_address_b}");
+    fund(&poop, 10u64.pow(19), &mut econia_client_b, faucet_address).await?;
+    println!("Minted 💩 to {account_address_b}");
 
-    let entry = register_market_account(econia_address, &e_apt, &e_usdc, market_id, 0)?;
+    let entry = register_market_account(econia_address, &rocket, &poop, market_id, 0)?;
     econia_client_b.submit_tx(entry).await?;
 
-    let e_apt_subunits = 10 * 10u64.pow(8);
-    let entry = deposit_from_coinstore(econia_address, &e_apt, market_id, 0, e_apt_subunits)?;
+    let rocket_subunits = 10 * 10u64.pow(8);
+    let entry = deposit_from_coinstore(econia_address, &rocket, market_id, 0, rocket_subunits)?;
     econia_client_b.submit_tx(entry).await?;
-    println!("Deposited eAPT from coinstore for account {account_address_b}");
+    println!("Deposited 🚀 from coinstore for account {account_address_b}");
 
-    let e_usdc_subunits = 10_000 * 10u64.pow(6);
-    let entry = deposit_from_coinstore(econia_address, &e_usdc, market_id, 0, e_usdc_subunits)?;
+    let poop_subunits = 10_000 * 10u64.pow(6);
+    let entry = deposit_from_coinstore(econia_address, &poop, market_id, 0, poop_subunits)?;
     econia_client_b.submit_tx(entry).await?;
-    println!("Deposited eUSDC from coinstore for account {account_address_b}");
+    println!("Deposited 💩 from coinstore for account {account_address_b}");
 
     wait_for_enter!("Place two market orders with account B");
 
@@ -546,27 +546,27 @@ async fn main() -> EconiaResult<()> {
 
     let entry = place_market_order_user_entry(
         econia_address,
-        &e_apt,
-        &e_usdc,
+        &rocket,
+        &poop,
         market_id,
         &econia_address,
         Side::Ask,
         500,
         SelfMatchBehavior::CancelMaker,
-    )?; // Buy 0.5 eAPT
+    )?; // Buy 0.5 🚀
     econia_client_b.submit_tx(entry).await?;
     println!("Placed market bid order for account {account_address_b}");
 
     let entry = place_market_order_user_entry(
         econia_address,
-        &e_apt,
-        &e_usdc,
+        &rocket,
+        &poop,
         market_id,
         &econia_address,
         Side::Bid,
         500,
         SelfMatchBehavior::CancelMaker,
-    )?; // Sell 0.5 eAPT
+    )?; // Sell 0.5 🚀
     econia_client_b.submit_tx(entry).await?;
     println!("Placed market ask order for account {account_address_b}");
 
@@ -644,8 +644,8 @@ async fn main() -> EconiaResult<()> {
     let (bid_entry, ask_entry) = place_limit_orders_at_market(
         econia_client.view_client(),
         econia_address,
-        &e_apt,
-        &e_usdc,
+        &rocket,
+        &poop,
         market_id,
         100,
         buy_ticks_per_lot,
@@ -659,8 +659,8 @@ async fn main() -> EconiaResult<()> {
     let (bid_entry, ask_entry) = place_limit_orders_at_market(
         econia_client.view_client(),
         econia_address,
-        &e_apt,
-        &e_usdc,
+        &rocket,
+        &poop,
         market_id,
         200,
         buy_ticks_per_lot,
@@ -674,8 +674,8 @@ async fn main() -> EconiaResult<()> {
     let (bid_entry, ask_entry) = place_limit_orders_at_market(
         econia_client.view_client(),
         econia_address,
-        &e_apt,
-        &e_usdc,
+        &rocket,
+        &poop,
         market_id,
         300,
         buy_ticks_per_lot,
@@ -689,8 +689,8 @@ async fn main() -> EconiaResult<()> {
     let (bid_entry, ask_entry) = place_limit_orders_at_market(
         econia_client.view_client(),
         econia_address,
-        &e_apt,
-        &e_usdc,
+        &rocket,
+        &poop,
         market_id,
         400,
         buy_ticks_per_lot,
@@ -704,8 +704,8 @@ async fn main() -> EconiaResult<()> {
     let (bid_entry, ask_entry) = place_limit_orders_at_market(
         econia_client.view_client(),
         econia_address,
-        &e_apt,
-        &e_usdc,
+        &rocket,
+        &poop,
         market_id,
         500,
         buy_ticks_per_lot,

@@ -100,9 +100,9 @@ NODE_URL = get_aptos_node_url()
 FAUCET_URL = get_aptos_faucet_url()
 ECONIA_ADDR = get_econia_address()
 FAUCET_ADDR = get_faucet_address()
-COIN_TYPE_EAPT = TypeTag(StructTag.from_str(f"{FAUCET_ADDR}::example_apt::ExampleAPT"))
-COIN_TYPE_EUSDC = TypeTag(
-    StructTag.from_str(f"{FAUCET_ADDR}::example_usdc::ExampleUSDC")
+COIN_TYPE_ROCKET = TypeTag(StructTag.from_str(f"{FAUCET_ADDR}::example_rocket::ExampleRocket"))
+COIN_TYPE_POOP = TypeTag(
+    StructTag.from_str(f"{FAUCET_ADDR}::example_poop::ExamplePoop")
 )
 
 LOT_SIZE = 100000 if int(sys.argv[1]) == 0 else int(sys.argv[1])  # type: ignore
@@ -135,8 +135,8 @@ async def gen_start():
     viewer = EconiaViewer(NODE_URL, ECONIA_ADDR)
     market_id = get_market_id_base_coin(
         viewer,
-        str(COIN_TYPE_EAPT),
-        str(COIN_TYPE_EUSDC),
+        str(COIN_TYPE_ROCKET),
+        str(COIN_TYPE_POOP),
         LOT_SIZE,
         TICK_SIZE,
         MIN_SIZE,
@@ -165,8 +165,8 @@ async def gen_start():
 
         calldata = register_market_base_coin_from_coinstore(
             ECONIA_ADDR,
-            COIN_TYPE_EAPT,
-            COIN_TYPE_EUSDC,
+            COIN_TYPE_ROCKET,
+            COIN_TYPE_POOP,
             TypeTag(StructTag.from_str(COIN_TYPE_APT)),
             LOT_SIZE,
             TICK_SIZE,
@@ -175,8 +175,8 @@ async def gen_start():
         await econia_client.gen_submit_tx_wait(calldata)
         market_id = get_market_id_base_coin(
             viewer,
-            str(COIN_TYPE_EAPT),
-            str(COIN_TYPE_EUSDC),
+            str(COIN_TYPE_ROCKET),
+            str(COIN_TYPE_POOP),
             LOT_SIZE,
             TICK_SIZE,
             MIN_SIZE,
@@ -248,8 +248,8 @@ async def setup_pair(
         await client_a.gen_submit_tx_wait(
             register_market_account(
                 ECONIA_ADDR,
-                COIN_TYPE_EAPT,
-                COIN_TYPE_EUSDC,
+                COIN_TYPE_ROCKET,
+                COIN_TYPE_POOP,
                 market_id,
                 0,
             )
@@ -261,8 +261,8 @@ async def setup_pair(
         await client_b.gen_submit_tx_wait(
             register_market_account(
                 ECONIA_ADDR,
-                COIN_TYPE_EAPT,
-                COIN_TYPE_EUSDC,
+                COIN_TYPE_ROCKET,
+                COIN_TYPE_POOP,
                 market_id,
                 0,
             )
@@ -276,44 +276,44 @@ async def setup_pair(
         client_maker = client_a if flip else client_b
         client_taker = client_b if flip else client_a
         flip = coin_flip()
-        from_type = COIN_TYPE_EAPT if flip else COIN_TYPE_EUSDC
-        to_type = COIN_TYPE_EUSDC if flip else COIN_TYPE_EAPT
+        from_type = COIN_TYPE_ROCKET if flip else COIN_TYPE_POOP
+        to_type = COIN_TYPE_POOP if flip else COIN_TYPE_ROCKET
 
         base_lots_remaining = base_lots
-        if from_type == COIN_TYPE_EAPT:
+        if from_type == COIN_TYPE_ROCKET:
             await fund(
-                client_maker, client_maker.user_account, 100 * 10**8, COIN_TYPE_EAPT
+                client_maker, client_maker.user_account, 100 * 10**8, COIN_TYPE_ROCKET
             )
             await fund(
-                client_taker, client_taker.user_account, 600 * 10**6, COIN_TYPE_EUSDC
+                client_taker, client_taker.user_account, 600 * 10**6, COIN_TYPE_POOP
             )
 
             await client_maker.gen_submit_tx_wait(
                 deposit_from_coinstore(
-                    ECONIA_ADDR, COIN_TYPE_EAPT, market_id, 0, 100 * 10**8
+                    ECONIA_ADDR, COIN_TYPE_ROCKET, market_id, 0, 100 * 10**8
                 )
             )
             await client_taker.gen_submit_tx_wait(
                 deposit_from_coinstore(
-                    ECONIA_ADDR, COIN_TYPE_EUSDC, market_id, 0, 600 * 10**6
+                    ECONIA_ADDR, COIN_TYPE_POOP, market_id, 0, 600 * 10**6
                 )
             )
         else:
             await fund(
-                client_maker, client_maker.user_account, 600 * 10**6, COIN_TYPE_EUSDC
+                client_maker, client_maker.user_account, 600 * 10**6, COIN_TYPE_POOP
             )
             await fund(
-                client_taker, client_taker.user_account, 100 * 10**8, COIN_TYPE_EAPT
+                client_taker, client_taker.user_account, 100 * 10**8, COIN_TYPE_ROCKET
             )
 
             await client_maker.gen_submit_tx_wait(
                 deposit_from_coinstore(
-                    ECONIA_ADDR, COIN_TYPE_EUSDC, market_id, 0, 600 * 10**6
+                    ECONIA_ADDR, COIN_TYPE_POOP, market_id, 0, 600 * 10**6
                 )
             )
             await client_taker.gen_submit_tx_wait(
                 deposit_from_coinstore(
-                    ECONIA_ADDR, COIN_TYPE_EAPT, market_id, 0, 100 * 10**8
+                    ECONIA_ADDR, COIN_TYPE_ROCKET, market_id, 0, 100 * 10**8
                 )
             )
 
@@ -321,7 +321,7 @@ async def setup_pair(
         while base_lots_remaining > MIN_SIZE:
             base_lots_size = random.randint(MIN_SIZE, base_lots_remaining)
             match_price = (
-                ticks_per_lot if from_type == COIN_TYPE_EUSDC else ticks_per_lot + 1
+                ticks_per_lot if from_type == COIN_TYPE_POOP else ticks_per_lot + 1
             )
             await execute_limit_order(
                 client_maker, market_id, from_type, base_lots_size, match_price
@@ -376,11 +376,11 @@ async def fund(client: EconiaClient, account: Account, subunits: int, type: Type
 async def execute_market_order(
     client: EconiaClient, market_id: int, from_type: TypeTag, base_lots: int
 ):
-    direction = Side.BID if from_type == COIN_TYPE_EUSDC else Side.ASK
+    direction = Side.BID if from_type == COIN_TYPE_POOP else Side.ASK
     calldata = place_market_order_user_entry(
         ECONIA_ADDR,
-        COIN_TYPE_EAPT,
-        COIN_TYPE_EUSDC,
+        COIN_TYPE_ROCKET,
+        COIN_TYPE_POOP,
         market_id,
         get_integrator(),
         direction,
@@ -397,11 +397,11 @@ async def execute_limit_order(
     base_lots: int,
     ticks_per_lot: int,
 ):
-    direction = Side.BID if from_type == COIN_TYPE_EUSDC else Side.ASK
+    direction = Side.BID if from_type == COIN_TYPE_POOP else Side.ASK
     calldata = place_limit_order_user_entry(
         ECONIA_ADDR,
-        COIN_TYPE_EAPT,
-        COIN_TYPE_EUSDC,
+        COIN_TYPE_ROCKET,
+        COIN_TYPE_POOP,
         market_id,
         get_integrator(),
         direction,

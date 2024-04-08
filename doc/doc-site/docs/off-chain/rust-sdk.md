@@ -97,7 +97,7 @@ We then use an `EconiaViewClient` (that is dropped as soon as we finish using it
 Expected output:
 
 ```
-==========Create a market for eAPT/eUSDC==========
+==========Create a market for 🚀/💩==========
 Market created with ID: 1
 Press enter to continue (next step: Set up account A)
 ```
@@ -116,7 +116,7 @@ The function returns a tuple with the address of the newly created account and a
 In order to make a call with this account, you'll have to use this client.
 You will have to use multiple clients **and it is important not to mix them up**.
 
-Next, we'll fund the accounts with some example coins (eAPT and eUSDC).
+Next, we'll fund the accounts with some example coins (🚀 and 💩).
 To do so, we use the `fund` helper function (you can find its definition in the script's source).
 
 Now that that's out of the way, we'll register the account to the market.
@@ -131,12 +131,12 @@ You should see the following (`ADDR_A` would be a randomly generated address):
 
 ```
 =================Set up account A=================
-Minted eAPT to ADDR_A
-Minted eUSDC to ADDR_A
+Minted 🚀 to ADDR_A
+Minted 💩 to ADDR_A
 Registered market account for ADDR_A
 367
-Deposited eAPT from coinstore for account ADDR_A
-Deposited eUSDC from coinstore for account ADDR_A
+Deposited 🚀 from coinstore for account ADDR_A
+Deposited 💩 from coinstore for account ADDR_A
 ADDR_A was successfully set up
 Press enter to continue (next step: Place two limit orders with account A)
 ```
@@ -175,10 +175,10 @@ As this is the same procedure as before, we're not going to explain it again.
 
 ```
 =================Set up account B=================
-Minted eAPT to ADDR_B
-Minted eUSDC to ADDR_B
-Deposited eAPT from coinstore for account ADDR_B
-Deposited eUSDC from coinstore for account ADDR_B
+Minted 🚀 to ADDR_B
+Minted 💩 to ADDR_B
+Deposited 🚀 from coinstore for account ADDR_B
+Deposited 💩 from coinstore for account ADDR_B
 Press enter to continue (next step: Place two market orders with account B)
 ```
 
@@ -242,7 +242,7 @@ There are three functions we created here:
 
 ```
 Placing competitive limit orders (top-of-book) with account A
-There is no eAPT being bought or sold right now
+There is no 🚀 being bought or sold right now
 Best price levels:
   Highest BID/BUY @ 1004 ticks/lot, 500 lots
   Lowest ASK/SELL @ 1996 ticks/lot, 500 lots

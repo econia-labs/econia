@@ -42,8 +42,8 @@ Invoking a wrapper (once it is already published):
 aptos move run \
     --function-id $WRAPPER_PUBLISHER::cancel_and_place::cancel_and_place \
     --type-args \
-        $ECONIA_FAUCET_ADDR::example_apt::ExampleAPT \
-        $ECONIA_FAUCET_ADDR::example_usdc::ExampleUSDC \
+        $ECONIA_FAUCET_ADDR::example_rocket::ExampleRocket \
+        $ECONIA_FAUCET_ADDR::example_poop::ExamplePoop \
     --args \
         u64:3 \
         u128:'[69673519005926178638800656]' \

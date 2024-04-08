@@ -40,8 +40,8 @@ pub struct Args {
 }
 
 pub struct State {
-    pub e_apt: TypeTag,
-    pub e_usdc: TypeTag,
+    pub rocket: TypeTag,
+    pub poop: TypeTag,
     pub faucet_address: AccountAddress,
     pub faucet_client: FaucetClient,
     pub econia_address: AccountAddress,
@@ -59,7 +59,7 @@ struct MinSize {
 
 /// Creates the initial variables needed
 pub async fn init(args: &Args) -> State {
-    // Create eAPT and eUSDC `TypeTag`s
+    // Create 🚀 and 💩 `TypeTag`s
     let faucet_address = if args.faucet_address.starts_with("0x") {
         args.faucet_address.clone()
     } else {
@@ -67,11 +67,11 @@ pub async fn init(args: &Args) -> State {
     };
     let faucet_address =
         AccountAddress::from_hex_literal(&faucet_address).expect("Could not parse faucet address.");
-    let e_apt = TypeTag::Struct(Box::new(
-        StructTag::from_str(&format!("0x{faucet_address}::example_apt::ExampleAPT")).unwrap(),
+    let rocket = TypeTag::Struct(Box::new(
+        StructTag::from_str(&format!("0x{faucet_address}::example_rocket::ExampleRocket")).unwrap(),
     ));
-    let e_usdc = TypeTag::Struct(Box::new(
-        StructTag::from_str(&format!("0x{faucet_address}::example_usdc::ExampleUSDC")).unwrap(),
+    let poop = TypeTag::Struct(Box::new(
+        StructTag::from_str(&format!("0x{faucet_address}::example_poop::ExamplePoop")).unwrap(),
     ));
 
     // Create a `FaucetClient`
@@ -110,11 +110,11 @@ pub async fn init(args: &Args) -> State {
                 ("order", "min_size.desc"),
                 ("limit", "1"),
                 ("base_account_address", &format!("{faucet_address:#}")),
-                ("base_module_name", "eq.example_usdc"),
-                ("base_struct_name", "eq.ExampleUSDC"),
+                ("base_module_name", "eq.example_poop"),
+                ("base_struct_name", "eq.ExamplePoop"),
                 ("quote_account_address", &format!("{faucet_address:#}")),
-                ("quote_module_name", "eq.example_apt"),
-                ("quote_struct_name", "eq.ExampleAPT"),
+                ("quote_module_name", "eq.example_rocket"),
+                ("quote_struct_name", "eq.ExampleRocket"),
                 ("select", "min_size"),
             ],
         )
@@ -135,8 +135,8 @@ pub async fn init(args: &Args) -> State {
     };
 
     State {
-        e_apt,
-        e_usdc,
+        rocket,
+        poop,
         faucet_address,
         faucet_client,
         econia_address,

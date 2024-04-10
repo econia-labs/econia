@@ -17,48 +17,18 @@ SELECT
     quote_account_address || '::' || quote_module_name || '::' || quote_struct_name AS quote_currency,
     base_volume_24h AS base_volume,
     quote_volume_24h AS quote_volume,
-    -- all_24h_volume_in_base_nominal = (quote_in_ticks * tick_size / 10^quote_decimals / price_nominal * 10^base_decimals + base_in_lots * lot_size) / 10^base_decimals
-    (
-            quote_volume_24h *
-            (SELECT tick_size FROM market_registration_events AS x WHERE x.market_id = markets.market_id) /
-            POW(10,quote_decimals) /
-            integer_price_to_quote_nominal(market_id, api.get_market_last_price(market_id)) *
-            POW(10,base_decimals)
-        +
-            base_volume_24h *
-            (SELECT lot_size FROM market_registration_events AS x WHERE x.market_id = markets.market_id)
-    ) / POW(10,base_decimals) AS all_24h_volume_in_base_nominal,
-    -- all_24h_volume_in_quote_nominal = (quote_in_ticks * tick_size + base_in_lots * lot_size / 10^base_decimals * price_nominal * 10^qoute_decimals) / 10^quote_decimals
-    (
-            quote_volume_24h *
-            (SELECT tick_size FROM market_registration_events AS x WHERE x.market_id = markets.market_id)
-        +
-            base_volume_24h *
-            (SELECT lot_size FROM market_registration_events AS x WHERE x.market_id = markets.market_id) /
-            POW(10,base_decimals) *
-            integer_price_to_quote_nominal(market_id, api.get_market_last_price(market_id)) *
-            POW(10,quote_decimals)
-    ) / POW(10,quote_decimals) AS all_24h_volume_in_quote_nominal,
-    -- base_24h_volume_in_base_nominal = (base_in_lots * lot_size) / 10^base_decimals
     (
         base_volume_24h *
-        (SELECT lot_size FROM market_registration_events AS x WHERE x.market_id = markets.market_id)
-    ) / POW(10,quote_decimals) AS base_24h_volume_in_base_nominal,
-    -- base_24h_volume_in_quote_nominal = (base_in_lots * lot_size) / 10^base_decimals * price_nominal
-    (
-        base_volume_24h *
-        (SELECT lot_size FROM market_registration_events AS x WHERE x.market_id = markets.market_id)
-    ) / POW(10,quote_decimals) * integer_price_to_quote_nominal(market_id, api.get_market_last_price(market_id)) AS base_24h_volume_in_quote_nominal,
-    -- quote_24h_volume_in_quote_nominal = (quote_in_ticks * tick_size) / 10^quote_decimals
+        (SELECT lot_size FROM market_registration_events AS x WHERE x.market_id = markets.market_id) /
+        POW(10,quote_decimals)
+    )
+    AS base_volume_nominal,
     (
         quote_volume_24h *
-        (SELECT tick_size FROM market_registration_events AS x WHERE x.market_id = markets.market_id)
-    ) / POW(10,quote_decimals) AS quote_24h_volume_in_quote_nominal,
-    -- quote_24h_volume_in_base_nominal = (quote_in_ticks * tick_size) / 10^quote_decimals / price_nominal
-    (
-        quote_volume_24h *
-        (SELECT tick_size FROM market_registration_events AS x WHERE x.market_id = markets.market_id)
-    ) / POW(10,quote_decimals) / integer_price_to_quote_nominal(market_id, api.get_market_last_price(market_id)) AS quote_24h_volume_in_base_nominal,
+        (SELECT tick_size FROM market_registration_events AS x WHERE x.market_id = markets.market_id) /
+        POW(10,quote_decimals)
+    )
+    AS quote_volume_nominal,
     integer_price_to_quote_nominal(market_id, api.get_market_last_price(market_id)) AS last_price,
     integer_price_to_quote_nominal(market_id, api.get_market_best_ask_price(market_id)) AS ask,
     integer_price_to_quote_nominal(market_id, api.get_market_best_bid_price(market_id)) AS bid,

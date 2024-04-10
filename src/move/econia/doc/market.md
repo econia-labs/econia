@@ -7586,7 +7586,7 @@ Should be called before <code><a href="market.md#0xc0deb00c_market_match">match<
 
 * "Inbound asset" is asset received by user.
 * "Outbound asset" is asset traded away by by user.
-* "Available asset" is the the user's holdings for either base
+* "Available asset" is the user's holdings for either base
 or quote. When trading from a user's market account,
 corresponds to either <code><a href="user.md#0xc0deb00c_user_MarketAccount">user::MarketAccount</a>.base_available</code> or
 <code><a href="user.md#0xc0deb00c_user_MarketAccount">user::MarketAccount</a>.quote_available</code>. When trading from a

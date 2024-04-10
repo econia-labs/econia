@@ -1,6 +1,6 @@
 /// Incentive-associated parameters and data structures.
 ///
-/// Contains hard-coded "genesis parameters" that are are set
+/// Contains hard-coded "genesis parameters" that are set
 /// upon module publication per `init_module()`, and which can be
 /// updated later per `set_incentive_parameters()`.
 ///

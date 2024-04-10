@@ -5,7 +5,7 @@
 
 Incentive-associated parameters and data structures.
 
-Contains hard-coded "genesis parameters" that are are set
+Contains hard-coded "genesis parameters" that are set
 upon module publication per <code><a href="incentives.md#0xc0deb00c_incentives_init_module">init_module</a>()</code>, and which can be
 updated later per <code><a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters">set_incentive_parameters</a>()</code>.
 

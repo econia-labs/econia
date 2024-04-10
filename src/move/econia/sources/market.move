@@ -4337,7 +4337,7 @@ module econia::market {
     ///
     /// * "Inbound asset" is asset received by user.
     /// * "Outbound asset" is asset traded away by by user.
-    /// * "Available asset" is the the user's holdings for either base
+    /// * "Available asset" is the user's holdings for either base
     ///   or quote. When trading from a user's market account,
     ///   corresponds to either `user::MarketAccount.base_available` or
     ///   `user::MarketAccount.quote_available`. When trading from a

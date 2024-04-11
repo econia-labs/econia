@@ -175,10 +175,11 @@ To deploy on Vercel, you'll need to set up the following environment variables:
 | `NEXT_PUBLIC_API_URL`                    | The Econia REST API URL                                                                          |
 | `NEXT_PUBLIC_RPC_NODE_URL`               | Aptos RPC URL                                                                                    |
 | `GITHUB_ACCESS_TOKEN`                    | Access token for GitHub account with private `TradingView` repo access (only required in Vercel) |
-| `NEXT_PUBLIC_UNCONNECTED_NOTICE_MESSAGE` | Message that shows in modal when user has not connected wallet yet                               |
+| `NEXT_PUBLIC_UNCONNECTED_NOTICE_MESSAGE` | The modal message to display when a user has not connected their wallet yet                      |
 | `NEXT_PUBLIC_READ_ONLY`                  | Config read only mode, 1 OR 0                                                                    |
 | `NEXT_PUBLIC_READ_ONLY_MESSAGE`          | Error message when user attempt do a require sign operator                                       |
 | `NEXT_PUBLIC_DEFAULT_MARKET_ID`          | Default market id                                                                                |
+| `NEXT_PUBLIC_INTEGRATOR_ADDRESS`         | The address that will receive integrator fees for taker orders. This address must have a fee store registered for the given market |
 | `TRY_CLONING_TRADINGVIEW`                | Set to any value other than "1" to skip private submodule cloning                                |
 
 :::note

@@ -9,7 +9,7 @@ members = [
   "mqtt-publisher",
   "types",
   "sdk",
-  "sdk/example",
+  "sdk/example", "aggv2",
 ]
 exclude = ["api", "db", "dependencies"]
 

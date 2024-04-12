@@ -94,6 +94,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "aggv2"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "bigdecimal 0.3.1",
+ "chrono",
+ "dotenvy",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "sqlx-postgres",
+ "tokio",
+ "tracing",
+ "tracing-subscriber 0.3.17",
+]
+
+[[package]]
 name = "ahash"
 version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1713,10 +1731,10 @@ checksum = "9324c8014cd04590682b34f1e9448d38f0674d0f7b2dc553331016ef0e4e9ebc"
 dependencies = [
  "autocfg",
  "libm",
- "num-bigint",
+ "num-bigint 0.4.4",
  "num-integer",
- "num-traits 0.2.16",
- "serde 1.0.188",
+ "num-traits",
+ "serde",
 ]
 
 [[package]]

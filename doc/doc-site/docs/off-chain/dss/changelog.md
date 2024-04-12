@@ -13,6 +13,12 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 1. Merge `main` into `dss-stable`.
 1. Push annotated tag to head of `dss-stable`.
 
+## [v2.1.0] (in progress)
+
+### Added
+
+- Price level events over MQTT (disabled by default, enable by adding `MQTT_PRICE_LEVELS=yes`, see `src/docker/example.env`) ([#753]).
+
 ## [v2.0.1] (hot upgradable)
 
 ### Fixed
@@ -190,6 +196,7 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 [#719]: https://github.com/econia-labs/econia/pull/719
 [#720]: https://github.com/econia-labs/econia/pull/720
 [#723]: https://github.com/econia-labs/econia/pull/723
+[#753]: https://github.com/econia-labs/econia/pull/753
 [processor #19]: https://github.com/econia-labs/aptos-indexer-processors/pull/19
 [processor #20]: https://github.com/econia-labs/aptos-indexer-processors/pull/20
 [processor #21]: https://github.com/econia-labs/aptos-indexer-processors/pull/21

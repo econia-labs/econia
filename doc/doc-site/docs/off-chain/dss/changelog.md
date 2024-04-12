@@ -17,7 +17,7 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 
 ### Added
 
-- Price level events over MQTT ([#753])
+- Price level events over MQTT (disabled by default, enable by adding `MQTT_PRICE_LEVELS=yes`, see `src/docker/example.env`) ([#753]).
 
 ## [v2.0.1] (hot upgradable)
 

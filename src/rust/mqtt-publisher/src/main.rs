@@ -103,7 +103,7 @@ async fn main() -> Result<()> {
     let mqtt_url = std::env::var("MQTT_URL")?;
     let mqtt_password = std::env::var("MQTT_PASSWORD")?;
     let db_url = std::env::var("DATABASE_URL")?;
-    let mqtt_price_levels = std::env::var("MQTT_PRICE_LEVELS")?;
+    let mqtt_price_levels = std::env::var("MQTT_PRICE_LEVELS").unwrap_or(String::from("no"));
 
     let mut mqttoptions =
         MqttOptions::parse_url(format!("{mqtt_url}/?client_id=mqtt_publisher")).unwrap();
@@ -135,7 +135,7 @@ async fn eventpoll_loop(mut eventloop: EventLoop) -> Result<()> {
 #[derive(Serialize)]
 struct PriceLevel {
     price: u128,
-    amount: u128,
+    size: u128,
 }
 
 async fn price_level_loop(db_url: &str, mqtt_client: Arc<RwLock<AsyncClient>>) -> Result<()> {
@@ -143,40 +143,7 @@ async fn price_level_loop(db_url: &str, mqtt_client: Arc<RwLock<AsyncClient>>) -
 
     loop {
         tokio::time::sleep(Duration::from_millis(50)).await;
-        let data = sqlx::query!(
-            r#"
-            WITH levels AS (
-                SELECT
-                    market_id,
-                    direction::text,
-                    price,
-                    SUM(remaining_size) AS total_size
-                FROM
-                    aggregator.user_history
-                WHERE
-                    order_status = 'open'
-                GROUP BY
-                    market_id,
-                    direction,
-                    price
-                ORDER BY
-                    market_id,
-                    direction,
-                    CASE
-                        WHEN direction = 'ask' THEN price
-                        ELSE -1 * price
-                    END
-            ),
-            numbered_levels AS (
-                SELECT
-                    *,
-                    row_number() OVER (PARTITION BY market_id, direction) AS level
-                FROM
-                    levels
-            )
-            SELECT * FROM numbered_levels WHERE level <= 10;
-        "#
-        )
+        let data = sqlx::query_file!("sqlx_queries/get_price_levels.sql")
         .fetch_all(&pool)
         .await?;
         let mqtt_client = mqtt_client.read().await;
@@ -193,7 +160,7 @@ async fn price_level_loop(db_url: &str, mqtt_client: Arc<RwLock<AsyncClient>>) -
                     .ok_or(anyhow!("price is None"))?
                     .to_u128()
                     .ok_or(anyhow!("price is too big"))?,
-                amount: row
+                size: row
                     .total_size
                     .ok_or(anyhow!("total_size is None"))?
                     .to_u128()

@@ -45,7 +45,7 @@ A payload for this event looks like this:
 ```json
 {
   "price": 12345,
-  "amount": 12345
+  "size": 12345
 }
 ```
 

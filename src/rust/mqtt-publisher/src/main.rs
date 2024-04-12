@@ -105,7 +105,8 @@ async fn main() -> Result<()> {
     let db_url = std::env::var("DATABASE_URL")?;
     let mqtt_price_levels = std::env::var("MQTT_PRICE_LEVELS")?;
 
-    let mut mqttoptions = MqttOptions::parse_url(format!("{mqtt_url}/?client_id=mqtt_publisher")).unwrap();
+    let mut mqttoptions =
+        MqttOptions::parse_url(format!("{mqtt_url}/?client_id=mqtt_publisher")).unwrap();
     mqttoptions.set_credentials("mqtt_publisher", mqtt_password);
     mqttoptions.set_transport(Transport::Tcp);
     mqttoptions.set_keep_alive(Duration::from_secs(5));
@@ -121,7 +122,6 @@ async fn main() -> Result<()> {
     } else {
         tokio::try_join!(epl, pnl)?;
     }
-
 
     Ok(())
 }
@@ -143,7 +143,8 @@ async fn price_level_loop(db_url: &str, mqtt_client: Arc<RwLock<AsyncClient>>) -
 
     loop {
         tokio::time::sleep(Duration::from_millis(50)).await;
-        let data = sqlx::query!(r#"
+        let data = sqlx::query!(
+            r#"
             WITH levels AS (
                 SELECT
                     market_id,
@@ -174,20 +175,46 @@ async fn price_level_loop(db_url: &str, mqtt_client: Arc<RwLock<AsyncClient>>) -
                     levels
             )
             SELECT * FROM numbered_levels WHERE level <= 10;
-        "#).fetch_all(&pool).await?;
+        "#
+        )
+        .fetch_all(&pool)
+        .await?;
         let mqtt_client = mqtt_client.read().await;
         for row in data {
-            let topic = format!("levels/{}/{}/{}", row.market_id, row.direction.ok_or(anyhow!("direction is None"))?, row.level.ok_or(anyhow!("level is None"))?);
+            let topic = format!(
+                "levels/{}/{}/{}",
+                row.market_id,
+                row.direction.ok_or(anyhow!("direction is None"))?,
+                row.level.ok_or(anyhow!("level is None"))?
+            );
             let payload = PriceLevel {
-                price: row.price.ok_or(anyhow!("price is None"))?.to_u128().ok_or(anyhow!("price is too big"))?,
-                amount: row.total_size.ok_or(anyhow!("total_size is None"))?.to_u128().ok_or(anyhow!("total_size is too big"))?,
+                price: row
+                    .price
+                    .ok_or(anyhow!("price is None"))?
+                    .to_u128()
+                    .ok_or(anyhow!("price is too big"))?,
+                amount: row
+                    .total_size
+                    .ok_or(anyhow!("total_size is None"))?
+                    .to_u128()
+                    .ok_or(anyhow!("total_size is too big"))?,
             };
-            mqtt_client.publish(topic, QoS::AtLeastOnce, false, serde_json::to_string(&payload)?).await?;
+            mqtt_client
+                .publish(
+                    topic,
+                    QoS::AtLeastOnce,
+                    false,
+                    serde_json::to_string(&payload)?,
+                )
+                .await?;
         }
     }
 }
 
-async fn postgres_notif_loop(db_url: &str, mqtt_client: Arc<RwLock<AsyncClient>>) -> anyhow::Result<()> {
+async fn postgres_notif_loop(
+    db_url: &str,
+    mqtt_client: Arc<RwLock<AsyncClient>>,
+) -> anyhow::Result<()> {
     let mut listener = PgListener::connect(&db_url).await?;
     let channels = vec![
         "place_limit_order",
@@ -198,11 +225,7 @@ async fn postgres_notif_loop(db_url: &str, mqtt_client: Arc<RwLock<AsyncClient>>
         "fill",
     ];
     listener.listen_all(channels).await?;
-    let mut emitted_fills: HashSet<(
-        u128,
-        u128,
-        u128,
-    )> = Default::default();
+    let mut emitted_fills: HashSet<(u128, u128, u128)> = Default::default();
     loop {
         let notification = listener.recv().await?;
         let mqtt_client = mqtt_client.read().await;

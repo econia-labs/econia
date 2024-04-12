@@ -30,6 +30,25 @@ But you could subscribe to `fill/+/0xc0deface/+` to get all fill events from the
 
 ## Topics
 
+### Price levels
+
+`levels/MARKET_ID/DIRECTION/LEVEL`
+
+Here, `DIRECTION` is either `ask` or `bid`, and `LEVEL` is the level of the price level (level 1 is the best ask/bid, level 2 is the second best, etc.).
+
+Levels go up to 10.
+
+Tip: You can subscribe to `levels/MARKET_ID/#` or `levels/MARKET_ID/+/+` to subscribe to all price levels events for a market.
+
+A payload for this event looks like this:
+
+```json
+{
+  "price": 12345,
+  "amount": 12345
+}
+```
+
 ### PlaceLimitOrderEvents
 
 `place_limit_order/MARKET_ID/USER_ADDRESS/CUSTODIAN_ID/INTEGRATOR`

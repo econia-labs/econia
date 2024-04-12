@@ -48,9 +48,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      diesel:
+        condition: service_completed_successfully
     environment:
       DATABASE_URL: "postgres://econia:econia@postgres:5432/econia"
       MQTT_PASSWORD: ${MQTT_PASSWORD}
+      MQTT_PRICE_LEVELS: ${MQTT_PRICE_LEVELS}
     ports:
       - "21883:21883"
       - "21884:21884"

@@ -1713,10 +1713,10 @@ checksum = "9324c8014cd04590682b34f1e9448d38f0674d0f7b2dc553331016ef0e4e9ebc"
 dependencies = [
  "autocfg",
  "libm",
- "num-bigint",
+ "num-bigint 0.4.4",
  "num-integer",
- "num-traits 0.2.16",
- "serde 1.0.188",
+ "num-traits",
+ "serde",
 ]
 
 [[package]]
@@ -2849,7 +2849,7 @@ dependencies = [
 
 [[package]]
 name = "econia-sdk"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "anyhow",
  "aptos-api-types",
@@ -5094,6 +5094,7 @@ name = "mqtt-publisher"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "bigdecimal 0.4.3",
  "chrono",
  "rumqttc",
  "serde",

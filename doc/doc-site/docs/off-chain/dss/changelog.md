@@ -31,7 +31,6 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 - Add the `all` liquidity group by default to all markets ([#728]).
 - Remove the market registration pipeline (counted markets registered per day) ([#727]).
 - Fix liquidity calculation logic ([#744]).
-- Fix liquidity calculation logic ([#744]).
 
 ## [v2.0.1] (hot upgradable)
 

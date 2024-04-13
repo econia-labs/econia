@@ -5,26 +5,33 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 ## Release procedure
 
 1. Create preparatory pull request (PR) into `main` branch of `econia` repo (like [#653]).
-   1. Rebuild REST API docs.
-   1. Bump changelog with PRs since last preparatory PR:
-      1. In `econia` repo.
-      1. In processor submodule.
-      1. Note if a hot upgrade is possible relative to the last release.
+   1. [Rebuild REST API docs][docs site README].
+   1. Bump changelog.
+        1. Add new pull requests since last release:
+            1. From [`econia` repo].
+            1. From [processor submodule].
+        1. Note if a hot upgrade is possible relative to the last release.
+        1. Verify all new links by manually following them on a
+           [live local docs build][docs site README].
+        1. Run `mdformat` on changelog.
+1. Tag `main` with an annotated release candidate tag like [dss-v2.1.0-rc.1].
 1. Merge `main` into `dss-stable`.
 1. Push annotated tag to head of `dss-stable`.
 
-## [v2.1.0-rc1]
+## [v2.1.0-rc1] (hot upgradable)
 
 ### Added
 
 - Price level events over MQTT (disabled by default, enable by adding `MQTT_PRICE_LEVELS=yes`, see `src/docker/example.env`) ([#753]).
-- Fix the `/tickers` `base_volume_nominal` field ([#749]).
-- Optimize the `/tickers` endpoint ([#731]).
+- Fix the `/tickers` `base_volume_nominal` and `quote_volume_nominal` field ([#746], [#749]).
+- Optimize the `/tickers` endpoint ([#729]).
 - Add suspend and resume functionality for the DSS when deployed on GCP ([#736]).
 - Add more details in aggregator logging ([#738]).
-- Fix a bug that would corrupt your balance if your market account handle started with `0x0` ([#732]).
+- Fix a bug that would prohibit balance reporting for market account handles starting with `0x0` ([#732], [Processor #25]).
 - Add the `all` liquidity group by default to all markets ([#728]).
 - Remove the market registration pipeline (counted markets registered per day) ([#727]).
+- Fix liquidity calculation logic ([#744]).
+- Fix liquidity calculation logic ([#744]).
 
 ## [v2.0.1] (hot upgradable)
 
@@ -205,10 +212,12 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 [#723]: https://github.com/econia-labs/econia/pull/723
 [#727]: https://github.com/econia-labs/econia/pull/727
 [#728]: https://github.com/econia-labs/econia/pull/728
-[#731]: https://github.com/econia-labs/econia/pull/731
+[#729]: https://github.com/econia-labs/econia/pull/729
 [#732]: https://github.com/econia-labs/econia/pull/732
 [#736]: https://github.com/econia-labs/econia/pull/736
 [#738]: https://github.com/econia-labs/econia/pull/738
+[#744]: https://github.com/econia-labs/econia/pull/744
+[#746]: https://github.com/econia-labs/econia/pull/746
 [#749]: https://github.com/econia-labs/econia/pull/749
 [#753]: https://github.com/econia-labs/econia/pull/753
 [processor #19]: https://github.com/econia-labs/aptos-indexer-processors/pull/19
@@ -216,6 +225,7 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 [processor #21]: https://github.com/econia-labs/aptos-indexer-processors/pull/21
 [processor #22]: https://github.com/econia-labs/aptos-indexer-processors/pull/22
 [processor #23]: https://github.com/econia-labs/aptos-indexer-processors/pull/23
+[processor #25]: https://github.com/econia-labs/aptos-indexer-processors/pull/25
 [v1.3.0]: https://github.com/econia-labs/econia/releases/tag/dss-v1.3.0
 [v1.4.0]: https://github.com/econia-labs/econia/compare/dss-v1.3.0...dss-v1.4.0
 [v1.5.0]: https://github.com/econia-labs/econia/compare/dss-v1.4.0...dss-v1.5.0
@@ -224,3 +234,7 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 [v2.0.0]: https://github.com/econia-labs/econia/compare/dss-v1.6.1...dss-v2.0.0
 [v2.0.1]: https://github.com/econia-labs/econia/compare/dss-v2.0.0...dss-v2.0.1
 [`dss-stable`]: https://github.com/econia-labs/econia/tree/dss-stable
+[dss-v2.1.0-rc.1]: https://github.com/econia-labs/econia/releases/tag/dss-v2.1.0-rc.1
+[docs site README]: https://github.com/econia-labs/econia/blob/main/doc/doc-site/README.md
+[`econia` repo]: https://github.com/econia-labs/econia/pulls?q=is%3Aclosed
+[processor submodule]: https://github.com/econia-labs/aptos-indexer-processors/pulls?q=is%3Aclosed

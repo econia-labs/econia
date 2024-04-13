@@ -5,20 +5,20 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 ## Release procedure
 
 1. Create preparatory pull request (PR) into `main` branch of `econia` repo (like [#653]).
-   1. [Rebuild REST API docs][docs site README].
+   1. [Rebuild REST API docs][docs site readme].
    1. Bump changelog.
-        1. Add new pull requests since last release:
-            1. From [`econia` repo].
-            1. From [processor submodule].
-        1. Note if a hot upgrade is possible relative to the last release.
-        1. Verify all new links by manually following them on a
-           [live local docs build][docs site README].
-        1. Run `mdformat` on changelog.
+      1. Add new pull requests since last release:
+         1. From [`econia` repo].
+         1. From [processor submodule].
+      1. Note if a hot upgrade is possible relative to the last release.
+      1. Verify all new links by manually following them on a
+         [live local docs build][docs site readme].
+      1. Run `mdformat` on changelog.
 1. Tag `main` with an annotated release candidate tag like [dss-v2.1.0-rc.1].
 1. Merge `main` into `dss-stable`.
 1. Push annotated tag to head of `dss-stable`.
 
-## [v2.1.0-rc1] (hot upgradable)
+## \[v2.1.0-rc1\] (hot upgradable)
 
 ### Added
 
@@ -220,12 +220,15 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 [#746]: https://github.com/econia-labs/econia/pull/746
 [#749]: https://github.com/econia-labs/econia/pull/749
 [#753]: https://github.com/econia-labs/econia/pull/753
+[docs site readme]: https://github.com/econia-labs/econia/blob/main/doc/doc-site/README.md
+[dss-v2.1.0-rc.1]: https://github.com/econia-labs/econia/releases/tag/dss-v2.1.0-rc.1
 [processor #19]: https://github.com/econia-labs/aptos-indexer-processors/pull/19
 [processor #20]: https://github.com/econia-labs/aptos-indexer-processors/pull/20
 [processor #21]: https://github.com/econia-labs/aptos-indexer-processors/pull/21
 [processor #22]: https://github.com/econia-labs/aptos-indexer-processors/pull/22
 [processor #23]: https://github.com/econia-labs/aptos-indexer-processors/pull/23
 [processor #25]: https://github.com/econia-labs/aptos-indexer-processors/pull/25
+[processor submodule]: https://github.com/econia-labs/aptos-indexer-processors/pulls?q=is%3Aclosed
 [v1.3.0]: https://github.com/econia-labs/econia/releases/tag/dss-v1.3.0
 [v1.4.0]: https://github.com/econia-labs/econia/compare/dss-v1.3.0...dss-v1.4.0
 [v1.5.0]: https://github.com/econia-labs/econia/compare/dss-v1.4.0...dss-v1.5.0
@@ -234,7 +237,4 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 [v2.0.0]: https://github.com/econia-labs/econia/compare/dss-v1.6.1...dss-v2.0.0
 [v2.0.1]: https://github.com/econia-labs/econia/compare/dss-v2.0.0...dss-v2.0.1
 [`dss-stable`]: https://github.com/econia-labs/econia/tree/dss-stable
-[dss-v2.1.0-rc.1]: https://github.com/econia-labs/econia/releases/tag/dss-v2.1.0-rc.1
-[docs site README]: https://github.com/econia-labs/econia/blob/main/doc/doc-site/README.md
 [`econia` repo]: https://github.com/econia-labs/econia/pulls?q=is%3Aclosed
-[processor submodule]: https://github.com/econia-labs/aptos-indexer-processors/pulls?q=is%3Aclosed

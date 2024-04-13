@@ -30,7 +30,7 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 - Fix a bug that would prohibit balance reporting for market account handles starting with `0x0` ([#732], [Processor #25]).
 - Add the `all` liquidity group by default to all markets ([#728]).
 - Remove the market registration pipeline (counted markets registered per day) ([#727]).
-- Fix liquidity calculation logic ([#744]).
+- Fix liquidity calculation logic ([#730]).
 
 ## [v2.0.1] (hot upgradable)
 
@@ -212,10 +212,10 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 [#727]: https://github.com/econia-labs/econia/pull/727
 [#728]: https://github.com/econia-labs/econia/pull/728
 [#729]: https://github.com/econia-labs/econia/pull/729
+[#730]: https://github.com/econia-labs/econia/pull/730
 [#732]: https://github.com/econia-labs/econia/pull/732
 [#736]: https://github.com/econia-labs/econia/pull/736
 [#738]: https://github.com/econia-labs/econia/pull/738
-[#744]: https://github.com/econia-labs/econia/pull/744
 [#746]: https://github.com/econia-labs/econia/pull/746
 [#749]: https://github.com/econia-labs/econia/pull/749
 [#753]: https://github.com/econia-labs/econia/pull/753

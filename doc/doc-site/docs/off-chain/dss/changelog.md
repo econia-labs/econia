@@ -5,19 +5,38 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 ## Release procedure
 
 1. Create preparatory pull request (PR) into `main` branch of `econia` repo (like [#653]).
-   1. Rebuild REST API docs.
-   1. Bump changelog with PRs since last preparatory PR:
-      1. In `econia` repo.
-      1. In processor submodule.
+   1. [Rebuild REST API docs][docs site readme].
+   1. Bump changelog.
+      1. Add new pull requests since last release:
+         1. From [`econia` repo].
+         1. From [processor submodule].
       1. Note if a hot upgrade is possible relative to the last release.
+      1. Verify all new links by manually following them on a
+         [live local docs build][docs site readme].
+      1. Run `mdformat` on changelog.
+1. Tag `main` with an annotated release candidate tag like [dss-v2.1.0-rc.1].
 1. Merge `main` into `dss-stable`.
 1. Push annotated tag to head of `dss-stable`.
 
-## [v2.1.0] (in progress)
+## [v2.1.0-rc.1][dss-v2.1.0-rc.1] (hot upgradable)
 
 ### Added
 
 - Price level events over MQTT (disabled by default, enable by adding `MQTT_PRICE_LEVELS=yes`, see `src/docker/example.env`) ([#753]).
+- `/tickers` endpoint optimizations ([#729]).
+- Suspend and resume functionality for the DSS when deployed on GCP ([#736]).
+- More details in aggregator logging ([#738]).
+- Default support for the `all` liquidity group on all markets ([#728]).
+
+### Fixed
+
+- `/tickers` endpoint `base_volume_nominal` and `quote_volume_nominal` fields ([#746], [#749]).
+- Balance reporting for market account handles starting with `0x0` ([#732], [Processor #25]).
+- Liquidity calculation logic ([#730]).
+
+### Deprecated
+
+- Market registration pipeline, an unused development stub that counted markets registered per day ([#727]).
 
 ## [v2.0.1] (hot upgradable)
 
@@ -196,12 +215,25 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 [#719]: https://github.com/econia-labs/econia/pull/719
 [#720]: https://github.com/econia-labs/econia/pull/720
 [#723]: https://github.com/econia-labs/econia/pull/723
+[#727]: https://github.com/econia-labs/econia/pull/727
+[#728]: https://github.com/econia-labs/econia/pull/728
+[#729]: https://github.com/econia-labs/econia/pull/729
+[#730]: https://github.com/econia-labs/econia/pull/730
+[#732]: https://github.com/econia-labs/econia/pull/732
+[#736]: https://github.com/econia-labs/econia/pull/736
+[#738]: https://github.com/econia-labs/econia/pull/738
+[#746]: https://github.com/econia-labs/econia/pull/746
+[#749]: https://github.com/econia-labs/econia/pull/749
 [#753]: https://github.com/econia-labs/econia/pull/753
+[docs site readme]: https://github.com/econia-labs/econia/blob/main/doc/doc-site/README.md
+[dss-v2.1.0-rc.1]: https://github.com/econia-labs/econia/releases/tag/dss-v2.1.0-rc.1
 [processor #19]: https://github.com/econia-labs/aptos-indexer-processors/pull/19
 [processor #20]: https://github.com/econia-labs/aptos-indexer-processors/pull/20
 [processor #21]: https://github.com/econia-labs/aptos-indexer-processors/pull/21
 [processor #22]: https://github.com/econia-labs/aptos-indexer-processors/pull/22
 [processor #23]: https://github.com/econia-labs/aptos-indexer-processors/pull/23
+[processor #25]: https://github.com/econia-labs/aptos-indexer-processors/pull/25
+[processor submodule]: https://github.com/econia-labs/aptos-indexer-processors/pulls?q=is%3Aclosed
 [v1.3.0]: https://github.com/econia-labs/econia/releases/tag/dss-v1.3.0
 [v1.4.0]: https://github.com/econia-labs/econia/compare/dss-v1.3.0...dss-v1.4.0
 [v1.5.0]: https://github.com/econia-labs/econia/compare/dss-v1.4.0...dss-v1.5.0
@@ -210,3 +242,4 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 [v2.0.0]: https://github.com/econia-labs/econia/compare/dss-v1.6.1...dss-v2.0.0
 [v2.0.1]: https://github.com/econia-labs/econia/compare/dss-v2.0.0...dss-v2.0.1
 [`dss-stable`]: https://github.com/econia-labs/econia/tree/dss-stable
+[`econia` repo]: https://github.com/econia-labs/econia/pulls?q=is%3Aclosed

@@ -18,19 +18,25 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 1. Merge `main` into `dss-stable`.
 1. Push annotated tag to head of `dss-stable`.
 
-## \[v2.1.0-rc.1\] (hot upgradable)
+## [v2.1.0-rc.1][dss-v2.1.0-rc.1] (hot upgradable)
 
 ### Added
 
 - Price level events over MQTT (disabled by default, enable by adding `MQTT_PRICE_LEVELS=yes`, see `src/docker/example.env`) ([#753]).
-- Fix the `/tickers` `base_volume_nominal` and `quote_volume_nominal` field ([#746], [#749]).
-- Optimize the `/tickers` endpoint ([#729]).
-- Add suspend and resume functionality for the DSS when deployed on GCP ([#736]).
-- Add more details in aggregator logging ([#738]).
-- Fix a bug that would prohibit balance reporting for market account handles starting with `0x0` ([#732], [Processor #25]).
-- Add the `all` liquidity group by default to all markets ([#728]).
-- Remove the market registration pipeline (counted markets registered per day) ([#727]).
-- Fix liquidity calculation logic ([#730]).
+- `/tickers` endpoint optimizations ([#729]).
+- Suspend and resume functionality for the DSS when deployed on GCP ([#736]).
+- More details in aggregator logging ([#738]).
+- Default support for the `all` liquidity group on all markets ([#728]).
+
+### Fixed
+
+- `/tickers` endpoint `base_volume_nominal` and `quote_volume_nominal` fields ([#746], [#749]).
+- Balance reporting for market account handles starting with `0x0` ([#732], [Processor #25]).
+- Liquidity calculation logic ([#730]).
+
+### Deprecated
+
+- Market registration pipeline, an unused development stub that counted markets registered per day ([#727]).
 
 ## [v2.0.1] (hot upgradable)
 

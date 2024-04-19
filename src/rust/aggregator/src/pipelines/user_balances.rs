@@ -1,7 +1,7 @@
 use anyhow::anyhow;
-use bigdecimal::{num_bigint::ToBigInt, BigDecimal, Zero};
+use bigdecimal::{BigDecimal, Zero};
 use chrono::{DateTime, Duration, Utc};
-use sqlx::{PgConnection, PgPool, Postgres, Transaction};
+use sqlx::{PgConnection, PgPool};
 
 use aggregator::{
     util::{commit_transaction, create_repeatable_read_transaction},

@@ -7,5 +7,5 @@ WITH
       $4::NUMERIC(20,0) "ask",
       $5::NUMERIC(20,0) "bid"
   )
-INSERT INTO aggregator.liquidity (group_id, "time", bps_times_ten, amount_ask_lots, amount_bid_lots)
+INSERT INTO aggregator.liquidity (group_id, "time", bps_times_ten, amount_ask_ticks, amount_bid_ticks)
 SELECT group_id, "time", bps_times_ten, ask, bid FROM parameters;

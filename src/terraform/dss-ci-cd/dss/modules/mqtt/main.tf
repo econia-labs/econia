@@ -33,7 +33,8 @@ resource "terraform_data" "instance" {
       "--container-env",
       join(",", [
         "MQTT_PASSWORD=${var.mosquitto_password}",
-        "DATABASE_URL=${var.db_conn_str_private}"
+        "DATABASE_URL=${var.db_conn_str_private}",
+        "MQTT_PRICE_LEVELS=yes"
       ]),
       "--container-image ${terraform_data.image.output}",
       "--network ${var.sql_network_id}",

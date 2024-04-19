@@ -1,0 +1,44 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "WITH levels AS (\n    SELECT\n        market_id,\n        direction::text,\n        price,\n        SUM(remaining_size) AS total_size\n    FROM\n        aggregator.user_history\n    WHERE\n        order_status = 'open'\n    GROUP BY\n        market_id,\n        direction,\n        price\n    ORDER BY\n        market_id,\n        direction,\n        CASE\n            WHEN direction = 'ask' THEN price\n            ELSE -1 * price\n        END\n),\nnumbered_levels AS (\n    SELECT\n        *,\n        row_number() OVER (PARTITION BY market_id, direction) AS level\n    FROM\n        levels\n)\nSELECT * FROM numbered_levels WHERE level <= 10;\n",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "market_id",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 1,
+        "name": "direction",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "price",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 3,
+        "name": "total_size",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 4,
+        "name": "level",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      null,
+      true,
+      null,
+      null
+    ]
+  },
+  "hash": "1c7c3b6ddbdd74af168cc3cb3a6d7cf4da58ebe4f3ba32dfb84f5d6ad9234360"
+}

@@ -1,5 +1,5 @@
 
-<a name="0xc0deb00c_user"></a>
+<a id="0xc0deb00c_user"></a>
 
 # Module `0xc0deb00c::user`
 
@@ -13,7 +13,7 @@ a user can open multiple market accounts, each with a unique
 custodian.
 
 
-<a name="@General_overview_sections_0"></a>
+<a id="@General_overview_sections_0"></a>
 
 ## General overview sections
 
@@ -36,13 +36,13 @@ custodian.
 [Complete DocGen index](#complete-docgen-index)
 
 
-<a name="@Architecture_1"></a>
+<a id="@Architecture_1"></a>
 
 ## Architecture
 
 
 
-<a name="@Market_account_IDs_2"></a>
+<a id="@Market_account_IDs_2"></a>
 
 ### Market account IDs
 
@@ -58,7 +58,7 @@ while the 64 most-significant bits are the market ID. See
 <code><a href="user.md#0xc0deb00c_user_get_market_id">get_market_id</a>()</code> for implementation details.
 
 
-<a name="@Market_accounts_3"></a>
+<a id="@Market_accounts_3"></a>
 
 ### Market accounts
 
@@ -70,7 +70,7 @@ base asset is a coin, a <code><a href="user.md#0xc0deb00c_user_Collateral">Colla
 the base coin type.
 
 
-<a name="@Orders_and_access_keys_4"></a>
+<a id="@Orders_and_access_keys_4"></a>
 
 ### Orders and access keys
 
@@ -99,7 +99,7 @@ ID in the relevant <code><a href="user.md#0xc0deb00c_user_Order">Order</a></code
 necessarily unique for orders across time.
 
 
-<a name="@Market_order_IDs_5"></a>
+<a id="@Market_order_IDs_5"></a>
 
 ### Market order IDs
 
@@ -109,13 +109,13 @@ ID, and are tracked in a users' <code><a href="user.md#0xc0deb00c_user_Order">Or
 order ID is a unique identifier for an order on a given order book.
 
 
-<a name="@Function_index_6"></a>
+<a id="@Function_index_6"></a>
 
 ## Function index
 
 
 
-<a name="@View_functions_7"></a>
+<a id="@View_functions_7"></a>
 
 ### View functions
 
@@ -153,7 +153,7 @@ Market account ID lookup:
 * <code><a href="user.md#0xc0deb00c_user_get_market_id">get_market_id</a>()</code>
 
 
-<a name="@Public_functions_8"></a>
+<a id="@Public_functions_8"></a>
 
 ### Public functions
 
@@ -175,7 +175,7 @@ Asset transfer:
 * <code><a href="user.md#0xc0deb00c_user_withdraw_generic_asset_user">withdraw_generic_asset_user</a>()</code>
 
 
-<a name="@Public_entry_functions_9"></a>
+<a id="@Public_entry_functions_9"></a>
 
 ### Public entry functions
 
@@ -192,7 +192,7 @@ Account registration:
 * <code><a href="user.md#0xc0deb00c_user_register_market_account_generic_base">register_market_account_generic_base</a>()</code>
 
 
-<a name="@Public_friend_functions_10"></a>
+<a id="@Public_friend_functions_10"></a>
 
 ### Public friend functions
 
@@ -225,7 +225,7 @@ Market events:
 * <code><a href="user.md#0xc0deb00c_user_emit_swap_maker_fill_events_internal">emit_swap_maker_fill_events_internal</a>()</code>
 
 
-<a name="@Dependency_charts_11"></a>
+<a id="@Dependency_charts_11"></a>
 
 ### Dependency charts
 
@@ -365,7 +365,7 @@ emit_swap_maker_fill_events_internal --> emit_maker_fill_event
 ```
 
 
-<a name="@Complete_DocGen_index_12"></a>
+<a id="@Complete_DocGen_index_12"></a>
 
 ## Complete DocGen index
 
@@ -616,7 +616,7 @@ The below index is automatically generated from source code:
 ![](img/user_backward_dep.svg)
 
 
-<a name="0xc0deb00c_user_CancelOrderEvent"></a>
+<a id="0xc0deb00c_user_CancelOrderEvent"></a>
 
 ## Struct `CancelOrderEvent`
 
@@ -666,7 +666,7 @@ Emitted when an order is cancelled.
 </dl>
 
 
-<a name="0xc0deb00c_user_ChangeOrderSizeEvent"></a>
+<a id="0xc0deb00c_user_ChangeOrderSizeEvent"></a>
 
 ## Struct `ChangeOrderSizeEvent`
 
@@ -721,7 +721,7 @@ Emitted when the size of an open order is manually changed.
 </dl>
 
 
-<a name="0xc0deb00c_user_Collateral"></a>
+<a id="0xc0deb00c_user_Collateral"></a>
 
 ## Resource `Collateral`
 
@@ -749,7 +749,7 @@ All of a user's collateral across all market accounts.
 </dl>
 
 
-<a name="0xc0deb00c_user_FillEvent"></a>
+<a id="0xc0deb00c_user_FillEvent"></a>
 
 ## Struct `FillEvent`
 
@@ -844,7 +844,7 @@ Emitted when one order fills against another.
 </dl>
 
 
-<a name="0xc0deb00c_user_MarketAccount"></a>
+<a id="0xc0deb00c_user_MarketAccount"></a>
 
 ## Struct `MarketAccount`
 
@@ -968,7 +968,7 @@ registry.
 </dl>
 
 
-<a name="0xc0deb00c_user_MarketAccountView"></a>
+<a id="0xc0deb00c_user_MarketAccountView"></a>
 
 ## Struct `MarketAccountView`
 
@@ -1047,7 +1047,7 @@ User-friendly market account view function return.
 </dl>
 
 
-<a name="0xc0deb00c_user_MarketAccounts"></a>
+<a id="0xc0deb00c_user_MarketAccounts"></a>
 
 ## Resource `MarketAccounts`
 
@@ -1081,7 +1081,7 @@ All of a user's market accounts.
 </dl>
 
 
-<a name="0xc0deb00c_user_MarketEventHandleCreationNumbers"></a>
+<a id="0xc0deb00c_user_MarketEventHandleCreationNumbers"></a>
 
 ## Struct `MarketEventHandleCreationNumbers`
 
@@ -1136,7 +1136,7 @@ of a particular <code><a href="user.md#0xc0deb00c_user_MarketEventHandlesForMark
 </dl>
 
 
-<a name="0xc0deb00c_user_MarketEventHandles"></a>
+<a id="0xc0deb00c_user_MarketEventHandles"></a>
 
 ## Resource `MarketEventHandles`
 
@@ -1162,7 +1162,7 @@ All of a user's <code><a href="user.md#0xc0deb00c_user_MarketEventHandlesForMark
 </dl>
 
 
-<a name="0xc0deb00c_user_MarketEventHandlesForMarketAccount"></a>
+<a id="0xc0deb00c_user_MarketEventHandlesForMarketAccount"></a>
 
 ## Struct `MarketEventHandlesForMarketAccount`
 
@@ -1211,7 +1211,7 @@ Event handles for market events within a unique market account.
 </dl>
 
 
-<a name="0xc0deb00c_user_Order"></a>
+<a id="0xc0deb00c_user_Order"></a>
 
 ## Struct `Order`
 
@@ -1243,7 +1243,7 @@ An open order, either ask or bid.
 </dl>
 
 
-<a name="0xc0deb00c_user_PlaceLimitOrderEvent"></a>
+<a id="0xc0deb00c_user_PlaceLimitOrderEvent"></a>
 
 ## Struct `PlaceLimitOrderEvent`
 
@@ -1337,7 +1337,7 @@ Emitted when a limit order is placed.
 </dl>
 
 
-<a name="0xc0deb00c_user_PlaceMarketOrderEvent"></a>
+<a id="0xc0deb00c_user_PlaceMarketOrderEvent"></a>
 
 ## Struct `PlaceMarketOrderEvent`
 
@@ -1407,12 +1407,12 @@ Emitted when a market order is placed.
 </dl>
 
 
-<a name="@Constants_13"></a>
+<a id="@Constants_13"></a>
 
 ## Constants
 
 
-<a name="0xc0deb00c_user_HI_64"></a>
+<a id="0xc0deb00c_user_HI_64"></a>
 
 <code>u64</code> bitmask with all bits set, generated in Python via
 <code>hex(int('1' * 64, 2))</code>.
@@ -1423,7 +1423,7 @@ Emitted when a market order is placed.
 
 
 
-<a name="0xc0deb00c_user_NIL"></a>
+<a id="0xc0deb00c_user_NIL"></a>
 
 Flag for null value when null defined as 0.
 
@@ -1433,7 +1433,7 @@ Flag for null value when null defined as 0.
 
 
 
-<a name="0xc0deb00c_user_NO_CUSTODIAN"></a>
+<a id="0xc0deb00c_user_NO_CUSTODIAN"></a>
 
 Custodian ID flag for no custodian.
 
@@ -1443,7 +1443,7 @@ Custodian ID flag for no custodian.
 
 
 
-<a name="0xc0deb00c_user_NO_UNDERWRITER"></a>
+<a id="0xc0deb00c_user_NO_UNDERWRITER"></a>
 
 Underwriter ID flag for no underwriter.
 
@@ -1453,7 +1453,7 @@ Underwriter ID flag for no underwriter.
 
 
 
-<a name="0xc0deb00c_user_ASK"></a>
+<a id="0xc0deb00c_user_ASK"></a>
 
 Flag for ask side
 
@@ -1463,7 +1463,7 @@ Flag for ask side
 
 
 
-<a name="0xc0deb00c_user_BID"></a>
+<a id="0xc0deb00c_user_BID"></a>
 
 Flag for bid side
 
@@ -1473,7 +1473,7 @@ Flag for bid side
 
 
 
-<a name="0xc0deb00c_user_CANCEL_REASON_EVICTION"></a>
+<a id="0xc0deb00c_user_CANCEL_REASON_EVICTION"></a>
 
 Order cancelled because it was evicted from the price-time
 priority queue.
@@ -1484,7 +1484,7 @@ priority queue.
 
 
 
-<a name="0xc0deb00c_user_CANCEL_REASON_IMMEDIATE_OR_CANCEL"></a>
+<a id="0xc0deb00c_user_CANCEL_REASON_IMMEDIATE_OR_CANCEL"></a>
 
 Order cancelled because it was an immediate-or-cancel order
 that did not immediately fill.
@@ -1495,7 +1495,7 @@ that did not immediately fill.
 
 
 
-<a name="0xc0deb00c_user_CANCEL_REASON_MANUAL_CANCEL"></a>
+<a id="0xc0deb00c_user_CANCEL_REASON_MANUAL_CANCEL"></a>
 
 Order cancelled because it was manually cancelled by either
 signing user or custodian.
@@ -1506,7 +1506,7 @@ signing user or custodian.
 
 
 
-<a name="0xc0deb00c_user_CANCEL_REASON_MAX_QUOTE_TRADED"></a>
+<a id="0xc0deb00c_user_CANCEL_REASON_MAX_QUOTE_TRADED"></a>
 
 Order cancelled because no more quote asset could be traded.
 
@@ -1516,7 +1516,7 @@ Order cancelled because no more quote asset could be traded.
 
 
 
-<a name="0xc0deb00c_user_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY"></a>
+<a id="0xc0deb00c_user_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY"></a>
 
 Order cancelled because there was not enough liquidity to take
 from.
@@ -1527,7 +1527,7 @@ from.
 
 
 
-<a name="0xc0deb00c_user_CANCEL_REASON_SELF_MATCH_MAKER"></a>
+<a id="0xc0deb00c_user_CANCEL_REASON_SELF_MATCH_MAKER"></a>
 
 Order cancelled because it was on the maker side of an fill
 where self match behavior indicated cancelling the maker order.
@@ -1538,7 +1538,7 @@ where self match behavior indicated cancelling the maker order.
 
 
 
-<a name="0xc0deb00c_user_CANCEL_REASON_SELF_MATCH_TAKER"></a>
+<a id="0xc0deb00c_user_CANCEL_REASON_SELF_MATCH_TAKER"></a>
 
 Order cancelled because it was on the taker side of an fill
 where self match behavior indicated cancelling the taker order.
@@ -1549,7 +1549,7 @@ where self match behavior indicated cancelling the taker order.
 
 
 
-<a name="0xc0deb00c_user_CANCEL_REASON_SIZE_CHANGE_INTERNAL"></a>
+<a id="0xc0deb00c_user_CANCEL_REASON_SIZE_CHANGE_INTERNAL"></a>
 
 Flag to indicate that order is only temporarily cancelled from
 market account memory because it will be subsequently re-placed
@@ -1561,7 +1561,7 @@ as part of a size change.
 
 
 
-<a name="0xc0deb00c_user_CANCEL_REASON_TOO_SMALL_TO_FILL_LOT"></a>
+<a id="0xc0deb00c_user_CANCEL_REASON_TOO_SMALL_TO_FILL_LOT"></a>
 
 Swap order cancelled because the remaining base asset amount to
 match was too small to fill a single lot.
@@ -1572,7 +1572,7 @@ match was too small to fill a single lot.
 
 
 
-<a name="0xc0deb00c_user_CANCEL_REASON_VIOLATED_LIMIT_PRICE"></a>
+<a id="0xc0deb00c_user_CANCEL_REASON_VIOLATED_LIMIT_PRICE"></a>
 
 Swap order cancelled because the next order on the book to match
 against violated the swap order limit price.
@@ -1583,7 +1583,7 @@ against violated the swap order limit price.
 
 
 
-<a name="0xc0deb00c_user_E_ACCESS_KEY_MISMATCH"></a>
+<a id="0xc0deb00c_user_E_ACCESS_KEY_MISMATCH"></a>
 
 Expected order access key does not match assigned order access
 key.
@@ -1594,7 +1594,7 @@ key.
 
 
 
-<a name="0xc0deb00c_user_E_ASSET_NOT_IN_PAIR"></a>
+<a id="0xc0deb00c_user_E_ASSET_NOT_IN_PAIR"></a>
 
 Asset type is not in trading pair for market.
 
@@ -1604,7 +1604,7 @@ Asset type is not in trading pair for market.
 
 
 
-<a name="0xc0deb00c_user_E_CHANGE_ORDER_NO_CHANGE"></a>
+<a id="0xc0deb00c_user_E_CHANGE_ORDER_NO_CHANGE"></a>
 
 No change in order size.
 
@@ -1614,7 +1614,7 @@ No change in order size.
 
 
 
-<a name="0xc0deb00c_user_E_COIN_AMOUNT_MISMATCH"></a>
+<a id="0xc0deb00c_user_E_COIN_AMOUNT_MISMATCH"></a>
 
 Mismatch between coin value and indicated amount.
 
@@ -1624,7 +1624,7 @@ Mismatch between coin value and indicated amount.
 
 
 
-<a name="0xc0deb00c_user_E_COIN_TYPE_IS_GENERIC_ASSET"></a>
+<a id="0xc0deb00c_user_E_COIN_TYPE_IS_GENERIC_ASSET"></a>
 
 Coin type is generic asset.
 
@@ -1634,7 +1634,7 @@ Coin type is generic asset.
 
 
 
-<a name="0xc0deb00c_user_E_DEPOSIT_OVERFLOW_ASSET_CEILING"></a>
+<a id="0xc0deb00c_user_E_DEPOSIT_OVERFLOW_ASSET_CEILING"></a>
 
 Deposit would overflow asset ceiling.
 
@@ -1644,7 +1644,7 @@ Deposit would overflow asset ceiling.
 
 
 
-<a name="0xc0deb00c_user_E_EXISTS_MARKET_ACCOUNT"></a>
+<a id="0xc0deb00c_user_E_EXISTS_MARKET_ACCOUNT"></a>
 
 Market account already exists.
 
@@ -1654,7 +1654,7 @@ Market account already exists.
 
 
 
-<a name="0xc0deb00c_user_E_INVALID_MARKET_ORDER_ID"></a>
+<a id="0xc0deb00c_user_E_INVALID_MARKET_ORDER_ID"></a>
 
 Market order ID mismatch with user's open order.
 
@@ -1664,7 +1664,7 @@ Market order ID mismatch with user's open order.
 
 
 
-<a name="0xc0deb00c_user_E_INVALID_UNDERWRITER"></a>
+<a id="0xc0deb00c_user_E_INVALID_UNDERWRITER"></a>
 
 Underwriter is not valid for indicated market.
 
@@ -1674,7 +1674,7 @@ Underwriter is not valid for indicated market.
 
 
 
-<a name="0xc0deb00c_user_E_NOT_ENOUGH_ASSET_OUT"></a>
+<a id="0xc0deb00c_user_E_NOT_ENOUGH_ASSET_OUT"></a>
 
 Not enough asset to trade away.
 
@@ -1684,7 +1684,7 @@ Not enough asset to trade away.
 
 
 
-<a name="0xc0deb00c_user_E_NO_MARKET_ACCOUNT"></a>
+<a id="0xc0deb00c_user_E_NO_MARKET_ACCOUNT"></a>
 
 No market account resource found.
 
@@ -1694,7 +1694,7 @@ No market account resource found.
 
 
 
-<a name="0xc0deb00c_user_E_NO_MARKET_ACCOUNTS"></a>
+<a id="0xc0deb00c_user_E_NO_MARKET_ACCOUNTS"></a>
 
 No market accounts resource found.
 
@@ -1704,7 +1704,7 @@ No market accounts resource found.
 
 
 
-<a name="0xc0deb00c_user_E_OVERFLOW_ASSET_IN"></a>
+<a id="0xc0deb00c_user_E_OVERFLOW_ASSET_IN"></a>
 
 Filling order would overflow asset received from trade.
 
@@ -1714,7 +1714,7 @@ Filling order would overflow asset received from trade.
 
 
 
-<a name="0xc0deb00c_user_E_PRICE_0"></a>
+<a id="0xc0deb00c_user_E_PRICE_0"></a>
 
 Price is zero.
 
@@ -1724,7 +1724,7 @@ Price is zero.
 
 
 
-<a name="0xc0deb00c_user_E_PRICE_TOO_HIGH"></a>
+<a id="0xc0deb00c_user_E_PRICE_TOO_HIGH"></a>
 
 Price exceeds maximum possible price.
 
@@ -1734,7 +1734,7 @@ Price exceeds maximum possible price.
 
 
 
-<a name="0xc0deb00c_user_E_START_SIZE_MISMATCH"></a>
+<a id="0xc0deb00c_user_E_START_SIZE_MISMATCH"></a>
 
 Mismatch between expected size before operation and actual size
 before operation.
@@ -1745,7 +1745,7 @@ before operation.
 
 
 
-<a name="0xc0deb00c_user_E_TICKS_OVERFLOW"></a>
+<a id="0xc0deb00c_user_E_TICKS_OVERFLOW"></a>
 
 Ticks to fill an order overflows a <code>u64</code>.
 
@@ -1755,7 +1755,7 @@ Ticks to fill an order overflows a <code>u64</code>.
 
 
 
-<a name="0xc0deb00c_user_E_UNREGISTERED_CUSTODIAN"></a>
+<a id="0xc0deb00c_user_E_UNREGISTERED_CUSTODIAN"></a>
 
 Custodian ID has not been registered.
 
@@ -1765,7 +1765,7 @@ Custodian ID has not been registered.
 
 
 
-<a name="0xc0deb00c_user_E_WITHDRAW_TOO_LITTLE_AVAILABLE"></a>
+<a id="0xc0deb00c_user_E_WITHDRAW_TOO_LITTLE_AVAILABLE"></a>
 
 Too little available for withdrawal.
 
@@ -1775,7 +1775,7 @@ Too little available for withdrawal.
 
 
 
-<a name="0xc0deb00c_user_HI_PRICE"></a>
+<a id="0xc0deb00c_user_HI_PRICE"></a>
 
 Maximum possible price that can be encoded in 32 bits. Generated
 in Python via <code>hex(int('1' * 32, 2))</code>.
@@ -1786,7 +1786,7 @@ in Python via <code>hex(int('1' * 32, 2))</code>.
 
 
 
-<a name="0xc0deb00c_user_SHIFT_MARKET_ID"></a>
+<a id="0xc0deb00c_user_SHIFT_MARKET_ID"></a>
 
 Number of bits market ID is shifted in market account ID.
 
@@ -1796,14 +1796,14 @@ Number of bits market ID is shifted in market account ID.
 
 
 
-<a name="0xc0deb00c_user_get_ASK"></a>
+<a id="0xc0deb00c_user_get_ASK"></a>
 
 ## Function `get_ASK`
 
 Public constant getter for <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code>.
 
 
-<a name="@Testing_14"></a>
+<a id="@Testing_14"></a>
 
 ### Testing
 
@@ -1825,14 +1825,14 @@ Public constant getter for <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></
 
 
 
-<a name="0xc0deb00c_user_get_BID"></a>
+<a id="0xc0deb00c_user_get_BID"></a>
 
 ## Function `get_BID`
 
 Public constant getter for <code><a href="user.md#0xc0deb00c_user_BID">BID</a></code>.
 
 
-<a name="@Testing_15"></a>
+<a id="@Testing_15"></a>
 
 ### Testing
 
@@ -1854,14 +1854,14 @@ Public constant getter for <code><a href="user.md#0xc0deb00c_user_BID">BID</a></
 
 
 
-<a name="0xc0deb00c_user_get_CANCEL_REASON_EVICTION"></a>
+<a id="0xc0deb00c_user_get_CANCEL_REASON_EVICTION"></a>
 
 ## Function `get_CANCEL_REASON_EVICTION`
 
 Public constant getter for <code><a href="user.md#0xc0deb00c_user_CANCEL_REASON_EVICTION">CANCEL_REASON_EVICTION</a></code>.
 
 
-<a name="@Testing_16"></a>
+<a id="@Testing_16"></a>
 
 ### Testing
 
@@ -1885,14 +1885,14 @@ Public constant getter for <code><a href="user.md#0xc0deb00c_user_CANCEL_REASON_
 
 
 
-<a name="0xc0deb00c_user_get_CANCEL_REASON_IMMEDIATE_OR_CANCEL"></a>
+<a id="0xc0deb00c_user_get_CANCEL_REASON_IMMEDIATE_OR_CANCEL"></a>
 
 ## Function `get_CANCEL_REASON_IMMEDIATE_OR_CANCEL`
 
 Public constant getter for <code><a href="user.md#0xc0deb00c_user_CANCEL_REASON_IMMEDIATE_OR_CANCEL">CANCEL_REASON_IMMEDIATE_OR_CANCEL</a></code>.
 
 
-<a name="@Testing_17"></a>
+<a id="@Testing_17"></a>
 
 ### Testing
 
@@ -1916,14 +1916,14 @@ Public constant getter for <code><a href="user.md#0xc0deb00c_user_CANCEL_REASON_
 
 
 
-<a name="0xc0deb00c_user_get_CANCEL_REASON_MANUAL_CANCEL"></a>
+<a id="0xc0deb00c_user_get_CANCEL_REASON_MANUAL_CANCEL"></a>
 
 ## Function `get_CANCEL_REASON_MANUAL_CANCEL`
 
 Public constant getter for <code><a href="user.md#0xc0deb00c_user_CANCEL_REASON_MANUAL_CANCEL">CANCEL_REASON_MANUAL_CANCEL</a></code>.
 
 
-<a name="@Testing_18"></a>
+<a id="@Testing_18"></a>
 
 ### Testing
 
@@ -1947,14 +1947,14 @@ Public constant getter for <code><a href="user.md#0xc0deb00c_user_CANCEL_REASON_
 
 
 
-<a name="0xc0deb00c_user_get_CANCEL_REASON_MAX_QUOTE_TRADED"></a>
+<a id="0xc0deb00c_user_get_CANCEL_REASON_MAX_QUOTE_TRADED"></a>
 
 ## Function `get_CANCEL_REASON_MAX_QUOTE_TRADED`
 
 Public constant getter for <code><a href="user.md#0xc0deb00c_user_CANCEL_REASON_MAX_QUOTE_TRADED">CANCEL_REASON_MAX_QUOTE_TRADED</a></code>.
 
 
-<a name="@Testing_19"></a>
+<a id="@Testing_19"></a>
 
 ### Testing
 
@@ -1978,14 +1978,14 @@ Public constant getter for <code><a href="user.md#0xc0deb00c_user_CANCEL_REASON_
 
 
 
-<a name="0xc0deb00c_user_get_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY"></a>
+<a id="0xc0deb00c_user_get_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY"></a>
 
 ## Function `get_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY`
 
 Public constant getter for <code><a href="user.md#0xc0deb00c_user_CANCEL_REASON_NOT_ENOUGH_LIQUIDITY">CANCEL_REASON_NOT_ENOUGH_LIQUIDITY</a></code>.
 
 
-<a name="@Testing_20"></a>
+<a id="@Testing_20"></a>
 
 ### Testing
 
@@ -2009,14 +2009,14 @@ Public constant getter for <code><a href="user.md#0xc0deb00c_user_CANCEL_REASON_
 
 
 
-<a name="0xc0deb00c_user_get_CANCEL_REASON_SELF_MATCH_MAKER"></a>
+<a id="0xc0deb00c_user_get_CANCEL_REASON_SELF_MATCH_MAKER"></a>
 
 ## Function `get_CANCEL_REASON_SELF_MATCH_MAKER`
 
 Public constant getter for <code><a href="user.md#0xc0deb00c_user_CANCEL_REASON_SELF_MATCH_MAKER">CANCEL_REASON_SELF_MATCH_MAKER</a></code>.
 
 
-<a name="@Testing_21"></a>
+<a id="@Testing_21"></a>
 
 ### Testing
 
@@ -2040,14 +2040,14 @@ Public constant getter for <code><a href="user.md#0xc0deb00c_user_CANCEL_REASON_
 
 
 
-<a name="0xc0deb00c_user_get_CANCEL_REASON_SELF_MATCH_TAKER"></a>
+<a id="0xc0deb00c_user_get_CANCEL_REASON_SELF_MATCH_TAKER"></a>
 
 ## Function `get_CANCEL_REASON_SELF_MATCH_TAKER`
 
 Public constant getter for <code><a href="user.md#0xc0deb00c_user_CANCEL_REASON_SELF_MATCH_TAKER">CANCEL_REASON_SELF_MATCH_TAKER</a></code>.
 
 
-<a name="@Testing_22"></a>
+<a id="@Testing_22"></a>
 
 ### Testing
 
@@ -2071,7 +2071,7 @@ Public constant getter for <code><a href="user.md#0xc0deb00c_user_CANCEL_REASON_
 
 
 
-<a name="0xc0deb00c_user_get_CANCEL_REASON_TOO_SMALL_TO_FILL_LOT"></a>
+<a id="0xc0deb00c_user_get_CANCEL_REASON_TOO_SMALL_TO_FILL_LOT"></a>
 
 ## Function `get_CANCEL_REASON_TOO_SMALL_TO_FILL_LOT`
 
@@ -2079,7 +2079,7 @@ Public constant getter for
 <code><a href="user.md#0xc0deb00c_user_CANCEL_REASON_TOO_SMALL_TO_FILL_LOT">CANCEL_REASON_TOO_SMALL_TO_FILL_LOT</a></code>.
 
 
-<a name="@Testing_23"></a>
+<a id="@Testing_23"></a>
 
 ### Testing
 
@@ -2103,14 +2103,14 @@ Public constant getter for
 
 
 
-<a name="0xc0deb00c_user_get_CANCEL_REASON_VIOLATED_LIMIT_PRICE"></a>
+<a id="0xc0deb00c_user_get_CANCEL_REASON_VIOLATED_LIMIT_PRICE"></a>
 
 ## Function `get_CANCEL_REASON_VIOLATED_LIMIT_PRICE`
 
 Public constant getter for <code><a href="user.md#0xc0deb00c_user_CANCEL_REASON_VIOLATED_LIMIT_PRICE">CANCEL_REASON_VIOLATED_LIMIT_PRICE</a></code>.
 
 
-<a name="@Testing_24"></a>
+<a id="@Testing_24"></a>
 
 ### Testing
 
@@ -2134,14 +2134,14 @@ Public constant getter for <code><a href="user.md#0xc0deb00c_user_CANCEL_REASON_
 
 
 
-<a name="0xc0deb00c_user_get_NO_CUSTODIAN"></a>
+<a id="0xc0deb00c_user_get_NO_CUSTODIAN"></a>
 
 ## Function `get_NO_CUSTODIAN`
 
 Public constant getter for <code><a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a></code>.
 
 
-<a name="@Testing_25"></a>
+<a id="@Testing_25"></a>
 
 ### Testing
 
@@ -2163,14 +2163,14 @@ Public constant getter for <code><a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">
 
 
 
-<a name="0xc0deb00c_user_get_all_market_account_ids_for_market_id"></a>
+<a id="0xc0deb00c_user_get_all_market_account_ids_for_market_id"></a>
 
 ## Function `get_all_market_account_ids_for_market_id`
 
 Return all market account IDs associated with market ID.
 
 
-<a name="@Parameters_26"></a>
+<a id="@Parameters_26"></a>
 
 ### Parameters
 
@@ -2179,7 +2179,7 @@ Return all market account IDs associated with market ID.
 * <code>market_id</code>: Market ID to check market accounts for.
 
 
-<a name="@Returns_27"></a>
+<a id="@Returns_27"></a>
 
 ### Returns
 
@@ -2188,7 +2188,7 @@ Return all market account IDs associated with market ID.
 market, empty if no market accounts.
 
 
-<a name="@Gas_considerations_28"></a>
+<a id="@Gas_considerations_28"></a>
 
 ### Gas considerations
 
@@ -2197,7 +2197,7 @@ Loops over all elements within a vector that is itself a single
 item in global storage, and returns a vector via pass-by-value.
 
 
-<a name="@Testing_29"></a>
+<a id="@Testing_29"></a>
 
 ### Testing
 
@@ -2247,14 +2247,14 @@ item in global storage, and returns a vector via pass-by-value.
 
 
 
-<a name="0xc0deb00c_user_get_all_market_account_ids_for_user"></a>
+<a id="0xc0deb00c_user_get_all_market_account_ids_for_user"></a>
 
 ## Function `get_all_market_account_ids_for_user`
 
 Return all of a user's market account IDs.
 
 
-<a name="@Parameters_30"></a>
+<a id="@Parameters_30"></a>
 
 ### Parameters
 
@@ -2262,7 +2262,7 @@ Return all of a user's market account IDs.
 * <code><a href="user.md#0xc0deb00c_user">user</a></code>: Address of user to check market account IDs for.
 
 
-<a name="@Returns_31"></a>
+<a id="@Returns_31"></a>
 
 ### Returns
 
@@ -2271,7 +2271,7 @@ Return all of a user's market account IDs.
 no market accounts.
 
 
-<a name="@Gas_considerations_32"></a>
+<a id="@Gas_considerations_32"></a>
 
 ### Gas considerations
 
@@ -2283,7 +2283,7 @@ read, incurring linearly-scaled vector operation costs. Returns
 a vector via pass-by-value.
 
 
-<a name="@Testing_33"></a>
+<a id="@Testing_33"></a>
 
 ### Testing
 
@@ -2340,14 +2340,14 @@ a vector via pass-by-value.
 
 
 
-<a name="0xc0deb00c_user_get_custodian_id"></a>
+<a id="0xc0deb00c_user_get_custodian_id"></a>
 
 ## Function `get_custodian_id`
 
 Return custodian ID encoded in market account ID.
 
 
-<a name="@Testing_34"></a>
+<a id="@Testing_34"></a>
 
 ### Testing
 
@@ -2373,7 +2373,7 @@ Return custodian ID encoded in market account ID.
 
 
 
-<a name="0xc0deb00c_user_get_market_account"></a>
+<a id="0xc0deb00c_user_get_market_account"></a>
 
 ## Function `get_market_account`
 
@@ -2382,7 +2382,7 @@ Return human-readable <code><a href="user.md#0xc0deb00c_user_MarketAccountView">
 Mutates state, so kept as a private view function.
 
 
-<a name="@Aborts_35"></a>
+<a id="@Aborts_35"></a>
 
 ### Aborts
 
@@ -2390,7 +2390,7 @@ Mutates state, so kept as a private view function.
 * <code><a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a></code>: No such specified market account.
 
 
-<a name="@Testing_36"></a>
+<a id="@Testing_36"></a>
 
 ### Testing
 
@@ -2444,14 +2444,14 @@ Mutates state, so kept as a private view function.
 
 
 
-<a name="0xc0deb00c_user_get_market_account_id"></a>
+<a id="0xc0deb00c_user_get_market_account_id"></a>
 
 ## Function `get_market_account_id`
 
 Return market account ID with encoded market and custodian IDs.
 
 
-<a name="@Testing_37"></a>
+<a id="@Testing_37"></a>
 
 ### Testing
 
@@ -2478,7 +2478,7 @@ Return market account ID with encoded market and custodian IDs.
 
 
 
-<a name="0xc0deb00c_user_get_market_accounts"></a>
+<a id="0xc0deb00c_user_get_market_accounts"></a>
 
 ## Function `get_market_accounts`
 
@@ -2487,7 +2487,7 @@ Get user-friendly views of all of a <code><a href="user.md#0xc0deb00c_user">user
 Mutates state, so kept as a private view function.
 
 
-<a name="@Testing_38"></a>
+<a id="@Testing_38"></a>
 
 ### Testing
 
@@ -2530,7 +2530,7 @@ Mutates state, so kept as a private view function.
 
 
 
-<a name="0xc0deb00c_user_get_market_event_handle_creation_numbers"></a>
+<a id="0xc0deb00c_user_get_market_event_handle_creation_numbers"></a>
 
 ## Function `get_market_event_handle_creation_numbers`
 
@@ -2542,7 +2542,7 @@ Restricted to private view function to prevent runtime handle
 contention.
 
 
-<a name="@Testing_39"></a>
+<a id="@Testing_39"></a>
 
 ### Testing
 
@@ -2599,14 +2599,14 @@ contention.
 
 
 
-<a name="0xc0deb00c_user_get_market_id"></a>
+<a id="0xc0deb00c_user_get_market_id"></a>
 
 ## Function `get_market_id`
 
 Return market ID encoded in market account ID.
 
 
-<a name="@Testing_40"></a>
+<a id="@Testing_40"></a>
 
 ### Testing
 
@@ -2632,7 +2632,7 @@ Return market ID encoded in market account ID.
 
 
 
-<a name="0xc0deb00c_user_has_market_account"></a>
+<a id="0xc0deb00c_user_has_market_account"></a>
 
 ## Function `has_market_account`
 
@@ -2640,7 +2640,7 @@ Return <code><b>true</b></code> if <code><a href="user.md#0xc0deb00c_user">user<
 given <code>market_id</code> and <code>custodian_id</code>.
 
 
-<a name="@Testing_41"></a>
+<a id="@Testing_41"></a>
 
 ### Testing
 
@@ -2670,7 +2670,7 @@ given <code>market_id</code> and <code>custodian_id</code>.
 
 
 
-<a name="0xc0deb00c_user_has_market_account_by_market_account_id"></a>
+<a id="0xc0deb00c_user_has_market_account_by_market_account_id"></a>
 
 ## Function `has_market_account_by_market_account_id`
 
@@ -2678,7 +2678,7 @@ Return <code><b>true</b></code> if <code><a href="user.md#0xc0deb00c_user">user<
 given <code>market_account_id</code>.
 
 
-<a name="@Testing_42"></a>
+<a id="@Testing_42"></a>
 
 ### Testing
 
@@ -2711,7 +2711,7 @@ given <code>market_account_id</code>.
 
 
 
-<a name="0xc0deb00c_user_has_market_account_by_market_id"></a>
+<a id="0xc0deb00c_user_has_market_account_by_market_id"></a>
 
 ## Function `has_market_account_by_market_id`
 
@@ -2719,7 +2719,7 @@ Return <code><b>true</b></code> if <code><a href="user.md#0xc0deb00c_user">user<
 registered with given <code>market_id</code>.
 
 
-<a name="@Testing_43"></a>
+<a id="@Testing_43"></a>
 
 ### Testing
 
@@ -2752,14 +2752,14 @@ registered with given <code>market_id</code>.
 
 
 
-<a name="0xc0deb00c_user_deposit_coins"></a>
+<a id="0xc0deb00c_user_deposit_coins"></a>
 
 ## Function `deposit_coins`
 
 Wrapped call to <code><a href="user.md#0xc0deb00c_user_deposit_asset">deposit_asset</a>()</code> for depositing coins.
 
 
-<a name="@Aborts_44"></a>
+<a id="@Aborts_44"></a>
 
 ### Aborts
 
@@ -2769,7 +2769,7 @@ corresponding to the Econia account having initialized a coin
 of type <code>GenericAsset</code>.
 
 
-<a name="@Testing_45"></a>
+<a id="@Testing_45"></a>
 
 ### Testing
 
@@ -2814,14 +2814,14 @@ of type <code>GenericAsset</code>.
 
 
 
-<a name="0xc0deb00c_user_deposit_generic_asset"></a>
+<a id="0xc0deb00c_user_deposit_generic_asset"></a>
 
 ## Function `deposit_generic_asset`
 
 Wrapped call to <code><a href="user.md#0xc0deb00c_user_deposit_asset">deposit_asset</a>()</code> for depositing generic asset.
 
 
-<a name="@Testing_46"></a>
+<a id="@Testing_46"></a>
 
 ### Testing
 
@@ -2859,7 +2859,7 @@ Wrapped call to <code><a href="user.md#0xc0deb00c_user_deposit_asset">deposit_as
 
 
 
-<a name="0xc0deb00c_user_get_asset_counts_custodian"></a>
+<a id="0xc0deb00c_user_get_asset_counts_custodian"></a>
 
 ## Function `get_asset_counts_custodian`
 
@@ -2869,7 +2869,7 @@ Restricted to custodian for given market account to prevent
 excessive public queries and thus transaction collisions.
 
 
-<a name="@Testing_47"></a>
+<a id="@Testing_47"></a>
 
 ### Testing
 
@@ -2905,7 +2905,7 @@ excessive public queries and thus transaction collisions.
 
 
 
-<a name="0xc0deb00c_user_get_asset_counts_user"></a>
+<a id="0xc0deb00c_user_get_asset_counts_user"></a>
 
 ## Function `get_asset_counts_user`
 
@@ -2915,7 +2915,7 @@ Restricted to signing user for given market account to prevent
 excessive public queries and thus transaction collisions.
 
 
-<a name="@Testing_48"></a>
+<a id="@Testing_48"></a>
 
 ### Testing
 
@@ -2948,7 +2948,7 @@ excessive public queries and thus transaction collisions.
 
 
 
-<a name="0xc0deb00c_user_get_market_account_market_info_custodian"></a>
+<a id="0xc0deb00c_user_get_market_account_market_info_custodian"></a>
 
 ## Function `get_market_account_market_info_custodian`
 
@@ -2959,7 +2959,7 @@ Restricted to custodian for given market account to prevent
 excessive public queries and thus transaction collisions.
 
 
-<a name="@Testing_49"></a>
+<a id="@Testing_49"></a>
 
 ### Testing
 
@@ -2996,7 +2996,7 @@ excessive public queries and thus transaction collisions.
 
 
 
-<a name="0xc0deb00c_user_get_market_account_market_info_user"></a>
+<a id="0xc0deb00c_user_get_market_account_market_info_user"></a>
 
 ## Function `get_market_account_market_info_user`
 
@@ -3007,7 +3007,7 @@ Restricted to signing user for given market account to prevent
 excessive public queries and thus transaction collisions.
 
 
-<a name="@Testing_50"></a>
+<a id="@Testing_50"></a>
 
 ### Testing
 
@@ -3042,7 +3042,7 @@ excessive public queries and thus transaction collisions.
 
 
 
-<a name="0xc0deb00c_user_withdraw_coins_custodian"></a>
+<a id="0xc0deb00c_user_withdraw_coins_custodian"></a>
 
 ## Function `withdraw_coins_custodian`
 
@@ -3050,7 +3050,7 @@ Wrapped call to <code><a href="user.md#0xc0deb00c_user_withdraw_coins">withdraw_
 authority of delegated custodian.
 
 
-<a name="@Testing_51"></a>
+<a id="@Testing_51"></a>
 
 ### Testing
 
@@ -3088,7 +3088,7 @@ authority of delegated custodian.
 
 
 
-<a name="0xc0deb00c_user_withdraw_coins_user"></a>
+<a id="0xc0deb00c_user_withdraw_coins_user"></a>
 
 ## Function `withdraw_coins_user`
 
@@ -3096,7 +3096,7 @@ Wrapped call to <code><a href="user.md#0xc0deb00c_user_withdraw_coins">withdraw_
 authority of signing user.
 
 
-<a name="@Testing_52"></a>
+<a id="@Testing_52"></a>
 
 ### Testing
 
@@ -3133,7 +3133,7 @@ authority of signing user.
 
 
 
-<a name="0xc0deb00c_user_withdraw_generic_asset_custodian"></a>
+<a id="0xc0deb00c_user_withdraw_generic_asset_custodian"></a>
 
 ## Function `withdraw_generic_asset_custodian`
 
@@ -3141,7 +3141,7 @@ Wrapped call to <code><a href="user.md#0xc0deb00c_user_withdraw_generic_asset">w
 authority of delegated custodian.
 
 
-<a name="@Testing_53"></a>
+<a id="@Testing_53"></a>
 
 ### Testing
 
@@ -3178,7 +3178,7 @@ authority of delegated custodian.
 
 
 
-<a name="0xc0deb00c_user_withdraw_generic_asset_user"></a>
+<a id="0xc0deb00c_user_withdraw_generic_asset_user"></a>
 
 ## Function `withdraw_generic_asset_user`
 
@@ -3186,7 +3186,7 @@ Wrapped call to <code><a href="user.md#0xc0deb00c_user_withdraw_generic_asset">w
 authority of signing user.
 
 
-<a name="@Testing_54"></a>
+<a id="@Testing_54"></a>
 
 ### Testing
 
@@ -3222,7 +3222,7 @@ authority of signing user.
 
 
 
-<a name="0xc0deb00c_user_deposit_from_coinstore"></a>
+<a id="0xc0deb00c_user_deposit_from_coinstore"></a>
 
 ## Function `deposit_from_coinstore`
 
@@ -3230,7 +3230,7 @@ Wrapped call to <code><a href="user.md#0xc0deb00c_user_deposit_coins">deposit_co
 <code>aptos_framework::coin::CoinStore</code>.
 
 
-<a name="@Testing_55"></a>
+<a id="@Testing_55"></a>
 
 ### Testing
 
@@ -3267,7 +3267,7 @@ Wrapped call to <code><a href="user.md#0xc0deb00c_user_deposit_coins">deposit_co
 
 
 
-<a name="0xc0deb00c_user_init_market_event_handles_if_missing"></a>
+<a id="0xc0deb00c_user_init_market_event_handles_if_missing"></a>
 
 ## Function `init_market_event_handles_if_missing`
 
@@ -3279,7 +3279,7 @@ market account without associated market event handles, if they
 registered a market account before an on-chain upgrade.
 
 
-<a name="@Parameters_56"></a>
+<a id="@Parameters_56"></a>
 
 ### Parameters
 
@@ -3289,7 +3289,7 @@ registered a market account before an on-chain upgrade.
 * <code>custodian_id</code>: Custodian ID for market account.
 
 
-<a name="@Aborts_57"></a>
+<a id="@Aborts_57"></a>
 
 ### Aborts
 
@@ -3297,7 +3297,7 @@ registered a market account before an on-chain upgrade.
 * <code><a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a></code>: No such specified market account.
 
 
-<a name="@Testing_58"></a>
+<a id="@Testing_58"></a>
 
 ### Testing
 
@@ -3352,7 +3352,7 @@ registered a market account before an on-chain upgrade.
 
 
 
-<a name="0xc0deb00c_user_register_market_account"></a>
+<a id="0xc0deb00c_user_register_market_account"></a>
 
 ## Function `register_market_account`
 
@@ -3362,7 +3362,7 @@ Verifies market ID and asset types via internal call to
 <code><a href="user.md#0xc0deb00c_user_register_market_account_account_entries">register_market_account_account_entries</a>()</code>.
 
 
-<a name="@Type_parameters_59"></a>
+<a id="@Type_parameters_59"></a>
 
 ### Type parameters
 
@@ -3373,7 +3373,7 @@ a generic asset, must be passed as <code><a href="registry.md#0xc0deb00c_registr
 * <code>QuoteType</code>: Quote type for indicated market.
 
 
-<a name="@Parameters_60"></a>
+<a id="@Parameters_60"></a>
 
 ### Parameters
 
@@ -3384,7 +3384,7 @@ a generic asset, must be passed as <code><a href="registry.md#0xc0deb00c_registr
 <code><a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a></code>.
 
 
-<a name="@Aborts_61"></a>
+<a id="@Aborts_61"></a>
 
 ### Aborts
 
@@ -3393,7 +3393,7 @@ a generic asset, must be passed as <code><a href="registry.md#0xc0deb00c_registr
 registered.
 
 
-<a name="@Testing_62"></a>
+<a id="@Testing_62"></a>
 
 ### Testing
 
@@ -3447,14 +3447,14 @@ registered.
 
 
 
-<a name="0xc0deb00c_user_register_market_account_generic_base"></a>
+<a id="0xc0deb00c_user_register_market_account_generic_base"></a>
 
 ## Function `register_market_account_generic_base`
 
 Wrapped <code><a href="user.md#0xc0deb00c_user_register_market_account">register_market_account</a>()</code> call for generic base asset.
 
 
-<a name="@Testing_63"></a>
+<a id="@Testing_63"></a>
 
 ### Testing
 
@@ -3488,7 +3488,7 @@ Wrapped <code><a href="user.md#0xc0deb00c_user_register_market_account">register
 
 
 
-<a name="0xc0deb00c_user_withdraw_to_coinstore"></a>
+<a id="0xc0deb00c_user_withdraw_to_coinstore"></a>
 
 ## Function `withdraw_to_coinstore`
 
@@ -3496,7 +3496,7 @@ Wrapped call to <code><a href="user.md#0xc0deb00c_user_withdraw_coins_user">with
 market account to user's <code>aptos_framework::coin::CoinStore</code>.
 
 
-<a name="@Testing_64"></a>
+<a id="@Testing_64"></a>
 
 ### Testing
 
@@ -3533,7 +3533,7 @@ market account to user's <code>aptos_framework::coin::CoinStore</code>.
 
 
 
-<a name="0xc0deb00c_user_cancel_order_internal"></a>
+<a id="0xc0deb00c_user_cancel_order_internal"></a>
 
 ## Function `cancel_order_internal`
 
@@ -3556,7 +3556,7 @@ malicious market order ID (portions of which essentially
 function as pointers into AVL queue state).
 
 
-<a name="@Parameters_65"></a>
+<a id="@Parameters_65"></a>
 
 ### Parameters
 
@@ -3579,7 +3579,7 @@ immediate re-placement, corresponding to the cancel reason
 no cancel event is emitted.
 
 
-<a name="@Returns_66"></a>
+<a id="@Returns_66"></a>
 
 ### Returns
 
@@ -3587,7 +3587,7 @@ no cancel event is emitted.
 * <code>u128</code>: Market order ID for corresponding order.
 
 
-<a name="@Terminology_67"></a>
+<a id="@Terminology_67"></a>
 
 ### Terminology
 
@@ -3598,7 +3598,7 @@ from a trade if the cancelled order had been filled.
 away if the cancelled order had been filled.
 
 
-<a name="@Aborts_68"></a>
+<a id="@Aborts_68"></a>
 
 ### Aborts
 
@@ -3609,7 +3609,7 @@ operation and actual size before operation.
 user's open order, when market order ID not passed as <code><a href="user.md#0xc0deb00c_user_NIL">NIL</a></code>.
 
 
-<a name="@Emits_69"></a>
+<a id="@Emits_69"></a>
 
 ### Emits
 
@@ -3617,7 +3617,7 @@ user's open order, when market order ID not passed as <code><a href="user.md#0xc
 * <code><a href="user.md#0xc0deb00c_user_CancelOrderEvent">CancelOrderEvent</a></code>: Information about a cancelled order.
 
 
-<a name="@Assumptions_70"></a>
+<a id="@Assumptions_70"></a>
 
 ### Assumptions
 
@@ -3638,7 +3638,7 @@ or a self match cancel.
 order if market order ID is not <code><a href="user.md#0xc0deb00c_user_NIL">NIL</a></code>.
 
 
-<a name="@Expected_value_testing_71"></a>
+<a id="@Expected_value_testing_71"></a>
 
 ### Expected value testing
 
@@ -3648,7 +3648,7 @@ order if market order ID is not <code><a href="user.md#0xc0deb00c_user_NIL">NIL<
 * <code>test_place_cancel_order_stack()</code>
 
 
-<a name="@Failure_testing_72"></a>
+<a id="@Failure_testing_72"></a>
 
 ### Failure testing
 
@@ -3757,14 +3757,14 @@ order if market order ID is not <code><a href="user.md#0xc0deb00c_user_NIL">NIL<
 
 
 
-<a name="0xc0deb00c_user_change_order_size_internal"></a>
+<a id="0xc0deb00c_user_change_order_size_internal"></a>
 
 ## Function `change_order_size_internal`
 
 Change the size of a user's open order on given side.
 
 
-<a name="@Parameters_73"></a>
+<a id="@Parameters_73"></a>
 
 ### Parameters
 
@@ -3781,7 +3781,7 @@ to <code><a href="user.md#0xc0deb00c_user_place_order_internal">place_order_inte
 * <code>market_order_id</code>: Market order ID for order book lookup.
 
 
-<a name="@Aborts_74"></a>
+<a id="@Aborts_74"></a>
 
 ### Aborts
 
@@ -3789,7 +3789,7 @@ to <code><a href="user.md#0xc0deb00c_user_place_order_internal">place_order_inte
 * <code><a href="user.md#0xc0deb00c_user_E_CHANGE_ORDER_NO_CHANGE">E_CHANGE_ORDER_NO_CHANGE</a></code>: No change in order size.
 
 
-<a name="@Emits_75"></a>
+<a id="@Emits_75"></a>
 
 ### Emits
 
@@ -3798,7 +3798,7 @@ to <code><a href="user.md#0xc0deb00c_user_place_order_internal">place_order_inte
 manual size change.
 
 
-<a name="@Assumptions_76"></a>
+<a id="@Assumptions_76"></a>
 
 ### Assumptions
 
@@ -3811,7 +3811,7 @@ order ID, which is checked in <code><a href="user.md#0xc0deb00c_user_cancel_orde
 order.
 
 
-<a name="@Testing_77"></a>
+<a id="@Testing_77"></a>
 
 ### Testing
 
@@ -3886,7 +3886,7 @@ order.
 
 
 
-<a name="0xc0deb00c_user_create_cancel_order_event_internal"></a>
+<a id="0xc0deb00c_user_create_cancel_order_event_internal"></a>
 
 ## Function `create_cancel_order_event_internal`
 
@@ -3920,7 +3920,7 @@ Return a <code><a href="user.md#0xc0deb00c_user_CancelOrderEvent">CancelOrderEve
 
 
 
-<a name="0xc0deb00c_user_create_fill_event_internal"></a>
+<a id="0xc0deb00c_user_create_fill_event_internal"></a>
 
 ## Function `create_fill_event_internal`
 
@@ -3968,7 +3968,7 @@ Return a <code><a href="user.md#0xc0deb00c_user_FillEvent">FillEvent</a></code> 
 
 
 
-<a name="0xc0deb00c_user_deposit_assets_internal"></a>
+<a id="0xc0deb00c_user_deposit_assets_internal"></a>
 
 ## Function `deposit_assets_internal`
 
@@ -3978,7 +3978,7 @@ Should only be called by the matching engine when matching from
 a user's market account.
 
 
-<a name="@Type_parameters_78"></a>
+<a id="@Type_parameters_78"></a>
 
 ### Type parameters
 
@@ -3987,7 +3987,7 @@ a user's market account.
 * <code>QuoteType</code>: Quote type for market.
 
 
-<a name="@Parameters_79"></a>
+<a id="@Parameters_79"></a>
 
 ### Parameters
 
@@ -4001,7 +4001,7 @@ a user's market account.
 * <code>underwriter_id</code>: Underwriter ID for market.
 
 
-<a name="@Testing_80"></a>
+<a id="@Testing_80"></a>
 
 ### Testing
 
@@ -4042,14 +4042,14 @@ a user's market account.
 
 
 
-<a name="0xc0deb00c_user_emit_limit_order_events_internal"></a>
+<a id="0xc0deb00c_user_emit_limit_order_events_internal"></a>
 
 ## Function `emit_limit_order_events_internal`
 
 Emit limit order events to a user's market event handles.
 
 
-<a name="@Parameters_81"></a>
+<a id="@Parameters_81"></a>
 
 ### Parameters
 
@@ -4073,7 +4073,7 @@ across the spread, may be empty.
 cancel reason associated with a <code><a href="user.md#0xc0deb00c_user_CancelOrderEvent">CancelOrderEvent</a></code>.
 
 
-<a name="@Emits_82"></a>
+<a id="@Emits_82"></a>
 
 ### Emits
 
@@ -4160,14 +4160,14 @@ transaction in which it was placed.
 
 
 
-<a name="0xc0deb00c_user_emit_market_order_events_internal"></a>
+<a id="0xc0deb00c_user_emit_market_order_events_internal"></a>
 
 ## Function `emit_market_order_events_internal`
 
 Emit market order events to a user's market event handles.
 
 
-<a name="@Parameters_83"></a>
+<a id="@Parameters_83"></a>
 
 ### Parameters
 
@@ -4187,7 +4187,7 @@ Emit market order events to a user's market event handles.
 cancel reason associated with a <code><a href="user.md#0xc0deb00c_user_CancelOrderEvent">CancelOrderEvent</a></code>.
 
 
-<a name="@Emits_84"></a>
+<a id="@Emits_84"></a>
 
 ### Emits
 
@@ -4263,7 +4263,7 @@ market order was cancelled without completely filling.
 
 
 
-<a name="0xc0deb00c_user_emit_swap_maker_fill_events_internal"></a>
+<a id="0xc0deb00c_user_emit_swap_maker_fill_events_internal"></a>
 
 ## Function `emit_swap_maker_fill_events_internal`
 
@@ -4289,7 +4289,7 @@ Emit a <code><a href="user.md#0xc0deb00c_user_FillEvent">FillEvent</a></code> fo
 
 
 
-<a name="0xc0deb00c_user_fill_order_internal"></a>
+<a id="0xc0deb00c_user_fill_order_internal"></a>
 
 ## Function `fill_order_internal`
 
@@ -4308,7 +4308,7 @@ order as indicated with sufficient assets to fill it. Hence no
 error checking.
 
 
-<a name="@Type_parameters_85"></a>
+<a id="@Type_parameters_85"></a>
 
 ### Type parameters
 
@@ -4317,7 +4317,7 @@ error checking.
 * <code>QuoteType</code>: Quote type for indicated market.
 
 
-<a name="@Parameters_86"></a>
+<a id="@Parameters_86"></a>
 
 ### Parameters
 
@@ -4338,7 +4338,7 @@ matching engine.
 * <code>quote_to_route</code>: Amount of quote asset filled.
 
 
-<a name="@Returns_87"></a>
+<a id="@Returns_87"></a>
 
 ### Returns
 
@@ -4350,7 +4350,7 @@ matching engine.
 * <code>u128</code>: Market order ID just filled against.
 
 
-<a name="@Aborts_88"></a>
+<a id="@Aborts_88"></a>
 
 ### Aborts
 
@@ -4359,7 +4359,7 @@ matching engine.
 operation and actual size before operation.
 
 
-<a name="@Assumptions_89"></a>
+<a id="@Assumptions_89"></a>
 
 ### Assumptions
 
@@ -4367,7 +4367,7 @@ operation and actual size before operation.
 * Only called by the matching engine as described above.
 
 
-<a name="@Testing_90"></a>
+<a id="@Testing_90"></a>
 
 ### Testing
 
@@ -4508,14 +4508,14 @@ operation and actual size before operation.
 
 
 
-<a name="0xc0deb00c_user_get_asset_counts_internal"></a>
+<a id="0xc0deb00c_user_get_asset_counts_internal"></a>
 
 ## Function `get_asset_counts_internal`
 
 Return asset counts for specified market account.
 
 
-<a name="@Parameters_91"></a>
+<a id="@Parameters_91"></a>
 
 ### Parameters
 
@@ -4525,7 +4525,7 @@ Return asset counts for specified market account.
 * <code>custodian_id</code>: Custodian ID for market account.
 
 
-<a name="@Returns_92"></a>
+<a id="@Returns_92"></a>
 
 ### Returns
 
@@ -4538,7 +4538,7 @@ Return asset counts for specified market account.
 * <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>.quote_ceiling</code>
 
 
-<a name="@Aborts_93"></a>
+<a id="@Aborts_93"></a>
 
 ### Aborts
 
@@ -4547,7 +4547,7 @@ Return asset counts for specified market account.
 * <code><a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a></code>: No market account resource found.
 
 
-<a name="@Testing_94"></a>
+<a id="@Testing_94"></a>
 
 ### Testing
 
@@ -4600,14 +4600,14 @@ Return asset counts for specified market account.
 
 
 
-<a name="0xc0deb00c_user_get_active_market_order_ids_internal"></a>
+<a id="0xc0deb00c_user_get_active_market_order_ids_internal"></a>
 
 ## Function `get_active_market_order_ids_internal`
 
 Return all active market order IDs for given market account.
 
 
-<a name="@Parameters_95"></a>
+<a id="@Parameters_95"></a>
 
 ### Parameters
 
@@ -4618,7 +4618,7 @@ Return all active market order IDs for given market account.
 * <code>side</code>: <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code> or <code><a href="user.md#0xc0deb00c_user_BID">BID</a></code>, the side on which to check.
 
 
-<a name="@Returns_96"></a>
+<a id="@Returns_96"></a>
 
 ### Returns
 
@@ -4627,7 +4627,7 @@ Return all active market order IDs for given market account.
 given market account and side, empty if none.
 
 
-<a name="@Aborts_97"></a>
+<a id="@Aborts_97"></a>
 
 ### Aborts
 
@@ -4636,7 +4636,7 @@ given market account and side, empty if none.
 * <code><a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a></code>: No market account resource found.
 
 
-<a name="@Testing_98"></a>
+<a id="@Testing_98"></a>
 
 ### Testing
 
@@ -4694,7 +4694,7 @@ given market account and side, empty if none.
 
 
 
-<a name="0xc0deb00c_user_get_next_order_access_key_internal"></a>
+<a id="0xc0deb00c_user_get_next_order_access_key_internal"></a>
 
 ## Function `get_next_order_access_key_internal`
 
@@ -4705,7 +4705,7 @@ order access key to be allocated. Otherwise is order access key
 at top of inactive order stack.
 
 
-<a name="@Parameters_99"></a>
+<a id="@Parameters_99"></a>
 
 ### Parameters
 
@@ -4717,7 +4717,7 @@ at top of inactive order stack.
 placed.
 
 
-<a name="@Returns_100"></a>
+<a id="@Returns_100"></a>
 
 ### Returns
 
@@ -4725,7 +4725,7 @@ placed.
 * <code>u64</code>: Order access key of next order to be placed.
 
 
-<a name="@Aborts_101"></a>
+<a id="@Aborts_101"></a>
 
 ### Aborts
 
@@ -4734,7 +4734,7 @@ placed.
 * <code><a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a></code>: No market account resource found.
 
 
-<a name="@Testing_102"></a>
+<a id="@Testing_102"></a>
 
 ### Testing
 
@@ -4786,7 +4786,7 @@ placed.
 
 
 
-<a name="0xc0deb00c_user_get_open_order_id_internal"></a>
+<a id="0xc0deb00c_user_get_open_order_id_internal"></a>
 
 ## Function `get_open_order_id_internal`
 
@@ -4798,7 +4798,7 @@ Restricted to public friend to prevent runtime user state
 contention.
 
 
-<a name="@Testing_103"></a>
+<a id="@Testing_103"></a>
 
 ### Testing
 
@@ -4847,7 +4847,7 @@ contention.
 
 
 
-<a name="0xc0deb00c_user_place_order_internal"></a>
+<a id="0xc0deb00c_user_place_order_internal"></a>
 
 ## Function `place_order_internal`
 
@@ -4868,7 +4868,7 @@ required. Once an order book entry has been created, a market
 order ID will then be made available.
 
 
-<a name="@Parameters_104"></a>
+<a id="@Parameters_104"></a>
 
 ### Parameters
 
@@ -4884,7 +4884,7 @@ order ID will then be made available.
 assigned to order.
 
 
-<a name="@Terminology_105"></a>
+<a id="@Terminology_105"></a>
 
 ### Terminology
 
@@ -4893,7 +4893,7 @@ assigned to order.
 * The "outbound" asset is the asset traded away.
 
 
-<a name="@Assumptions_106"></a>
+<a id="@Assumptions_106"></a>
 
 ### Assumptions
 
@@ -4904,7 +4904,7 @@ assigned to order.
 verified by <code><a href="user.md#0xc0deb00c_user_get_next_order_access_key_internal">get_next_order_access_key_internal</a>()</code>.
 
 
-<a name="@Aborts_107"></a>
+<a id="@Aborts_107"></a>
 
 ### Aborts
 
@@ -4919,7 +4919,7 @@ received from trade.
 match assigned order access key.
 
 
-<a name="@Expected_value_testing_108"></a>
+<a id="@Expected_value_testing_108"></a>
 
 ### Expected value testing
 
@@ -4929,7 +4929,7 @@ match assigned order access key.
 * <code>test_place_cancel_order_stack()</code>
 
 
-<a name="@Failure_testing_109"></a>
+<a id="@Failure_testing_109"></a>
 
 ### Failure testing
 
@@ -5033,7 +5033,7 @@ match assigned order access key.
 
 
 
-<a name="0xc0deb00c_user_withdraw_assets_internal"></a>
+<a id="0xc0deb00c_user_withdraw_assets_internal"></a>
 
 ## Function `withdraw_assets_internal`
 
@@ -5043,7 +5043,7 @@ Should only be called by the matching engine when matching from
 a user's market account.
 
 
-<a name="@Type_parameters_110"></a>
+<a id="@Type_parameters_110"></a>
 
 ### Type parameters
 
@@ -5052,7 +5052,7 @@ a user's market account.
 * <code>QuoteType</code>: Quote type for market.
 
 
-<a name="@Parameters_111"></a>
+<a id="@Parameters_111"></a>
 
 ### Parameters
 
@@ -5065,7 +5065,7 @@ a user's market account.
 * <code>underwriter_id</code>: Underwriter ID for market.
 
 
-<a name="@Returns_112"></a>
+<a id="@Returns_112"></a>
 
 ### Returns
 
@@ -5075,7 +5075,7 @@ market account.
 * <code>&lt;Coin&lt;QuoteType&gt;</code>: Quote coins from user's market account.
 
 
-<a name="@Testing_113"></a>
+<a id="@Testing_113"></a>
 
 ### Testing
 
@@ -5119,7 +5119,7 @@ market account.
 
 
 
-<a name="0xc0deb00c_user_deposit_asset"></a>
+<a id="0xc0deb00c_user_deposit_asset"></a>
 
 ## Function `deposit_asset`
 
@@ -5128,7 +5128,7 @@ Deposit an asset to a user's market account.
 Update asset counts, deposit optional coins as collateral.
 
 
-<a name="@Type_parameters_114"></a>
+<a id="@Type_parameters_114"></a>
 
 ### Type parameters
 
@@ -5137,7 +5137,7 @@ Update asset counts, deposit optional coins as collateral.
 if a generic asset.
 
 
-<a name="@Parameters_115"></a>
+<a id="@Parameters_115"></a>
 
 ### Parameters
 
@@ -5151,7 +5151,7 @@ if a generic asset.
 depositing coins.
 
 
-<a name="@Aborts_116"></a>
+<a id="@Aborts_116"></a>
 
 ### Aborts
 
@@ -5166,7 +5166,7 @@ asset ceiling.
 indicated market, in the case of a generic asset deposit.
 
 
-<a name="@Assumptions_117"></a>
+<a id="@Assumptions_117"></a>
 
 ### Assumptions
 
@@ -5175,7 +5175,7 @@ indicated market, in the case of a generic asset deposit.
 does a corresponding collateral map entry.
 
 
-<a name="@Testing_118"></a>
+<a id="@Testing_118"></a>
 
 ### Testing
 
@@ -5268,7 +5268,7 @@ does a corresponding collateral map entry.
 
 
 
-<a name="0xc0deb00c_user_emit_maker_fill_event"></a>
+<a id="0xc0deb00c_user_emit_maker_fill_event"></a>
 
 ## Function `emit_maker_fill_event`
 
@@ -5310,14 +5310,14 @@ indicated market account.
 
 
 
-<a name="0xc0deb00c_user_get_market_account_market_info"></a>
+<a id="0xc0deb00c_user_get_market_account_market_info"></a>
 
 ## Function `get_market_account_market_info`
 
 Return <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a></code> fields stored in market account.
 
 
-<a name="@Parameters_119"></a>
+<a id="@Parameters_119"></a>
 
 ### Parameters
 
@@ -5327,7 +5327,7 @@ Return <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::Mark
 * <code>custodian_id</code>: Custodian ID for market account.
 
 
-<a name="@Returns_120"></a>
+<a id="@Returns_120"></a>
 
 ### Returns
 
@@ -5341,7 +5341,7 @@ Return <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::Mark
 * <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>.underwriter_id</code>
 
 
-<a name="@Aborts_121"></a>
+<a id="@Aborts_121"></a>
 
 ### Aborts
 
@@ -5350,7 +5350,7 @@ Return <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::Mark
 * <code><a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a></code>: No market account resource found.
 
 
-<a name="@Testing_122"></a>
+<a id="@Testing_122"></a>
 
 ### Testing
 
@@ -5406,7 +5406,7 @@ Return <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::Mark
 
 
 
-<a name="0xc0deb00c_user_register_market_account_account_entries"></a>
+<a id="0xc0deb00c_user_register_market_account_account_entries"></a>
 
 ## Function `register_market_account_account_entries`
 
@@ -5419,7 +5419,7 @@ registered market, via call to
 <code><a href="registry.md#0xc0deb00c_registry_get_market_info_for_market_account">registry::get_market_info_for_market_account</a>()</code>.
 
 
-<a name="@Type_parameters_123"></a>
+<a id="@Type_parameters_123"></a>
 
 ### Type parameters
 
@@ -5428,7 +5428,7 @@ registered market, via call to
 * <code>QuoteType</code>: Quote type for indicated market.
 
 
-<a name="@Parameters_124"></a>
+<a id="@Parameters_124"></a>
 
 ### Parameters
 
@@ -5440,7 +5440,7 @@ registered market, via call to
 <code><a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a></code>.
 
 
-<a name="@Aborts_125"></a>
+<a id="@Aborts_125"></a>
 
 ### Aborts
 
@@ -5448,7 +5448,7 @@ registered market, via call to
 * <code><a href="user.md#0xc0deb00c_user_E_EXISTS_MARKET_ACCOUNT">E_EXISTS_MARKET_ACCOUNT</a></code>: Market account already exists.
 
 
-<a name="@Testing_126"></a>
+<a id="@Testing_126"></a>
 
 ### Testing
 
@@ -5518,7 +5518,7 @@ registered market, via call to
 
 
 
-<a name="0xc0deb00c_user_register_market_account_collateral_entry"></a>
+<a id="0xc0deb00c_user_register_market_account_collateral_entry"></a>
 
 ## Function `register_market_account_collateral_entry`
 
@@ -5532,7 +5532,7 @@ performed by <code>register_market_account_accounts_entries()</code> in
 <code><a href="user.md#0xc0deb00c_user_register_market_account">register_market_account</a>()</code>.
 
 
-<a name="@Type_parameters_127"></a>
+<a id="@Type_parameters_127"></a>
 
 ### Type parameters
 
@@ -5540,7 +5540,7 @@ performed by <code>register_market_account_accounts_entries()</code> in
 * <code>CoinType</code>: Phantom coin type for indicated market.
 
 
-<a name="@Parameters_128"></a>
+<a id="@Parameters_128"></a>
 
 ### Parameters
 
@@ -5549,7 +5549,7 @@ performed by <code>register_market_account_accounts_entries()</code> in
 * <code>market_account_id</code>: Market account ID for given market.
 
 
-<a name="@Testing_129"></a>
+<a id="@Testing_129"></a>
 
 ### Testing
 
@@ -5587,14 +5587,14 @@ performed by <code>register_market_account_accounts_entries()</code> in
 
 
 
-<a name="0xc0deb00c_user_vectorize_open_orders"></a>
+<a id="0xc0deb00c_user_vectorize_open_orders"></a>
 
 ## Function `vectorize_open_orders`
 
 Convert a tablist of <code><a href="user.md#0xc0deb00c_user_Order">Order</a></code> into a vector of only open orders.
 
 
-<a name="@Testing_130"></a>
+<a id="@Testing_130"></a>
 
 ### Testing
 
@@ -5638,7 +5638,7 @@ Convert a tablist of <code><a href="user.md#0xc0deb00c_user_Order">Order</a></co
 
 
 
-<a name="0xc0deb00c_user_withdraw_asset"></a>
+<a id="0xc0deb00c_user_withdraw_asset"></a>
 
 ## Function `withdraw_asset`
 
@@ -5647,7 +5647,7 @@ Withdraw an asset from a user's market account.
 Update asset counts, withdraw optional collateral coins.
 
 
-<a name="@Type_parameters_131"></a>
+<a id="@Type_parameters_131"></a>
 
 ### Type parameters
 
@@ -5656,7 +5656,7 @@ Update asset counts, withdraw optional collateral coins.
 if a generic asset.
 
 
-<a name="@Parameters_132"></a>
+<a id="@Parameters_132"></a>
 
 ### Parameters
 
@@ -5669,7 +5669,7 @@ if a generic asset.
 withdrawing coins.
 
 
-<a name="@Returns_133"></a>
+<a id="@Returns_133"></a>
 
 ### Returns
 
@@ -5677,7 +5677,7 @@ withdrawing coins.
 * <code>Option&lt;Coin&lt;AssetType&gt;&gt;</code>: Optional collateral coins.
 
 
-<a name="@Aborts_134"></a>
+<a id="@Aborts_134"></a>
 
 ### Aborts
 
@@ -5692,7 +5692,7 @@ withdrawal.
 indicated market, in the case of a generic asset withdrawal.
 
 
-<a name="@Testing_135"></a>
+<a id="@Testing_135"></a>
 
 ### Testing
 
@@ -5780,14 +5780,14 @@ indicated market, in the case of a generic asset withdrawal.
 
 
 
-<a name="0xc0deb00c_user_withdraw_coins"></a>
+<a id="0xc0deb00c_user_withdraw_coins"></a>
 
 ## Function `withdraw_coins`
 
 Wrapped call to <code><a href="user.md#0xc0deb00c_user_withdraw_asset">withdraw_asset</a>()</code> for withdrawing coins.
 
 
-<a name="@Testing_136"></a>
+<a id="@Testing_136"></a>
 
 ### Testing
 
@@ -5826,7 +5826,7 @@ Wrapped call to <code><a href="user.md#0xc0deb00c_user_withdraw_asset">withdraw_
 
 
 
-<a name="0xc0deb00c_user_withdraw_generic_asset"></a>
+<a id="0xc0deb00c_user_withdraw_generic_asset"></a>
 
 ## Function `withdraw_generic_asset`
 
@@ -5834,7 +5834,7 @@ Wrapped call to <code><a href="user.md#0xc0deb00c_user_withdraw_asset">withdraw_
 asset.
 
 
-<a name="@Testing_137"></a>
+<a id="@Testing_137"></a>
 
 ### Testing
 

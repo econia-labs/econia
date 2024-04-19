@@ -6,9 +6,9 @@ edition = "2021"
 [dependencies]
 aptos-sdk.workspace = true
 
-anyhow = "1.0.75"
+anyhow.workspace = true
 async-trait = "0.1.73"
-bigdecimal.workspace = true
+bigdecimal = { version = "0.3.1", features = ["serde"] }
 chrono.workspace = true
 clap = { workspace = true, features = ["derive", "string"] }
 dotenvy.workspace = true

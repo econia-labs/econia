@@ -62,6 +62,7 @@ Before you start working with the DSS, make sure you are on the right branch and
 ```bash
 # From Econia repo root
 git checkout dss-stable
+git pull
 git submodule update --init --recursive
 ```
 
@@ -108,6 +109,48 @@ Finally, to fully shut it down:
 ```bash
 docker compose --file src/docker/compose.dss-core.yaml down
 ```
+
+### Conducting a hot upgrade
+
+If you'd like to upgrade your DSS to the latest version without having to backfill the entire database, you can conduct a "hot upgrade".
+This process leverage's Docker compose' underlying capability to preserve database volumes across environment builds, so that you can recompile binaries without having to sync to chain tip for each new release.
+
+:::note
+The Econia Labs team strives to enable a hot upgrade for every DSS release (relative to the most recent release).
+Occasionally, however, upstream changes (like breaking changes to the Aptos indexing framework) may require backfilling from Move package genesis.
+See the [changelog](./changelog.md) to verify that the latest release supports a hot upgrade.
+:::
+
+1. Shut down the DSS
+
+   ```bash
+   docker compose --file src/docker/compose.dss-core.yaml down
+   ```
+
+1. Clean your Docker containers and image cache:
+
+   ```bash
+   docker system prune -af
+   ```
+
+   :::tip
+   This is similar to starting a DSS from scratch, but it preserves the `db` volume.
+   :::
+
+1. Check out the latest stable DSS source code:
+
+   ```bash
+   git checkout dss-stable
+   git pull
+   git submodule update --init --recursive
+   ```
+
+1. Restart the DSS:
+
+   ```bash
+   docker compose --file src/docker/compose.dss-core.yaml build --no-cache
+   docker compose --file src/docker/compose.dss-core.yaml up --force-recreate
+   ```
 
 ### Verifying the DSS
 

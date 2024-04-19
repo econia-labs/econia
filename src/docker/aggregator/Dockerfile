@@ -19,7 +19,7 @@ RUN apt-get update && apt-get install -y \
     lld \
     pkg-config \
     && rm -rf /var/lib/apt/lists/*
-RUN cargo build --release -p aggregator
+RUN RUSTFLAGS="--cfg tokio_unstable" cargo build --release -p aggregator
 
 FROM debian:bookworm-slim AS runtime
 ARG APP_DIR

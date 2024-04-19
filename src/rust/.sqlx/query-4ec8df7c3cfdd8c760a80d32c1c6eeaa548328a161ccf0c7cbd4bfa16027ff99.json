@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "WITH\n  parameters AS (\n    SELECT\n      $1::INT \"group_id\",\n      $2::INT \"bps_times_ten\",\n      $3::TIMESTAMPTZ \"time\",\n      $4::NUMERIC(20,0) \"ask\",\n      $5::NUMERIC(20,0) \"bid\"\n  )\nINSERT INTO aggregator.liquidity (group_id, \"time\", bps_times_ten, amount_ask_ticks, amount_bid_ticks)\nSELECT group_id, \"time\", bps_times_ten, ask, bid FROM parameters;\n",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int4",
+        "Timestamptz",
+        "Numeric",
+        "Numeric"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "4ec8df7c3cfdd8c760a80d32c1c6eeaa548328a161ccf0c7cbd4bfa16027ff99"
+}

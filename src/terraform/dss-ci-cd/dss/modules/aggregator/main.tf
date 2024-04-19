@@ -6,6 +6,7 @@ resource "terraform_data" "image" {
     command = join(" ", [
       "gcloud builds submit econia",
       "--config cloudbuild.yaml",
+      "--timeout 10000",
       "--substitutions",
       join(",", [
         "_DOCKERFILE=aggregator/Dockerfile",

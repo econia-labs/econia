@@ -10,6 +10,8 @@ chown mosquitto:mosquitto /password_file
 
 /usr/sbin/mosquitto -c /mosquitto/config/mosquitto.conf &
 
+sleep 5
+
 /app/mqtt-publisher &
 
 wait -n

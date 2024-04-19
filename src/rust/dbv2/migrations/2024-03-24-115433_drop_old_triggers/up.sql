@@ -1,0 +1,10 @@
+-- Your SQL goes here
+DROP TRIGGER cancel_order_events_trigger ON cancel_order_events;
+DROP TRIGGER change_order_size_events_trigger ON change_order_size_events;
+DROP TRIGGER fill_events_trigger ON fill_events;
+DROP TRIGGER market_registration_events_trigger ON market_registration_events;
+DROP TRIGGER place_limit_order_events_trigger ON place_limit_order_events;
+DROP TRIGGER place_market_order_events_trigger ON place_market_order_events;
+DROP TRIGGER place_swap_order_events_trigger ON place_swap_order_events;
+DROP TRIGGER recognized_market_events_trigger ON recognized_market_events;
+DROP TRIGGER updated_order_trigger ON aggregator.user_history;

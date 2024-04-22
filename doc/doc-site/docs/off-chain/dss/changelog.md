@@ -28,6 +28,10 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 - More details in aggregator logging ([#738]).
 - Default support for the `all` liquidity group on all markets ([#728]).
 
+### Changed
+
+- Fork base, to include upstream processor changes ([#725], [#744], [Processor #24]).
+
 ### Fixed
 
 - `/tickers` endpoint `base_volume_nominal` and `quote_volume_nominal` fields ([#746], [#749]).
@@ -215,6 +219,7 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 [#719]: https://github.com/econia-labs/econia/pull/719
 [#720]: https://github.com/econia-labs/econia/pull/720
 [#723]: https://github.com/econia-labs/econia/pull/723
+[#725]: https://github.com/econia-labs/econia/pull/725
 [#727]: https://github.com/econia-labs/econia/pull/727
 [#728]: https://github.com/econia-labs/econia/pull/728
 [#729]: https://github.com/econia-labs/econia/pull/729
@@ -222,6 +227,7 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 [#732]: https://github.com/econia-labs/econia/pull/732
 [#736]: https://github.com/econia-labs/econia/pull/736
 [#738]: https://github.com/econia-labs/econia/pull/738
+[#744]: https://github.com/econia-labs/econia/pull/744
 [#746]: https://github.com/econia-labs/econia/pull/746
 [#749]: https://github.com/econia-labs/econia/pull/749
 [#753]: https://github.com/econia-labs/econia/pull/753
@@ -232,6 +238,7 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 [processor #21]: https://github.com/econia-labs/aptos-indexer-processors/pull/21
 [processor #22]: https://github.com/econia-labs/aptos-indexer-processors/pull/22
 [processor #23]: https://github.com/econia-labs/aptos-indexer-processors/pull/23
+[processor #24]: https://github.com/econia-labs/aptos-indexer-processors/pull/24
 [processor #25]: https://github.com/econia-labs/aptos-indexer-processors/pull/25
 [processor submodule]: https://github.com/econia-labs/aptos-indexer-processors/pulls?q=is%3Aclosed
 [v1.3.0]: https://github.com/econia-labs/econia/releases/tag/dss-v1.3.0

@@ -9,14 +9,13 @@ use crate::{Direction, Event, numeric::*};
 
 use super::{FeedFromEventsAndPrevState, InsertableFeed};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ContractState {
     pub markets: HashMap<MarketId, MarketState>,
     pub timestamp: DateTime<Utc>,
-    pub transaction_version: TxnVersion,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct MarketState {
     pub asks: HashMap<OrderId, LimitOrder>,
     pub bids: HashMap<OrderId, LimitOrder>,
@@ -32,7 +31,7 @@ pub struct Account {
 
 #[derive(Clone, Debug)]
 pub struct LimitOrder {
-    pub last_changed: BlockchainTimestamp,
+    pub last_changed: BlockStamp,
     pub user: String,
     pub custodian_id: BigDecimal,
     pub direction: Direction,
@@ -75,7 +74,7 @@ impl FeedFromEventsAndPrevState for ContractState {
 
             for order_cache in orders_cache {
                 let order = LimitOrder {
-                    last_changed: BlockchainTimestamp::from_raw_parts(TxnVersion::new(order_cache.last_changed_transaction_version), EventId::new(order_cache.last_changed_event_id)),
+                    last_changed: BlockStamp::from_raw_parts(TransactionVersion::new(order_cache.last_changed_transaction_version), EventIndex::new(order_cache.last_changed_event_id)),
                     user: order_cache.user,
                     custodian_id: order_cache.custodian_id,
                     direction: if order_cache.is_ask { Direction::Ask } else { Direction::Bid },
@@ -93,56 +92,17 @@ impl FeedFromEventsAndPrevState for ContractState {
             ContractState {
                 markets,
                 timestamp: state_cache.time,
-                transaction_version: TxnVersion::new(state_cache.transaction_version),
             }
         } else {
-            let timestamp = sqlx::query!(r#"
-WITH mins AS (
-    SELECT MIN("time") AS "time" FROM balance_updates_by_handle  UNION
-    SELECT MIN("time") AS "time" FROM cancel_order_events        UNION
-    SELECT MIN("time") AS "time" FROM change_order_size_events   UNION
-    SELECT MIN("time") AS "time" FROM fill_events                UNION
-    SELECT MIN("time") AS "time" FROM market_registration_events UNION
-    SELECT MIN("time") AS "time" FROM place_limit_order_events   UNION
-    SELECT MIN("time") AS "time" FROM place_market_order_events  UNION
-    SELECT MIN("time") AS "time" FROM place_swap_order_events    UNION
-    SELECT MIN("time") AS "time" FROM recognized_market_events
-)
-SELECT MIN("time") AS "time" FROM mins
-            "#).fetch_optional(pool)
-                .await
-                .unwrap()
-                .map(|r| r.time)
-                .flatten()
-                .unwrap_or(DateTime::UNIX_EPOCH);
-            let transaction_version = sqlx::query!(r#"
-WITH mins AS (
-    SELECT MIN(txn_version) AS txn_version FROM balance_updates_by_handle  UNION
-    SELECT MIN(txn_version) AS txn_version FROM cancel_order_events        UNION
-    SELECT MIN(txn_version) AS txn_version FROM change_order_size_events   UNION
-    SELECT MIN(txn_version) AS txn_version FROM fill_events                UNION
-    SELECT MIN(txn_version) AS txn_version FROM market_registration_events UNION
-    SELECT MIN(txn_version) AS txn_version FROM place_limit_order_events   UNION
-    SELECT MIN(txn_version) AS txn_version FROM place_market_order_events  UNION
-    SELECT MIN(txn_version) AS txn_version FROM place_swap_order_events    UNION
-    SELECT MIN(txn_version) AS txn_version FROM recognized_market_events
-)
-SELECT MIN(txn_version) AS txn_version FROM mins
-            "#).fetch_optional(pool)
-                .await
-                .unwrap()
-                .map(|r| r.txn_version)
-                .flatten()
-                .unwrap_or(BigDecimal::from(0));
+            let timestamp = DateTime::UNIX_EPOCH;
             ContractState {
                 markets: Default::default(),
                 timestamp,
-                transaction_version: TxnVersion::new(transaction_version),
             }
         }
     }
 
-    fn update(&mut self, events: &Vec<Event>) {
+    fn update<'a>(&mut self, events: impl Iterator<Item = &'a Event>) {
         for event in events {
             match event.clone() {
                 Event::MarketRegistration { market_id, .. } => {
@@ -174,7 +134,7 @@ SELECT MIN(txn_version) AS txn_version FROM mins
                         market.asks.insert(
                             OrderId::from(order_id),
                             LimitOrder {
-                                last_changed: BlockchainTimestamp::from_raw_parts(txn_version, event_idx),
+                                last_changed: BlockStamp::from_raw_parts(txn_version, event_idx),
                                 user,
                                 custodian_id,
                                 direction: Direction::Ask,
@@ -187,7 +147,7 @@ SELECT MIN(txn_version) AS txn_version FROM mins
                         market.bids.insert(
                             OrderId::from(order_id),
                             LimitOrder {
-                                last_changed: BlockchainTimestamp::from_raw_parts(txn_version, event_idx),
+                                last_changed: BlockStamp::from_raw_parts(txn_version, event_idx),
                                 user,
                                 custodian_id,
                                 direction: Direction::Bid,
@@ -259,7 +219,7 @@ SELECT MIN(txn_version) AS txn_version FROM mins
                     if let Some(order) = order {
                         order.size = new_size;
                         order.last_changed =
-                            BlockchainTimestamp::from_raw_parts(txn_version, event_idx);
+                            BlockStamp::from_raw_parts(txn_version, event_idx);
                     }
                 }
                 _ => {}
@@ -275,9 +235,8 @@ impl InsertableFeed for ContractState {
         sqlx::query!("DELETE FROM aggv2.market_cache").execute(transaction as &mut PgConnection).await.unwrap();
         sqlx::query!("DELETE FROM aggv2.order_cache").execute(transaction as &mut PgConnection).await.unwrap();
         sqlx::query!(
-            "INSERT INTO aggv2.state_cache VALUES ($1, $2)",
+            "INSERT INTO aggv2.state_cache VALUES ($1)",
             self.timestamp,
-            self.transaction_version.clone().inner(),
         ).execute(transaction as &mut PgConnection).await.unwrap();
         for (market_id, market) in &self.markets {
             sqlx::query!(
@@ -292,8 +251,8 @@ impl InsertableFeed for ContractState {
                     market_id.clone().inner(),
                     true,
                     order_id.clone().inner(),
-                    order.last_changed.get_transaction_version().clone().inner(),
-                    order.last_changed.get_event_id().clone().inner(),
+                    order.last_changed.transaction_version().clone().inner(),
+                    order.last_changed.event_index().clone().inner(),
                     order.user,
                     order.custodian_id,
                     order.integrator,
@@ -308,8 +267,8 @@ impl InsertableFeed for ContractState {
                     market_id.clone().inner(),
                     false,
                     order_id.clone().inner(),
-                    order.last_changed.get_transaction_version().clone().inner(),
-                    order.last_changed.get_event_id().clone().inner(),
+                    order.last_changed.transaction_version().clone().inner(),
+                    order.last_changed.event_index().clone().inner(),
                     order.user,
                     order.custodian_id,
                     order.integrator,

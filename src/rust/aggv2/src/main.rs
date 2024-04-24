@@ -1,6 +1,6 @@
 use bigdecimal::BigDecimal;
 use chrono::{Utc, DateTime};
-use numeric::{BlockchainTimestamp, OrderId, TxnVersion, EventId};
+use numeric::{BlockStamp, OrderId, TransactionVersion, EventIndex};
 
 mod feed;
 mod numeric;
@@ -10,7 +10,7 @@ use numeric::*;
 #[derive(Clone, Debug)]
 pub enum Event {
     BalanceUpdatesByHandle {
-        txn_version: TxnVersion,
+        txn_version: TransactionVersion,
         market_id: MarketId,
         custodian_id: BigDecimal,
         time: DateTime<Utc>,
@@ -22,8 +22,8 @@ pub enum Event {
         quote_ceiling: QuoteSubunit,
     },
     MarketRegistration {
-        txn_version: TxnVersion,
-        event_idx: EventId,
+        txn_version: TransactionVersion,
+        event_idx: EventIndex,
         market_id: MarketId,
         time: DateTime<Utc>,
         base_account_address: Option<String>,
@@ -39,8 +39,8 @@ pub enum Event {
         underwriter_id: BigDecimal,
     },
     MarketRecognition {
-        txn_version: TxnVersion,
-        event_idx: EventId,
+        txn_version: TransactionVersion,
+        event_idx: EventIndex,
         market_id: MarketId,
         time: DateTime<Utc>,
         base_account_address: Option<String>,
@@ -56,8 +56,8 @@ pub enum Event {
         underwriter_id: BigDecimal,
     },
     PlaceLimitOrder {
-        txn_version: TxnVersion,
-        event_idx: EventId,
+        txn_version: TransactionVersion,
+        event_idx: EventIndex,
         time: DateTime<Utc>,
         market_id: MarketId,
         user: String,
@@ -72,8 +72,8 @@ pub enum Event {
         size: Lot,
     },
     PlaceMarketOrder {
-        txn_version: TxnVersion,
-        event_idx: EventId,
+        txn_version: TransactionVersion,
+        event_idx: EventIndex,
         time: DateTime<Utc>,
         market_id: MarketId,
         user: String,
@@ -85,8 +85,8 @@ pub enum Event {
         size: Lot,
     },
     PlaceSwapOrder {
-        txn_version: TxnVersion,
-        event_idx: EventId,
+        txn_version: TransactionVersion,
+        event_idx: EventIndex,
         time: DateTime<Utc>,
         market_id: MarketId,
         order_id: OrderId,
@@ -100,8 +100,8 @@ pub enum Event {
         limit_price: Price,
     },
     Fill {
-        txn_version: TxnVersion,
-        event_idx: EventId,
+        txn_version: TransactionVersion,
+        event_idx: EventIndex,
         emit_address: String,
         time: DateTime<Utc>,
         maker_address: String,
@@ -118,8 +118,8 @@ pub enum Event {
         taker_quote_fees_paid: BigDecimal,
     },
     Cancel {
-        txn_version: TxnVersion,
-        event_idx: EventId,
+        txn_version: TransactionVersion,
+        event_idx: EventIndex,
         time: DateTime<Utc>,
         market_id: MarketId,
         user: String,
@@ -128,8 +128,8 @@ pub enum Event {
         reason: i16,
     },
     ChangeSize {
-        txn_version: TxnVersion,
-        event_idx: EventId,
+        txn_version: TransactionVersion,
+        event_idx: EventIndex,
         time: DateTime<Utc>,
         market_id: MarketId,
         user: String,
@@ -141,34 +141,34 @@ pub enum Event {
 }
 
 impl Event {
-    pub fn blockchain_timestamp(&self) -> BlockchainTimestamp {
+    pub fn blockstamp(&self) -> BlockStamp {
         match self.clone() {
             Event::MarketRegistration { txn_version, event_idx, .. } => {
-                BlockchainTimestamp::from_raw_parts(txn_version, event_idx)
+                BlockStamp::from_raw_parts(txn_version, event_idx)
             },
             Event::PlaceLimitOrder { txn_version, event_idx, .. } => {
-                BlockchainTimestamp::from_raw_parts(txn_version, event_idx)
+                BlockStamp::from_raw_parts(txn_version, event_idx)
             },
             Event::PlaceMarketOrder { txn_version, event_idx, .. } => {
-                BlockchainTimestamp::from_raw_parts(txn_version, event_idx)
+                BlockStamp::from_raw_parts(txn_version, event_idx)
             },
             Event::PlaceSwapOrder { txn_version, event_idx, .. } => {
-                BlockchainTimestamp::from_raw_parts(txn_version, event_idx)
+                BlockStamp::from_raw_parts(txn_version, event_idx)
             },
             Event::Fill { txn_version, event_idx, .. } => {
-                BlockchainTimestamp::from_raw_parts(txn_version, event_idx)
+                BlockStamp::from_raw_parts(txn_version, event_idx)
             },
             Event::Cancel { txn_version, event_idx, .. } => {
-                BlockchainTimestamp::from_raw_parts(txn_version, event_idx)
+                BlockStamp::from_raw_parts(txn_version, event_idx)
             },
             Event::ChangeSize { txn_version, event_idx, .. } => {
-                BlockchainTimestamp::from_raw_parts(txn_version, event_idx)
+                BlockStamp::from_raw_parts(txn_version, event_idx)
             },
             Event::BalanceUpdatesByHandle { txn_version, .. } => {
-                BlockchainTimestamp::from_raw_parts(txn_version, EventId::new(0))
+                BlockStamp::from_raw_parts(txn_version, EventIndex::new(0))
             },
             Event::MarketRecognition { txn_version, event_idx, .. } => {
-                BlockchainTimestamp::from_raw_parts(txn_version, event_idx)
+                BlockStamp::from_raw_parts(txn_version, event_idx)
             }
         }
     }

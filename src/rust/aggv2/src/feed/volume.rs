@@ -8,7 +8,7 @@ use crate::{numeric::*, Event};
 
 use super::{FeedFromEventsAndPrevState, InsertableFeed};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Volume {
     markets: HashMap<MarketId, MarketVolume>,
 }
@@ -20,11 +20,11 @@ pub struct MarketVolume {
 }
 
 impl FeedFromEventsAndPrevState for Volume {
-    fn update(&mut self, events: &Vec<Event>) {
+    fn update<'a>(&mut self, events: impl Iterator<Item = &'a Event>) {
         for prev_vol in self.markets.iter_mut() {
             prev_vol.1.period = Tick::new(0);
         }
-        for event in events.iter() {
+        for event in events {
             match event {
                 Event::MarketRegistration { market_id, .. } => {
                     self.markets.insert(MarketId::from(market_id.clone()), MarketVolume {

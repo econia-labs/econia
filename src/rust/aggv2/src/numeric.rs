@@ -5,7 +5,7 @@ use bigdecimal::BigDecimal;
 macro_rules! make_numeric_type {
     ($name:ident) => {
         #[derive(Hash, PartialEq, Eq, PartialOrd, Ord, Clone)]
-        pub struct $name(BigDecimal);
+        pub struct $name(pub BigDecimal);
 
         impl std::fmt::Debug for $name {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -137,8 +137,8 @@ macro_rules! make_numeric_type {
 
 make_numeric_type!(MarketId);
 make_numeric_type!(OrderId);
-make_numeric_type!(TxnVersion);
-make_numeric_type!(EventId);
+make_numeric_type!(TransactionVersion);
+make_numeric_type!(EventIndex);
 make_numeric_type!(Lot);
 make_numeric_type!(Tick);
 make_numeric_type!(BaseSubunit);
@@ -146,43 +146,43 @@ make_numeric_type!(QuoteSubunit);
 make_numeric_type!(Price);
 
 #[derive(Hash, PartialEq, Eq, PartialOrd, Ord, Clone)]
-pub struct BlockchainTimestamp(TxnVersion, EventId);
+pub struct BlockStamp(TransactionVersion, EventIndex);
 
-impl Display for BlockchainTimestamp {
+impl Display for BlockStamp {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}({})", self.0, self.1)
     }
 }
 
-impl std::fmt::Debug for BlockchainTimestamp {
+impl std::fmt::Debug for BlockStamp {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}({:?})", self.0, self.1)
     }
 }
 
-impl BlockchainTimestamp {
-    pub fn from_raw_parts(transaction_version: impl Into<TxnVersion>, event_id: impl Into<EventId>) -> Self {
-        BlockchainTimestamp(transaction_version.into(), event_id.into())
+impl BlockStamp {
+    pub fn from_raw_parts(transaction_version: impl Into<TransactionVersion>, event_id: impl Into<EventIndex>) -> Self {
+        BlockStamp(transaction_version.into(), event_id.into())
     }
 
-    pub fn from_transaction_version(transaction_version: TxnVersion) -> Self {
-        BlockchainTimestamp(transaction_version, EventId::new(0))
+    pub fn from_transaction_version(transaction_version: TransactionVersion) -> Self {
+        BlockStamp(transaction_version, EventIndex::new(0))
     }
 
     pub fn bump_version(&mut self) {
         self.0 += 1;
-        self.1 = EventId::new(0);
+        self.1 = EventIndex::new(0);
     }
 
     pub fn bump_event(&mut self) {
         self.1 += 1;
     }
 
-    pub fn get_transaction_version(&self) -> &TxnVersion {
+    pub fn transaction_version(&self) -> &TransactionVersion {
         &self.0
     }
 
-    pub fn get_event_id(&self) -> &EventId {
+    pub fn event_index(&self) -> &EventIndex {
         &self.1
     }
 }

@@ -9,7 +9,7 @@ members = [
   "mqtt-publisher",
   "types",
   "sdk",
-  "sdk/example",
+  "sdk/example", "aggv2",
 ]
 exclude = ["api", "db", "dependencies"]
 
@@ -35,7 +35,7 @@ backtrace = "0.3.58"
 base64 = "0.13.0"
 bcs = { git = "https://github.com/aptos-labs/bcs.git", rev = "d31fab9d81748e2594be5cd5cdf845786a30562d" }
 bigdecimal = { version = "0.4", features = ["serde"] }
-chrono = { version = "0.4.26", features = ["clock", "serde"] }
+chrono = { version = "0.4", features = ["clock", "serde"] }
 clap = { version = "4.3.5", features = ["derive", "unstable-styles"] }
 diesel = { version = "2.1.0", features = [
     "chrono",

@@ -1,5 +1,8 @@
 # Aggregator v2
 
+This directory contains an experimental aggregator for the Econia Data Service
+Stack.
+
 ## Architecture
 
 The new aggregator works using feeds.

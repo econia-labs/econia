@@ -1,0 +1,95 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT * FROM place_swap_order_events WHERE \"time\" > $1 AND \"time\" <= $2",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "txn_version",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 1,
+        "name": "event_idx",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 2,
+        "name": "market_id",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 3,
+        "name": "time",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 4,
+        "name": "order_id",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 5,
+        "name": "signing_account",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "integrator",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 7,
+        "name": "direction",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 8,
+        "name": "min_base",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 9,
+        "name": "max_base",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 10,
+        "name": "min_quote",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 11,
+        "name": "max_quote",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 12,
+        "name": "limit_price",
+        "type_info": "Numeric"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "7036df53ef634dd45a0838f2fc9cf5a64f15dc8b67b603ee7084aeb8476c205b"
+}

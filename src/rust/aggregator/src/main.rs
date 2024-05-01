@@ -45,7 +45,10 @@ struct Args {
     aptos_network: Option<AptosNetwork>,
 }
 
-const MAX_BATCH_SIZE: u64 = 100_000;
+const MAX_BATCH_SIZE: u64 = 1_000_000;
+
+/// The number of events a pipeline should target to load into ram at once.
+const TARGET_EVENTS: usize = 1_000_000;
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 pub enum Pipelines {

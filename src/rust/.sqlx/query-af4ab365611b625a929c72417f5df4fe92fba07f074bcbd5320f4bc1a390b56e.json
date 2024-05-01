@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM aggv2.market_cache",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "af4ab365611b625a929c72417f5df4fe92fba07f074bcbd5320f4bc1a390b56e"
+}

@@ -1,0 +1,38 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT DISTINCT ON (market_id) * FROM aggv2.volume ORDER BY market_id, \"time\" DESC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "time",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 1,
+        "name": "market_id",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 2,
+        "name": "cumulative",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 3,
+        "name": "period",
+        "type_info": "Numeric"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "0aeef92366dfdf782ae8792d4969778ad3ad01b97b3d3c0b44625d7381186c17"
+}

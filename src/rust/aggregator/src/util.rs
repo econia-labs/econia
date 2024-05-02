@@ -1,4 +1,5 @@
 use anyhow::anyhow;
+use bigdecimal::BigDecimal;
 use sqlx::{Executor, Pool, Transaction};
 use sqlx_postgres::Postgres;
 

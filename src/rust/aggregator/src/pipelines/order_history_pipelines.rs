@@ -8,7 +8,7 @@ use aggregator::{util::*, Pipeline, PipelineAggregationResult, PipelineError};
 use sqlx_postgres::Postgres;
 use tokio::sync::RwLock;
 
-use crate::{TARGET_EVENTS, MAX_BATCH_SIZE};
+use crate::{TARGET_EVENTS, MAX_BATCH_SIZE, update_batch_size, DEFAULT_BATCH_SIZE};
 
 pub const TIMEOUT: std::time::Duration = std::time::Duration::from_secs(1);
 
@@ -39,7 +39,7 @@ impl OrderHistoryPipelines {
             // Start with a very small batch size.
             // This way, if the aggregator is restarting after a crash due to too many events in
             // ram, it will not just crash again.
-            batch_size: BigDecimal::from(10),
+            batch_size: BigDecimal::from(DEFAULT_BATCH_SIZE),
         }
     }
 }
@@ -214,15 +214,8 @@ impl OrderHistoryPipelines {
             .await
             .map_err(to_pipeline_error)?;
 
-            // Update the batch size based on how many events the current batch contained.
             let n_events = places.len() + fills.len() + changes.len() + cancels.len();
-            if n_events > TARGET_EVENTS && self.batch_size > BigDecimal::from(1) {
-                self.batch_size = &self.batch_size / BigDecimal::from(10);
-                tracing::debug!("Batch size reduced to {}", self.batch_size);
-            } else if n_events < TARGET_EVENTS / 10 && self.batch_size < BigDecimal::from(MAX_BATCH_SIZE) {
-                self.batch_size = &self.batch_size * BigDecimal::from(10);
-                tracing::debug!("Batch size increased to {}", self.batch_size);
-            }
+            update_batch_size(&mut self.batch_size, n_events);
 
             // Insert all places as orders into the state.
             for place in places {

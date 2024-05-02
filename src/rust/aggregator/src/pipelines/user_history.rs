@@ -8,7 +8,7 @@ use aggregator::{
     Pipeline, PipelineAggregationResult, PipelineError,
 };
 
-use crate::{dbtypes::OrderType, TARGET_EVENTS, MAX_BATCH_SIZE};
+use crate::{dbtypes::OrderType, TARGET_EVENTS, MAX_BATCH_SIZE, update_batch_size, DEFAULT_BATCH_SIZE};
 
 /// Number of bits to shift when encoding transaction version.
 const SHIFT_TXN_VERSION: u8 = 64;
@@ -29,7 +29,7 @@ impl UserHistory {
             // Start with a very small batch size.
             // This way, if the aggregator is restarting after a crash due to too many events in
             // ram, it will not just crash again.
-            batch_size: BigDecimal::from(10),
+            batch_size: BigDecimal::from(DEFAULT_BATCH_SIZE),
         }
     }
 }
@@ -127,15 +127,8 @@ impl Pipeline for UserHistory {
             .await
             .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
 
-            // Update the batch size based on how many events the current batch contained.
             let n_events = fill_events.len() + change_events.len();
-            if n_events > TARGET_EVENTS && self.batch_size > BigDecimal::from(1) {
-                self.batch_size = &self.batch_size / BigDecimal::from(10);
-                tracing::debug!("Batch size reduced to {}", self.batch_size);
-            } else if n_events < TARGET_EVENTS / 10 && self.batch_size < BigDecimal::from(MAX_BATCH_SIZE) {
-                self.batch_size = &self.batch_size * BigDecimal::from(10);
-                tracing::debug!("Batch size increased to {}", self.batch_size);
-            }
+            update_batch_size(&mut self.batch_size, n_events);
 
             // Step through fill and change events in total order.
             let mut fill_index = 0;

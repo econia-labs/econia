@@ -20,6 +20,10 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 
 ## [v2.2.0] (in progress)
 
+### Changed
+
+- Improve performance of `/markets` endpoint ([#760]).
+
 ### Fixed
 
 - `/tickers` endpoint `base_volume_nominal` field ([#761]).
@@ -237,6 +241,7 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 [#746]: https://github.com/econia-labs/econia/pull/746
 [#749]: https://github.com/econia-labs/econia/pull/749
 [#753]: https://github.com/econia-labs/econia/pull/753
+[#760]: https://github.com/econia-labs/econia/pull/760
 [#761]: https://github.com/econia-labs/econia/pull/761
 [docs site readme]: https://github.com/econia-labs/econia/blob/main/doc/doc-site/README.md
 [dss-v2.1.0-rc.1]: https://github.com/econia-labs/econia/releases/tag/dss-v2.1.0-rc.1

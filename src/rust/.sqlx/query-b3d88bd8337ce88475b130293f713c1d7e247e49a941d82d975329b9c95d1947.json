@@ -1,0 +1,38 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT * FROM aggv2.account_cache",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "market_id",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 1,
+        "name": "user",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "base",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 3,
+        "name": "quote",
+        "type_info": "Numeric"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "b3d88bd8337ce88475b130293f713c1d7e247e49a941d82d975329b9c95d1947"
+}

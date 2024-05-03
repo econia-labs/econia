@@ -64,6 +64,7 @@ CREATE TABLE events (
     transaction_verson NUMERIC NOT NULL,
     event_index NUMERIC NOT NULL,
     "time" TIMESTAMPTZ NOT NULL,
+    PRIMARY KEY (transaction_verson, event_index)
 );
 
 CREATE INDEX events_time ON events ("time");

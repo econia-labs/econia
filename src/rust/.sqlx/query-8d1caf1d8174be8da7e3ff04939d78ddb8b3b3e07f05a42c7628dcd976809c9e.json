@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO aggv2.liquidity VALUES ($1, $2, $3, $4, $5)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Timestamptz",
+        "Numeric",
+        "Numeric",
+        "Numeric",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "8d1caf1d8174be8da7e3ff04939d78ddb8b3b3e07f05a42c7628dcd976809c9e"
+}

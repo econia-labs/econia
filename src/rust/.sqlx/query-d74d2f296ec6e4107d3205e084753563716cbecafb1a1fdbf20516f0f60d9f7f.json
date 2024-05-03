@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM aggv2.account_cache",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "d74d2f296ec6e4107d3205e084753563716cbecafb1a1fdbf20516f0f60d9f7f"
+}

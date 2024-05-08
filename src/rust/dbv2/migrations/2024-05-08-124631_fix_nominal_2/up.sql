@@ -1,5 +1,5 @@
 -- Your SQL goes here
-CREATE FUNCTION api.get_market_last_price (market_id numeric) RETURNS NUMERIC AS $$
+CREATE OR REPLACE FUNCTION api.get_market_last_price (market_id numeric) RETURNS NUMERIC AS $$
     SELECT price
     FROM fill_events
     WHERE market_id = $1

@@ -31,6 +31,7 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 ### Internal
 
 - Added dynamic batch sizing to avoid crashes during high usage ([#762]).
+- Updated Rust dependencies ([#764]).
 
 ## [v2.1.0] (hot upgradable)
 
@@ -248,6 +249,7 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 [#760]: https://github.com/econia-labs/econia/pull/760
 [#761]: https://github.com/econia-labs/econia/pull/761
 [#762]: https://github.com/econia-labs/econia/pull/762
+[#764]: https://github.com/econia-labs/econia/pull/764
 [docs site readme]: https://github.com/econia-labs/econia/blob/main/doc/doc-site/README.md
 [dss-v2.1.0-rc.1]: https://github.com/econia-labs/econia/releases/tag/dss-v2.1.0-rc.1
 [processor #19]: https://github.com/econia-labs/aptos-indexer-processors/pull/19

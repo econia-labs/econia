@@ -27,4 +27,6 @@ AND
 GROUP BY
     fill_events.market_id,
     market_registration_events.tick_size,
-    "times"."time";
+    "times"."time"
+ON CONFLICT ON CONSTRAINT daily_rolling_volume_history_pkey DO UPDATE
+SET volume_in_quote_subunits = EXCLUDED.volume_in_quote_subunits;

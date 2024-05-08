@@ -65,7 +65,7 @@ pub async fn fill_cache(
     };
     let mut new_event_cache = BTreeMap::new();
     let limit = sqlx::query!(
-        r#"SELECT "time" FROM events WHERE "time" > $1 ORDER BY "time" offset $2 limit 1"#,
+        r#"SELECT "time" FROM aggv2.events WHERE "time" > $1 ORDER BY "time" offset $2 limit 1"#,
         start_timestamp,
         amount_of_events - 1
     )

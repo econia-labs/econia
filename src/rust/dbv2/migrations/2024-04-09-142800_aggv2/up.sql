@@ -60,11 +60,11 @@ CREATE TABLE aggv2.liquidity (
     PRIMARY KEY (time, market_id, bps_times_ten)
 );
 
-CREATE TABLE events (
+CREATE TABLE aggv2.events (
     transaction_verson NUMERIC NOT NULL,
     event_index NUMERIC NOT NULL,
     "time" TIMESTAMPTZ NOT NULL,
     PRIMARY KEY (transaction_verson, event_index)
 );
 
-CREATE INDEX events_time ON events ("time");
+CREATE INDEX events_time ON aggv2.events ("time");

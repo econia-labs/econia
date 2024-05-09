@@ -27,6 +27,7 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 ### Fixed
 
 - `/tickers` endpoint `base_volume_nominal` field ([#761]).
+- `/tickers` endpoint `price` field ([#766]).
 
 ### Internal
 
@@ -250,6 +251,7 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 [#761]: https://github.com/econia-labs/econia/pull/761
 [#762]: https://github.com/econia-labs/econia/pull/762
 [#764]: https://github.com/econia-labs/econia/pull/764
+[#766]: https://github.com/econia-labs/econia/pull/766
 [docs site readme]: https://github.com/econia-labs/econia/blob/main/doc/doc-site/README.md
 [dss-v2.1.0-rc.1]: https://github.com/econia-labs/econia/releases/tag/dss-v2.1.0-rc.1
 [processor #19]: https://github.com/econia-labs/aptos-indexer-processors/pull/19

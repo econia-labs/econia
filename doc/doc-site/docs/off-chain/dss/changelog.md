@@ -28,7 +28,7 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 
 - `/tickers` endpoint `base_volume_nominal` field ([#761]).
 - `/tickers` endpoint `price` field ([#766]).
-- fixed nominal issues when tickers isn't 0 ([#767]).
+- fixed nominal issues when tickers isn't 1 ([#767]).
 - fixed potential duplicates in `daily_rolling_volume_history`([#765]).
 
 ### Internal

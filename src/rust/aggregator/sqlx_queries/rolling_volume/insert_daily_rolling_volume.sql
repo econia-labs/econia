@@ -22,7 +22,7 @@ t AS (
         SUM(volume) OVER (PARTITION BY market_id ORDER BY minute RANGE BETWEEN '24 hours' PRECEDING AND CURRENT ROW) AS volume
     FROM vpm
 )
-SELECT * FROM t
+SELECT minute, market_id, volume * (SELECT tick_size FROM market_registration_events m WHERE m.market_id = t.market_id) FROM t
 WHERE (
         (SELECT * FROM aggregator.daily_rolling_volume_history_last_indexed_timestamp) IS NULL
     OR

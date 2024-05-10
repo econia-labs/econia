@@ -1,32 +1,32 @@
 INSERT INTO aggregator.daily_rolling_volume_history
 ("time", "market_id", "volume_in_quote_subunits")
-WITH "times" AS (
+WITH vpm AS (
     SELECT
-        DATE_TRUNC('minute', dd) AS "time"
-    FROM
-        generate_series((SELECT "time" FROM fill_events ORDER BY "time" LIMIT 1), (SELECT * FROM aggregator.order_history_latest_event_timestamp), '1 minute'::interval) dd
-    WHERE
+        SUM(size * price) volume,
+        DATE_TRUNC('minute', "time") AS minute,
+        market_id
+    FROM fill_events
+    WHERE emit_address = maker_address
+    AND (
+            (SELECT * FROM aggregator.daily_rolling_volume_history_last_indexed_timestamp) IS NULL
+        OR
+            DATE_TRUNC('minute', "time") >= DATE_TRUNC('minute', (SELECT * FROM aggregator.daily_rolling_volume_history_last_indexed_timestamp)) - interval '1 day'
+    )
+    GROUP BY DATE_TRUNC('minute', "time"), market_id
+    ORDER BY DATE_TRUNC('minute', "time")
+),
+t AS (
+    SELECT
+        minute,
+        market_id,
+        SUM(volume) OVER (PARTITION BY market_id ORDER BY minute RANGE BETWEEN '24 hours' PRECEDING AND CURRENT ROW) AS volume
+    FROM vpm
+)
+SELECT minute, market_id, volume * (SELECT tick_size FROM market_registration_events m WHERE m.market_id = t.market_id) FROM t
+WHERE (
         (SELECT * FROM aggregator.daily_rolling_volume_history_last_indexed_timestamp) IS NULL
     OR
-        dd > (SELECT * FROM aggregator.daily_rolling_volume_history_last_indexed_timestamp)
+        "minute" >= DATE_TRUNC('minute', (SELECT * FROM aggregator.daily_rolling_volume_history_last_indexed_timestamp))
 )
-SELECT
-    "times"."time",
-    fill_events.market_id,
-    SUM(fill_events."size" * fill_events.price) * market_registration_events.tick_size AS volume_in_quote_subunits
-FROM
-    fill_events,
-    market_registration_events,
-    "times"
-WHERE
-    fill_events.maker_address = fill_events.emit_address
-AND
-    fill_events."time" BETWEEN ("times"."time" - '1 day'::interval) AND "times"."time"
-AND
-    market_registration_events.market_id = fill_events.market_id
-GROUP BY
-    fill_events.market_id,
-    market_registration_events.tick_size,
-    "times"."time"
 ON CONFLICT ON CONSTRAINT daily_rolling_volume_history_pkey DO UPDATE
 SET volume_in_quote_subunits = EXCLUDED.volume_in_quote_subunits;

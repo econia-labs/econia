@@ -18,11 +18,11 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 1. Merge `main` into `dss-stable`.
 1. Push annotated tag to head of `dss-stable`.
 
-## [v2.2.0-rc.1] (hot upgradable)
+## [v2.2.0-rc.2] (hot upgradable)
 
 ### Changed
 
-- Improve performance of `/markets` endpoint ([#760]).
+- Improve performance of `/markets` endpoint ([#760], [#772]).
 
 ### Fixed
 
@@ -258,6 +258,7 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 [#766]: https://github.com/econia-labs/econia/pull/766
 [#767]: https://github.com/econia-labs/econia/pull/767
 [#768]: https://github.com/econia-labs/econia/pull/768
+[#772]: https://github.com/econia-labs/econia/pull/772
 [docs site readme]: https://github.com/econia-labs/econia/blob/main/doc/doc-site/README.md
 [dss-v2.1.0-rc.1]: https://github.com/econia-labs/econia/releases/tag/dss-v2.1.0-rc.1
 [processor #19]: https://github.com/econia-labs/aptos-indexer-processors/pull/19

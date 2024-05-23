@@ -1433,6 +1433,18 @@ module econia::incentives {
             (max_quote_match as u64) // Else max quote match amount.
     }
 
+    /// Inverse of `calculate_max_quote_match` to get `max_quote_delta_user` for a buy.
+    fun buy_max_quote_match_to_quote_delta_user(
+        max_quote_match: u64,
+        taker_fee_divisor: u64,
+    ): u64 {
+        let max_quote_delta_user =
+            (max_quote_match as u128) * ((taker_fee_divisor + 1) as u128) /
+            (taker_fee_divisor as u128);
+        assert!(max_quote_delta_user <= (HI_64 as u128), 0);
+        (max_quote_delta_user as u64)
+    }
+
     /// Deposit `coins` of `UtilityCoinType`, verifying that the proper
     /// amount is supplied for custodian registration.
     ///
@@ -2298,6 +2310,39 @@ module econia::incentives {
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test]
+    fun test_buy_max_quote_match_to_quote_delta_user() {
+        let direction = BUY;
+        let max_quote_delta_user = 100_000_000;
+
+        // Assert calculation without internal rounding.
+        let taker_fee_divisor = 999;
+        assert!(
+            (taker_fee_divisor as u128) * (max_quote_delta_user as u128) %
+                ((taker_fee_divisor + 1) as u128) == 0,
+            1,
+        );
+        let max_quote_match =
+            calculate_max_quote_match(direction, taker_fee_divisor, max_quote_delta_user);
+        let max_quote_delta_user_derived =
+            buy_max_quote_match_to_quote_delta_user(max_quote_match, taker_fee_divisor);
+        assert!(max_quote_delta_user >= max_quote_delta_user_derived, 1);
+
+        // Assert calculation with internal rounding.
+        taker_fee_divisor = 2_000;
+        assert!(
+            (taker_fee_divisor as u128) * (max_quote_delta_user as u128) %
+                ((taker_fee_divisor + 1) as u128) != 0,
+            2,
+        );
+        max_quote_match =
+            calculate_max_quote_match(direction, taker_fee_divisor, max_quote_delta_user);
+        max_quote_delta_user_derived =
+            buy_max_quote_match_to_quote_delta_user(max_quote_match, taker_fee_divisor);
+        assert!(max_quote_delta_user >= max_quote_delta_user_derived, 3);
+
+    }
 
     #[test]
     /// Verify max quote match amounts.

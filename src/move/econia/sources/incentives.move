@@ -1438,9 +1438,14 @@ module econia::incentives {
         max_quote_match: u64,
         taker_fee_divisor: u64,
     ): u64 {
-        let max_quote_delta_user =
-            (max_quote_match as u128) * ((taker_fee_divisor + 1) as u128) /
-            (taker_fee_divisor as u128);
+        let numerator = (max_quote_match as u128) * ((taker_fee_divisor + 1) as u128);
+        let denominator = (taker_fee_divisor as u128);
+        // Round up as needed to ensure that the user will have enough quote coins to pay the fee.
+        let max_quote_delta_user = if (numerator % denominator == 0) {
+            (numerator / denominator)
+        } else {
+            (numerator / denominator) + 1
+        };
         assert!(max_quote_delta_user <= (HI_64 as u128), 0);
         (max_quote_delta_user as u64)
     }
@@ -2312,36 +2317,47 @@ module econia::incentives {
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test]
+    /// Specify a max quote match amount, then verify that the resultant max quote delta user amount
+    /// is sufficient to fill the trade.
     fun test_buy_max_quote_match_to_quote_delta_user() {
-        let direction = BUY;
-        let max_quote_delta_user = 100_000_000;
 
-        // Assert calculation without internal rounding.
-        let taker_fee_divisor = 999;
+        // Check result without truncation.
+        let max_quote_match_as_input = 100_000_000;
+        let taker_fee_divisor = 1000;
         assert!(
-            (taker_fee_divisor as u128) * (max_quote_delta_user as u128) %
+            (max_quote_match_as_input as u128) * ((taker_fee_divisor + 1) as u128) %
+                (taker_fee_divisor as u128) == 0,
+            0
+        );
+        let max_quote_delta_user_as_output =
+            buy_max_quote_match_to_quote_delta_user(max_quote_match_as_input, taker_fee_divisor);
+        assert!(
+            (taker_fee_divisor as u128) * (max_quote_delta_user_as_output as u128) %
                 ((taker_fee_divisor + 1) as u128) == 0,
-            1,
+            0,
         );
-        let max_quote_match =
-            calculate_max_quote_match(direction, taker_fee_divisor, max_quote_delta_user);
-        let max_quote_delta_user_derived =
-            buy_max_quote_match_to_quote_delta_user(max_quote_match, taker_fee_divisor);
-        assert!(max_quote_delta_user >= max_quote_delta_user_derived, 1);
+        let max_quote_match_as_output =
+            calculate_max_quote_match(BUY, taker_fee_divisor, max_quote_delta_user_as_output);
+        assert!(max_quote_match_as_output == max_quote_match_as_input, 0);
 
-        // Assert calculation with internal rounding.
-        taker_fee_divisor = 2_000;
+        // Check result with truncation.
+        max_quote_match_as_input = 100_000_000;
+        taker_fee_divisor = 1001;
         assert!(
-            (taker_fee_divisor as u128) * (max_quote_delta_user as u128) %
-                ((taker_fee_divisor + 1) as u128) != 0,
-            2,
+            (max_quote_match_as_input as u128) * ((taker_fee_divisor + 1) as u128) %
+                (taker_fee_divisor as u128) != 0,
+            0
         );
-        max_quote_match =
-            calculate_max_quote_match(direction, taker_fee_divisor, max_quote_delta_user);
-        max_quote_delta_user_derived =
-            buy_max_quote_match_to_quote_delta_user(max_quote_match, taker_fee_divisor);
-        assert!(max_quote_delta_user >= max_quote_delta_user_derived, 3);
-
+        max_quote_delta_user_as_output =
+            buy_max_quote_match_to_quote_delta_user(max_quote_match_as_input, taker_fee_divisor);
+        assert!(
+            (taker_fee_divisor as u128) * (max_quote_delta_user_as_output as u128) %
+                ((taker_fee_divisor + 1) as u128) != 0,
+            0,
+        );
+        max_quote_match_as_output =
+            calculate_max_quote_match(BUY, taker_fee_divisor, max_quote_delta_user_as_output);
+        assert!(max_quote_match_as_output == max_quote_match_as_input, 0);
     }
 
     #[test]

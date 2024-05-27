@@ -21,6 +21,7 @@ RUN apt-get update && apt-get install -y \
         curl \
         git \
         libpq-dev \
+        libdw-dev \
         libssl-dev \
         lld \
         pkg-config \

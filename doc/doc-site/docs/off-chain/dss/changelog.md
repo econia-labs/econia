@@ -36,6 +36,7 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 - Added dynamic batch sizing to avoid crashes during high usage ([#762]).
 - Updated Rust dependencies ([#764]).
 - Optimize daily volume calculations wrapped query ([#768]).
+- Fork base, to include upstream processor changes ([#775], [Processor #27]).
 
 ## [v2.1.0] (hot upgradable)
 
@@ -259,6 +260,7 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 [#767]: https://github.com/econia-labs/econia/pull/767
 [#768]: https://github.com/econia-labs/econia/pull/768
 [#772]: https://github.com/econia-labs/econia/pull/772
+[#775]: https://github.com/econia-labs/econia/pull/775
 [docs site readme]: https://github.com/econia-labs/econia/blob/main/doc/doc-site/README.md
 [dss-v2.1.0-rc.1]: https://github.com/econia-labs/econia/releases/tag/dss-v2.1.0-rc.1
 [processor #19]: https://github.com/econia-labs/aptos-indexer-processors/pull/19
@@ -268,6 +270,7 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 [processor #23]: https://github.com/econia-labs/aptos-indexer-processors/pull/23
 [processor #24]: https://github.com/econia-labs/aptos-indexer-processors/pull/24
 [processor #25]: https://github.com/econia-labs/aptos-indexer-processors/pull/25
+[processor #27]: https://github.com/econia-labs/aptos-indexer-processors/pull/27
 [processor submodule]: https://github.com/econia-labs/aptos-indexer-processors/pulls?q=is%3Aclosed
 [v1.3.0]: https://github.com/econia-labs/econia/releases/tag/dss-v1.3.0
 [v1.4.0]: https://github.com/econia-labs/econia/compare/dss-v1.3.0...dss-v1.4.0

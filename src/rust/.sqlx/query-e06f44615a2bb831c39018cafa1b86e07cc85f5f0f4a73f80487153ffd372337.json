@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM aggv2.order_cache",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "e06f44615a2bb831c39018cafa1b86e07cc85f5f0f4a73f80487153ffd372337"
+}

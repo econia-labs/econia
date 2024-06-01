@@ -1,0 +1,74 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT * FROM aggv2.order_cache",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "market_id",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 1,
+        "name": "is_ask",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 2,
+        "name": "order_id",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 3,
+        "name": "last_changed_transaction_version",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 4,
+        "name": "last_changed_event_id",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 5,
+        "name": "user",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "custodian_id",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 7,
+        "name": "integrator",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "price",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 9,
+        "name": "size",
+        "type_info": "Numeric"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "8b41c282738a9763609851b0c0ee0fe515c099805d9e0e30d5a21df371b206a9"
+}

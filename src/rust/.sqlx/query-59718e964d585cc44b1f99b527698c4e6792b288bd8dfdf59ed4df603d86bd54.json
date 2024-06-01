@@ -1,0 +1,113 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT * FROM fill_events WHERE \"time\" > $1 AND \"time\" <= $2",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "txn_version",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 1,
+        "name": "event_idx",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 2,
+        "name": "emit_address",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "time",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 4,
+        "name": "maker_address",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "maker_custodian_id",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 6,
+        "name": "maker_order_id",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 7,
+        "name": "maker_side",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 8,
+        "name": "market_id",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 9,
+        "name": "price",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 10,
+        "name": "sequence_number_for_trade",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 11,
+        "name": "size",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 12,
+        "name": "taker_address",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 13,
+        "name": "taker_custodian_id",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 14,
+        "name": "taker_order_id",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 15,
+        "name": "taker_quote_fees_paid",
+        "type_info": "Numeric"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "59718e964d585cc44b1f99b527698c4e6792b288bd8dfdf59ed4df603d86bd54"
+}

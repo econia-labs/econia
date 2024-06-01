@@ -37,7 +37,7 @@ The process is the same as running against testnet, just with a slightly differe
 ### Getting the API key
 
 Unless you are an infrastructure provider or want to run a fullnode yourself, the simplest way to get indexed transaction data is from the Aptos Labs gRPC endpoint (indexer v2 API).
-To connect to this service, you'll need to get an API key [here](https://aptos-api-gateway-prod.firebaseapp.com/).
+To connect to this service, you'll need to get an API key [here](https://developers.aptoslabs.com/).
 
 ### Generating a config
 

@@ -8,7 +8,7 @@ use aggregator::{
     Pipeline, PipelineAggregationResult, PipelineError,
 };
 
-use crate::{dbtypes::OrderType, MAX_BATCH_SIZE};
+use crate::{dbtypes::OrderType, TARGET_EVENTS, MAX_BATCH_SIZE, update_batch_size, DEFAULT_BATCH_SIZE};
 
 /// Number of bits to shift when encoding transaction version.
 const SHIFT_TXN_VERSION: u8 = 64;
@@ -18,6 +18,7 @@ pub const TIMEOUT: std::time::Duration = std::time::Duration::from_millis(100);
 pub struct UserHistory {
     pool: PgPool,
     last_indexed_timestamp: Option<DateTime<Utc>>,
+    batch_size: BigDecimal,
 }
 
 impl UserHistory {
@@ -25,6 +26,10 @@ impl UserHistory {
         Self {
             pool,
             last_indexed_timestamp: None,
+            // Start with a very small batch size.
+            // This way, if the aggregator is restarting after a crash due to too many events in
+            // ram, it will not just crash again.
+            batch_size: BigDecimal::from(DEFAULT_BATCH_SIZE),
         }
     }
 }
@@ -103,7 +108,7 @@ impl Pipeline for UserHistory {
 
         while txn_version_start < txn_version_stop {
             let txn_version_iter_stop = (txn_version_start.clone()
-                + BigDecimal::from(MAX_BATCH_SIZE))
+                + &self.batch_size)
             .min(txn_version_stop.clone());
             let fill_events = sqlx::query_file!(
                 "sqlx_queries/user_history/get_fill_events.sql",
@@ -121,6 +126,10 @@ impl Pipeline for UserHistory {
             .fetch_all(&mut transaction as &mut PgConnection)
             .await
             .map_err(|e| PipelineError::ProcessingError(anyhow!(e)))?;
+
+            let n_events = fill_events.len() + change_events.len();
+            update_batch_size(&mut self.batch_size, n_events);
+
             // Step through fill and change events in total order.
             let mut fill_index = 0;
             let mut change_index = 0;

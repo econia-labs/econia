@@ -45,7 +45,7 @@ This guide will help you set up continuous integration/continuous deployment (CI
    ```
 
    :::tip
-   [You can get a gRPC auth token from Aptos Labs](https://aptos-api-gateway-prod.firebaseapp.com/)
+   [You can get a gRPC auth token from Aptos Labs](https://developers.aptoslabs.com/)
    :::
 
 1. Initialize the CI/CD project runner, which on startup will run a script that installs dependencies:

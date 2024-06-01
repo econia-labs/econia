@@ -1,0 +1,71 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT * FROM change_order_size_events WHERE \"time\" > $1 AND \"time\" <= $2",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "txn_version",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 1,
+        "name": "event_idx",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 2,
+        "name": "market_id",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 3,
+        "name": "time",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 4,
+        "name": "order_id",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 5,
+        "name": "user",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "custodian_id",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 7,
+        "name": "side",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 8,
+        "name": "new_size",
+        "type_info": "Numeric"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "008767291a4a3e679f5f53891e2383a7053812b75ffa233ca1a1b4a8de7bff36"
+}

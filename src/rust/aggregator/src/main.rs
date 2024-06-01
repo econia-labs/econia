@@ -7,6 +7,7 @@ use std::{
 use aggregator::Pipeline;
 use anyhow::{anyhow, Result};
 use aptos_sdk::rest_client::AptosBaseUrl;
+use bigdecimal::BigDecimal;
 use clap::{Parser, ValueEnum};
 use pipelines::{
     Candlesticks, Coins, EnumeratedVolume, Fees, Leaderboards, OrderHistoryPipelines, Prices,
@@ -44,8 +45,6 @@ struct Args {
     #[arg(short, long)]
     aptos_network: Option<AptosNetwork>,
 }
-
-const MAX_BATCH_SIZE: u64 = 100_000;
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 pub enum Pipelines {
@@ -422,4 +421,44 @@ async fn main() -> Result<()> {
     }
 
     Ok(())
+}
+
+/// The maximum number of transactions processed in one batch.
+const MAX_BATCH_SIZE: u64 = 1_000_000;
+/// The minimum number of transactions processed in one batch.
+const MIN_BATCH_SIZE: u64 = 1;
+
+/// The batch size used to initialize pipelines.
+const DEFAULT_BATCH_SIZE: u64 = 1;
+
+// The coefficient by which to multiply when increasing batch size.
+const BATCH_SIZE_INCREASE_COEFFICIENT: u64 = 2;
+// The coefficient by which to divide when reducing batch size.
+const BATCH_SIZE_REDUCE_COEFFICIENT: u64 = 10;
+
+/// The number of events a pipeline should target to load into ram at once.
+const TARGET_EVENTS: usize = 1_000_000;
+// The denominator of the ratio of `TARGET_EVENTS` when to start increasing the batch size.
+const TARGET_EVENTS_RATIO_DENOMINATOR: usize = 10;
+
+/// Update the batch size based on how many events the current batch contained.
+fn update_batch_size(current_batch_size: &mut BigDecimal, n_events: usize) {
+    let min_batch_size = BigDecimal::from(MIN_BATCH_SIZE);
+    let max_batch_size = BigDecimal::from(MAX_BATCH_SIZE);
+
+    if n_events > TARGET_EVENTS && *current_batch_size > min_batch_size {
+        *current_batch_size = (current_batch_size.clone()
+            / BigDecimal::from(BATCH_SIZE_REDUCE_COEFFICIENT))
+        .max(min_batch_size);
+
+        tracing::debug!("Batch size reduced to {}", current_batch_size);
+    } else if n_events < TARGET_EVENTS / TARGET_EVENTS_RATIO_DENOMINATOR
+        && *current_batch_size < max_batch_size
+    {
+        *current_batch_size = (current_batch_size.clone()
+            * BigDecimal::from(BATCH_SIZE_INCREASE_COEFFICIENT))
+        .min(max_batch_size);
+
+        tracing::debug!("Batch size increased to {}", current_batch_size);
+    }
 }

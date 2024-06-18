@@ -18,6 +18,12 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 1. Merge `main` into `dss-stable`.
 1. Push annotated tag to head of `dss-stable`.
 
+## [v2.2.1] (in progress)
+
+### Fixed
+
+- Fix inaccurate data in `/rpc/volume_history` endpoint ([#778]).
+
 ## [v2.2.0] (hot upgradable)
 
 ### Changed
@@ -261,6 +267,7 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 [#768]: https://github.com/econia-labs/econia/pull/768
 [#772]: https://github.com/econia-labs/econia/pull/772
 [#775]: https://github.com/econia-labs/econia/pull/775
+[#778]: https://github.com/econia-labs/econia/pull/778
 [docs site readme]: https://github.com/econia-labs/econia/blob/main/doc/doc-site/README.md
 [dss-v2.1.0-rc.1]: https://github.com/econia-labs/econia/releases/tag/dss-v2.1.0-rc.1
 [processor #19]: https://github.com/econia-labs/aptos-indexer-processors/pull/19

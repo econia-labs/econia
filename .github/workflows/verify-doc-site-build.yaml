@@ -1,0 +1,28 @@
+---
+jobs:
+  build-docs:
+    defaults:
+      run:
+        working-directory: 'doc/doc-site'
+    runs-on: 'ubuntu-latest'
+    steps:
+    - uses: 'actions/checkout@v3'
+    - uses: 'actions/setup-node@v3'
+      with:
+        node-version: 20
+    - uses: 'pnpm/action-setup@v2'
+      with:
+        run_install: false
+        version: '9.1.2'
+    - run: 'pnpm install --frozen-lockfile'
+    - run: 'pnpm build'
+name: 'Verify docs site build'
+'on':
+  pull_request:
+    branches:
+    - 'main'
+    paths:
+    - 'doc/doc-site/**'
+    - '.github/workflows/verify-doc-site-build.yaml'
+  workflow_dispatch: null
+...

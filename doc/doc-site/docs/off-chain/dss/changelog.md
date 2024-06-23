@@ -18,7 +18,7 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 1. Merge `main` into `dss-stable`.
 1. Push annotated tag to head of `dss-stable`.
 
-## [v2.2.1-rc.1][dss-v2.2.1-rc.1]
+## [v2.2.1-rc.1][dss-v2.2.1-rc.1] (hot upgradeable)
 
 ### Fixed
 

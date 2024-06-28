@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "WITH max_place AS (\n    SELECT\n        txn_version\n    FROM\n        place_limit_order_events\n    WHERE\n        make_time_version(\"time\", txn_version) < make_time_version($1, 0)\n    ORDER BY\n        make_time_version(\"time\", txn_version) DESC\n    LIMIT 1\n),\nmax_fill AS (\n    SELECT\n        txn_version\n    FROM\n        fill_events\n    WHERE\n        make_time_version(\"time\", txn_version) < make_time_version($1, 0)\n    ORDER BY\n        make_time_version(\"time\", txn_version) DESC\n    LIMIT 1\n),\nmax_change AS (\n    SELECT\n        txn_version\n    FROM\n        change_order_size_events\n    WHERE\n        make_time_version(\"time\", txn_version) < make_time_version($1, 0)\n    ORDER BY\n        make_time_version(\"time\", txn_version) DESC\n    LIMIT 1\n),\nmax_cancel AS (\n    SELECT\n        txn_version\n    FROM\n        cancel_order_events\n    WHERE\n        make_time_version(\"time\", txn_version) < make_time_version($1, 0)\n    ORDER BY\n        make_time_version(\"time\", txn_version) DESC\n    LIMIT 1\n),\nmaxes AS (\n    SELECT\n        *\n    FROM\n        max_place\n    UNION\n    SELECT\n        *\n    FROM\n        max_fill\n    UNION\n    SELECT\n        *\n    FROM\n        max_change\n    UNION\n    SELECT\n        *\n    FROM\n        max_cancel\n)\nSELECT\n    MAX(txn_version) AS txn_version\nFROM\n    maxes;\n",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "txn_version",
+        "type_info": "Numeric"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "c2bf3cf0fb6303e0b9dcf8a1fd93bed7e945982657575c92bc02da4bc52ba1c6"
+}

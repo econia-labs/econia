@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE\n    aggregator.user_balances_last_indexed_txn\nSET\n    txn_version = (SELECT txn_version FROM balance_updates_by_handle ORDER BY txn_version DESC LIMIT 1)\n",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "9c6461183b6ec8d0c6a60f1e84b04c9676582b3bd45c7f611d8861df41d0a73e"
+}

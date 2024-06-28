@@ -1,5 +1,5 @@
 
-<a name="0xc0deb00c_assets"></a>
+<a id="0xc0deb00c_assets"></a>
 
 # Module `0xc0deb00c::assets`
 
@@ -36,7 +36,7 @@ Mock asset types for on- and off-chain testing.
 ![](img/assets_backward_dep.svg)
 
 
-<a name="0xc0deb00c_assets_CoinCapabilities"></a>
+<a id="0xc0deb00c_assets_CoinCapabilities"></a>
 
 ## Resource `CoinCapabilities`
 
@@ -73,7 +73,7 @@ Stores mock coin type capabilities.
 </dl>
 
 
-<a name="0xc0deb00c_assets_BC"></a>
+<a id="0xc0deb00c_assets_BC"></a>
 
 ## Struct `BC`
 
@@ -98,7 +98,7 @@ Base coin type.
 </dl>
 
 
-<a name="0xc0deb00c_assets_QC"></a>
+<a id="0xc0deb00c_assets_QC"></a>
 
 ## Struct `QC`
 
@@ -123,7 +123,7 @@ Quote coin type.
 </dl>
 
 
-<a name="0xc0deb00c_assets_UC"></a>
+<a id="0xc0deb00c_assets_UC"></a>
 
 ## Struct `UC`
 
@@ -148,12 +148,12 @@ Utility coin type.
 </dl>
 
 
-<a name="@Constants_0"></a>
+<a id="@Constants_0"></a>
 
 ## Constants
 
 
-<a name="0xc0deb00c_assets_BASE_COIN_DECIMALS"></a>
+<a id="0xc0deb00c_assets_BASE_COIN_DECIMALS"></a>
 
 Base coin decimals.
 
@@ -163,7 +163,7 @@ Base coin decimals.
 
 
 
-<a name="0xc0deb00c_assets_BASE_COIN_NAME"></a>
+<a id="0xc0deb00c_assets_BASE_COIN_NAME"></a>
 
 Base coin name.
 
@@ -173,7 +173,7 @@ Base coin name.
 
 
 
-<a name="0xc0deb00c_assets_BASE_COIN_SYMBOL"></a>
+<a id="0xc0deb00c_assets_BASE_COIN_SYMBOL"></a>
 
 Base coin symbol.
 
@@ -183,7 +183,7 @@ Base coin symbol.
 
 
 
-<a name="0xc0deb00c_assets_E_HAS_CAPABILITIES"></a>
+<a id="0xc0deb00c_assets_E_HAS_CAPABILITIES"></a>
 
 Coin capabilities have already been initialized.
 
@@ -193,7 +193,7 @@ Coin capabilities have already been initialized.
 
 
 
-<a name="0xc0deb00c_assets_E_NOT_ECONIA"></a>
+<a id="0xc0deb00c_assets_E_NOT_ECONIA"></a>
 
 Caller is not Econia.
 
@@ -203,7 +203,7 @@ Caller is not Econia.
 
 
 
-<a name="0xc0deb00c_assets_QUOTE_COIN_DECIMALS"></a>
+<a id="0xc0deb00c_assets_QUOTE_COIN_DECIMALS"></a>
 
 Quote coin decimals.
 
@@ -213,7 +213,7 @@ Quote coin decimals.
 
 
 
-<a name="0xc0deb00c_assets_QUOTE_COIN_NAME"></a>
+<a id="0xc0deb00c_assets_QUOTE_COIN_NAME"></a>
 
 Quote coin name.
 
@@ -223,7 +223,7 @@ Quote coin name.
 
 
 
-<a name="0xc0deb00c_assets_QUOTE_COIN_SYMBOL"></a>
+<a id="0xc0deb00c_assets_QUOTE_COIN_SYMBOL"></a>
 
 Quote coin symbol.
 
@@ -233,7 +233,7 @@ Quote coin symbol.
 
 
 
-<a name="0xc0deb00c_assets_UTILITY_COIN_DECIMALS"></a>
+<a id="0xc0deb00c_assets_UTILITY_COIN_DECIMALS"></a>
 
 Utility coin decimals.
 
@@ -243,7 +243,7 @@ Utility coin decimals.
 
 
 
-<a name="0xc0deb00c_assets_UTILITY_COIN_NAME"></a>
+<a id="0xc0deb00c_assets_UTILITY_COIN_NAME"></a>
 
 Utility coin name.
 
@@ -253,7 +253,7 @@ Utility coin name.
 
 
 
-<a name="0xc0deb00c_assets_UTILITY_COIN_SYMBOL"></a>
+<a id="0xc0deb00c_assets_UTILITY_COIN_SYMBOL"></a>
 
 Utility coin symbol.
 
@@ -263,7 +263,7 @@ Utility coin symbol.
 
 
 
-<a name="0xc0deb00c_assets_burn"></a>
+<a id="0xc0deb00c_assets_burn"></a>
 
 ## Function `burn`
 
@@ -290,7 +290,7 @@ Burn <code>coins</code> for which <code>CoinType</code> is defined at Econia acc
 
 
 
-<a name="0xc0deb00c_assets_mint"></a>
+<a id="0xc0deb00c_assets_mint"></a>
 
 ## Function `mint`
 
@@ -325,7 +325,7 @@ Econia account.
 
 
 
-<a name="0xc0deb00c_assets_init_coin_type"></a>
+<a id="0xc0deb00c_assets_init_coin_type"></a>
 
 ## Function `init_coin_type`
 
@@ -366,7 +366,7 @@ Initialize given coin type under Econia account.
 
 
 
-<a name="0xc0deb00c_assets_init_module"></a>
+<a id="0xc0deb00c_assets_init_module"></a>
 
 ## Function `init_module`
 

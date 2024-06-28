@@ -1,5 +1,5 @@
 
-<a name="0xc0deb00c_tablist"></a>
+<a id="0xc0deb00c_tablist"></a>
 
 # Module `0xc0deb00c::tablist`
 
@@ -15,7 +15,7 @@ See <code>test_iterate()</code> and <code>test_iterate_remove()</code> for itera
 syntax.
 
 
-<a name="@Complete_docgen_index_0"></a>
+<a id="@Complete_docgen_index_0"></a>
 
 ## Complete docgen index
 
@@ -78,7 +78,7 @@ The below index is automatically generated from source code:
 ![](img/tablist_backward_dep.svg)
 
 
-<a name="0xc0deb00c_tablist_Node"></a>
+<a id="0xc0deb00c_tablist_Node"></a>
 
 ## Struct `Node`
 
@@ -115,7 +115,7 @@ A tablist node, pointing to the previous and next nodes, if any.
 </dl>
 
 
-<a name="0xc0deb00c_tablist_Tablist"></a>
+<a id="0xc0deb00c_tablist_Tablist"></a>
 
 ## Struct `Tablist`
 
@@ -152,12 +152,12 @@ A hybrid between a table and a doubly linked list.
 </dl>
 
 
-<a name="@Constants_1"></a>
+<a id="@Constants_1"></a>
 
 ## Constants
 
 
-<a name="0xc0deb00c_tablist_E_DESTROY_NOT_EMPTY"></a>
+<a id="0xc0deb00c_tablist_E_DESTROY_NOT_EMPTY"></a>
 
 Attempting to destroy a tablist that is not empty.
 
@@ -167,7 +167,7 @@ Attempting to destroy a tablist that is not empty.
 
 
 
-<a name="0xc0deb00c_tablist_add"></a>
+<a id="0xc0deb00c_tablist_add"></a>
 
 ## Function `add`
 
@@ -175,7 +175,7 @@ Add <code>key</code>-<code>value</code> pair to given <code><a href="tablist.md#
 already present.
 
 
-<a name="@Testing_2"></a>
+<a id="@Testing_2"></a>
 
 ### Testing
 
@@ -222,7 +222,7 @@ already present.
 
 
 
-<a name="0xc0deb00c_tablist_borrow"></a>
+<a id="0xc0deb00c_tablist_borrow"></a>
 
 ## Function `borrow`
 
@@ -230,7 +230,7 @@ Return immutable reference to the value that <code>key</code> maps to,
 aborting if <code>key</code> is not in given <code><a href="tablist.md#0xc0deb00c_tablist_Tablist">Tablist</a></code>.
 
 
-<a name="@Testing_3"></a>
+<a id="@Testing_3"></a>
 
 ### Testing
 
@@ -259,7 +259,7 @@ aborting if <code>key</code> is not in given <code><a href="tablist.md#0xc0deb00
 
 
 
-<a name="0xc0deb00c_tablist_borrow_iterable"></a>
+<a id="0xc0deb00c_tablist_borrow_iterable"></a>
 
 ## Function `borrow_iterable`
 
@@ -272,7 +272,7 @@ Borrow the <code><a href="tablist.md#0xc0deb00c_tablist_Node">Node</a></code> in
 Aborts if there is no entry for <code>key</code>.
 
 
-<a name="@Testing_4"></a>
+<a id="@Testing_4"></a>
 
 ### Testing
 
@@ -308,7 +308,7 @@ Aborts if there is no entry for <code>key</code>.
 
 
 
-<a name="0xc0deb00c_tablist_borrow_iterable_mut"></a>
+<a id="0xc0deb00c_tablist_borrow_iterable_mut"></a>
 
 ## Function `borrow_iterable_mut`
 
@@ -322,7 +322,7 @@ returning:
 Aborts if there is no entry for <code>key</code>.
 
 
-<a name="@Testing_5"></a>
+<a id="@Testing_5"></a>
 
 ### Testing
 
@@ -359,7 +359,7 @@ Aborts if there is no entry for <code>key</code>.
 
 
 
-<a name="0xc0deb00c_tablist_borrow_mut"></a>
+<a id="0xc0deb00c_tablist_borrow_mut"></a>
 
 ## Function `borrow_mut`
 
@@ -369,7 +369,7 @@ aborting if <code>key</code> is not in given <code><a href="tablist.md#0xc0deb00
 Aborts if there is no entry for <code>key</code>.
 
 
-<a name="@Testing_6"></a>
+<a id="@Testing_6"></a>
 
 ### Testing
 
@@ -399,14 +399,14 @@ Aborts if there is no entry for <code>key</code>.
 
 
 
-<a name="0xc0deb00c_tablist_contains"></a>
+<a id="0xc0deb00c_tablist_contains"></a>
 
 ## Function `contains`
 
 Return <code><b>true</b></code> if given <code><a href="tablist.md#0xc0deb00c_tablist_Tablist">Tablist</a></code> contains <code>key</code>, else <code><b>false</b></code>.
 
 
-<a name="@Testing_7"></a>
+<a id="@Testing_7"></a>
 
 ### Testing
 
@@ -435,14 +435,14 @@ Return <code><b>true</b></code> if given <code><a href="tablist.md#0xc0deb00c_ta
 
 
 
-<a name="0xc0deb00c_tablist_destroy_empty"></a>
+<a id="0xc0deb00c_tablist_destroy_empty"></a>
 
 ## Function `destroy_empty`
 
 Destroy an empty <code><a href="tablist.md#0xc0deb00c_tablist_Tablist">Tablist</a></code>, aborting if not empty.
 
 
-<a name="@Aborts_8"></a>
+<a id="@Aborts_8"></a>
 
 ### Aborts
 
@@ -450,7 +450,7 @@ Destroy an empty <code><a href="tablist.md#0xc0deb00c_tablist_Tablist">Tablist</
 * <code><a href="tablist.md#0xc0deb00c_tablist_E_DESTROY_NOT_EMPTY">E_DESTROY_NOT_EMPTY</a></code>: The tablist is not empty.
 
 
-<a name="@Testing_9"></a>
+<a id="@Testing_9"></a>
 
 ### Testing
 
@@ -484,14 +484,14 @@ Destroy an empty <code><a href="tablist.md#0xc0deb00c_tablist_Tablist">Tablist</
 
 
 
-<a name="0xc0deb00c_tablist_get_head_key"></a>
+<a id="0xc0deb00c_tablist_get_head_key"></a>
 
 ## Function `get_head_key`
 
 Return optional head key from given <code><a href="tablist.md#0xc0deb00c_tablist_Tablist">Tablist</a></code>.
 
 
-<a name="@Testing_10"></a>
+<a id="@Testing_10"></a>
 
 ### Testing
 
@@ -519,14 +519,14 @@ Return optional head key from given <code><a href="tablist.md#0xc0deb00c_tablist
 
 
 
-<a name="0xc0deb00c_tablist_get_tail_key"></a>
+<a id="0xc0deb00c_tablist_get_tail_key"></a>
 
 ## Function `get_tail_key`
 
 Return optional tail key in given <code><a href="tablist.md#0xc0deb00c_tablist_Tablist">Tablist</a></code>.
 
 
-<a name="@Testing_11"></a>
+<a id="@Testing_11"></a>
 
 ### Testing
 
@@ -554,14 +554,14 @@ Return optional tail key in given <code><a href="tablist.md#0xc0deb00c_tablist_T
 
 
 
-<a name="0xc0deb00c_tablist_length"></a>
+<a id="0xc0deb00c_tablist_length"></a>
 
 ## Function `length`
 
 Return number of elements in given <code><a href="tablist.md#0xc0deb00c_tablist_Tablist">Tablist</a></code>.
 
 
-<a name="@Testing_12"></a>
+<a id="@Testing_12"></a>
 
 ### Testing
 
@@ -589,14 +589,14 @@ Return number of elements in given <code><a href="tablist.md#0xc0deb00c_tablist_
 
 
 
-<a name="0xc0deb00c_tablist_new"></a>
+<a id="0xc0deb00c_tablist_new"></a>
 
 ## Function `new`
 
 Return an empty <code><a href="tablist.md#0xc0deb00c_tablist_Tablist">Tablist</a></code>.
 
 
-<a name="@Testing_13"></a>
+<a id="@Testing_13"></a>
 
 ### Testing
 
@@ -626,14 +626,14 @@ Return an empty <code><a href="tablist.md#0xc0deb00c_tablist_Tablist">Tablist</a
 
 
 
-<a name="0xc0deb00c_tablist_is_empty"></a>
+<a id="0xc0deb00c_tablist_is_empty"></a>
 
 ## Function `is_empty`
 
 Return <code><b>true</b></code> if given <code><a href="tablist.md#0xc0deb00c_tablist_Tablist">Tablist</a></code> is empty, else <code><b>false</b></code>.
 
 
-<a name="@Testing_14"></a>
+<a id="@Testing_14"></a>
 
 ### Testing
 
@@ -661,7 +661,7 @@ Return <code><b>true</b></code> if given <code><a href="tablist.md#0xc0deb00c_ta
 
 
 
-<a name="0xc0deb00c_tablist_remove"></a>
+<a id="0xc0deb00c_tablist_remove"></a>
 
 ## Function `remove`
 
@@ -673,7 +673,7 @@ See wrapped function <code><a href="tablist.md#0xc0deb00c_tablist_remove_iterabl
 Aborts if there is no entry for <code>key</code>.
 
 
-<a name="@Testing_15"></a>
+<a id="@Testing_15"></a>
 
 ### Testing
 
@@ -704,7 +704,7 @@ Aborts if there is no entry for <code>key</code>.
 
 
 
-<a name="0xc0deb00c_tablist_remove_iterable"></a>
+<a id="0xc0deb00c_tablist_remove_iterable"></a>
 
 ## Function `remove_iterable`
 
@@ -715,7 +715,7 @@ next key it mapped to (if any).
 Aborts if there is no entry for <code>key</code>.
 
 
-<a name="@Testing_16"></a>
+<a id="@Testing_16"></a>
 
 ### Testing
 
@@ -772,14 +772,14 @@ Aborts if there is no entry for <code>key</code>.
 
 
 
-<a name="0xc0deb00c_tablist_singleton"></a>
+<a id="0xc0deb00c_tablist_singleton"></a>
 
 ## Function `singleton`
 
 Return a new <code><a href="tablist.md#0xc0deb00c_tablist_Tablist">Tablist</a></code> containing <code>key</code>-<code>value</code> pair.
 
 
-<a name="@Testing_17"></a>
+<a id="@Testing_17"></a>
 
 ### Testing
 

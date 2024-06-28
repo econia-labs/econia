@@ -1,5 +1,5 @@
 
-<a name="0xc0deb00c_incentives"></a>
+<a id="0xc0deb00c_incentives"></a>
 
 # Module `0xc0deb00c::incentives`
 
@@ -10,7 +10,7 @@ upon module publication per <code><a href="incentives.md#0xc0deb00c_incentives_i
 updated later per <code><a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters">set_incentive_parameters</a>()</code>.
 
 
-<a name="@General_overview_sections_0"></a>
+<a id="@General_overview_sections_0"></a>
 
 ## General overview sections
 
@@ -36,7 +36,7 @@ updated later per <code><a href="incentives.md#0xc0deb00c_incentives_set_incenti
 [Complete DocGen index](#complete-docgen-index)
 
 
-<a name="@Incentive_model_1"></a>
+<a id="@Incentive_model_1"></a>
 
 ## Incentive model
 
@@ -91,13 +91,13 @@ corresponding abort codes, see:
 * <code><a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters_parse_tiers_vector">set_incentive_parameters_parse_tiers_vector</a>()</code>
 
 
-<a name="@Functions_2"></a>
+<a id="@Functions_2"></a>
 
 ## Functions
 
 
 
-<a name="@View_functions_3"></a>
+<a id="@View_functions_3"></a>
 
 ### View functions
 
@@ -115,7 +115,7 @@ corresponding abort codes, see:
 * <code><a href="incentives.md#0xc0deb00c_incentives_is_utility_coin_type">is_utility_coin_type</a>()</code>
 
 
-<a name="@Public_getters_4"></a>
+<a id="@Public_getters_4"></a>
 
 ### Public getters
 
@@ -125,7 +125,7 @@ corresponding abort codes, see:
 * <code><a href="incentives.md#0xc0deb00c_incentives_verify_utility_coin_type">verify_utility_coin_type</a>()</code>
 
 
-<a name="@Other_public_functions_5"></a>
+<a id="@Other_public_functions_5"></a>
 
 ### Other public functions
 
@@ -138,7 +138,7 @@ corresponding abort codes, see:
 * <code><a href="incentives.md#0xc0deb00c_incentives_withdraw_utility_coins_all">withdraw_utility_coins_all</a>()</code>
 
 
-<a name="@Public_entry_functions_6"></a>
+<a id="@Public_entry_functions_6"></a>
 
 ### Public entry functions
 
@@ -152,7 +152,7 @@ corresponding abort codes, see:
 * <code><a href="incentives.md#0xc0deb00c_incentives_withdraw_utility_coins_to_coin_store">withdraw_utility_coins_to_coin_store</a>()</code>
 
 
-<a name="@Public_friend_functions_7"></a>
+<a id="@Public_friend_functions_7"></a>
 
 ### Public friend functions
 
@@ -166,7 +166,7 @@ corresponding abort codes, see:
 * <code><a href="incentives.md#0xc0deb00c_incentives_register_integrator_fee_store">register_integrator_fee_store</a>()</code>
 
 
-<a name="@Dependency_charts_8"></a>
+<a id="@Dependency_charts_8"></a>
 
 ## Dependency charts
 
@@ -178,7 +178,7 @@ a browser renders the diagrams with coloring that makes it difficult
 to read, try a different browser.
 
 
-<a name="@Incentive_parameter_setters_9"></a>
+<a id="@Incentive_parameter_setters_9"></a>
 
 ### Incentive parameter setters
 
@@ -200,7 +200,7 @@ set_incentive_parameters --> get_n_fee_store_tiers
 ```
 
 
-<a name="@Econia_fee_account_operations_10"></a>
+<a id="@Econia_fee_account_operations_10"></a>
 
 ### Econia fee account operations
 
@@ -236,7 +236,7 @@ register_econia_fee_store_entry --> resource_account::get_signer
 ```
 
 
-<a name="@Registrant_operations_11"></a>
+<a id="@Registrant_operations_11"></a>
 
 ### Registrant operations
 
@@ -261,7 +261,7 @@ get_market_registration_fee
 ```
 
 
-<a name="@Integrator_operations_12"></a>
+<a id="@Integrator_operations_12"></a>
 
 ### Integrator operations
 
@@ -292,7 +292,7 @@ get_integrator_withdrawal_fee --> get_integrator_withdrawal_fee_view
 ```
 
 
-<a name="@Match_operations_13"></a>
+<a id="@Match_operations_13"></a>
 
 ### Match operations
 
@@ -309,7 +309,7 @@ assess_taker_fees --> range_check_coin_merge
 ```
 
 
-<a name="@Complete_DocGen_index_14"></a>
+<a id="@Complete_DocGen_index_14"></a>
 
 ## Complete DocGen index
 
@@ -490,7 +490,7 @@ The below index is automatically generated from source code:
 ![](img/incentives_backward_dep.svg)
 
 
-<a name="0xc0deb00c_incentives_EconiaFeeStore"></a>
+<a id="0xc0deb00c_incentives_EconiaFeeStore"></a>
 
 ## Resource `EconiaFeeStore`
 
@@ -517,7 +517,7 @@ reserved for Econia.
 </dl>
 
 
-<a name="0xc0deb00c_incentives_IncentiveParameters"></a>
+<a id="0xc0deb00c_incentives_IncentiveParameters"></a>
 
 ## Resource `IncentiveParameters`
 
@@ -581,7 +581,7 @@ Incentive parameters for assorted operations.
 </dl>
 
 
-<a name="0xc0deb00c_incentives_IntegratorFeeStore"></a>
+<a id="0xc0deb00c_incentives_IntegratorFeeStore"></a>
 
 ## Struct `IntegratorFeeStore`
 
@@ -612,7 +612,7 @@ Fee store for a given integrator, on a given market.
 </dl>
 
 
-<a name="0xc0deb00c_incentives_IntegratorFeeStores"></a>
+<a id="0xc0deb00c_incentives_IntegratorFeeStores"></a>
 
 ## Resource `IntegratorFeeStores`
 
@@ -639,7 +639,7 @@ All of an integrator's <code><a href="incentives.md#0xc0deb00c_incentives_Integr
 </dl>
 
 
-<a name="0xc0deb00c_incentives_IntegratorFeeStoreTierParameters"></a>
+<a id="0xc0deb00c_incentives_IntegratorFeeStoreTierParameters"></a>
 
 ## Struct `IntegratorFeeStoreTierParameters`
 
@@ -695,7 +695,7 @@ Integrator fee store tier parameters for a given tier.
 </dl>
 
 
-<a name="0xc0deb00c_incentives_UtilityCoinStore"></a>
+<a id="0xc0deb00c_incentives_UtilityCoinStore"></a>
 
 ## Resource `UtilityCoinStore`
 
@@ -720,12 +720,12 @@ Container for utility coin fees collected by Econia.
 </dl>
 
 
-<a name="@Constants_15"></a>
+<a id="@Constants_15"></a>
 
 ## Constants
 
 
-<a name="0xc0deb00c_incentives_E_NOT_ECONIA"></a>
+<a id="0xc0deb00c_incentives_E_NOT_ECONIA"></a>
 
 Caller is not Econia, but should be.
 
@@ -735,7 +735,7 @@ Caller is not Econia, but should be.
 
 
 
-<a name="0xc0deb00c_incentives_HI_64"></a>
+<a id="0xc0deb00c_incentives_HI_64"></a>
 
 <code>u64</code> bitmask with all bits set, generated in Python via
 <code>hex(int('1' * 64, 2))</code>.
@@ -746,7 +746,7 @@ Caller is not Econia, but should be.
 
 
 
-<a name="0xc0deb00c_incentives_BUY"></a>
+<a id="0xc0deb00c_incentives_BUY"></a>
 
 Buy direction flag, as defined in <code><a href="market.md#0xc0deb00c_market">market</a>.<b>move</b></code>.
 
@@ -756,7 +756,7 @@ Buy direction flag, as defined in <code><a href="market.md#0xc0deb00c_market">ma
 
 
 
-<a name="0xc0deb00c_incentives_CUSTODIAN_REGISTRATION_FEE"></a>
+<a id="0xc0deb00c_incentives_CUSTODIAN_REGISTRATION_FEE"></a>
 
 Genesis parameter.
 
@@ -766,7 +766,7 @@ Genesis parameter.
 
 
 
-<a name="0xc0deb00c_incentives_E_ACTIVATION_FEE_TOO_SMALL"></a>
+<a id="0xc0deb00c_incentives_E_ACTIVATION_FEE_TOO_SMALL"></a>
 
 The indicated tier activation fee is too small.
 
@@ -776,7 +776,7 @@ The indicated tier activation fee is too small.
 
 
 
-<a name="0xc0deb00c_incentives_E_CUSTODIAN_REGISTRATION_FEE_LESS_THAN_MIN"></a>
+<a id="0xc0deb00c_incentives_E_CUSTODIAN_REGISTRATION_FEE_LESS_THAN_MIN"></a>
 
 Custodian registration fee is less than the minimum.
 
@@ -786,7 +786,7 @@ Custodian registration fee is less than the minimum.
 
 
 
-<a name="0xc0deb00c_incentives_E_ECONIA_FEE_STORE_OVERFLOW"></a>
+<a id="0xc0deb00c_incentives_E_ECONIA_FEE_STORE_OVERFLOW"></a>
 
 Depositing to an Econia fee store would result in an overflow.
 
@@ -796,7 +796,7 @@ Depositing to an Econia fee store would result in an overflow.
 
 
 
-<a name="0xc0deb00c_incentives_E_EMPTY_FEE_STORE_TIERS"></a>
+<a id="0xc0deb00c_incentives_E_EMPTY_FEE_STORE_TIERS"></a>
 
 Passed fee store tiers vector is empty.
 
@@ -806,7 +806,7 @@ Passed fee store tiers vector is empty.
 
 
 
-<a name="0xc0deb00c_incentives_E_FEE_SHARE_DIVISOR_TOO_BIG"></a>
+<a id="0xc0deb00c_incentives_E_FEE_SHARE_DIVISOR_TOO_BIG"></a>
 
 Indicated fee share divisor for given tier is too big.
 
@@ -816,7 +816,7 @@ Indicated fee share divisor for given tier is too big.
 
 
 
-<a name="0xc0deb00c_incentives_E_FEE_SHARE_DIVISOR_TOO_SMALL"></a>
+<a id="0xc0deb00c_incentives_E_FEE_SHARE_DIVISOR_TOO_SMALL"></a>
 
 The indicated fee share divisor for a given tier is less than
 the indicated taker fee divisor.
@@ -827,7 +827,7 @@ the indicated taker fee divisor.
 
 
 
-<a name="0xc0deb00c_incentives_E_FEWER_TIERS"></a>
+<a id="0xc0deb00c_incentives_E_FEWER_TIERS"></a>
 
 An update to the incentive parameters set indicates a reduction
 in fee store tiers.
@@ -838,7 +838,7 @@ in fee store tiers.
 
 
 
-<a name="0xc0deb00c_incentives_E_FIRST_TIER_ACTIVATION_FEE_NONZERO"></a>
+<a id="0xc0deb00c_incentives_E_FIRST_TIER_ACTIVATION_FEE_NONZERO"></a>
 
 The cost to activate to tier 0 is nonzero.
 
@@ -848,7 +848,7 @@ The cost to activate to tier 0 is nonzero.
 
 
 
-<a name="0xc0deb00c_incentives_E_INTEGRATOR_FEE_STORE_OVERFLOW"></a>
+<a id="0xc0deb00c_incentives_E_INTEGRATOR_FEE_STORE_OVERFLOW"></a>
 
 Depositing to an integrator fee store would result in an
 overflow.
@@ -859,7 +859,7 @@ overflow.
 
 
 
-<a name="0xc0deb00c_incentives_E_INVALID_TIER"></a>
+<a id="0xc0deb00c_incentives_E_INVALID_TIER"></a>
 
 There is no tier with given number.
 
@@ -869,7 +869,7 @@ There is no tier with given number.
 
 
 
-<a name="0xc0deb00c_incentives_E_INVALID_UTILITY_COIN_TYPE"></a>
+<a id="0xc0deb00c_incentives_E_INVALID_UTILITY_COIN_TYPE"></a>
 
 Type is not the utility coin type.
 
@@ -879,7 +879,7 @@ Type is not the utility coin type.
 
 
 
-<a name="0xc0deb00c_incentives_E_MARKET_REGISTRATION_FEE_LESS_THAN_MIN"></a>
+<a id="0xc0deb00c_incentives_E_MARKET_REGISTRATION_FEE_LESS_THAN_MIN"></a>
 
 Market registration fee is less than the minimum.
 
@@ -889,7 +889,7 @@ Market registration fee is less than the minimum.
 
 
 
-<a name="0xc0deb00c_incentives_E_NOT_AN_UPGRADE"></a>
+<a id="0xc0deb00c_incentives_E_NOT_AN_UPGRADE"></a>
 
 Indicated tier is not higher than existing tier.
 
@@ -899,7 +899,7 @@ Indicated tier is not higher than existing tier.
 
 
 
-<a name="0xc0deb00c_incentives_E_NOT_COIN"></a>
+<a id="0xc0deb00c_incentives_E_NOT_COIN"></a>
 
 Type does not correspond to an initialized coin.
 
@@ -909,7 +909,7 @@ Type does not correspond to an initialized coin.
 
 
 
-<a name="0xc0deb00c_incentives_E_NOT_ENOUGH_UTILITY_COINS"></a>
+<a id="0xc0deb00c_incentives_E_NOT_ENOUGH_UTILITY_COINS"></a>
 
 Not enough utility coins provided.
 
@@ -919,7 +919,7 @@ Not enough utility coins provided.
 
 
 
-<a name="0xc0deb00c_incentives_E_TAKER_DIVISOR_LESS_THAN_MIN"></a>
+<a id="0xc0deb00c_incentives_E_TAKER_DIVISOR_LESS_THAN_MIN"></a>
 
 Taker fee divisor is less than the minimum.
 
@@ -929,7 +929,7 @@ Taker fee divisor is less than the minimum.
 
 
 
-<a name="0xc0deb00c_incentives_E_TIER_COST_NOT_INCREASE"></a>
+<a id="0xc0deb00c_incentives_E_TIER_COST_NOT_INCREASE"></a>
 
 Cumulative activation fee for new tier is not greater than that
 of current tier.
@@ -940,7 +940,7 @@ of current tier.
 
 
 
-<a name="0xc0deb00c_incentives_E_TIER_FIELDS_WRONG_LENGTH"></a>
+<a id="0xc0deb00c_incentives_E_TIER_FIELDS_WRONG_LENGTH"></a>
 
 The wrong number of fields are passed for a given tier.
 
@@ -950,7 +950,7 @@ The wrong number of fields are passed for a given tier.
 
 
 
-<a name="0xc0deb00c_incentives_E_TOO_MANY_TIERS"></a>
+<a id="0xc0deb00c_incentives_E_TOO_MANY_TIERS"></a>
 
 Too many integrator fee store tiers indicated.
 
@@ -960,7 +960,7 @@ Too many integrator fee store tiers indicated.
 
 
 
-<a name="0xc0deb00c_incentives_E_UNDERWRITER_REGISTRATION_FEE_LESS_THAN_MIN"></a>
+<a id="0xc0deb00c_incentives_E_UNDERWRITER_REGISTRATION_FEE_LESS_THAN_MIN"></a>
 
 Custodian registration fee is less than the minimum.
 
@@ -970,7 +970,7 @@ Custodian registration fee is less than the minimum.
 
 
 
-<a name="0xc0deb00c_incentives_E_UTILITY_COIN_STORE_OVERFLOW"></a>
+<a id="0xc0deb00c_incentives_E_UTILITY_COIN_STORE_OVERFLOW"></a>
 
 Depositing to a utility coin store would result in an overflow.
 
@@ -980,7 +980,7 @@ Depositing to a utility coin store would result in an overflow.
 
 
 
-<a name="0xc0deb00c_incentives_E_WITHDRAWAL_FEE_TOO_BIG"></a>
+<a id="0xc0deb00c_incentives_E_WITHDRAWAL_FEE_TOO_BIG"></a>
 
 The indicated withdrawal fee is too big.
 
@@ -990,7 +990,7 @@ The indicated withdrawal fee is too big.
 
 
 
-<a name="0xc0deb00c_incentives_E_WITHDRAWAL_FEE_TOO_SMALL"></a>
+<a id="0xc0deb00c_incentives_E_WITHDRAWAL_FEE_TOO_SMALL"></a>
 
 The indicated withdrawal fee is too small.
 
@@ -1000,7 +1000,7 @@ The indicated withdrawal fee is too small.
 
 
 
-<a name="0xc0deb00c_incentives_FEE_SHARE_DIVISOR_0"></a>
+<a id="0xc0deb00c_incentives_FEE_SHARE_DIVISOR_0"></a>
 
 Genesis parameter.
 
@@ -1010,7 +1010,7 @@ Genesis parameter.
 
 
 
-<a name="0xc0deb00c_incentives_FEE_SHARE_DIVISOR_1"></a>
+<a id="0xc0deb00c_incentives_FEE_SHARE_DIVISOR_1"></a>
 
 Genesis parameter.
 
@@ -1020,7 +1020,7 @@ Genesis parameter.
 
 
 
-<a name="0xc0deb00c_incentives_FEE_SHARE_DIVISOR_2"></a>
+<a id="0xc0deb00c_incentives_FEE_SHARE_DIVISOR_2"></a>
 
 Genesis parameter.
 
@@ -1030,7 +1030,7 @@ Genesis parameter.
 
 
 
-<a name="0xc0deb00c_incentives_FEE_SHARE_DIVISOR_3"></a>
+<a id="0xc0deb00c_incentives_FEE_SHARE_DIVISOR_3"></a>
 
 Genesis parameter.
 
@@ -1040,7 +1040,7 @@ Genesis parameter.
 
 
 
-<a name="0xc0deb00c_incentives_FEE_SHARE_DIVISOR_4"></a>
+<a id="0xc0deb00c_incentives_FEE_SHARE_DIVISOR_4"></a>
 
 Genesis parameter.
 
@@ -1050,7 +1050,7 @@ Genesis parameter.
 
 
 
-<a name="0xc0deb00c_incentives_FEE_SHARE_DIVISOR_5"></a>
+<a id="0xc0deb00c_incentives_FEE_SHARE_DIVISOR_5"></a>
 
 Genesis parameter.
 
@@ -1060,7 +1060,7 @@ Genesis parameter.
 
 
 
-<a name="0xc0deb00c_incentives_FEE_SHARE_DIVISOR_6"></a>
+<a id="0xc0deb00c_incentives_FEE_SHARE_DIVISOR_6"></a>
 
 Genesis parameter.
 
@@ -1070,7 +1070,7 @@ Genesis parameter.
 
 
 
-<a name="0xc0deb00c_incentives_FEE_SHARE_DIVISOR_INDEX"></a>
+<a id="0xc0deb00c_incentives_FEE_SHARE_DIVISOR_INDEX"></a>
 
 Index of fee share in vectorized representation of an
 <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStoreTierParameters">IntegratorFeeStoreTierParameters</a></code>.
@@ -1081,7 +1081,7 @@ Index of fee share in vectorized representation of an
 
 
 
-<a name="0xc0deb00c_incentives_MARKET_REGISTRATION_FEE"></a>
+<a id="0xc0deb00c_incentives_MARKET_REGISTRATION_FEE"></a>
 
 Genesis parameter.
 
@@ -1091,7 +1091,7 @@ Genesis parameter.
 
 
 
-<a name="0xc0deb00c_incentives_MAX_INTEGRATOR_FEE_STORE_TIERS"></a>
+<a id="0xc0deb00c_incentives_MAX_INTEGRATOR_FEE_STORE_TIERS"></a>
 
 Maximum number of integrator fee store tiers is largest number
 that can fit in a <code>u8</code>.
@@ -1102,7 +1102,7 @@ that can fit in a <code>u8</code>.
 
 
 
-<a name="0xc0deb00c_incentives_MIN_DIVISOR"></a>
+<a id="0xc0deb00c_incentives_MIN_DIVISOR"></a>
 
 Minimum possible divisor for avoiding divide-by-zero error,
 including during denominator calculation for a <code><a href="incentives.md#0xc0deb00c_incentives_SELL">SELL</a></code> in
@@ -1114,7 +1114,7 @@ including during denominator calculation for a <code><a href="incentives.md#0xc0
 
 
 
-<a name="0xc0deb00c_incentives_MIN_FEE"></a>
+<a id="0xc0deb00c_incentives_MIN_FEE"></a>
 
 Minimum possible flat fee, required to disincentivize excessive
 bogus transactions.
@@ -1125,7 +1125,7 @@ bogus transactions.
 
 
 
-<a name="0xc0deb00c_incentives_N_TIER_FIELDS"></a>
+<a id="0xc0deb00c_incentives_N_TIER_FIELDS"></a>
 
 Number of fields in an <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStoreTierParameters">IntegratorFeeStoreTierParameters</a></code>.
 
@@ -1135,7 +1135,7 @@ Number of fields in an <code><a href="incentives.md#0xc0deb00c_incentives_Integr
 
 
 
-<a name="0xc0deb00c_incentives_SELL"></a>
+<a id="0xc0deb00c_incentives_SELL"></a>
 
 Sell direction flag, as defined in <code><a href="market.md#0xc0deb00c_market">market</a>.<b>move</b></code>.
 
@@ -1145,7 +1145,7 @@ Sell direction flag, as defined in <code><a href="market.md#0xc0deb00c_market">m
 
 
 
-<a name="0xc0deb00c_incentives_TAKER_FEE_DIVISOR"></a>
+<a id="0xc0deb00c_incentives_TAKER_FEE_DIVISOR"></a>
 
 Genesis parameter.
 
@@ -1155,7 +1155,7 @@ Genesis parameter.
 
 
 
-<a name="0xc0deb00c_incentives_TIER_ACTIVATION_FEE_0"></a>
+<a id="0xc0deb00c_incentives_TIER_ACTIVATION_FEE_0"></a>
 
 Genesis parameter.
 
@@ -1165,7 +1165,7 @@ Genesis parameter.
 
 
 
-<a name="0xc0deb00c_incentives_TIER_ACTIVATION_FEE_1"></a>
+<a id="0xc0deb00c_incentives_TIER_ACTIVATION_FEE_1"></a>
 
 Genesis parameter.
 
@@ -1175,7 +1175,7 @@ Genesis parameter.
 
 
 
-<a name="0xc0deb00c_incentives_TIER_ACTIVATION_FEE_2"></a>
+<a id="0xc0deb00c_incentives_TIER_ACTIVATION_FEE_2"></a>
 
 Genesis parameter.
 
@@ -1185,7 +1185,7 @@ Genesis parameter.
 
 
 
-<a name="0xc0deb00c_incentives_TIER_ACTIVATION_FEE_3"></a>
+<a id="0xc0deb00c_incentives_TIER_ACTIVATION_FEE_3"></a>
 
 Genesis parameter.
 
@@ -1195,7 +1195,7 @@ Genesis parameter.
 
 
 
-<a name="0xc0deb00c_incentives_TIER_ACTIVATION_FEE_4"></a>
+<a id="0xc0deb00c_incentives_TIER_ACTIVATION_FEE_4"></a>
 
 Genesis parameter.
 
@@ -1205,7 +1205,7 @@ Genesis parameter.
 
 
 
-<a name="0xc0deb00c_incentives_TIER_ACTIVATION_FEE_5"></a>
+<a id="0xc0deb00c_incentives_TIER_ACTIVATION_FEE_5"></a>
 
 Genesis parameter.
 
@@ -1215,7 +1215,7 @@ Genesis parameter.
 
 
 
-<a name="0xc0deb00c_incentives_TIER_ACTIVATION_FEE_6"></a>
+<a id="0xc0deb00c_incentives_TIER_ACTIVATION_FEE_6"></a>
 
 Genesis parameter.
 
@@ -1225,7 +1225,7 @@ Genesis parameter.
 
 
 
-<a name="0xc0deb00c_incentives_TIER_ACTIVATION_FEE_INDEX"></a>
+<a id="0xc0deb00c_incentives_TIER_ACTIVATION_FEE_INDEX"></a>
 
 Index of tier activation fee in vectorized representation of an
 <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStoreTierParameters">IntegratorFeeStoreTierParameters</a></code>.
@@ -1236,7 +1236,7 @@ Index of tier activation fee in vectorized representation of an
 
 
 
-<a name="0xc0deb00c_incentives_UNDERWRITER_REGISTRATION_FEE"></a>
+<a id="0xc0deb00c_incentives_UNDERWRITER_REGISTRATION_FEE"></a>
 
 Genesis parameter.
 
@@ -1246,7 +1246,7 @@ Genesis parameter.
 
 
 
-<a name="0xc0deb00c_incentives_WITHDRAWAL_FEE_0"></a>
+<a id="0xc0deb00c_incentives_WITHDRAWAL_FEE_0"></a>
 
 Genesis parameter.
 
@@ -1256,7 +1256,7 @@ Genesis parameter.
 
 
 
-<a name="0xc0deb00c_incentives_WITHDRAWAL_FEE_1"></a>
+<a id="0xc0deb00c_incentives_WITHDRAWAL_FEE_1"></a>
 
 Genesis parameter.
 
@@ -1266,7 +1266,7 @@ Genesis parameter.
 
 
 
-<a name="0xc0deb00c_incentives_WITHDRAWAL_FEE_2"></a>
+<a id="0xc0deb00c_incentives_WITHDRAWAL_FEE_2"></a>
 
 Genesis parameter.
 
@@ -1276,7 +1276,7 @@ Genesis parameter.
 
 
 
-<a name="0xc0deb00c_incentives_WITHDRAWAL_FEE_3"></a>
+<a id="0xc0deb00c_incentives_WITHDRAWAL_FEE_3"></a>
 
 Genesis parameter.
 
@@ -1286,7 +1286,7 @@ Genesis parameter.
 
 
 
-<a name="0xc0deb00c_incentives_WITHDRAWAL_FEE_4"></a>
+<a id="0xc0deb00c_incentives_WITHDRAWAL_FEE_4"></a>
 
 Genesis parameter.
 
@@ -1296,7 +1296,7 @@ Genesis parameter.
 
 
 
-<a name="0xc0deb00c_incentives_WITHDRAWAL_FEE_5"></a>
+<a id="0xc0deb00c_incentives_WITHDRAWAL_FEE_5"></a>
 
 Genesis parameter.
 
@@ -1306,7 +1306,7 @@ Genesis parameter.
 
 
 
-<a name="0xc0deb00c_incentives_WITHDRAWAL_FEE_6"></a>
+<a id="0xc0deb00c_incentives_WITHDRAWAL_FEE_6"></a>
 
 Genesis parameter.
 
@@ -1316,7 +1316,7 @@ Genesis parameter.
 
 
 
-<a name="0xc0deb00c_incentives_WITHDRAWAL_FEE_INDEX"></a>
+<a id="0xc0deb00c_incentives_WITHDRAWAL_FEE_INDEX"></a>
 
 Index of withdrawal fee in vectorized representation of an
 <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStoreTierParameters">IntegratorFeeStoreTierParameters</a></code>.
@@ -1327,14 +1327,14 @@ Index of withdrawal fee in vectorized representation of an
 
 
 
-<a name="0xc0deb00c_incentives_get_cost_to_upgrade_integrator_fee_store_view"></a>
+<a id="0xc0deb00c_incentives_get_cost_to_upgrade_integrator_fee_store_view"></a>
 
 ## Function `get_cost_to_upgrade_integrator_fee_store_view`
 
 Calculate cost to upgrade <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStore">IntegratorFeeStore</a></code> to higher tier.
 
 
-<a name="@Type_parameters_16"></a>
+<a id="@Type_parameters_16"></a>
 
 ### Type parameters
 
@@ -1343,7 +1343,7 @@ Calculate cost to upgrade <code><a href="incentives.md#0xc0deb00c_incentives_Int
 * <code>UtilityCoinType</code>: The utility coin type.
 
 
-<a name="@Parameters_17"></a>
+<a id="@Parameters_17"></a>
 
 ### Parameters
 
@@ -1353,7 +1353,7 @@ Calculate cost to upgrade <code><a href="incentives.md#0xc0deb00c_incentives_Int
 * <code>new_tier</code>: Tier to upgrade to.
 
 
-<a name="@Returns_18"></a>
+<a id="@Returns_18"></a>
 
 ### Returns
 
@@ -1365,7 +1365,7 @@ to tier 3 and 100 to activate to tier 1, it costs 900 to
 upgrade from tier 1 to tier 3.
 
 
-<a name="@Aborts_19"></a>
+<a id="@Aborts_19"></a>
 
 ### Aborts
 
@@ -1376,7 +1376,7 @@ that the <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStore">
 tier is not greater than that of current tier.
 
 
-<a name="@Restrictions_20"></a>
+<a id="@Restrictions_20"></a>
 
 ### Restrictions
 
@@ -1386,7 +1386,7 @@ public queries on an <code><a href="incentives.md#0xc0deb00c_incentives_Integrat
 collisions with the matching engine.
 
 
-<a name="@Testing_21"></a>
+<a id="@Testing_21"></a>
 
 ### Testing
 
@@ -1442,14 +1442,14 @@ collisions with the matching engine.
 
 
 
-<a name="0xc0deb00c_incentives_get_custodian_registration_fee"></a>
+<a id="0xc0deb00c_incentives_get_custodian_registration_fee"></a>
 
 ## Function `get_custodian_registration_fee`
 
 Return custodian registration fee.
 
 
-<a name="@Testing_22"></a>
+<a id="@Testing_22"></a>
 
 ### Testing
 
@@ -1475,14 +1475,14 @@ u64
 
 
 
-<a name="0xc0deb00c_incentives_get_fee_share_divisor"></a>
+<a id="0xc0deb00c_incentives_get_fee_share_divisor"></a>
 
 ## Function `get_fee_share_divisor`
 
 Return integrator fee share divisor for <code>tier</code>.
 
 
-<a name="@Testing_23"></a>
+<a id="@Testing_23"></a>
 
 ### Testing
 
@@ -1522,7 +1522,7 @@ Return integrator fee share divisor for <code>tier</code>.
 
 
 
-<a name="0xc0deb00c_incentives_get_integrator_withdrawal_fee_view"></a>
+<a id="0xc0deb00c_incentives_get_integrator_withdrawal_fee_view"></a>
 
 ## Function `get_integrator_withdrawal_fee_view`
 
@@ -1530,7 +1530,7 @@ Return withdrawal fee for given <code>integrator_address</code> and
 <code>market_id</code>.
 
 
-<a name="@Restrictions_24"></a>
+<a id="@Restrictions_24"></a>
 
 ### Restrictions
 
@@ -1572,14 +1572,14 @@ collisions with the matching engine.
 
 
 
-<a name="0xc0deb00c_incentives_get_market_registration_fee"></a>
+<a id="0xc0deb00c_incentives_get_market_registration_fee"></a>
 
 ## Function `get_market_registration_fee`
 
 Return market registration fee.
 
 
-<a name="@Testing_25"></a>
+<a id="@Testing_25"></a>
 
 ### Testing
 
@@ -1605,14 +1605,14 @@ u64
 
 
 
-<a name="0xc0deb00c_incentives_get_n_fee_store_tiers"></a>
+<a id="0xc0deb00c_incentives_get_n_fee_store_tiers"></a>
 
 ## Function `get_n_fee_store_tiers`
 
 Return number of fee store tiers.
 
 
-<a name="@Testing_26"></a>
+<a id="@Testing_26"></a>
 
 ### Testing
 
@@ -1644,14 +1644,14 @@ u64
 
 
 
-<a name="0xc0deb00c_incentives_get_taker_fee_divisor"></a>
+<a id="0xc0deb00c_incentives_get_taker_fee_divisor"></a>
 
 ## Function `get_taker_fee_divisor`
 
 Return taker fee divisor.
 
 
-<a name="@Testing_27"></a>
+<a id="@Testing_27"></a>
 
 ### Testing
 
@@ -1677,14 +1677,14 @@ u64
 
 
 
-<a name="0xc0deb00c_incentives_get_tier_activation_fee"></a>
+<a id="0xc0deb00c_incentives_get_tier_activation_fee"></a>
 
 ## Function `get_tier_activation_fee`
 
 Return fee to activate an <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStore">IntegratorFeeStore</a></code> to given <code>tier</code>.
 
 
-<a name="@Testing_28"></a>
+<a id="@Testing_28"></a>
 
 ### Testing
 
@@ -1724,7 +1724,7 @@ Return fee to activate an <code><a href="incentives.md#0xc0deb00c_incentives_Int
 
 
 
-<a name="0xc0deb00c_incentives_get_tier_withdrawal_fee"></a>
+<a id="0xc0deb00c_incentives_get_tier_withdrawal_fee"></a>
 
 ## Function `get_tier_withdrawal_fee`
 
@@ -1732,7 +1732,7 @@ Return fee to withdraw from <code><a href="incentives.md#0xc0deb00c_incentives_I
 given <code>tier</code>.
 
 
-<a name="@Testing_29"></a>
+<a id="@Testing_29"></a>
 
 ### Testing
 
@@ -1772,14 +1772,14 @@ given <code>tier</code>.
 
 
 
-<a name="0xc0deb00c_incentives_get_underwriter_registration_fee"></a>
+<a id="0xc0deb00c_incentives_get_underwriter_registration_fee"></a>
 
 ## Function `get_underwriter_registration_fee`
 
 Return underwriter registration fee.
 
 
-<a name="@Testing_30"></a>
+<a id="@Testing_30"></a>
 
 ### Testing
 
@@ -1806,14 +1806,14 @@ u64
 
 
 
-<a name="0xc0deb00c_incentives_is_utility_coin_type"></a>
+<a id="0xc0deb00c_incentives_is_utility_coin_type"></a>
 
 ## Function `is_utility_coin_type`
 
 Return <code><b>true</b></code> if <code>T</code> is the utility coin type.
 
 
-<a name="@Testing_31"></a>
+<a id="@Testing_31"></a>
 
 ### Testing
 
@@ -1841,7 +1841,7 @@ bool
 
 
 
-<a name="0xc0deb00c_incentives_get_cost_to_upgrade_integrator_fee_store"></a>
+<a id="0xc0deb00c_incentives_get_cost_to_upgrade_integrator_fee_store"></a>
 
 ## Function `get_cost_to_upgrade_integrator_fee_store`
 
@@ -1850,7 +1850,7 @@ Public function wrapper for
 integrator signature to prevent runtime transaction collisions.
 
 
-<a name="@Testing_32"></a>
+<a id="@Testing_32"></a>
 
 ### Testing
 
@@ -1887,7 +1887,7 @@ integrator signature to prevent runtime transaction collisions.
 
 
 
-<a name="0xc0deb00c_incentives_get_integrator_withdrawal_fee"></a>
+<a id="0xc0deb00c_incentives_get_integrator_withdrawal_fee"></a>
 
 ## Function `get_integrator_withdrawal_fee`
 
@@ -1919,14 +1919,14 @@ signature to prevent runtime transaction collisions.
 
 
 
-<a name="0xc0deb00c_incentives_upgrade_integrator_fee_store"></a>
+<a id="0xc0deb00c_incentives_upgrade_integrator_fee_store"></a>
 
 ## Function `upgrade_integrator_fee_store`
 
 Upgrade <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStore">IntegratorFeeStore</a></code> to a higher tier.
 
 
-<a name="@Type_parameters_33"></a>
+<a id="@Type_parameters_33"></a>
 
 ### Type parameters
 
@@ -1935,7 +1935,7 @@ Upgrade <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStore">I
 * <code>UtilityCoinType</code>: The utility coin type.
 
 
-<a name="@Parameters_34"></a>
+<a id="@Parameters_34"></a>
 
 ### Parameters
 
@@ -1990,14 +1990,14 @@ Upgrade <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStore">I
 
 
 
-<a name="0xc0deb00c_incentives_verify_utility_coin_type"></a>
+<a id="0xc0deb00c_incentives_verify_utility_coin_type"></a>
 
 ## Function `verify_utility_coin_type`
 
 Assert <code>T</code> is utility coin type.
 
 
-<a name="@Aborts_35"></a>
+<a id="@Aborts_35"></a>
 
 ### Aborts
 
@@ -2005,7 +2005,7 @@ Assert <code>T</code> is utility coin type.
 * <code><a href="incentives.md#0xc0deb00c_incentives_E_INVALID_UTILITY_COIN_TYPE">E_INVALID_UTILITY_COIN_TYPE</a></code>: <code>T</code> is not utility coin type.
 
 
-<a name="@Testing_36"></a>
+<a id="@Testing_36"></a>
 
 ### Testing
 
@@ -2029,7 +2029,7 @@ Assert <code>T</code> is utility coin type.
 
 
 
-<a name="0xc0deb00c_incentives_withdraw_econia_fees"></a>
+<a id="0xc0deb00c_incentives_withdraw_econia_fees"></a>
 
 ## Function `withdraw_econia_fees`
 
@@ -2068,7 +2068,7 @@ Testing
 
 
 
-<a name="0xc0deb00c_incentives_withdraw_econia_fees_all"></a>
+<a id="0xc0deb00c_incentives_withdraw_econia_fees_all"></a>
 
 ## Function `withdraw_econia_fees_all`
 
@@ -2106,14 +2106,14 @@ Testing
 
 
 
-<a name="0xc0deb00c_incentives_withdraw_integrator_fees"></a>
+<a id="0xc0deb00c_incentives_withdraw_integrator_fees"></a>
 
 ## Function `withdraw_integrator_fees`
 
 Withdraw all fees from an <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStore">IntegratorFeeStore</a></code>.
 
 
-<a name="@Type_parameters_37"></a>
+<a id="@Type_parameters_37"></a>
 
 ### Type parameters
 
@@ -2122,7 +2122,7 @@ Withdraw all fees from an <code><a href="incentives.md#0xc0deb00c_incentives_Int
 * <code>UtilityCoinType</code>: The utility coin type.
 
 
-<a name="@Parameters_38"></a>
+<a id="@Parameters_38"></a>
 
 ### Parameters
 
@@ -2135,7 +2135,7 @@ withdrawals and thus transaction collisions with the matching
 engine.
 
 
-<a name="@Returns_39"></a>
+<a id="@Returns_39"></a>
 
 ### Returns
 
@@ -2184,7 +2184,7 @@ engine.
 
 
 
-<a name="0xc0deb00c_incentives_withdraw_utility_coins"></a>
+<a id="0xc0deb00c_incentives_withdraw_utility_coins"></a>
 
 ## Function `withdraw_utility_coins`
 
@@ -2194,7 +2194,7 @@ under authority of <code>econia</code>.
 See inner function <code><a href="incentives.md#0xc0deb00c_incentives_withdraw_utility_coins_internal">withdraw_utility_coins_internal</a>()</code>.
 
 
-<a name="@Testing_40"></a>
+<a id="@Testing_40"></a>
 
 ### Testing
 
@@ -2225,7 +2225,7 @@ See inner function <code><a href="incentives.md#0xc0deb00c_incentives_withdraw_u
 
 
 
-<a name="0xc0deb00c_incentives_withdraw_utility_coins_all"></a>
+<a id="0xc0deb00c_incentives_withdraw_utility_coins_all"></a>
 
 ## Function `withdraw_utility_coins_all`
 
@@ -2235,7 +2235,7 @@ authority of <code>econia</code>.
 See inner function <code><a href="incentives.md#0xc0deb00c_incentives_withdraw_utility_coins_internal">withdraw_utility_coins_internal</a>()</code>.
 
 
-<a name="@Testing_41"></a>
+<a id="@Testing_41"></a>
 
 ### Testing
 
@@ -2265,7 +2265,7 @@ See inner function <code><a href="incentives.md#0xc0deb00c_incentives_withdraw_u
 
 
 
-<a name="0xc0deb00c_incentives_update_incentives"></a>
+<a id="0xc0deb00c_incentives_update_incentives"></a>
 
 ## Function `update_incentives`
 
@@ -2275,7 +2275,7 @@ initialization.
 Accepts same arguments as <code><a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters">set_incentive_parameters</a>()</code>.
 
 
-<a name="@Testing_42"></a>
+<a id="@Testing_42"></a>
 
 ### Testing
 
@@ -2311,7 +2311,7 @@ Accepts same arguments as <code><a href="incentives.md#0xc0deb00c_incentives_set
 
 
 
-<a name="0xc0deb00c_incentives_upgrade_integrator_fee_store_via_coinstore"></a>
+<a id="0xc0deb00c_incentives_upgrade_integrator_fee_store_via_coinstore"></a>
 
 ## Function `upgrade_integrator_fee_store_via_coinstore`
 
@@ -2321,7 +2321,7 @@ utility coins from an <code>aptos_framework::Coin::CoinStore</code>.
 See wrapped function <code><a href="incentives.md#0xc0deb00c_incentives_upgrade_integrator_fee_store">upgrade_integrator_fee_store</a>()</code>.
 
 
-<a name="@Testing_43"></a>
+<a id="@Testing_43"></a>
 
 ### Testing
 
@@ -2361,7 +2361,7 @@ See wrapped function <code><a href="incentives.md#0xc0deb00c_incentives_upgrade_
 
 
 
-<a name="0xc0deb00c_incentives_withdraw_econia_fees_all_to_coin_store"></a>
+<a id="0xc0deb00c_incentives_withdraw_econia_fees_all_to_coin_store"></a>
 
 ## Function `withdraw_econia_fees_all_to_coin_store`
 
@@ -2369,7 +2369,7 @@ Wrapped call to <code><a href="incentives.md#0xc0deb00c_incentives_withdraw_econ
 similar to <code><a href="incentives.md#0xc0deb00c_incentives_withdraw_econia_fees_all">withdraw_econia_fees_all</a>()</code>.
 
 
-<a name="@Testing_44"></a>
+<a id="@Testing_44"></a>
 
 ### Testing
 
@@ -2398,7 +2398,7 @@ similar to <code><a href="incentives.md#0xc0deb00c_incentives_withdraw_econia_fe
 
 
 
-<a name="0xc0deb00c_incentives_withdraw_econia_fees_to_coin_store"></a>
+<a id="0xc0deb00c_incentives_withdraw_econia_fees_to_coin_store"></a>
 
 ## Function `withdraw_econia_fees_to_coin_store`
 
@@ -2406,7 +2406,7 @@ Wrapped call to <code><a href="incentives.md#0xc0deb00c_incentives_withdraw_econ
 similar to <code><a href="incentives.md#0xc0deb00c_incentives_withdraw_econia_fees">withdraw_econia_fees</a>()</code>.
 
 
-<a name="@Testing_45"></a>
+<a id="@Testing_45"></a>
 
 ### Testing
 
@@ -2436,7 +2436,7 @@ similar to <code><a href="incentives.md#0xc0deb00c_incentives_withdraw_econia_fe
 
 
 
-<a name="0xc0deb00c_incentives_withdraw_integrator_fees_via_coinstores"></a>
+<a id="0xc0deb00c_incentives_withdraw_integrator_fees_via_coinstores"></a>
 
 ## Function `withdraw_integrator_fees_via_coinstores`
 
@@ -2447,7 +2447,7 @@ depositing quote coins to one too.
 See wrapped function <code><a href="incentives.md#0xc0deb00c_incentives_withdraw_integrator_fees">withdraw_integrator_fees</a>()</code>.
 
 
-<a name="@Type_parameters_46"></a>
+<a id="@Type_parameters_46"></a>
 
 ### Type parameters
 
@@ -2456,7 +2456,7 @@ See wrapped function <code><a href="incentives.md#0xc0deb00c_incentives_withdraw
 * <code>UtilityCoinType</code>: The utility coin type.
 
 
-<a name="@Parameters_47"></a>
+<a id="@Parameters_47"></a>
 
 ### Parameters
 
@@ -2509,7 +2509,7 @@ Testing
 
 
 
-<a name="0xc0deb00c_incentives_withdraw_utility_coins_all_to_coin_store"></a>
+<a id="0xc0deb00c_incentives_withdraw_utility_coins_all_to_coin_store"></a>
 
 ## Function `withdraw_utility_coins_all_to_coin_store`
 
@@ -2517,7 +2517,7 @@ Wrapped <code><a href="incentives.md#0xc0deb00c_incentives_withdraw_utility_coin
 similar to <code><a href="incentives.md#0xc0deb00c_incentives_withdraw_utility_coins_all">withdraw_utility_coins_all</a>()</code>.
 
 
-<a name="@Testing_48"></a>
+<a id="@Testing_48"></a>
 
 ### Testing
 
@@ -2545,7 +2545,7 @@ similar to <code><a href="incentives.md#0xc0deb00c_incentives_withdraw_utility_c
 
 
 
-<a name="0xc0deb00c_incentives_withdraw_utility_coins_to_coin_store"></a>
+<a id="0xc0deb00c_incentives_withdraw_utility_coins_to_coin_store"></a>
 
 ## Function `withdraw_utility_coins_to_coin_store`
 
@@ -2553,7 +2553,7 @@ Wrapped <code><a href="incentives.md#0xc0deb00c_incentives_withdraw_utility_coin
 similar to <code><a href="incentives.md#0xc0deb00c_incentives_withdraw_utility_coins">withdraw_utility_coins</a>()</code>.
 
 
-<a name="@Testing_49"></a>
+<a id="@Testing_49"></a>
 
 ### Testing
 
@@ -2582,7 +2582,7 @@ similar to <code><a href="incentives.md#0xc0deb00c_incentives_withdraw_utility_c
 
 
 
-<a name="0xc0deb00c_incentives_assess_taker_fees"></a>
+<a id="0xc0deb00c_incentives_assess_taker_fees"></a>
 
 ## Function `assess_taker_fees`
 
@@ -2596,7 +2596,7 @@ passed on to Econia. Otherwise the integrator's fee share is
 determined based on their tier for the given market.
 
 
-<a name="@Type_parameters_50"></a>
+<a id="@Type_parameters_50"></a>
 
 ### Type parameters
 
@@ -2604,7 +2604,7 @@ determined based on their tier for the given market.
 * <code>QuoteCoinType</code>: Quote coin type for market.
 
 
-<a name="@Parameters_51"></a>
+<a id="@Parameters_51"></a>
 
 ### Parameters
 
@@ -2619,7 +2619,7 @@ all fees to Econia.
 * <code>quote_coins</code>: Quote coins to withdraw fees from.
 
 
-<a name="@Returns_52"></a>
+<a id="@Returns_52"></a>
 
 ### Returns
 
@@ -2629,7 +2629,7 @@ assessed.
 * <code>u64</code>: Amount of fees assessed.
 
 
-<a name="@Aborts_53"></a>
+<a id="@Aborts_53"></a>
 
 ### Aborts
 
@@ -2644,7 +2644,7 @@ quote coin for a market.
 would result in an overflow per above.
 
 
-<a name="@Assumptions_54"></a>
+<a id="@Assumptions_54"></a>
 
 ### Assumptions
 
@@ -2742,7 +2742,7 @@ Testing
 
 
 
-<a name="0xc0deb00c_incentives_calculate_max_quote_match"></a>
+<a id="0xc0deb00c_incentives_calculate_max_quote_match"></a>
 
 ## Function `calculate_max_quote_match`
 
@@ -2759,7 +2759,7 @@ matching concludes. Hence it is necessary to calculate a maximum
 quote match amount prior to matching.
 
 
-<a name="@Example_buy_55"></a>
+<a id="@Example_buy_55"></a>
 
 ### Example buy
 
@@ -2772,7 +2772,7 @@ quote match amount prior to matching.
 * Taker has spent 105 quote coins.
 
 
-<a name="@Example_sell_56"></a>
+<a id="@Example_sell_56"></a>
 
 ### Example sell
 
@@ -2785,7 +2785,7 @@ quote match amount prior to matching.
 * Taker has received 100 quote coins.
 
 
-<a name="@Variables_57"></a>
+<a id="@Variables_57"></a>
 
 ### Variables
 
@@ -2800,13 +2800,13 @@ can be described with the following variables:
 * $f = \frac{q_m}{d_t}$: Fees assessed.
 
 
-<a name="@Equations_58"></a>
+<a id="@Equations_58"></a>
 
 ### Equations
 
 
 
-<a name="@Buy_59"></a>
+<a id="@Buy_59"></a>
 
 #### Buy
 
@@ -2820,7 +2820,7 @@ $$ q_m = \frac{\Delta_t}{1 + \frac{1}{d_t}} $$
 $$ q_m = \frac{d_t \Delta_t}{d_t + 1}$$
 
 
-<a name="@Sell_60"></a>
+<a id="@Sell_60"></a>
 
 #### Sell
 
@@ -2834,7 +2834,7 @@ $$ q_m = \frac{\Delta_t}{1 - \frac{1}{d_t}} $$
 $$ q_m = \frac{d_t \Delta_t}{d_t - 1}$$
 
 
-<a name="@Overflow_correction_61"></a>
+<a id="@Overflow_correction_61"></a>
 
 ### Overflow correction
 
@@ -2860,7 +2860,7 @@ smaller than the user-specified change in quote coins (the
 amount of quote coins the taker is willing to spend).
 
 
-<a name="@Parameters_62"></a>
+<a id="@Parameters_62"></a>
 
 ### Parameters
 
@@ -2871,7 +2871,7 @@ amount of quote coins the taker is willing to spend).
 user: spent if a <code><a href="incentives.md#0xc0deb00c_incentives_BUY">BUY</a></code> and received if a <code><a href="incentives.md#0xc0deb00c_incentives_SELL">SELL</a></code>.
 
 
-<a name="@Returns_63"></a>
+<a id="@Returns_63"></a>
 
 ### Returns
 
@@ -2879,7 +2879,7 @@ user: spent if a <code><a href="incentives.md#0xc0deb00c_incentives_BUY">BUY</a>
 * <code>u64</code>: Maximum amount of quote coins to match.
 
 
-<a name="@Assumptions_64"></a>
+<a id="@Assumptions_64"></a>
 
 ### Assumptions
 
@@ -2887,7 +2887,7 @@ user: spent if a <code><a href="incentives.md#0xc0deb00c_incentives_BUY">BUY</a>
 * Taker fee divisor is greater than 1.
 
 
-<a name="@Testing_65"></a>
+<a id="@Testing_65"></a>
 
 ### Testing
 
@@ -2926,7 +2926,7 @@ user: spent if a <code><a href="incentives.md#0xc0deb00c_incentives_BUY">BUY</a>
 
 
 
-<a name="0xc0deb00c_incentives_deposit_custodian_registration_utility_coins"></a>
+<a id="0xc0deb00c_incentives_deposit_custodian_registration_utility_coins"></a>
 
 ## Function `deposit_custodian_registration_utility_coins`
 
@@ -2934,7 +2934,7 @@ Deposit <code>coins</code> of <code>UtilityCoinType</code>, verifying that the p
 amount is supplied for custodian registration.
 
 
-<a name="@Testing_66"></a>
+<a id="@Testing_66"></a>
 
 ### Testing
 
@@ -2965,7 +2965,7 @@ amount is supplied for custodian registration.
 
 
 
-<a name="0xc0deb00c_incentives_deposit_market_registration_utility_coins"></a>
+<a id="0xc0deb00c_incentives_deposit_market_registration_utility_coins"></a>
 
 ## Function `deposit_market_registration_utility_coins`
 
@@ -2973,7 +2973,7 @@ Deposit <code>coins</code> of <code>UtilityCoinType</code>, verifying that the p
 amount is supplied for market registration.
 
 
-<a name="@Testing_67"></a>
+<a id="@Testing_67"></a>
 
 ### Testing
 
@@ -3004,7 +3004,7 @@ amount is supplied for market registration.
 
 
 
-<a name="0xc0deb00c_incentives_deposit_underwriter_registration_utility_coins"></a>
+<a id="0xc0deb00c_incentives_deposit_underwriter_registration_utility_coins"></a>
 
 ## Function `deposit_underwriter_registration_utility_coins`
 
@@ -3012,7 +3012,7 @@ Deposit <code>coins</code> of <code>UtilityCoinType</code>, verifying that the p
 amount is supplied for underwriter registration.
 
 
-<a name="@Testing_68"></a>
+<a id="@Testing_68"></a>
 
 ### Testing
 
@@ -3043,7 +3043,7 @@ amount is supplied for underwriter registration.
 
 
 
-<a name="0xc0deb00c_incentives_register_econia_fee_store_entry"></a>
+<a id="0xc0deb00c_incentives_register_econia_fee_store_entry"></a>
 
 ## Function `register_econia_fee_store_entry`
 
@@ -3092,14 +3092,14 @@ Testing
 
 
 
-<a name="0xc0deb00c_incentives_register_integrator_fee_store"></a>
+<a id="0xc0deb00c_incentives_register_integrator_fee_store"></a>
 
 ## Function `register_integrator_fee_store`
 
 Register an <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStore">IntegratorFeeStore</a></code> entry for given <code>integrator</code>.
 
 
-<a name="@Type_parameters_69"></a>
+<a id="@Type_parameters_69"></a>
 
 ### Type parameters
 
@@ -3108,7 +3108,7 @@ Register an <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStor
 * <code>UtilityCoinType</code>: The utility coin type.
 
 
-<a name="@Parameters_70"></a>
+<a id="@Parameters_70"></a>
 
 ### Parameters
 
@@ -3175,14 +3175,14 @@ Testing
 
 
 
-<a name="0xc0deb00c_incentives_deposit_utility_coins"></a>
+<a id="0xc0deb00c_incentives_deposit_utility_coins"></a>
 
 ## Function `deposit_utility_coins`
 
 Deposit <code>coins</code> to the Econia <code><a href="incentives.md#0xc0deb00c_incentives_UtilityCoinStore">UtilityCoinStore</a></code>.
 
 
-<a name="@Aborts_71"></a>
+<a id="@Aborts_71"></a>
 
 ### Aborts
 
@@ -3195,7 +3195,7 @@ with a supply far in excess of <code><a href="incentives.md#0xc0deb00c_incentive
 coin.
 
 
-<a name="@Testing_72"></a>
+<a id="@Testing_72"></a>
 
 ### Testing
 
@@ -3232,7 +3232,7 @@ coin.
 
 
 
-<a name="0xc0deb00c_incentives_deposit_utility_coins_verified"></a>
+<a id="0xc0deb00c_incentives_deposit_utility_coins_verified"></a>
 
 ## Function `deposit_utility_coins_verified`
 
@@ -3241,7 +3241,7 @@ Verify that <code>UtilityCoinType</code> is the utility coin type and that
 coins to <code><a href="incentives.md#0xc0deb00c_incentives_UtilityCoinStore">UtilityCoinStore</a></code>.
 
 
-<a name="@Aborts_73"></a>
+<a id="@Aborts_73"></a>
 
 ### Aborts
 
@@ -3250,7 +3250,7 @@ coins to <code><a href="incentives.md#0xc0deb00c_incentives_UtilityCoinStore">Ut
 provided.
 
 
-<a name="@Testing_74"></a>
+<a id="@Testing_74"></a>
 
 ### Testing
 
@@ -3284,7 +3284,7 @@ provided.
 
 
 
-<a name="0xc0deb00c_incentives_init_module"></a>
+<a id="0xc0deb00c_incentives_init_module"></a>
 
 ## Function `init_module`
 
@@ -3293,7 +3293,7 @@ Initialize incentives during first-time publication.
 Uses hard-coded genesis parameters that can be updated later.
 
 
-<a name="@Testing_75"></a>
+<a id="@Testing_75"></a>
 
 ### Testing
 
@@ -3347,7 +3347,7 @@ Uses hard-coded genesis parameters that can be updated later.
 
 
 
-<a name="0xc0deb00c_incentives_init_utility_coin_store"></a>
+<a id="0xc0deb00c_incentives_init_utility_coin_store"></a>
 
 ## Function `init_utility_coin_store`
 
@@ -3358,7 +3358,7 @@ exists for given <code>CoinType</code>, which may happen in the case of
 switching back to a utility coin type after having abandoned it.
 
 
-<a name="@Type_Parameters_76"></a>
+<a id="@Type_Parameters_76"></a>
 
 ### Type Parameters
 
@@ -3366,7 +3366,7 @@ switching back to a utility coin type after having abandoned it.
 * <code>CoinType</code>: Utility coin phantom type.
 
 
-<a name="@Parameters_77"></a>
+<a id="@Parameters_77"></a>
 
 ### Parameters
 
@@ -3374,7 +3374,7 @@ switching back to a utility coin type after having abandoned it.
 * <code>fee_account</code>: Econia fee account <code><a href="">signer</a></code>.
 
 
-<a name="@Aborts_78"></a>
+<a id="@Aborts_78"></a>
 
 ### Aborts
 
@@ -3383,7 +3383,7 @@ switching back to a utility coin type after having abandoned it.
 <code>aptos_framework::coin::Coin</code>.
 
 
-<a name="@Testing_79"></a>
+<a id="@Testing_79"></a>
 
 ### Testing
 
@@ -3415,7 +3415,7 @@ switching back to a utility coin type after having abandoned it.
 
 
 
-<a name="0xc0deb00c_incentives_range_check_coin_merge"></a>
+<a id="0xc0deb00c_incentives_range_check_coin_merge"></a>
 
 ## Function `range_check_coin_merge`
 
@@ -3431,7 +3431,7 @@ form of a custom error code for the given operation, which
 allows for diagnosis in extreme cases.
 
 
-<a name="@Aborts_80"></a>
+<a id="@Aborts_80"></a>
 
 ### Aborts
 
@@ -3439,7 +3439,7 @@ allows for diagnosis in extreme cases.
 * <code>error_code</code>: Proposed coin merge overflows a <code>u64</code>.
 
 
-<a name="@Testing_81"></a>
+<a id="@Testing_81"></a>
 
 ### Testing
 
@@ -3470,7 +3470,7 @@ allows for diagnosis in extreme cases.
 
 
 
-<a name="0xc0deb00c_incentives_set_incentive_parameters"></a>
+<a id="0xc0deb00c_incentives_set_incentive_parameters"></a>
 
 ## Function `set_incentive_parameters`
 
@@ -3482,7 +3482,7 @@ the values of <code><a href="incentives.md#0xc0deb00c_incentives_IncentiveParame
 via <code><a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters_parse_tiers_vector">set_incentive_parameters_parse_tiers_vector</a>()</code>.
 
 
-<a name="@Type_Parameters_82"></a>
+<a id="@Type_Parameters_82"></a>
 
 ### Type Parameters
 
@@ -3490,7 +3490,7 @@ via <code><a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters_
 * <code>UtilityCoinType</code>: Utility coin phantom type.
 
 
-<a name="@Parameters_83"></a>
+<a id="@Parameters_83"></a>
 
 ### Parameters
 
@@ -3511,7 +3511,7 @@ already been set, <code><b>false</b></code> if setting parameters for the first
 time.
 
 
-<a name="@Assumptions_84"></a>
+<a id="@Assumptions_84"></a>
 
 ### Assumptions
 
@@ -3522,7 +3522,7 @@ exists at the Econia account.
 exist at the Econia account.
 
 
-<a name="@Aborts_85"></a>
+<a id="@Aborts_85"></a>
 
 ### Aborts
 
@@ -3606,7 +3606,7 @@ to undefined behavior.
 
 
 
-<a name="0xc0deb00c_incentives_set_incentive_parameters_parse_tiers_vector"></a>
+<a id="0xc0deb00c_incentives_set_incentive_parameters_parse_tiers_vector"></a>
 
 ## Function `set_incentive_parameters_parse_tiers_vector`
 
@@ -3623,7 +3623,7 @@ to the <code><a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">I
 to parse into.
 
 
-<a name="@Aborts_86"></a>
+<a id="@Aborts_86"></a>
 
 ### Aborts
 
@@ -3644,7 +3644,7 @@ with tier number.
 tier does not meet minimum threshold.
 
 
-<a name="@Assumptions_87"></a>
+<a id="@Assumptions_87"></a>
 
 ### Assumptions
 
@@ -3658,7 +3658,7 @@ vector.
 vector.
 
 
-<a name="@Testing_88"></a>
+<a id="@Testing_88"></a>
 
 ### Testing
 
@@ -3753,14 +3753,14 @@ vector.
 
 
 
-<a name="0xc0deb00c_incentives_set_incentive_parameters_range_check_inputs"></a>
+<a id="0xc0deb00c_incentives_set_incentive_parameters_range_check_inputs"></a>
 
 ## Function `set_incentive_parameters_range_check_inputs`
 
 Range check inputs for <code><a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters">set_incentive_parameters</a>()</code>.
 
 
-<a name="@Parameters_89"></a>
+<a id="@Parameters_89"></a>
 
 ### Parameters
 
@@ -3778,7 +3778,7 @@ vector containing fields for a corresponding
 <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStoreTierParameters">IntegratorFeeStoreTierParameters</a></code>.
 
 
-<a name="@Aborts_90"></a>
+<a id="@Aborts_90"></a>
 
 ### Aborts
 
@@ -3799,7 +3799,7 @@ indicates an empty vector.
 a vector that is too long.
 
 
-<a name="@Testing_91"></a>
+<a id="@Testing_91"></a>
 
 ### Testing
 
@@ -3854,7 +3854,7 @@ a vector that is too long.
 
 
 
-<a name="0xc0deb00c_incentives_withdraw_econia_fees_internal"></a>
+<a id="0xc0deb00c_incentives_withdraw_econia_fees_internal"></a>
 
 ## Function `withdraw_econia_fees_internal`
 
@@ -3864,7 +3864,7 @@ withdraw <code>amount</code> (which may correspond to all coins), aborting
 if <code><a href="">account</a></code> is not Econia.
 
 
-<a name="@Aborts_92"></a>
+<a id="@Aborts_92"></a>
 
 ### Aborts
 
@@ -3910,7 +3910,7 @@ if <code><a href="">account</a></code> is not Econia.
 
 
 
-<a name="0xc0deb00c_incentives_withdraw_econia_fees_to_coin_store_internal"></a>
+<a id="0xc0deb00c_incentives_withdraw_econia_fees_to_coin_store_internal"></a>
 
 ## Function `withdraw_econia_fees_to_coin_store_internal`
 
@@ -3919,7 +3919,7 @@ depositing withdrawn coins to an
 <code>aptos_framework::coin::CoinStore</code>.
 
 
-<a name="@Testing_93"></a>
+<a id="@Testing_93"></a>
 
 ### Testing
 
@@ -3955,7 +3955,7 @@ depositing withdrawn coins to an
 
 
 
-<a name="0xc0deb00c_incentives_withdraw_utility_coins_internal"></a>
+<a id="0xc0deb00c_incentives_withdraw_utility_coins_internal"></a>
 
 ## Function `withdraw_utility_coins_internal`
 
@@ -3964,7 +3964,7 @@ is <code><b>true</b></code>, otherwise withdraw <code>amount</code> (which may c
 all coins), aborting if <code><a href="">account</a></code> is not Econia.
 
 
-<a name="@Aborts_94"></a>
+<a id="@Aborts_94"></a>
 
 ### Aborts
 
@@ -4005,7 +4005,7 @@ all coins), aborting if <code><a href="">account</a></code> is not Econia.
 
 
 
-<a name="0xc0deb00c_incentives_withdraw_utility_coins_to_coin_store_internal"></a>
+<a id="0xc0deb00c_incentives_withdraw_utility_coins_to_coin_store_internal"></a>
 
 ## Function `withdraw_utility_coins_to_coin_store_internal`
 
@@ -4014,7 +4014,7 @@ depositing withdrawn coins to an
 <code>aptos_framework::coin::CoinStore</code>.
 
 
-<a name="@Testing_95"></a>
+<a id="@Testing_95"></a>
 
 ### Testing
 

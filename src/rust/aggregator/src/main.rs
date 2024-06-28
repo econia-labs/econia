@@ -1,16 +1,24 @@
 use std::{
-    fmt::Display,
+    str::FromStr,
     sync::Arc,
     time::{Duration, SystemTime},
 };
 
 use aggregator::Pipeline;
 use anyhow::{anyhow, Result};
+use aptos_sdk::rest_client::AptosBaseUrl;
 use clap::{Parser, ValueEnum};
-use pipelines::{Candlesticks, Leaderboards, RefreshMaterializedView, UserHistory};
+use pipelines::{
+    Candlesticks, Coins, EnumeratedVolume, Leaderboards, OrderHistory, RefreshMaterializedView,
+    RollingVolume, UserBalances, UserHistory,
+};
 use sqlx::Executor;
 use sqlx_postgres::PgPoolOptions;
 use tokio::{sync::Mutex, task::JoinSet};
+use url::Url;
+
+mod dbtypes;
+mod pipelines;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -20,64 +28,196 @@ struct Args {
     no_default: bool,
 
     /// Exclusion list. Pipelines specified here will not be executed. Ignored if --no-default passed.
-    #[arg(short, long)]
-    exclude: Option<Vec<Pipelines>>,
+    #[arg(short, long, default_values = Vec::<String>::new())]
+    exclude: Vec<Pipelines>,
 
     /// Inclusion list. Pipelines specified here will be executed. Ignored if --no-default is not passed.
-    #[arg(short, long, value_enum)]
-    include: Option<Vec<Pipelines>>,
+    #[arg(short, long, value_enum, default_values = Vec::<String>::new())]
+    include: Vec<Pipelines>,
 
     /// Database URL.
     #[arg(short, long)]
     database_url: Option<String>,
+
+    /// Aptos network.
+    #[arg(short, long)]
+    aptos_network: Option<AptosNetwork>,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+const MAX_BATCH_SIZE: u64 = 100_000;
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 pub enum Pipelines {
     Candlesticks,
+    Coins,
+    EnumeratedVolume,
     Leaderboards,
     Market24hData,
+    OrderHistory,
+    RollingVolume,
+    TvlPerAsset,
+    TvlPerMarket,
+    UserBalances,
     UserHistory,
 }
 
-impl ValueEnum for Pipelines {
-    fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
-        Some(clap::builder::PossibleValue::new(self.to_string()))
-    }
+#[derive(Clone, Debug, PartialEq)]
+pub enum AptosNetwork {
+    Mainnet,
+    Testnet,
+    Devnet,
+    Custom(String),
+}
 
-    fn value_variants<'a>() -> &'a [Self] {
-        &[
-            Self::Candlesticks,
-            Self::Leaderboards,
-            Self::Market24hData,
-            Self::UserHistory,
-        ]
+impl FromStr for AptosNetwork {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let network = match s {
+            "mainnet" => Self::Mainnet,
+            "testnet" => Self::Testnet,
+            "devnet" => Self::Devnet,
+            _ => {
+                if s.to_string().starts_with("custom(") && s.to_string().ends_with(')') {
+                    Self::Custom(s["custom(".len()..s.len() - ")".len()].to_string())
+                } else {
+                    return Err(anyhow!("Invalid Aptos Network"));
+                }
+            }
+        };
+        Ok(network)
     }
 }
 
-impl Display for Pipelines {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{self:?}")
+struct EnvConfig {
+    no_default: bool,
+    exclude: Vec<Pipelines>,
+    include: Vec<Pipelines>,
+    database_url: Option<String>,
+    aptos_network: Option<AptosNetwork>,
+}
+
+impl EnvConfig {
+    pub fn new() -> Self {
+        EnvConfig {
+            no_default: std::env::var("AGGREGATOR_NO_DEFAULT").unwrap_or(String::from("false")).parse().unwrap_or_else(|_| {
+                tracing::error!("Invalid value for AGGREGATOR_NO_DEFAULT, must be either true or false.");
+                panic!()
+            }),
+            exclude: std::env::var("AGGREGATOR_EXCLUDE")
+                .ok()
+                .map(|s|
+                    s.split('+')
+                        .map(|s|
+                            ValueEnum::from_str(s, true)
+                                .unwrap_or_else(|_| {
+                                    tracing::error!("Invalid value for AGGREGATOR_EXCLUDE. Run the aggregator with --help to list possible values.");
+                                    panic!()
+                                })
+                        )
+                        .collect()
+                )
+                .unwrap_or_default(),
+            include: std::env::var("AGGREGATOR_INCLUDE")
+                .ok()
+                .map(|s|
+                    s.split('+')
+                        .map(|s|
+                            ValueEnum::from_str(s, true)
+                                .unwrap_or_else(|_| {
+                                    tracing::error!("Invalid value for AGGREGATOR_INCLUDE. Run the aggregator with --help to list possible values.");
+                                    panic!()
+                                })
+                        )
+                        .collect()
+                )
+                .unwrap_or_default(),
+            database_url: std::env::var("DATABASE_URL").ok(),
+            aptos_network: std::env::var("APTOS_NETWORK").ok().map(|s|
+                AptosNetwork::from_str(&s).unwrap_or_else(|_| {
+                    tracing::error!("Invalid Aptos network.");
+                    panic!()
+                })
+            )
+        }
     }
 }
 
-mod pipelines;
+impl AptosNetwork {
+    pub fn to_base_url(&self) -> AptosBaseUrl {
+        match self {
+            Self::Mainnet => AptosBaseUrl::Mainnet,
+            Self::Testnet => AptosBaseUrl::Testnet,
+            Self::Devnet => AptosBaseUrl::Devnet,
+            Self::Custom(s) => AptosBaseUrl::Custom(Url::parse(&s).unwrap_or_else(|_| {
+                tracing::error!("Invalid custom Aptos network url.");
+                panic!()
+            })),
+        }
+    }
+}
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    let mut args: Args = Args::parse();
+
     tracing_subscriber::fmt()
         .with_max_level(tracing::Level::INFO)
         .init();
     tracing::info!("Started up.");
-    dotenvy::dotenv().ok();
-    let args: Args = Args::parse();
 
-    let database_url = std::env::var("DATABASE_URL")
-        .or_else(|_| -> Result<String> {
-            args.database_url
-                .ok_or(anyhow!("No database URL was provided."))
+    dotenvy::dotenv().ok();
+
+    let env_config: EnvConfig = EnvConfig::new();
+
+    let network = env_config.aptos_network.unwrap_or_else(|| {
+        args.aptos_network.unwrap_or_else(|| {
+            tracing::warn!("APTOS_NETWORK is not set. Using AptosNetwork::Testnet by default.");
+            AptosNetwork::Testnet
         })
-        .expect("DATABASE_URL should be set");
+    });
+
+    let database_url = env_config.database_url.unwrap_or_else(|| {
+        args.database_url.unwrap_or_else(|| {
+            tracing::error!("DATABASE_URL is not set.");
+            panic!();
+        })
+    });
+
+    let pipelines = if env_config.no_default || args.no_default {
+        let mut include = env_config.include.clone();
+        include.append(&mut args.include);
+        include.sort();
+        include.dedup();
+        if include.is_empty() {
+            tracing::error!("No pipelines are included and --no-default is set.");
+            panic!();
+        }
+        include
+    } else {
+        let mut x = vec![
+            Pipelines::Candlesticks,
+            Pipelines::Coins,
+            Pipelines::EnumeratedVolume,
+            Pipelines::Market24hData,
+            Pipelines::UserBalances,
+            Pipelines::RollingVolume,
+            Pipelines::UserHistory,
+            Pipelines::TvlPerAsset,
+            Pipelines::TvlPerMarket,
+        ];
+        let mut exclude = env_config.exclude.clone();
+        let mut include = env_config.include.clone();
+        exclude.append(&mut args.exclude);
+        include.append(&mut args.include);
+        x = x.into_iter().filter(|a| !exclude.contains(a)).collect();
+        x.append(&mut include);
+        x.sort();
+        x.dedup();
+        x
+    };
+    tracing::info!("Using pipelines {pipelines:?}.");
+    tracing::info!("Using network {network:?}.");
 
     let pool = PgPoolOptions::new()
         .after_connect(|conn, _| {
@@ -95,23 +235,6 @@ async fn main() -> Result<()> {
     let default_interval = Duration::from_secs(5);
 
     let mut data: Vec<Arc<Mutex<dyn Pipeline + Send + Sync>>> = vec![];
-
-    let pipelines = if args.no_default {
-        (args
-            .include
-            .ok_or(anyhow!("No data is included and --no-default is set."))?)
-        .clone()
-    } else {
-        let mut x = vec![
-            Pipelines::Candlesticks,
-            Pipelines::Market24hData,
-            Pipelines::UserHistory,
-        ];
-        let exclude = args.exclude.unwrap_or(vec![]);
-        x = x.into_iter().filter(|a| !exclude.contains(a)).collect();
-        x.append(&mut args.include.unwrap_or(vec![]));
-        x
-    };
 
     for pipeline in pipelines {
         match pipeline {
@@ -146,6 +269,15 @@ async fn main() -> Result<()> {
                     60 * 60 * 24,
                 ))));
             }
+            Pipelines::Coins => {
+                data.push(Arc::new(Mutex::new(Coins::new(
+                    pool.clone(),
+                    network.to_base_url(),
+                ))));
+            }
+            Pipelines::EnumeratedVolume => {
+                data.push(Arc::new(Mutex::new(EnumeratedVolume::new(pool.clone()))))
+            }
             Pipelines::Leaderboards => {
                 data.push(Arc::new(Mutex::new(Leaderboards::new(pool.clone()))));
             }
@@ -156,8 +288,31 @@ async fn main() -> Result<()> {
                     Duration::from_secs(5 * 60),
                 ))))
             }
+            Pipelines::OrderHistory => {
+                data.push(Arc::new(Mutex::new(OrderHistory::new(pool.clone()))))
+            }
+            Pipelines::RollingVolume => {
+                data.push(Arc::new(Mutex::new(RollingVolume::new(pool.clone()))))
+            }
+            Pipelines::UserBalances => {
+                data.push(Arc::new(Mutex::new(UserBalances::new(pool.clone()))));
+            }
             Pipelines::UserHistory => {
                 data.push(Arc::new(Mutex::new(UserHistory::new(pool.clone()))));
+            }
+            Pipelines::TvlPerAsset => {
+                data.push(Arc::new(Mutex::new(RefreshMaterializedView::new(
+                    pool.clone(),
+                    "aggregator.tvl_per_asset",
+                    Duration::from_secs(60),
+                ))));
+            }
+            Pipelines::TvlPerMarket => {
+                data.push(Arc::new(Mutex::new(RefreshMaterializedView::new(
+                    pool.clone(),
+                    "aggregator.tvl_per_market",
+                    Duration::from_secs(60),
+                ))));
             }
         }
     }
@@ -169,13 +324,19 @@ async fn main() -> Result<()> {
             let mut data = data.lock().await;
 
             tracing::info!(
-                "[{}] Starting process & save (historical).",
+                "[{}] Starting process & saving (historical).",
                 data.model_name()
             );
+            let start = SystemTime::now();
             data.process_and_save_historical_data().await?;
+            let time = start
+                .elapsed()
+                .unwrap_or(Duration::from_secs(0))
+                .as_millis();
             tracing::info!(
-                "[{}] Finished process & save (historical).",
-                data.model_name()
+                "[{}] Finished process & saving in {}ms (historical).",
+                data.model_name(),
+                time
             );
 
             loop {

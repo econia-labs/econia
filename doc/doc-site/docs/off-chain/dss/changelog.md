@@ -27,7 +27,7 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 
 ### Internal
 
-- Update processor submodule to include upstream updates ([#783], [Processor #31]).
+- Update processor submodule to include upstream updates ([#783], [#786], [Processor #31]).
 
 ## [v2.2.0] (hot upgradable)
 
@@ -275,6 +275,7 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 [#778]: https://github.com/econia-labs/econia/pull/778
 [#780]: https://github.com/econia-labs/econia/pull/780
 [#783]: https://github.com/econia-labs/econia/pull/783
+[#786]: https://github.com/econia-labs/econia/pull/786
 [docs site readme]: https://github.com/econia-labs/econia/blob/main/doc/doc-site/README.md
 [dss-v2.1.0-rc.1]: https://github.com/econia-labs/econia/releases/tag/dss-v2.1.0-rc.1
 [dss-v2.2.1-rc.1]: https://github.com/econia-labs/econia/releases/tag/dss-v2.2.1-rc.1

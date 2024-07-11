@@ -321,7 +321,7 @@ async fn main() -> EconiaResult<()> {
         faucet_address,
         faucet_client,
         econia_address,
-        mut econia_client,
+        econia_client,
     } = init(&args).await;
 
     print_title!("Create a market for eAPT/eUSDC");

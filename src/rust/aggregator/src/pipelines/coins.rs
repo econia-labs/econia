@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use anyhow::anyhow;
 use aptos_sdk::{
     rest_client::{AptosBaseUrl, Client},
@@ -134,7 +136,7 @@ async fn get_coin_info(
     let move_struct_tag_str: String = move_struct_tag_str.into();
     let client = Client::new(network.to_url());
     let ad = move_struct_tag_str.split("::").collect::<Vec<_>>()[0];
-    let ad = AccountAddress::from_str_strict(ad).map_err(map_other)?;
+    let ad = AccountAddress::from_str(ad).map_err(map_other)?;
     let res = client
         .get_account_resource(ad, &format!("0x1::coin::CoinInfo<{}>", move_struct_tag_str))
         .await;

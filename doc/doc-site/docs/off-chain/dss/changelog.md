@@ -18,12 +18,13 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 1. Merge `main` into `dss-stable`.
 1. Push annotated tag to head of `dss-stable`.
 
-## [v2.3.0-rc.1][dss-v2.3.0-rc.1] (hot upgradeable)
+## [v2.3.0][dss-v2.3.0] (hot upgradeable)
 
 ### Fixed
 
 - Fix inaccurate data in `/rpc/volume_history` endpoint ([#778]).
 - Improve performance of daily rolling volume history indexing ([#780]).
+- Fix coins pipeline not working for coins which have an address starting with `0x0` ([#788]).
 
 ### Internal
 
@@ -276,6 +277,7 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 [#780]: https://github.com/econia-labs/econia/pull/780
 [#783]: https://github.com/econia-labs/econia/pull/783
 [#786]: https://github.com/econia-labs/econia/pull/786
+[#788]: https://github.com/econia-labs/econia/pull/788
 [docs site readme]: https://github.com/econia-labs/econia/blob/main/doc/doc-site/README.md
 [dss-v2.1.0-rc.1]: https://github.com/econia-labs/econia/releases/tag/dss-v2.1.0-rc.1
 [dss-v2.2.1-rc.1]: https://github.com/econia-labs/econia/releases/tag/dss-v2.2.1-rc.1

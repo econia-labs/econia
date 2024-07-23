@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO aggregator.daily_rolling_volume_history\n(\"time\", \"market_id\", \"volume_in_quote_subunits\")\n-- Measured in ticks\nWITH volume_per_minute AS (\n    SELECT volume, start_time AS \"minute\", market_id FROM aggregator.candlesticks WHERE resolution = 60 AND (\n        start_time > COALESCE((SELECT * FROM aggregator.daily_rolling_volume_history_last_indexed_timestamp), '0001-01-01') - interval '1 day'\n    )\n    AND start_time + interval '1 minute' < CURRENT_TIMESTAMP\n    ORDER BY start_time\n),\nvolume_totals_per_minute_per_market AS (\n    SELECT\n        \"minute\",\n        market_id,\n        SUM(volume) OVER (PARTITION BY market_id ORDER BY \"minute\" RANGE BETWEEN '1 day' PRECEDING AND CURRENT ROW) AS volume\n    FROM volume_per_minute\n)\nSELECT\n    \"minute\",\n    market_id,\n    volume * (\n        SELECT tick_size\n        FROM market_registration_events m\n        WHERE m.market_id = v.market_id\n    )\nFROM volume_totals_per_minute_per_market v\nWHERE (\n        (SELECT * FROM aggregator.daily_rolling_volume_history_last_indexed_timestamp) IS NULL\n    OR\n        \"minute\" > (SELECT * FROM aggregator.daily_rolling_volume_history_last_indexed_timestamp)\n)\nON CONFLICT ON CONSTRAINT daily_rolling_volume_history_pkey DO UPDATE\nSET volume_in_quote_subunits = EXCLUDED.volume_in_quote_subunits;\n",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "2c8c707d2052da3d6646ed4419f55396b9380cadf4e34a139b05bcd44d5a77ca"
+}

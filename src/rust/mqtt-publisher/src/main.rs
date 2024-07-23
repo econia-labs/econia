@@ -5,6 +5,7 @@ use bigdecimal::ToPrimitive;
 use chrono::{DateTime, Utc};
 use rumqttc::{AsyncClient, EventLoop, MqttOptions, QoS, Transport};
 use serde::{Deserialize, Serialize};
+use sqlx::{Executor, PgConnection};
 use sqlx_postgres::{PgListener, PgPool};
 use tokio::sync::RwLock;
 
@@ -136,6 +137,7 @@ async fn eventpoll_loop(mut eventloop: EventLoop) -> Result<()> {
 struct PriceLevel {
     price: u128,
     size: u128,
+    txn_version: u128,
 }
 
 async fn price_level_loop(db_url: &str, mqtt_client: Arc<RwLock<AsyncClient>>) -> Result<()> {
@@ -143,9 +145,18 @@ async fn price_level_loop(db_url: &str, mqtt_client: Arc<RwLock<AsyncClient>>) -
 
     loop {
         tokio::time::sleep(Duration::from_millis(50)).await;
+        let mut tx = pool.begin().await?;
+        tx.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;").await?;
         let data = sqlx::query_file!("sqlx_queries/get_price_levels.sql")
-        .fetch_all(&pool)
-        .await?;
+            .fetch_all(&mut tx as &mut PgConnection)
+            .await?;
+        let txn_version = sqlx::query_file!("sqlx_queries/get_txn_version.sql")
+            .fetch_one(&mut tx as &mut PgConnection)
+            .await?
+            .txn_version
+            .to_u128()
+            .ok_or(anyhow!("txn_version is too big"))?;
+        tx.rollback().await?;
         let mqtt_client = mqtt_client.read().await;
         for row in data {
             let topic = format!(
@@ -165,6 +176,7 @@ async fn price_level_loop(db_url: &str, mqtt_client: Arc<RwLock<AsyncClient>>) -
                     .ok_or(anyhow!("total_size is None"))?
                     .to_u128()
                     .ok_or(anyhow!("total_size is too big"))?,
+                txn_version,
             };
             mqtt_client
                 .publish(

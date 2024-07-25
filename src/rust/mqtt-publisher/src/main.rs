@@ -150,7 +150,7 @@ async fn price_level_loop(db_url: &str, mqtt_client: Arc<RwLock<AsyncClient>>) -
         let data = sqlx::query_file!("sqlx_queries/get_price_levels.sql")
             .fetch_all(&mut tx as &mut PgConnection)
             .await?;
-        let txn_version = sqlx::query_file!("sqlx_queries/get_txn_version.sql")
+        let txn_version = sqlx::query_file!("sqlx_queries/get_user_history_last_indexed_txn.sql")
             .fetch_one(&mut tx as &mut PgConnection)
             .await?
             .txn_version

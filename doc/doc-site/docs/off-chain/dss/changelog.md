@@ -20,6 +20,10 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 
 ## [v2.4.0] (in progress)
 
+### Added
+
+- Transaction version field inside levels MQTT events ([#792]).
+
 ### Fixed
 
 - Updated the `time` crate to fix DSS docker compilation ([#793]).
@@ -284,6 +288,7 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 [#783]: https://github.com/econia-labs/econia/pull/783
 [#786]: https://github.com/econia-labs/econia/pull/786
 [#788]: https://github.com/econia-labs/econia/pull/788
+[#792]: https://github.com/econia-labs/econia/pull/792
 [#793]: https://github.com/econia-labs/econia/pull/793
 [docs site readme]: https://github.com/econia-labs/econia/blob/main/doc/doc-site/README.md
 [dss-v2.1.0-rc.1]: https://github.com/econia-labs/econia/releases/tag/dss-v2.1.0-rc.1

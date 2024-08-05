@@ -18,7 +18,7 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 1. Merge `main` into `dss-stable`.
 1. Push annotated tag to head of `dss-stable`.
 
-## [v2.4.0] (in progress)
+## [v2.4.0-rc.1][dss-v2.4.0-rc.1] (in progress)
 
 ### Added
 
@@ -294,6 +294,7 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 [dss-v2.1.0-rc.1]: https://github.com/econia-labs/econia/releases/tag/dss-v2.1.0-rc.1
 [dss-v2.2.1-rc.1]: https://github.com/econia-labs/econia/releases/tag/dss-v2.2.1-rc.1
 [dss-v2.3.0-rc.1]: https://github.com/econia-labs/econia/releases/tag/dss-v2.3.0-rc.1
+[dss-v2.4.0-rc.1]: https://github.com/econia-labs/econia/releases/tag/dss-v2.4.0-rc.1
 [processor #19]: https://github.com/econia-labs/aptos-indexer-processors/pull/19
 [processor #20]: https://github.com/econia-labs/aptos-indexer-processors/pull/20
 [processor #21]: https://github.com/econia-labs/aptos-indexer-processors/pull/21

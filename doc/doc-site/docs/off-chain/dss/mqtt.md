@@ -45,9 +45,14 @@ A payload for this event looks like this:
 ```json
 {
   "price": 12345,
-  "size": 12345
+  "size": 12345,
+  "txn_version": 12345
 }
 ```
+
+*Remember to set `MQTT_PRICE_LEVELS=yes` in the `.env` file for docker compose
+(if running with docker compose, otherwise the `mqtt-publisher` executable must
+have that variable exported) if you wish to get price levels over MQTT.*
 
 ### PlaceLimitOrderEvents
 

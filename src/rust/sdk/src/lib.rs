@@ -321,7 +321,7 @@ impl EconiaClient {
     }
 
     async fn submit_tx_internal(
-        &mut self,
+        &self,
         payload: &EntryFunction,
     ) -> EconiaResult<EconiaTransaction> {
         let addr = self.user_account.address();
@@ -382,7 +382,7 @@ impl EconiaClient {
     /// # Arguments:
     ///
     /// * `entry` - `EntryFunction` to be submitted as part of the transaction to the blockchain.
-    pub async fn submit_tx(&mut self, entry: EntryFunction) -> EconiaResult<EconiaTransaction> {
+    pub async fn submit_tx(&self, entry: EntryFunction) -> EconiaResult<EconiaTransaction> {
         for i in 0..(self.config.retry_count) {
             match self.submit_tx_internal(&entry).await {
                 Ok(lt) => return Ok(lt),

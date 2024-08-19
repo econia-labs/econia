@@ -18,11 +18,12 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 1. Merge `main` into `dss-stable`.
 1. Push annotated tag to head of `dss-stable`.
 
-## [v2.4.0-rc.1][dss-v2.4.0-rc.1] (in progress)
+## [v2.4.0-rc.2][dss-v2.4.0-rc.2] (in progress)
 
 ### Added
 
 - Transaction version field inside levels MQTT events ([#792]).
+- Timestamp of last processed transaction in `/data_status` endpoint ([#796]).
 
 ### Fixed
 
@@ -290,6 +291,7 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 [#788]: https://github.com/econia-labs/econia/pull/788
 [#792]: https://github.com/econia-labs/econia/pull/792
 [#793]: https://github.com/econia-labs/econia/pull/793
+[#796]: https://github.com/econia-labs/econia/pull/796
 [docs site readme]: https://github.com/econia-labs/econia/blob/main/doc/doc-site/README.md
 [dss-v2.1.0-rc.1]: https://github.com/econia-labs/econia/releases/tag/dss-v2.1.0-rc.1
 [dss-v2.2.1-rc.1]: https://github.com/econia-labs/econia/releases/tag/dss-v2.2.1-rc.1

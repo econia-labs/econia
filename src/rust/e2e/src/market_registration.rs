@@ -27,7 +27,7 @@ pub async fn test_market_registration<'a>(state: &'a State) -> Result<()> {
     )
     .unwrap();
 
-    let (_, mut econia_client) =
+    let (_, econia_client) =
         account(&state.faucet_client, &state.node_url, state.econia_address).await;
 
     econia_client.submit_tx(entry).await?;

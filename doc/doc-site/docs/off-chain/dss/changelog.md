@@ -18,7 +18,7 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 1. Merge `main` into `dss-stable`.
 1. Push annotated tag to head of `dss-stable`.
 
-## [v2.4.0-rc.2][dss-v2.4.0-rc.2]
+## [v2.4.0] (hot upgradable)
 
 ### Added
 
@@ -317,6 +317,7 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 [v2.1.0]: https://github.com/econia-labs/econia/compare/dss-v2.0.1...dss-v2.1.0
 [v2.2.0]: https://github.com/econia-labs/econia/compare/dss-v2.1.0...dss-v2.2.0
 [v2.3.0]: https://github.com/econia-labs/econia/compare/dss-v2.2.0...dss-v2.3.0
+[v2.4.0]: https://github.com/econia-labs/econia/compare/dss-v2.3.0...dss-v2.4.0
 [`dss-stable`]: https://github.com/econia-labs/econia/tree/dss-stable
 [`econia` repo]: https://github.com/econia-labs/econia/pulls?q=is%3Aclosed
 

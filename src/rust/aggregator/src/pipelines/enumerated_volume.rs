@@ -45,6 +45,10 @@ impl Pipeline for EnumeratedVolume {
             .execute(&mut transaction as &mut PgConnection)
             .await
             .map_err(to_pipeline_error)?;
+        sqlx::query_file!("sqlx_queries/enumerated_volume/update_last_indexed_txn.sql",)
+            .execute(&mut transaction as &mut PgConnection)
+            .await
+            .map_err(to_pipeline_error)?;
         sqlx::query!("REFRESH MATERIALIZED VIEW aggregator.enumerated_volume_24h",)
             .execute(&mut transaction as &mut PgConnection)
             .await

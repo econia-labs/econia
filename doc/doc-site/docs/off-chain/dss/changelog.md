@@ -18,6 +18,14 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 1. Merge `main` into `dss-stable`.
 1. Push annotated tag to head of `dss-stable`.
 
+## [v2.5.0-rc.1] (hot upgradable)
+
+### Internal
+
+- Optimize enumerated volume calculation to improve idling performance ([#799]).
+- Add index to speed up querying orders by `user` and `market_id` ([#800]).
+- Add index to speed up querying orders by `order_id` ([#801]).
+
 ## [v2.4.0] (hot upgradable)
 
 ### Added
@@ -292,11 +300,15 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 [#792]: https://github.com/econia-labs/econia/pull/792
 [#793]: https://github.com/econia-labs/econia/pull/793
 [#796]: https://github.com/econia-labs/econia/pull/796
+[#799]: https://github.com/econia-labs/econia/pull/799
+[#800]: https://github.com/econia-labs/econia/pull/800
+[#801]: https://github.com/econia-labs/econia/pull/801
 [docs site readme]: https://github.com/econia-labs/econia/blob/main/doc/doc-site/README.md
 [dss-v2.1.0-rc.1]: https://github.com/econia-labs/econia/releases/tag/dss-v2.1.0-rc.1
 [dss-v2.2.1-rc.1]: https://github.com/econia-labs/econia/releases/tag/dss-v2.2.1-rc.1
 [dss-v2.3.0-rc.1]: https://github.com/econia-labs/econia/releases/tag/dss-v2.3.0-rc.1
 [dss-v2.4.0-rc.1]: https://github.com/econia-labs/econia/releases/tag/dss-v2.4.0-rc.1
+[dss-v2.5.0-rc.1]: https://github.com/econia-labs/econia/releases/tag/dss-v2.4.0-rc.1
 [processor #19]: https://github.com/econia-labs/aptos-indexer-processors/pull/19
 [processor #20]: https://github.com/econia-labs/aptos-indexer-processors/pull/20
 [processor #21]: https://github.com/econia-labs/aptos-indexer-processors/pull/21

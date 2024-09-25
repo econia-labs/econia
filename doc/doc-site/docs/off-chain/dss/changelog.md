@@ -310,7 +310,6 @@ Stable DSS builds are tracked on the [`dss-stable`] branch with tags like [`dss-
 [dss-v2.2.1-rc.1]: https://github.com/econia-labs/econia/releases/tag/dss-v2.2.1-rc.1
 [dss-v2.3.0-rc.1]: https://github.com/econia-labs/econia/releases/tag/dss-v2.3.0-rc.1
 [dss-v2.4.0-rc.1]: https://github.com/econia-labs/econia/releases/tag/dss-v2.4.0-rc.1
-[dss-v2.5.0-rc.1]: https://github.com/econia-labs/econia/releases/tag/dss-v2.5.0-rc.1
 [dss-v2.5.0-rc.2]: https://github.com/econia-labs/econia/releases/tag/dss-v2.5.0-rc.2
 [processor #19]: https://github.com/econia-labs/aptos-indexer-processors/pull/19
 [processor #20]: https://github.com/econia-labs/aptos-indexer-processors/pull/20

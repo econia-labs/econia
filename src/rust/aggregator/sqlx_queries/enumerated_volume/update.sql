@@ -1,30 +1,17 @@
-INSERT INTO aggregator.enumerated_volume (volume_as_base, volume_as_quote, "address", module, struct, generic_asset_name, last_indexed_txn)
-WITH base_volumes AS (
+INSERT INTO aggregator.enumerated_volume (volume_as_base, volume_as_quote, "address", module, struct, generic_asset_name)
+WITH relevant_fills AS (
+    SELECT * FROM fill_events, aggregator.enumerated_volume_last_indexed_txn WHERE fill_events.txn_version > enumerated_volume_last_indexed_txn.txn_version
+),
+base_volumes AS (
     SELECT
         size_to_base_indivisible_subunits(markets.market_id, SUM("size")) AS volume_as_base,
         base_account_address AS "address",
         base_module_name AS module,
         base_struct_name AS struct,
         base_name_generic AS generic_asset_name
-    FROM fill_events, api.markets
+    FROM relevant_fills AS fill_events, market_registration_events AS markets
     WHERE emit_address = maker_address
     AND markets.market_id = fill_events.market_id
-    AND fill_events.txn_version > COALESCE((
-        SELECT last_indexed_txn
-        FROM aggregator.enumerated_volume
-        WHERE (
-            markets.base_account_address = enumerated_volume."address"
-            AND markets.base_module_name = enumerated_volume.module
-            AND markets.base_struct_name = enumerated_volume.struct
-            AND enumerated_volume.generic_asset_name = ''
-        )
-        OR (
-            enumerated_volume."address" = ''
-            AND enumerated_volume.module = ''
-            AND enumerated_volume.struct = ''
-            AND enumerated_volume.generic_asset_name = markets.base_name_generic
-        )
-    ), 0)
     GROUP BY
         markets.market_id,
         base_account_address,
@@ -38,16 +25,8 @@ quote_volumes AS (
         quote_account_address AS "address",
         quote_module_name AS module,
         quote_struct_name AS struct
-    FROM fill_events, api.markets
+    FROM relevant_fills AS fill_events, market_registration_events AS markets
     WHERE emit_address = maker_address
-    AND fill_events.txn_version > COALESCE((
-        SELECT last_indexed_txn
-        FROM aggregator.enumerated_volume
-        WHERE
-            markets.quote_account_address = enumerated_volume."address"
-            AND markets.quote_module_name = enumerated_volume.module
-            AND markets.quote_struct_name = enumerated_volume.struct
-    ), 0)
     AND markets.market_id = fill_events.market_id
     GROUP BY
         markets.market_id,
@@ -78,11 +57,10 @@ latest AS (
         q.struct
 )
 SELECT
-    a.volume_as_base + COALESCE(b.volume_as_base,0),
-    a.volume_as_quote + COALESCE(b.volume_as_quote,0),
+    COALESCE(a.volume_as_base, 0) + COALESCE(b.volume_as_base,0),
+    COALESCE(a.volume_as_quote, 0) + COALESCE(b.volume_as_quote,0),
     COALESCE(a."address", ''), COALESCE(a.module, ''), COALESCE(a.struct, ''),
-    COALESCE(a.generic_asset_name, ''),
-    (SELECT txn_version FROM fill_events ORDER BY txn_version DESC LIMIT 1)
+    COALESCE(a.generic_asset_name, '')
 FROM latest a
 LEFT JOIN
 aggregator.enumerated_volume b
@@ -97,5 +75,4 @@ AND a.generic_asset_name = b.generic_asset_name)
 ON CONFLICT ON CONSTRAINT enumerated_volume_pkey DO
 UPDATE SET
     volume_as_base = EXCLUDED.volume_as_base,
-    volume_as_quote = EXCLUDED.volume_as_quote,
-    last_indexed_txn = EXCLUDED.last_indexed_txn;
+    volume_as_quote = EXCLUDED.volume_as_quote;

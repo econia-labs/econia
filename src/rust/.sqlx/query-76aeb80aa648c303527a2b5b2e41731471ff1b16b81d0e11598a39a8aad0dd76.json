@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE aggregator.enumerated_volume_last_indexed_txn SET txn_version = COALESCE((SELECT txn_version FROM fill_events ORDER BY txn_version DESC LIMIT 1), 0);\n",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "76aeb80aa648c303527a2b5b2e41731471ff1b16b81d0e11598a39a8aad0dd76"
+}

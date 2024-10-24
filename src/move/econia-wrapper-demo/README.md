@@ -1,6 +1,7 @@
 # Econia wrapper demo
 
-This package contains a demo Move wrapper, useful for combining multiple Econia Move operations into one.
+This package contains a demo Move wrapper, useful for combining multiple Econia
+Move operations into one.
 
 ## Publishing the package
 
@@ -24,8 +25,8 @@ aptos move publish \
 
 Results:
 
-- [Publication transaction](https://explorer.aptoslabs.com/txn/789995990?network=testnet)
-- [Package deployment](https://explorer.aptoslabs.com/account/0x6a8134d4a23c44b7b8f0db989568825c155ccc6d020cc85224a188cd9b9d37c1/modules/code/cancel_and_place?network=testnet)
+- [Initial publication transaction]
+- [Package deployment]
 
 ## Invoking a transaction:
 
@@ -61,4 +62,8 @@ aptos move run \
 
 Results:
 
-- [Successful transaction](https://explorer.aptoslabs.com/txn/790010705/events?network=testnet)
+- [Successful transaction (order IDs to cancel are for open orders)]
+
+[Initial publication transaction]: https://explorer.aptoslabs.com/txn/789995990?network=testnet
+[Package deployment]: https://explorer.aptoslabs.com/account/0x6a8134d4a23c44b7b8f0db989568825c155ccc6d020cc85224a188cd9b9d37c1/modules/code/cancel_and_place?network=testnet
+[Successful transaction (order IDs to cancel are for open orders)]: https://explorer.aptoslabs.com/txn/790010705/events?network=testnet

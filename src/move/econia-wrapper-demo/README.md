@@ -1,6 +1,7 @@
 # Econia wrapper demo
 
-This package contains a demo Move wrapper, useful for combining multiple Econia Move operations into one.
+This package contains a demo Move wrapper, useful for combining multiple Econia
+Move operations into one.
 
 ## Publishing the package
 
@@ -24,8 +25,9 @@ aptos move publish \
 
 Results:
 
-- [Publication transaction](https://explorer.aptoslabs.com/txn/789995990?network=testnet)
-- [Package deployment](https://explorer.aptoslabs.com/account/0x6a8134d4a23c44b7b8f0db989568825c155ccc6d020cc85224a188cd9b9d37c1/modules/code/cancel_and_place?network=testnet)
+- [Initial publication transaction (`v0.1.0`)]
+- [Package `v0.2.0` re-publication]
+- [Package deployment]
 
 ## Invoking a transaction:
 
@@ -61,4 +63,13 @@ aptos move run \
 
 Results:
 
-- [Successful transaction](https://explorer.aptoslabs.com/txn/790010705/events?network=testnet)
+- [Successful transaction (order IDs to cancel are for open orders, `v0.1.0`)]
+- [Successful transaction (order IDs to cancel are for closed orders), `v0.2.0`]
+- [Successful transaction (order IDs to cancel are for open orders, `v0.2.0`)]
+
+[Initial publication transaction (`v0.1.0`)]: https://explorer.aptoslabs.com/txn/789995990?network=testnet
+[Package deployment]: https://explorer.aptoslabs.com/account/0x6a8134d4a23c44b7b8f0db989568825c155ccc6d020cc85224a188cd9b9d37c1/modules/code/cancel_and_place?network=testnet
+[Package `v0.2.0` re-publication]: https://explorer.aptoslabs.com/txn/6175261891?network=testnet
+[Successful transaction (order IDs to cancel are for open orders, `v0.1.0`)]: https://explorer.aptoslabs.com/txn/790010705/events?network=testnet
+[Successful transaction (order IDs to cancel are for closed orders), `v0.2.0`]: https://explorer.aptoslabs.com/txn/0x7dc56f6f46bf6ca06b5d94eb06cf2be7b865f000da63fd6398412fb889dcb95d/events?network=testnet
+[Successful transaction (order IDs to cancel are for open orders, `v0.2.0`)]: https://explorer.aptoslabs.com/txn/0x276adc25fecb975b51272a44d7f8596ba4fb4f4467178ac26a912e7f7086c595/events?network=testnet

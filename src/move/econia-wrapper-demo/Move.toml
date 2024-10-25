@@ -1,6 +1,6 @@
 [package]
 name = "EconiaWrapperDemo"
-version = '0.1.0'
+version = '0.2.0'
 upgrade_policy = 'compatible'
 
 [addresses]
@@ -8,3 +8,7 @@ wrapper_publisher = "_"
 
 [dependencies.Econia]
 local = "../econia"
+
+[dev-addresses]
+econia = "0xc0de"
+wrapper_publisher = "0xace"

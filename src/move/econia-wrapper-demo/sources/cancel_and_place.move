@@ -33,10 +33,14 @@ module wrapper_publisher::cancel_and_place {
         let ask_flag = market::get_ASK();
         let bid_flag = market::get_BID();
         vector::for_each_ref(&ask_order_ids_to_cancel, |order_id_ref| {
-            market::cancel_order_user(user, market_id, ask_flag, *order_id_ref)
+            let order_id = *order_id_ref;
+            if (market::has_open_order(market_id, order_id))
+                market::cancel_order_user(user, market_id, ask_flag, order_id)
         });
         vector::for_each_ref(&bid_order_ids_to_cancel, |order_id_ref| {
-            market::cancel_order_user(user, market_id, bid_flag, *order_id_ref)
+            let order_id = *order_id_ref;
+            if (market::has_open_order(market_id, order_id))
+                market::cancel_order_user(user, market_id, bid_flag, order_id)
         });
         let i = 0;
         while (i < n_ask_sizes) {

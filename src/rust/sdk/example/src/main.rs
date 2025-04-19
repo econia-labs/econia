@@ -8,7 +8,7 @@ use aptos_sdk::{
     },
     rest_client::{aptos_api_types::MoveModuleId, FaucetClient},
     types::{
-        account_address::AccountAddress, transaction::EntryFunction, LocalAccount, APTOS_COIN_TYPE,
+        account_address::AccountAddress, transaction::EntryFunction, LocalAccount, APTOS_COIN_TYPE_STR,
     },
 };
 use clap::Parser;
@@ -313,6 +313,8 @@ pub async fn report_best_price_levels(
 
 #[tokio::main]
 async fn main() -> EconiaResult<()> {
+    let aptos_coin_type_tag = TypeTag::from_str(APTOS_COIN_TYPE_STR).unwrap();
+
     let args = Args::parse();
 
     let Init {
@@ -333,8 +335,8 @@ async fn main() -> EconiaResult<()> {
     let market_id = econia_client
         .view_client()
         .get_market_id_base_coin(
-            e_apt.clone().into(),
-            e_usdc.clone().into(),
+            (&e_apt).into(),
+            (&e_usdc).into(),
             lot_size,
             tick_size,
             min_size,
@@ -397,7 +399,7 @@ async fn main() -> EconiaResult<()> {
             econia_address,
             &e_apt,
             &e_usdc,
-            &APTOS_COIN_TYPE,
+            &aptos_coin_type_tag,
             lot_size,
             tick_size,
             min_size,
@@ -409,8 +411,8 @@ async fn main() -> EconiaResult<()> {
         let market_id = econia_client
             .view_client()
             .get_market_id_base_coin(
-                e_apt.clone().into(),
-                e_usdc.clone().into(),
+                (&e_apt).into(),
+                (&e_usdc).into(),
                 lot_size,
                 tick_size,
                 min_size,

@@ -10,15 +10,12 @@ rm /app/out.csv
 
 echo "health_check_port: 8085
 server_config:
-  processor_config:
-    type: econia_transaction_processor
-    econia_address: $ECONIA_ADDRESS
-  postgres_connection_string: $DATABASE_URL
-  indexer_grpc_data_service_address: $GRPC_DATA_SERVICE_URL
-  indexer_grpc_http2_ping_interval_in_secs: 60
-  indexer_grpc_http2_ping_timeout_in_secs: 10
-  auth_token: $GRPC_AUTH_TOKEN
-  number_concurrent_processing_tasks: 1
-  starting_version: $STARTING_VERSION" > /app/config.yaml
+  postgres_config:
+    connection_string: $DATABASE_URL
+  transaction_stream_config:
+    request_name_header: econia
+    indexer_grpc_data_service_address: $GRPC_DATA_SERVICE_URL
+    auth_token: $GRPC_AUTH_TOKEN
+    starting_version: $STARTING_VERSION" > /app/config.yaml
 
 /usr/local/bin/processor -c /app/config.yaml

@@ -1,0 +1,54 @@
+[package]
+name = "processor"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
+publish.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+dbv2 = { path = "../dbv2" }
+
+ahash = "0.8.11"
+anyhow = { workspace = true }
+aptos-indexer-processor-sdk = { git = "https://github.com/aptos-labs/aptos-indexer-processor-sdk.git", tag = "aptos-indexer-processor-sdk-v2.0.0", features = ["postgres_partial"] }
+bigdecimal = { workspace = true, features = ["serde"] }
+bitflags = "2.5.0"
+chrono = { workspace = true, features = ["clock", "serde"] }
+clap = { workspace = true, features = ["derive", "unstable-styles"] }
+diesel = { workspace = true, features = [
+    "chrono",
+    "postgres_backend",
+    "numeric",
+    "serde_json",
+    "64-column-tables"
+] }
+diesel-async = { git = "https://github.com/weiznich/diesel_async.git", rev = "e3beac66cd41ab53d78a10328bb72f272103e5d1", features = [
+    "async-connection-wrapper",
+    "postgres",
+    "bb8",
+    "tokio",
+] }
+diesel-derive-enum = { workspace = true, features = ["postgres"] }
+futures = { workspace = true }
+futures-util = { workspace = true }
+hex = { workspace = true }
+lazy_static = "1.5.0"
+native-tls = "0.2.13"
+num = "0.4.3"
+once_cell = "1.21.3"
+postgres-native-tls = "0.5.1"
+regex = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+strum = { version = "0.27.1", features = ["derive"] }
+tokio = { workspace = true }
+tokio-postgres = "0.7.13"
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+url = "2.5.4"
+field_count.workspace = true
+diesel_migrations.workspace = true

@@ -5,8 +5,8 @@ ARG RUST_ROOT=src/rust
 
 # Relative to builder layer root.
 ARG APP_DIR=/app
-ARG PROCESSOR_DIR=$APP_DIR/dependencies/aptos-indexer-processors/rust
-ARG BIN_PATH=$PROCESSOR_DIR/target/release/processor
+ARG PROCESSOR_DIR=$APP_DIR/processor
+ARG BIN_PATH=$APP_DIR/target/release/processor
 
 # Install build dependencies, compile binary.
 FROM rust:slim-bullseye AS builder

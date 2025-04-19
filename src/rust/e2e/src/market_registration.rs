@@ -1,5 +1,7 @@
+use std::str::FromStr;
+
 use anyhow::{ensure, Result};
-use aptos_sdk::types::APTOS_COIN_TYPE;
+use aptos_sdk::{move_types::language_storage::TypeTag, types::APTOS_COIN_TYPE_STR};
 use e2e_proc_macro::e2e_test;
 use econia_sdk::entry::register_market_base_coin_from_coinstore;
 use sqlx::query;
@@ -16,11 +18,13 @@ pub async fn test_market_registration<'a>(state: &'a State) -> Result<()> {
         .market_size
         .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
 
+    let aptos_coin_type_tag = TypeTag::from_str(APTOS_COIN_TYPE_STR).unwrap();
+
     let entry = register_market_base_coin_from_coinstore(
         state.econia_address.clone(),
         &state.e_apt,
         &state.e_usdc,
-        &APTOS_COIN_TYPE,
+        &aptos_coin_type_tag,
         lot_size,
         tick_size,
         min_size,

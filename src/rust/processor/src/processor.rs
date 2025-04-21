@@ -20,6 +20,7 @@ use dbv2::{
 use diesel_async::scoped_futures::ScopedFutureExt;
 
 use serde_json::Value;
+use tracing::info;
 use std::{collections::HashMap, str::FromStr};
 
 use crate::events::EventModel;
@@ -639,6 +640,10 @@ pub async fn process_transactions(
     transactions: Vec<Transaction>,
     pool: ArcDbPool,
 ) -> anyhow::Result<()> {
+    let first_version = transactions.get(0).map(|t| t.version);
+    let last_version = transactions.last().map(|t| t.version);
+
+    info!(first_version, last_version, transactions = transactions.len(), "Processing transactions.");
     let mut conn = pool.get().await?;
 
     // Create a hashmap to store block_height to timestamp.
@@ -882,6 +887,8 @@ pub async fn process_transactions(
             return Err(anyhow!("could not run transaction, quitting"));
         }
     }
+
+    info!(first_version, last_version, transactions = transactions.len(), "Successfully processed transactions.");
 
     Ok(())
 

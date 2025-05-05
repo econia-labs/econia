@@ -1,5 +1,10 @@
 # Incentives
 
+:::note
+Econia is no longer actively maintained. If you want an onchain order book for
+Aptos, see: https://x.com/AveryChing/status/1907866088186196417
+:::
+
 ## General
 
 As described in the [incentives module documentation], Econia is a permissionless system that mitigates denial-of-service (DoS) attacks by charging utility coins for assorted operations.

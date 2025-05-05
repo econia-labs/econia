@@ -1,5 +1,10 @@
 # Deploying on GCP
 
+:::note
+Econia is no longer actively maintained. If you want an onchain order book for
+Aptos, see: https://x.com/AveryChing/status/1907866088186196417
+:::
+
 :::danger
 Manual deployment is not recommended, and this guide is not actively maintained.
 See the [DSS CI/CD guide](./ci-cd.md) for the most up-to-date deployment steps.

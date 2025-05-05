@@ -1,5 +1,10 @@
 # Market accounts
 
+:::note
+Econia is no longer actively maintained. If you want an onchain order book for
+Aptos, see: https://x.com/AveryChing/status/1907866088186196417
+:::
+
 When an Econia user places a limit order or a market order (or if a custodian places one on their behalf), the user's assets and orders are tracked in a [`MarketAccount`] that is specific to the given [market] and [custodian].
 
 As explained in the [user module documentation], the concatenated result of market and custodian IDs is known as a "market account ID", which is used for [`MarketAccount`] lookup inside a user's [`MarketAccounts`] as well as inside of a [`Collateral`] resource for any relevant coin types.

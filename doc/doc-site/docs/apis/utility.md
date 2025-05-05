@@ -1,5 +1,10 @@
 # Utility functions
 
+:::note
+Econia is no longer actively maintained. If you want an onchain order book for
+Aptos, see: https://x.com/AveryChing/status/1907866088186196417
+:::
+
 ## Market order ID getters
 
 - [`did_order_post()`](https://github.com/econia-labs/econia/blob/main/src/move/econia/doc/market.md#function-did_order_post)

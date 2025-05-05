@@ -1,5 +1,10 @@
 # Using Terraform
 
+:::note
+Econia is no longer actively maintained. If you want an onchain order book for
+Aptos, see: https://x.com/AveryChing/status/1907866088186196417
+:::
+
 :::danger
 This guide is not actively maintained.
 See the [DSS CI/CD guide](./ci-cd.md) for the most up-to-date deployment steps.

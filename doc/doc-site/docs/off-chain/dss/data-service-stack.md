@@ -1,5 +1,10 @@
 # Data service stack
 
+:::note
+Econia is no longer actively maintained. If you want an onchain order book for
+Aptos, see: https://x.com/AveryChing/status/1907866088186196417
+:::
+
 The Econia data service stack (DSS) is a collection of services that provide assorted data endpoints for integration purposes.
 It exposes a REST API and an MQTT server, which are powered internally by an aggregator, a database, and an indexer.
 To ensure composability, portability, and ease of use, each component is represented as a Docker service inside of a Docker compose environment.

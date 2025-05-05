@@ -4,6 +4,11 @@ title: CI/CD
 
 # Continuous integration and deployment
 
+:::note
+Econia is no longer actively maintained. If you want an onchain order book for
+Aptos, see: https://x.com/AveryChing/status/1907866088186196417
+:::
+
 This guide will help you set up continuous integration/continuous deployment (CI/CD) workflows for a DSS deployment on Google Cloud Platform (GCP).
 
 ## Dependencies

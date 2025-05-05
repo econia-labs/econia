@@ -1,5 +1,10 @@
 # The registry
 
+:::note
+Econia is no longer actively maintained. If you want an onchain order book for
+Aptos, see: https://x.com/AveryChing/status/1907866088186196417
+:::
+
 Econia contains a global [`Registry`] that tracks information about [markets], [custodians], and [underwriters], all of which can be registered permissionlessly.
 An additional [recognized markets] registry provides additional functionality for certain markets that are recognized as following best practices for [market size parameters].
 

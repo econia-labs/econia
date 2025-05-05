@@ -5,6 +5,11 @@ hide_title: true
 description: Documentation for the Econia Protocol
 ---
 
+:::note
+Econia is no longer actively maintained. If you want an onchain order book for
+Aptos, see: https://x.com/AveryChing/status/1907866088186196417
+:::
+
 <div className="welcome-heading">
     <div>
         <h2 style={{ marginBottom: "40px" }}>Welcome</h2>

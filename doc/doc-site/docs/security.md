@@ -1,5 +1,10 @@
 # Security
 
+:::note
+Econia is no longer actively maintained. If you want an onchain order book for
+Aptos, see: https://x.com/AveryChing/status/1907866088186196417
+:::
+
 Econia has been independently audited by three firms, and all [audit reports] are public:
 Move source code is audited through commit [`f974e80`] (tag [`v4.3.0-audited`]), via three initial audits and six followup audits.
 

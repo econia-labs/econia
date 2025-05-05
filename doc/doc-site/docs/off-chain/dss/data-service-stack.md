@@ -12,6 +12,12 @@ For more on Docker, see [the official docs](https://docs.docker.com/).
 
 This page will show you how to run the DSS locally.
 
+:::tip
+If you still want to use the DSS even though Econia is not maintained, you may
+need to fork and update the processor to use Aptos indexer SDK per:
+https://github.com/econia-labs/econia/pull/808
+:::
+
 ## How it works
 
 The DSS exposes a REST API and an MQTT server.

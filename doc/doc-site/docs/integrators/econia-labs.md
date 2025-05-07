@@ -1,5 +1,10 @@
 # From Econia Labs
 
+:::note
+Econia is no longer actively maintained. If you want an onchain order book for
+Aptos, see: https://x.com/AveryChing/status/1907866088186196417
+:::
+
 Check out the following resources from Econia Labs:
 
 1. [Teach yourself Move]

@@ -1,5 +1,10 @@
 # MQTT
 
+:::note
+Econia is no longer actively maintained. If you want an onchain order book for
+Aptos, see: https://x.com/AveryChing/status/1907866088186196417
+:::
+
 Econia's [DSS](./data-service-stack.md) provides an MQTT server for real-time notifications.
 It uses Mosquitto as the MQTT server, and a custom Rust program to publish PostgreSQL events to MQTT.
 

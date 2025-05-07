@@ -1,5 +1,10 @@
 # Changelog
 
+:::note
+Econia is no longer actively maintained. If you want an onchain order book for
+Aptos, see: https://x.com/AveryChing/status/1907866088186196417
+:::
+
 Econia Move source code adheres to [Semantic Versioning] and [Keep a Changelog] standards.
 
 ## [v4.3.0]

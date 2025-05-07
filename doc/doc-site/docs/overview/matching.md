@@ -1,5 +1,10 @@
 # Matching
 
+:::note
+Econia is no longer actively maintained. If you want an onchain order book for
+Aptos, see: https://x.com/AveryChing/status/1907866088186196417
+:::
+
 Econia's matching engine is atomic and crankless, which means that taker orders either fill against maker orders during the transaction in which they are placed, or do not fill at all.
 This fully-autonomous process eliminates the need for a so-called "crank" sometimes required by other on-chain order books, which rely on third parties to trigger the matching process via external transactions.
 In practice, this means that Econia matching operations can be stacked back-to-back within a single transaction, for maximum composability.

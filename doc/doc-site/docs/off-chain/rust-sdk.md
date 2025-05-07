@@ -1,5 +1,10 @@
 # Rust SDK
 
+:::note
+Econia is no longer actively maintained. If you want an onchain order book for
+Aptos, see: https://x.com/AveryChing/status/1907866088186196417
+:::
+
 The code for the Rust SDK lives in [`/econia/src/rust/sdk`](https://github.com/econia-labs/econia/tree/main/src/rust/sdk/example).
 The SDK provides direct access to the Econia protocol, and comes with an example script described below.
 
